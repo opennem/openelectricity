@@ -1,4 +1,5 @@
 import getDateField from './get-date-field';
+import parseYear from './parse-year';
 
 /**
  * Extract the relevant year from a unit based on its status.
@@ -9,10 +10,5 @@ import getDateField from './get-date-field';
  * @returns {number | null} The year, or null if no date is available
  */
 export default function getUnitYear(unit) {
-	const dateField = getDateField(unit.status_id);
-	const dateValue = unit[dateField];
-	if (!dateValue || typeof dateValue !== 'string') return null;
-
-	const year = parseInt(dateValue.substring(0, 4), 10);
-	return isNaN(year) ? null : year;
+	return parseYear(unit[getDateField(unit.status_id)]);
 }

@@ -76,6 +76,11 @@ export const statusOptions = [
 
 export const ALL_STATUSES = statusOptions.map((opt) => opt.value);
 export const DEFAULT_STATUSES = ['operating', 'commissioning'];
+// Play mode (the map's year animation) always animates the full grid history,
+// ignoring the user's status filter. Committed units have no commencement_date
+// yet, so playback reveals them at their expected_operation_date instead —
+// extending the timeline into the future (see play-filter.js).
+export const PLAY_STATUSES = ['operating', 'commissioning', 'retired', 'committed'];
 
 export const regions = [
 	// { longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },

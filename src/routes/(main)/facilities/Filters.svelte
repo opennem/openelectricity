@@ -7,7 +7,6 @@
 	import FuelTechRowContent from './_components/filters/FuelTechRowContent.svelte';
 	import { ListFilter } from '@lucide/svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
-	import { onDestroy } from 'svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 
 	import { getLeafValues, countSelectedLeaves } from './_utils/filter-options.js';
@@ -48,9 +47,6 @@
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
 	 *   onshortcutinvoked?: () => void,
-	 *   onyearplayingchange?: (playing: boolean) => void,
-	 *   onplayyearchange?: (year: number | null) => void,
-	 *   onregisteranimationcontrols?: (controls: { stop: () => void, toggle: () => void }) => void,
 	 *   filteredCount?: number,
 	 *   onresetall?: () => void
 	 * }}
@@ -83,9 +79,6 @@
 		onshowshortcuts,
 		ondownloadcsv,
 		onshortcutinvoked,
-		onyearplayingchange,
-		onplayyearchange,
-		onregisteranimationcontrols,
 		filteredCount = 0,
 		onresetall
 	} = $props();
@@ -108,88 +101,6 @@
 			countSelectedLeaves(fuelTechOptions, selectedFuelTechs) +
 			countSelectedLeaves(regionOptions, selectedRegions)
 	);
-
-	// ============================================
-	// Year Animation (Play button)
-	// ============================================
-
-	let isYearPlaying = $state(false);
-	/** @type {ReturnType<typeof setInterval> | null} */
-	let yearPlayInterval = $state(null);
-	let animationEndYear = 0;
-	/** @type {number | null} */
-	let playYear = $state(null);
-
-	function startYearAnimation() {
-		animationEndYear = yearRange[1];
-		const startFrom = playYear !== null && playYear < animationEndYear ? playYear : yearRange[0];
-
-		playYear = startFrom;
-		onplayyearchange?.(playYear);
-
-		isYearPlaying = true;
-		onyearplayingchange?.(true);
-		yearPlayInterval = setInterval(() => {
-			const nextYear = (playYear ?? yearRange[0]) + 1;
-
-			if (nextYear > animationEndYear) {
-				playYear = animationEndYear;
-				onplayyearchange?.(playYear);
-				pauseYearAnimation();
-				return;
-			}
-
-			playYear = nextYear;
-			onplayyearchange?.(playYear);
-		}, 200);
-	}
-
-	function pauseYearAnimation() {
-		isYearPlaying = false;
-		onyearplayingchange?.(false);
-		if (yearPlayInterval) {
-			clearInterval(yearPlayInterval);
-			yearPlayInterval = null;
-		}
-	}
-
-	function stopYearAnimation() {
-		pauseYearAnimation();
-		playYear = null;
-		onplayyearchange?.(null);
-	}
-
-	function handleYearClear() {
-		stopYearAnimation();
-		onyearrangechange?.([yearMin, yearMax]);
-	}
-
-	function toggleYearAnimation() {
-		if (isYearPlaying) {
-			pauseYearAnimation();
-		} else {
-			startYearAnimation();
-		}
-	}
-
-	// Expose animation controls to parent
-	$effect(() => {
-		onregisteranimationcontrols?.({ stop: stopYearAnimation, toggle: toggleYearAnimation });
-	});
-
-	// Stop animation if view changes
-	/** @type {string} */
-	let prevSelectedView = $state('');
-	$effect(() => {
-		if (prevSelectedView && selectedView !== prevSelectedView) {
-			stopYearAnimation();
-		}
-		prevSelectedView = selectedView;
-	});
-
-	onDestroy(() => {
-		stopYearAnimation();
-	});
 
 	// ============================================
 	// Browser Fullscreen API
@@ -394,23 +305,14 @@
 	{yearRange}
 	{yearMin}
 	{yearMax}
-	onyearrangechange={(range) => {
-		stopYearAnimation();
-		onyearrangechange?.(range);
-	}}
-	onclearyears={() => {
-		stopYearAnimation();
-		onyearrangechange?.([yearMin, yearMax]);
-	}}
+	onyearrangechange={(range) => onyearrangechange?.(range)}
+	onclearyears={() => onyearrangechange?.([yearMin, yearMax])}
 	onclearregions={() => onregionschange?.([])}
 	onclearstatuses={() => onstatuseschange?.([...DEFAULT_STATUSES])}
 	onclearfueltechs={() => onfueltechschange?.([])}
 	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 	{filteredCount}
-	onresetall={() => {
-		stopYearAnimation();
-		onresetall?.();
-	}}
+	onresetall={() => onresetall?.()}
 />
 
 <!-- Mobile floating nav — the filter bar below is desktop-only; on mobile the
@@ -558,12 +460,8 @@
 					step={1}
 					formatValue={formatYear}
 					compact={isFullscreen}
-					suppressScrollClose={isYearPlaying}
-					onchange={(range) => {
-						stopYearAnimation();
-						onyearrangechange?.(range);
-					}}
-					onclear={handleYearClear}
+					onchange={(range) => onyearrangechange?.(range)}
+					onclear={() => onyearrangechange?.([yearMin, yearMax])}
 				/>
 			</div>
 		{/snippet}

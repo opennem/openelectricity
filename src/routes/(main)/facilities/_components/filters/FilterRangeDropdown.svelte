@@ -13,7 +13,6 @@
 	 *   step?: number,
 	 *   formatValue?: (v: number) => string,
 	 *   compact?: boolean,
-	 *   suppressScrollClose?: boolean,
 	 *   onchange?: (range: [number, number]) => void,
 	 *   onclear?: () => void
 	 * }}
@@ -26,7 +25,6 @@
 		step = 1,
 		formatValue = (v) => String(v),
 		compact = false,
-		suppressScrollClose = false,
 		onchange,
 		onclear
 	} = $props();
@@ -37,7 +35,7 @@
 	);
 </script>
 
-<FilterPanel label={pillLabel} active={isFiltered} {compact} {suppressScrollClose}>
+<FilterPanel label={pillLabel} active={isFiltered} {compact}>
 	{#snippet footerLeft()}
 		<button
 			type="button"

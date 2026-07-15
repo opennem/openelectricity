@@ -1,6 +1,7 @@
 <script>
 	import { onDestroy, onMount } from 'svelte';
 	import clamp from '$lib/utils/clamp.js';
+	import AnimationTimeline from '$lib/components/playback/AnimationTimeline.svelte';
 
 	/**
 	 * Animate through a facet column's unique values by interpolating row
@@ -186,50 +187,9 @@
 		displayedFrame = clamp(index, 0, lastIndex);
 	}
 
-	let isScrubbing = $state(false);
-	/** @type {DOMRect | null} */
-	let scrubRect = null;
-
-	/** @param {PointerEvent} event */
-	function scrubToEvent(event) {
-		if (lastIndex === 0 || !scrubRect) return;
-		const pct = clamp((event.clientX - scrubRect.left) / scrubRect.width, 0, 1);
-		displayedFrame = pct * lastIndex;
-	}
-
-	/** @param {PointerEvent} event */
-	function handleScrubPointerDown(event) {
-		if (facetValues.length < 2) return;
-		haltPlayback();
-		isScrubbing = true;
-		const target = /** @type {HTMLElement} */ (event.currentTarget);
-		target.setPointerCapture(event.pointerId);
-		scrubRect = target.getBoundingClientRect();
-		scrubToEvent(event);
-	}
-
-	/** @param {PointerEvent} event */
-	function handleScrubPointerMove(event) {
-		if (!isScrubbing) return;
-		scrubToEvent(event);
-	}
-
-	function handleScrubPointerUp() {
-		if (!isScrubbing) return;
-		isScrubbing = false;
-		scrubRect = null;
-		snapDisplayedFrame();
-	}
-
-	const timelineProgress = $derived(lastIndex > 0 ? Math.min(1, safeFrame / lastIndex) * 100 : 0);
-
 	$effect(() => {
 		if (displayedFrame >= facetValues.length) displayedFrame = 0;
 	});
-
-	// Measured to size the play button as a true square matching the timeline
-	// (aspect-ratio is unreliable when the height comes from flex-stretch).
-	let timelineHeight = $state(0);
 
 	onMount(() => {
 		if (autoPlay && facetValues.length >= 2) play();
@@ -258,86 +218,20 @@
 		})}
 	</div>
 
-	<div class="flex items-start gap-2 max-w-[600px] mx-auto w-full">
-		<button
-			type="button"
-			onclick={togglePlay}
+	<div class="max-w-[600px] mx-auto w-full">
+		<AnimationTimeline
+			value={safeFrame}
+			max={lastIndex}
+			{isPlaying}
 			disabled={facetValues.length < 2}
-			style="width: {timelineHeight}px; height: {timelineHeight}px"
-			class="shrink-0 bg-black text-white rounded-lg transition-all hover:bg-dark-grey disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center"
-			title={isPlaying ? 'Pause' : 'Play'}
-			aria-label={isPlaying ? 'Pause' : 'Play'}
-		>
-			{#if isPlaying}
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 24 24"
-					fill="currentColor"
-					class="size-5"
-				>
-					<rect x="6" y="5" width="4" height="14" rx="1" />
-					<rect x="14" y="5" width="4" height="14" rx="1" />
-				</svg>
-			{:else}
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 24 24"
-					fill="currentColor"
-					class="size-5"
-				>
-					<path
-						d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.04-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14Z"
-					/>
-				</svg>
-			{/if}
-		</button>
-
-		<div class="flex-1 min-w-0">
-			{#if facetValues.length >= 2}
-				<div
-					bind:clientHeight={timelineHeight}
-					class="border border-warm-grey rounded-lg px-3 py-2"
-				>
-					<div
-						role="slider"
-						tabindex="0"
-						aria-label="Animation timeline"
-						aria-valuemin="0"
-						aria-valuemax={lastIndex}
-						aria-valuenow={currentFrameIndex}
-						aria-valuetext={String(currentFacet)}
-						onpointerdown={handleScrubPointerDown}
-						onpointermove={handleScrubPointerMove}
-						onpointerup={handleScrubPointerUp}
-						onpointercancel={handleScrubPointerUp}
-						class="relative h-3 cursor-pointer touch-none group flex items-center select-none"
-					>
-						<div class="relative w-full h-1 rounded-full bg-warm-grey/50 overflow-hidden">
-							<div
-								class="absolute inset-y-0 left-0 rounded-full bg-dark-grey"
-								style="width: {timelineProgress}%"
-							></div>
-						</div>
-						{#each facetValues as _value, i (i)}
-							{@const left = (i / (facetValues.length - 1)) * 100}
-							<span
-								class="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-2 bg-mid-grey/40"
-								style="left: {left}%"
-							></span>
-						{/each}
-						<div
-							class="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-dark-grey shadow-sm ring-2 ring-light-warm-grey transition-transform group-hover:scale-125 {isScrubbing
-								? 'scale-125'
-								: ''}"
-							style="left: {timelineProgress}%"
-						></div>
-					</div>
-				</div>
-				<div class="flex justify-between text-[10px] text-mid-grey mt-1.5 px-3 tabular-nums">
-					<span>{String(facetValues[0])}</span>
-					<span>{String(facetValues[facetValues.length - 1])}</span>
-				</div>
-			{/if}
-		</div>
+			ticks={facetValues.map((_, i) => i)}
+			startLabel={String(facetValues[0] ?? '')}
+			endLabel={String(facetValues[facetValues.length - 1] ?? '')}
+			valueText={String(currentFacet)}
+			ontoggle={togglePlay}
+			onscrubstart={haltPlayback}
+			onscrub={(v) => (displayedFrame = v)}
+			onscrubend={snapDisplayedFrame}
+		/>
 	</div>
 </div>

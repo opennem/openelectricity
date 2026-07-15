@@ -4,7 +4,7 @@
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { building } from '$app/environment';
-	import { Flag, Pause, Play, X, Zap } from '@lucide/svelte';
+	import { Flag, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
 	import { normaliseMetric } from './_utils/normalise-metric.js';
@@ -23,6 +23,7 @@
 	import List from './List.svelte';
 	import Grid from './Grid.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
+	import YearAnimationOverlay from './_components/YearAnimationOverlay.svelte';
 	import MobileFacilitiesSheet from './_components/MobileFacilitiesSheet.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
@@ -48,6 +49,13 @@
 	import { getUnitCapacity, sumUnitCapacities } from '$lib/utils/capacity';
 	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
 	import { fetchFacilityDetail, peekFacilityDetail } from './_utils/fetch-facility-detail.js';
+	import { fetchAllFacilities } from './_utils/fetch-all-facilities.js';
+	import {
+		filterFacilitiesByPlayYear,
+		computePlayCapacityByYear,
+		getFacilityPlayYear
+	} from './_utils/play-filter.js';
+	import { computeYearBounds, computePlayYearBounds } from './_utils/year-bounds.js';
 	import { MediaQuery } from 'svelte/reactivity';
 	import {
 		BELOW_TABLET_QUERY,
@@ -138,11 +146,19 @@
 	/** @type {string | null | undefined} */
 	let optimisticCode = $state(undefined);
 
+	// The set that selection lookups and marker metrics resolve against: during
+	// play the map shows the full unfiltered set, so facilities revealed outside
+	// the active filters must still resolve. ($derived.by: the play-mode state
+	// is declared further down; the closure defers evaluation past its TDZ.)
+	let lookupFacilities = $derived.by(() =>
+		playModeActive && allFacilities ? allFacilities : facilities
+	);
+
 	/** @type {any | null} */
 	let selectedFacility = $derived.by(() => {
 		const code =
 			optimisticCode !== undefined ? optimisticCode : page.url.searchParams.get('facility');
-		return code ? (facilities?.find((f) => f.code === code) ?? null) : null;
+		return code ? (lookupFacilities?.find((f) => f.code === code) ?? null) : null;
 	});
 
 	// Editorial profile (description, photos, owners, unit garnishes) for the
@@ -307,10 +323,11 @@
 	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
 
 	// Capacity per facility (maximum falling back to registered), normalised to
-	// 0..1 — sizes the map markers (circle radius).
+	// 0..1 — sizes the map markers (circle radius). Sourced from the play set
+	// during play so full-set markers get a size too.
 	let capacityValuesByCode = $derived.by(() => {
 		const m = new Map();
-		for (const f of facilities ?? []) m.set(f.code, getFacilityCapacity(f));
+		for (const f of lookupFacilities ?? []) m.set(f.code, getFacilityCapacity(f));
 		return m;
 	});
 	let metricValues = $derived(normaliseMetric(capacityValuesByCode));
@@ -350,8 +367,74 @@
 	// Shortcuts toast
 	let showShortcutsToast = $state(false);
 
-	// Year animation playing state (from Filters)
+	// ============================================
+	// Play mode (year animation)
+	// ============================================
+	// The overlay owns the playback engine; the page owns `playModeActive`
+	// (dims/inerts the filter bar and gates the display swap below) and lazily
+	// fetches the full dataset the animation runs over — play always animates
+	// the complete grid history regardless of the active filters.
+	let playModeActive = $state(false);
 	let isYearPlaying = $state(false);
+	// Full facilities set (PLAY_STATUSES, no region/fueltech filter), fetched on
+	// first play. $state.raw: large immutable dataset — never deep-proxy it.
+	/** @type {any[] | null} */
+	let allFacilities = $state.raw(null);
+	let allFacilitiesLoading = $state(false);
+	let allFacilitiesError = $state(false);
+	// Pre-play facility selection (from the URL), snapshotted on open so closing
+	// play can restore it. Never rendered — a plain variable, not state.
+	/** @type {string | null} */
+	let playRestoreCode = null;
+
+	function handlePlayOpen() {
+		playModeActive = true;
+		// The detail panel would cover the map during play — snapshot the
+		// URL-held selection and clear it, restored in handlePlayClose.
+		playRestoreCode = selectedFacility?.code ?? null;
+		if (selectedFacility) closeFacilityDetail();
+
+		if (allFacilities) {
+			// Zoom out to the full dataset so the markers pop up in frame.
+			mapRef?.fitFacilities(allFacilities);
+			return;
+		}
+		if (allFacilitiesLoading) return;
+		allFacilitiesLoading = true;
+		allFacilitiesError = false;
+		fetchAllFacilities().then((data) => {
+			allFacilitiesLoading = false;
+			if (data) {
+				allFacilities = data;
+				if (playModeActive) mapRef?.fitFacilities(data);
+			} else {
+				allFacilitiesError = true;
+			}
+		});
+	}
+
+	/**
+	 * @param {boolean} restore — false for navigation closes, where the new URL
+	 * defines the state and the map should be left alone.
+	 */
+	function handlePlayClose(restore) {
+		playModeActive = false;
+		const restoreCode = playRestoreCode;
+		playRestoreCode = null;
+		if (!restore) return;
+
+		// Restore the pre-play map state from the URL-held selection: a facility
+		// selected *during* play wins (the URL already points there and the map is
+		// on it); otherwise re-select the snapshotted facility, which flies the
+		// map back to it — or just re-frame the filtered set.
+		if (new URLSearchParams(window.location.search).get('facility')) return;
+		const facility = restoreCode ? facilities?.find((f) => f.code === restoreCode) : null;
+		if (facility) {
+			handleFacilitySelect(facility);
+		} else {
+			mapRef?.resetView();
+		}
+	}
 
 	// When a facility is selected in list view, collapse the list pane (drop the
 	// Storage + Capacity + Region columns, overlap the fuel-tech badges) to give
@@ -363,9 +446,6 @@
 	);
 	/** @type {number | null} */
 	let playYear = $state(null);
-	/** @type {{ stop: () => void, toggle: () => void } | null} */
-	let yearAnimationControls = $state(null);
-	let showYearOverlay = $state(false);
 
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
 	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
@@ -380,6 +460,12 @@
 	// the next user interaction and synced to the URL then.
 	let routerReady = $state(false);
 	afterNavigate(() => {
+		// Any real navigation (back/forward, filter refetch) ends play mode so
+		// the restored URL's filters take effect again — without restoring the
+		// pre-play map state, since the navigated-to URL defines it. Facility
+		// selection uses shallow replaceState, which doesn't fire afterNavigate,
+		// so selecting facilities mid-play doesn't interrupt playback.
+		if (playModeActive) handlePlayClose(false);
 		// Reconcile selection *and* view from the *actual* browser URL after every
 		// navigation (back/forward, filter change). We can't trust page.url /
 		// navigation.to.url here: after a shallow replaceState (how selection and
@@ -495,36 +581,33 @@
 		return { min, max };
 	});
 
-	// Calculate year bounds from all unit dates
-	let yearBounds = $derived.by(() => {
-		if (!facilities || facilities.length === 0) return { min: 1900, max: 2040 };
-
-		/** @type {number[]} */
-		const years = facilities.flatMap((facility) =>
-			filterDerivedBatteryUnits(facility.units ?? [], hasBidirectionalBattery(facility))
-				.map((/** @type {any} */ unit) => getUnitYear(unit))
-				.filter((/** @type {number | null} */ y) => y !== null)
-		);
-
-		if (years.length === 0) return { min: 1900, max: 2040 };
-		return { min: Math.min(...years), max: Math.max(...years) };
+	// Year bounds from all unit dates (drives the Years filter). Play mode's
+	// range comes from the full set's commencement years instead.
+	let yearBounds = $derived(computeYearBounds(facilities));
+	let playYearBounds = $derived(computePlayYearBounds(allFacilities));
+	// Total-capacity-per-year data for the play overlay's Capacity readout.
+	let playCapacitySeries = $derived(
+		allFacilities
+			? computePlayCapacityByYear(allFacilities, playYearBounds.min, playYearBounds.max)
+			: []
+	);
+	// Facility code → first-connection year, precomputed once from the stable
+	// full set (the map's facilities prop rebuilds every play tick, but appear
+	// years never change) — drives the marker scale-in.
+	let playAppearYears = $derived.by(() => {
+		const m = new Map();
+		for (const f of allFacilities ?? []) m.set(f.code, getFacilityPlayYear(f));
+		return m;
 	});
 
 	/**
 	 * Check if a unit's year falls within the year range.
-	 * During playback (playYearValue set), show all units up to the playhead year.
 	 * @param {any} unit
 	 * @param {[number, number]} yearRangeFilter
 	 * @param {boolean} isYearFiltered
-	 * @param {number | null} playYearValue
 	 * @returns {boolean}
 	 */
-	function unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered, playYearValue) {
-		if (playYearValue !== null) {
-			const unitYear = getUnitYear(unit);
-			if (unitYear === null) return false;
-			return unitYear <= playYearValue;
-		}
+	function unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered) {
 		if (!isYearFiltered) return true;
 		const unitYear = getUnitYear(unit);
 		if (unitYear === null) return false;
@@ -539,7 +622,6 @@
 	 * @param {[number, number]} yearRangeFilter
 	 * @param {{ min: number, max: number }} yearBoundsRef
 	 * @param {'list' | 'timeline' | 'grid'} view
-	 * @param {number | null} playYearValue
 	 * @returns {any[]}
 	 */
 	function filterFacilities(
@@ -548,13 +630,10 @@
 		capacityRangeFilter,
 		yearRangeFilter,
 		yearBoundsRef,
-		view,
-		playYearValue
+		view
 	) {
 		const isYearFiltered =
-			playYearValue !== null ||
-			yearRangeFilter[0] > yearBoundsRef.min ||
-			yearRangeFilter[1] < yearBoundsRef.max;
+			yearRangeFilter[0] > yearBoundsRef.min || yearRangeFilter[1] < yearBoundsRef.max;
 
 		if (view === 'timeline') {
 			// Timeline: filter units by individual capacity and year, keep facilities with matching units
@@ -571,7 +650,7 @@
 								: true) &&
 							getUnitCapacity(unit) >= capacityRangeFilter[0] &&
 							getUnitCapacity(unit) <= capacityRangeFilter[1] &&
-							unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered, playYearValue)
+							unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered)
 					)
 				}))
 				.filter((facility) => facility.units && facility.units.length > 0);
@@ -595,7 +674,7 @@
 				.filter((facility) => {
 					if (!isYearFiltered) return true;
 					return facility.units.some((/** @type {any} */ unit) =>
-						unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered, playYearValue)
+						unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered)
 					);
 				});
 		}
@@ -609,8 +688,7 @@
 			capacityRange,
 			yearRange,
 			yearBounds,
-			selectedView,
-			playYear
+			selectedView
 		);
 	});
 
@@ -638,12 +716,21 @@
 		return facilityList.filter(hasValidLocation);
 	}
 
-	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
+	// While play mode is showing a frame, the play set replaces the filtered
+	// set everywhere the page displays facilities (map, views, footer badges);
+	// null otherwise, letting the filtered set show through.
+	/** @type {any[] | null} */
+	let playFacilities = $derived.by(() => {
+		if (!playModeActive || !allFacilities || playYear === null) return null;
+		return filterFacilitiesByPlayYear(allFacilities, playYear, selectedView);
+	});
+	let displayFacilities = $derived(playFacilities ?? filteredFacilities);
+	let displayWithLocation = $derived(filterWithLocation(displayFacilities));
 
-	// Calculate totals for filtered facilities
-	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
+	// Calculate totals for displayed facilities
+	let filteredUnits = $derived(displayFacilities?.flatMap((f) => f.units) ?? []);
 	let totalCapacityMW = $derived(sumUnitCapacities(filteredUnits));
-	let totalFacilitiesCount = $derived(filteredFacilities?.length ?? 0);
+	let totalFacilitiesCount = $derived(displayFacilities?.length ?? 0);
 	let totalUnitsCount = $derived(filteredUnits?.length ?? 0);
 
 	// Calculate capacity by status
@@ -736,8 +823,8 @@
 	}
 
 	function handleDownloadCsv() {
-		if (filteredFacilities?.length) {
-			downloadCsv(facilitiesToCsv(filteredFacilities), 'facilities.csv');
+		if (displayFacilities?.length) {
+			downloadCsv(facilitiesToCsv(displayFacilities), 'facilities.csv');
 		}
 	}
 
@@ -748,12 +835,12 @@
 	 */
 	let orderedFacilities = $derived.by(() => {
 		if (selectedView === 'list') {
-			return sortFacilities(filteredFacilities, listSortBy, listSortOrder, null);
+			return sortFacilities(displayFacilities, listSortBy, listSortOrder, null);
 		}
 		if (selectedView === 'timeline' && timelineOrderedCodes.length) {
 			/** @type {Record<string, any>} */
 			const lookup = {};
-			for (const f of filteredFacilities ?? []) lookup[f.code] = f;
+			for (const f of displayFacilities ?? []) lookup[f.code] = f;
 			/** @type {any[]} */
 			const ordered = [];
 			for (const code of timelineOrderedCodes) {
@@ -762,7 +849,7 @@
 			}
 			return ordered;
 		}
-		return filteredFacilities ?? [];
+		return displayFacilities ?? [];
 	});
 
 	/**
@@ -1114,10 +1201,14 @@
 		<!-- The bar itself is desktop-only (Filters renders a floating nav over
 		     the map on mobile), so the border is too — otherwise an empty strip
 		     would sit above the full-bleed map. -->
+		<!-- During play mode the bar is dimmed and inert: the map shows the full
+		     unfiltered dataset, so filter interactions would have no visible
+		     effect. `inert` blocks pointer, keyboard and focus in one go. -->
 		<div
-			class="relative z-40 shrink-0 tablet:border-b tablet:border-warm-grey {isFullscreen
-				? ''
-				: 'px-4'}"
+			class="relative z-40 shrink-0 tablet:border-b tablet:border-warm-grey transition-opacity duration-300 {playModeActive
+				? 'opacity-40'
+				: ''} {isFullscreen ? '' : 'px-4'}"
+			inert={playModeActive}
 		>
 			<Filters
 				{searchTerm}
@@ -1146,9 +1237,6 @@
 				ondownloadcsv={handleDownloadCsv}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onshortcutinvoked={() => (showShortcutsToast = false)}
-				onyearplayingchange={(playing) => (isYearPlaying = playing)}
-				onplayyearchange={(year) => (playYear = year)}
-				onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
 				filteredCount={totalFacilitiesCount}
 				onresetall={handleResetAll}
 			/>
@@ -1179,7 +1267,7 @@
 					{:else if selectedView === 'grid'}
 						<div class="flex-1 overflow-y-auto min-h-0">
 							<Grid
-								facilities={filteredFacilities}
+								facilities={displayFacilities}
 								selectedFacilityCode={selectedFacility?.code ?? null}
 								{facilityPhotos}
 								onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
@@ -1191,7 +1279,7 @@
 					{:else if selectedView === 'list'}
 						<div class="flex-1 overflow-y-auto min-h-0 mt-4">
 							<List
-								facilities={filteredFacilities}
+								facilities={displayFacilities}
 								{hoveredFacility}
 								{clickedFacility}
 								selectedFacilityCode={selectedFacility?.code ?? null}
@@ -1234,7 +1322,7 @@
 							<div class="p-6">
 								<Timeline
 									bind:this={timelineRef}
-									facilities={filteredWithLocation}
+									facilities={displayWithLocation}
 									{hoveredFacility}
 									{clickedFacility}
 									selectedFacilityCode={selectedFacility?.code ?? null}
@@ -1281,7 +1369,7 @@
 						{#await import('./Map.svelte') then { default: Map }}
 							<Map
 								bind:this={mapRef}
-								facilities={filteredWithLocation}
+								facilities={displayWithLocation}
 								{hoveredFacility}
 								selectedFacilityCode={selectedFacility?.code ?? null}
 								osmWayId={selectedProfile?.osm_way_id ?? null}
@@ -1292,6 +1380,8 @@
 								showTransmissionLines={mapShowTransmissionLines}
 								{transmissionLineVisibility}
 								showGolfCourses={mapShowGolfCourses}
+								{playYear}
+								appearYears={playAppearYears}
 								scrollZoom={!isYearPlaying}
 								cooperativeGestures={!isFullscreen}
 								flyToOffsetX={0}
@@ -1385,85 +1475,18 @@
 						{/if}
 
 						<!-- Year animation controls (desktop only) -->
-						{#if showYearOverlay}
-							{@const playheadPercent =
-								playYear !== null && yearRange[1] > yearRange[0]
-									? ((playYear - yearRange[0]) / (yearRange[1] - yearRange[0])) * 100
-									: 0}
-							<div
-								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] hidden tablet:flex flex-col gap-3"
-							>
-								<p class="text-[10px] text-mid-grey leading-tight mb-0">
-									Showing facilities connected to the grid
-								</p>
-
-								<!-- Playhead -->
-								<div class="flex flex-col gap-1.5">
-									<div class="flex items-center justify-between">
-										<span class="font-mono text-[10px] text-mid-grey">{yearRange[0]}</span>
-										<span
-											class="font-mono text-xs font-semibold"
-											class:text-dark-grey={playYear !== null}
-											class:text-transparent={playYear === null}
-										>
-											{playYear ?? yearRange[0]}
-										</span>
-										<span class="font-mono text-[10px] text-mid-grey">{yearRange[1]}</span>
-									</div>
-									<div class="relative h-1.5 w-full rounded-full bg-warm-grey">
-										{#if playYear !== null}
-											<span
-												class="absolute h-full bg-dark-grey rounded-full"
-												style="width: {playheadPercent}%"
-											></span>
-											<span
-												class="absolute top-1/2 size-3 rounded-full border-2 border-dark-grey bg-white shadow-sm pointer-events-none"
-												style="left: {playheadPercent}%; translate: -50% -50%"
-											></span>
-										{/if}
-									</div>
-								</div>
-
-								<!-- Controls -->
-								<div class="flex items-center gap-2">
-									<button
-										onclick={() => yearAnimationControls?.toggle()}
-										class="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg bg-light-warm-grey hover:bg-warm-grey transition-colors cursor-pointer text-xs text-mid-grey"
-										title={isYearPlaying ? 'Pause' : 'Play'}
-									>
-										{#if isYearPlaying}
-											<Pause class="size-3" />
-											<span>Pause</span>
-										{:else}
-											<Play class="size-3" />
-											<span>Play</span>
-										{/if}
-									</button>
-									<button
-										onclick={() => {
-											yearAnimationControls?.stop();
-											showYearOverlay = false;
-										}}
-										class="p-1.5 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
-										title="Close"
-									>
-										<X class="size-3.5 text-mid-grey" />
-									</button>
-								</div>
-							</div>
-						{:else}
-							<button
-								onclick={() => {
-									showYearOverlay = true;
-									yearAnimationControls?.toggle();
-								}}
-								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2 text-xs font-medium hidden tablet:flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
-								title="Play year animation"
-							>
-								<Play class="size-4 text-mid-grey" />
-								<span>Play</span>
-							</button>
-						{/if}
+						<YearAnimationOverlay
+							active={playModeActive}
+							bind:playYear
+							bind:isPlaying={isYearPlaying}
+							minYear={playYearBounds.min}
+							maxYear={playYearBounds.max}
+							loading={allFacilitiesLoading}
+							error={allFacilitiesError}
+							capacitySeries={playCapacitySeries}
+							onopen={handlePlayOpen}
+							onclose={handlePlayClose}
+						/>
 
 						{#if mapShowTransmissionLines}
 							<TransmissionLinesLegend
@@ -1533,8 +1556,8 @@
 					<MobileFacilitiesSheet
 						open={!selectedFacility}
 						{containerHeight}
-						facilities={filteredFacilities}
-						facilitiesWithLocation={filteredWithLocation}
+						facilities={displayFacilities}
+						facilitiesWithLocation={displayWithLocation}
 						{facilityPhotos}
 						{selectedView}
 						{viewLoading}

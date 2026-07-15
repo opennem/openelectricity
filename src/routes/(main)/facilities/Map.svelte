@@ -10,6 +10,7 @@
 		LineLayer,
 		FillLayer
 	} from 'svelte-maplibre-gl';
+	import { backOut } from 'svelte/easing';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { sumUnitCapacities } from '$lib/utils/capacity';
 	import { fetchOsmPolygon } from '$lib/utils/osm.js';
@@ -45,6 +46,8 @@
 	 *   flyToOffsetX?: number,
 	 *   flyToOffsetY?: number,
 	 *   metricValues?: Map<string, number | null>,
+	 *   playYear?: number | null,
+	 *   appearYears?: Map<string, number | null>,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
 	 *   onselect?: (facility: any | null) => void,
@@ -69,6 +72,12 @@
 		flyToOffsetX = 0,
 		flyToOffsetY = 0,
 		metricValues = new Map(),
+		// Play-mode playhead year — markers whose facility first connects at this
+		// year scale in as they appear. null outside play mode. appearYears maps
+		// facility code → first-connection year, precomputed once by the page
+		// (facilities rebuild every play tick; their appear years never change).
+		playYear = null,
+		appearYears = new Map(),
 		onhover,
 		onclick,
 		onselect,
@@ -250,6 +259,7 @@
 						network_id: facility.network_id,
 						network_region: facility.network_region,
 						capacity: getTotalCapacity(facility),
+						appear_year: appearYears.get(facility.code) ?? 0,
 						// Active metric, normalised to 0..1 — drives marker radius.
 						metric_value: typeof normalised === 'number' ? normalised : 0
 					}
@@ -258,6 +268,40 @@
 		};
 		return geojson;
 	});
+
+	// Play-mode spawn animation: each time the playhead year changes, markers
+	// appearing at that year scale in. New GeoJSON features render at full size
+	// immediately (paint transitions don't apply to data-driven per-feature
+	// changes), so the pop is driven by rAF: spawnProgress animates 0 → 1 and
+	// the radius expression scales matching features by it.
+	let spawnProgress = $state(1);
+	$effect(() => {
+		if (playYear === null) {
+			spawnProgress = 1;
+			return;
+		}
+		const start = performance.now();
+		const DURATION = 350;
+		spawnProgress = 0;
+		/** @type {number} */
+		let raf;
+		const tick = (/** @type {number} */ now) => {
+			const t = Math.min(1, (now - start) / DURATION);
+			// backOut overshoots to ~1.1× before settling, reading as a pop.
+			spawnProgress = backOut(t);
+			if (t < 1) raf = requestAnimationFrame(tick);
+		};
+		raf = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(raf);
+	});
+
+	// Radius multiplier: scales this year's new markers by spawnProgress, 1 for
+	// everything else. A plain 1 outside play mode keeps the expression static.
+	let spawnRadiusFactor = $derived(
+		playYear === null
+			? 1
+			: ['case', ['==', ['get', 'appear_year'], playYear], Math.max(0, spawnProgress), 1]
+	);
 
 	// Validate hoveredFacility - must exist in facilities list or have valid location
 	let validatedHoveredFacility = $derived.by(() => {
@@ -343,10 +387,14 @@
 		/** @type {import('svelte').ComponentProps<typeof CircleLayer>['paint']} */ ({
 			'circle-color': ['get', 'color'],
 			'circle-radius': [
-				'case',
-				['==', ['get', 'code'], highlightedFacilityCode ?? ''],
-				['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
-				['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
+				'*',
+				[
+					'case',
+					['==', ['get', 'code'], highlightedFacilityCode ?? ''],
+					['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
+					['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
+				],
+				spawnRadiusFactor
 			],
 			'circle-radius-transition': { duration: 400, delay: 0 },
 			'circle-stroke-width': ['case', ['==', ['get', 'code'], highlightedFacilityCode ?? ''], 2, 1],
@@ -437,6 +485,17 @@
 	export function resetView() {
 		closePopups();
 		fitMapToFacilities(facilities);
+	}
+
+	/**
+	 * Fit the view to an explicit facility list — for framings broader than the
+	 * currently displayed set, e.g. play mode zooming out to the full dataset
+	 * before the year animation reveals it.
+	 * @param {any[]} facilityList
+	 */
+	export function fitFacilities(facilityList) {
+		closePopups();
+		fitMapToFacilities(facilityList);
 	}
 
 	/**

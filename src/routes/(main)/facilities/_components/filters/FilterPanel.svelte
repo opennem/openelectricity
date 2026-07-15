@@ -14,7 +14,6 @@
 	 *   badge?: number | string | null,
 	 *   active?: boolean,
 	 *   compact?: boolean,
-	 *   suppressScrollClose?: boolean,
 	 *   onopenchange?: (open: boolean) => void,
 	 *   footerLeft?: import('svelte').Snippet,
 	 *   children: import('svelte').Snippet
@@ -25,7 +24,6 @@
 		badge = null,
 		active = false,
 		compact = false,
-		suppressScrollClose = false,
 		onopenchange,
 		footerLeft,
 		children
@@ -51,9 +49,7 @@
 	}
 
 	function handleScroll() {
-		if (!suppressScrollClose) {
-			setOpen(false);
-		}
+		setOpen(false);
 	}
 </script>
 
