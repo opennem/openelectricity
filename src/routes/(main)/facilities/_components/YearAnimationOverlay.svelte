@@ -203,7 +203,18 @@
 
 			<!-- Footer: notes -->
 			<div class="flex flex-col gap-1.5 px-4 py-3 border-t border-warm-grey bg-light-warm-grey">
-				<p class="text-[10px] text-mid-grey leading-tight mb-0">
+				<p class="flex items-start gap-1.5 text-[10px] text-mid-grey leading-tight mb-0">
+					<span
+						class="inline-block size-1 rounded-full bg-mid-grey shrink-0 mt-1"
+						aria-hidden="true"
+					></span>
+					Retired facilities are removed from their closure year.
+				</p>
+				<p class="flex items-start gap-1.5 text-[10px] text-mid-grey leading-tight mb-0">
+					<span
+						class="inline-block size-1 rounded-full bg-mid-grey shrink-0 mt-1"
+						aria-hidden="true"
+					></span>
 					Future capacity includes committed facilities by expected operation date.
 				</p>
 				<p class="flex items-center gap-1.5 text-[10px] text-mid-grey leading-tight mb-0">
