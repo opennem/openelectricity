@@ -74,9 +74,10 @@
 	/** @type {'sm' | 'md' | 'lg'} */
 	let badgeSize = $derived(compact ? 'sm' : 'lg');
 
-	// Standard list badges spread out; the space-constrained cluster popup,
-	// dense sheet rows and the narrowed selected-state list overlap them.
-	let badgesOverlap = $derived(compact || dense || narrow);
+	// Standard list badges spread out while there are at most two; rows with
+	// more fuel techs overlap them, as do the space-constrained cluster popup,
+	// dense sheet rows and the narrowed selected-state list.
+	let badgesOverlap = $derived(compact || dense || narrow || orderedFuelTechs.length > 2);
 
 	// Dense subtitle: the leading (dominant) fuel tech's base name + short
 	// region, e.g. "Coal · NSW" (coal_black → Coal, solar_utility → Solar) —
