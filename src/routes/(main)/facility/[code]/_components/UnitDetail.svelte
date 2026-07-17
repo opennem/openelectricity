@@ -572,13 +572,16 @@
 	     card. Keyed on the unit so viewport + load state reset when a different
 	     unit opens. -->
 	{#if unitFacility}
-		<div class="{sectionCardClass} space-y-4 p-4">
-			<RetiredFacilityNotice units={[unit]} subject="unit" />
+		<!-- py only — the charts run edge-to-edge inside the card; the toolbar
+		     row carries its own small left inset and the notice its own mx. -->
+		<div class="{sectionCardClass} space-y-4 py-4">
+			<RetiredFacilityNotice units={[unit]} subject="unit" class="mx-4" />
 			{#key unit.code}
 				<FacilityCompactCharts
 					facility={unitFacility}
 					{timeZone}
 					fileCode={unit.code}
+					toolbarInset="pl-4"
 					onsummarydata={(d) => (unitSummary = { code: unit.code, data: d })}
 				/>
 			{/key}

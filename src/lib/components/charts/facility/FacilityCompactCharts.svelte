@@ -20,7 +20,7 @@
 	import FacilityPriceChart from './FacilityPriceChart.svelte';
 	import FacilityFinancialDataProvider from './FacilityFinancialDataProvider.svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
+	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
 	import { createChartRangeControl } from './chart-range-control.svelte.js';
 	import { dataEndMs } from './data-end.js';
 	import { capYTicks } from './helpers.js';
@@ -34,12 +34,15 @@
 	 * `fileCode` names the CSV downloads (defaults to the facility code; the unit
 	 * sheet passes the unit's code). `onsummarydata` forwards the financial
 	 * provider's visible-range energy + market-value summary up to the host —
-	 * UnitDetail derives the unit's Capacity Factor from it.
+	 * UnitDetail derives the unit's Capacity Factor from it. `toolbarInset` is
+	 * the toolbar row's left inset class — hosts whose card supplies no
+	 * horizontal padding (the unit sheet) pass a larger one.
 	 * @type {{
 	 *   facility: any,
 	 *   timeZone: string,
 	 *   rangeDays?: number,
 	 *   fileCode?: string,
+	 *   toolbarInset?: string,
 	 *   onsummarydata?: (data: any) => void
 	 * }}
 	 */
@@ -48,6 +51,7 @@
 		timeZone,
 		rangeDays = 3,
 		fileCode = undefined,
+		toolbarInset = 'pl-2',
 		onsummarydata = undefined
 	} = $props();
 
@@ -168,10 +172,10 @@
 </script>
 
 <div class="space-y-4">
-	<!-- Recessed toolbar tray: the light well carries the date-range label while
-	     the controls float on it as raised white chips (`raised`) — the same
-	     track-and-thumb depth story as SwitchWithIcons, scaled to the row. -->
-	<div class="{toolbarTrayClass} rounded-lg p-2 pl-4">
+	<!-- Flat toolbar row (no tray treatment in the compact hosts — the sheet /
+	     pane surface is plain white, so the controls use the default grey
+	     chips rather than the tray's raised ones). -->
+	<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 {toolbarInset}">
 		<span class="text-base font-medium text-dark-grey">{dateRangeLabel}</span>
 		<div class="flex items-center gap-1.5">
 			<ChartRangeBar
@@ -185,7 +189,6 @@
 				{earliestDate}
 				showIntervalDropdown={true}
 				compact
-				raised
 				pending={range.rangeSwitchPending}
 				onrangeselect={range.handleRangeSelect}
 				ondaterangechange={range.handleDateRangeChange}
@@ -199,7 +202,7 @@
 				ondownloaditem={handleDownload}
 				showCopyLink
 				showDocumentation={false}
-				triggerClass="p-2 rounded-lg hover:bg-white/60 transition-colors cursor-pointer"
+				triggerClass="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
 			/>
 		</div>
 	</div>

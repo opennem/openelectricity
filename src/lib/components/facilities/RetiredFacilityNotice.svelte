@@ -13,9 +13,9 @@
 	 * — the same anchor the chart windows scroll back to — so the notice and
 	 * the charts can't disagree. Renders nothing when the units aren't all
 	 * retired.
-	 * @type {{ units: any[], subject?: 'facility' | 'unit' }}
+	 * @type {{ units: any[], subject?: 'facility' | 'unit', class?: string }}
 	 */
-	let { units = [], subject = 'facility' } = $props();
+	let { units = [], subject = 'facility', class: className = '' } = $props();
 
 	let retired = $derived(isFullyRetired(units));
 	let retiredDateLabel = $derived.by(() => {
@@ -30,7 +30,7 @@
 
 {#if retired}
 	<div
-		class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-dashed border-mid-warm-grey/60 bg-light-warm-grey/50 px-4 py-3 text-sm text-mid-grey"
+		class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-dashed border-mid-warm-grey/60 bg-light-warm-grey/50 px-4 py-3 text-sm text-mid-grey {className}"
 	>
 		<FacilityStatusIcon status="retired" />
 		<span class="font-medium text-dark-grey">Retired {subject}</span>
