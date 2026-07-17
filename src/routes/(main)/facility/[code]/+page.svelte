@@ -18,6 +18,7 @@
 		FacilityPollutionPanel,
 		FacilityMetrics
 	} from '$lib/components/charts/facility';
+	import { clickoutside } from '@svelte-put/clickoutside';
 	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
 	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
@@ -177,6 +178,19 @@
 		hoverTime = time;
 	}
 
+	/** Shared pan/zoom engagement across the stacked charts — they're
+	 *  viewport-synced, so the ✥ toggle in any chart's header row (left of the
+	 *  +/- zoom buttons) engages and releases them together. */
+	let panZoomEngaged = $state(false);
+
+	/** Chart section cards pick up a darker border while pan/zoom is engaged, so
+	 *  the mode is visible at every chart in the stack — not just at the toggle.
+	 *  `!` so the engaged colour reliably beats sectionCardClass's own
+	 *  border-mid-warm-grey/40 (class order doesn't decide CSS conflicts). */
+	let chartCardClass = $derived(
+		`${sectionCardClass} transition-[border-color] duration-200${panZoomEngaged ? ' !border-dark-grey' : ''}`
+	);
+
 	/** Which chart of the Market pair to show. Default: price (the derived
 	 *  $/MWh line — what most viewers come to a facility page for). */
 	/** @type {'price' | 'mv'} */
@@ -330,6 +344,7 @@
 		// Land each facility on its Charts tab so navigation never strands you.
 		activeTab = 'charts';
 		range.reset();
+		panZoomEngaged = false;
 		rangeApplied = false;
 		// Reset client-side load tracking so the new facility shows its skeleton until
 		// its own chart fetch settles.
@@ -533,9 +548,15 @@
 							</div>
 						</div>
 
-						<div class="space-y-4">
+						<!-- A pointerdown anywhere outside the charts column (range bar,
+						     metrics, page chrome) releases the engaged pan/zoom. -->
+						<div
+							class="space-y-4"
+							use:clickoutside={{ event: 'pointerdown', options: true }}
+							onclickoutside={() => (panZoomEngaged = false)}
+						>
 							<!-- Generation -->
-							<section class={sectionCardClass}>
+							<section class={chartCardClass}>
 								<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 									<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
 									<span
@@ -575,6 +596,8 @@
 												intervalData = d;
 												range.settle();
 											}}
+											panZoomMode="tap-to-engage"
+											bind:panZoomEngaged
 											bundleDerivedMetrics
 											{hiddenUnitCodes}
 										/>
@@ -622,7 +645,7 @@
 									onviewportsettle={range.handleViewportSettle}
 									reconcileSeq={range.reconcileSeq}
 								>
-									<section class={sectionCardClass}>
+									<section class={chartCardClass}>
 										<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 											<h3 class="m-0 text-sm font-semibold text-dark-grey">Market</h3>
 											<SwitchTabs
@@ -636,9 +659,17 @@
 										</div>
 										{#if viewStart && viewEnd}
 											{#if activeMarketTab === 'price'}
-												<FacilityPriceChart showContainer={false} />
+												<FacilityPriceChart
+													showContainer={false}
+													panZoomMode="tap-to-engage"
+													bind:panZoomEngaged
+												/>
 											{:else}
-												<FacilityMarketValueChart showContainer={false} />
+												<FacilityMarketValueChart
+													showContainer={false}
+													panZoomMode="tap-to-engage"
+													bind:panZoomEngaged
+												/>
 											{/if}
 										{/if}
 									</section>
@@ -661,7 +692,7 @@
 										onviewportsettle={range.handleViewportSettle}
 										reconcileSeq={range.reconcileSeq}
 									>
-										<section class={sectionCardClass}>
+										<section class={chartCardClass}>
 											<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 												<h3 class="m-0 text-sm font-semibold text-dark-grey">Emissions</h3>
 												<SwitchTabs
@@ -676,9 +707,17 @@
 											</div>
 											{#if viewStart && viewEnd}
 												{#if activeEmissionsTab === 'volume'}
-													<FacilityEmissionsVolumeChart showContainer={false} />
+													<FacilityEmissionsVolumeChart
+														showContainer={false}
+														panZoomMode="tap-to-engage"
+														bind:panZoomEngaged
+													/>
 												{:else}
-													<FacilityEmissionsIntensityChart showContainer={false} />
+													<FacilityEmissionsIntensityChart
+														showContainer={false}
+														panZoomMode="tap-to-engage"
+														bind:panZoomEngaged
+													/>
 												{/if}
 											{/if}
 										</section>

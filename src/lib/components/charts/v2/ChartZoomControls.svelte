@@ -10,6 +10,7 @@
 	 */
 	import Minus from '@lucide/svelte/icons/minus';
 	import Plus from '@lucide/svelte/icons/plus';
+	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -37,24 +38,28 @@
 	class="absolute top-0 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-30"
 	style:right="{overlayInsetPx}px"
 >
-	<button
-		class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMaxZoom
-			? 'text-mid-warm-grey cursor-not-allowed'
-			: 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
-		onclick={onzoomout}
-		disabled={isAtMaxZoom}
-		title="Zoom out"
-	>
-		<Minus size={14} />
-	</button>
-	<button
-		class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMinZoom
-			? 'text-mid-warm-grey cursor-not-allowed'
-			: 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
-		onclick={onzoomin}
-		disabled={isAtMinZoom}
-		title="Zoom in"
-	>
-		<Plus size={14} />
-	</button>
+	<Tooltip text="Zoom out" class="inline-flex">
+		<button
+			class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMaxZoom
+				? 'text-mid-warm-grey cursor-not-allowed'
+				: 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
+			onclick={onzoomout}
+			disabled={isAtMaxZoom}
+			aria-label="Zoom out"
+		>
+			<Minus size={14} />
+		</button>
+	</Tooltip>
+	<Tooltip text="Zoom in" class="inline-flex">
+		<button
+			class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMinZoom
+				? 'text-mid-warm-grey cursor-not-allowed'
+				: 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
+			onclick={onzoomin}
+			disabled={isAtMinZoom}
+			aria-label="Zoom in"
+		>
+			<Plus size={14} />
+		</button>
+	</Tooltip>
 </div>

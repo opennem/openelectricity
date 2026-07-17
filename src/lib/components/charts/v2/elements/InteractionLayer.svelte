@@ -37,6 +37,9 @@
 	 * @property {((deltaMs: number) => void)} [onpan]
 	 * @property {(() => void)} [onpanend]
 	 * @property {((factor: number, centerMs: number) => void)} [onzoom]
+	 * @property {(() => void)} [onblockedwheel] - Fired (throttle-free, passive) when a wheel
+	 *   gesture lands on a tap-to-engage chart that isn't engaged — the page keeps scrolling,
+	 *   but the consumer can surface a "click to enable pan & zoom" hint at the point of intent.
 	 * @property {import('svelte').Snippet} [children]
 	 */
 
@@ -56,6 +59,7 @@
 		onpan,
 		onpanend,
 		onzoom,
+		onblockedwheel,
 		children
 	} = $props();
 
@@ -575,6 +579,21 @@
 			}
 			cleanup();
 		};
+	});
+
+	// While a tap-to-engage chart sits idle, no pan/zoom listeners are attached
+	// (the effect above gates on effectiveEnablePan) and a wheel gesture just
+	// scrolls the page — silently, at the exact moment the user wants to zoom.
+	// A passive listener (never preventDefault — the scroll must continue)
+	// notifies the consumer so it can show a "click to enable" hint in place.
+	$effect(() => {
+		const target = el;
+		if (!target || !onblockedwheel) return;
+		if (!enablePan || panZoomMode !== 'tap-to-engage' || engaged) return;
+
+		const notify = () => onblockedwheel();
+		target.addEventListener('wheel', notify, { passive: true });
+		return () => target.removeEventListener('wheel', notify);
 	});
 </script>
 

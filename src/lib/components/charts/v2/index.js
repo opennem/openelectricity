@@ -20,7 +20,6 @@ export { default as StackedAreaChart } from './StackedAreaChart.svelte';
 export { default as GroupedBarChart } from './GroupedBarChart.svelte';
 export { default as BarChart } from './BarChart.svelte';
 export { default as ChartHeader } from './ChartHeader.svelte';
-export { default as ChartPanZoomHint } from './ChartPanZoomHint.svelte';
 export { default as ChartTooltip } from './ChartTooltip.svelte';
 export { default as ChartControls } from './ChartControls.svelte';
 

@@ -19,12 +19,8 @@
 	import FacilityChart from './FacilityChart.svelte';
 	import FacilityPriceChart from './FacilityPriceChart.svelte';
 	import FacilityFinancialDataProvider from './FacilityFinancialDataProvider.svelte';
-	import {
-		formatDateRange,
-		ChartPanZoomHint,
-		ChartRangeBar,
-		toolbarTrayClass
-	} from '$lib/components/charts/v2';
+	import { clickoutside } from '@svelte-put/clickoutside';
+	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
 	import { createChartRangeControl } from './chart-range-control.svelte.js';
 	import { dataEndMs } from './data-end.js';
 	import { capYTicks } from './helpers.js';
@@ -210,28 +206,23 @@
 
 	<!-- Charts stay mounted under the empty state (visibility, not display:none —
 	     LayerCake needs a real size) so a later range/preset pick can still fetch
-	     and recover. `group/charts` scopes the shared pan/zoom hint's hover
-	     reveal to the charts block. -->
-	<div class="group/charts relative space-y-4">
+	     and recover. A pointerdown anywhere outside the block releases the
+	     engaged pan/zoom; while engaged, a flush outline marks the whole block
+	     as being in the mode (the charts here are flush, no cards) — matching
+	     the facility page's border-hugging treatment. -->
+	<div
+		class={[
+			'relative space-y-4',
+			panZoomEngaged && 'rounded-xs outline outline-1 outline-dark-grey/40'
+		]}
+		use:clickoutside={{ event: 'pointerdown', options: true }}
+		onclickoutside={() => (panZoomEngaged = false)}
+	>
 		<div class={['space-y-4', noData && 'invisible']}>
 			<section>
-				<!-- One shared interaction hint for the whole tap-to-engage stack —
-				     both charts ride the same `panZoomEngaged` flag, so their built-in
-				     per-chart pills are disabled (showPanZoomHint={false}) and this
-				     single pill above the first chart covers them together. -->
-				<div class="mb-2 flex items-center justify-between gap-4">
-					<h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-mid-grey">
-						{range.activeMetric === 'energy' ? 'Energy' : 'Generation'}
-					</h3>
-					<ChartPanZoomHint
-						engaged={panZoomEngaged}
-						onengage={() => (panZoomEngaged = true)}
-						onexit={() => (panZoomEngaged = false)}
-						class={panZoomEngaged
-							? ''
-							: 'opacity-0 group-hover/charts:opacity-100 transition-opacity duration-150'}
-					/>
-				</div>
+				<!-- The chart header carries the section title and the interaction
+				     buttons (✥ pan/zoom toggle + zoom in/out) — same controls as the
+				     facility page. Both charts ride the same `panZoomEngaged` flag. -->
 				<FacilityChart
 					bind:this={powerChart}
 					{facility}
@@ -243,10 +234,8 @@
 					metric={range.activeMetric}
 					displayInterval={range.displayInterval}
 					chartHeight="h-[180px]"
-					title={range.activeMetric === 'energy' ? 'Energy' : 'Power'}
-					showHeader={false}
+					title={range.activeMetric === 'energy' ? 'Energy' : 'Generation'}
 					showOptions={false}
-					showZoomControls={false}
 					resizable={false}
 					yTicks={capYTicks}
 					showContainer={false}
@@ -264,7 +253,6 @@
 					}}
 					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
-					showPanZoomHint={false}
 					bundleDerivedMetrics
 					prefetchRanges={false}
 				/>
@@ -272,9 +260,6 @@
 
 			{#if viewStart && viewEnd}
 				<section>
-					<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">
-						Price
-					</h3>
 					<FacilityFinancialDataProvider
 						{facility}
 						{timeZone}
@@ -294,11 +279,10 @@
 					>
 						<FacilityPriceChart
 							showContainer={false}
-							showHeader={false}
+							showOptions={false}
 							resizable={false}
 							panZoomMode="tap-to-engage"
 							bind:panZoomEngaged
-							showPanZoomHint={false}
 						/>
 					</FacilityFinancialDataProvider>
 				</section>

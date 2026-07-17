@@ -63,7 +63,6 @@
 	 * @property {((state: { hasData: boolean }) => void)} [onloadcomplete] - Called once the initial client-side fetch/seed settles. `hasData` reflects whether any data was found, letting a parent distinguish "still loading" from "no data" (e.g. to show an empty state). Stays accurate across panning.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active. 'tap-to-engage' gates pan/zoom behind the bindable `panZoomEngaged` flag.
 	 * @property {boolean} [panZoomEngaged] - Bindable engagement state for tap-to-engage mode.
-	 * @property {boolean} [showPanZoomHint] - Whether tap-to-engage mode renders its own hint pill (default true). Hosts stacking several charts behind one engagement flag pass false and render a shared `ChartPanZoomHint` once instead.
 	 * @property {boolean} [enablePan] - Whether drag/wheel pan is enabled (default: true). Set false for a fixed-window snapshot chart (hover still works).
 	 * @property {boolean} [resizable] - Whether to show the drag-to-resize handle below the chart (default: true). Set false for a fixed-height snapshot so the chart honours `chartHeight` and doesn't share the persisted resize height.
 	 * @property {number | Array<any> | ((ticks: any[]) => any[])} [yTicks] - Y-axis ticks passed through to AxisY: a count, an explicit array, or a function that thins the scale's default ticks. Omit for the AxisY default (4).
@@ -109,7 +108,6 @@
 		onloadcomplete,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
-		showPanZoomHint = true,
 		enablePan = true,
 		resizable = true,
 		yTicks = undefined,
@@ -863,7 +861,6 @@
 			{enablePan}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
-			{showPanZoomHint}
 			viewDomain={null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
 			{resizable}

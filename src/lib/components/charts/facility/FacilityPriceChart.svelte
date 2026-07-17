@@ -10,14 +10,14 @@
 	import { StratumChart } from '$lib/components/charts/v2';
 	import { getFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 
-	/** @type {{ showContainer?: boolean, showHeader?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean, showPanZoomHint?: boolean, resizable?: boolean }} */
+	/** @type {{ showContainer?: boolean, showHeader?: boolean, showOptions?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean, resizable?: boolean }} */
 	let {
 		showContainer = true,
 		showHeader = true,
+		showOptions = true,
 		zoomMode = 'static',
 		panZoomMode = 'always',
 		panZoomEngaged = $bindable(false),
-		showPanZoomHint = true,
 		resizable = true
 	} = $props();
 
@@ -87,13 +87,13 @@
 		<StratumChart
 			chart={priceChartStore}
 			{showHeader}
+			{showOptions}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
 			enablePan={hasViewportHandler}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
-			{showPanZoomHint}
 			viewDomain={null}
 			onpanstart={ctx.handlePanStart}
 			onpan={ctx.handlePan}
