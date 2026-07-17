@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import ChartDataManager, { clearCompletedResponses } from './ChartDataManager.svelte.js';
+import ChartDataManager, {
+	clearCompletedResponses,
+	clearInFlightFetches
+} from './ChartDataManager.svelte.js';
 import { processFacilityPower } from '../facility/process-facility-power.js';
 
 // ============================================
@@ -104,8 +107,9 @@ function createManager(overrides = {}) {
 describe('ChartDataManager', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
-		// Module-level LRU would otherwise serve responses across tests.
+		// Module-level LRU / in-flight map would otherwise leak across tests.
 		clearCompletedResponses();
+		clearInFlightFetches();
 	});
 
 	afterEach(() => {
@@ -1125,6 +1129,275 @@ describe('ChartDataManager', () => {
 
 			// The reset cache must not be repopulated by the stale response.
 			expect(manager.processedCache).toBeNull();
+		});
+	});
+
+	// ------------------------------------------
+	// Interval date snapping (start down, end UP)
+	// ------------------------------------------
+
+	describe('interval date snapping', () => {
+		function okFetchSpy() {
+			return vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: buildPowerResponse({
+						networkId: 'NEM',
+						unitCodes: ['UNIT1'],
+						startISO: '2026-02-08T00:00:00+10:00',
+						pointCount: 12
+					})
+				})
+			});
+		}
+
+		/** @param {import('vitest').Mock} spy */
+		function firstCallDates(spy) {
+			const url = new URL(spy.mock.calls[0][0], 'http://localhost');
+			return {
+				dateStart: url.searchParams.get('date_start'),
+				dateEnd: url.searchParams.get('date_end')
+			};
+		}
+
+		it('snaps a yearly range end UP so the current partial year is included', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			// Fetch window ending mid-2026 (local +10). The API's date_end excludes
+			// the bucket starting at that instant, so a down-snap to 2026-01-01
+			// would drop the in-progress 2026 bucket entirely.
+			const from = new Date('2023-03-15T00:00:00+10:00').getTime();
+			const to = new Date('2026-07-17T12:00:00+10:00').getTime();
+			const manager = createManager({ interval: '1y', metric: 'energy' });
+			manager.requestRange(from, to, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			const { dateStart, dateEnd } = firstCallDates(fetchSpy);
+			expect(dateStart).toBe('2023-01-01T00:00:00');
+			expect(dateEnd).toBe('2027-01-01T00:00:00');
+		});
+
+		it('keeps an exactly boundary-aligned end where it is', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const from = new Date('2023-01-01T00:00:00+10:00').getTime();
+			const to = new Date('2026-01-01T00:00:00+10:00').getTime();
+			const manager = createManager({ interval: '1y', metric: 'energy' });
+			manager.requestRange(from, to, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(firstCallDates(fetchSpy).dateEnd).toBe('2026-01-01T00:00:00');
+		});
+
+		it('snaps monthly and daily ends UP to the next boundary', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const from = new Date('2026-05-10T00:00:00+10:00').getTime();
+			const to = new Date('2026-07-17T12:00:00+10:00').getTime();
+			const monthly = createManager({ interval: '1M', metric: 'energy' });
+			monthly.requestRange(from, to, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(firstCallDates(fetchSpy).dateStart).toBe('2026-05-01T00:00:00');
+			expect(firstCallDates(fetchSpy).dateEnd).toBe('2026-08-01T00:00:00');
+
+			fetchSpy.mockClear();
+			const daily = createManager({ interval: '1d', metric: 'energy' });
+			daily.requestRange(from, to, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(firstCallDates(fetchSpy).dateEnd).toBe('2026-07-18T00:00:00');
+		});
+	});
+
+	// ------------------------------------------
+	// cancelStaleFetches / refcounted abort
+	// ------------------------------------------
+
+	describe('cancelStaleFetches / refcounted abort', () => {
+		const DAY = 24 * 60 * 60 * 1000;
+		const HOUR = 60 * 60 * 1000;
+
+		/**
+		 * A fetch spy that honours `{ signal }` like the real fetch — stays pending
+		 * until the resolver is called, rejects with AbortError when the signal
+		 * aborts — and records each request's signal for refcount assertions.
+		 */
+		function abortableFetchSpy() {
+			/** @type {(v: any) => void} */
+			let resolveFetch = () => {};
+			const ready = new Promise((r) => (resolveFetch = r));
+			/** @type {AbortSignal[]} */
+			const signals = [];
+			const spy = vi.fn().mockImplementation((/** @type {any} */ _url, /** @type {any} */ opts) => {
+				/** @type {AbortSignal | undefined} */
+				const signal = opts?.signal;
+				if (signal) signals.push(signal);
+				return new Promise((resolve, reject) => {
+					if (signal?.aborted) return reject(new DOMException('Aborted', 'AbortError'));
+					signal?.addEventListener(
+						'abort',
+						() => reject(new DOMException('Aborted', 'AbortError')),
+						{ once: true }
+					);
+					ready.then(() =>
+						resolve({
+							ok: true,
+							json: async () => ({
+								response: buildPowerResponse({
+									networkId: 'NEM',
+									unitCodes: ['UNIT1'],
+									startISO: '2026-02-08T00:00:00+10:00',
+									pointCount: 12
+								})
+							})
+						})
+					);
+				});
+			});
+			return { spy, resolveFetch, signals };
+		}
+
+		it('aborts a stale in-flight batch: loading cleans up, nothing merged, span stays fetchable', async () => {
+			const { spy } = abortableFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - HOUR, now, { immediate: true });
+			expect(spy).toHaveBeenCalledTimes(1);
+			expect(manager.isLoading).toBe(true);
+
+			// Settle on a keep-window disjoint from the in-flight batch — it aborts.
+			manager.cancelStaleFetches(now - 10 * HOUR, now - 5 * HOUR);
+			await vi.advanceTimersByTimeAsync(0);
+
+			expect(manager.isLoading).toBe(false);
+			expect(manager.hasPendingFetch).toBe(false);
+			expect(manager.processedCache).toBeNull();
+
+			// The aborted span was NOT recorded as empty and never reached the
+			// completed-response LRU — the same request hits the network again.
+			manager.requestRange(now - HOUR, now, { immediate: true });
+			expect(spy).toHaveBeenCalledTimes(2);
+		});
+
+		it('subtracts in-flight batches from new gaps — an overlapping re-request is a no-op', async () => {
+			const { spy, resolveFetch } = abortableFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - 2 * HOUR, now, { immediate: true });
+			expect(spy).toHaveBeenCalledTimes(1);
+
+			// A drifted keep-window (the settle fan-out case) fully covered by the
+			// in-flight batch must not spawn a second batch.
+			manager.reconcileWindow(now - HOUR, now);
+			expect(spy).toHaveBeenCalledTimes(1);
+
+			resolveFetch(undefined);
+			await vi.advanceTimersByTimeAsync(0);
+			expect(manager.processedCache).not.toBeNull();
+		});
+
+		it('leaves in-flight batches that overlap the keep-window running', async () => {
+			const { spy, resolveFetch } = abortableFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - HOUR, now, { immediate: true });
+			expect(spy).toHaveBeenCalledTimes(1);
+
+			// Keep-window overlaps the batch — nothing is aborted.
+			manager.cancelStaleFetches(now - 2 * HOUR, now);
+			await vi.advanceTimersByTimeAsync(0);
+			expect(manager.isLoading).toBe(true);
+
+			resolveFetch(undefined);
+			await vi.advanceTimersByTimeAsync(0);
+			expect(manager.processedCache).not.toBeNull();
+		});
+
+		it('drops a pending debounced fetch that is disjoint from the keep-window', async () => {
+			const { spy } = abortableFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - HOUR, now); // debounced
+			manager.cancelStaleFetches(now - 20 * HOUR, now - 10 * HOUR);
+			await vi.advanceTimersByTimeAsync(300);
+
+			expect(spy).not.toHaveBeenCalled();
+			expect(manager.hasPendingFetch).toBe(false);
+		});
+
+		it('clamps an overlapping pending fetch to the keep-window', async () => {
+			const { spy, resolveFetch } = abortableFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const manager = createManager();
+			const now = Date.now();
+			// Mid-gesture requests merged into one wide pending window…
+			manager.requestRange(now - 10 * HOUR, now);
+			// …then the gesture settles on a narrower range.
+			const keepStart = now - 2 * HOUR;
+			manager.cancelStaleFetches(keepStart, now);
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(spy).toHaveBeenCalledTimes(1);
+			const url = new URL(spy.mock.calls[0][0], 'http://localhost');
+			const fetchStartMs = Date.parse(url.searchParams.get('date_start') + '+10:00');
+			// API dates are formatted at second precision.
+			expect(fetchStartMs).toBe(Math.floor(keepStart / 1000) * 1000);
+
+			resolveFetch(undefined);
+		});
+
+		it('refcounts shared URLs: the request survives one manager cancelling, aborts when all do', async () => {
+			const { spy, signals } = abortableFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const now = Date.now();
+			const from = now - 100 * DAY;
+			const m1 = createManager({ interval: '1M', metric: 'energy' });
+			const m2 = createManager({ interval: '1M', metric: 'energy' });
+			m1.requestRange(from, now, { immediate: true });
+			m2.requestRange(from, now, { immediate: true });
+			expect(spy).toHaveBeenCalledTimes(1);
+			expect(signals.length).toBe(1);
+
+			// One manager retires — the other still waits on the shared request.
+			m1.dispose();
+			await vi.advanceTimersByTimeAsync(0);
+			expect(signals[0].aborted).toBe(false);
+			expect(m2.isLoading).toBe(true);
+
+			// Last consumer gone — now the network request itself is aborted.
+			m2.dispose();
+			await vi.advanceTimersByTimeAsync(0);
+			expect(signals[0].aborted).toBe(true);
+		});
+
+		it('dispose aborts in-flight batches so a revived manager re-fetches them', async () => {
+			const { spy } = abortableFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - HOUR, now, { immediate: true });
+			expect(spy).toHaveBeenCalledTimes(1);
+
+			manager.dispose();
+			await vi.advanceTimersByTimeAsync(0);
+			expect(manager.isLoading).toBe(false);
+
+			// Stash-revival path: the same span fetches again after dispose.
+			manager.requestRange(now - HOUR, now, { immediate: true });
+			expect(spy).toHaveBeenCalledTimes(2);
 		});
 	});
 

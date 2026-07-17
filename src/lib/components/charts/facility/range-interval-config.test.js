@@ -7,7 +7,8 @@ import {
 	getIntervalsForRange,
 	getDefaultIntervalForRange,
 	getIntervalOptionsForDays,
-	getPresetByDays
+	getPresetByDays,
+	viewportDurationLimits
 } from './range-interval-config.js';
 
 // Mirror of VALID_INTERVALS in src/routes/api/facilities/[code]/power/+server.js —
@@ -68,6 +69,13 @@ describe('helpers', () => {
 		expect(hourly?.aggregate).toBeNull();
 		// Anything coarser than 30m is energy, not power.
 		expect(hourly?.metric).toBe('energy');
+	});
+
+	it('viewportDurationLimits: tight window for fine grains, full history for energy', () => {
+		const HOUR = 60 * 60 * 1000;
+		const DAY = 24 * HOUR;
+		expect(viewportDurationLimits(true)).toEqual({ minMs: 1 * HOUR, maxMs: 16 * DAY });
+		expect(viewportDurationLimits(false)).toEqual({ minMs: 5 * DAY, maxMs: 50 * 365 * DAY });
 	});
 
 	it('getPresetByDays matches preset day counts', () => {

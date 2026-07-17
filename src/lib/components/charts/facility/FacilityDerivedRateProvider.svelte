@@ -21,7 +21,11 @@
 
 	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 	import { createFacilityDataManager } from './facility-data-manager.js';
-	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
+	import {
+		createViewportGestures,
+		isViewportPinned
+	} from '$lib/components/charts/v2/viewport-gestures.js';
+	import { viewportDurationLimits } from './range-interval-config.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { analyzeUnits, unitSeriesIds } from './unit-analysis.js';
@@ -29,6 +33,7 @@
 	import { applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import { untrack } from 'svelte';
 	import { getBasisMetric, combinedMetricsFor, buildCombinedMetricsUrl } from './energy-basis.js';
+	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 	import { ianaFromOffset } from '../v2/network-time.js';
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '../v2/chart-loading-state.js';
 
@@ -56,6 +61,9 @@
 	 * @property {((time: number | undefined) => void)} [onfocuschange] - Called when a chart's local focus changes.
 	 * @property {((data: any) => void)} [onsummarydata] - Visible-range summary for the metrics section; shaped by `recipe.buildSummaryPayload`.
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
+	 * @property {((range: { start: number, end: number }) => void)} [onviewportsettle] - Fired once when a pan/zoom gesture comes to rest — parents apply grain switches here.
+	 * @property {number} [minDateMs] - Viewport left-edge floor for pan/zoom (default: EARLIEST_DATA_MS).
+	 * @property {number} [reconcileSeq] - Bump to cancel stale in-flight fetches and re-request the current window — owners do this when a *peer* chart's gesture settles, so shared-URL requests actually abort (sharedFetch refcounts every consumer).
 	 * @property {string[]} [hiddenUnitCodes] - Unit codes whose series are hidden from the volume chart (e.g. toggled off in the units panel). The derived rate line stays facility-wide.
 	 * @property {DerivedRateRecipe} recipe
 	 * @property {import('svelte').Snippet} [children]
@@ -81,6 +89,9 @@
 		onfocuschange,
 		onsummarydata,
 		onviewportchange,
+		onviewportsettle,
+		minDateMs = EARLIEST_DATA_MS,
+		reconcileSeq = 0,
 		hiddenUnitCodes = [],
 		recipe,
 		children
@@ -104,6 +115,12 @@
 	/** Fetch/prefetch buffer multiplier — wider for the energy basis since its
 	 *  intervals are daily+. */
 	let fetchBufferMultiplier = $derived(isEnergyInterval ? 3 : 1);
+
+	// Zoom duration limits — same rules as FacilityChart, which shares this
+	// page-level viewport: without them a zoom on a derived chart could push
+	// the viewport past bounds the generation chart would never produce itself.
+	let MIN_VIEWPORT_MS = $derived(viewportDurationLimits(!isEnergyInterval).minMs);
+	let MAX_VIEWPORT_MS = $derived(viewportDurationLimits(!isEnergyInterval).maxMs);
 
 	/**
 	 * Fetch window for a viewport — buffered each side (wider for the energy
@@ -380,7 +397,46 @@
 			basisDataManager?.dispose();
 			ownRateVolumeManager?.dispose();
 			ownRateBasisManager?.dispose();
+			disposeGestures();
 		};
+	});
+
+	/**
+	 * Cancel in-flight work outside the buffered window around [start, end] and
+	 * fetch the final gaps immediately, across all four managers.
+	 * @param {number} start
+	 * @param {number} end
+	 */
+	function reconcileFetches(start, end) {
+		// A grain switch is pending (interval prop flipped, managers not yet
+		// recreated) — don't fetch the old grain; the manager effects fetch the
+		// new one immediately and their dispose aborts the stale work.
+		if (volumeDataManager && volumeDataManager.interval !== interval) return;
+		const [from, to] = bufferedRange(start, end);
+		const managers = [
+			volumeDataManager,
+			basisDataManager,
+			ownRateVolumeManager,
+			ownRateBasisManager
+		];
+		for (const manager of managers) {
+			manager?.reconcileWindow(from, to);
+		}
+	}
+
+	// Peer-triggered reconcile: the generation chart shares this page's combined
+	// URL, so its settle can only abort the shared request once these managers
+	// cancel too. Owners bump `reconcileSeq` from their settle handler.
+	let lastReconcileSeq = 0;
+	$effect(() => {
+		const seq = reconcileSeq;
+		if (seq === lastReconcileSeq) return;
+		lastReconcileSeq = seq;
+		if (!active) return;
+		const start = untrack(() => viewStart);
+		const end = untrack(() => viewEnd);
+		if (!start || !end) return;
+		untrack(() => reconcileFetches(start, end));
 	});
 
 	// Fetch data when viewport changes — all managers
@@ -612,9 +668,20 @@
 	// own the viewport, so `apply` forwards to the page controller; fetching
 	// happens in the viewport effect when the new range flows back down.
 
-	const { handlePanStart, handlePan, handlePanEnd, handleZoom } = createViewportGestures({
+	const {
+		handlePanStart,
+		handlePan,
+		handlePanEnd,
+		handleZoom,
+		zoomIn,
+		zoomOut,
+		dispose: disposeGestures
+	} = createViewportGestures({
 		viewport: () => ({ start: viewStart, end: viewEnd }),
 		apply: (start, end) => onviewportchange?.({ start, end }),
+		minDurationMs: () => MIN_VIEWPORT_MS,
+		maxDurationMs: () => MAX_VIEWPORT_MS,
+		minDateMs: () => minDateMs,
 		onGestureStart: () => {
 			rateChartStore?.clearHover();
 			volumeChartStore?.clearHover();
@@ -629,7 +696,22 @@
 				volumeDataManager?.requestRange(start - prefetch, start);
 				basisDataManager?.requestRange(start - prefetch, start);
 			}
+		},
+		onSettle: (start, end) => {
+			// Parent first — it may flip interval/displayInterval synchronously
+			// (grain switch); reconcileFetches skips the old grain when that happens.
+			onviewportsettle?.({ start, end });
+			reconcileFetches(start, end);
 		}
+	});
+
+	// Zoom-button disable flags, mirroring FacilityChart (which shares this
+	// page-level viewport).
+	let isAtMinZoom = $derived(!!viewStart && !!viewEnd && viewEnd - viewStart <= MIN_VIEWPORT_MS);
+	let isAtMaxZoom = $derived.by(() => {
+		if (!viewStart || !viewEnd) return false;
+		if (viewEnd - viewStart >= MAX_VIEWPORT_MS) return true;
+		return isViewportPinned(viewStart, viewEnd, minDateMs);
 	});
 
 	// ============================================
@@ -719,6 +801,12 @@
 		get hasViewportHandler() {
 			return !!onviewportchange;
 		},
+		get isAtMinZoom() {
+			return isAtMinZoom;
+		},
+		get isAtMaxZoom() {
+			return isAtMaxZoom;
+		},
 		get hoverTime() {
 			return hoverTime;
 		},
@@ -735,6 +823,13 @@
 		handlePan,
 		handlePanEnd,
 		handleZoom,
+		// Guarded: zooming before the page seeds the viewport would anchor on 0.
+		zoomIn: () => {
+			if (viewStart && viewEnd) zoomIn();
+		},
+		zoomOut: () => {
+			if (viewStart && viewEnd) zoomOut();
+		},
 		getTooltipData
 	});
 </script>

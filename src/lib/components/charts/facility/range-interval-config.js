@@ -100,6 +100,25 @@ export const RANGE_INTERVALS = {
 	ALL: { options: ['1M', 'season', 'quarter', 'half', 'fy', '1y'], default: '1M' }
 };
 
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+/**
+ * Zoom-duration limits for a chart viewport. Fine (sub-daily power) grains get
+ * a tight window; energy grains span up to a full history. Shared so every
+ * component clamping the same page-level viewport (FacilityChart, NetworkChart,
+ * the derived-rate providers) enforces identical bounds — divergent copies
+ * would let a zoom on one chart produce a viewport its siblings never allow.
+ *
+ * @param {boolean} fine - Sub-daily grain (5m/1h power-style viewport)
+ * @returns {{ minMs: number, maxMs: number }}
+ */
+export function viewportDurationLimits(fine) {
+	return fine
+		? { minMs: 1 * HOUR_MS, maxMs: 16 * DAY_MS }
+		: { minMs: 5 * DAY_MS, maxMs: 50 * 365 * DAY_MS };
+}
+
 /**
  * @param {string} id
  * @returns {IntervalSpec | undefined}

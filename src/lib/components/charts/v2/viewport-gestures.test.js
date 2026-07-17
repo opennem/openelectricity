@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createViewportGestures } from './viewport-gestures.js';
+import { createViewportGestures, isViewportPinned } from './viewport-gestures.js';
 
 const HOUR = 60 * 60 * 1000;
 const NOW = new Date('2026-06-01T12:00:00Z').getTime();
@@ -152,6 +152,192 @@ describe('createViewportGestures', () => {
 
 			gestures.zoomOut();
 			expect(state.end - state.start).toBeCloseTo(duration);
+		});
+	});
+
+	describe('minDateMs floor', () => {
+		const FLOOR = NOW - 200 * HOUR;
+
+		it('clamps a pan into the past at the floor, preserving the duration', () => {
+			const { state, gestures } = harness({ minDateMs: () => FLOOR });
+			gestures.handlePan(1000 * HOUR); // drag far into the past
+
+			expect(state.start).toBe(FLOOR);
+			expect(state.end - state.start).toBe(24 * HOUR);
+		});
+
+		it('shrinks an oversized viewport to [floor, now] when panning', () => {
+			const state = { start: NOW - 500 * HOUR, end: NOW - 100 * HOUR }; // 400h > now - floor
+			const gestures = createViewportGestures({
+				viewport: () => ({ ...state }),
+				apply: (start, end) => {
+					state.start = start;
+					state.end = end;
+				},
+				minDateMs: () => FLOOR
+			});
+
+			gestures.handlePan(HOUR); // any pan toward the past
+			expect(state.start).toBe(FLOOR);
+			expect(state.end).toBe(NOW);
+		});
+
+		it('caps zoom-out duration at now - floor even when maxDurationMs allows more', () => {
+			const { state, gestures } = harness({
+				minDateMs: () => FLOOR,
+				maxDurationMs: () => 10_000 * HOUR
+			});
+			const center = (state.start + state.end) / 2;
+
+			gestures.handleZoom(0.0001, center); // extreme zoom out
+			expect(state.start).toBe(FLOOR);
+			expect(state.end).toBe(NOW);
+		});
+
+		it('clamps a zoom-out anchored near the floor to the floor', () => {
+			const state = { start: FLOOR, end: FLOOR + 24 * HOUR };
+			const gestures = createViewportGestures({
+				viewport: () => ({ ...state }),
+				apply: (start, end) => {
+					state.start = start;
+					state.end = end;
+				},
+				minDateMs: () => FLOOR
+			});
+
+			gestures.handleZoom(0.5, state.start); // anchor at the left edge
+			expect(state.start).toBe(FLOOR);
+			expect(state.end - state.start).toBe(48 * HOUR);
+		});
+
+		it('does not clamp when minDateMs is omitted', () => {
+			const { state, gestures } = harness();
+			gestures.handlePan(1000 * HOUR);
+			expect(state.start).toBe(NOW - 48 * HOUR - 1000 * HOUR);
+		});
+
+		it('isViewportPinned detects the fully-clamped [floor, now] state', () => {
+			expect(isViewportPinned(FLOOR, NOW, FLOOR)).toBe(true);
+			// Tolerance absorbs wall-clock drift between clamp and evaluation.
+			expect(isViewportPinned(FLOOR, NOW - 30 * 1000, FLOOR)).toBe(true);
+			// Not pinned when either edge is short of its bound.
+			expect(isViewportPinned(FLOOR + HOUR, NOW, FLOOR)).toBe(false);
+			expect(isViewportPinned(FLOOR, NOW - 2 * HOUR, FLOOR)).toBe(false);
+		});
+	});
+
+	describe('settle (onSettle)', () => {
+		it('a drag pan settles once, synchronously on pan end', () => {
+			const onSettle = vi.fn();
+			const { state, gestures } = harness({ onSettle });
+
+			gestures.handlePanStart();
+			gestures.handlePan(HOUR);
+			gestures.handlePan(HOUR);
+			expect(onSettle).not.toHaveBeenCalled();
+
+			gestures.handlePanEnd();
+			expect(onSettle).toHaveBeenCalledExactlyOnceWith(state.start, state.end);
+
+			// No trailing timer-driven repeat.
+			vi.advanceTimersByTime(1000);
+			expect(onSettle).toHaveBeenCalledOnce();
+		});
+
+		it('a wheel-zoom stream settles once after the lull', () => {
+			const onSettle = vi.fn();
+			const { state, gestures } = harness({ onSettle });
+			const center = (state.start + state.end) / 2;
+
+			// No pointer gesture — wheel steps only.
+			gestures.handleZoom(1.1, center);
+			vi.advanceTimersByTime(100);
+			gestures.handleZoom(1.1, center); // resets the lull timer
+			vi.advanceTimersByTime(150);
+			expect(onSettle).not.toHaveBeenCalled();
+
+			vi.advanceTimersByTime(50); // 200ms since the last step
+			expect(onSettle).toHaveBeenCalledExactlyOnceWith(state.start, state.end);
+		});
+
+		it('a wheel pan settles via the earlier onpanend instead of the lull timer', () => {
+			const onSettle = vi.fn();
+			const { state, gestures } = harness({ onSettle });
+
+			// Wheel pans arrive without handlePanStart; InteractionLayer fires
+			// onpanend 150ms after the stream stops — before the 200ms lull.
+			gestures.handlePan(HOUR);
+			gestures.handlePanEnd();
+			expect(onSettle).toHaveBeenCalledExactlyOnceWith(state.start, state.end);
+
+			vi.advanceTimersByTime(1000);
+			expect(onSettle).toHaveBeenCalledOnce();
+		});
+
+		it('starting a pointer gesture cancels a pending wheel settle', () => {
+			const onSettle = vi.fn();
+			const { gestures } = harness({ onSettle });
+			const center = NOW - 36 * HOUR;
+
+			gestures.handleZoom(1.1, center);
+			vi.advanceTimersByTime(100);
+			gestures.handlePanStart(); // new gesture before the lull elapses
+			vi.advanceTimersByTime(1000);
+			expect(onSettle).not.toHaveBeenCalled();
+
+			// The combined gesture still settles once, on release.
+			gestures.handlePan(HOUR);
+			gestures.handlePanEnd();
+			expect(onSettle).toHaveBeenCalledOnce();
+		});
+
+		it('button zooms settle synchronously with the clamped viewport', () => {
+			const onSettle = vi.fn();
+			const { state, gestures } = harness({
+				onSettle,
+				minDurationMs: () => 30 * HOUR // 24h viewport → zoomIn clamps to 30h
+			});
+
+			gestures.zoomIn();
+			expect(onSettle).toHaveBeenCalledExactlyOnceWith(state.start, state.end);
+			expect(state.end - state.start).toBe(30 * HOUR);
+		});
+
+		it('settles with the applied viewport even when apply does not write back', () => {
+			// Provider charts forward apply to a parent — viewport() stays stale
+			// within the synchronous gesture. Settle must report the applied value.
+			const onSettle = vi.fn();
+			const fixed = { start: NOW - 48 * HOUR, end: NOW - 24 * HOUR };
+			const gestures = createViewportGestures({
+				viewport: () => ({ ...fixed }),
+				apply: () => {},
+				onSettle
+			});
+
+			gestures.handlePanStart();
+			gestures.handlePan(2 * HOUR);
+			gestures.handlePanEnd();
+			expect(onSettle).toHaveBeenCalledExactlyOnceWith(
+				fixed.start - 2 * HOUR,
+				fixed.end - 2 * HOUR
+			);
+		});
+
+		it('a gesture that moved nothing does not settle', () => {
+			const onSettle = vi.fn();
+			const { gestures } = harness({ onSettle });
+			gestures.handlePanStart();
+			gestures.handlePanEnd();
+			expect(onSettle).not.toHaveBeenCalled();
+		});
+
+		it('dispose cancels a pending settle', () => {
+			const onSettle = vi.fn();
+			const { gestures } = harness({ onSettle });
+			gestures.handleZoom(1.1, NOW - 36 * HOUR);
+			gestures.dispose();
+			vi.advanceTimersByTime(1000);
+			expect(onSettle).not.toHaveBeenCalled();
 		});
 	});
 });

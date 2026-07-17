@@ -19,7 +19,12 @@
 	import FacilityChart from './FacilityChart.svelte';
 	import FacilityPriceChart from './FacilityPriceChart.svelte';
 	import FacilityFinancialDataProvider from './FacilityFinancialDataProvider.svelte';
-	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
+	import {
+		formatDateRange,
+		ChartPanZoomHint,
+		ChartRangeBar,
+		toolbarTrayClass
+	} from '$lib/components/charts/v2';
 	import { createChartRangeControl } from './chart-range-control.svelte.js';
 	import { dataEndMs } from './data-end.js';
 	import { capYTicks } from './helpers.js';
@@ -92,7 +97,6 @@
 		onsummarydata?.(d);
 	}
 
-
 	/** Earliest data point for this unit — floor for the date picker + All preset. */
 	let earliestDate = $derived(getEarliestDate(facility?.units ?? []));
 
@@ -110,10 +114,6 @@
 		// (the host {#key}s this component on its facility/unit code).
 		// svelte-ignore state_referenced_locally
 		initialRangeDays: rangeDays
-	});
-
-	$effect(() => {
-		return () => range.dispose();
 	});
 
 	/** @param {string} key */
@@ -210,13 +210,28 @@
 
 	<!-- Charts stay mounted under the empty state (visibility, not display:none —
 	     LayerCake needs a real size) so a later range/preset pick can still fetch
-	     and recover. -->
-	<div class="relative space-y-4">
+	     and recover. `group/charts` scopes the shared pan/zoom hint's hover
+	     reveal to the charts block. -->
+	<div class="group/charts relative space-y-4">
 		<div class={['space-y-4', noData && 'invisible']}>
 			<section>
-				<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">
-					{range.activeMetric === 'energy' ? 'Energy' : 'Generation'}
-				</h3>
+				<!-- One shared interaction hint for the whole tap-to-engage stack —
+				     both charts ride the same `panZoomEngaged` flag, so their built-in
+				     per-chart pills are disabled (showPanZoomHint={false}) and this
+				     single pill above the first chart covers them together. -->
+				<div class="mb-2 flex items-center justify-between gap-4">
+					<h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-mid-grey">
+						{range.activeMetric === 'energy' ? 'Energy' : 'Generation'}
+					</h3>
+					<ChartPanZoomHint
+						engaged={panZoomEngaged}
+						onengage={() => (panZoomEngaged = true)}
+						onexit={() => (panZoomEngaged = false)}
+						class={panZoomEngaged
+							? ''
+							: 'opacity-0 group-hover/charts:opacity-100 transition-opacity duration-150'}
+					/>
+				</div>
 				<FacilityChart
 					bind:this={powerChart}
 					{facility}
@@ -241,6 +256,7 @@
 					{focusTime}
 					onfocuschange={handleFocusChange}
 					onviewportchange={range.handleChartViewportChange}
+					onviewportsettle={range.handleViewportSettle}
 					onloadcomplete={handleLoadComplete}
 					onvisibledata={(d) => {
 						intervalData = d;
@@ -248,6 +264,7 @@
 					}}
 					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
+					showPanZoomHint={false}
 					bundleDerivedMetrics
 					prefetchRanges={false}
 				/>
@@ -271,6 +288,8 @@
 						{focusTime}
 						onfocuschange={handleFocusChange}
 						onviewportchange={range.handleDerivedViewportChange}
+						onviewportsettle={range.handleViewportSettle}
+						reconcileSeq={range.reconcileSeq}
 						onsummarydata={handleSummaryData}
 					>
 						<FacilityPriceChart
@@ -279,6 +298,7 @@
 							resizable={false}
 							panZoomMode="tap-to-engage"
 							bind:panZoomEngaged
+							showPanZoomHint={false}
 						/>
 					</FacilityFinancialDataProvider>
 				</section>

@@ -60,6 +60,9 @@
 	 * @property {((time: number | undefined) => void)} [onfocuschange] - Called when a financial chart's local focus changes.
 	 * @property {((data: SummaryData) => void)} [onsummarydata]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
+	 * @property {((range: { start: number, end: number }) => void)} [onviewportsettle] - Fired once when a pan/zoom gesture comes to rest.
+	 * @property {number} [minDateMs] - Viewport left-edge floor for pan/zoom.
+	 * @property {number} [reconcileSeq] - Bump to cancel stale in-flight fetches and re-request the current window (see FacilityDerivedRateProvider).
 	 * @property {string[]} [hiddenUnitCodes] - Unit codes whose series are hidden from the market-value chart (e.g. toggled off in the units panel). The derived price line stays facility-wide.
 	 * @property {import('svelte').Snippet} [children]
 	 */
@@ -84,6 +87,9 @@
 		onfocuschange,
 		onsummarydata,
 		onviewportchange,
+		onviewportsettle,
+		minDateMs = undefined,
+		reconcileSeq = 0,
 		hiddenUnitCodes = [],
 		children
 	} = $props();
@@ -267,6 +273,12 @@
 				get hasViewportHandler() {
 					return ctx.hasViewportHandler;
 				},
+				get isAtMinZoom() {
+					return ctx.isAtMinZoom;
+				},
+				get isAtMaxZoom() {
+					return ctx.isAtMaxZoom;
+				},
 				get hoverTime() {
 					return ctx.hoverTime;
 				},
@@ -283,6 +295,8 @@
 				handlePan: ctx.handlePan,
 				handlePanEnd: ctx.handlePanEnd,
 				handleZoom: ctx.handleZoom,
+				zoomIn: ctx.zoomIn,
+				zoomOut: ctx.zoomOut,
 				getTooltipData: ctx.getTooltipData,
 				formatPriceValue,
 				formatDollarValue
@@ -309,6 +323,9 @@
 	{onfocuschange}
 	{onsummarydata}
 	{onviewportchange}
+	{onviewportsettle}
+	{minDateMs}
+	{reconcileSeq}
 	{hiddenUnitCodes}
 	{recipe}
 >

@@ -13,10 +13,18 @@
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
+	import {
+		getIntervalSpec,
+		viewportDurationLimits
+	} from '$lib/components/charts/facility/range-interval-config.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { createManagerStash, managerKey } from '$lib/components/charts/v2/manager-stash.js';
-	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
+	import {
+		createViewportGestures,
+		isViewportPinned
+	} from '$lib/components/charts/v2/viewport-gestures.js';
+	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 	import { processNetworkData } from './process-network-data.js';
 	import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
 	import { getGroup } from './groups.js';
@@ -47,9 +55,12 @@
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange]
+	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once
+	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata]
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode]
 	 * @property {boolean} [panZoomEngaged]
+	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
 	 */
 
 	/** @type {Props} */
@@ -73,9 +84,11 @@
 		hoverTime = undefined,
 		onhoverchange,
 		onviewportchange,
+		onviewportsettle,
 		onvisibledata,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
-		panZoomEngaged = $bindable(false)
+		panZoomEngaged = $bindable(false),
+		minDateMs = EARLIEST_DATA_MS
 	} = $props();
 
 	const dollarFormatter = getNumberFormat(0);
@@ -87,10 +100,8 @@
 	/** Fine grain (sub-daily) drives the power-style viewport limits. */
 	let fineGrain = $derived(interval === '5m' || interval === '1h');
 
-	let MIN_VIEWPORT_MS = $derived(fineGrain ? 1 * 60 * 60 * 1000 : 5 * 24 * 60 * 60 * 1000);
-	let MAX_VIEWPORT_MS = $derived(
-		fineGrain ? 16 * 24 * 60 * 60 * 1000 : 50 * 365 * 24 * 60 * 60 * 1000
-	);
+	let MIN_VIEWPORT_MS = $derived(viewportDurationLimits(fineGrain).minMs);
+	let MAX_VIEWPORT_MS = $derived(viewportDurationLimits(fineGrain).maxMs);
 	let fetchBufferMultiplier = $derived(fineGrain ? 1 : 3);
 
 	// ============================================
@@ -171,10 +182,10 @@
 	 */
 	function stashOrDispose(manager, currentCacheKey) {
 		if (!manager) return;
-		if (manager.cacheKey !== currentCacheKey) {
-			manager.dispose();
-			return;
-		}
+		// Dispose first — aborts the outgoing grain's in-flight fetches (refcounted
+		// in sharedFetch, so shared URLs survive) while keeping the cache warm.
+		manager.dispose();
+		if (manager.cacheKey !== currentCacheKey) return;
 		managerStash.stash(managerKey(manager.interval, manager.metric, manager.seriesKey), manager);
 	}
 
@@ -257,6 +268,7 @@
 		return () => {
 			untrack(() => dataManager)?.dispose();
 			managerStash.clear();
+			disposeGestures();
 		};
 	});
 
@@ -418,45 +430,55 @@
 		};
 	});
 
-	let showLoadingOverlay = $derived.by(() => {
-		if (!dataManager || !chartStore) return false;
-		if (chartStore.seriesData.length > 0) return false;
-		return !dataManager.initialLoadComplete || dataManager.isLoading || dataManager.hasPendingFetch;
-	});
+	let showLoadingOverlay = $derived(computeShowLoadingOverlay(dataManager, chartStore));
 
 	// ============================================
 	// Pan / zoom
 	// ============================================
 
-	const { handlePanStart, handlePan, handlePanEnd, handleZoom, zoomIn, zoomOut } =
-		createViewportGestures({
-			viewport: () => ({ start: viewStart, end: viewEnd }),
-			apply: (start, end) => {
-				viewStart = start;
-				viewEnd = end;
-			},
-			minDurationMs: () => MIN_VIEWPORT_MS,
-			maxDurationMs: () => MAX_VIEWPORT_MS,
-			onGestureStart: () => {
-				isPanning = true;
-				chartStore?.clearHover();
-			},
-			onGestureEnd: () => {
-				isPanning = false;
-			},
-			onMove: (start, end) => {
-				const buffer = (end - start) * fetchBufferMultiplier;
-				dataManager?.requestRange(start - buffer, end + buffer);
-			},
-			onPanEnd: (direction, start, end) => {
-				const prefetch = (end - start) * fetchBufferMultiplier;
-				if (direction === -1) {
-					dataManager?.requestRange(end, Math.min(end + prefetch, Date.now()));
-				} else {
-					dataManager?.requestRange(start - prefetch, start);
-				}
+	const {
+		handlePanStart,
+		handlePan,
+		handlePanEnd,
+		handleZoom,
+		zoomIn,
+		zoomOut,
+		dispose: disposeGestures
+	} = createViewportGestures({
+		viewport: () => ({ start: viewStart, end: viewEnd }),
+		apply: (start, end) => {
+			viewStart = start;
+			viewEnd = end;
+		},
+		minDurationMs: () => MIN_VIEWPORT_MS,
+		maxDurationMs: () => MAX_VIEWPORT_MS,
+		minDateMs: () => minDateMs,
+		onGestureStart: () => {
+			isPanning = true;
+			chartStore?.clearHover();
+		},
+		onGestureEnd: () => {
+			isPanning = false;
+		},
+		onMove: (start, end) => {
+			const buffer = (end - start) * fetchBufferMultiplier;
+			dataManager?.requestRange(start - buffer, end + buffer);
+		},
+		onPanEnd: (direction, start, end) => {
+			const prefetch = (end - start) * fetchBufferMultiplier;
+			if (direction === -1) {
+				dataManager?.requestRange(end, Math.min(end + prefetch, Date.now()));
+			} else {
+				dataManager?.requestRange(start - prefetch, start);
 			}
-		});
+		},
+		onSettle: (start, end) => {
+			// Parent first — it may flip metric/interval synchronously (grain
+			// switch); reconcileFetches skips the old grain when that happens.
+			onviewportsettle?.({ start, end });
+			reconcileFetches();
+		}
+	});
 
 	$effect(() => {
 		const start = viewStart;
@@ -466,7 +488,9 @@
 	});
 
 	let isAtMinZoom = $derived(viewEnd - viewStart <= MIN_VIEWPORT_MS);
-	let isAtMaxZoom = $derived(viewEnd - viewStart >= MAX_VIEWPORT_MS);
+	let isAtMaxZoom = $derived(
+		viewEnd - viewStart >= MAX_VIEWPORT_MS || isViewportPinned(viewStart, viewEnd, minDateMs)
+	);
 
 	// ============================================
 	// Hover / focus
@@ -505,7 +529,7 @@
 	/** @param {number} startMs @param {number} endMs */
 	export function setViewport(startMs, endMs) {
 		const now = Date.now();
-		viewStart = startMs;
+		viewStart = Math.max(startMs, minDateMs);
 		viewEnd = Math.min(endMs, now);
 		if (dataManager && (dataManager.interval !== interval || dataManager.metric !== metric)) {
 			return;
@@ -513,6 +537,22 @@
 		const duration = viewEnd - viewStart;
 		const buffer = duration * fetchBufferMultiplier;
 		dataManager?.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, now));
+	}
+
+	/**
+	 * Cancel in-flight work outside the current buffered window and fetch the
+	 * final gaps immediately. Called when a gesture settles — locally via
+	 * onSettle, and by the Explorer for peer panels that were fed per-frame
+	 * setViewport calls during the gesture.
+	 */
+	export function reconcileFetches() {
+		if (!viewStart || !viewEnd || !dataManager) return;
+		// A grain switch is pending (props flipped, manager not yet swapped) —
+		// don't fetch the old grain; the manager-swap effect fetches the new one
+		// immediately and its dispose-before-stash aborts the stale work.
+		if (dataManager.interval !== interval || dataManager.metric !== metric) return;
+		const buffer = (viewEnd - viewStart) * fetchBufferMultiplier;
+		dataManager.reconcileWindow(viewStart - buffer, Math.min(viewEnd + buffer, Date.now()));
 	}
 </script>
 

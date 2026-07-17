@@ -10,15 +10,14 @@
 	import { StratumChart } from '$lib/components/charts/v2';
 	import { getFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 
-	const BUTTON_ZOOM_FACTOR = 1.5;
-
-	/** @type {{ showContainer?: boolean, showHeader?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean, resizable?: boolean }} */
+	/** @type {{ showContainer?: boolean, showHeader?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean, showPanZoomHint?: boolean, resizable?: boolean }} */
 	let {
 		showContainer = true,
 		showHeader = true,
 		zoomMode = 'static',
 		panZoomMode = 'always',
 		panZoomEngaged = $bindable(false),
+		showPanZoomHint = true,
 		resizable = true
 	} = $props();
 
@@ -50,16 +49,6 @@
 	let viewEnd = $derived(ctx?.viewEnd ?? 0);
 	let hasViewportHandler = $derived(ctx?.hasViewportHandler ?? false);
 	let loadingRanges = $derived(ctx?.priceLoadingRanges ?? []);
-
-	function zoomIn() {
-		if (!ctx || !viewStart || !viewEnd) return;
-		ctx.handleZoom(BUTTON_ZOOM_FACTOR, (viewStart + viewEnd) / 2);
-	}
-
-	function zoomOut() {
-		if (!ctx || !viewStart || !viewEnd) return;
-		ctx.handleZoom(1 / BUTTON_ZOOM_FACTOR, (viewStart + viewEnd) / 2);
-	}
 
 	// Mirror externally-driven hover time into the local chart store. Only
 	// active when a parent has opted in via `onhoverchange` — otherwise the
@@ -104,6 +93,7 @@
 			enablePan={hasViewportHandler}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
+			{showPanZoomHint}
 			viewDomain={null}
 			onpanstart={ctx.handlePanStart}
 			onpan={ctx.handlePan}
@@ -112,8 +102,10 @@
 			{loadingRanges}
 			tooltipMode="floating"
 			zoomMode={hasViewportHandler ? zoomMode : 'none'}
-			onzoomin={zoomIn}
-			onzoomout={zoomOut}
+			onzoomin={ctx.zoomIn}
+			onzoomout={ctx.zoomOut}
+			isAtMinZoom={ctx.isAtMinZoom}
+			isAtMaxZoom={ctx.isAtMaxZoom}
 			{resizable}
 			heightStorageKey="facility-chart-height-market"
 			minHeight={120}

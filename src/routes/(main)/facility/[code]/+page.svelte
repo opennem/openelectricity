@@ -177,9 +177,6 @@
 		hoverTime = time;
 	}
 
-	/** Shared pan/zoom engagement across the stacked charts. */
-	let panZoomEngaged = $state(false);
-
 	/** Which chart of the Market pair to show. Default: price (the derived
 	 *  $/MWh line — what most viewers come to a facility page for). */
 	/** @type {'price' | 'mv'} */
@@ -212,10 +209,6 @@
 		initialRangeDays: data.rangeDays ?? 3
 	});
 
-	$effect(() => {
-		return () => range.dispose();
-	});
-
 	let rangeSlug = $derived(rangeSlugFor(range));
 
 	/** The chart CSV downloads surface in the header nav's options menus (desktop
@@ -243,9 +236,6 @@
 		chartDownloads?.set({ items, download: handleChartDownload });
 		return () => chartDownloads?.clear();
 	});
-
-	/** @type {HTMLElement | undefined} */
-	let chartCardEl = $state(undefined);
 
 	/** @type {HTMLElement | undefined} */
 	let splitContainerEl = $state(undefined);
@@ -340,7 +330,6 @@
 		// Land each facility on its Charts tab so navigation never strands you.
 		activeTab = 'charts';
 		range.reset();
-		panZoomEngaged = false;
 		rangeApplied = false;
 		// Reset client-side load tracking so the new facility shows its skeleton until
 		// its own chart fetch settles.
@@ -438,27 +427,7 @@
 
 	/** Static skeleton bar heights (%) — a calm placeholder while the chart loads. */
 	const SKELETON_BARS = [42, 64, 50, 78, 56, 70, 46, 84, 60, 74, 52, 88, 66, 54, 72, 48, 80];
-
-	/** @param {KeyboardEvent} e */
-	function handlePanZoomKeydown(e) {
-		if (e.key === 'Escape' && panZoomEngaged) {
-			e.preventDefault();
-			e.stopPropagation();
-			panZoomEngaged = false;
-		}
-	}
-
-	/** @param {MouseEvent} e */
-	function handlePanZoomClickOutside(e) {
-		if (!panZoomEngaged || !chartCardEl) return;
-		const target = /** @type {Node | null} */ (e.target);
-		if (target && !chartCardEl.contains(target)) {
-			panZoomEngaged = false;
-		}
-	}
 </script>
-
-<svelte:window onkeydown={handlePanZoomKeydown} onclick={handlePanZoomClickOutside} />
 
 <Meta
 	title={selectedFacility?.name ?? 'Facility'}
@@ -564,10 +533,7 @@
 							</div>
 						</div>
 
-						<!-- chartCardEl wraps the chart sections (not the range bar / metrics)
-							     so pan/zoom click-outside treats clicks between charts as "still
-							     engaged" but disengages on a range-bar / metrics click. -->
-						<div bind:this={chartCardEl} class="space-y-4">
+						<div class="space-y-4">
 							<!-- Generation -->
 							<section class={sectionCardClass}>
 								<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
@@ -603,13 +569,12 @@
 											{hoverTime}
 											onhoverchange={handleHoverChange}
 											onviewportchange={range.handleChartViewportChange}
+											onviewportsettle={range.handleViewportSettle}
 											onloadcomplete={handlePowerLoadComplete}
 											onvisibledata={(d) => {
 												intervalData = d;
 												range.settle();
 											}}
-											panZoomMode="tap-to-engage"
-											bind:panZoomEngaged
 											bundleDerivedMetrics
 											{hiddenUnitCodes}
 										/>
@@ -654,6 +619,8 @@
 									onhoverchange={handleHoverChange}
 									onsummarydata={(d) => (summaryData = d)}
 									onviewportchange={range.handleDerivedViewportChange}
+									onviewportsettle={range.handleViewportSettle}
+									reconcileSeq={range.reconcileSeq}
 								>
 									<section class={sectionCardClass}>
 										<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
@@ -669,17 +636,9 @@
 										</div>
 										{#if viewStart && viewEnd}
 											{#if activeMarketTab === 'price'}
-												<FacilityPriceChart
-													showContainer={false}
-													panZoomMode="tap-to-engage"
-													bind:panZoomEngaged
-												/>
+												<FacilityPriceChart showContainer={false} />
 											{:else}
-												<FacilityMarketValueChart
-													showContainer={false}
-													panZoomMode="tap-to-engage"
-													bind:panZoomEngaged
-												/>
+												<FacilityMarketValueChart showContainer={false} />
 											{/if}
 										{/if}
 									</section>
@@ -699,6 +658,8 @@
 										onhoverchange={handleHoverChange}
 										onsummarydata={(d) => (emissionsData = d)}
 										onviewportchange={range.handleDerivedViewportChange}
+										onviewportsettle={range.handleViewportSettle}
+										reconcileSeq={range.reconcileSeq}
 									>
 										<section class={sectionCardClass}>
 											<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
@@ -715,17 +676,9 @@
 											</div>
 											{#if viewStart && viewEnd}
 												{#if activeEmissionsTab === 'volume'}
-													<FacilityEmissionsVolumeChart
-														showContainer={false}
-														panZoomMode="tap-to-engage"
-														bind:panZoomEngaged
-													/>
+													<FacilityEmissionsVolumeChart showContainer={false} />
 												{:else}
-													<FacilityEmissionsIntensityChart
-														showContainer={false}
-														panZoomMode="tap-to-engage"
-														bind:panZoomEngaged
-													/>
+													<FacilityEmissionsIntensityChart showContainer={false} />
 												{/if}
 											{/if}
 										</section>

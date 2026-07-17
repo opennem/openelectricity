@@ -8,9 +8,7 @@
 
 import { bisectTime, bisectTimeRight, mergeSortedByTime } from './binary-search.js';
 import { offsetMsFromOffset } from './network-time.js';
-
-/** No facility data exists before this date; every fetch window is clamped to it. */
-const EARLIEST_DATA_MS = new Date('1998-12-01T00:00:00Z').getTime();
+import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 
 /**
  * OE API per-interval range caps (days) — the API rejects wider requests with
@@ -28,9 +26,20 @@ export const OE_API_MAX_RANGE_DAYS = { '5m': 30, '1h': 365 };
  * their own network request. The entry is removed once the fetch settles, so
  * later (non-concurrent) repeats fall through to the HTTP cache as before.
  *
- * @type {Map<string, Promise<any>>}
+ * Each consumer passing an AbortSignal holds one reference; the underlying
+ * request is aborted only when every consumer has aborted (refCount hits 0).
+ *
+ * @type {Map<string, { promise: Promise<any>, controller: AbortController, refCount: number }>}
  */
 const inFlightFetches = new Map();
+
+/**
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isAbortError(err) {
+	return /** @type {any} */ (err)?.name === 'AbortError';
+}
 
 /** Max completed responses kept for reuse. */
 const RESPONSE_CACHE_MAX = 30;
@@ -89,20 +98,42 @@ export function clearCompletedResponses() {
 }
 
 /**
+ * Drop all in-flight fetch entries. For tests — an unsettled entry (deferred
+ * or aborted-consumer fetch) would otherwise leak into the next case and
+ * swallow requests for the same URL.
+ */
+export function clearInFlightFetches() {
+	inFlightFetches.clear();
+}
+
+/**
  * Fetch a URL, collapsing concurrent identical requests into one network call
  * and serving recent completed responses from the module-level LRU.
  * Resolves to the API `response` payload, or `null` on a non-OK status.
  *
+ * When `signal` is given it marks this consumer's interest in the shared
+ * request: aborting it rejects this consumer's promise immediately (so its
+ * loading state can clean up) and releases one reference — the network request
+ * itself is aborted only once every consumer sharing the URL has aborted.
+ *
  * @param {string} url
+ * @param {AbortSignal} [signal]
  * @returns {Promise<any>}
  */
-function sharedFetch(url) {
+function sharedFetch(url, signal) {
 	const cached = getCachedResponse(url);
 	if (cached !== undefined) return Promise.resolve(cached);
+	if (signal?.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'));
 
-	let pending = inFlightFetches.get(url);
-	if (!pending) {
-		pending = fetch(url)
+	let entry = inFlightFetches.get(url);
+	if (!entry) {
+		const controller = new AbortController();
+		const created =
+			/** @type {{ promise: Promise<any>, controller: AbortController, refCount: number }} */ ({
+				controller,
+				refCount: 0
+			});
+		created.promise = fetch(url, { signal: controller.signal })
 			.then(async (res) => {
 				if (!res.ok) {
 					console.error('ChartDataManager: API returned', res.status);
@@ -112,10 +143,77 @@ function sharedFetch(url) {
 				storeCachedResponse(url, json.response);
 				return json.response;
 			})
-			.finally(() => inFlightFetches.delete(url));
-		inFlightFetches.set(url, pending);
+			.finally(() => {
+				// A fully-aborted entry is deleted eagerly (see onAbort below) and may
+				// already have been replaced by a fresh request for the same URL.
+				if (inFlightFetches.get(url) === created) inFlightFetches.delete(url);
+			});
+		entry = created;
+		inFlightFetches.set(url, entry);
 	}
-	return pending;
+	entry.refCount++;
+
+	if (!signal) return entry.promise;
+
+	const held = entry;
+	return new Promise((resolve, reject) => {
+		const onAbort = () => {
+			held.refCount--;
+			if (held.refCount <= 0) {
+				held.controller.abort();
+				// Delete eagerly so a new request for this URL starts a fresh fetch
+				// instead of attaching to the doomed entry — the rejection's
+				// `.finally` above only runs a microtask later.
+				if (inFlightFetches.get(url) === held) inFlightFetches.delete(url);
+			}
+			reject(new DOMException('Aborted', 'AbortError'));
+		};
+		signal.addEventListener('abort', onAbort, { once: true });
+		held.promise.then(
+			(value) => {
+				signal.removeEventListener('abort', onAbort);
+				resolve(value);
+			},
+			(err) => {
+				signal.removeEventListener('abort', onAbort);
+				reject(err);
+			}
+		);
+	});
+}
+
+/**
+ * Snap a timezone-naive local datetime string ('YYYY-MM-DDTHH:mm:ss') down to
+ * the start of the bucket containing it. Intervals absent here (5m/1h/7d) are
+ * sent unsnapped.
+ * @type {Record<string, (ds: string) => string>}
+ */
+const SNAP_TO_BUCKET_START = {
+	'1y': (ds) => ds.slice(0, 4) + '-01-01T00:00:00',
+	'3M': (ds) => {
+		const m = parseInt(ds.slice(5, 7), 10);
+		const qMonth = String(Math.floor((m - 1) / 3) * 3 + 1).padStart(2, '0');
+		return ds.slice(0, 4) + '-' + qMonth + '-01T00:00:00';
+	},
+	'1M': (ds) => ds.slice(0, 7) + '-01T00:00:00',
+	'1d': (ds) => ds.slice(0, 10) + 'T00:00:00'
+};
+
+/**
+ * Advance a bucket-start local datetime string by one bucket.
+ * @param {string} interval - a SNAP_TO_BUCKET_START key
+ * @param {string} bucketStart - 'YYYY-MM-DDT00:00:00' at a bucket boundary
+ * @returns {string}
+ */
+function nextBucketStart(interval, bucketStart) {
+	const year = parseInt(bucketStart.slice(0, 4), 10);
+	const month0 = parseInt(bucketStart.slice(5, 7), 10) - 1;
+	const day = parseInt(bucketStart.slice(8, 10), 10);
+	const months = interval === '1y' ? 12 : interval === '3M' ? 3 : interval === '1M' ? 1 : 0;
+	const next = months
+		? new Date(Date.UTC(year, month0 + months, day))
+		: new Date(Date.UTC(year, month0, day + 1));
+	return next.toISOString().slice(0, 19);
 }
 
 /**
@@ -179,8 +277,10 @@ export default class ChartDataManager {
 	/** @type {ReturnType<typeof setTimeout> | null} */ #fetchTimer = null;
 	/** @type {{start: number, end: number} | null} */ #pendingFetch = null;
 
-	// Track in-flight requests to avoid duplicates
-	/** @type {Set<string>} */ #inFlightKeys = new Set();
+	// In-flight batches by `${start}-${end}` key — dedups duplicate requests and
+	// lets cancelStaleFetches()/dispose() abort batches that are no longer needed.
+	/** @type {Map<string, { range: LoadingRange, controller: AbortController }>} */
+	#inFlightBatches = new Map();
 
 	// Ranges that returned no data — prevents re-fetching the same empty ranges
 	/** @type {LoadingRange[]} */ #emptyRanges = [];
@@ -422,16 +522,18 @@ export default class ChartDataManager {
 		// two-pointer merge, new rows win on equal timestamps) and the loading/
 		// empty-range bookkeeping is per-batch, so a split gap costs one round
 		// trip instead of one per batch.
+		let anyAborted = false;
 		const fetchBatch = async (/** @type {LoadingRange} */ batch) => {
 			const key = `${batch.start}-${batch.end}`;
-			if (this.#inFlightKeys.has(key)) return;
-			this.#inFlightKeys.add(key);
+			if (this.#inFlightBatches.has(key)) return;
+			const controller = new AbortController();
+			this.#inFlightBatches.set(key, { range: batch, controller });
 
 			// Add to loading ranges
 			this.loadingRanges = [...this.loadingRanges, batch];
 
 			try {
-				const data = await this.#fetchFromApi(batch.start, batch.end);
+				const data = await this.#fetchFromApi(batch.start, batch.end, controller.signal);
 				// dispose()/clearCache() while awaiting retired this generation —
 				// drop the result instead of merging into dead/reset state.
 				if (gen !== this.#generation) return;
@@ -448,9 +550,20 @@ export default class ChartDataManager {
 					this.#emptyRanges.push(batch);
 				}
 			} catch (err) {
-				console.error('ChartDataManager fetch error:', err);
+				if (isAbortError(err)) {
+					// Cancelled by cancelStaleFetches()/dispose() — not a failure, and
+					// crucially NOT an empty range: the span stays unknown so a later
+					// requestRange() fetches it again.
+					anyAborted = true;
+				} else {
+					console.error('ChartDataManager fetch error:', err);
+				}
 			} finally {
-				this.#inFlightKeys.delete(key);
+				// Guard by identity — dispose() clears the map, and a revived manager
+				// may have started an identical batch before this cleanup runs.
+				if (this.#inFlightBatches.get(key)?.controller === controller) {
+					this.#inFlightBatches.delete(key);
+				}
 				if (gen === this.#generation) {
 					this.loadingRanges = this.loadingRanges.filter(
 						(r) => r.start !== batch.start || r.end !== batch.end
@@ -470,7 +583,9 @@ export default class ChartDataManager {
 		// re-fetch it. Energy ranges load in one batch, so cacheStart is the true
 		// earliest; 5m never reaches back this far (viewport-limited). Guard against
 		// re-pushing the same span on every tick (right-gap refreshes re-enter here).
-		if (this.#cacheStart !== null && reqStart < this.#cacheStart) {
+		// Skipped when any batch was aborted — an aborted left batch would make
+		// this record a span that was never actually fetched.
+		if (!anyAborted && this.#cacheStart !== null && reqStart < this.#cacheStart) {
 			const start = reqStart;
 			const end = this.#cacheStart;
 			if (!this.#emptyRanges.some((r) => r.start === start && r.end === end)) {
@@ -480,30 +595,38 @@ export default class ChartDataManager {
 	}
 
 	/**
-	 * Subtract known-empty ranges from a gap, returning the remaining sub-ranges.
+	 * Subtract already-covered spans from a gap, returning the remaining
+	 * sub-ranges. Covered means known-empty OR currently in flight — the
+	 * in-flight subtraction makes an overlapping re-request (a settle that fans
+	 * out to several reconcile paths, a wall-clock-drifted keep window) a no-op
+	 * instead of a duplicate fetch + merge.
 	 * @param {LoadingRange} gap
 	 * @returns {LoadingRange[]}
 	 */
-	#subtractEmptyRanges(gap) {
+	#subtractCoveredRanges(gap) {
 		/** @type {LoadingRange[]} */
 		let remaining = [gap];
 
-		for (const empty of this.#emptyRanges) {
+		/** @type {LoadingRange[]} */
+		const covered = [...this.#emptyRanges];
+		for (const { range } of this.#inFlightBatches.values()) covered.push(range);
+
+		for (const span of covered) {
 			/** @type {LoadingRange[]} */
 			const next = [];
 			for (const r of remaining) {
 				// No overlap — keep as-is
-				if (empty.end <= r.start || empty.start >= r.end) {
+				if (span.end <= r.start || span.start >= r.end) {
 					next.push(r);
 					continue;
 				}
 				// Left remainder
-				if (empty.start > r.start) {
-					next.push({ start: r.start, end: empty.start });
+				if (span.start > r.start) {
+					next.push({ start: r.start, end: span.start });
 				}
 				// Right remainder
-				if (empty.end < r.end) {
-					next.push({ start: empty.end, end: r.end });
+				if (span.end < r.end) {
+					next.push({ start: span.end, end: r.end });
 				}
 			}
 			remaining = next;
@@ -519,58 +642,62 @@ export default class ChartDataManager {
 	 * @returns {LoadingRange[]}
 	 */
 	#computeGaps(start, end) {
-		if (this.#cacheStart === null || this.#cacheEnd === null) {
-			return [{ start, end }];
-		}
-
-		// Overlap buffer: fetch a few extra intervals past the cache boundary
-		// so there are no missing points at the seam. The dedup merge makes
-		// overlapping data harmless. Scale by interval.
-		const DAY_MS = 24 * 60 * 60 * 1000;
-		const OVERLAP_MS =
-			this.interval === '1y'
-				? 365 * DAY_MS
-				: this.interval === '3M'
-					? 92 * DAY_MS
-					: this.interval === '1M'
-						? 31 * DAY_MS
-						: this.interval === '1d'
-							? DAY_MS
-							: 10 * 60 * 1000; // 10 minutes for 5m
-
 		/** @type {LoadingRange[]} */
 		const gaps = [];
 
-		if (start < this.#cacheStart) {
-			// No overlap on the left: the existing first bucket is complete, so a
-			// fetch up to cacheStart is contiguous. Extending past it would re-fetch
-			// already-cached data on every over-buffered "All" viewport tick.
-			gaps.push({ start, end: Math.min(end, this.#cacheStart) });
+		if (this.#cacheStart === null || this.#cacheEnd === null) {
+			gaps.push({ start, end });
+		} else {
+			// Overlap buffer: fetch a few extra intervals past the cache boundary
+			// so there are no missing points at the seam. The dedup merge makes
+			// overlapping data harmless. Scale by interval.
+			const DAY_MS = 24 * 60 * 60 * 1000;
+			const OVERLAP_MS =
+				this.interval === '1y'
+					? 365 * DAY_MS
+					: this.interval === '3M'
+						? 92 * DAY_MS
+						: this.interval === '1M'
+							? 31 * DAY_MS
+							: this.interval === '1d'
+								? DAY_MS
+								: 10 * 60 * 1000; // 10 minutes for 5m
+
+			if (start < this.#cacheStart) {
+				// No overlap on the left: the existing first bucket is complete, so a
+				// fetch up to cacheStart is contiguous. Extending past it would re-fetch
+				// already-cached data on every over-buffered "All" viewport tick.
+				gaps.push({ start, end: Math.min(end, this.#cacheStart) });
+			}
+
+			if (end > this.#cacheEnd) {
+				// Keep the overlap on the right so the latest (possibly still-growing)
+				// bucket is refreshed.
+				gaps.push({ start: Math.max(start, this.#cacheEnd - OVERLAP_MS), end });
+			}
 		}
 
-		if (end > this.#cacheEnd) {
-			// Keep the overlap on the right so the latest (possibly still-growing)
-			// bucket is refreshed.
-			gaps.push({ start: Math.max(start, this.#cacheEnd - OVERLAP_MS), end });
-		}
-
-		// Subtract ranges known to be empty so they aren't re-fetched
+		// Subtract known-empty and in-flight spans so they aren't re-fetched.
+		// Sub-second remainders (right-edge slivers left by the subtraction) are
+		// dropped — no interval has buckets that small, and #fetchFromApi would
+		// reject them anyway.
 		/** @type {LoadingRange[]} */
 		const filtered = [];
 		for (const gap of gaps) {
-			filtered.push(...this.#subtractEmptyRanges(gap));
+			filtered.push(...this.#subtractCoveredRanges(gap));
 		}
 
-		return filtered;
+		return filtered.filter((r) => r.end - r.start >= 1000);
 	}
 
 	/**
 	 * Fetch data from the API
 	 * @param {number} startMs
 	 * @param {number} endMs
+	 * @param {AbortSignal} [signal]
 	 * @returns {Promise<any|null>}
 	 */
-	async #fetchFromApi(startMs, endMs) {
+	async #fetchFromApi(startMs, endMs, signal) {
 		// Validate metric/interval compatibility — 5m only supports power and market_value
 		if (this.interval === '5m' && this.metric === 'energy') {
 			console.warn(
@@ -594,28 +721,20 @@ export default class ChartDataManager {
 		let dateStart = new Date(clampedStart + offsetMs).toISOString().slice(0, 19);
 		let dateEnd = new Date(clampedEnd + offsetMs).toISOString().slice(0, 19);
 
-		// Snap date boundaries to match the interval
-		if (this.interval === '1y') {
-			// Yearly: snap to 1 Jan
-			dateStart = dateStart.slice(0, 4) + '-01-01T00:00:00';
-			dateEnd = dateEnd.slice(0, 4) + '-01-01T00:00:00';
-		} else if (this.interval === '3M') {
-			// Quarterly: snap to start of quarter (Jan, Apr, Jul, Oct)
-			const snapToQuarter = (/** @type {string} */ ds) => {
-				const m = parseInt(ds.slice(5, 7), 10);
-				const qMonth = String(Math.floor((m - 1) / 3) * 3 + 1).padStart(2, '0');
-				return ds.slice(0, 4) + '-' + qMonth + '-01T00:00:00';
-			};
-			dateStart = snapToQuarter(dateStart);
-			dateEnd = snapToQuarter(dateEnd);
-		} else if (this.interval === '1M') {
-			// Monthly: snap to first of month at midnight
-			dateStart = dateStart.slice(0, 7) + '-01T00:00:00';
-			dateEnd = dateEnd.slice(0, 7) + '-01T00:00:00';
-		} else if (this.interval === '1d') {
-			// Daily: snap to midnight
-			dateStart = dateStart.slice(0, 10) + 'T00:00:00';
-			dateEnd = dateEnd.slice(0, 10) + 'T00:00:00';
+		// Snap date boundaries to the interval: the start DOWN to its bucket
+		// start, the end UP to the next boundary. The API's date_end excludes
+		// the bucket starting at that instant, so a down-snapped end (e.g.
+		// 1 Jan for 1y) would silently drop the current partial bucket — the
+		// in-progress year/quarter/month/day would never render. Snapped
+		// boundaries also keep URLs stable within a bucket period, so the
+		// completed-response LRU hits instead of refetching per tick.
+		const snapDown = SNAP_TO_BUCKET_START[this.interval];
+		if (snapDown) {
+			dateStart = snapDown(dateStart);
+			const endBucketStart = snapDown(dateEnd);
+			// An exactly boundary-aligned end already covers everything before it.
+			dateEnd =
+				endBucketStart === dateEnd ? dateEnd : nextBucketStart(this.interval, endBucketStart);
 		}
 
 		const params = new URLSearchParams({
@@ -625,7 +744,53 @@ export default class ChartDataManager {
 			date_end: dateEnd
 		});
 
-		return sharedFetch(this.buildFetchUrl(params));
+		return sharedFetch(this.buildFetchUrl(params), signal);
+	}
+
+	/**
+	 * Cancel fetch work that a settled pan/zoom gesture no longer needs: abort
+	 * in-flight batches that don't intersect [keepStart, keepEnd] and drop (or
+	 * clamp) the pending debounced fetch. Overlapping work is left alone —
+	 * aborted spans stay unknown, so a later requestRange() re-fetches them.
+	 *
+	 * @param {number} keepStart - Keep-window start (ms)
+	 * @param {number} keepEnd - Keep-window end (ms)
+	 */
+	cancelStaleFetches(keepStart, keepEnd) {
+		if (this.#pendingFetch) {
+			if (this.#pendingFetch.end <= keepStart || this.#pendingFetch.start >= keepEnd) {
+				if (this.#fetchTimer) clearTimeout(this.#fetchTimer);
+				this.#fetchTimer = null;
+				this.#pendingFetch = null;
+				this.hasPendingFetch = this.loadingRanges.length > 0;
+			} else {
+				// Clamp — mid-gesture requests merge into one widest-gap window, which
+				// would otherwise drag panned-past spans into the settle fetch.
+				this.#pendingFetch.start = Math.max(this.#pendingFetch.start, keepStart);
+				this.#pendingFetch.end = Math.min(this.#pendingFetch.end, keepEnd);
+			}
+		}
+		// Abort rejections land on a microtask, so mutating callbacks can't fire
+		// while iterating; each batch's own `finally` removes it from the map and
+		// from loadingRanges.
+		for (const { range, controller } of this.#inFlightBatches.values()) {
+			if (range.end <= keepStart || range.start >= keepEnd) controller.abort();
+		}
+	}
+
+	/**
+	 * Reconcile in-flight work with a settled viewport: abort batches outside
+	 * [keepStart, keepEnd], then immediately fetch the window's remaining gaps.
+	 * The cancel and the request are one operation — aborted spans stay
+	 * unknown, and the paired request is what brings any wrongly-dropped span
+	 * straight back.
+	 *
+	 * @param {number} keepStart - Keep-window start (ms)
+	 * @param {number} keepEnd - Keep-window end (ms)
+	 */
+	reconcileWindow(keepStart, keepEnd) {
+		this.cancelStaleFetches(keepStart, keepEnd);
+		this.requestRange(keepStart, keepEnd, { immediate: true });
 	}
 
 	/**
@@ -698,20 +863,24 @@ export default class ChartDataManager {
 	}
 
 	/**
-	 * Retire this manager: cancel the pending debounce and make any in-flight
-	 * fetch a no-op when it settles. The processed cache is left intact, so a
-	 * stashed manager can be revived later — new requestRange() calls work
-	 * normally after dispose.
+	 * Retire this manager: cancel the pending debounce, abort in-flight batches
+	 * and make any still-settling fetch a no-op. The processed cache is left
+	 * intact, so a stashed manager can be revived later — new requestRange()
+	 * calls work normally after dispose.
 	 *
-	 * Note: the underlying network request is deliberately NOT aborted —
-	 * `sharedFetch` responses are shared across managers by URL, so another
-	 * (live) manager may still be waiting on the same request.
+	 * Aborting is safe for URLs shared across managers: `sharedFetch` refcounts
+	 * consumers, so the underlying network request survives until every manager
+	 * waiting on it has aborted.
 	 */
 	dispose() {
 		this.#generation++;
 		if (this.#fetchTimer) clearTimeout(this.#fetchTimer);
 		this.#fetchTimer = null;
 		this.#pendingFetch = null;
+		for (const { controller } of this.#inFlightBatches.values()) {
+			controller.abort();
+		}
+		this.#inFlightBatches.clear();
 		this.loadingRanges = [];
 		this.hasPendingFetch = false;
 	}

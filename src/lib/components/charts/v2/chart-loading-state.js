@@ -21,8 +21,13 @@ export function isSwitchingData(manager, store) {
 }
 
 /**
- * Show the loading overlay while switching data, or when the chart has no
- * visible data and a fetch is pending or in flight.
+ * Show the full-chart loading veil while switching data, or before the first
+ * load has completed.
+ *
+ * Deliberately NOT shown when panning into an unfetched region after the
+ * initial load: the chart frame stays up with viewport-derived axis labels
+ * and the in-SVG shimmer marks the loading ranges — a translucent veil would
+ * dim the very labels that keep the pan navigable.
  *
  * @param {ManagerLike | null} manager
  * @param {StoreLike | null} store
@@ -32,5 +37,5 @@ export function showLoadingOverlay(manager, store) {
 	if (!manager || !store) return false;
 	if (isSwitchingData(manager, store)) return true;
 	if (store.seriesData.length > 0) return false;
-	return !manager.initialLoadComplete || manager.isLoading || manager.hasPendingFetch;
+	return !manager.initialLoadComplete;
 }

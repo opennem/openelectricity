@@ -42,6 +42,9 @@
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when an emissions chart's local hover changes.
 	 * @property {((data: { rows: any[], seriesNames: string[] }) => void)} [onsummarydata] - Visible-range reported emissions (tCO₂) for the metrics section.
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
+	 * @property {((range: { start: number, end: number }) => void)} [onviewportsettle] - Fired once when a pan/zoom gesture comes to rest.
+	 * @property {number} [minDateMs] - Viewport left-edge floor for pan/zoom.
+	 * @property {number} [reconcileSeq] - Bump to cancel stale in-flight fetches and re-request the current window (see FacilityDerivedRateProvider).
 	 * @property {string[]} [hiddenUnitCodes] - Unit codes whose series are hidden from the emissions-volume chart (e.g. toggled off in the units panel). The derived intensity line stays facility-wide.
 	 * @property {import('svelte').Snippet} [children]
 	 */
@@ -62,6 +65,9 @@
 		onhoverchange,
 		onsummarydata,
 		onviewportchange,
+		onviewportsettle,
+		minDateMs = undefined,
+		reconcileSeq = 0,
 		hiddenUnitCodes = [],
 		children
 	} = $props();
@@ -189,6 +195,12 @@
 				get hasViewportHandler() {
 					return ctx.hasViewportHandler;
 				},
+				get isAtMinZoom() {
+					return ctx.isAtMinZoom;
+				},
+				get isAtMaxZoom() {
+					return ctx.isAtMaxZoom;
+				},
 				get hoverTime() {
 					return ctx.hoverTime;
 				},
@@ -199,6 +211,8 @@
 				handlePan: ctx.handlePan,
 				handlePanEnd: ctx.handlePanEnd,
 				handleZoom: ctx.handleZoom,
+				zoomIn: ctx.zoomIn,
+				zoomOut: ctx.zoomOut,
 				getTooltipData: ctx.getTooltipData,
 				formatIntensityValue,
 				formatEmissionsValue
@@ -221,6 +235,9 @@
 	{onhoverchange}
 	{onsummarydata}
 	{onviewportchange}
+	{onviewportsettle}
+	{minDateMs}
+	{reconcileSeq}
 	{hiddenUnitCodes}
 	{recipe}
 >

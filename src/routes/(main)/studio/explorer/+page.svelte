@@ -37,16 +37,15 @@
 	} from '$lib/components/charts/facility/range-interval-config.js';
 	import {
 		getMetricIntervalForDays,
-		getHysteresisSwitch,
+		getHysteresisTarget,
 		getDisplayIntervalForDays
 	} from '$lib/utils/metric-interval.js';
+	import { MIN_DATE } from '$lib/utils/date-range.js';
 
 	/** @type {{ data: { region: string, selectedRange: number | null, intervalId: string, group: string, startDate: string, endDate: string } }} */
 	let { data } = $props();
 
 	const DAY_MS = 24 * 60 * 60 * 1000;
-	/** NEM dispatch begins Dec 1998 — the floor for the "All" range + date picker. */
-	const FLOOR_DATE = '1998-12-01';
 
 	// ============================================
 	// State
@@ -152,7 +151,7 @@
 		const endMs = Date.now();
 		let actualDays = days;
 		if (days === -1) {
-			actualDays = Math.max(1, Math.ceil((endMs - new Date(FLOOR_DATE).getTime()) / DAY_MS));
+			actualDays = Math.max(1, Math.ceil((endMs - new Date(MIN_DATE).getTime()) / DAY_MS));
 		}
 		const startMs = endMs - actualDays * DAY_MS;
 		const preset = getPresetByDays(days);
@@ -176,11 +175,13 @@
 		applyRangeSwitch(viewStart || defaultStart, viewEnd || defaultEnd, value);
 	}
 
-	/** Hysteresis-aware metric/interval switch on pan/zoom. */
+	/** Hysteresis-aware metric/interval switch — evaluated once per gesture, at
+	 *  settle, walking the ladder to convergence (a deep zoom crosses several
+	 *  thresholds in one gesture). */
 	/** @param {{ start: number, end: number }} range */
 	function applyMetricSwitch(range) {
 		const durationDays = (range.end - range.start) / DAY_MS;
-		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
+		const next = getHysteresisTarget(activeMetric, activeInterval, durationDays);
 		if (!next && COARSE_PICKER_INTERVALS.has(displayInterval)) return;
 		displayInterval = getDisplayIntervalForDays(
 			next?.metric ?? activeMetric,
@@ -194,8 +195,21 @@
 	}
 
 	/**
+	 * Mid-gesture display-interval adaptation: re-aggregate the current grain so
+	 * point counts stay bounded while zooming, without touching metric/interval
+	 * (no fetch). Explicit coarse picker choices are preserved.
+	 * @param {{ start: number, end: number }} range
+	 */
+	function updateLiveDisplayInterval(range) {
+		if (COARSE_PICKER_INTERVALS.has(displayInterval)) return;
+		const durationDays = (range.end - range.start) / DAY_MS;
+		displayInterval = getDisplayIntervalForDays(activeMetric, activeInterval, durationDays);
+	}
+
+	/**
 	 * Pan/zoom on any panel drives the shared viewport: mirror the new range
-	 * into every other panel with the echo suppressed.
+	 * into every other panel with the echo suppressed. The metric/interval
+	 * switch waits for the gesture to settle (handlePanelSettle).
 	 * @param {{ start: number, end: number }} range
 	 * @param {string} sourceId
 	 */
@@ -204,7 +218,7 @@
 		viewStart = range.start;
 		viewEnd = range.end;
 		selectedRange = null;
-		applyMetricSwitch(range);
+		updateLiveDisplayInterval(range);
 		echo.run(() => {
 			for (const panel of PANELS) {
 				if (panel.id === sourceId) continue;
@@ -212,6 +226,27 @@
 			}
 		});
 		scheduleUrlUpdate();
+	}
+
+	/**
+	 * A gesture on any panel came to rest: evaluate the hysteresis switch once
+	 * with the final viewport, then prune the peer panels' stale in-flight
+	 * fetches (they were fed per-frame setViewport calls during the gesture).
+	 * The source panel reconciles itself via its own onSettle;
+	 * `reconcileFetches` emits no viewport events, so there's no echo risk.
+	 * Deliberately not echo-guarded — settles only originate from user
+	 * gestures (`setViewport` never fires one), and the guard's microtask
+	 * release would swallow the synchronous zoom-button settle.
+	 * @param {{ start: number, end: number }} range
+	 * @param {string} sourceId
+	 */
+	function handlePanelSettle(range, sourceId) {
+		applyMetricSwitch(range);
+		scheduleUrlUpdate();
+		for (const panel of PANELS) {
+			if (panel.id === sourceId) continue;
+			chartRefs[panel.id]?.reconcileFetches();
+		}
 	}
 
 	/** @param {{ value: string | number | null | undefined }} option */
@@ -359,9 +394,9 @@
 				{displayInterval}
 				startDate={pickerStartDate}
 				endDate={pickerEndDate}
-				minDate={FLOOR_DATE}
+				minDate={MIN_DATE}
 				{maxDate}
-				earliestDate={FLOOR_DATE}
+				earliestDate={MIN_DATE}
 				showIntervalDropdown={true}
 				onrangeselect={handleRangeSelect}
 				ondaterangechange={handleDateRangeChange}
@@ -432,6 +467,7 @@
 							{hoverTime}
 							onhoverchange={handleHoverChange}
 							onviewportchange={(range) => handlePanelViewport(range, panel.id)}
+							onviewportsettle={(range) => handlePanelSettle(range, panel.id)}
 							onvisibledata={panel.feedsTable ? handleVisibleData : undefined}
 						/>
 					</div>

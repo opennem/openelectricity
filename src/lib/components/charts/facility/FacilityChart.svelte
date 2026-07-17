@@ -10,7 +10,11 @@
 	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 	import { createFacilityDataManager } from './facility-data-manager.js';
 	import { createManagerStash, managerKey } from '$lib/components/charts/v2/manager-stash.js';
-	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
+	import {
+		createViewportGestures,
+		isViewportPinned
+	} from '$lib/components/charts/v2/viewport-gestures.js';
+	import { viewportDurationLimits } from './range-interval-config.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { analyzeUnits, unitSeriesIds } from './unit-analysis.js';
@@ -19,6 +23,7 @@
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
 	import { combinedMetricsFor, buildCombinedMetricsUrl } from './energy-basis.js';
+	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 	import { untrack } from 'svelte';
 	import { ianaFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
@@ -37,6 +42,8 @@
 	 * @property {string} [dateStart] - Initial date start string (YYYY-MM-DD) for viewport when no seeded cache
 	 * @property {string} [dateEnd] - Initial date end string (YYYY-MM-DD) for viewport when no seeded cache
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
+	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once when a pan/zoom gesture comes to rest — parents apply grain switches here
+	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
 	 * @property {boolean} [showAnnotations] - Whether to show capacity reference lines (default: false)
 	 * @property {boolean} [showHeader] - Whether to show the chart title/header bar (default: true)
@@ -56,6 +63,7 @@
 	 * @property {((state: { hasData: boolean }) => void)} [onloadcomplete] - Called once the initial client-side fetch/seed settles. `hasData` reflects whether any data was found, letting a parent distinguish "still loading" from "no data" (e.g. to show an empty state). Stays accurate across panning.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active. 'tap-to-engage' gates pan/zoom behind the bindable `panZoomEngaged` flag.
 	 * @property {boolean} [panZoomEngaged] - Bindable engagement state for tap-to-engage mode.
+	 * @property {boolean} [showPanZoomHint] - Whether tap-to-engage mode renders its own hint pill (default true). Hosts stacking several charts behind one engagement flag pass false and render a shared `ChartPanZoomHint` once instead.
 	 * @property {boolean} [enablePan] - Whether drag/wheel pan is enabled (default: true). Set false for a fixed-window snapshot chart (hover still works).
 	 * @property {boolean} [resizable] - Whether to show the drag-to-resize handle below the chart (default: true). Set false for a fixed-height snapshot so the chart honours `chartHeight` and doesn't share the persisted resize height.
 	 * @property {number | Array<any> | ((ticks: any[]) => any[])} [yTicks] - Y-axis ticks passed through to AxisY: a count, an explicit array, or a function that thins the scale's default ticks. Omit for the AxisY default (4).
@@ -80,6 +88,8 @@
 		dateStart = '',
 		dateEnd = '',
 		onviewportchange,
+		onviewportsettle,
+		minDateMs = EARLIEST_DATA_MS,
 		onvisibledata,
 		showAnnotations = false,
 		showHeader = true,
@@ -99,6 +109,7 @@
 		onloadcomplete,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
+		showPanZoomHint = true,
 		enablePan = true,
 		resizable = true,
 		yTicks = undefined,
@@ -150,12 +161,9 @@
 	/** Whether we're showing energy data (1d interval) vs power (5m) */
 	let isEnergyMetric = $derived(metric === 'energy');
 
-	/** Minimum viewport duration: 1 hour for power, 5 days for energy */
-	let MIN_VIEWPORT_MS = $derived(isEnergyMetric ? 5 * 24 * 60 * 60 * 1000 : 1 * 60 * 60 * 1000);
-	/** Maximum viewport duration: 16 days for power, 10 years for energy */
-	let MAX_VIEWPORT_MS = $derived(
-		isEnergyMetric ? 50 * 365 * 24 * 60 * 60 * 1000 : 16 * 24 * 60 * 60 * 1000
-	);
+	/** Zoom-duration limits: 1h–16d for power, 5d–50y for energy (shared rules) */
+	let MIN_VIEWPORT_MS = $derived(viewportDurationLimits(!isEnergyMetric).minMs);
+	let MAX_VIEWPORT_MS = $derived(viewportDurationLimits(!isEnergyMetric).maxMs);
 
 	/** Prefetch buffer multiplier — energy uses wider buffers since intervals are daily */
 	let fetchBufferMultiplier = $derived(isEnergyMetric ? 3 : 1);
@@ -213,10 +221,10 @@
 	 */
 	function stashOrDispose(manager, currentCode) {
 		if (!manager) return;
-		if (manager.cacheKey !== currentCode) {
-			manager.dispose();
-			return;
-		}
+		// Dispose first — aborts the outgoing grain's in-flight fetches (refcounted
+		// in sharedFetch, so shared URLs survive) while keeping the cache warm.
+		manager.dispose();
+		if (manager.cacheKey !== currentCode) return;
 		managerStash.stash(managerKey(manager.interval, manager.metric, manager.seriesKey), manager);
 	}
 
@@ -420,6 +428,7 @@
 		return () => {
 			dataManager?.dispose();
 			managerStash.clear();
+			disposeGestures();
 		};
 	});
 
@@ -611,38 +620,52 @@
 	// Pan / Zoom Handlers
 	// ============================================
 
-	const { handlePanStart, handlePan, handlePanEnd, handleZoom, zoomIn, zoomOut } =
-		createViewportGestures({
-			viewport: () => ({ start: viewStart, end: viewEnd }),
-			apply: (start, end) => {
-				viewStart = start;
-				viewEnd = end;
-			},
-			minDurationMs: () => MIN_VIEWPORT_MS,
-			maxDurationMs: () => MAX_VIEWPORT_MS,
-			onGestureStart: () => {
-				isPanning = true;
-				// Clear hover during pan
-				chartStore?.clearHover();
-			},
-			onGestureEnd: () => {
-				isPanning = false;
-			},
-			// Request data for any uncached range (wider buffer for energy)
-			onMove: (start, end) => {
-				const buffer = (end - start) * fetchBufferMultiplier;
-				dataManager?.requestRange(start - buffer, end + buffer);
-			},
-			// Prefetch ahead in the pan direction (wider for energy)
-			onPanEnd: (direction, start, end) => {
-				const prefetch = (end - start) * fetchBufferMultiplier;
-				if (direction === -1) {
-					dataManager?.requestRange(end, Math.min(end + prefetch, Date.now()));
-				} else {
-					dataManager?.requestRange(start - prefetch, start);
-				}
+	const {
+		handlePanStart,
+		handlePan,
+		handlePanEnd,
+		handleZoom,
+		zoomIn,
+		zoomOut,
+		dispose: disposeGestures
+	} = createViewportGestures({
+		viewport: () => ({ start: viewStart, end: viewEnd }),
+		apply: (start, end) => {
+			viewStart = start;
+			viewEnd = end;
+		},
+		minDurationMs: () => MIN_VIEWPORT_MS,
+		maxDurationMs: () => MAX_VIEWPORT_MS,
+		minDateMs: () => minDateMs,
+		onGestureStart: () => {
+			isPanning = true;
+			// Clear hover during pan
+			chartStore?.clearHover();
+		},
+		onGestureEnd: () => {
+			isPanning = false;
+		},
+		// Request data for any uncached range (wider buffer for energy)
+		onMove: (start, end) => {
+			const buffer = (end - start) * fetchBufferMultiplier;
+			dataManager?.requestRange(start - buffer, end + buffer);
+		},
+		// Prefetch ahead in the pan direction (wider for energy)
+		onPanEnd: (direction, start, end) => {
+			const prefetch = (end - start) * fetchBufferMultiplier;
+			if (direction === -1) {
+				dataManager?.requestRange(end, Math.min(end + prefetch, Date.now()));
+			} else {
+				dataManager?.requestRange(start - prefetch, start);
 			}
-		});
+		},
+		onSettle: (start, end) => {
+			// Parent first — it may flip metric/interval synchronously (grain
+			// switch); reconcileFetches skips the old grain when that happens.
+			onviewportsettle?.({ start, end });
+			reconcileFetches();
+		}
+	});
 
 	// Reactively notify parent whenever viewport changes (pan, zoom, setViewport, initial load, metric switch)
 	$effect(() => {
@@ -699,7 +722,9 @@
 	});
 
 	let isAtMinZoom = $derived(viewEnd - viewStart <= MIN_VIEWPORT_MS);
-	let isAtMaxZoom = $derived(viewEnd - viewStart >= MAX_VIEWPORT_MS);
+	let isAtMaxZoom = $derived(
+		viewEnd - viewStart >= MAX_VIEWPORT_MS || isViewportPinned(viewStart, viewEnd, minDateMs)
+	);
 
 	// ============================================
 	// Hover/Focus Handlers
@@ -770,7 +795,7 @@
 	 */
 	export function setViewport(startMs, endMs) {
 		const now = Date.now();
-		viewStart = startMs;
+		viewStart = Math.max(startMs, minDateMs);
 		viewEnd = Math.min(endMs, now);
 
 		// If an interval/metric switch is pending (the props have changed but the
@@ -787,6 +812,20 @@
 		const duration = viewEnd - viewStart;
 		const buffer = duration * fetchBufferMultiplier;
 		dataManager?.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, now));
+	}
+
+	/**
+	 * Cancel in-flight work outside the current buffered window and fetch the
+	 * final gaps immediately. Called when a gesture settles.
+	 */
+	export function reconcileFetches() {
+		if (!viewStart || !viewEnd || !dataManager) return;
+		// A grain switch is pending (props flipped, manager not yet swapped) —
+		// don't fetch the old grain; the manager-swap effect fetches the new one
+		// immediately and its dispose-before-stash aborts the stale work.
+		if (dataManager.interval !== interval || dataManager.metric !== metric) return;
+		const buffer = (viewEnd - viewStart) * fetchBufferMultiplier;
+		dataManager.reconcileWindow(viewStart - buffer, Math.min(viewEnd + buffer, Date.now()));
 	}
 
 	/**
@@ -824,6 +863,7 @@
 			{enablePan}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
+			{showPanZoomHint}
 			viewDomain={null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
 			{resizable}

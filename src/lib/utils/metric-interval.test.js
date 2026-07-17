@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	getMetricIntervalForDays,
 	getHysteresisSwitch,
+	getHysteresisTarget,
 	getDisplayIntervalForDays,
 	POWER_THRESHOLD,
 	MONTHLY_THRESHOLD,
@@ -75,6 +76,31 @@ describe('getHysteresisSwitch', () => {
 				if (r) expect(native.has(r.interval)).toBe(true);
 			}
 		}
+	});
+});
+
+describe('getHysteresisTarget', () => {
+	it('walks several rungs when a settled gesture crossed multiple thresholds', () => {
+		// Deep zoom from "All" (energy/1y) straight to a month — a single
+		// getHysteresisSwitch step stops at 1M; the target must reach 1d.
+		expect(getHysteresisTarget('energy', '1y', 30)).toEqual({ metric: 'energy', interval: '1d' });
+		// …and all the way to power for a days-wide viewport.
+		expect(getHysteresisTarget('energy', '1y', 3)).toEqual({ metric: 'power', interval: '5m' });
+		// Zoom-out from power to a decade viewport walks up to 1y.
+		expect(getHysteresisTarget('power', '5m', 4000)).toEqual({ metric: 'energy', interval: '1y' });
+	});
+
+	it('returns null when no switch is needed', () => {
+		expect(getHysteresisTarget('energy', '1d', 100)).toBeNull();
+		expect(getHysteresisTarget('power', '5m', 3)).toBeNull();
+	});
+
+	it('preserves the per-rung hysteresis gap at the final rung', () => {
+		// 9 days sits in the 1d↔5m hysteresis gap (switch to power only at ≤8):
+		// from above, the walk stops at 1d rather than overshooting to 5m…
+		expect(getHysteresisTarget('energy', '1y', 9)).toEqual({ metric: 'energy', interval: '1d' });
+		// …and an existing 1d viewport at 9 days stays put.
+		expect(getHysteresisTarget('energy', '1d', 9)).toBeNull();
 	});
 });
 

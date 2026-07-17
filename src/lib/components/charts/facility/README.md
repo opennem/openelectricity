@@ -133,11 +133,15 @@ To prevent rapid flipping during continuous zoom, the switch thresholds differ b
 - **Energy/1M → Energy/1d**: at **< 300 days**
 - **Energy/1d → Power/5m**: at **≤ 8 days**
 
-All switches are debounced by 300ms. A pan/zoom that doesn't cross a native
-threshold preserves an explicit interval-dropdown pick (5m/30m/Week/Quarter/
-Season/Half/Fin-Year) rather than snapping it back to the auto grain — see
-`stickyDisplay` in `chart-range-control.svelte.js`. Crossing a threshold, or a
-later preset/calendar selection, re-derives the display interval.
+Switches are evaluated **once per gesture, when it settles** (the chart's
+`onviewportsettle` callback — synchronous on pointer release / zoom-button
+click, a 200 ms lull for wheel streams), always against the final viewport.
+Mid-gesture, only the display interval adapts (re-aggregation, no fetch). A
+pan/zoom that doesn't cross a native threshold preserves an explicit
+interval-dropdown pick (5m/30m/Week/Quarter/Season/Half/Fin-Year) rather than
+snapping it back to the auto grain — see `stickyDisplay` in
+`chart-range-control.svelte.js`. Crossing a threshold, or a later
+preset/calendar selection, re-derives the display interval.
 
 ### What happens on switch
 
@@ -268,7 +272,9 @@ The factory wraps `processFacilityPower` as the manager's `processResponse` and 
 - **`seedCache(powerResponse)`** — Populate cache from server-side data (no fetch)
 - **`requestRange(start, end)`** — Debounced fetch for uncached time ranges
 - **`getDataForRange(startMs, endMs)`** — Slice cache by viewport bounds (binary search)
-- **`dispose()`** — Retire the manager: cancel the pending debounce and make in-flight fetches no-ops on resolve. The cache is left intact so a stashed manager can be revived
+- **`cancelStaleFetches(keepStart, keepEnd)`** — Abort in-flight batches disjoint from the keep-window and drop/clamp the pending debounced fetch. Aborted spans stay unknown (never recorded empty), so a later `requestRange` re-fetches them
+- **`reconcileWindow(keepStart, keepEnd)`** — `cancelStaleFetches` + an immediate `requestRange` for the same window, as one operation. What the charts call when a pan/zoom gesture settles — the paired request is what brings any wrongly-dropped span straight back
+- **`dispose()`** — Retire the manager: cancel the pending debounce, abort in-flight batches (safe for shared URLs — `sharedFetch` refcounts consumers) and make still-settling fetches no-ops. The cache is left intact so a stashed manager can be revived
 - **`clearCache()`** — Dispose and reset all cached state
 
 Internally calls its configured `processResponse` (for facilities, `processFacilityPower`) and merges results with an O(n+m) sorted merge (new rows win on equal timestamps). The newest (right) boundary keeps an interval-scaled overlap (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y) to refresh the latest bucket; the older (left) boundary fetches contiguously up to the cache start. Concurrent identical fetches across managers (e.g. the generation chart and the price/emissions providers' combined URL) collapse to one network request via an in-flight dedup, and completed responses are kept in a module-level LRU (cap 30, TTL 300 s — the API's `max-age`) so sequential repeats skip the network and the JSON re-parse.
@@ -358,14 +364,17 @@ FacilityChart's handlers come from `createViewportGestures()` in `v2/viewport-ge
 **Viewport → Page sync**:
 
 - `onviewportchange({start, end})` fires reactively whenever the viewport changes (pan, zoom, `setViewport`, initial load, metric switch)
+- `onviewportsettle({start, end})` fires once when a gesture comes to rest (pointer release / zoom-button click synchronously; wheel streams after a 200 ms lull; never from `setViewport`)
 - Page converts to dates for DateRangePicker display
-- Page runs hysteresis logic for auto metric/interval switching
+- Page runs the hysteresis metric/interval switch at settle (`handleViewportSettle`); mid-gesture only the display interval adapts
+- On settle the chart also reconciles its fetches (`reconcileFetches()`): in-flight requests outside the buffered final window are aborted and the remaining gaps fetched immediately
 
-**Tap-to-engage** (`/facility/[code]`):
+**Tap-to-engage** (`FacilityCompactCharts` — the unit detail sheet and the /facilities pane):
 
-- Page passes `panZoomMode="tap-to-engage"` and `bind:panZoomEngaged` to every mounted chart in the column (Generation plus the currently-visible Market and Emissions tabs) so a single tap engages them together — they're viewport-synced.
-- First tap on the chart sets `panZoomEngaged = true` and skips the usual focus-marker toggle.
-- The page's `<svelte:window onkeydown onclick>` handles ESC and click-outside, resetting the shared flag. ESC calls `preventDefault` + `stopPropagation` so it never escalates to exiting fullscreen.
+- The host passes `panZoomMode="tap-to-engage"` and `bind:panZoomEngaged` to both charts so a single tap engages them together — they're viewport-synced, and wheel/drag can't hijack the surrounding sheet's scroll until the user opts in.
+- First tap on a chart sets `panZoomEngaged = true` and skips the usual focus-marker toggle.
+- The engage/exit hint renders **once for the whole stack**: the per-chart pills are disabled (`showPanZoomHint={false}`) and a single `v2/ChartPanZoomHint` sits in the first chart's heading row — hover-revealed via the host's `group/charts` wrapper while idle, solid while engaged. A standalone tap-to-engage StratumChart keeps its built-in overlay hint (the default).
+- The `/facility/[code]` page itself runs `panZoomMode="always"` (the default): pan/zoom is live immediately and no interaction hints render.
 
 ### Data update flow
 

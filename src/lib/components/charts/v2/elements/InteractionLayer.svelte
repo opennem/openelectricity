@@ -14,7 +14,12 @@
 	 * SVG-level interactions (e.g. StackedArea series hover) during pan/zoom.
 	 */
 
-	import { classifyWheelIntent, wheelPanDeltaMs, wheelZoomFactor } from '../wheel-interaction.js';
+	import {
+		classifyWheelIntent,
+		wheelPanDeltaMs,
+		wheelZoomFactor,
+		WHEEL_PAN_IDLE_MS
+	} from '../wheel-interaction.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -510,11 +515,21 @@
 			wheelPanEndTimeout = setTimeout(() => {
 				wheelPanEndTimeout = null;
 				onpanend?.();
-			}, 150);
+			}, WHEEL_PAN_IDLE_MS);
 			return;
 		}
 
 		if (!onzoom) return;
+		// A pan→zoom transition within one wheel stream is one gesture — keep
+		// deferring the pending pan-end so it doesn't fire mid-zoom, an idle gap
+		// after the *pan* stopped. It fires once the whole stream goes quiet.
+		if (wheelPanEndTimeout) {
+			clearTimeout(wheelPanEndTimeout);
+			wheelPanEndTimeout = setTimeout(() => {
+				wheelPanEndTimeout = null;
+				onpanend?.();
+			}, WHEEL_PAN_IDLE_MS);
+		}
 		wheelPendingZoomFactor *= wheelZoomFactor(event.deltaY);
 		wheelPendingZoomCenterMs = clientXToTime(event.clientX);
 		scheduleWheelFrame();

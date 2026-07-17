@@ -145,6 +145,13 @@
 	let axisBufferLeft = $derived(Math.max(15, styles.chartPadding.left));
 	let axisBufferRight = $derived(Math.max(15, styles.chartPadding.right));
 
+	// With no rows the y-domain collapses to [0, 0] and d3's degenerate scale
+	// would float a lone "0" gridline at half height — suppress scale-derived
+	// y ticks while empty. Explicit tick arrays (e.g. the price chart's fixed
+	// hybrid axis) stay meaningful regardless of data, so they're kept.
+	let hasRows = $derived(chart.seriesScaledData.length > 0);
+	let yTicksWhenEmpty = $derived(hasRows || Array.isArray(chart.yTicks) ? chart.yTicks : []);
+
 	// When clampHoverLine is true, limit the hover/focus line to the stacked area height
 	let hoverMaxY = $derived.by(() => {
 		if (!clampHoverLine || !chart.hoverTime) return undefined;
@@ -335,7 +342,7 @@
 			</defs>
 			<g clip-path={axesClipPath}>
 				<AxisY
-					ticks={chart.yTicks}
+					ticks={yTicksWhenEmpty}
 					formatTick={chart.useFormatY
 						? chart.formatY
 						: chart.chartOptions.isDataTransformTypeProportion

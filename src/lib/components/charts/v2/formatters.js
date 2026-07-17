@@ -8,6 +8,7 @@
 import { computeEnergyGridlines } from './energy-gridlines.js';
 import { cachedFormatter, formatDayMonth } from './date-labels.js';
 import { getTimeFormatPolicy } from './time-format-policy.js';
+import { bucketStartsInRange, isCalendarBucketKind } from './bucket-boundaries.js';
 import { ianaFromOffset, offsetHoursFromOffset, offsetMsFromOffset } from './network-time.js';
 import { perfSpan } from './perf.js';
 
@@ -51,20 +52,24 @@ export function formatTooltipDateTime(d, ianaTimeZone, displayInterval) {
  * @param {number} viewEnd - Viewport end (ms)
  * @param {string} ianaTimeZone - e.g. 'Australia/Brisbane'
  * @param {string} timeZone - offset string, e.g. '+10:00'
- * @param {any[]} data - Series rows (for the wide-span day-start fallback)
  * @returns {{ ticks: Date[], formatTick: (d: any) => string, formatKey: string }}
  *   `formatKey` identifies the formatter (branch + zones) so callers can skip
  *   reassigning an equivalent `formatTick` — the branch rule lives here, not
  *   in the callers.
  */
-export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, data) {
+export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone) {
 	const HOUR_MS = 60 * 60 * 1000;
 	const DAY_MS = 24 * HOUR_MS;
 	const spanHours = (viewEnd - viewStart) / HOUR_MS;
 
-	// Wide power view (> 2 days): keep day-start ticks.
+	// Wide power view (> 2 days): day-start ticks, generated from the viewport
+	// (not the data) so the axis spans empty/loading regions. Stepping a fixed
+	// day from one local day start is exact — the zones are DST-free.
 	if (!(spanHours > 0) || spanHours > 48) {
-		const dayStarts = getDayStartDates(data, ianaTimeZone, timeZone);
+		const first = getStartOfDay(new Date(viewStart), ianaTimeZone, timeZone).getTime();
+		/** @type {Date[]} */
+		const dayStarts = [];
+		for (let t = first; t <= viewEnd; t += DAY_MS) dayStarts.push(new Date(t));
 		return {
 			ticks: dayStarts,
 			formatTick: (/** @type {any} */ d) => formatDayMonth(d, ianaTimeZone),
@@ -104,6 +109,56 @@ export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, da
 	return { ticks, formatTick, formatKey: `time|${ianaTimeZone}|${timeZone}` };
 }
 
+/** Bucket widths of the fixed-width (non-calendar) energy display grains. */
+const FIXED_BUCKET_MS = /** @type {Record<string, number>} */ ({
+	'1d': 24 * 60 * 60 * 1000,
+	'7d': 7 * 24 * 60 * 60 * 1000
+});
+
+/**
+ * Synthesize a viewport-spanning lattice of bucket starts for the energy axis,
+ * so ticks exist over empty/loading regions and span partially-loaded
+ * viewports. Visible rows are calendar-bucketed by the same rules, so where
+ * data exists the lattice coincides with it.
+ *
+ * Calendar kinds (1M/3M/quarter/season/half/fy/1y) are exact and data-free.
+ * Fixed kinds (1d/7d) anchor to the first row's phase when rows exist (native
+ * 7d bucket phase isn't client-predictable), else to the local day start.
+ *
+ * @param {any[]} data - Visible series rows (phase anchor only)
+ * @param {number} viewStart - Viewport start (ms)
+ * @param {number} viewEnd - Viewport end (ms)
+ * @param {string} displayInterval
+ * @param {string} ianaTimeZone
+ * @param {string} timeZone - offset string
+ * @returns {{ time: number }[]}
+ */
+function viewportBucketStarts(data, viewStart, viewEnd, displayInterval, ianaTimeZone, timeZone) {
+	const fixedMs = FIXED_BUCKET_MS[displayInterval];
+	if (fixedMs === undefined) {
+		if (isCalendarBucketKind(displayInterval)) {
+			return bucketStartsInRange(
+				displayInterval,
+				viewStart,
+				viewEnd,
+				offsetHoursFromOffset(timeZone)
+			).map((time) => ({ time }));
+		}
+		// Unknown grain (defensive) — the raw rows preserve the old behaviour.
+		return data;
+	}
+
+	const anchor = data.length
+		? data[0].time
+		: getStartOfDay(new Date(viewStart), ianaTimeZone, timeZone).getTime();
+	// Largest lattice point ≤ viewStart, so the first bucket covers the left edge.
+	const first = anchor - Math.ceil((anchor - viewStart) / fixedMs) * fixedMs;
+	/** @type {{ time: number }[]} */
+	const starts = [];
+	for (let t = first; t <= viewEnd; t += fixedMs) starts.push({ time: t });
+	return starts;
+}
+
 /**
  * Apply the standard facility x-axis + tooltip formatting to a chart store.
  *
@@ -111,6 +166,11 @@ export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, da
  * power-mode day-start/time ticks), plus `formatTooltipX` — the dedicated
  * tooltip formatter that always renders the hovered point's full date/time
  * rather than the terse, midpoint-keyed axis label.
+ *
+ * Ticks are synthesized from the viewport (with the data only anchoring the
+ * 1d/7d lattice phase), so the axis stays labelled over empty and loading
+ * regions — including a mid-viewport data gap, which gets regular gridlines
+ * rather than a hole.
  *
  * @param {any} store - ChartStore instance
  * @param {Object} opts
@@ -144,32 +204,42 @@ export function applyFacilityTimeAxis(
 		}
 		const policy = memo.policy;
 
-		if (isEnergy && data.length > 1) {
+		if (isEnergy) {
 			// The energy tick formatter captures data-derived midpoint maps, so it
 			// can only be reused when every input is unchanged (common for effect
-			// re-runs triggered by other dependencies).
-			const energyKey = `${viewStart}|${viewEnd}|${policyKey}`;
-			if (memo.tickSource === 'energy' && memo.energyKey === energyKey && memo.energyData === data)
-				return;
+			// re-runs triggered by other dependencies). The data enters the key
+			// only through the first row's time — all the lattice reads from it is
+			// the 1d/7d phase anchor — so a fetch merging new rows at the right
+			// edge doesn't rebuild identical ticks.
+			const anchor = data.length ? data[0].time : null;
+			const energyKey = `${viewStart}|${viewEnd}|${policyKey}|${anchor}`;
+			if (memo.tickSource === 'energy' && memo.energyKey === energyKey) return;
 			memo.tickSource = 'energy';
 			memo.energyKey = energyKey;
-			memo.energyData = data;
 			memo.powerFormatKey = undefined;
 
+			const starts = viewportBucketStarts(
+				data,
+				viewStart,
+				viewEnd,
+				displayInterval,
+				ianaTimeZone,
+				timeZone
+			);
 			// Coarse calendar buckets (season/quarter/half/fy/1y) don't align to the
 			// Jan/month gridlines the inference assumes — the policy supplies an
 			// explicit bucket labeller for them.
-			const g = computeEnergyGridlines(data, viewStart, viewEnd, ianaTimeZone, policy.bucketTick);
+			const g = computeEnergyGridlines(starts, viewStart, viewEnd, ianaTimeZone, policy.bucketTick);
 			store.xGridlineTicks = g.gridlineTicks;
 			store.xTicks = g.ticks;
 			store.formatTickX = g.formatTick;
 			memo.lastTicks = g.ticks;
-		} else if (data.length > 0) {
+		} else {
 			// Power mode: time ticks when zoomed in, day-start ticks otherwise.
 			// Compare against the memo, never the store — reading a store field the
 			// effect later writes would make every calling effect self-invalidate
 			// and run twice per viewport tick.
-			const ax = getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, data);
+			const ax = getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone);
 			if (memo.tickSource !== 'power' || !sameTickDates(memo.lastTicks, ax.ticks)) {
 				store.xTicks = ax.ticks;
 				store.xGridlineTicks = ax.ticks;
@@ -177,7 +247,6 @@ export function applyFacilityTimeAxis(
 			}
 			memo.tickSource = 'power';
 			memo.energyKey = undefined;
-			memo.energyData = undefined;
 			// The power formatters depend only on the branch and zones — the
 			// identity comes from getPowerAxisTicks, which owns the branch rule.
 			if (memo.powerFormatKey !== ax.formatKey) {

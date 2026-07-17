@@ -14,7 +14,7 @@
 
 import {
 	getMetricIntervalForDays,
-	getHysteresisSwitch,
+	getHysteresisTarget,
 	getDisplayIntervalForDays
 } from '$lib/utils/metric-interval';
 import {
@@ -34,7 +34,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  *   viewport: () => { start: number, end: number },
  *   defaultViewport: () => { start: number, end: number },
  *   setViewport: (startMs: number, endMs: number) => void,
- *   chart: () => { setViewport: (startMs: number, endMs: number) => void } | undefined | null,
+ *   chart: () => { setViewport: (startMs: number, endMs: number) => void, reconcileFetches?: () => void } | undefined | null,
  *   timeZone: () => string,
  *   earliestDate?: () => string | null,
  *   initialRangeDays?: number
@@ -76,8 +76,10 @@ export function createChartRangeControl(config) {
 	 *  calendar selection) re-derives it. */
 	let stickyDisplay = false;
 
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let metricSwitchTimer = null;
+	/** Bumped when a gesture settles so the derived-chart providers cancel their
+	 *  stale in-flight fetches too — shared-URL requests only abort once every
+	 *  manager holding a reference has cancelled (sharedFetch refcounts). */
+	let reconcileSeq = $state(0);
 
 	/** Suppression guard so pushing a viewport into the generation chart doesn't
 	 *  echo back through its own `onviewportchange`. */
@@ -100,33 +102,31 @@ export function createChartRangeControl(config) {
 		return { start: live.start || fallback.start, end: live.end || fallback.end };
 	}
 
-	/** Hysteresis-aware metric/interval switching for pan/zoom — keeps the
-	 *  current axis where it is unless duration crosses an 8/10-day (and
-	 *  300/365-day, 1500/1825-day) threshold. Display interval is recomputed
-	 *  every tick from the (possibly newly-targeted) metric/interval. */
+	/** Mid-gesture display-interval adaptation: re-aggregate the current grain so
+	 *  point counts stay bounded while zooming, without touching metric/interval
+	 *  (no fetch). Explicit dropdown picks are preserved (see `stickyDisplay`). */
+	/** @param {{ start: number, end: number }} range */
+	function updateLiveDisplayInterval(range) {
+		if (stickyDisplay) return;
+		const durationDays = (range.end - range.start) / DAY_MS;
+		displayInterval = getDisplayIntervalForDays(activeMetric, activeInterval, durationDays);
+	}
+
+	/** Hysteresis-aware metric/interval switching — evaluated once per gesture,
+	 *  when it settles, with the final viewport. Keeps the current axis where it
+	 *  is unless duration crosses an 8/10-day (and 300/365-day, 1500/1825-day)
+	 *  threshold. Settle-time evaluation replaces the old 300ms timer, which
+	 *  could apply a switch computed against a viewport the user had already
+	 *  zoomed back out of. */
 	/** @param {{ start: number, end: number }} range */
 	function applyMetricSwitch(range) {
 		const durationDays = (range.end - range.start) / DAY_MS;
-		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
-
-		// Preserve an explicit dropdown pick across pans and zooms that don't
-		// cross a native fetch threshold.
-		if (!next && stickyDisplay) return;
-
-		displayInterval = getDisplayIntervalForDays(
-			next?.metric ?? activeMetric,
-			next?.interval ?? activeInterval,
-			durationDays
-		);
-
-		if (next) {
-			stickyDisplay = false;
-			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
-			metricSwitchTimer = setTimeout(() => {
-				activeMetric = next.metric;
-				activeInterval = next.interval;
-			}, 300);
-		}
+		const next = getHysteresisTarget(activeMetric, activeInterval, durationDays);
+		if (!next) return;
+		stickyDisplay = false;
+		displayInterval = getDisplayIntervalForDays(next.metric, next.interval, durationDays);
+		activeMetric = next.metric;
+		activeInterval = next.interval;
 	}
 
 	/** Explicit selection (preset, custom dates, or interval dropdown) — resolves
@@ -187,13 +187,14 @@ export function createChartRangeControl(config) {
 		applyRangeSwitch(start, end, value, { sticky: true });
 	}
 
-	/** Pan/zoom-driven viewport change from the generation chart. */
+	/** Pan/zoom-driven viewport change from the generation chart. The
+	 *  metric/interval switch waits for the gesture to settle. */
 	/** @param {{ start: number, end: number }} range */
 	function handleChartViewportChange(range) {
 		if (echo.suppressed) return;
 		setViewport(range.start, range.end);
 		selectedRange = null;
-		applyMetricSwitch(range);
+		updateLiveDisplayInterval(range);
 	}
 
 	/** Viewport change emitted by a derived-chart provider (financial OR
@@ -205,14 +206,26 @@ export function createChartRangeControl(config) {
 		if (echo.suppressed) return;
 		setViewport(range.start, range.end);
 		selectedRange = null;
-		applyMetricSwitch(range);
+		updateLiveDisplayInterval(range);
 		pushToChart(range.start, range.end);
 	}
 
-	/** Cancel the delayed metric switch — call on owner unmount. */
-	function dispose() {
-		if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
-		metricSwitchTimer = null;
+	/** A gesture on the generation chart or a derived chart came to rest:
+	 *  evaluate the hysteresis switch once with the final viewport, then prune
+	 *  stale in-flight fetches everywhere — the generation chart directly, the
+	 *  providers via `reconcileSeq`. Both are no-ops for the component that
+	 *  settled (it reconciled itself) and skip the old grain when a switch fired.
+	 *
+	 *  Deliberately NOT echo-guarded: settles only ever originate from user
+	 *  gestures (`setViewport` never fires one), so they can't echo — and a
+	 *  derived-chart button zoom runs its viewport push (which raises the
+	 *  guard until a microtask) and this settle in the same synchronous task,
+	 *  so a guard here would swallow exactly those settles. */
+	/** @param {{ start: number, end: number }} range */
+	function handleViewportSettle(range) {
+		applyMetricSwitch(range);
+		reconcileSeq++;
+		chart()?.reconcileFetches?.();
 	}
 
 	/** Clear the pending pulse once switched data settles (load-complete or the
@@ -223,7 +236,6 @@ export function createChartRangeControl(config) {
 
 	/** Reset for a new facility/unit — back to the initial power grain. */
 	function reset() {
-		dispose();
 		activeInterval = '5m';
 		activeMetric = 'power';
 		displayInterval = initialDisplayInterval();
@@ -247,6 +259,10 @@ export function createChartRangeControl(config) {
 		get rangeSwitchPending() {
 			return rangeSwitchPending;
 		},
+		/** Pass to the derived-chart providers' `reconcileSeq` prop. */
+		get reconcileSeq() {
+			return reconcileSeq;
+		},
 		/** Span of the current view in days — drives the interval options offered
 		 *  for a custom (calendar) range when no preset is active. */
 		get customDays() {
@@ -269,8 +285,8 @@ export function createChartRangeControl(config) {
 		handleIntervalChange,
 		handleChartViewportChange,
 		handleDerivedViewportChange,
+		handleViewportSettle,
 		settle,
-		reset,
-		dispose
+		reset
 	};
 }

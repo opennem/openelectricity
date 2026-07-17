@@ -11,6 +11,7 @@
 	 * it provides the series key for hover highlighting.
 	 */
 	import ChartHeader from './ChartHeader.svelte';
+	import ChartPanZoomHint from './ChartPanZoomHint.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import ChartTooltipCompactStrip from './ChartTooltipCompactStrip.svelte';
 	import ChartTooltipCompactCard from './ChartTooltipCompactCard.svelte';
@@ -47,6 +48,7 @@
 	 * @property {boolean} [enablePan]
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' renders a hover hint pill and gates pan/zoom behind the bindable `engaged` flag.
 	 * @property {boolean} [engaged] - Bindable engagement state for tap-to-engage mode.
+	 * @property {boolean} [showPanZoomHint] - Whether tap-to-engage mode renders its own hint pill (default true). Hosts stacking several charts behind one `engaged` flag pass false and render a single shared `ChartPanZoomHint` above the first chart instead.
 	 * @property {Array<{start: number, end: number}>} [loadingRanges]
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {[number, number] | null} [viewDomain]
@@ -98,6 +100,7 @@
 		enablePan = false,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		engaged = $bindable(false),
+		showPanZoomHint = true,
 		loadingRanges = [],
 		clampHoverLine = false,
 		viewDomain = null,
@@ -127,6 +130,26 @@
 	);
 
 	let hasData = $derived(chart?.seriesData?.length > 0);
+
+	// Viewport-driven charts (explicit x-domain) keep their frame — axes,
+	// gridlines, loading shimmer — when the visible range has no rows, so the
+	// date labels stay visible while panning through empty/loading regions.
+	// Charts that let LayerCake fit the domain from data keep the spacer: an
+	// empty frame would have no scale to draw. The `d[1] > d[0]` check matters —
+	// provider charts set a [0, 0] domain before the page seeds the viewport.
+	let hasExplicitTimeDomain = $derived.by(() => {
+		const d = chart?.renderXDomain;
+		return (
+			Array.isArray(d) &&
+			d.length === 2 &&
+			Number.isFinite(d[0]) &&
+			Number.isFinite(d[1]) &&
+			d[1] > d[0]
+		);
+	});
+	let showChartFrame = $derived(
+		hasData || (!chart.chartOptions.isAnyBarType && hasExplicitTimeDomain)
+	);
 
 	// Resolve the effective tooltip mode, honouring the legacy `showTooltip={false}`.
 	let effectiveTooltipMode = $derived(showTooltip === false ? 'none' : tooltipMode);
@@ -255,7 +278,7 @@
 				{onpanend}
 				{onzoom}
 			>
-				{#if hasData}
+				{#if showChartFrame}
 					<StackedAreaChart
 						{chart}
 						{netTotalKey}
@@ -284,6 +307,15 @@
 			</InteractionLayer>
 		{/if}
 
+		{#if showChartFrame && !hasData && loadingRanges.length === 0}
+			<div
+				class="pointer-events-none absolute inset-0 flex items-center justify-center"
+				aria-hidden="true"
+			>
+				<span class="text-xs text-mid-warm-grey">No data for this period</span>
+			</div>
+		{/if}
+
 		{#if resizable}
 			<ChartResizeHandle
 				{chart}
@@ -310,25 +342,18 @@
 			/>
 		{/if}
 
-		{#if panZoomMode === 'tap-to-engage' && enablePan && hasData}
+		{#if panZoomMode === 'tap-to-engage' && enablePan && showChartFrame && showPanZoomHint}
 			{#if engaged}
-				<div class="pointer-events-none absolute bottom-2 right-2 z-10" aria-hidden="true">
-					<div
-						class="px-3 py-1.5 rounded-full bg-dark-grey/85 text-white text-xs font-medium shadow-sm"
-					>
-						Scroll to zoom · Esc to exit
-					</div>
+				<div class="absolute bottom-2 right-2 z-10">
+					<ChartPanZoomHint engaged onexit={() => (engaged = false)} />
 				</div>
 			{:else}
+				<!-- The wrapper stays click-transparent so the chart's own tap-to-engage
+				     keeps working around the pill; the button itself is clickable. -->
 				<div
 					class="pan-zoom-hint pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150"
-					aria-hidden="true"
 				>
-					<div
-						class="px-3 py-1.5 rounded-full bg-dark-grey/85 text-white text-xs font-medium shadow-sm"
-					>
-						Click to enable pan &amp; zoom
-					</div>
+					<ChartPanZoomHint onengage={() => (engaged = true)} raised class="pointer-events-auto" />
 				</div>
 			{/if}
 		{/if}

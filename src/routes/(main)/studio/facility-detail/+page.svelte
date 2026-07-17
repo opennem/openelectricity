@@ -33,7 +33,8 @@
 	// Cross-route imports from facility-explorer
 	import {
 		getMetricIntervalForDays,
-		getHysteresisSwitch,
+		getHysteresisTarget,
+		getDisplayIntervalForDays,
 		MIN_DATE,
 		getEarliestDate,
 		getDateStartForRange,
@@ -298,12 +299,10 @@
 		}
 	}
 
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let metricSwitchTimer = null;
-
 	/**
 	 * Handle viewport change from chart pan/zoom -- sync DateRangePicker display
-	 * and auto-switch metric when crossing thresholds.
+	 * and adapt the display interval to the zoom level. The metric/interval
+	 * switch waits for the gesture to settle (handleViewportSettle).
 	 * @param {{ start: number, end: number }} range
 	 */
 	function handleViewportChange(range) {
@@ -319,23 +318,31 @@
 		dateStart = new Date(range.start + offsetMs).toISOString().slice(0, 10);
 		dateEnd = new Date(range.end + offsetMs).toISOString().slice(0, 10);
 
-		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
-		const switchResult = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
-
 		// Auto-adjust display interval based on zoom level
+		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
 		if (activeMetric === 'power') {
 			displayInterval = durationDays < 2 ? '5m' : '30m';
 		} else if (activeMetric === 'energy') {
 			displayInterval = durationDays >= 366 ? '1M' : '1d';
 		}
+	}
 
-		if (switchResult) {
-			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
-			metricSwitchTimer = setTimeout(() => {
-				activeMetric = switchResult.metric;
-				activeInterval = switchResult.interval;
-			}, 300);
-		}
+	/**
+	 * A pan/zoom gesture came to rest: evaluate the hysteresis metric/interval
+	 * switch once with the final viewport. Settle-time evaluation replaces the
+	 * old 300ms timer, which could apply a switch computed against a viewport
+	 * the user had already zoomed back out of.
+	 * @param {{ start: number, end: number }} range
+	 */
+	function handleViewportSettle(range) {
+		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
+		const next = getHysteresisTarget(activeMetric, activeInterval, durationDays);
+		if (!next) return;
+		activeMetric = next.metric;
+		activeInterval = next.interval;
+		// Bring the display interval to the new grain now rather than on the
+		// next viewport tick.
+		displayInterval = getDisplayIntervalForDays(next.metric, next.interval, durationDays);
 	}
 
 	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
@@ -633,6 +640,7 @@
 										metric={activeMetric}
 										{displayInterval}
 										onviewportchange={handleViewportChange}
+										onviewportsettle={handleViewportSettle}
 										onvisibledata={handleVisibleData}
 									/>
 
