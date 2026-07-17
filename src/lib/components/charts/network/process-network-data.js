@@ -4,7 +4,9 @@
  * Mirrors `processFacilityPower` (real API timestamps, union + lookup, no
  * index-alignment) but keys on **fuel tech** rather than unit code, and rolls
  * individual fuel techs up into the selected grouping (Detailed / Simplified)
- * by summing per timestamp.
+ * by summing per timestamp — a thin wrapper over the shared timestamp-union
+ * core in v2/series-rows.js in 'sum' mode (null samples skipped so an absent
+ * rooftop/other reading doesn't zero a group's sum).
  *
  *   getNetworkData(secondaryGrouping=['fueltech']) →
  *     { data: [{ metric, results: [{ columns: { fueltech }, data: [[ts, val], …] }] }] }
@@ -17,7 +19,43 @@
  * network-specific price processor here.
  */
 
-import { stripDateTimezone } from '$lib/utils/date-format.js';
+import {
+	collectSeriesByTimestamp,
+	orderSeriesIds,
+	rowsFromSeriesMaps
+} from '$lib/components/charts/v2/series-rows.js';
+
+/**
+ * Battery split fuel techs. The OE network responses return the aggregate
+ * `battery` fuel tech alongside these — and its values are exactly their net
+ * (discharging − charging), verified against the live API — so keeping all
+ * three would count every battery flow twice in the stack. When any split is
+ * present the aggregate is skipped; a response carrying only `battery` keeps
+ * it.
+ */
+const BATTERY_SPLIT_FUELTECHS = new Set([
+	'battery_charging',
+	'battery_discharging',
+	'battery_VPP_charging',
+	'battery_VPP_discharging',
+	'battery_distributed_charging',
+	'battery_distributed_discharging'
+]);
+
+/**
+ * @param {any} response
+ * @param {string} metricFilter
+ * @returns {boolean}
+ */
+function hasBatterySplits(response, metricFilter) {
+	for (const metric of response?.data ?? []) {
+		if (metric.metric !== metricFilter) continue;
+		for (const series of metric.results ?? []) {
+			if (BATTERY_SPLIT_FUELTECHS.has(series.columns?.fueltech || series.name)) return true;
+		}
+	}
+	return false;
+}
 
 /**
  * @typedef {Object} ProcessNetworkDataConfig
@@ -55,45 +93,25 @@ export function processNetworkData(response, config) {
 		for (const ft of groupMap[groupId]) fuelTechToGroup[ft] = groupId;
 	}
 
-	/** @type {Map<string, Map<number, number>>} groupId → (timestampMs → summed value) */
-	const groupMaps = new Map();
-	/** @type {Set<number>} union of all timestamps */
-	const allTimestamps = new Set();
+	// Prefer the charging/discharging splits over the aggregate net series.
+	const skipAggregateBattery = hasBatterySplits(response, metricFilter);
 
-	for (const metric of response.data) {
-		if (metric.metric !== metricFilter) continue;
-
-		for (const series of metric.results || []) {
+	const { seriesMaps, timestamps } = collectSeriesByTimestamp(response, {
+		metricFilter,
+		networkTimezone,
+		mode: 'sum',
+		shouldInvert: (groupId) => loadsToInvert.includes(groupId),
+		classifySeries: (series) => {
 			const fuelTech = series.columns?.fueltech || series.name;
+			if (skipAggregateBattery && fuelTech === 'battery') return null;
 			const groupId = fuelTechToGroup[fuelTech];
-			if (!groupId) continue;
-			const shouldInvert = loadsToInvert.includes(groupId);
-
-			let valueMap = groupMaps.get(groupId);
-			if (!valueMap) {
-				valueMap = new Map();
-				groupMaps.set(groupId, valueMap);
-			}
-
-			for (const [timestamp, value] of series.data || []) {
-				if (value == null) continue;
-				const ms = new Date(stripDateTimezone(timestamp) + networkTimezone).getTime();
-				if (isNaN(ms)) continue;
-
-				const signed = shouldInvert ? -value : value;
-				valueMap.set(ms, (valueMap.get(ms) ?? 0) + signed);
-				allTimestamps.add(ms);
-			}
+			return groupId ? { id: groupId } : null;
 		}
-	}
+	});
 
-	if (groupMaps.size === 0) return null;
+	if (seriesMaps.size === 0) return null;
 
-	// Series order: configured order first, then any extras seen in the data
-	const present = [...groupMaps.keys()];
-	const ordered = groupOrder.filter((id) => groupMaps.has(id));
-	const extras = present.filter((id) => !groupOrder.includes(id));
-	const seriesNames = [...ordered, ...extras];
+	const seriesNames = orderSeriesIds([...seriesMaps.keys()], groupOrder);
 
 	/** @type {Record<string, string>} */
 	const seriesLabels = {};
@@ -104,16 +122,10 @@ export function processNetworkData(response, config) {
 		seriesColours[groupId] = getColour(groupId);
 	}
 
-	const sortedTimestamps = [...allTimestamps].sort((a, b) => a - b);
-	/** @type {any[]} */
-	const data = sortedTimestamps.map((ms) => {
-		/** @type {any} */
-		const row = { date: new Date(ms), time: ms };
-		for (const groupId of seriesNames) {
-			row[groupId] = groupMaps.get(groupId)?.get(ms) ?? null;
-		}
-		return row;
-	});
-
-	return { data, seriesNames, seriesLabels, seriesColours };
+	return {
+		data: rowsFromSeriesMaps(seriesMaps, timestamps, seriesNames),
+		seriesNames,
+		seriesLabels,
+		seriesColours
+	};
 }

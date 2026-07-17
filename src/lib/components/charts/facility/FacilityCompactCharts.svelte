@@ -19,7 +19,8 @@
 	import FacilityChart from './FacilityChart.svelte';
 	import FacilityPriceChart from './FacilityPriceChart.svelte';
 	import FacilityFinancialDataProvider from './FacilityFinancialDataProvider.svelte';
-	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
+	import { clickoutside } from '@svelte-put/clickoutside';
+	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
 	import { createChartRangeControl } from './chart-range-control.svelte.js';
 	import { dataEndMs } from './data-end.js';
 	import { capYTicks } from './helpers.js';
@@ -33,12 +34,15 @@
 	 * `fileCode` names the CSV downloads (defaults to the facility code; the unit
 	 * sheet passes the unit's code). `onsummarydata` forwards the financial
 	 * provider's visible-range energy + market-value summary up to the host —
-	 * UnitDetail derives the unit's Capacity Factor from it.
+	 * UnitDetail derives the unit's Capacity Factor from it. `toolbarInset` is
+	 * the toolbar row's left inset class — hosts whose card supplies no
+	 * horizontal padding (the unit sheet) pass a larger one.
 	 * @type {{
 	 *   facility: any,
 	 *   timeZone: string,
 	 *   rangeDays?: number,
 	 *   fileCode?: string,
+	 *   toolbarInset?: string,
 	 *   onsummarydata?: (data: any) => void
 	 * }}
 	 */
@@ -47,6 +51,7 @@
 		timeZone,
 		rangeDays = 3,
 		fileCode = undefined,
+		toolbarInset = 'pl-2',
 		onsummarydata = undefined
 	} = $props();
 
@@ -92,7 +97,6 @@
 		onsummarydata?.(d);
 	}
 
-
 	/** Earliest data point for this unit — floor for the date picker + All preset. */
 	let earliestDate = $derived(getEarliestDate(facility?.units ?? []));
 
@@ -110,10 +114,6 @@
 		// (the host {#key}s this component on its facility/unit code).
 		// svelte-ignore state_referenced_locally
 		initialRangeDays: rangeDays
-	});
-
-	$effect(() => {
-		return () => range.dispose();
 	});
 
 	/** @param {string} key */
@@ -172,10 +172,10 @@
 </script>
 
 <div class="space-y-4">
-	<!-- Recessed toolbar tray: the light well carries the date-range label while
-	     the controls float on it as raised white chips (`raised`) — the same
-	     track-and-thumb depth story as SwitchWithIcons, scaled to the row. -->
-	<div class="{toolbarTrayClass} rounded-lg p-2 pl-4">
+	<!-- Flat toolbar row (no tray treatment in the compact hosts — the sheet /
+	     pane surface is plain white, so the controls use the default grey
+	     chips rather than the tray's raised ones). -->
+	<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 {toolbarInset}">
 		<span class="text-base font-medium text-dark-grey">{dateRangeLabel}</span>
 		<div class="flex items-center gap-1.5">
 			<ChartRangeBar
@@ -189,7 +189,6 @@
 				{earliestDate}
 				showIntervalDropdown={true}
 				compact
-				raised
 				pending={range.rangeSwitchPending}
 				onrangeselect={range.handleRangeSelect}
 				ondaterangechange={range.handleDateRangeChange}
@@ -203,20 +202,30 @@
 				ondownloaditem={handleDownload}
 				showCopyLink
 				showDocumentation={false}
-				triggerClass="p-2 rounded-lg hover:bg-white/60 transition-colors cursor-pointer"
+				triggerClass="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
 			/>
 		</div>
 	</div>
 
 	<!-- Charts stay mounted under the empty state (visibility, not display:none —
 	     LayerCake needs a real size) so a later range/preset pick can still fetch
-	     and recover. -->
-	<div class="relative space-y-4">
+	     and recover. A pointerdown anywhere outside the block releases the
+	     engaged pan/zoom; while engaged, a flush outline marks the whole block
+	     as being in the mode (the charts here are flush, no cards) — matching
+	     the facility page's border-hugging treatment. -->
+	<div
+		class={[
+			'relative space-y-4',
+			panZoomEngaged && 'rounded-xs outline outline-1 outline-dark-grey/40'
+		]}
+		use:clickoutside={{ event: 'pointerdown', options: true }}
+		onclickoutside={() => (panZoomEngaged = false)}
+	>
 		<div class={['space-y-4', noData && 'invisible']}>
 			<section>
-				<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">
-					{range.activeMetric === 'energy' ? 'Energy' : 'Generation'}
-				</h3>
+				<!-- The chart header carries the section title and the interaction
+				     buttons (✥ pan/zoom toggle + zoom in/out) — same controls as the
+				     facility page. Both charts ride the same `panZoomEngaged` flag. -->
 				<FacilityChart
 					bind:this={powerChart}
 					{facility}
@@ -228,10 +237,8 @@
 					metric={range.activeMetric}
 					displayInterval={range.displayInterval}
 					chartHeight="h-[180px]"
-					title={range.activeMetric === 'energy' ? 'Energy' : 'Power'}
-					showHeader={false}
+					title={range.activeMetric === 'energy' ? 'Energy' : 'Generation'}
 					showOptions={false}
-					showZoomControls={false}
 					resizable={false}
 					yTicks={capYTicks}
 					showContainer={false}
@@ -241,6 +248,7 @@
 					{focusTime}
 					onfocuschange={handleFocusChange}
 					onviewportchange={range.handleChartViewportChange}
+					onviewportsettle={range.handleViewportSettle}
 					onloadcomplete={handleLoadComplete}
 					onvisibledata={(d) => {
 						intervalData = d;
@@ -255,9 +263,6 @@
 
 			{#if viewStart && viewEnd}
 				<section>
-					<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">
-						Price
-					</h3>
 					<FacilityFinancialDataProvider
 						{facility}
 						{timeZone}
@@ -271,11 +276,13 @@
 						{focusTime}
 						onfocuschange={handleFocusChange}
 						onviewportchange={range.handleDerivedViewportChange}
+						onviewportsettle={range.handleViewportSettle}
+						reconcileSeq={range.reconcileSeq}
 						onsummarydata={handleSummaryData}
 					>
 						<FacilityPriceChart
 							showContainer={false}
-							showHeader={false}
+							showOptions={false}
 							resizable={false}
 							panZoomMode="tap-to-engage"
 							bind:panZoomEngaged

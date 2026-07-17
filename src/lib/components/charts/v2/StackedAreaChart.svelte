@@ -26,6 +26,8 @@
 	} from './elements';
 	import NetTotalLine from './elements/NetTotalLine.svelte';
 	import HatchOverlay from './elements/HatchOverlay.svelte';
+	import { indexOfTime } from './binary-search.js';
+	import { perfSpan } from './perf.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -86,12 +88,14 @@
 	let stackedData = $derived.by(() => {
 		if (renderSeriesData.length === 0) return [];
 
-		if (chart.useDivergingStack) {
-			const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
-			return stackGen(renderSeriesData);
-		}
+		return perfSpan('chart:d3-stack', () => {
+			if (chart.useDivergingStack) {
+				const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
+				return stackGen(renderSeriesData);
+			}
 
-		return lcStack(renderSeriesData, chart.visibleSeriesNames);
+			return lcStack(renderSeriesData, chart.visibleSeriesNames);
+		});
 	});
 
 	let groupedData = $derived(
@@ -141,17 +145,26 @@
 	let axisBufferLeft = $derived(Math.max(15, styles.chartPadding.left));
 	let axisBufferRight = $derived(Math.max(15, styles.chartPadding.right));
 
+	// With no rows the y-domain collapses to [0, 0] and d3's degenerate scale
+	// would float a lone "0" gridline at half height — suppress scale-derived
+	// y ticks while empty. Explicit tick arrays (e.g. the price chart's fixed
+	// hybrid axis) stay meaningful regardless of data, so they're kept.
+	let hasRows = $derived(chart.seriesScaledData.length > 0);
+	let yTicksWhenEmpty = $derived(hasRows || Array.isArray(chart.yTicks) ? chart.yTicks : []);
+
 	// When clampHoverLine is true, limit the hover/focus line to the stacked area height
 	let hoverMaxY = $derived.by(() => {
 		if (!clampHoverLine || !chart.hoverTime) return undefined;
-		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.hoverTime);
-		return point?._max;
+		const rows = chart.seriesScaledDataWithMinMax;
+		const i = indexOfTime(rows, chart.hoverTime);
+		return i === -1 ? undefined : rows[i]._max;
 	});
 
 	let focusMaxY = $derived.by(() => {
 		if (!clampHoverLine || !chart.focusTime) return undefined;
-		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.focusTime);
-		return point?._max;
+		const rows = chart.seriesScaledDataWithMinMax;
+		const i = indexOfTime(rows, chart.focusTime);
+		return i === -1 ? undefined : rows[i]._max;
 	});
 </script>
 
@@ -329,7 +342,7 @@
 			</defs>
 			<g clip-path={axesClipPath}>
 				<AxisY
-					ticks={chart.yTicks}
+					ticks={yTicksWhenEmpty}
 					formatTick={chart.useFormatY
 						? chart.formatY
 						: chart.chartOptions.isDataTransformTypeProportion

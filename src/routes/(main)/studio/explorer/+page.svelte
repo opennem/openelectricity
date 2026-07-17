@@ -27,6 +27,7 @@
 	import { regionOptions } from '$lib/regions.js';
 	import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
 	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
+	import { createEchoGuard } from '$lib/components/charts/v2/echo-guard.js';
 	import { PANELS } from './panels.js';
 	import {
 		getIntervalSpec,
@@ -36,16 +37,15 @@
 	} from '$lib/components/charts/facility/range-interval-config.js';
 	import {
 		getMetricIntervalForDays,
-		getHysteresisSwitch,
+		getHysteresisTarget,
 		getDisplayIntervalForDays
 	} from '$lib/utils/metric-interval.js';
+	import { MIN_DATE } from '$lib/utils/date-range.js';
 
 	/** @type {{ data: { region: string, selectedRange: number | null, intervalId: string, group: string, startDate: string, endDate: string } }} */
 	let { data } = $props();
 
 	const DAY_MS = 24 * 60 * 60 * 1000;
-	/** NEM dispatch begins Dec 1998 — the floor for the "All" range + date picker. */
-	const FLOOR_DATE = '1998-12-01';
 
 	// ============================================
 	// State
@@ -71,10 +71,9 @@
 	/** Shared hover time — syncs crosshair/table across panels. */
 	let hoverTime = $state(/** @type {number | undefined} */ (undefined));
 
-	/** @type {NetworkChart | undefined} */
-	let genChart = $state(undefined);
-	/** @type {NetworkChart | undefined} */
-	let priceChart = $state(undefined);
+	/** Panel chart instances keyed by panel id (bind:this into the record). */
+	/** @type {Record<string, NetworkChart | undefined>} */
+	let chartRefs = $state({});
 
 	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
 	let tableData = $state(null);
@@ -121,22 +120,11 @@
 
 	const COARSE_PICKER_INTERVALS = new Set(['7d', 'season', 'quarter', 'half', 'fy']);
 
-	let genPanel = $derived(PANELS.find((p) => p.id === 'generation'));
-
 	// ============================================
-	// Viewport sync (prevent gen ↔ price echo)
+	// Viewport sync (prevent panel ↔ panel echo)
 	// ============================================
 
-	let suppressSync = false;
-	/** @param {() => void} fn */
-	function runSuppressed(fn) {
-		suppressSync = true;
-		try {
-			fn();
-		} finally {
-			queueMicrotask(() => (suppressSync = false));
-		}
-	}
+	const echo = createEchoGuard();
 
 	// ============================================
 	// Range / interval handlers
@@ -151,9 +139,8 @@
 		displayInterval = intervalId;
 		viewStart = startMs;
 		viewEnd = endMs;
-		runSuppressed(() => {
-			genChart?.setViewport(startMs, endMs);
-			priceChart?.setViewport(startMs, endMs);
+		echo.run(() => {
+			for (const panel of PANELS) chartRefs[panel.id]?.setViewport(startMs, endMs);
 		});
 		scheduleUrlUpdate();
 	}
@@ -164,7 +151,7 @@
 		const endMs = Date.now();
 		let actualDays = days;
 		if (days === -1) {
-			actualDays = Math.max(1, Math.ceil((endMs - new Date(FLOOR_DATE).getTime()) / DAY_MS));
+			actualDays = Math.max(1, Math.ceil((endMs - new Date(MIN_DATE).getTime()) / DAY_MS));
 		}
 		const startMs = endMs - actualDays * DAY_MS;
 		const preset = getPresetByDays(days);
@@ -188,11 +175,13 @@
 		applyRangeSwitch(viewStart || defaultStart, viewEnd || defaultEnd, value);
 	}
 
-	/** Hysteresis-aware metric/interval switch on pan/zoom. */
+	/** Hysteresis-aware metric/interval switch — evaluated once per gesture, at
+	 *  settle, walking the ladder to convergence (a deep zoom crosses several
+	 *  thresholds in one gesture). */
 	/** @param {{ start: number, end: number }} range */
 	function applyMetricSwitch(range) {
 		const durationDays = (range.end - range.start) / DAY_MS;
-		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
+		const next = getHysteresisTarget(activeMetric, activeInterval, durationDays);
 		if (!next && COARSE_PICKER_INTERVALS.has(displayInterval)) return;
 		displayInterval = getDisplayIntervalForDays(
 			next?.metric ?? activeMetric,
@@ -205,26 +194,59 @@
 		}
 	}
 
-	/** @param {{ start: number, end: number }} range */
-	function handleGenViewport(range) {
-		if (suppressSync) return;
+	/**
+	 * Mid-gesture display-interval adaptation: re-aggregate the current grain so
+	 * point counts stay bounded while zooming, without touching metric/interval
+	 * (no fetch). Explicit coarse picker choices are preserved.
+	 * @param {{ start: number, end: number }} range
+	 */
+	function updateLiveDisplayInterval(range) {
+		if (COARSE_PICKER_INTERVALS.has(displayInterval)) return;
+		const durationDays = (range.end - range.start) / DAY_MS;
+		displayInterval = getDisplayIntervalForDays(activeMetric, activeInterval, durationDays);
+	}
+
+	/**
+	 * Pan/zoom on any panel drives the shared viewport: mirror the new range
+	 * into every other panel with the echo suppressed. The metric/interval
+	 * switch waits for the gesture to settle (handlePanelSettle).
+	 * @param {{ start: number, end: number }} range
+	 * @param {string} sourceId
+	 */
+	function handlePanelViewport(range, sourceId) {
+		if (echo.suppressed) return;
 		viewStart = range.start;
 		viewEnd = range.end;
 		selectedRange = null;
-		applyMetricSwitch(range);
-		runSuppressed(() => priceChart?.setViewport(range.start, range.end));
+		updateLiveDisplayInterval(range);
+		echo.run(() => {
+			for (const panel of PANELS) {
+				if (panel.id === sourceId) continue;
+				chartRefs[panel.id]?.setViewport(range.start, range.end);
+			}
+		});
 		scheduleUrlUpdate();
 	}
 
-	/** @param {{ start: number, end: number }} range */
-	function handlePriceViewport(range) {
-		if (suppressSync) return;
-		viewStart = range.start;
-		viewEnd = range.end;
-		selectedRange = null;
+	/**
+	 * A gesture on any panel came to rest: evaluate the hysteresis switch once
+	 * with the final viewport, then prune the peer panels' stale in-flight
+	 * fetches (they were fed per-frame setViewport calls during the gesture).
+	 * The source panel reconciles itself via its own onSettle;
+	 * `reconcileFetches` emits no viewport events, so there's no echo risk.
+	 * Deliberately not echo-guarded — settles only originate from user
+	 * gestures (`setViewport` never fires one), and the guard's microtask
+	 * release would swallow the synchronous zoom-button settle.
+	 * @param {{ start: number, end: number }} range
+	 * @param {string} sourceId
+	 */
+	function handlePanelSettle(range, sourceId) {
 		applyMetricSwitch(range);
-		runSuppressed(() => genChart?.setViewport(range.start, range.end));
 		scheduleUrlUpdate();
+		for (const panel of PANELS) {
+			if (panel.id === sourceId) continue;
+			chartRefs[panel.id]?.reconcileFetches();
+		}
 	}
 
 	/** @param {{ value: string | number | null | undefined }} option */
@@ -372,9 +394,9 @@
 				{displayInterval}
 				startDate={pickerStartDate}
 				endDate={pickerEndDate}
-				minDate={FLOOR_DATE}
+				minDate={MIN_DATE}
 				{maxDate}
-				earliestDate={FLOOR_DATE}
+				earliestDate={MIN_DATE}
 				showIntervalDropdown={true}
 				onrangeselect={handleRangeSelect}
 				ondaterangechange={handleDateRangeChange}
@@ -406,72 +428,50 @@
 			class="flex-1 min-h-0 flex flex-col relative bg-light-warm-grey"
 			bind:clientHeight={tableContainerHeight}
 		>
-			<!-- Panel stack -->
+			<!-- Panel stack — rendered from the PANELS registry so the customiser
+			     (add/remove/reorder) can drop in by changing the list -->
 			<div class="flex-1 min-h-0 overflow-y-auto p-4 space-y-6">
-				<!-- Generation -->
-				<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
-					<div
-						class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-					>
-						<h3 class="text-sm font-semibold text-dark-grey m-0">Generation</h3>
-						<span
-							class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey text-xs uppercase tracking-wider"
+				{#each PANELS as panel (panel.id)}
+					<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
+						<div
+							class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
 						>
-							{getIntervalSpec(displayInterval)?.label ?? displayInterval}
-						</span>
+							<h3 class="text-sm font-semibold text-dark-grey m-0">{panel.title}</h3>
+							{#if panel.grouped}
+								<span
+									class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey text-xs uppercase tracking-wider"
+								>
+									{getIntervalSpec(displayInterval)?.label ?? displayInterval}
+								</span>
+							{:else if panel.unitLabel}
+								<span class="text-xs text-mid-grey">{panel.unitLabel}</span>
+							{/if}
+						</div>
+						<NetworkChart
+							bind:this={chartRefs[panel.id]}
+							region={selectedRegion}
+							metric={panel.metric === 'power' ? activeMetric : panel.metric}
+							interval={activeInterval}
+							{displayInterval}
+							group={panel.grouped ? selectedGroup : undefined}
+							chartKind={panel.chartKind}
+							{timeZone}
+							{dateStart}
+							{dateEnd}
+							title={panel.title}
+							chartHeight={panel.heightClass}
+							showContainer={false}
+							showHeader={false}
+							tooltipMode="floating"
+							useDivergingStack={panel.diverging ?? false}
+							{hoverTime}
+							onhoverchange={handleHoverChange}
+							onviewportchange={(range) => handlePanelViewport(range, panel.id)}
+							onviewportsettle={(range) => handlePanelSettle(range, panel.id)}
+							onvisibledata={panel.feedsTable ? handleVisibleData : undefined}
+						/>
 					</div>
-					<NetworkChart
-						bind:this={genChart}
-						region={selectedRegion}
-						metric={activeMetric}
-						interval={activeInterval}
-						{displayInterval}
-						group={selectedGroup}
-						chartKind="stacked"
-						{timeZone}
-						{dateStart}
-						{dateEnd}
-						title="Generation"
-						chartHeight="h-[320px]"
-						showContainer={false}
-						showHeader={false}
-						tooltipMode="floating"
-						useDivergingStack={genPanel?.diverging ?? false}
-						{hoverTime}
-						onhoverchange={handleHoverChange}
-						onviewportchange={handleGenViewport}
-						onvisibledata={handleVisibleData}
-					/>
-				</div>
-
-				<!-- Price -->
-				<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
-					<div
-						class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-					>
-						<h3 class="text-sm font-semibold text-dark-grey m-0">Price</h3>
-						<span class="text-xs text-mid-grey">$/MWh</span>
-					</div>
-					<NetworkChart
-						bind:this={priceChart}
-						region={selectedRegion}
-						metric="price"
-						interval={activeInterval}
-						{displayInterval}
-						chartKind="line"
-						{timeZone}
-						{dateStart}
-						{dateEnd}
-						title="Price"
-						chartHeight="h-[200px]"
-						showContainer={false}
-						showHeader={false}
-						tooltipMode="floating"
-						{hoverTime}
-						onhoverchange={handleHoverChange}
-						onviewportchange={handlePriceViewport}
-					/>
-				</div>
+				{/each}
 			</div>
 
 			<!-- Resizable fuel-tech table -->

@@ -1,153 +1,68 @@
 /**
- * Data Processing Utilities for Chart v2
+ * Display aggregation for Chart v2 — bucketing native-grain rows to the
+ * user-facing display interval (30m, month, season/half/fy/quarter).
  *
- * Provides flexible data transformation from raw statistics
- * to chart-ready time series data.
+ * The legacy StatisticV2 → TimeSeriesV2 pipeline lives in
+ * `legacy-transform.js` and is re-exported below so existing imports keep
+ * working.
  */
 
-import StatisticV2 from '$lib/utils/Statistic/v2.js';
-import TimeSeriesV2 from '$lib/utils/TimeSeries/v2.js';
 import { bucketStartMs } from './bucket-boundaries.js';
 import { localYearMonth } from './date-labels.js';
 import { offsetHoursFromIana } from './network-time.js';
+import { perfSpan } from './perf.js';
 
 /**
- * @typedef {Object} ProcessingOptions
- * @property {Object.<string, string[]>} [groupMap] - Map group names to source IDs
- * @property {string[]} [groupOrder] - Order for the groups in output
- * @property {string[]} [loadsToInvert] - IDs to invert (make negative)
- * @property {string} [targetInterval] - Target aggregation interval
- * @property {boolean} [aggregateToInterval] - Whether to aggregate
- * @property {(acc: Object, item: any) => Object} [labelReducer] - Custom label reducer
- * @property {(acc: Object, item: any) => Object} [colourReducer] - Custom colour reducer
- * @property {string} [statsType] - Stats type ('history' | 'forecast')
+ * Per-series incremental sums/counts for one bucket. The buckets used to push
+ * every sample into per-series arrays and reduce at the end; incremental
+ * in-order addition produces bit-identical sums with no per-sample allocation.
+ * @param {string[]} seriesNames
  */
-
-/**
- * @typedef {Object} ProcessedResult
- * @property {StatisticV2} stats - The processed statistics
- * @property {TimeSeriesV2} timeseries - The time series data
- */
-
-/**
- * Process raw statistics data into chart-ready time series
- *
- * @param {any[]} data - Raw statistics data
- * @param {string} unit - Unit of measurement
- * @param {ProcessingOptions} [options]
- * @returns {ProcessedResult}
- *
- * @example
- * const result = processData(rawData, 'MW', {
- *   groupMap: { solar: ['solar_utility', 'solar_rooftop'] },
- *   groupOrder: ['solar', 'wind', 'coal'],
- *   loadsToInvert: ['battery_charging'],
- *   colourReducer: myColourReducer
- * });
- */
-export function processData(data, unit, options = {}) {
-	const {
-		groupMap,
-		groupOrder,
-		loadsToInvert,
-		targetInterval,
-		aggregateToInterval = false,
-		labelReducer,
-		colourReducer,
-		statsType = 'history'
-	} = options;
-
-	// Step 1: Create Statistic instance
-	const stats = new StatisticV2(data, { statsType, unit });
-
-	// Step 2: Invert values if specified
-	if (loadsToInvert?.length) {
-		stats.invertValues(loadsToInvert);
+function newBucketSums(seriesNames) {
+	/** @type {Record<string, number>} */
+	const sums = {};
+	/** @type {Record<string, number>} */
+	const counts = {};
+	for (const name of seriesNames) {
+		sums[name] = 0;
+		counts[name] = 0;
 	}
-
-	// Step 3: Group data if groupMap provided
-	if (groupMap) {
-		stats.group(groupMap);
-	}
-
-	// Step 4: Reorder if order specified
-	if (groupOrder) {
-		stats.reorder(groupOrder);
-	}
-
-	// Step 5: Create TimeSeries
-	const timeseries = new TimeSeriesV2(stats.getData(), {
-		statsType,
-		labelReducer,
-		colourReducer
-	});
-
-	// Step 6: Transform to time series format
-	timeseries.transform();
-
-	// Step 7: Aggregate if requested
-	if (aggregateToInterval && targetInterval) {
-		timeseries.aggregate(targetInterval);
-	}
-
-	// Step 8: Calculate min/max
-	timeseries.updateMinMax();
-
-	return { stats, timeseries };
+	return { sums, counts };
 }
 
 /**
- * Convenience function that returns chart-ready format directly
- *
- * @param {any[]} data - Raw statistics data
- * @param {string} unit - Unit of measurement
- * @param {ProcessingOptions} [options]
+ * Fold one row's values into a bucket's sums/counts (nulls skipped).
+ * @param {{ _sums: Record<string, number>, _counts: Record<string, number> }} bucket
+ * @param {any} point
+ * @param {string[]} seriesNames
  */
-export function processForChart(data, unit, options = {}) {
-	const { stats, timeseries } = processData(data, unit, options);
-	return {
-		...timeseries.toChartFormat(),
-		stats
-	};
+function accumulateIntoBucket(bucket, point, seriesNames) {
+	for (const name of seriesNames) {
+		const value = point[name];
+		if (value !== null && value !== undefined) {
+			bucket._sums[name] += value;
+			bucket._counts[name]++;
+		}
+	}
 }
 
 /**
- * Filter time series data by date range
- *
- * @param {any[]} data - Array of data points with date/time
- * @param {Date} startDate - Start of range (inclusive)
- * @param {Date} endDate - End of range (inclusive)
- * @returns {any[]}
+ * Write a bucket's aggregated values onto an output row: null when no samples,
+ * else the sum or the mean.
+ * @param {{ _sums: Record<string, number>, _counts: Record<string, number> }} bucket
+ * @param {any} out
+ * @param {string[]} seriesNames
+ * @param {'sum' | 'mean'} method
  */
-export function filterByDateRange(data, startDate, endDate) {
-	const startTime = startDate.getTime();
-	const endTime = endDate.getTime();
-
-	return data.filter((d) => {
-		const time = d.time ?? d.date?.getTime?.();
-		return time >= startTime && time <= endTime;
-	});
-}
-
-/**
- * Create a reusable processor with preset options
- *
- * @param {ProcessingOptions} presetOptions - Default options
- * @returns {(data: any[], unit: string, overrides?: ProcessingOptions) => ProcessedResult}
- *
- * @example
- * const processAuGrid = createProcessor({
- *   groupMap: auGridGroupMap,
- *   groupOrder: auGridOrder,
- *   loadsToInvert: loadFuelTechs
- * });
- *
- * const result = processAuGrid(data, 'MW');
- */
-export function createProcessor(presetOptions) {
-	return (data, unit, overrides = {}) => {
-		return processData(data, unit, { ...presetOptions, ...overrides });
-	};
+function finaliseBucket(bucket, out, seriesNames, method) {
+	for (const name of seriesNames) {
+		const count = bucket._counts[name];
+		if (count === 0) {
+			out[name] = null;
+		} else {
+			out[name] = method === 'sum' ? bucket._sums[name] : bucket._sums[name] / count;
+		}
+	}
 }
 
 /**
@@ -175,28 +90,21 @@ export function aggregateToInterval(
 	for (const point of data) {
 		const bucketTime = Math.floor(point.time / intervalMs) * intervalMs;
 
-		if (!buckets.has(bucketTime)) {
-			buckets.set(bucketTime, {
+		let bucket = buckets.get(bucketTime);
+		if (!bucket) {
+			const { sums, counts } = newBucketSums(seriesNames);
+			bucket = {
 				time: bucketTime,
 				date: new Date(bucketTime),
-				_values: {},
+				_sums: sums,
+				_counts: counts,
 				_count: 0
-			});
-
-			seriesNames.forEach((name) => {
-				buckets.get(bucketTime)._values[name] = [];
-			});
+			};
+			buckets.set(bucketTime, bucket);
 		}
 
-		const bucket = buckets.get(bucketTime);
 		bucket._count++;
-
-		seriesNames.forEach((name) => {
-			const value = point[name];
-			if (value !== null && value !== undefined) {
-				bucket._values[name].push(value);
-			}
-		});
+		accumulateIntoBucket(bucket, point, seriesNames);
 	}
 
 	/** @type {any[]} */
@@ -207,20 +115,7 @@ export function aggregateToInterval(
 			date: bucket.date,
 			time: bucket.time
 		};
-
-		seriesNames.forEach((name) => {
-			const values = bucket._values[name];
-			if (values.length === 0) {
-				point[name] = null;
-			} else if (method === 'sum') {
-				point[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
-			} else {
-				point[name] =
-					values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) /
-					values.length;
-			}
-		});
-
+		finaliseBucket(bucket, point, seriesNames, method);
 		result.push(point);
 	}
 
@@ -296,31 +191,23 @@ export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum'
 		const { year, month0 } = localYearMonth(new Date(point.time), ianaTimeZone);
 		const key = year * 12 + month0;
 
-		if (!buckets.has(key)) {
+		let bucket = buckets.get(key);
+		if (!bucket) {
 			// Start of month in local tz, expressed as UTC ms
 			const monthStart = new Date(Date.UTC(year, month0, 1, -offsetHours));
-			/** @type {any} */
-			const bucket = {
+			const { sums, counts } = newBucketSums(seriesNames);
+			bucket = {
 				time: monthStart.getTime(),
 				date: monthStart,
-				_values: {},
+				_sums: sums,
+				_counts: counts,
 				_count: 0
 			};
-			seriesNames.forEach((name) => {
-				bucket._values[name] = [];
-			});
 			buckets.set(key, bucket);
 		}
 
-		const bucket = buckets.get(key);
 		bucket._count++;
-
-		seriesNames.forEach((name) => {
-			const value = point[name];
-			if (value !== null && value !== undefined) {
-				bucket._values[name].push(value);
-			}
-		});
+		accumulateIntoBucket(bucket, point, seriesNames);
 	}
 
 	/** @type {any[]} */
@@ -328,20 +215,7 @@ export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum'
 	for (const bucket of buckets.values()) {
 		/** @type {any} */
 		const point = { date: bucket.date, time: bucket.time };
-
-		seriesNames.forEach((name) => {
-			const values = bucket._values[name];
-			if (values.length === 0) {
-				point[name] = null;
-			} else if (method === 'sum') {
-				point[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
-			} else {
-				point[name] =
-					values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) /
-					values.length;
-			}
-		});
-
+		finaliseBucket(bucket, point, seriesNames, method);
 		result.push(point);
 	}
 
@@ -369,16 +243,11 @@ export function aggregateByBoundary(data, seriesNames, kind, ianaTimeZone, metho
 		const start = bucketStartMs(kind, point.time, offsetHours);
 		let bucket = buckets.get(start);
 		if (!bucket) {
-			bucket = { time: start, date: new Date(start), _values: {} };
-			seriesNames.forEach((name) => {
-				bucket._values[name] = [];
-			});
+			const { sums, counts } = newBucketSums(seriesNames);
+			bucket = { time: start, date: new Date(start), _sums: sums, _counts: counts };
 			buckets.set(start, bucket);
 		}
-		seriesNames.forEach((name) => {
-			const value = point[name];
-			if (value !== null && value !== undefined) bucket._values[name].push(value);
-		});
+		accumulateIntoBucket(bucket, point, seriesNames);
 	}
 
 	/** @type {any[]} */
@@ -386,18 +255,7 @@ export function aggregateByBoundary(data, seriesNames, kind, ianaTimeZone, metho
 	for (const bucket of buckets.values()) {
 		/** @type {any} */
 		const out = { date: bucket.date, time: bucket.time };
-		seriesNames.forEach((name) => {
-			const values = bucket._values[name];
-			if (values.length === 0) {
-				out[name] = null;
-			} else if (method === 'sum') {
-				out[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
-			} else {
-				out[name] =
-					values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) /
-					values.length;
-			}
-		});
+		finaliseBucket(bucket, out, seriesNames, method);
 		result.push(out);
 	}
 
@@ -426,41 +284,51 @@ export function aggregateForDisplay(
 ) {
 	if (!data || data.length === 0) return data;
 
-	switch (displayInterval) {
-		case '30m':
-			// Aggregate raw 5m samples. Summed (volume) series trim partial edge
-			// buckets so a half-filled first/last period doesn't render as a false
-			// dip; averaged (rate) series keep them — a partial bucket still
-			// averages to the right level.
-			return aggregateToInterval(data, '30m', seriesNames, method, {
-				trimPartialEdges: method === 'sum'
-			});
-		case '1M':
-			// Monthly display from daily energy; native 1M needs no aggregation.
-			return apiInterval === '1d'
-				? aggregateToMonth(data, seriesNames, ianaTimeZone, method)
-				: data;
-		case 'season':
-			return apiInterval === '1M'
-				? aggregateByBoundary(data, seriesNames, 'season', ianaTimeZone, method)
-				: data;
-		case 'half':
-			// No native half-year — always aggregate from monthly.
-			return aggregateByBoundary(data, seriesNames, 'half', ianaTimeZone, method);
-		case 'fy':
-			return apiInterval === '1M'
-				? aggregateByBoundary(data, seriesNames, 'fy', ianaTimeZone, method)
-				: data;
-		case 'quarter':
-			// Native 3M needs no aggregation; otherwise bucket from monthly.
-			return apiInterval === '3M'
-				? data
-				: aggregateByBoundary(data, seriesNames, 'quarter', ianaTimeZone, method);
-		default:
-			// Native grains: 5m, 1d, 7d, 1M(native), 3M, 1y.
-			return data;
-	}
+	return perfSpan('chart:aggregate', () => {
+		switch (displayInterval) {
+			case '30m':
+				// Aggregate raw 5m samples. Summed (volume) series trim partial edge
+				// buckets so a half-filled first/last period doesn't render as a false
+				// dip; averaged (rate) series keep them — a partial bucket still
+				// averages to the right level.
+				return aggregateToInterval(data, '30m', seriesNames, method, {
+					trimPartialEdges: method === 'sum'
+				});
+			case '1M':
+				// Monthly display from daily energy; native 1M needs no aggregation.
+				return apiInterval === '1d'
+					? aggregateToMonth(data, seriesNames, ianaTimeZone, method)
+					: data;
+			case 'season':
+				return apiInterval === '1M'
+					? aggregateByBoundary(data, seriesNames, 'season', ianaTimeZone, method)
+					: data;
+			case 'half':
+				// No native half-year — always aggregate from monthly.
+				return aggregateByBoundary(data, seriesNames, 'half', ianaTimeZone, method);
+			case 'fy':
+				return apiInterval === '1M'
+					? aggregateByBoundary(data, seriesNames, 'fy', ianaTimeZone, method)
+					: data;
+			case 'quarter':
+				// Native 3M needs no aggregation; otherwise bucket from monthly.
+				return apiInterval === '3M'
+					? data
+					: aggregateByBoundary(data, seriesNames, 'quarter', ianaTimeZone, method);
+			default:
+				// Native grains: 5m, 1d, 7d, 1M(native), 3M, 1y.
+				return data;
+		}
+	});
 }
 
-// Re-export the v2 classes for direct use
-export { StatisticV2, TimeSeriesV2 };
+// Legacy pipeline — moved to legacy-transform.js; re-exported so `v2/index.js`
+// and the remaining route imports keep working unchanged.
+export {
+	processData,
+	processForChart,
+	filterByDateRange,
+	createProcessor,
+	StatisticV2,
+	TimeSeriesV2
+} from './legacy-transform.js';

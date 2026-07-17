@@ -95,3 +95,43 @@ describe('processNetworkData', () => {
 		expect(processNetworkData(res, configFor(detailed))).toBeNull();
 	});
 });
+
+describe('battery aggregate vs splits (prefer-splits)', () => {
+	const T = '2024-01-01T00:00:00';
+
+	it('skips the aggregate battery series when any split is present', () => {
+		const res = makeResponse([
+			{ fueltech: 'battery', data: [[T, -100]] }, // net = dis - chg, would double-count
+			{ fueltech: 'battery_discharging', data: [[T, 20]] },
+			{ fueltech: 'battery_charging', data: [[T, 120]] }
+		]);
+		const result = processNetworkData(res, configFor(detailed));
+
+		expect(result?.seriesNames).not.toContain('battery');
+		expect(result?.seriesNames).toContain('battery_discharging');
+		expect(result?.data[0].battery_discharging).toBe(20);
+		expect(result?.data[0].battery_charging).toBe(-120); // inverted load
+	});
+
+	it('keeps the aggregate battery series when no splits are present', () => {
+		const res = makeResponse([
+			{ fueltech: 'battery', data: [[T, -100]] },
+			{ fueltech: 'coal_black', data: [[T, 500]] }
+		]);
+		const result = processNetworkData(res, configFor(detailed));
+
+		expect(result?.seriesNames).toContain('battery');
+		expect(result?.data[0].battery).toBe(-100);
+	});
+
+	it('applies the rule under the Simplified grouping too', () => {
+		const res = makeResponse([
+			{ fueltech: 'battery', data: [[T, -100]] },
+			{ fueltech: 'battery_VPP_discharging', data: [[T, 30]] }
+		]);
+		const result = processNetworkData(res, configFor(simple));
+
+		expect(result?.seriesNames).not.toContain('battery');
+		expect(result?.data[0].battery_discharging).toBe(30);
+	});
+});

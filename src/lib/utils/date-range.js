@@ -11,6 +11,12 @@
 export const MIN_DATE = '1998-12-01';
 
 /**
+ * Epoch ms of MIN_DATE (UTC midnight) — the floor for chart viewports and
+ * data fetches; no OE data exists before it.
+ */
+export const EARLIEST_DATA_MS = new Date(MIN_DATE + 'T00:00:00Z').getTime();
+
+/**
  * Find the earliest `data_first_seen` date across a facility's units.
  *
  * @param {Array<{ data_first_seen?: string }>} units

@@ -54,6 +54,8 @@ chart.seriesColours = chartData.seriesColours;
 
 ## Data Processing
 
+> **Legacy pipeline** — `processForChart`, `createProcessor`, `StatisticV2` and `TimeSeriesV2` below now live in [`legacy-transform.js`](./legacy-transform.js), re-exported through `dataProcessing.js` and `index.js` so existing imports keep working. `TimeSeriesV2.transform()` is positionally indexed (it reads every series by array index from the first series' start time), so series with differing start times or lengths land on wrong timestamps — new processors should build on the timestamp-union core in [`series-rows.js`](./series-rows.js) instead, as `processFacilityPower`, `processNetworkData` and `processPriceData` do. `dataProcessing.js` itself now only holds display aggregation (`aggregateForDisplay`, `aggregateToInterval`, `aggregateToMonth`, `aggregateByBoundary`).
+
 ### processForChart(data, unit, options)
 
 The main entry point for processing raw statistics data into chart-ready format.
@@ -394,7 +396,7 @@ The main chart component for stacked area/bar charts:
 
 The shared derivation logic used by the built-in tooltips (hover/focus precedence, `visibleSeriesNames` total, date formatting for time-based and category charts, per-series row building) lives as pure helpers in [`tooltip-derivations.js`](./tooltip-derivations.js) with `tooltip-derivations.test.js` covering the edge cases. The date header prefers `chart.formatTooltipX` (the exact-point formatter) over the midpoint-keyed `formatTickX`, and `chartTooltips.showDate` (default `true`) hides it when `false` — gated centrally in `getFormattedX`, so all tooltip variants honour it.
 
-What a date label should look like per display interval is defined once in [`time-format-policy.js`](./time-format-policy.js): `getTimeFormatPolicy(displayInterval, ianaTimeZone)` returns `{ formatTooltip, bucketTick }` — the standalone per-point label (weeks render as inclusive ranges like "16 — 22 June 2025", financial years as "FY2026", seasons as "Summer 2025/26") and, for the coarse calendar buckets in `COARSE_BUCKET_INTERVALS` (quarter/season/half/fy/1y), an explicit per-bucket axis labeller. `applyFacilityTimeAxis` in `formatters.js` wires the policy into a ChartStore; the underlying cached Intl primitives live in [`date-labels.js`](./date-labels.js) and the NEM/WEM offset ↔ IANA mapping in [`network-time.js`](./network-time.js).
+What a date label should look like per display interval is defined once in [`time-format-policy.js`](./time-format-policy.js): `getTimeFormatPolicy(displayInterval, ianaTimeZone)` returns `{ formatTooltip, bucketTick }` — the standalone per-point label (weeks render as inclusive ranges like "16 — 22 June 2025", financial years as "FY2026", seasons as "Summer 2025/26") and, for the coarse calendar buckets in `COARSE_BUCKET_INTERVALS` (quarter/season/half/fy/1y), an explicit per-bucket axis labeller. `applyFacilityTimeAxis` in `formatters.js` wires the policy into a ChartStore, behind a per-store WeakMap memo so unchanged ticks and formatter closures aren't reassigned (and dependants aren't re-notified) on every viewport tick; the underlying cached Intl primitives live in [`date-labels.js`](./date-labels.js) and the NEM/WEM offset ↔ IANA mapping in [`network-time.js`](./network-time.js).
 
 #### Synced Charts Example
 
@@ -472,25 +474,27 @@ Toggle between time intervals:
 
 ### Zoom buttons
 
-StratumChart owns the +/- zoom button rendering — pass `zoomMode` plus the click handlers and it picks the layout:
+StratumChart owns the +/- zoom button rendering — pass `zoomMode` plus the click handlers and it picks the layout. The handlers themselves come from [`viewport-gestures.js`](./viewport-gestures.js): `createViewportGestures()` holds the shared pan/zoom maths (invert the drag delta, clamp to now, anchor zoom at the pointer, centre-anchored 1.5× button zoom) used by FacilityChart, NetworkChart and the facility providers:
 
 ```svelte
 <script>
 	import { StratumChart } from '$lib/components/charts/v2';
+	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 
-	const FACTOR = 1.5;
-	function zoomIn() {
-		handleZoom(FACTOR, (viewStart + viewEnd) / 2);
-	}
-	function zoomOut() {
-		handleZoom(1 / FACTOR, (viewStart + viewEnd) / 2);
-	}
+	const { handlePan, handleZoom, zoomIn, zoomOut } = createViewportGestures({
+		viewport: () => ({ start: viewStart, end: viewEnd }),
+		apply: (start, end) => {
+			viewStart = start;
+			viewEnd = end;
+		}
+	});
 </script>
 
 <div class="group relative">
 	<StratumChart
 		{chart}
 		enablePan
+		onpan={handlePan}
 		onzoom={handleZoom}
 		tooltipMode="floating"
 		zoomMode="floating"
@@ -842,7 +846,7 @@ Two optional SVG elements for specialized visualizations:
 
 ### ChartDataManager
 
-`ChartDataManager` is a Svelte 5 reactive class that manages cached time-series data independently from the visible viewport. Used by FacilityChart for client-side data fetching and caching.
+`ChartDataManager` is a Svelte 5 reactive class that manages cached time-series data independently from the visible viewport. The class is source-neutral — its config is `{ cacheKey, networkTimezone, interval?, metric?, seriesKey?, processResponse, buildFetchUrl }`, with the last two required: `processResponse` maps a raw API response to chart-ready rows and `buildFetchUrl` builds the request URL from the standard params (interval, metric, date_start, date_end). FacilityChart, NetworkChart and the facility derived-rate providers all drive it; the facility wiring (unit series ids for ordering/inversion, the `processFacilityPower` processor, the unit-set `seriesKey` and the default facility URL with its `network_id` param) lives in the `createFacilityDataManager()` factory in [`../facility/facility-data-manager.js`](../facility/facility-data-manager.js).
 
 ```
 Server data ──seedCache()──> #dataCache (sorted rows by timestamp)
@@ -861,13 +865,14 @@ Pan/zoom ───requestRange()──> #computeGaps() ──> #fetchFromApi()
 Key behaviors:
 
 - **Gap detection**: Only fetches ranges not already in cache. The newest (right) boundary keeps an interval-scaled overlap (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y) so the still-growing latest bucket is refreshed; the older (left) boundary fetches contiguously up to `cacheStart` (no overlap) so an over-buffered "All" range doesn't re-fetch cached data each tick. The empty pre-data span before the facility's first point is recorded once so it's never re-requested
-- **Request dedup**: Concurrent identical fetches share one network request via a module-level in-flight map keyed by URL — so the generation chart and the price/emissions providers (which build the same `metric=<basis>,market_value,emissions` URL) collapse to a single call. The entry clears on settle, so later repeats fall through to the HTTP cache
+- **Request dedup + response reuse**: Concurrent identical fetches share one network request via a module-level in-flight map keyed by URL — so the generation chart and the price/emissions providers (which build the same `metric=<basis>,market_value,emissions` URL) collapse to a single call. Completed responses also land in a module-level LRU (cap 30, TTL 300 s — matching the chart API routes' `Cache-Control: max-age=300`), so sequential repeats of the same URL (a group toggle re-fetching history, manager rebuilds) skip both the network round-trip and the JSON re-parse; only expired entries fall through to the HTTP cache. `clearCompletedResponses()` empties the LRU for tests
 - **Interval-aware fetch limits**: Every daily-or-coarser energy grain (1d/1M/3M/1y) pulls a full facility lifetime in one request (~11000-day cap — at most ~11k points), so wide ranges like "All" never batch. The sub-daily grains are capped by the OE API itself (`OE_API_MAX_RANGE_DAYS`: 30 days for 5m, 365 for 1h), with `#splitGapIntoBatches` chunking anything wider into concurrently-fetched batches
-- **Date snapping**: Aligns request boundaries to interval periods — midnight for 1d, 1st of month for 1M, quarter start for 3M, Jan 1 for 1y
+- **Date snapping**: Aligns request boundaries to interval periods (midnight for 1d, 1st of month for 1M, quarter start for 3M, Jan 1 for 1y) — the start DOWN to its bucket start, the end UP to the next boundary. The API's `date_end` excludes the bucket starting at that instant, so a down-snapped end would silently drop the current partial bucket (the in-progress year at 1y, month at 1M, today at 1d)
 - **Debounced fetching**: Batches rapid pan movements into single API calls (150ms debounce)
 - **Sorted merge**: Both the cache and every processed response are time-sorted, so merges are O(n+m) — plain concat for the common append/prepend cases, a two-pointer merge (`mergeSortedByTime` in `binary-search.js`) for overlaps, with new rows winning on equal timestamps. `getDataForRange` slices by binary search
-- **Disposal / stale-fetch guard**: `dispose()` cancels the pending debounce and makes in-flight fetches no-ops on resolve (a generation counter captured per fetch). The cache is left intact so a stashed manager can be revived; `clearCache()` disposes and also resets the cache. The network request itself is never aborted — `sharedFetch` responses are shared across managers by URL
-- **Metric-aware**: Accepts `interval` and `metric` config; recreated when these change. The constructor also self-computes `unitsKey` — a stable identity of the unit set derived from `unitFuelTechMap` — so owners can detect a units-only change (e.g. battery net ⇄ split on `/facility/[code]`) that requires a new manager even though facility/interval/metric are unchanged
+- **Stale-fetch cancellation**: `reconcileWindow(keepStart, keepEnd)` — what the charts call when a pan/zoom gesture settles (`viewport-gestures.js` `onSettle`) — pairs `cancelStaleFetches` (abort in-flight batches disjoint from the keep-window, drop/clamp the pending debounced fetch) with an immediate `requestRange` for the same window. Aborts are refcounted in `sharedFetch`: every consumer of a shared URL holds a reference, and the network request is only aborted once all of them have cancelled — so one manager retiring never kills a request a sibling still awaits. Aborted spans are never recorded as empty, so they stay fetchable; gap detection also subtracts in-flight batch ranges, so an overlapping re-request (a settle fanning out to several reconcile paths) is a no-op rather than a duplicate fetch
+- **Disposal / stale-fetch guard**: `dispose()` cancels the pending debounce, aborts in-flight batches (refcount-safe, see above) and makes still-settling fetches no-ops (a generation counter captured per fetch). The cache is left intact so a stashed manager can be revived; `clearCache()` disposes and also resets the cache. The stash itself is [`manager-stash.js`](./manager-stash.js): `createManagerStash()` keeps an LRU (default 4) of warm managers, disposing evictions — used by both FacilityChart and NetworkChart
+- **Metric-aware**: Accepts `interval` and `metric` config; recreated when these change. `seriesKey` is a caller-supplied identity of the series set baked into `processResponse` (for facilities, `createFacilityDataManager` derives it from the unit set) so owners can detect a series-only change (e.g. battery net ⇄ split on `/facility/[code]`) that requires a new manager even though cacheKey/interval/metric are unchanged
 
 ---
 
@@ -888,9 +893,12 @@ src/lib/components/charts/v2/
 ├── StackedAreaChart.svelte     # Stacked area / line time-series chart
 ├── BarChart.svelte             # Stacked-bar chart
 ├── GroupedBarChart.svelte      # Grouped bar chart
+├── MiniCharts.svelte           # Small-multiples grid of StratumCharts
 ├── ChartHeader.svelte          # Title + options row above the chart
 ├── ChartControls.svelte        # Chart type / transform toggles
 ├── ChartTooltip.svelte         # Built-in "strip" tooltip above the chart
+├── ChartTooltipCompactStrip.svelte # Built-in "compact-strip" single-line tooltip
+├── ChartTooltipCompactCard.svelte  # Built-in "compact-card" tooltip
 ├── ChartTooltipFloating.svelte # Built-in "floating" all-series card overlaid on the chart
 ├── ChartZoomControls.svelte    # +/- zoom buttons (top-right, hover-reveal)
 ├── ChartResizeHandle.svelte    # Vertical resize handle below the chart
@@ -898,7 +906,14 @@ src/lib/components/charts/v2/
 ├── DateBrush.svelte            # Date range brush selector
 ├── IntervalSelector.svelte     # Interval toggle
 │
-├── dataProcessing.js           # Data processing utilities (incl. aggregateForDisplay / aggregateByBoundary)
+├── dataProcessing.js           # Display aggregation only (aggregateForDisplay / aggregateToInterval / aggregateToMonth / aggregateByBoundary); re-exports legacy-transform.js
+├── legacy-transform.js         # Legacy StatisticV2 → TimeSeriesV2 pipeline (processData, processForChart, createProcessor)
+├── series-rows.js              # Timestamp-union processor core ('set' / 'sum' modes) under processFacilityPower / processNetworkData / processPriceData
+├── display-aggregation.js      # createVisibleAggregation() — viewport slice + aggregation memo with stable array identity
+├── manager-stash.js            # createManagerStash() — LRU of warm ChartDataManagers (FacilityChart, NetworkChart)
+├── viewport-gestures.js        # createViewportGestures() — shared pan/zoom viewport maths
+├── echo-guard.js               # createEchoGuard() — suppress viewport pushes echoing back via onviewportchange
+├── perf.js                     # perfSpan() — dev-only performance.mark/measure wrapper for hot chart paths
 ├── binary-search.js            # bisectTime / indexOfTime / mergeSortedByTime for time-sorted rows
 ├── bucket-boundaries.js        # Pure calendar math: network-local quarter/season/half/fy bucket starts + spans
 ├── chart-families.js           # Chart-type family metadata (stacked-area, bar, etc.)
@@ -906,14 +921,15 @@ src/lib/components/charts/v2/
 ├── compute-y-domain.js         # Y-domain computation for single/dual axes
 ├── date-labels.js              # Cached Intl date-label primitives (formatDayMonth, formatDateRange, formatBucketLabel, …)
 ├── energy-gridlines.js         # Gridline tick computation for energy intervals
-├── formatters.js               # Axis/tooltip wiring (applyFacilityTimeAxis, getPowerAxisTicks) + re-exports
+├── formatters.js               # Axis/tooltip wiring (applyFacilityTimeAxis with per-store write guards, getPowerAxisTicks) + re-exports
 ├── network-time.js             # NEM/WEM offset ↔ IANA timezone mapping helpers
 ├── time-format-policy.js       # Single source of truth: display interval → tooltip/axis date labels
 ├── intervalConfig.js           # Interval/metric/curve definitions
 ├── intervals.js                # Interval utilities
 ├── presets.js                  # Chart presets
 ├── sync.js                     # Multi-chart synchronization
-├── tooltip-derivations.js      # Pure helpers shared by both tooltip components
+├── tooltip-derivations.js      # Pure helpers shared by the tooltip components
+├── types.js                    # Shared JSDoc typedefs (TimeSeriesData, …)
 ├── wheel-interaction.js        # Pure wheel→pan/zoom math (used by InteractionLayer)
 │
 ├── *.test.js                   # Vitest unit tests co-located with each module
@@ -929,7 +945,10 @@ src/lib/components/charts/v2/
     ├── HatchOverlay.svelte     # Hatched projection overlay region
     ├── StepHoverBand.svelte    # Band highlight for step mode hover/focus
     ├── step-band.js            # Pure math: computeStepBand(index, dataset) for StepHoverBand
+    ├── Annotations.svelte      # SVG shape/text annotations at data coordinates
+    ├── annotations-helpers.js  # Pure helpers for Annotations
     ├── AxisX.svelte            # Time axis with gridlines
+    ├── AxisXRotated.svelte     # Rotated labels for categorical (band scale) charts
     ├── AxisY.svelte            # Value axis with gridlines
     ├── ClipPath.svelte         # SVG clip path definition
     ├── Dot.svelte              # Hover/focus dot indicator

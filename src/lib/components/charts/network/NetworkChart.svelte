@@ -11,17 +11,28 @@
 
 	import { untrack } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { aggregateForDisplay } from '$lib/components/charts/v2/dataProcessing.js';
+	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
+	import {
+		getIntervalSpec,
+		viewportDurationLimits
+	} from '$lib/components/charts/facility/range-interval-config.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
+	import { createManagerStash, managerKey } from '$lib/components/charts/v2/manager-stash.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
+	import {
+		createViewportGestures,
+		isViewportPinned
+	} from '$lib/components/charts/v2/viewport-gestures.js';
+	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 	import { processNetworkData } from './process-network-data.js';
 	import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
 	import { getGroup } from './groups.js';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { loadFuelTechs } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import { ianaFromOffset } from '../v2/network-time.js';
+	import { perfSpan } from '../v2/perf.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -44,9 +55,12 @@
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange]
+	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once
+	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata]
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode]
 	 * @property {boolean} [panZoomEngaged]
+	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
 	 */
 
 	/** @type {Props} */
@@ -70,9 +84,11 @@
 		hoverTime = undefined,
 		onhoverchange,
 		onviewportchange,
+		onviewportsettle,
 		onvisibledata,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
-		panZoomEngaged = $bindable(false)
+		panZoomEngaged = $bindable(false),
+		minDateMs = EARLIEST_DATA_MS
 	} = $props();
 
 	const dollarFormatter = getNumberFormat(0);
@@ -84,10 +100,8 @@
 	/** Fine grain (sub-daily) drives the power-style viewport limits. */
 	let fineGrain = $derived(interval === '5m' || interval === '1h');
 
-	let MIN_VIEWPORT_MS = $derived(fineGrain ? 1 * 60 * 60 * 1000 : 5 * 24 * 60 * 60 * 1000);
-	let MAX_VIEWPORT_MS = $derived(
-		fineGrain ? 16 * 24 * 60 * 60 * 1000 : 50 * 365 * 24 * 60 * 60 * 1000
-	);
+	let MIN_VIEWPORT_MS = $derived(viewportDurationLimits(fineGrain).minMs);
+	let MAX_VIEWPORT_MS = $derived(viewportDurationLimits(fineGrain).maxMs);
 	let fetchBufferMultiplier = $derived(fineGrain ? 1 : 3);
 
 	// ============================================
@@ -98,8 +112,6 @@
 	let viewStart = $state(0);
 	/** @type {number} */
 	let viewEnd = $state(0);
-	/** @type {number} */
-	let lastPanDelta = $state(0);
 	let isPanning = $state(false);
 
 	// ============================================
@@ -107,11 +119,6 @@
 	// ============================================
 
 	let groupConfig = $derived(getGroup(group));
-
-	/** @param {string} groupId */
-	function getGroupColour(groupId) {
-		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (groupId)] || '#888888';
-	}
 
 	/**
 	 * Process function for the active panel — fuel-tech-grouped generation or a
@@ -128,7 +135,7 @@
 			groupOrder: groupConfig.order,
 			groupLabels: groupConfig.labels,
 			loadsToInvert: loadFuelTechs,
-			getColour: getGroupColour,
+			getColour: getFuelTechColour,
 			metricFilter: metric,
 			networkTimezone: tz
 		};
@@ -156,28 +163,79 @@
 	/** @type {ChartDataManager | null} */
 	let dataManager = $state(null);
 
+	/**
+	 * Warm managers stashed on swap (keyed by grain + series identity via
+	 * managerKey, within the current region+kind) so filter round-trips — a grouping
+	 * toggle-back, a hysteresis metric flip on zoom — revive cached data
+	 * instantly instead of refetching.
+	 */
+	const managerStash = createManagerStash();
+
+	/** Region the stash belongs to — a region change invalidates every entry. */
+	let stashRegion = '';
+
+	/**
+	 * Stash the outgoing manager for an instant back-switch, or retire it when
+	 * it belongs to another region/kind.
+	 * @param {ChartDataManager | null | undefined} manager
+	 * @param {string} currentCacheKey
+	 */
+	function stashOrDispose(manager, currentCacheKey) {
+		if (!manager) return;
+		// Dispose first — aborts the outgoing grain's in-flight fetches (refcounted
+		// in sharedFetch, so shared URLs survive) while keeping the cache warm.
+		manager.dispose();
+		if (manager.cacheKey !== currentCacheKey) return;
+		managerStash.stash(managerKey(manager.interval, manager.metric, manager.seriesKey), manager);
+	}
+
 	$effect(() => {
 		// Dependencies that require a fresh manager
 		const currentRegion = region;
 		const currentMetric = metric;
 		const currentInterval = interval;
 		const currentKind = chartKind;
+		// The processed series set is group-dependent for generation panels.
+		const currentSeriesKey = isPriceKind ? '' : group;
 		// `processResponseFn` already depends on `group` (via groupConfig), so a
 		// group change recomputes it and re-runs this effect with a fresh manager.
 		const processFn = processResponseFn;
 		const urlFn = buildFetchUrl;
 
-		const manager = new ChartDataManager({
-			facilityCode: `${currentRegion}:${currentKind}`,
-			networkId: timeZone === '+08:00' ? 'WEM' : 'NEM',
-			interval: currentInterval,
-			metric: currentMetric,
-			unitFuelTechMap: {},
-			processResponseFn: processFn,
-			buildFetchUrl: urlFn,
-			getLabel: () => '',
-			getColour: () => ''
-		});
+		const currentCacheKey = `${currentRegion}:${currentKind}`;
+
+		// A region change means a different data source — drop the warm managers.
+		if (stashRegion !== currentRegion) {
+			if (stashRegion) managerStash.clear();
+			stashRegion = currentRegion;
+		}
+
+		// Skip recreation when the live manager already matches — unrelated
+		// dependency churn must not refetch.
+		const existing = untrack(() => dataManager);
+		if (
+			existing &&
+			existing.cacheKey === currentCacheKey &&
+			existing.interval === currentInterval &&
+			existing.metric === currentMetric &&
+			existing.seriesKey === currentSeriesKey
+		) {
+			return;
+		}
+
+		// Revive a warm manager when one matches; otherwise construct fresh.
+		const revived = managerStash.take(managerKey(currentInterval, currentMetric, currentSeriesKey));
+		const manager =
+			revived ??
+			new ChartDataManager({
+				cacheKey: currentCacheKey,
+				networkTimezone: timeZone || '+10:00',
+				interval: currentInterval,
+				metric: currentMetric,
+				seriesKey: currentSeriesKey,
+				processResponse: processFn,
+				buildFetchUrl: urlFn
+			});
 
 		const start = untrack(() => viewStart);
 		const end = untrack(() => viewEnd);
@@ -195,14 +253,23 @@
 		if (vs && ve) {
 			const duration = ve - vs;
 			const buffer = duration * (currentMetric === 'energy' || !fineGrain ? 3 : 1);
+			// A revived manager that still covers the window returns immediately
+			// from its cache — no fetch, no loading flash.
 			manager.requestRange(vs - buffer, Math.min(ve + buffer, Date.now()), { immediate: true });
 		}
 
+		// Keep the outgoing manager's cache warm for an instant back-switch.
+		stashOrDispose(existing, currentCacheKey);
 		dataManager = manager;
+	});
 
-		// Retire this run's manager on re-run or unmount so in-flight fetches
-		// settle as no-ops.
-		return () => manager.dispose();
+	// Retire all managers on unmount so in-flight fetches settle as no-ops.
+	$effect(() => {
+		return () => {
+			untrack(() => dataManager)?.dispose();
+			managerStash.clear();
+			disposeGestures();
+		};
 	});
 
 	// ============================================
@@ -285,37 +352,44 @@
 		);
 	});
 
+	// Memoises the slice + display aggregation so pan ticks within one native
+	// sample reuse the previous rows array (stable reference → the seriesData
+	// assignment below is a signal no-op on a hit).
+	const visibleAggregation = createVisibleAggregation();
+
 	// Visible data + axis
 	$effect(() => {
-		if (!chartStore || !dataManager?.processedCache) return;
+		const manager = dataManager;
+		if (!chartStore || !manager?.processedCache) return;
 
-		const start = viewStart;
-		const end = viewEnd;
-		const currentDisplayInterval = displayInterval;
-		const isEnergy = isEnergyMetric;
+		perfSpan('chart:viewport-effect', () => {
+			const start = viewStart;
+			const end = viewEnd;
+			const currentDisplayInterval = displayInterval;
+			const isEnergy = isEnergyMetric;
 
-		let visibleData = dataManager.getDataForRange(start, end);
-		if (dataManager.seriesMeta) {
-			visibleData = aggregateForDisplay(visibleData, dataManager.seriesMeta.seriesNames, {
+			const visibleData = visibleAggregation(manager.processedCache, {
+				viewStart: start,
+				viewEnd: end,
 				apiInterval: interval,
 				displayInterval: currentDisplayInterval,
 				ianaTimeZone,
 				method: isEnergy ? 'sum' : 'mean'
 			});
-		}
 
-		chartStore.seriesData = visibleData;
-		chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
-		chartStore.setYDomain(undefined);
+			chartStore.seriesData = visibleData;
+			chartStore.setXDomain(start, end);
+			chartStore.setYDomain(undefined);
 
-		applyFacilityTimeAxis(chartStore, {
-			data: visibleData,
-			viewStart: start,
-			viewEnd: end,
-			ianaTimeZone,
-			timeZone,
-			isEnergy: isEnergy || getIntervalSpec(displayInterval)?.curveType === 'step',
-			displayInterval: currentDisplayInterval
+			applyFacilityTimeAxis(chartStore, {
+				data: visibleData,
+				viewStart: start,
+				viewEnd: end,
+				ianaTimeZone,
+				timeZone,
+				isEnergy: isEnergy || getIntervalSpec(displayInterval)?.curveType === 'step',
+				displayInterval: currentDisplayInterval
+			});
 		});
 	});
 
@@ -338,7 +412,11 @@
 
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
-			const rows = aggregateForDisplay(manager.getDataForRange(start, end), meta.seriesNames, {
+			// Usually a memo hit — the viewport effect computed the same slice with
+			// the same options 300ms ago.
+			const rows = visibleAggregation(manager.processedCache, {
+				viewStart: start,
+				viewEnd: end,
 				apiInterval: currentInterval,
 				displayInterval: currentDisplayInterval,
 				ianaTimeZone: currentIana,
@@ -352,47 +430,55 @@
 		};
 	});
 
-	let showLoadingOverlay = $derived.by(() => {
-		if (!dataManager || !chartStore) return false;
-		if (chartStore.seriesData.length > 0) return false;
-		return !dataManager.initialLoadComplete || dataManager.isLoading || dataManager.hasPendingFetch;
-	});
+	let showLoadingOverlay = $derived(computeShowLoadingOverlay(dataManager, chartStore));
 
 	// ============================================
 	// Pan / zoom
 	// ============================================
 
-	function handlePanStart() {
-		isPanning = true;
-		chartStore?.clearHover();
-	}
-
-	/** @param {number} deltaMs */
-	function handlePan(deltaMs) {
-		let newStart = viewStart - deltaMs;
-		let newEnd = viewEnd - deltaMs;
-		const now = Date.now();
-		if (newEnd > now) {
-			newEnd = now;
-			newStart = now - (viewEnd - viewStart);
+	const {
+		handlePanStart,
+		handlePan,
+		handlePanEnd,
+		handleZoom,
+		zoomIn,
+		zoomOut,
+		dispose: disposeGestures
+	} = createViewportGestures({
+		viewport: () => ({ start: viewStart, end: viewEnd }),
+		apply: (start, end) => {
+			viewStart = start;
+			viewEnd = end;
+		},
+		minDurationMs: () => MIN_VIEWPORT_MS,
+		maxDurationMs: () => MAX_VIEWPORT_MS,
+		minDateMs: () => minDateMs,
+		onGestureStart: () => {
+			isPanning = true;
+			chartStore?.clearHover();
+		},
+		onGestureEnd: () => {
+			isPanning = false;
+		},
+		onMove: (start, end) => {
+			const buffer = (end - start) * fetchBufferMultiplier;
+			dataManager?.requestRange(start - buffer, end + buffer);
+		},
+		onPanEnd: (direction, start, end) => {
+			const prefetch = (end - start) * fetchBufferMultiplier;
+			if (direction === -1) {
+				dataManager?.requestRange(end, Math.min(end + prefetch, Date.now()));
+			} else {
+				dataManager?.requestRange(start - prefetch, start);
+			}
+		},
+		onSettle: (start, end) => {
+			// Parent first — it may flip metric/interval synchronously (grain
+			// switch); reconcileFetches skips the old grain when that happens.
+			onviewportsettle?.({ start, end });
+			reconcileFetches();
 		}
-		viewStart = newStart;
-		viewEnd = newEnd;
-		lastPanDelta = deltaMs;
-		const buffer = (viewEnd - viewStart) * fetchBufferMultiplier;
-		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
-	}
-
-	function handlePanEnd() {
-		isPanning = false;
-		const prefetch = (viewEnd - viewStart) * fetchBufferMultiplier;
-		const now = Date.now();
-		if (lastPanDelta < 0 && viewEnd < now) {
-			dataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
-		} else if (lastPanDelta > 0) {
-			dataManager?.requestRange(viewStart - prefetch, viewStart);
-		}
-	}
+	});
 
 	$effect(() => {
 		const start = viewStart;
@@ -401,33 +487,10 @@
 		onviewportchange?.({ start, end });
 	});
 
-	/** @param {number} factor @param {number} centerMs */
-	function handleZoom(factor, centerMs) {
-		const duration = viewEnd - viewStart;
-		const newDuration = Math.min(Math.max(duration / factor, MIN_VIEWPORT_MS), MAX_VIEWPORT_MS);
-		const ratio = (centerMs - viewStart) / duration;
-		let newStart = centerMs - ratio * newDuration;
-		let newEnd = newStart + newDuration;
-		const now = Date.now();
-		if (newEnd > now) {
-			newEnd = now;
-			newStart = now - newDuration;
-		}
-		viewStart = newStart;
-		viewEnd = newEnd;
-		const buffer = newDuration * fetchBufferMultiplier;
-		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
-	}
-
-	const BUTTON_ZOOM_FACTOR = 1.5;
-	function zoomIn() {
-		handleZoom(BUTTON_ZOOM_FACTOR, (viewStart + viewEnd) / 2);
-	}
-	function zoomOut() {
-		handleZoom(1 / BUTTON_ZOOM_FACTOR, (viewStart + viewEnd) / 2);
-	}
 	let isAtMinZoom = $derived(viewEnd - viewStart <= MIN_VIEWPORT_MS);
-	let isAtMaxZoom = $derived(viewEnd - viewStart >= MAX_VIEWPORT_MS);
+	let isAtMaxZoom = $derived(
+		viewEnd - viewStart >= MAX_VIEWPORT_MS || isViewportPinned(viewStart, viewEnd, minDateMs)
+	);
 
 	// ============================================
 	// Hover / focus
@@ -466,7 +529,7 @@
 	/** @param {number} startMs @param {number} endMs */
 	export function setViewport(startMs, endMs) {
 		const now = Date.now();
-		viewStart = startMs;
+		viewStart = Math.max(startMs, minDateMs);
 		viewEnd = Math.min(endMs, now);
 		if (dataManager && (dataManager.interval !== interval || dataManager.metric !== metric)) {
 			return;
@@ -474,6 +537,22 @@
 		const duration = viewEnd - viewStart;
 		const buffer = duration * fetchBufferMultiplier;
 		dataManager?.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, now));
+	}
+
+	/**
+	 * Cancel in-flight work outside the current buffered window and fetch the
+	 * final gaps immediately. Called when a gesture settles — locally via
+	 * onSettle, and by the Explorer for peer panels that were fed per-frame
+	 * setViewport calls during the gesture.
+	 */
+	export function reconcileFetches() {
+		if (!viewStart || !viewEnd || !dataManager) return;
+		// A grain switch is pending (props flipped, manager not yet swapped) —
+		// don't fetch the old grain; the manager-swap effect fetches the new one
+		// immediately and its dispose-before-stash aborts the stale work.
+		if (dataManager.interval !== interval || dataManager.metric !== metric) return;
+		const buffer = (viewEnd - viewStart) * fetchBufferMultiplier;
+		dataManager.reconcileWindow(viewStart - buffer, Math.min(viewEnd + buffer, Date.now()));
 	}
 </script>
 

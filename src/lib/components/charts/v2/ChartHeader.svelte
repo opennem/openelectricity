@@ -8,8 +8,10 @@
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import Minus from '@lucide/svelte/icons/minus';
+	import Move from '@lucide/svelte/icons/move';
 	import Plus from '@lucide/svelte/icons/plus';
 	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
+	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import ChartControls from './ChartControls.svelte';
 
 	/**
@@ -21,6 +23,9 @@
 	 * @property {(() => void)} [onzoomout]
 	 * @property {boolean} [isAtMinZoom]
 	 * @property {boolean} [isAtMaxZoom]
+	 * @property {boolean} [showPanZoomToggle] - Render the tap-to-engage pan/zoom toggle left of the zoom buttons, in the same flat icon-button style. While engaged the +/- buttons hide (wheel zoom covers them) and the toggle shows the active state.
+	 * @property {boolean} [panZoomEngaged] - Engagement state for the toggle.
+	 * @property {(() => void)} [onpanzoomtoggle] - Toggle engagement.
 	 */
 
 	/** @type {Props} */
@@ -31,7 +36,10 @@
 		onzoomin,
 		onzoomout,
 		isAtMinZoom = false,
-		isAtMaxZoom = false
+		isAtMaxZoom = false,
+		showPanZoomToggle = false,
+		panZoomEngaged = false,
+		onpanzoomtoggle
 	} = $props();
 
 	let showOptions = $state(false);
@@ -73,30 +81,55 @@
 			</div>
 		</div>
 
-		{#if showZoomButtons}
+		{#if showZoomButtons || showPanZoomToggle}
 			<div class="flex items-center gap-0.5 -mr-1">
-				<button
-					class="p-1 rounded transition-colors {isAtMaxZoom
-						? 'text-mid-warm-grey cursor-not-allowed'
-						: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
-					onclick={onzoomout}
-					disabled={isAtMaxZoom}
-					title="Zoom out"
-					aria-label="Zoom out"
-				>
-					<Minus size={12} />
-				</button>
-				<button
-					class="p-1 rounded transition-colors {isAtMinZoom
-						? 'text-mid-warm-grey cursor-not-allowed'
-						: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
-					onclick={onzoomin}
-					disabled={isAtMinZoom}
-					title="Zoom in"
-					aria-label="Zoom in"
-				>
-					<Plus size={12} />
-				</button>
+				{#if showPanZoomToggle}
+					<Tooltip
+						text={panZoomEngaged ? 'Done (Esc)' : 'Enable pan & zoom — drag to pan, scroll to zoom'}
+						class="inline-flex"
+					>
+						<button
+							class="p-1 rounded transition-colors {panZoomEngaged
+								? 'bg-dark-grey text-white hover:bg-black'
+								: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
+							onclick={onpanzoomtoggle}
+							aria-label={panZoomEngaged ? 'Disable pan and zoom' : 'Enable pan and zoom'}
+							aria-pressed={panZoomEngaged}
+						>
+							<Move size={12} />
+						</button>
+					</Tooltip>
+				{/if}
+
+				{#if showZoomButtons && !panZoomEngaged}
+					{#if showPanZoomToggle}
+						<div class="mx-0.5 h-4 w-px bg-mid-warm-grey/60" aria-hidden="true"></div>
+					{/if}
+					<Tooltip text="Zoom out" class="inline-flex">
+						<button
+							class="p-1 rounded transition-colors {isAtMaxZoom
+								? 'text-mid-warm-grey cursor-not-allowed'
+								: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
+							onclick={onzoomout}
+							disabled={isAtMaxZoom}
+							aria-label="Zoom out"
+						>
+							<Minus size={12} />
+						</button>
+					</Tooltip>
+					<Tooltip text="Zoom in" class="inline-flex">
+						<button
+							class="p-1 rounded transition-colors {isAtMinZoom
+								? 'text-mid-warm-grey cursor-not-allowed'
+								: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
+							onclick={onzoomin}
+							disabled={isAtMinZoom}
+							aria-label="Zoom in"
+						>
+							<Plus size={12} />
+						</button>
+					</Tooltip>
+				{/if}
 			</div>
 		{/if}
 	</header>

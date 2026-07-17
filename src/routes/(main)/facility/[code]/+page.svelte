@@ -18,6 +18,7 @@
 		FacilityPollutionPanel,
 		FacilityMetrics
 	} from '$lib/components/charts/facility';
+	import { clickoutside } from '@svelte-put/clickoutside';
 	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
 	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
@@ -177,8 +178,18 @@
 		hoverTime = time;
 	}
 
-	/** Shared pan/zoom engagement across the stacked charts. */
+	/** Shared pan/zoom engagement across the stacked charts — they're
+	 *  viewport-synced, so the ✥ toggle in any chart's header row (left of the
+	 *  +/- zoom buttons) engages and releases them together. */
 	let panZoomEngaged = $state(false);
+
+	/** Chart section cards pick up a darker border while pan/zoom is engaged, so
+	 *  the mode is visible at every chart in the stack — not just at the toggle.
+	 *  `!` so the engaged colour reliably beats sectionCardClass's own
+	 *  border-mid-warm-grey/40 (class order doesn't decide CSS conflicts). */
+	let chartCardClass = $derived(
+		`${sectionCardClass} transition-[border-color] duration-200${panZoomEngaged ? ' !border-dark-grey' : ''}`
+	);
 
 	/** Which chart of the Market pair to show. Default: price (the derived
 	 *  $/MWh line — what most viewers come to a facility page for). */
@@ -212,10 +223,6 @@
 		initialRangeDays: data.rangeDays ?? 3
 	});
 
-	$effect(() => {
-		return () => range.dispose();
-	});
-
 	let rangeSlug = $derived(rangeSlugFor(range));
 
 	/** The chart CSV downloads surface in the header nav's options menus (desktop
@@ -243,9 +250,6 @@
 		chartDownloads?.set({ items, download: handleChartDownload });
 		return () => chartDownloads?.clear();
 	});
-
-	/** @type {HTMLElement | undefined} */
-	let chartCardEl = $state(undefined);
 
 	/** @type {HTMLElement | undefined} */
 	let splitContainerEl = $state(undefined);
@@ -438,27 +442,7 @@
 
 	/** Static skeleton bar heights (%) — a calm placeholder while the chart loads. */
 	const SKELETON_BARS = [42, 64, 50, 78, 56, 70, 46, 84, 60, 74, 52, 88, 66, 54, 72, 48, 80];
-
-	/** @param {KeyboardEvent} e */
-	function handlePanZoomKeydown(e) {
-		if (e.key === 'Escape' && panZoomEngaged) {
-			e.preventDefault();
-			e.stopPropagation();
-			panZoomEngaged = false;
-		}
-	}
-
-	/** @param {MouseEvent} e */
-	function handlePanZoomClickOutside(e) {
-		if (!panZoomEngaged || !chartCardEl) return;
-		const target = /** @type {Node | null} */ (e.target);
-		if (target && !chartCardEl.contains(target)) {
-			panZoomEngaged = false;
-		}
-	}
 </script>
-
-<svelte:window onkeydown={handlePanZoomKeydown} onclick={handlePanZoomClickOutside} />
 
 <Meta
 	title={selectedFacility?.name ?? 'Facility'}
@@ -564,12 +548,15 @@
 							</div>
 						</div>
 
-						<!-- chartCardEl wraps the chart sections (not the range bar / metrics)
-							     so pan/zoom click-outside treats clicks between charts as "still
-							     engaged" but disengages on a range-bar / metrics click. -->
-						<div bind:this={chartCardEl} class="space-y-4">
+						<!-- A pointerdown anywhere outside the charts column (range bar,
+						     metrics, page chrome) releases the engaged pan/zoom. -->
+						<div
+							class="space-y-4"
+							use:clickoutside={{ event: 'pointerdown', options: true }}
+							onclickoutside={() => (panZoomEngaged = false)}
+						>
 							<!-- Generation -->
-							<section class={sectionCardClass}>
+							<section class={chartCardClass}>
 								<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 									<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
 									<span
@@ -603,6 +590,7 @@
 											{hoverTime}
 											onhoverchange={handleHoverChange}
 											onviewportchange={range.handleChartViewportChange}
+											onviewportsettle={range.handleViewportSettle}
 											onloadcomplete={handlePowerLoadComplete}
 											onvisibledata={(d) => {
 												intervalData = d;
@@ -654,8 +642,10 @@
 									onhoverchange={handleHoverChange}
 									onsummarydata={(d) => (summaryData = d)}
 									onviewportchange={range.handleDerivedViewportChange}
+									onviewportsettle={range.handleViewportSettle}
+									reconcileSeq={range.reconcileSeq}
 								>
-									<section class={sectionCardClass}>
+									<section class={chartCardClass}>
 										<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 											<h3 class="m-0 text-sm font-semibold text-dark-grey">Market</h3>
 											<SwitchTabs
@@ -699,8 +689,10 @@
 										onhoverchange={handleHoverChange}
 										onsummarydata={(d) => (emissionsData = d)}
 										onviewportchange={range.handleDerivedViewportChange}
+										onviewportsettle={range.handleViewportSettle}
+										reconcileSeq={range.reconcileSeq}
 									>
-										<section class={sectionCardClass}>
+										<section class={chartCardClass}>
 											<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 												<h3 class="m-0 text-sm font-semibold text-dark-grey">Emissions</h3>
 												<SwitchTabs

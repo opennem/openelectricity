@@ -9,12 +9,12 @@
 
 /** @param {boolean} narrow */
 export function nameColumnClass(narrow) {
-	return narrow ? 'sm:col-span-8' : 'sm:col-span-5';
+	return narrow ? 'sm:col-span-8' : 'sm:col-span-4';
 }
 
 /** @param {boolean} narrow */
 export function metaColumnsClass(narrow) {
 	return narrow
 		? 'sm:col-span-4 sm:grid-cols-[1fr]'
-		: 'sm:col-span-7 sm:grid-cols-[auto_1fr_auto_auto]';
+		: 'sm:col-span-8 sm:grid-cols-[auto_1fr_auto_auto]';
 }

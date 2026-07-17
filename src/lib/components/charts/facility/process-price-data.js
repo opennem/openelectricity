@@ -3,13 +3,17 @@
  *
  * Unlike processFacilityPower, this doesn't require unit-to-fuel-tech mapping.
  * Handles single-series data (e.g. regional spot price) as well as per-unit
- * series that may not match the facility's unit map.
+ * series that may not match the facility's unit map. A thin wrapper over the
+ * shared timestamp-union core in v2/series-rows.js ('set' mode, no inversion).
  *
  * Output shape matches the chart pipeline:
  *   { data: [{date, time, series1: val, ...}], seriesNames, seriesLabels, seriesColours }
  */
 
-import { stripDateTimezone } from '$lib/utils/date-format.js';
+import {
+	collectSeriesByTimestamp,
+	rowsFromSeriesMaps
+} from '$lib/components/charts/v2/series-rows.js';
 import { LINE_COLOUR } from './colours.js';
 
 /**
@@ -37,42 +41,19 @@ export function processPriceData(apiResponse, config) {
 		label = 'Price ($/MWh)'
 	} = config;
 
-	/** @type {Map<string, Map<number, number>>} seriesId -> (timestampMs -> value) */
-	const seriesMaps = new Map();
-
-	/** @type {Set<number>} union of all timestamps */
-	const allTimestamps = new Set();
-
-	/** @type {Map<string, string>} seriesId -> label */
-	const labelMap = new Map();
-
-	for (const metric of apiResponse.data) {
-		if (metric.metric !== metricFilter) continue;
-
-		for (const series of metric.results || []) {
-			const seriesId = series.name || metricFilter;
-
-			/** @type {Map<number, number>} */
-			const valueMap = new Map();
-
-			for (const [timestamp, value] of series.data || []) {
-				const stripped = stripDateTimezone(timestamp);
-				const ms = new Date(stripped + networkTimezone).getTime();
-
-				if (!isNaN(ms)) {
-					valueMap.set(ms, value);
-					allTimestamps.add(ms);
-				}
-			}
-
-			if (valueMap.size > 0) {
-				seriesMaps.set(seriesId, valueMap);
-				// Use unit_code in label if available, otherwise use the default
-				const unitCode = series.columns?.unit_code;
-				labelMap.set(seriesId, unitCode ? `${label} — ${unitCode}` : label);
-			}
+	const { seriesMaps, seriesMeta, timestamps } = collectSeriesByTimestamp(apiResponse, {
+		metricFilter,
+		networkTimezone,
+		mode: 'set',
+		classifySeries: (series) => {
+			// Use unit_code in the label if available, otherwise the default
+			const unitCode = series.columns?.unit_code;
+			return {
+				id: series.name || metricFilter,
+				meta: unitCode ? `${label} — ${unitCode}` : label
+			};
 		}
-	}
+	});
 
 	if (seriesMaps.size === 0) return null;
 
@@ -84,27 +65,14 @@ export function processPriceData(apiResponse, config) {
 	const seriesColours = {};
 
 	for (const seriesId of seriesNames) {
-		seriesLabels[seriesId] = labelMap.get(seriesId) || label;
+		seriesLabels[seriesId] = seriesMeta.get(seriesId) || label;
 		seriesColours[seriesId] = colour;
 	}
 
-	const sortedTimestamps = [...allTimestamps].sort((a, b) => a - b);
-
-	/** @type {any[]} */
-	const data = sortedTimestamps.map((ms) => {
-		/** @type {any} */
-		const row = {
-			date: new Date(ms),
-			time: ms
-		};
-
-		for (const seriesId of seriesNames) {
-			const valueMap = seriesMaps.get(seriesId);
-			row[seriesId] = valueMap?.get(ms) ?? null;
-		}
-
-		return row;
-	});
-
-	return { data, seriesNames, seriesLabels, seriesColours };
+	return {
+		data: rowsFromSeriesMaps(seriesMaps, timestamps, seriesNames),
+		seriesNames,
+		seriesLabels,
+		seriesColours
+	};
 }

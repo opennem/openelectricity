@@ -14,13 +14,15 @@
 		shouldShowNightShading
 	} from '$lib/components/charts/plot/plot-overlays.js';
 	import { computePlotGridlines } from '$lib/components/charts/plot/plot-gridlines.js';
-	import { analyzeUnits, unitSeriesIds } from '$lib/components/charts/facility/unit-analysis.js';
+	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
 	import { makeLoadAwareColourGetter } from '$lib/components/charts/facility/helpers.js';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import Select from '$lib/components/form-elements/Select.svelte';
 	import { formatSI, convert } from '$lib/utils/si-units';
-	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
+	import { createFacilityDataManager } from '$lib/components/charts/facility/facility-data-manager.js';
+
+	/** @typedef {import('$lib/components/charts/v2/ChartDataManager.svelte.js').default} ChartDataManager */
 	import { getIntervalForDuration } from '$lib/components/charts/v2/intervalConfig.js';
 	import { aggregateToInterval } from '$lib/components/charts/v2/dataProcessing.js';
 	import PlotChartOptions from '$lib/components/charts/plot/PlotChartOptions.svelte.js';
@@ -141,14 +143,6 @@
 
 	// ── Helpers ──────────────────────────────────────────────────
 
-	/**
-	 * @param {string} ftCode
-	 * @returns {string}
-	 */
-	function getFuelTechColor(ftCode) {
-		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (ftCode)] || '#888888';
-	}
-
 	const bisect = bisector((/** @type {any} */ d) => d.time).left;
 
 	// ── Per-Chart Reactive Derivations ───────────────────────────
@@ -161,7 +155,7 @@
 	 */
 	function getAnalysis(chart) {
 		if (!chart.facilityEntry.facility) return null;
-		return analyzeUnits(chart.facilityEntry.facility, getFuelTechColor);
+		return analyzeUnits(chart.facilityEntry.facility, getFuelTechColour);
 	}
 
 	/**
@@ -186,7 +180,7 @@
 		return makeLoadAwareColourGetter(
 			analysis?.unitColours ?? {},
 			analysis?.loadCodes ?? [],
-			getFuelTechColor
+			getFuelTechColour
 		);
 	}
 
@@ -200,16 +194,14 @@
 	 */
 	function createManager(chart, analysis, interval, metric) {
 		const facility = chart.facilityEntry.facility;
-		return new ChartDataManager({
+		return createFacilityDataManager({
 			facilityCode: facility.code,
 			networkId: facility.network_id,
 			interval,
 			metric,
 			unitFuelTechMap: analysis?.unitFuelTechMap ?? {},
-			// Series ids carry the metric prefix — build them for the metric this
-			// manager fetches or ordering/inversion won't match energy series.
-			unitOrder: unitSeriesIds(metric, analysis?.orderedCodes ?? []),
-			loadsToInvert: unitSeriesIds(metric, analysis?.loadCodes ?? []),
+			orderedCodes: analysis?.orderedCodes ?? [],
+			loadCodes: analysis?.loadCodes ?? [],
 			getLabel: getLabelFn(analysis),
 			getColour: getColourFn(analysis)
 		});

@@ -1,7 +1,7 @@
 <script>
 	import chroma from 'chroma-js';
 	import Meta from '$lib/components/Meta.svelte';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import {
 		generateUnitShades,
@@ -62,8 +62,7 @@
 	// Everything except the slider-driven previews is static — compute the
 	// production ramps once instead of 100+ chroma scales per slider tick.
 	const STATIC_ROWS = UNIT_FUEL_TECHS.map((code) => {
-		const base =
-			fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (code)] || '#888888';
+		const base = getFuelTechColour(code);
 		const override = SHADE_SPREADS[code];
 		return {
 			code,

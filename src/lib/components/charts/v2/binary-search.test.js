@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { bisectTime, bisectTimeRight, indexOfTime, mergeSortedByTime } from './binary-search.js';
+import {
+	bisectTime,
+	bisectTimeRight,
+	indexOfTime,
+	mergeSortedByTime,
+	nearestIndexOfTime
+} from './binary-search.js';
 
 const rows = (/** @type {number[]} */ times, /** @type {string} */ tag = '') =>
 	times.map((time) => ({ time, tag }));
@@ -80,5 +86,34 @@ describe('mergeSortedByTime', () => {
 		expect(mergeSortedByTime([], rows([1, 2]))).toHaveLength(2);
 		expect(mergeSortedByTime(rows([1, 2]), [])).toHaveLength(2);
 		expect(mergeSortedByTime([], [])).toEqual([]);
+	});
+});
+
+describe('nearestIndexOfTime', () => {
+	const data = rows([10, 20, 30]);
+
+	it('returns the exact match when present', () => {
+		expect(nearestIndexOfTime(data, 20)).toBe(1);
+	});
+
+	it('returns the nearest neighbour on either side', () => {
+		expect(nearestIndexOfTime(data, 12)).toBe(0);
+		expect(nearestIndexOfTime(data, 18)).toBe(1);
+		expect(nearestIndexOfTime(data, 29)).toBe(2);
+	});
+
+	it('prefers the earlier row on exact midpoints (first-minimum semantics)', () => {
+		expect(nearestIndexOfTime(data, 15)).toBe(0);
+		expect(nearestIndexOfTime(data, 25)).toBe(1);
+	});
+
+	it('clamps to the ends outside the range', () => {
+		expect(nearestIndexOfTime(data, 0)).toBe(0);
+		expect(nearestIndexOfTime(data, 99)).toBe(2);
+	});
+
+	it('handles empty and single-row data', () => {
+		expect(nearestIndexOfTime([], 10)).toBe(-1);
+		expect(nearestIndexOfTime([{ time: 5 }], 999)).toBe(0);
 	});
 });

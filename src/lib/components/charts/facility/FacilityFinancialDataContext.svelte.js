@@ -17,6 +17,8 @@ const KEY = Symbol('facility-financial-data');
  * @property {number} viewStart
  * @property {number} viewEnd
  * @property {boolean} hasViewportHandler
+ * @property {boolean} isAtMinZoom - Viewport at the duration floor; disables the zoom-in button
+ * @property {boolean} isAtMaxZoom - Viewport at the duration ceiling or pinned across [minDateMs, now]; disables the zoom-out button
  * @property {number | undefined} hoverTime
  * @property {((time: number | undefined) => void) | undefined} onhoverchange
  * @property {number | undefined} focusTime
@@ -25,6 +27,8 @@ const KEY = Symbol('facility-financial-data');
  * @property {(deltaMs: number) => void} handlePan
  * @property {() => void} handlePanEnd
  * @property {(factor: number, centerMs: number) => void} handleZoom
+ * @property {() => void} zoomIn - Button zoom step — settles (stale-fetch reconcile) immediately
+ * @property {() => void} zoomOut - Button zoom step — settles immediately
  * @property {(chart: import('$lib/components/charts/v2/ChartStore.svelte.js').default) => {
  *   data: any,
  *   key: string | undefined,

@@ -10,6 +10,14 @@
 const ZOOM_BASE = 1.002;
 
 /**
+ * Idle gap (ms) after the last wheel event before a wheel pan stream counts as
+ * ended (InteractionLayer fires `onpanend`). viewport-gestures derives its
+ * wheel settle debounce from this so `onpanend` always wins for wheel pans —
+ * keep the relationship structural, not two hand-synced literals.
+ */
+export const WHEEL_PAN_IDLE_MS = 150;
+
+/**
  * Decide whether a wheel event should pan or zoom based on which axis is
  * stronger. Ties go to zoom (vertical scroll is the common default on mice
  * without a horizontal wheel).

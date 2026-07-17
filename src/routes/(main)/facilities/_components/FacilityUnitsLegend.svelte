@@ -8,7 +8,7 @@
 	 */
 
 	import { buildUnitColourMap } from '$lib/components/charts/facility/helpers.js';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import detailedGroup from '$lib/fuel-tech-groups/detailed';
 	import { getUnitCapacity } from '$lib/utils/capacity';
 	import { getNumberFormat } from '$lib/utils/formatters';
@@ -31,14 +31,7 @@
 		return formatter0.format(value);
 	}
 
-	/**
-	 * @param {string} ftCode
-	 */
-	function getFuelTechColor(ftCode) {
-		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (ftCode)] || '#888888';
-	}
-
-	let unitColourMap = $derived(buildUnitColourMap(units, getFuelTechColor));
+	let unitColourMap = $derived(buildUnitColourMap(units, getFuelTechColour));
 
 	// Sort by fuel-tech display order (from detailedGroup) then by unit code.
 	let sortedUnits = $derived.by(() => {

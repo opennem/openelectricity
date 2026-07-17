@@ -14,7 +14,12 @@
 	 * SVG-level interactions (e.g. StackedArea series hover) during pan/zoom.
 	 */
 
-	import { classifyWheelIntent, wheelPanDeltaMs, wheelZoomFactor } from '../wheel-interaction.js';
+	import {
+		classifyWheelIntent,
+		wheelPanDeltaMs,
+		wheelZoomFactor,
+		WHEEL_PAN_IDLE_MS
+	} from '../wheel-interaction.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -32,6 +37,9 @@
 	 * @property {((deltaMs: number) => void)} [onpan]
 	 * @property {(() => void)} [onpanend]
 	 * @property {((factor: number, centerMs: number) => void)} [onzoom]
+	 * @property {(() => void)} [onblockedwheel] - Fired (throttle-free, passive) when a wheel
+	 *   gesture lands on a tap-to-engage chart that isn't engaged — the page keeps scrolling,
+	 *   but the consumer can surface a "click to enable pan & zoom" hint at the point of intent.
 	 * @property {import('svelte').Snippet} [children]
 	 */
 
@@ -51,6 +59,7 @@
 		onpan,
 		onpanend,
 		onzoom,
+		onblockedwheel,
 		children
 	} = $props();
 
@@ -450,6 +459,33 @@
 
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let wheelPanEndTimeout = null;
+	/** @type {number | null} */
+	let wheelRafId = null;
+	let wheelPendingPanMs = 0;
+	let wheelPendingZoomFactor = 1;
+	let wheelPendingZoomCenterMs = 0;
+
+	// Trackpads emit wheel events well above the display refresh rate, and each
+	// onpan/onzoom triggers the consumer's full slice/aggregate/render cascade.
+	// Accumulate intents (deltas sum, factors multiply — same maths as the pinch
+	// processor) and flush once per frame, mirroring the pointer rAF machinery.
+	function processWheelFrame() {
+		wheelRafId = null;
+		if (wheelPendingPanMs !== 0) {
+			const deltaMs = wheelPendingPanMs;
+			wheelPendingPanMs = 0;
+			onpan?.(deltaMs);
+		}
+		if (wheelPendingZoomFactor !== 1) {
+			const factor = wheelPendingZoomFactor;
+			wheelPendingZoomFactor = 1;
+			onzoom?.(factor, wheelPendingZoomCenterMs);
+		}
+	}
+
+	function scheduleWheelFrame() {
+		wheelRafId ??= requestAnimationFrame(processWheelFrame);
+	}
 
 	/**
 	 * Horizontal scroll pans the viewport; vertical scroll zooms at the
@@ -474,19 +510,33 @@
 
 		if (intent === 'pan') {
 			if (!onpan) return;
-			const deltaMs = wheelPanDeltaMs(event.deltaX, rect.width, domain[1] - domain[0]);
-			onpan(deltaMs);
+			wheelPendingPanMs += wheelPanDeltaMs(event.deltaX, rect.width, domain[1] - domain[0]);
+			scheduleWheelFrame();
 
+			// The end-of-stream timeout far outlives the pending rAF, so the final
+			// pan delta always flushes before onpanend fires.
 			if (wheelPanEndTimeout) clearTimeout(wheelPanEndTimeout);
 			wheelPanEndTimeout = setTimeout(() => {
 				wheelPanEndTimeout = null;
 				onpanend?.();
-			}, 150);
+			}, WHEEL_PAN_IDLE_MS);
 			return;
 		}
 
 		if (!onzoom) return;
-		onzoom(wheelZoomFactor(event.deltaY), clientXToTime(event.clientX));
+		// A pan→zoom transition within one wheel stream is one gesture — keep
+		// deferring the pending pan-end so it doesn't fire mid-zoom, an idle gap
+		// after the *pan* stopped. It fires once the whole stream goes quiet.
+		if (wheelPanEndTimeout) {
+			clearTimeout(wheelPanEndTimeout);
+			wheelPanEndTimeout = setTimeout(() => {
+				wheelPanEndTimeout = null;
+				onpanend?.();
+			}, WHEEL_PAN_IDLE_MS);
+		}
+		wheelPendingZoomFactor *= wheelZoomFactor(event.deltaY);
+		wheelPendingZoomCenterMs = clientXToTime(event.clientX);
+		scheduleWheelFrame();
 	}
 
 	// ---- Lifecycle ----
@@ -521,8 +571,29 @@
 				clearTimeout(wheelPanEndTimeout);
 				wheelPanEndTimeout = null;
 			}
+			if (wheelRafId !== null) {
+				cancelAnimationFrame(wheelRafId);
+				wheelRafId = null;
+				wheelPendingPanMs = 0;
+				wheelPendingZoomFactor = 1;
+			}
 			cleanup();
 		};
+	});
+
+	// While a tap-to-engage chart sits idle, no pan/zoom listeners are attached
+	// (the effect above gates on effectiveEnablePan) and a wheel gesture just
+	// scrolls the page — silently, at the exact moment the user wants to zoom.
+	// A passive listener (never preventDefault — the scroll must continue)
+	// notifies the consumer so it can show a "click to enable" hint in place.
+	$effect(() => {
+		const target = el;
+		if (!target || !onblockedwheel) return;
+		if (!enablePan || panZoomMode !== 'tap-to-engage' || engaged) return;
+
+		const notify = () => onblockedwheel();
+		target.addEventListener('wheel', notify, { passive: true });
+		return () => target.removeEventListener('wheel', notify);
 	});
 </script>
 

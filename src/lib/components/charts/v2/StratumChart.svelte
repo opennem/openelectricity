@@ -10,6 +10,8 @@
 	 * StackedArea's onmousemove is the only SVG-level interaction kept —
 	 * it provides the series key for hover highlighting.
 	 */
+	import { onDestroy } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import ChartHeader from './ChartHeader.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import ChartTooltipCompactStrip from './ChartTooltipCompactStrip.svelte';
@@ -45,7 +47,7 @@
 	 * @property {(() => void)} [onpanend]
 	 * @property {((factor: number, centerMs: number) => void)} [onzoom]
 	 * @property {boolean} [enablePan]
-	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' renders a hover hint pill and gates pan/zoom behind the bindable `engaged` flag.
+	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' gates pan/zoom behind the bindable `engaged` flag — engaged via the header's ✥ toggle, a tap on the chart, or the idle-wheel hint; released by the toggle or Esc.
 	 * @property {boolean} [engaged] - Bindable engagement state for tap-to-engage mode.
 	 * @property {Array<{start: number, end: number}>} [loadingRanges]
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
@@ -128,6 +130,26 @@
 
 	let hasData = $derived(chart?.seriesData?.length > 0);
 
+	// Viewport-driven charts (explicit x-domain) keep their frame — axes,
+	// gridlines, loading shimmer — when the visible range has no rows, so the
+	// date labels stay visible while panning through empty/loading regions.
+	// Charts that let LayerCake fit the domain from data keep the spacer: an
+	// empty frame would have no scale to draw. The `d[1] > d[0]` check matters —
+	// provider charts set a [0, 0] domain before the page seeds the viewport.
+	let hasExplicitTimeDomain = $derived.by(() => {
+		const d = chart?.renderXDomain;
+		return (
+			Array.isArray(d) &&
+			d.length === 2 &&
+			Number.isFinite(d[0]) &&
+			Number.isFinite(d[1]) &&
+			d[1] > d[0]
+		);
+	});
+	let showChartFrame = $derived(
+		hasData || (!chart.chartOptions.isAnyBarType && hasExplicitTimeDomain)
+	);
+
 	// Resolve the effective tooltip mode, honouring the legacy `showTooltip={false}`.
 	let effectiveTooltipMode = $derived(showTooltip === false ? 'none' : tooltipMode);
 
@@ -160,6 +182,44 @@
 		onhoverend?.();
 	}
 
+	// ---- Idle-wheel intent hint (tap-to-engage) ----
+	// Scrolling over an idle chart keeps scrolling the page, but that's exactly
+	// the moment the user wants pan/zoom — surface a momentary "click to
+	// enable" pill over this chart, at the point of intent. Dismisses shortly
+	// after the wheel stream stops, or instantly on engagement.
+
+	let idleWheelHintVisible = $state(false);
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
+	let idleWheelHintTimer;
+
+	function handleBlockedWheel() {
+		idleWheelHintVisible = true;
+		clearTimeout(idleWheelHintTimer);
+		idleWheelHintTimer = setTimeout(() => (idleWheelHintVisible = false), 1600);
+	}
+
+	function engageFromIdleHint() {
+		clearTimeout(idleWheelHintTimer);
+		idleWheelHintVisible = false;
+		engaged = true;
+	}
+
+	onDestroy(() => clearTimeout(idleWheelHintTimer));
+
+	// Esc releases the engaged pan/zoom — the header toggle advertises "(Esc)",
+	// so the component keeps that promise itself rather than every host
+	// re-wiring it. Capture phase + stopPropagation so releasing the mode wins
+	// over host Esc behaviour (sheet close, fullscreen exit). Every chart in a
+	// viewport-synced stack attaches one; they converge idempotently on the
+	// shared engaged flag.
+	/** @param {KeyboardEvent} e */
+	function handleEngagedKeydown(e) {
+		if (e.key !== 'Escape' || !engaged) return;
+		e.preventDefault();
+		e.stopPropagation();
+		engaged = false;
+	}
+
 	/**
 	 * @param {any} data
 	 */
@@ -176,12 +236,26 @@
 	}
 </script>
 
+<svelte:window
+	onkeydowncapture={panZoomMode === 'tap-to-engage' ? handleEngagedKeydown : undefined}
+/>
+
 <div class="stratum-chart {className}">
 	{#if showHeader}
 		{#if header}
 			{@render header()}
 		{:else if zoomMode === 'static'}
-			<ChartHeader {chart} {showOptions} {onzoomin} {onzoomout} {isAtMinZoom} {isAtMaxZoom} />
+			<ChartHeader
+				{chart}
+				{showOptions}
+				{onzoomin}
+				{onzoomout}
+				{isAtMinZoom}
+				{isAtMaxZoom}
+				showPanZoomToggle={panZoomMode === 'tap-to-engage' && enablePan}
+				panZoomEngaged={engaged}
+				onpanzoomtoggle={() => (engaged = !engaged)}
+			/>
 		{:else}
 			<ChartHeader {chart} {showOptions} />
 		{/if}
@@ -254,8 +328,9 @@
 				{onpan}
 				{onpanend}
 				{onzoom}
+				onblockedwheel={handleBlockedWheel}
 			>
-				{#if hasData}
+				{#if showChartFrame}
 					<StackedAreaChart
 						{chart}
 						{netTotalKey}
@@ -284,6 +359,15 @@
 			</InteractionLayer>
 		{/if}
 
+		{#if showChartFrame && !hasData && loadingRanges.length === 0}
+			<div
+				class="pointer-events-none absolute inset-0 flex items-center justify-center"
+				aria-hidden="true"
+			>
+				<span class="text-xs text-mid-warm-grey">No data for this period</span>
+			</div>
+		{/if}
+
 		{#if resizable}
 			<ChartResizeHandle
 				{chart}
@@ -310,27 +394,19 @@
 			/>
 		{/if}
 
-		{#if panZoomMode === 'tap-to-engage' && enablePan && hasData}
-			{#if engaged}
-				<div class="pointer-events-none absolute bottom-2 right-2 z-10" aria-hidden="true">
-					<div
-						class="px-3 py-1.5 rounded-full bg-dark-grey/85 text-white text-xs font-medium shadow-sm"
-					>
-						Scroll to zoom · Esc to exit
-					</div>
-				</div>
-			{:else}
-				<div
-					class="pan-zoom-hint pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150"
-					aria-hidden="true"
+		{#if !engaged && idleWheelHintVisible}
+			<div
+				class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+				transition:fade={{ duration: 150 }}
+			>
+				<button
+					type="button"
+					class="pointer-events-auto px-3 py-1.5 rounded-full bg-dark-grey/85 hover:bg-dark-grey text-white text-xs font-medium shadow-sm transition-colors cursor-pointer"
+					onclick={engageFromIdleHint}
 				>
-					<div
-						class="px-3 py-1.5 rounded-full bg-dark-grey/85 text-white text-xs font-medium shadow-sm"
-					>
-						Click to enable pan &amp; zoom
-					</div>
-				</div>
-			{/if}
+					Click to enable pan &amp; zoom
+				</button>
+			</div>
 		{/if}
 	</div>
 
@@ -345,8 +421,5 @@
 	}
 	.stratum-chart :global(svg *:focus) {
 		outline: none;
-	}
-	.stratum-chart-area:hover :global(.pan-zoom-hint) {
-		opacity: 1;
 	}
 </style>

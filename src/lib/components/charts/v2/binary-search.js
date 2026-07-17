@@ -37,6 +37,22 @@ export function indexOfTime(data, t) {
 }
 
 /**
+ * Index of the row whose `time` is nearest to `t`; ties prefer the earlier
+ * row (matching a first-minimum linear scan). Returns -1 for empty data.
+ *
+ * @param {Array<{ time: number }>} data - Rows sorted ascending by `time`
+ * @param {number} t - Timestamp (ms)
+ * @returns {number}
+ */
+export function nearestIndexOfTime(data, t) {
+	if (data.length === 0) return -1;
+	const i = bisectTime(data, t);
+	if (i === 0) return 0;
+	if (i === data.length) return data.length - 1;
+	return t - data[i - 1].time <= data[i].time - t ? i - 1 : i;
+}
+
+/**
  * Merge two time-sorted row arrays into one, deduping by timestamp with rows
  * from `incoming` winning on equal `time` — a fresh fetch of an overlapping
  * bucket replaces the cached (possibly still-growing) row.

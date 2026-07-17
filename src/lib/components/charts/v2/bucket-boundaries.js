@@ -86,6 +86,41 @@ export function bucketStartMs(kind, timeMs, offsetHours) {
 }
 
 /**
+ * Whether `kind` is a calendar-aligned coarse bucket this module can lattice
+ * (month/quarter/season/half/fy/year — the variable-width kinds).
+ * @param {string} kind
+ * @returns {boolean}
+ */
+export function isCalendarBucketKind(kind) {
+	return kind in BUCKET_MONTHS;
+}
+
+/**
+ * All bucket starts whose bucket intersects [startMs, endMs], in network time.
+ * The first entry is the start of the bucket containing `startMs`, so it may
+ * precede the range. Data-free — used to synthesize axis lattices over empty
+ * or partially-loaded viewports.
+ *
+ * @param {string} kind - a calendar kind (see isCalendarBucketKind)
+ * @param {number} startMs - UTC ms
+ * @param {number} endMs - UTC ms
+ * @param {number} offsetHours - network offset (10 for NEM, 8 for WEM)
+ * @returns {number[]} bucket-start UTC ms, ascending
+ */
+export function bucketStartsInRange(kind, startMs, endMs, offsetHours) {
+	const months = BUCKET_MONTHS[/** @type {keyof typeof BUCKET_MONTHS} */ (kind)] ?? 1;
+	/** @type {number[]} */
+	const starts = [];
+	let t = bucketStartMs(kind, startMs, offsetHours);
+	while (t <= endMs) {
+		starts.push(t);
+		const local = new Date(t + offsetHours * HOUR_MS);
+		t = Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + months, 1) - offsetHours * HOUR_MS;
+	}
+	return starts;
+}
+
+/**
  * Actual calendar length (hours) of the bucket that `timeMs` falls in. Used to
  * weight derived metrics (price = market_value / (power × hours)).
  *

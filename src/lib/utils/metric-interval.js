@@ -118,6 +118,35 @@ export function getHysteresisSwitch(currentMetric, currentInterval, durationDays
 }
 
 /**
+ * Resolve the final metric/interval for a viewport duration by walking the
+ * hysteresis ladder to convergence. A single `getHysteresisSwitch` step moves
+ * one rung, which is right for the incremental mid-gesture case it was built
+ * for — but a gesture that settles after crossing several thresholds (a deep
+ * zoom from "All" straight down to days) needs the full walk, else the grain
+ * lands one rung short and sticks there until the next gesture.
+ *
+ * Terminates: each step moves monotonically toward the band containing
+ * `durationDays` (the out-threshold of every rung exceeds its in-threshold,
+ * so a step can never reverse). Returns `null` when no switch is needed.
+ *
+ * @param {string} currentMetric
+ * @param {string} currentInterval
+ * @param {number} durationDays
+ * @returns {{ metric: string, interval: string } | null}
+ */
+export function getHysteresisTarget(currentMetric, currentInterval, durationDays) {
+	let metric = currentMetric;
+	let interval = currentInterval;
+	let next;
+	while ((next = getHysteresisSwitch(metric, interval, durationDays))) {
+		metric = next.metric;
+		interval = next.interval;
+	}
+	if (metric === currentMetric && interval === currentInterval) return null;
+	return { metric, interval };
+}
+
+/**
  * Display interval (client-side aggregation level layered on top of the fetched
  * API interval). The chart fetches at `interval` and renders at the returned
  * display interval — e.g. fetched power/5m renders as 5m (raw) or 30m

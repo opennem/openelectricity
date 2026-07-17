@@ -7,6 +7,7 @@
  */
 
 import chroma from 'chroma-js';
+import { SERIES_FALLBACK_COLOUR } from '$lib/components/charts/colours.js';
 
 // ============================================
 // Data Transformation
@@ -210,7 +211,7 @@ export function buildUnitColourMap(units, getBaseColor) {
 	const colours = {};
 
 	for (const [ft, unitCodes] of Object.entries(fuelTechUnits)) {
-		const baseColor = getBaseColor(ft) || '#888888';
+		const baseColor = getBaseColor(ft) || SERIES_FALLBACK_COLOUR;
 		const shades = generateUnitShades(baseColor, unitCodes.length, SHADE_SPREADS[ft]);
 
 		unitCodes.forEach((code, index) => {
