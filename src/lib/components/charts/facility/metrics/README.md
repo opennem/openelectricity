@@ -88,8 +88,8 @@ storage-carrying units (e.g. a solar + battery hybrid, or a pumped-hydro scheme)
 **Why these?** Each group surfaces what's decision-relevant for that technology: fossil
 plants are judged on emissions and how hard they run; renewables on how much they
 generate and the price they capture; batteries on arbitrage economics. The groupings
-originated in the `/studio/facility-detail` prototype and were confirmed in the
-implementation plan; the underlying formulas are standard energy-market definitions
+originated in the `/studio/facility-detail` prototype (since removed) and were confirmed
+in the implementation plan; the underlying formulas are standard energy-market definitions
 (see Provenance).
 
 ## Metric definitions
@@ -135,9 +135,10 @@ equipment detail is shown in the units slide-out panel, not here.
   intensity, average price, round-trip efficiency, DC:AC oversizing ratio). Not invented
   here.
 - **Metric sets** (which metrics per fuel group) — designed in the `/studio/facility-detail`
-  prototype and confirmed in the implementation plan.
-- **Correctness oracle** — the prototype's `compute-metrics.test.js`; this directory's
-  tests mirror its expected values so the fresh implementation is provably equivalent.
+  prototype (since removed) and confirmed in the implementation plan.
+- **Correctness oracle** — the prototype's `compute-metrics.test.js` (removed with the
+  prototype); this directory's tests mirror its expected values so the fresh
+  implementation is provably equivalent.
 - **Specs data** — OpenElectricity Sanity CMS facility documents.
 
 ## Files

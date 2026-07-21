@@ -8,7 +8,7 @@
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import formatValue from '../_utils/format-value';
 	import { sortFacilities } from '../_utils/sort-facilities';
-	import { VIEW_OPTIONS } from '../_utils/filters.js';
+	import { VIEW_OPTIONS } from '$lib/facilities/filters.js';
 	import { createLocalStorageState } from '$lib/utils/local-storage-state.svelte.js';
 
 	/**

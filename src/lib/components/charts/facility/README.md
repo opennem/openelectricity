@@ -4,10 +4,10 @@ Components for visualizing facility-level power data with per-unit breakdown, ho
 
 ## Page Integration
 
-The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orchestrates these components:
+The facility pages (`src/routes/(main)/facility/[code]/` and the `/facilities` detail panel) orchestrate these components:
 
-1. **Server load** (`+page.server.js`): Fetches all facilities + selected facility. For ranges below **POWER_THRESHOLD (10 days)**, fetches 5m power data server-side. For wider ranges or "All" (-1), skips — ChartDataManager handles it client-side.
-2. **Page component** (`+page.svelte`): Manages `activeMetric`/`activeInterval`, syncs ChartRangeBar ↔ chart viewport, handles auto metric/interval switching.
+1. **Server load**: Fetches the selected facility. For ranges below **POWER_THRESHOLD (10 days)**, fetches 5m power data server-side. For wider ranges or "All" (-1), skips — ChartDataManager handles it client-side.
+2. **Page component**: Manages the active range/interval via `createChartRangeControl`, syncs ChartRangeBar ↔ chart viewport, handles auto metric/interval switching.
 3. **ChartRangeBar** (`v2/ChartRangeBar.svelte`): Unified toolbar with range presets (1D/3D/7D/30D/1Y/All), calendar popover (DateRangePicker), and an interval dropdown whose options follow the selected range (resolved from `range-interval-config.js`).
 4. **FacilityChart**: Owns the viewport state (`viewStart`/`viewEnd`), creates data managers via `createFacilityDataManager()`, renders via StratumChart → StackedAreaChart.
 
@@ -19,8 +19,6 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 | `FacilityCompactCharts.svelte`       | Compact interactive Generation + Price block (own range tray, CSV options menu) shared by the `/facility/[code]` unit detail sheet and the `/facilities` selected-facility pane           |
 | `FacilityDerivedRateProvider.svelte` | Generic provider behind the derived-rate chart pairs (Price + Market Value, Intensity + Emissions Volume) — data managers, viewport plumbing, chart effects; configured via a recipe      |
 | `derived-rate-recipe.js`             | `DerivedRateRecipe` typedefs — the per-pair variation points the thin wrappers hand to `FacilityDerivedRateProvider`                                                                      |
-| `FacilityDataTable.svelte`           | Tabular view of visible chart data                                                                                                                                                        |
-| `FacilityUnitsTable.svelte`          | Facility unit metadata table                                                                                                                                                              |
 | `process-facility-power.js`          | Core data processing — converts API response to chart-ready rows (thin wrapper over the timestamp-union core in `v2/series-rows.js`)                                                      |
 | `facility-data-manager.js`           | `createFacilityDataManager` — facility-flavoured `ChartDataManager` factory: unit series ids, unit-set `seriesKey`, `processFacilityPower` wiring, default facility URL with `network_id` |
 | `unit-analysis.js`                   | One-pass unit analysis (`analyzeUnits`): colours, fuel-tech/order/load maps, `unitsKey`, capacity sums; plus `unitSeriesIds` (series-id convention)                                       |
@@ -35,7 +33,7 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 | `capacity-annotations.js`            | Capacity reference-line and y-domain rules for the generation chart, extracted from FacilityChart as a pure function                                                                      |
 | `colours.js`                         | `LINE_COLOUR` — the shared red used by both the price and intensity lines                                                                                                                 |
 | `interval-hours.js`                  | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains                                                                          |
-| `helpers.js`                         | Colour shading (`buildUnitColourMap`, `SHADE_SPREADS`), series label/colour getter factories, timezone helpers, legacy `transformFacilityPowerData`                                       |
+| `helpers.js`                          | Colour shading (`buildUnitColourMap`, `SHADE_SPREADS`), series label/colour getter factories, timezone helpers                                                                            |
 | `index.js`                           | Barrel exports                                                                                                                                                                            |
 
 ## Data Pipeline
@@ -97,7 +95,7 @@ API timestamps have inconsistent timezone formats (`Z` or `+HH:MM`). The pipelin
 
 The previous pipeline went through `transformFacilityPowerData → StatisticV2 → TimeSeriesV2.transform()`. `TimeSeriesV2.transform()` reconstructs timestamps from `startTime + index * interval`, using the **first series' start time as the base for all series**. If units have different start times or data lengths, values get mapped to wrong timestamps. `processFacilityPower()` avoids this by using the real timestamps from the API directly.
 
-The old `transformFacilityPowerData` is still exported for backward compatibility but is no longer used by the chart. The StatisticV2 → TimeSeriesV2 pipeline itself has moved to `v2/legacy-transform.js` (re-exported through `v2/dataProcessing.js` for the routes that still consume it).
+The old `transformFacilityPowerData` has since been removed. The StatisticV2 → TimeSeriesV2 pipeline itself has moved to `v2/legacy-transform.js` (re-exported through `v2/dataProcessing.js` for the routes that still consume it).
 
 ## Interval/Metric System
 

@@ -4,7 +4,7 @@
  */
 
 import { sumUnitCapacities } from '$lib/utils/capacity';
-import { getRegionLabel } from './filters';
+import { getRegionLabel } from '$lib/facilities/filters.js';
 
 /**
  * @param {any} facility

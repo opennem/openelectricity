@@ -10,8 +10,8 @@
 	 */
 
 	import { Battery, BookOpen, ExternalLink, Globe, Zap } from '@lucide/svelte';
-	import { groupUnits, hasBidirectionalBattery, filterDerivedBatteryUnits } from '../_utils/units';
-	import { getRegionLabel, getRegionLongLabel } from '../_utils/filters';
+	import { groupUnits, hasBidirectionalBattery, filterDerivedBatteryUnits } from '$lib/facilities/units.js';
+	import { getRegionLabel, getRegionLongLabel } from '$lib/facilities/filters.js';
 	import formatValue from '../_utils/format-value';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import FuelTechBadgeStack from '$lib/components/FuelTechBadgeStack.svelte';

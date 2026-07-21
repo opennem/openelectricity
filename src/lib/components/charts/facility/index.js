@@ -13,17 +13,12 @@ export { default as FacilityFinancialDataProvider } from './FacilityFinancialDat
 export { default as FacilityEmissionsIntensityChart } from './FacilityEmissionsIntensityChart.svelte';
 export { default as FacilityEmissionsVolumeChart } from './FacilityEmissionsVolumeChart.svelte';
 export { default as FacilityEmissionsDataProvider } from './FacilityEmissionsDataProvider.svelte';
-export { default as FacilitySummaryTable } from './FacilitySummaryTable.svelte';
 export { default as FacilityMetrics } from './metrics/FacilityMetrics.svelte';
-export { default as FacilityDataTable } from './FacilityDataTable.svelte';
-export { default as FacilityUnitsTable } from './FacilityUnitsTable.svelte';
 export {
 	generateUnitShades,
 	buildUnitColourMap,
 	SHADE_SPREADS,
-	getNetworkTimezone,
-	isWemNetwork,
-	transformFacilityPowerData
+	getNetworkTimezone
 } from './helpers.js';
 export { processFacilityPower } from './process-facility-power.js';
 export { analyzeUnits } from './unit-analysis.js';

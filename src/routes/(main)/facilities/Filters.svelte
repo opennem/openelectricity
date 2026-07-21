@@ -17,7 +17,7 @@
 		ALL_STATUSES,
 		DEFAULT_STATUSES,
 		VIEW_OPTIONS
-	} from './_utils/filters.js';
+	} from '$lib/facilities/filters.js';
 
 	/**
 	 * @type {{

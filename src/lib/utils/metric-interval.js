@@ -13,8 +13,7 @@
  * choices (see `range-interval-config.js`), never auto-selected by pan/zoom.
  *
  * Lives in `$lib/utils/` so any chart route can consume the same logic; direct
- * callers: `/studio/facility-explorer`, `/studio/facility-detail`,
- * `/facilities` detail panel, `/facility/[code]`.
+ * callers: `/facilities` detail panel, `/facility/[code]`, `/studio/explorer`.
  */
 
 // ── Threshold constants ──────────────────────────────────────────────

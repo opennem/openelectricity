@@ -96,7 +96,7 @@ This document tracks the migration from old chart components to the new v2 chart
 
 **LensChart.svelte:**
 
-- `src/routes/(main)/studio/generation-trends-profiles/components/GenerationChart.svelte`
+- ~~`src/routes/(main)/studio/generation-trends-profiles/components/GenerationChart.svelte`~~ → route removed
 - ~~`src/routes/(micro)/widget/+page.svelte`~~ → migrated to v2
 - `src/routes/(micro)/record/[id]/components/MiniTracker.svelte`
 - `src/routes/(main)/records/[id]/RecordHistory/index.svelte`
@@ -116,7 +116,7 @@ This document tracks the migration from old chart components to the new v2 chart
 
 **Old stores/:**
 
-- `src/routes/(main)/studio/generation-trends-profiles/helpers/init.js`
+- ~~`src/routes/(main)/studio/generation-trends-profiles/helpers/init.js`~~ → route removed
 - `src/routes/(main)/scenarios/+page.svelte`
 - ~~`src/routes/(micro)/widget/TopTips.svelte`~~ → migrated to v2
 - ~~`src/routes/(micro)/widget/BottomTips.svelte`~~ → migrated to v2

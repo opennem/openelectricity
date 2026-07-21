@@ -14,8 +14,8 @@
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import { Backdrop } from '$lib/components/ui/backdrop';
 	import { portal } from '$lib/actions/portal.js';
-	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../facilities/_utils/units';
-	import { regions as regionDefs } from '../facilities/_utils/filters.js';
+	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '$lib/facilities/units.js';
+	import { regions as regionDefs } from '$lib/facilities/filters.js';
 	import { MediaQuery } from 'svelte/reactivity';
 	import {
 		BELOW_TABLET_QUERY,

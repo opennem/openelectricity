@@ -54,7 +54,7 @@ After all edits:
    Grep "new_fueltech_code"
    ```
    Should show hits in `theme/`, `fuel_techs.js`, and at least one `fuel-tech-groups/` file.
-3. Remind the user to test visually on a chart that renders the fuel-tech (homepage infographics, scenarios-explorer, facility-detail) — the skill doesn't run the dev server.
+3. Remind the user to test visually on a chart that renders the fuel-tech (homepage infographics, scenarios-explorer, `/facility/[code]`) — the skill doesn't run the dev server.
 
 ## Reference files
 

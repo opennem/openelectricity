@@ -3,7 +3,7 @@ import { client as sanityClient } from '$lib/sanity.js';
 /**
  * Map of facility code → first-photo CDN URL, for the card-grid view. Cached
  * in-process for an hour since facility photos change rarely (mirrors the
- * pattern in `_stores/facilities-server-cache.js`).
+ * pattern in `$lib/server/facilities-server-cache.js`).
  *
  * @type {{ data: Record<string, string>, at: number } | null}
  */

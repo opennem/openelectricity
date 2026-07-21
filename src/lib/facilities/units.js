@@ -52,7 +52,7 @@ export function canSplitBatteryUnits(facility) {
  * @param {string} field
  * @returns {number}
  */
-export function sumField(units, field) {
+function sumField(units, field) {
 	return units.reduce((sum, unit) => sum + (Number(unit[field]) || 0), 0);
 }
 
@@ -179,14 +179,4 @@ export function withMarkedUnits(facility, { batteryView = 'net' } = {}) {
 			: unit
 	);
 	return { ...facility, units };
-}
-
-/**
- * Get the OpenElectricity explore URL for a facility
- * @param {any} facility
- * @returns {string}
- */
-export function getExploreUrl(facility) {
-	if (!facility) return '';
-	return `https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`;
 }

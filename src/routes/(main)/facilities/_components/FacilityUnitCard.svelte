@@ -3,7 +3,7 @@
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import GenCapViz from '$lib/components/facilities/GenCapViz.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
-	import { getRegionLabel } from '../_utils/filters';
+	import { getRegionLabel } from '$lib/facilities/filters.js';
 	import formatValue from '../_utils/format-value';
 	import { getFueltechColor } from '$lib/utils/fueltech-display';
 	import { getUnitCapacity, getUnitCapacitySource } from '$lib/utils/capacity';

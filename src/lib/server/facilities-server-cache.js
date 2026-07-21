@@ -26,7 +26,7 @@
  * Usage in +page.server.js:
  * -------------------------
  * ```js
- * import { getCachedFacilities, setCachedFacilities } from './_stores/facilities-server-cache.js';
+ * import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
  *
  * const filterParams = { statuses, regions, fuelTechs };
  * const cached = getCachedFacilities(filterParams);

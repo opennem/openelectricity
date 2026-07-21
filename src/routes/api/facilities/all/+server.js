@@ -12,15 +12,12 @@
 import { json } from '@sveltejs/kit';
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-import {
-	getCachedFacilities,
-	setCachedFacilities
-} from '../../../(main)/facilities/_stores/facilities-server-cache.js';
+import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
 import {
 	prepareStatusesForApi,
 	processFacilitiesWithStatuses
-} from '../../../(main)/facilities/_utils/status-utils.js';
-import { PLAY_STATUSES } from '../../../(main)/facilities/_utils/filters.js';
+} from '$lib/facilities/status-utils.js';
+import { PLAY_STATUSES } from '$lib/facilities/filters.js';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,

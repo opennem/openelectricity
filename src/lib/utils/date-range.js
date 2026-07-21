@@ -3,8 +3,8 @@
  *
  * Constants and helpers for computing default date ranges from facility
  * units and range presets. Lives in `$lib/utils/` so any chart route can
- * consume the same logic; callers today: `/studio/facility-explorer`,
- * `/studio/facility-detail`, `/facility/[code]`.
+ * consume the same logic; callers today: `/facility/[code]` and the
+ * facility chart components.
  */
 
 /** Earliest selectable date across the data set. */
@@ -31,31 +31,4 @@ export function getEarliestDate(units) {
 		if (d && (!earliest || d < earliest)) earliest = d;
 	}
 	return earliest ? earliest.slice(0, 10) : null;
-}
-
-/**
- * Get default start date based on a range preset (in days).
- * For -1 ("All"), resolves from facility units or falls back to MIN_DATE.
- *
- * @param {number} days
- * @param {Array<{ data_first_seen?: string }> | undefined} units
- * @returns {string} YYYY-MM-DD
- */
-export function getDateStartForRange(days, units) {
-	if (days === -1) {
-		const earliest = getEarliestDate(units ?? []);
-		return earliest || MIN_DATE;
-	}
-	const date = new Date();
-	date.setDate(date.getDate() - days);
-	return date.toISOString().slice(0, 10);
-}
-
-/**
- * Get default end date (today).
- *
- * @returns {string} YYYY-MM-DD
- */
-export function getDefaultDateEnd() {
-	return new Date().toISOString().slice(0, 10);
 }

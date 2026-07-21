@@ -1,5 +1,5 @@
 import { fuelTechNameMap } from '$lib/fuel_techs';
-import { regions as regionDefs } from '../../../routes/(main)/facilities/_utils/filters.js';
+import { regions as regionDefs } from '$lib/facilities/filters.js';
 
 /**
  * @typedef {Object} SearchableFacility

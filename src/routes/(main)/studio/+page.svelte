@@ -10,22 +10,10 @@
 			link: '/studio/explorer'
 		},
 		{
-			title: 'Facility Explorer',
-			description:
-				'Explore 7-day power generation data for Australian electricity facilities with unit-level breakdown.',
-			link: '/studio/facility-explorer'
-		},
-		{
 			title: 'CMS Facilities',
 			description:
 				'Inspect and manage facility metadata from the CMS with AI-assisted exploration.',
 			link: '/studio/cms-facilities'
-		},
-		{
-			title: 'Facility Detail',
-			description:
-				'Fuel-tech-specific facility analysis with tailored metrics for wind, solar, battery, coal, gas and hydro.',
-			link: '/studio/facility-detail'
 		},
 		{
 			title: 'Fuel Tech Shades',
@@ -60,19 +48,6 @@
 			description:
 				"Visualises the latest estimates of Australia's greenhouse gas emissions to 2040.",
 			link: '/studio/lens-on-emissions'
-		},
-		{
-			title: 'TrackerGrid',
-			description: 'A new data visualization tool for tracking and analyzing grid data.',
-			link: '/studio/tracker-grid',
-			disabled: true
-		},
-		{
-			title: 'Generation Trends & Profiles',
-			description:
-				'Analyze generation patterns, trends, and profiles of different energy sources across time periods and regions.',
-			link: '/studio/generation-trends-profiles',
-			disabled: true
 		},
 		{
 			title: 'Renewables — calculation methods',
@@ -138,11 +113,7 @@
 				</div>
 				<div>
 					<p class="text-xs">{project.description}</p>
-					{#if project.disabled}
-						<span class="text-sm text-dark-red">Coming soon</span>
-					{:else}
-						<a href={project.link} class="font-semibold text-sm text-error-red">View Project</a>
-					{/if}
+					<a href={project.link} class="font-semibold text-sm text-error-red">View Project</a>
 				</div>
 			</div>
 		{/each}

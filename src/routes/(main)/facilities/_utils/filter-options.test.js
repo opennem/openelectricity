@@ -5,7 +5,7 @@ import {
 	filterOptionsBySearch,
 	getSelectedLabels
 } from './filter-options.js';
-import { fuelTechOptions, regionOptions, statusOptions } from './filters.js';
+import { fuelTechOptions, regionOptions, statusOptions } from '$lib/facilities/filters.js';
 
 describe('getLeafValues', () => {
 	it('returns children of parents plus childless top-level options', () => {

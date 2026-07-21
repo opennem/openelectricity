@@ -16,10 +16,10 @@
 	import { fetchOsmPolygon } from '$lib/utils/osm.js';
 	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
 	import UnitGroup from './_components/UnitGroup.svelte';
-	import { groupUnits } from './_utils/units';
+	import { groupUnits } from '$lib/facilities/units.js';
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import FacilityCardImage from './_components/FacilityCardImage.svelte';
-	import { getRegionLabel } from './_utils/filters';
+	import { getRegionLabel } from '$lib/facilities/filters.js';
 	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
 	import { X } from '@lucide/svelte';
 

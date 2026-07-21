@@ -1,4 +1,4 @@
-import { fuelTechOptions } from './filters.js';
+import { fuelTechOptions } from '$lib/facilities/filters.js';
 
 /**
  * Generate fuel tech category-to-API-ids mapping from fuelTechOptions

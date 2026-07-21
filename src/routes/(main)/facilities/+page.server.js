@@ -25,20 +25,20 @@
  * - capacity_max: maximum capacity in MW (client-side filter)
  * - facility: selected facility code for detail view
  *
- * See _stores/facilities-server-cache.js for caching implementation
+ * See $lib/server/facilities-server-cache.js for caching implementation
  */
 
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-import { getCachedFacilities, setCachedFacilities } from './_stores/facilities-server-cache.js';
+import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
 import { expandFuelTechs } from './_utils/fuel-tech-map.js';
 import {
 	prepareStatusesForApi,
 	processFacilitiesWithStatuses,
 	filterFacilitiesByRegions
-} from './_utils/status-utils.js';
+} from '$lib/facilities/status-utils.js';
 import { fetchFacilityPhotos } from './_utils/fetch-facility-photos.js';
-import { DEFAULT_STATUSES, ALL_STATUSES, normaliseViewParam } from './_utils/filters.js';
+import { DEFAULT_STATUSES, ALL_STATUSES, normaliseViewParam } from '$lib/facilities/filters.js';
 // Codes with a committed `static/og/facility/<code>.jpg`; lets the Grid view show
 // the build-generated card and fall back to a live card for the rest.
 import cardCodes from '$lib/server/og/facility-card-codes.json';

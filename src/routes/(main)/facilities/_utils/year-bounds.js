@@ -1,6 +1,6 @@
 import getUnitYear from './get-unit-year';
 import { getUnitPlayYear } from './play-filter';
-import { filterDerivedBatteryUnits, hasBidirectionalBattery } from './units';
+import { filterDerivedBatteryUnits, hasBidirectionalBattery } from '$lib/facilities/units.js';
 
 /** Fallback when no facilities are loaded or no unit has a usable date. */
 const FALLBACK_BOUNDS = { min: 1900, max: 2040 };

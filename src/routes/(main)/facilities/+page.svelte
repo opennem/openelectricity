@@ -13,7 +13,7 @@
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import formatValue from './_utils/format-value';
 	import getUnitYear from './_utils/get-unit-year';
-	import { statusColours, DEFAULT_STATUSES, normaliseViewParam } from './_utils/filters.js';
+	import { statusColours, DEFAULT_STATUSES, normaliseViewParam } from '$lib/facilities/filters.js';
 	import { facilitiesToCsv } from './_utils/facilities-csv.js';
 	import { sortFacilities } from './_utils/sort-facilities';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
@@ -45,7 +45,7 @@
 		filterDerivedBatteryUnits,
 		getFacilityCapacity,
 		withMarkedUnits
-	} from './_utils/units';
+	} from '$lib/facilities/units.js';
 	import { getUnitCapacity, sumUnitCapacities } from '$lib/utils/capacity';
 	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
 	import { fetchFacilityDetail, peekFacilityDetail } from './_utils/fetch-facility-detail.js';

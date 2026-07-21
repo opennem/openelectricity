@@ -8,7 +8,7 @@
 	import FilterOptionList from './filters/FilterOptionList.svelte';
 	import FuelTechRowContent from './filters/FuelTechRowContent.svelte';
 	import { countSelectedLeaves, getSelectedLabels } from '../_utils/filter-options.js';
-	import { regionShortLabels } from '../_utils/filters.js';
+	import { regionShortLabels } from '$lib/facilities/filters.js';
 
 	/**
 	 * @type {{

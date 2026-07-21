@@ -3,54 +3,6 @@ import { statusColours } from '$lib/theme/openelectricity';
 
 export { statusColours };
 
-export const sizeOptions = [
-	{
-		label: '< 1 MW',
-		value: 'xs',
-		min: 0,
-		max: 1
-	},
-	{
-		label: '1 – 5 MW',
-		value: 'sm',
-		min: 1,
-		max: 5
-	},
-	{
-		label: '5 – 30 MW',
-		value: 'md',
-		min: 5,
-		max: 30
-	},
-	{
-		label: '> 30 MW',
-		value: 'lg',
-		min: 30,
-		max: Infinity
-	}
-];
-
-/**
- * Get size ranges from selected size values
- * @param {string[]} selectedSizes
- * @returns {{min: number, max: number}[]}
- */
-export function getSizeRanges(selectedSizes) {
-	return sizeOptions.filter((opt) => selectedSizes.includes(opt.value));
-}
-
-/**
- * Check if a capacity falls within any of the selected size ranges
- * @param {number} capacity
- * @param {string[]} selectedSizes
- * @returns {boolean}
- */
-export function isInSizeRange(capacity, selectedSizes) {
-	if (selectedSizes.length === 0) return true;
-	const ranges = getSizeRanges(selectedSizes);
-	return ranges.some((range) => capacity >= range.min && capacity < range.max);
-}
-
 export const statusOptions = [
 	{
 		label: 'Committed',
@@ -197,7 +149,7 @@ export const fuelTechOptions = [
  * Flatten the hierarchical fuel tech options to a simple list for label lookup
  * @returns {{value: string, label: string}[]}
  */
-export function getFlatFuelTechOptions() {
+function getFlatFuelTechOptions() {
 	/** @type {{value: string, label: string}[]} */
 	const flat = [];
 	for (const opt of fuelTechOptions) {
@@ -265,13 +217,4 @@ export function getRegionLongLabel(network_id, network_region) {
 		return match?.longLabel || match?.label || network_region;
 	}
 	return network_id?.toUpperCase() || '';
-}
-
-/**
- * Get the display label for a status
- * @param {string} status
- * @returns {string}
- */
-export function getStatusLabel(status) {
-	return statusOptions.find((s) => s.value === status)?.label || status;
 }

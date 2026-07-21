@@ -22,7 +22,7 @@
 	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
 	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
-	import { withMarkedUnits, canSplitBatteryUnits } from '../../facilities/_utils/units';
+	import { withMarkedUnits, canSplitBatteryUnits } from '$lib/facilities/units.js';
 
 	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
 	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';

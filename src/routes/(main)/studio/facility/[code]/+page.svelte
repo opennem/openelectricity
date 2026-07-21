@@ -1,8 +1,8 @@
 <script>
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import { getFueltechColor } from '$lib/utils/fueltech-display.js';
-	import { regions } from '../../../facilities/_utils/filters';
-	import { groupUnits } from '../../../facilities/_utils/units';
+	import { regions } from '$lib/facilities/filters.js';
+	import { groupUnits } from '$lib/facilities/units.js';
 	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
 	import { fuelTechName } from '$lib/fuel_techs.js';
 	import { getNumberFormat } from '$lib/utils/formatters.js';

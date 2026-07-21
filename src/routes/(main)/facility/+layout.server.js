@@ -4,7 +4,7 @@ import {
 	hasBidirectionalBattery,
 	filterDerivedBatteryUnits,
 	getFacilityCapacity
-} from '../facilities/_utils/units.js';
+} from '$lib/facilities/units.js';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
