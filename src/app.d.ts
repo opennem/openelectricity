@@ -5,7 +5,18 @@ declare global {
 		// interface Error {}
 		// interface Locals {}
 		// interface PageData {}
-		// interface Platform {}
+		// Minimal structural view of the Cloudflare adapter's platform object —
+		// enough for cache/waitUntil usage without depending on
+		// @cloudflare/workers-types. Everything optional: absent in `vite dev`.
+		interface Platform {
+			context?: { waitUntil(promise: Promise<unknown>): void };
+			caches?: {
+				default: {
+					match(key: string | Request): Promise<Response | undefined>;
+					put(key: string | Request, response: Response): Promise<void>;
+				};
+			};
+		}
 	}
 }
 

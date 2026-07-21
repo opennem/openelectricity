@@ -177,11 +177,16 @@ export async function fetchHomepageRenewablesInput() {
 				/** @type {any} */ ({
 					interval: '1M',
 					dateStart: RENEWABLES_DATE_START,
-					secondaryGrouping: ['fueltech']
+					secondaryGrouping: ['fueltech'],
+					// Server-side filter — only the fossil series ever leave the OE API
+					// instead of every fueltech being transferred and discarded here.
+					fueltech: FOSSIL_FUEL_TECHS
 				})
 			)
 		]);
 
+		// Deliberate belt-and-braces: a no-op while the API honours the fueltech
+		// param above, but keeps the output correct if it were ever ignored.
 		const fossilFueltechStats = (
 			fueltechEnergyRes.response.data[0]
 				? transformOeToStatsData(fueltechEnergyRes.response.data[0])

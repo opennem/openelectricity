@@ -3,6 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import { isSafari } from '$lib/utils/browser-detect';
+	import { createRequestGuard } from '$lib/utils/request-guard';
 
 	import { showToast } from '$lib/stores/toast';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
@@ -25,8 +26,27 @@
 
 	// Server-side data
 	let homepageData = $derived(data.homepageData);
-	let renewablesInput = $derived(data.renewablesInput?.data ?? null);
-	let renewablesError = $derived(data.renewablesInput?.error ?? null);
+
+	// `data.renewablesInput` is a streamed promise (returned un-awaited from
+	// load() so the OE fetch never gates TTFB) — resolve it into state rather
+	// than an await block so on re-navigation the old chart persists until the
+	// new data lands instead of flashing back to the skeleton.
+	/** @type {import('$lib/oe-api/renewables-cache.server').RenewablesEnvelope | null} */
+	let renewablesResult = $state(null);
+
+	const renewablesGuard = createRequestGuard();
+	$effect(() => {
+		const { isCurrent } = renewablesGuard.next();
+		Promise.resolve(data.renewablesInput).then((result) => {
+			if (isCurrent()) renewablesResult = result;
+		});
+	});
+
+	// $derived.by, not $derived: at this top-level position TS narrows the
+	// null-initialised state to `null` (the $effect assignment is invisible to
+	// straight-line flow analysis); the closure reads the declared type instead.
+	let renewablesInput = $derived.by(() => renewablesResult?.data ?? null);
+	let renewablesError = $derived.by(() => renewablesResult?.error ?? null);
 
 	$effect(() => {
 		if (browser && renewablesError) showToast(renewablesError);

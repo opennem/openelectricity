@@ -95,6 +95,20 @@
 
 	let innerWidth = $state(0);
 
+	// Measured container size — LayerCake mounts only once the div has layout,
+	// seeded with real dimensions so its pre-measurement box maths (default
+	// height 100 minus mobile padding 120) never goes negative and logs a
+	// spurious zero-height warning on late mounts. `hasLayout` is a one-way
+	// latch: a zero-size blip after first mount (hidden ancestor, layout
+	// transition) must re-measure, not tear down and rebuild the chart.
+	let containerWidth = $state(0);
+	let containerHeight = $state(0);
+	let hasLayout = $state(false);
+
+	$effect(() => {
+		if (containerWidth && containerHeight) hasLayout = true;
+	});
+
 	//TODO: refactor transition
 	let show = $state(false);
 	let interact = $state(false);
@@ -191,92 +205,96 @@
 	</div>
 {/if}
 
-<div class={containerClass}>
-	<LayerCake
-		padding={{ top: 20, right: chartRight, bottom: chartBottom, left: chartLeft }}
-		x="date"
-		y="value"
-		z="group"
-		{xDomain}
-		yDomain={[0, yMaxOverride]}
-		zDomain={seriesNames}
-		xScale={scaleUtc()}
-		zScale={scaleOrdinal()}
-		zRange={Object.values(seriesColours)}
-		data={groupedData}
-		{flatData}
-	>
-		{#if chartLabel}
-			<Html pointerEvents={false}>
-				<div class={chartLabelStyles}>{chartLabel}</div>
-			</Html>
-		{/if}
+<div class={containerClass} bind:clientWidth={containerWidth} bind:clientHeight={containerHeight}>
+	{#if hasLayout}
+		<LayerCake
+			{containerWidth}
+			{containerHeight}
+			padding={{ top: 20, right: chartRight, bottom: chartBottom, left: chartLeft }}
+			x="date"
+			y="value"
+			z="group"
+			{xDomain}
+			yDomain={[0, yMaxOverride]}
+			zDomain={seriesNames}
+			xScale={scaleUtc()}
+			zScale={scaleOrdinal()}
+			zRange={Object.values(seriesColours)}
+			data={groupedData}
+			{flatData}
+		>
+			{#if chartLabel}
+				<Html pointerEvents={false}>
+					<div class={chartLabelStyles}>{chartLabel}</div>
+				</Html>
+			{/if}
 
-		<Svg>
-			<AxisX
-				formatTick={formatTickX}
-				ticks={xTicks}
-				tickMarks={true}
-				gridlines={true}
-				snapTicks={true}
-				strokeArray="3"
-				stroke="#efefef"
-				tickLabel={!hoverData}
-				fill="transparent"
-			/>
-			<AxisY formatTick={yTickFormatter} ticks={5} xTick={2} />
-
-			<MultiLine opacity={0.1} drawDurationObject={drawDuration} {strokeWidth} />
-
-			<MultiLine {hoverData} drawDurationObject={drawDuration} {strokeWidth} />
-
-			{#if show && trends.length}
-				<TrendLine
-					{trends}
-					{hoverData}
-					colours={seriesColours}
-					{strokeWidth}
-					fadeTransition={trendFade}
+			<Svg>
+				<AxisX
+					formatTick={formatTickX}
+					ticks={xTicks}
+					tickMarks={true}
+					gridlines={true}
+					snapTicks={true}
+					strokeArray="3"
+					stroke="#efefef"
+					tickLabel={!hoverData}
+					fill="transparent"
 				/>
-			{/if}
-			<HoverLayer
-				dataset={hoverDataset}
-				onmousemove={(d) => {
-					const next = interact ? /** @type {TimeSeriesData} */ (d) : undefined;
-					localHoverData = next;
-					onHoverTimeChange?.(next ? /** @type {any} */ (next).time : undefined);
-				}}
-				onmouseout={() => {
-					localHoverData = undefined;
-					onHoverTimeChange?.(undefined);
-				}}
-			/>
-		</Svg>
+				<AxisY formatTick={yTickFormatter} ticks={5} xTick={2} />
 
-		<Html pointerEvents={false}>
-			<HoverText {hoverData} position="bottom">
-				<span class="text-xs font-light">
-					{formatHoverTickX(hoverTime)}{#if hoverIsTrend}<span class="italic text-mid-grey"
-							>&nbsp;· trend</span
-						>{/if}
-				</span>
-			</HoverText>
-			<HoverLine {hoverData} />
+				<MultiLine opacity={0.1} drawDurationObject={drawDuration} {strokeWidth} />
 
-			{#if show && showAnnotations}
-				<div transition:fade={fadeTransition}>
-					<Annotations
-						rounded={hoverData !== undefined}
-						annotation={hoverData || latestDatapoint}
-						dataset={historicalDataset}
-						{seriesLabels}
-						{showBesideLatestPoint}
-						unit={annotationUnit}
+				<MultiLine {hoverData} drawDurationObject={drawDuration} {strokeWidth} />
+
+				{#if show && trends.length}
+					<TrendLine
+						{trends}
+						{hoverData}
+						colours={seriesColours}
+						{strokeWidth}
+						fadeTransition={trendFade}
 					/>
-				</div>
-			{/if}
-		</Html>
-	</LayerCake>
+				{/if}
+				<HoverLayer
+					dataset={hoverDataset}
+					onmousemove={(d) => {
+						const next = interact ? /** @type {TimeSeriesData} */ (d) : undefined;
+						localHoverData = next;
+						onHoverTimeChange?.(next ? /** @type {any} */ (next).time : undefined);
+					}}
+					onmouseout={() => {
+						localHoverData = undefined;
+						onHoverTimeChange?.(undefined);
+					}}
+				/>
+			</Svg>
+
+			<Html pointerEvents={false}>
+				<HoverText {hoverData} position="bottom">
+					<span class="text-xs font-light">
+						{formatHoverTickX(hoverTime)}{#if hoverIsTrend}<span class="italic text-mid-grey"
+								>&nbsp;· trend</span
+							>{/if}
+					</span>
+				</HoverText>
+				<HoverLine {hoverData} />
+
+				{#if show && showAnnotations}
+					<div transition:fade={fadeTransition}>
+						<Annotations
+							rounded={hoverData !== undefined}
+							annotation={hoverData || latestDatapoint}
+							dataset={historicalDataset}
+							{seriesLabels}
+							{showBesideLatestPoint}
+							unit={annotationUnit}
+						/>
+					</div>
+				{/if}
+			</Html>
+		</LayerCake>
+	{/if}
 </div>
 
 <style>
