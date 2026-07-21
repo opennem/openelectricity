@@ -11,7 +11,8 @@
  * OSS builds. Needs PUBLIC_OE_API_URL, PUBLIC_OE_API_KEY, PUBLIC_SANITY_PROJECT_ID,
  * PUBLIC_SANITY_DATASET.
  *
- * Incremental: skips facilities whose PNG already exists unless OG_FORCE=1.
+ * Incremental: skips facilities whose PNG already exists unless OG_FORCE=1
+ * (`pnpm build:og:force`).
  */
 
 import { mkdirSync, existsSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';

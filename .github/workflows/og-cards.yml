@@ -38,8 +38,7 @@ jobs:
           PUBLIC_OE_API_KEY: ${{ secrets.PUBLIC_OE_API_KEY }}
           PUBLIC_SANITY_PROJECT_ID: ${{ secrets.PUBLIC_SANITY_PROJECT_ID }}
           PUBLIC_SANITY_DATASET: ${{ secrets.PUBLIC_SANITY_DATASET }}
-          OG_FORCE: '1'
-        run: pnpm build:og
+        run: pnpm build:og:force
 
       - name: Commit changed cards
         run: |
