@@ -296,7 +296,7 @@
 										seriesLabels={result.seriesLabels}
 										skipAnimation={true}
 										historicalDataset={result.statsDatasets}
-										containerClass="chart-container h-[300px] md:h-[350px]"
+										containerClass="h-[300px] md:h-[350px]"
 										strokeWidth="2px"
 										xDomain={STUDIO_X_DOMAIN}
 										xTicks={studioXTicks}

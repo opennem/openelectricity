@@ -8,6 +8,7 @@
 
 	import { goto, replaceState } from '$app/navigation';
 	import { getContext, onDestroy, onMount } from 'svelte';
+	import { streamedState } from '$lib/utils/streamed-state.svelte.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import {
 		FacilityChart,
@@ -62,23 +63,11 @@
 	/** @type {Props} */
 	let { data } = $props();
 
-	/**
-	 * Streamed list of all facilities. Populates once `data.facilities` resolves
-	 * — the critical render uses `data.facility` (the selected one) and doesn't
-	 * block on this.
-	 * @type {FacilityListItem[]}
-	 */
-	let facilitiesList = $state([]);
-
-	$effect(() => {
-		let cancelled = false;
-		data.facilities.then((list) => {
-			if (!cancelled) facilitiesList = list;
-		});
-		return () => {
-			cancelled = true;
-		};
-	});
+	// Streamed list of all facilities. Populates once `data.facilities` resolves
+	// — the critical render uses `data.facility` (the selected one) and doesn't
+	// block on this.
+	const streamedFacilities = streamedState(() => data.facilities);
+	let facilitiesList = $derived(streamedFacilities.current ?? []);
 
 	// Go fullscreen to remove nav/footer
 	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */

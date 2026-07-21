@@ -3,7 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import { isSafari } from '$lib/utils/browser-detect';
-	import { createRequestGuard } from '$lib/utils/request-guard';
+	import { streamedState } from '$lib/utils/streamed-state.svelte.js';
 
 	import { showToast } from '$lib/stores/toast';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
@@ -28,25 +28,14 @@
 	let homepageData = $derived(data.homepageData);
 
 	// `data.renewablesInput` is a streamed promise (returned un-awaited from
-	// load() so the OE fetch never gates TTFB) — resolve it into state rather
-	// than an await block so on re-navigation the old chart persists until the
-	// new data lands instead of flashing back to the skeleton.
-	/** @type {import('$lib/oe-api/renewables-cache.server').RenewablesEnvelope | null} */
-	let renewablesResult = $state(null);
+	// load() so the OE fetch never gates TTFB) — resolved into state so on
+	// re-navigation the old chart persists until the new data lands instead of
+	// flashing back to the skeleton.
+	/** @type {{ readonly current: import('$lib/oe-api/renewables-cache.server').RenewablesEnvelope | null }} */
+	const renewablesResult = streamedState(() => data.renewablesInput);
 
-	const renewablesGuard = createRequestGuard();
-	$effect(() => {
-		const { isCurrent } = renewablesGuard.next();
-		Promise.resolve(data.renewablesInput).then((result) => {
-			if (isCurrent()) renewablesResult = result;
-		});
-	});
-
-	// $derived.by, not $derived: at this top-level position TS narrows the
-	// null-initialised state to `null` (the $effect assignment is invisible to
-	// straight-line flow analysis); the closure reads the declared type instead.
-	let renewablesInput = $derived.by(() => renewablesResult?.data ?? null);
-	let renewablesError = $derived.by(() => renewablesResult?.error ?? null);
+	let renewablesInput = $derived(renewablesResult.current?.data ?? null);
+	let renewablesError = $derived(renewablesResult.current?.error ?? null);
 
 	$effect(() => {
 		if (browser && renewablesError) showToast(renewablesError);

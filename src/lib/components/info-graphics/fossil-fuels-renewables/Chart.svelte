@@ -4,6 +4,7 @@
 	import { quintOut } from 'svelte/easing';
 
 	import { LayerCake, Svg, Html, flatten, groupLonger } from 'layercake';
+	import MeasuredChartContainer from '$lib/components/charts/MeasuredChartContainer.svelte';
 	import { scaleOrdinal, scaleUtc } from 'd3-scale';
 	import { format } from 'date-fns';
 
@@ -66,7 +67,7 @@
 		seriesColours = {},
 		skipAnimation = false,
 		valueType = 'percentage',
-		containerClass = 'chart-container h-[350px] md:h-[650px]',
+		containerClass = 'h-[350px] md:h-[650px]',
 		externalHoverTime = undefined,
 		onHoverTimeChange = undefined,
 		annotationPlacement = 'auto',
@@ -94,20 +95,6 @@
 	);
 
 	let innerWidth = $state(0);
-
-	// Measured container size — LayerCake mounts only once the div has layout,
-	// seeded with real dimensions so its pre-measurement box maths (default
-	// height 100 minus mobile padding 120) never goes negative and logs a
-	// spurious zero-height warning on late mounts. `hasLayout` is a one-way
-	// latch: a zero-size blip after first mount (hidden ancestor, layout
-	// transition) must re-measure, not tear down and rebuild the chart.
-	let containerWidth = $state(0);
-	let containerHeight = $state(0);
-	let hasLayout = $state(false);
-
-	$effect(() => {
-		if (containerWidth && containerHeight) hasLayout = true;
-	});
 
 	//TODO: refactor transition
 	let show = $state(false);
@@ -205,11 +192,11 @@
 	</div>
 {/if}
 
-<div class={containerClass} bind:clientWidth={containerWidth} bind:clientHeight={containerHeight}>
-	{#if hasLayout}
+<MeasuredChartContainer class={containerClass}>
+	{#snippet children({ width, height })}
 		<LayerCake
-			{containerWidth}
-			{containerHeight}
+			containerWidth={width}
+			containerHeight={height}
 			padding={{ top: 20, right: chartRight, bottom: chartBottom, left: chartLeft }}
 			x="date"
 			y="value"
@@ -294,11 +281,5 @@
 				{/if}
 			</Html>
 		</LayerCake>
-	{/if}
-</div>
-
-<style>
-	.chart-container {
-		width: 100%;
-	}
-</style>
+	{/snippet}
+</MeasuredChartContainer>

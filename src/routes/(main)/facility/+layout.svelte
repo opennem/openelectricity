@@ -22,6 +22,7 @@
 		isFullscreenUrl,
 		toggleFullscreenMode
 	} from '$lib/utils/fullscreen-mode.js';
+	import { streamedState } from '$lib/utils/streamed-state.svelte.js';
 
 	import FacilityPickerBar from './[code]/_components/FacilityPickerBar.svelte';
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
@@ -42,18 +43,9 @@
 	/** @type {{ data: any, children: any }} */
 	let { data, children } = $props();
 
-	/** @type {FacilityListItem[]} */
-	let facilitiesList = $state.raw([]);
-
-	$effect(() => {
-		let cancelled = false;
-		Promise.resolve(data.facilities).then((list) => {
-			if (!cancelled) facilitiesList = list || [];
-		});
-		return () => {
-			cancelled = true;
-		};
-	});
+	/** @type {{ readonly current: FacilityListItem[] | null }} */
+	const streamedFacilities = streamedState(() => data.facilities);
+	let facilitiesList = $derived(streamedFacilities.current ?? []);
 
 	let selectedFacility = $derived.by(() => {
 		const f = page.data.facility;
