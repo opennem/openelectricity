@@ -81,6 +81,47 @@ function getOEPath(record, focusTime) {
 	return oePath;
 }
 
+/**
+ * Fetch the tracker data around focusTime and convert it to a time series.
+ * Returns undefined if the data is unavailable rather than throwing.
+ * @param {typeof globalThis.fetch} fetch
+ * @param {MilestoneRecord} record
+ * @param {number} focusTime
+ */
+async function getTimeSeries(fetch, record, focusTime) {
+	let oePath = getOEPath(record, focusTime);
+	if (!oePath) return undefined;
+
+	let trackerRes = await fetch(oePath);
+	if (!trackerRes.ok) return undefined;
+
+	let trackerData = await trackerRes.json();
+	let results = trackerData.data?.[0]?.results;
+	let result = results?.[0];
+	let fuelTechId = record.fueltech_id;
+
+	if (fuelTechId && result) {
+		if (fuelTechId === 'fossils') {
+			result = results.find((/** @type {any} */ d) => !d.columns.renewable);
+		} else if (fuelTechId === 'renewables') {
+			result = results.find((/** @type {any} */ d) => d.columns.renewable);
+		}
+	}
+
+	if (!result?.data) return undefined;
+
+	// convert result to a time series
+	return result.data.map((/** @type {any} */ d) => {
+		let date = new Date(d[0]);
+		return {
+			dateStr: d[0],
+			date,
+			time: date.getTime(),
+			value: d[1]
+		};
+	});
+}
+
 export async function load({ params, url, fetch }) {
 	let { searchParams } = url;
 	let focusTimeStr = searchParams.get('focusTime') || '';
@@ -88,81 +129,60 @@ export async function load({ params, url, fetch }) {
 	let focusTime = parseInt(focusTimeStr);
 	let id = params.id;
 
-	if (id) {
-		let res = await fetch(`/api/records/${id}?pageSize=1`);
-		let jsonData = await res.json();
-
-		let trackerRes;
-		let trackerData;
-		let timeSeries;
-		let timeZone;
-		let period = 'interval';
-		let fuelTechId;
-		let metric;
-		let focusRecord;
-
-		// console.log('jsonData', jsonData);
-		if (jsonData.data.length > 0) {
-			let firstRecord = jsonData.data[0];
-			if (!focusTimeStr || focusTimeStr === 'null') {
-				focusTime = new Date(firstRecord.interval).getTime();
-			}
-
-			let oePath = getOEPath(firstRecord, focusTime);
-
-			timeZone = firstRecord.network_id === 'WEM' ? '+08:00' : '+10:00';
-
-			period = firstRecord.period;
-			fuelTechId = firstRecord.fueltech_id;
-			metric = firstRecord.metric;
-
-			if (oePath) {
-				trackerRes = await fetch(oePath);
-				trackerData = await trackerRes.json();
-
-				let data = trackerData.data;
-				let results = data[0].results;
-				let result = results[0];
-
-				if (fuelTechId && result) {
-					if (fuelTechId === 'fossils') {
-						result = results.find((/** @type {any} */ d) => !d.columns.renewable);
-					} else if (fuelTechId === 'renewables') {
-						result = results.find((/** @type {any} */ d) => d.columns.renewable);
-					}
-				}
-
-				// convert result to a time series
-				timeSeries = result.data.map((/** @type {any} */ d) => {
-					let date = new Date(d[0]);
-					return {
-						dateStr: d[0],
-						date,
-						time: date.getTime(),
-						value: d[1]
-					};
-				});
-
-				focusRecord = timeSeries.find((/** @type {any} */ d) => d.time === focusTime);
-			}
-		}
-
-		// Map renewable_proportion to renewables for icon/color display
-		let displayFuelTechId = metric === 'renewable_proportion' ? 'renewables' : fuelTechId;
-
-		return {
-			focusTime,
-			record: jsonData.data[0],
-			timeSeries,
-			timeZone,
-			period,
-			fuelTechId: displayFuelTechId,
-			metric,
-			focusRecord
-		};
-	} else {
+	if (!id) {
 		error(404, {
 			message: 'Record ID not found.'
 		});
 	}
+
+	let res = await fetch(`/api/records/${id}?pageSize=1`);
+	if (!res.ok) {
+		error(502, {
+			message: 'Unable to fetch record.'
+		});
+	}
+
+	let jsonData = await res.json();
+	if (!jsonData.data || jsonData.data.length === 0) {
+		error(404, {
+			message: 'Record not found.'
+		});
+	}
+
+	let firstRecord = jsonData.data[0];
+	let latestRecordTime = new Date(firstRecord.interval).getTime();
+
+	if (!focusTimeStr || focusTimeStr === 'null' || isNaN(focusTime)) {
+		focusTime = latestRecordTime;
+	}
+
+	let timeZone = firstRecord.network_id === 'WEM' ? '+08:00' : '+10:00';
+	let period = firstRecord.period;
+	let fuelTechId = firstRecord.fueltech_id;
+	let metric = firstRecord.metric;
+
+	let timeSeries = await getTimeSeries(fetch, firstRecord, focusTime);
+	let focusRecord = timeSeries?.find((/** @type {any} */ d) => d.time === focusTime);
+
+	// focusTime may not match any data point (e.g. revised data or a stale link) —
+	// fall back to the latest record date so the page still renders
+	if (!focusRecord && focusTime !== latestRecordTime) {
+		focusTime = latestRecordTime;
+		timeSeries = await getTimeSeries(fetch, firstRecord, focusTime);
+		focusRecord = timeSeries?.find((/** @type {any} */ d) => d.time === focusTime);
+	}
+
+	// Map renewable_proportion to renewables for icon/color display
+	let displayFuelTechId = metric === 'renewable_proportion' ? 'renewables' : fuelTechId;
+
+	return {
+		focusTime,
+		record: firstRecord,
+		timeSeries,
+		timeZone,
+		period,
+		fuelTechId: displayFuelTechId,
+		metric,
+		focusRecord
+	};
 }

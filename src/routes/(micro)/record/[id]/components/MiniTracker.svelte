@@ -13,7 +13,7 @@
 
 	// Configure chart reactively when props change
 	$effect(() => {
-		if (timeSeries.length > 0) {
+		if (timeSeries && timeSeries.length > 0) {
 			let dataMetric = /** @type {import('openelectricity').DataMetric} */ (metric);
 			let isIntervalPeriod = period === 'interval';
 

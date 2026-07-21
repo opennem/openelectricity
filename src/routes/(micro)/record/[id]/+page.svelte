@@ -12,8 +12,8 @@
 
 	/** @type {MilestoneRecord} */
 	let currentRecord = $derived(record);
-	let formatX = $derived(xTickValueFormatters[period].format);
-	let recordSetOnDate = $derived(formatX(focusRecord.date, timeZone));
+	let formatX = $derived(xTickValueFormatters[period]?.format);
+	let recordSetOnDate = $derived(focusRecord && formatX ? formatX(focusRecord.date, timeZone) : '');
 
 	let pageTitle = $derived.by(() => {
 		if (!currentRecord) return 'Record';
@@ -59,28 +59,30 @@
 					</h2>
 				</div>
 
-				<div
-					class="flex md:flex-col md:justify-end rounded-2xl px-8 pt-6 pb-4 bg-light-warm-grey md:ml-2 border border-mid-warm-grey"
-				>
+				{#if focusRecord}
 					<div
-						class="md:text-right text-lg text-mid-grey font-space uppercase w-full flex items-center gap-2 justify-end"
+						class="flex md:flex-col md:justify-end rounded-2xl px-8 pt-6 pb-4 bg-light-warm-grey md:ml-2 border border-mid-warm-grey"
 					>
-						<span class="w-7 h-7 border-4 border-white bg-black rounded-full"></span>
-						Record set
-					</div>
+						<div
+							class="md:text-right text-lg text-mid-grey font-space uppercase w-full flex items-center gap-2 justify-end"
+						>
+							<span class="w-7 h-7 border-4 border-white bg-black rounded-full"></span>
+							Record set
+						</div>
 
-					<div class="text-right w-full whitespace-nowrap text-dark-grey">
-						<span class="text-2xl leading-5xl font-medium">
-							{recordSetOnDate}
-						</span>
-						<div class="text-5xl leading-5xl font-semibold">
-							{getNumberFormat(0).format(focusRecord.value)}
-							<small class="text-xl font-mono text-mid-grey">
-								{currentRecord.value_unit}
-							</small>
+						<div class="text-right w-full whitespace-nowrap text-dark-grey">
+							<span class="text-2xl leading-5xl font-medium">
+								{recordSetOnDate}
+							</span>
+							<div class="text-5xl leading-5xl font-semibold">
+								{getNumberFormat(0).format(focusRecord.value)}
+								<small class="text-xl font-mono text-mid-grey">
+									{currentRecord.value_unit}
+								</small>
+							</div>
 						</div>
 					</div>
-				</div>
+				{/if}
 			</header>
 
 			<MiniTracker record={currentRecord} {focusTime} {timeSeries} {metric} {period} {timeZone} />
