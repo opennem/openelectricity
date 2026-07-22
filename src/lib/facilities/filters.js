@@ -1,7 +1,7 @@
 import optionsReducer from '$lib/utils/options-reducer';
 import { statusColours } from '$lib/theme/openelectricity';
 import { STATUS_LABELS as LOAD_STATUS_LABELS } from '$lib/facilities/data-centres.js';
-import { getLeafValues } from '$lib/facilities/filter-options.js';
+import { getLeafValues, parseSelection } from '$lib/facilities/filter-options.js';
 
 export { statusColours };
 
@@ -28,7 +28,6 @@ export const statusOptions = [
 	}
 ];
 
-export const ALL_STATUSES = statusOptions.map((opt) => opt.value);
 export const DEFAULT_STATUSES = ['operating', 'commissioning'];
 
 // Data centre (load) statuses — a development pipeline distinct from the OE
@@ -214,6 +213,15 @@ export const typeOptions = [
 /** All selectable region values — the Region filter's "everything shown" default. */
 export const ALL_REGIONS = getLeafValues(regionOptions);
 
+// Without the load-only territories (ACT/NT) — the Region filter when the
+// facility_loads feature flag is off. The URL/server codec keeps using
+// ALL_REGIONS as its default either way, so wire semantics don't change
+// with the flag.
+export const GRID_REGION_OPTIONS = regionOptions.filter(
+	(opt) => opt.value !== 'act' && opt.value !== 'nt'
+);
+export const GRID_REGIONS = getLeafValues(GRID_REGION_OPTIONS);
+
 /** All selectable fuel-tech leaf values (sub-technologies included). */
 export const FUEL_TECH_VALUES = getLeafValues(fuelTechOptions);
 /** Every value in the fuel-tech tree (groups + leaves) — for row rendering. */
@@ -222,11 +230,23 @@ export const FUEL_TECH_OPTION_VALUES = new Set([
 	...FUEL_TECH_VALUES
 ]);
 
-// Selectable leaves only — group values ('generators', 'loads', 'gas'…) are
-// never stored in a selection.
-export const ALL_TYPES = getLeafValues(typeOptions);
 // Default: all generator technologies on, loads off (no fuel-tech filter).
 export const DEFAULT_TYPES = [...FUEL_TECH_VALUES];
+
+/**
+ * Parse the fuel_techs URL param — shared by the client page and the server
+ * load so the two boundaries can't drift. Handles the legacy prototype URLs
+ * that expressed "generators off" as generators=false instead of
+ * fuel_techs=none, and drops unknown values.
+ * @param {URLSearchParams} searchParams
+ * @returns {string[]}
+ */
+export function parseFuelTechsParam(searchParams) {
+	if (searchParams.get('generators') === 'false' && !searchParams.get('fuel_techs')) return [];
+	return parseSelection(searchParams.get('fuel_techs'), FUEL_TECH_VALUES).filter((v) =>
+		FUEL_TECH_VALUES.includes(v)
+	);
+}
 
 /** Region value → short label (NSW, QLD, …), e.g. for compact selection summaries */
 export const regionShortLabels = optionsReducer(regions.filter((r) => r.value));

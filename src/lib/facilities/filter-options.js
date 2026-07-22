@@ -44,6 +44,53 @@ export function countSelectedLeaves(options, selected) {
 }
 
 /**
+ * Toggle a single leaf value in a selection: meta-press selects only that
+ * value; otherwise the value is added or removed.
+ * @param {string[]} currentSelection
+ * @param {string} value
+ * @param {boolean} isMetaPressed
+ * @returns {string[]}
+ */
+export function toggleSelection(currentSelection, value, isMetaPressed) {
+	if (isMetaPressed) return [value];
+	if (currentSelection.includes(value)) {
+		return currentSelection.filter((item) => item !== value);
+	}
+	return [...currentSelection, value];
+}
+
+/**
+ * Toggle a group's leaf values in a selection: meta-press selects only the
+ * group; otherwise a fully-selected group is removed, a partial one is
+ * unioned in.
+ * @param {string[]} currentSelection
+ * @param {string[]} values
+ * @param {boolean} isMetaPressed
+ * @returns {string[]}
+ */
+export function toggleGroupSelection(currentSelection, values, isMetaPressed) {
+	if (isMetaPressed) return [...values];
+	const allSelected = values.every((v) => currentSelection.includes(v));
+	return allSelected
+		? currentSelection.filter((item) => !values.includes(item))
+		: [...new Set([...currentSelection, ...values])];
+}
+
+/**
+ * Dispatch a FilterOptionList change onto a selection: group rows emit their
+ * descendant leaf values as an array, leaves emit a single value.
+ * @param {string[]} currentSelection
+ * @param {string | string[]} value
+ * @param {boolean} isMetaPressed
+ * @returns {string[]}
+ */
+export function toggleInSelection(currentSelection, value, isMetaPressed) {
+	return Array.isArray(value)
+		? toggleGroupSelection(currentSelection, value, isMetaPressed)
+		: toggleSelection(currentSelection, value, isMetaPressed);
+}
+
+/**
  * Order-insensitive selection equality — "is this filter at its default?".
  * The linchpin of the literal "ticked = shown" model: badges, tags and URL
  * serialisation all key off this one predicate.

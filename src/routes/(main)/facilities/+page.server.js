@@ -38,8 +38,14 @@ import {
 	filterFacilitiesByRegions
 } from '$lib/facilities/status-utils.js';
 import { fetchFacilityPhotos } from './_utils/fetch-facility-photos.js';
-import { DEFAULT_STATUSES, ALL_REGIONS, normaliseViewParam } from '$lib/facilities/filters.js';
-import { parseSelection } from '$lib/facilities/filter-options.js';
+import {
+	DEFAULT_STATUSES,
+	ALL_REGIONS,
+	FUEL_TECH_VALUES,
+	parseFuelTechsParam,
+	normaliseViewParam
+} from '$lib/facilities/filters.js';
+import { parseSelection, isDefaultSelection } from '$lib/facilities/filter-options.js';
 // Codes with a committed `static/og/facility/<code>.jpg`; lets the Grid view show
 // the build-generated card and fall back to a live card for the rest.
 import cardCodes from '$lib/server/og/facility-card-codes.json';
@@ -58,9 +64,9 @@ export async function load({ url }) {
 	// is the inverse of the client's serialiseSelection.
 	const statuses = parseSelection(searchParams.get('statuses'), DEFAULT_STATUSES);
 	const regions = parseSelection(searchParams.get('regions'), ALL_REGIONS);
-	const fuelTechs = searchParams.get('fuel_techs')
-		? /** @type {string} */ (searchParams.get('fuel_techs')).split(',')
-		: [];
+	// Technologies use the same codec (default = every fuel tech), via the
+	// shared parser that also handles legacy generators=false URLs.
+	const fuelTechs = parseFuelTechsParam(searchParams);
 	// Capacity range - parsed on client, just pass through
 	const capacityMinParam = searchParams.get('capacity_min');
 	const capacityMaxParam = searchParams.get('capacity_max');
@@ -82,14 +88,19 @@ export async function load({ url }) {
 	// still fetched lazily on selection — see the profile endpoint.
 	const photosPromise = fetchFacilityPhotos();
 
-	// An empty statuses/regions selection literally shows nothing — skip the
-	// API round-trip entirely. Otherwise check the server-side cache first.
+	// An empty statuses/regions/technologies selection literally shows nothing
+	// — skip the API round-trip entirely. Otherwise check the server cache.
 	let facilities =
-		statuses.length === 0 || regions.length === 0 ? [] : getCachedFacilities(filterParams);
+		statuses.length === 0 || regions.length === 0 || fuelTechs.length === 0
+			? []
+			: getCachedFacilities(filterParams);
 
 	if (!facilities) {
-		// Expand fuel tech selections to API IDs
-		const fuelTechIds = expandFuelTechs(fuelTechs);
+		// Expand fuel tech selections to API IDs. The all-selected default maps
+		// to "no technology filter" at this boundary only.
+		const fuelTechIds = expandFuelTechs(
+			isDefaultSelection(fuelTechs, FUEL_TECH_VALUES) ? [] : fuelTechs
+		);
 
 		// Prepare statuses for API (handle commissioning conversion)
 		const apiStatuses = prepareStatusesForApi(statuses);

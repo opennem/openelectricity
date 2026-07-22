@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { X } from '@lucide/svelte';
 
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
@@ -6,18 +7,29 @@
 	import SearchInput from './SearchInput.svelte';
 	import FilterAccordionSection from './filters/FilterAccordionSection.svelte';
 	import FilterOptionList from './filters/FilterOptionList.svelte';
-	import { getSelectedLabels } from '$lib/facilities/filter-options.js';
+	import {
+		getSelectedLabels,
+		activeLeafCount,
+		toggleInSelection
+	} from '$lib/facilities/filter-options.js';
 	import { regionShortLabels } from '$lib/facilities/filters.js';
 
 	/**
+	 * Mobile filter sheet. Like the desktop dropdowns, every control edits a
+	 * LOCAL DRAFT — nothing applies until the footer's Apply button commits
+	 * all changed drafts at once (via the onapply* callbacks) and closes.
+	 * Dismissing the sheet any other way discards the drafts; they re-seed
+	 * from the committed props on the next open.
 	 * @type {{
 	 *   open: boolean,
+	 *   typeTitle?: string,
 	 *   typeOptions?: Array<{label: string, value: string, colour?: string}>,
+	 *   typeExpanded?: string[],
 	 *   regionOptions: Array<{label: string, value: string, children?: Array<{label: string, value: string}>}>,
 	 *   statusOptions: Array<{label: string, value: string, colour?: string}>,
-	 *   typeCount?: number,
-	 *   statusCount?: number,
-	 *   regionCount?: number,
+	 *   typeDefaults?: string[],
+	 *   statusDefaults?: string[],
+	 *   regionDefaults?: string[],
 	 *   selectedTypes?: string[],
 	 *   selectedRegions: string[],
 	 *   selectedStatuses: string[],
@@ -25,35 +37,28 @@
 	 *   capacityMin: number,
 	 *   capacityMax: number,
 	 *   formatCapacity: (val: number) => string,
-	 *   filteredCount: number,
 	 *   onclose: () => void,
-	 *   onresetall: () => void,
-	 *   ontypeschange?: (values: string[] | string, isMetaPressed: boolean) => void,
-	 *   oncleartypes?: () => void,
+	 *   onapplytypes?: (values: string[]) => void,
+	 *   onapplystatuses?: (values: string[]) => void,
+	 *   onapplyregions?: (values: string[]) => void,
+	 *   onapplycapacity?: (range: [number, number]) => void,
+	 *   onapplyyears?: (range: [number, number]) => void,
 	 *   typeRow?: import('svelte').Snippet<[import('$lib/facilities/filter-options.js').FilterOption, any]>,
-	 *   onregionschange: (values: string[] | string, isMetaPressed: boolean) => void,
-	 *   onstatuseschange: (values: string[] | string, isMetaPressed: boolean) => void,
-	 *   oncapacityrangechange: (range: [number, number]) => void,
-	 *   onclearregions: () => void,
-	 *   onclearstatuses: () => void,
-	 *   onclearcapacity: () => void,
 	 *   yearRange: [number, number],
 	 *   yearMin: number,
-	 *   yearMax: number,
-	 *   onyearrangechange: (range: [number, number]) => void,
-	 *   onclearyears: () => void
+	 *   yearMax: number
 	 * }}
 	 */
 	let {
 		open,
+		typeTitle = 'Type',
 		typeOptions = [],
+		typeExpanded = [],
 		regionOptions,
 		statusOptions,
-		// Deviation-aware active counts, computed once by Filters.svelte (0 = at
-		// default; an empty nothing-shown selection counts 1).
-		typeCount = 0,
-		statusCount = 0,
-		regionCount = 0,
+		typeDefaults = [],
+		statusDefaults = [],
+		regionDefaults = [],
 		selectedTypes = [],
 		selectedRegions,
 		selectedStatuses,
@@ -61,38 +66,82 @@
 		capacityMin,
 		capacityMax,
 		formatCapacity,
-		filteredCount,
 		onclose,
-		onresetall,
-		ontypeschange,
-		oncleartypes,
+		onapplytypes,
+		onapplystatuses,
+		onapplyregions,
+		onapplycapacity,
+		onapplyyears,
 		typeRow,
-		onregionschange,
-		onstatuseschange,
-		oncapacityrangechange,
-		onclearregions,
-		onclearstatuses,
-		onclearcapacity,
 		yearRange,
 		yearMin,
-		yearMax,
-		onyearrangechange,
-		onclearyears
+		yearMax
 	} = $props();
 
 	let techSearchTerm = $state('');
 
-	// Under "ticked = shown", counts and tags only surface when a filter
+	// The staged selections while the sheet is open — seeded from the
+	// committed props each time it opens, discarded on dismiss.
+	/** @type {string[]} */
+	let draftTypes = $state([]);
+	/** @type {string[]} */
+	let draftStatuses = $state([]);
+	/** @type {string[]} */
+	let draftRegions = $state([]);
+	/** @type {[number, number]} */
+	let draftCapacity = $state([0, 10000]);
+	/** @type {[number, number]} */
+	let draftYears = $state([1900, 2040]);
+
+	$effect(() => {
+		if (!open) return;
+		untrack(() => {
+			draftTypes = [...selectedTypes];
+			draftStatuses = [...selectedStatuses];
+			draftRegions = [...selectedRegions];
+			draftCapacity = [capacityRange[0], capacityRange[1]];
+			draftYears = [yearRange[0], yearRange[1]];
+			techSearchTerm = '';
+		});
+	});
+
+	/** Reset every draft to its default — committed only when Apply is hit. */
+	function resetDrafts() {
+		draftTypes = [...typeDefaults];
+		draftStatuses = [...statusDefaults];
+		draftRegions = [...regionDefaults];
+		draftCapacity = [capacityMin, capacityMax];
+		draftYears = [yearMin, yearMax];
+	}
+
+	/** Commit every changed draft, then close. Client-side range commits go
+	 * first (replaceState); the selection commits follow, so a final
+	 * navigation's buildUrl reads everything back from updated state. The
+	 * parent's apply handlers drop unchanged selections themselves. */
+	function applyAll() {
+		if (draftCapacity[0] !== capacityRange[0] || draftCapacity[1] !== capacityRange[1]) {
+			onapplycapacity?.([draftCapacity[0], draftCapacity[1]]);
+		}
+		if (draftYears[0] !== yearRange[0] || draftYears[1] !== yearRange[1]) {
+			onapplyyears?.([draftYears[0], draftYears[1]]);
+		}
+		onapplyregions?.(draftRegions);
+		onapplystatuses?.(draftStatuses);
+		onapplytypes?.(draftTypes);
+		onclose();
+	}
+
+	// Under "ticked = shown", counts and tags only surface when a DRAFT
 	// deviates from its default (count 0 = at default) — otherwise a fresh
-	// page reads as filtered.
-	let typeIsDefault = $derived(typeCount === 0);
-	let statusIsDefault = $derived(statusCount === 0);
-	let regionIsDefault = $derived(regionCount === 0);
+	// sheet reads as filtered.
+	let typeCount = $derived(activeLeafCount(typeOptions, draftTypes, typeDefaults));
+	let statusCount = $derived(activeLeafCount(statusOptions, draftStatuses, statusDefaults));
+	let regionCount = $derived(activeLeafCount(regionOptions, draftRegions, regionDefaults));
 
 	let isCapacityFiltered = $derived(
-		capacityRange[0] > capacityMin || capacityRange[1] < capacityMax
+		draftCapacity[0] > capacityMin || draftCapacity[1] < capacityMax
 	);
-	let isYearFiltered = $derived(yearRange[0] > yearMin || yearRange[1] < yearMax);
+	let isYearFiltered = $derived(draftYears[0] > yearMin || draftYears[1] < yearMax);
 
 	// The sheet anchors to this full-viewport wrapper (kept mounted so the
 	// sheet's own open/close fly transition can play).
@@ -154,7 +203,7 @@
 				<button
 					type="button"
 					class="justify-self-start text-sm text-mid-grey hover:text-dark-grey font-medium underline underline-offset-2 transition-colors cursor-pointer"
-					onclick={onresetall}
+					onclick={resetDrafts}
 				>
 					Reset
 				</button>
@@ -173,11 +222,11 @@
 		<!-- Filter sections -->
 		<section class="px-6">
 			<FilterAccordionSection
-				title="Type"
-				tags={typeIsDefault ? [] : getSelectedLabels(typeOptions, selectedTypes)}
+				title={typeTitle}
+				tags={typeCount === 0 ? [] : getSelectedLabels(typeOptions, draftTypes)}
 				count={typeCount}
 				clearLabel="Reset to defaults"
-				onclear={oncleartypes}
+				onclear={() => (draftTypes = [...typeDefaults])}
 			>
 				<div class="pb-3">
 					<SearchInput
@@ -191,43 +240,47 @@
 				</div>
 				<FilterOptionList
 					options={typeOptions}
-					selected={selectedTypes}
-					defaultExpanded={['generators', 'loads']}
+					selected={draftTypes}
+					defaultExpanded={typeExpanded}
 					searchTerm={techSearchTerm}
-					onchange={ontypeschange}
+					onchange={(value, isMetaPressed) =>
+						(draftTypes = toggleInSelection(draftTypes, value, isMetaPressed))}
 					row={typeRow}
 				/>
 			</FilterAccordionSection>
 
 			<FilterAccordionSection
 				title="Status"
-				tags={statusIsDefault ? [] : getSelectedLabels(statusOptions, selectedStatuses)}
+				tags={statusCount === 0 ? [] : getSelectedLabels(statusOptions, draftStatuses)}
 				count={statusCount}
 				clearLabel="Reset to defaults"
-				onclear={onclearstatuses}
+				onclear={() => (draftStatuses = [...statusDefaults])}
 			>
 				<FilterOptionList
 					options={statusOptions}
-					selected={selectedStatuses}
-					onchange={onstatuseschange}
+					selected={draftStatuses}
+					onchange={(value, isMetaPressed) =>
+						(draftStatuses = toggleInSelection(draftStatuses, value, isMetaPressed))}
 				/>
 			</FilterAccordionSection>
 
 			<FilterAccordionSection
 				title="Region"
-				tags={regionIsDefault
+				tags={regionCount === 0
 					? []
-					: getSelectedLabels(regionOptions, selectedRegions, {
+					: getSelectedLabels(regionOptions, draftRegions, {
 							labelMap: regionShortLabels
 						})}
 				count={regionCount}
-				onclear={onclearregions}
+				clearLabel="Reset to defaults"
+				onclear={() => (draftRegions = [...regionDefaults])}
 			>
 				<FilterOptionList
 					options={regionOptions}
-					selected={selectedRegions}
+					selected={draftRegions}
 					defaultExpanded={['nem']}
-					onchange={onregionschange}
+					onchange={(value, isMetaPressed) =>
+						(draftRegions = toggleInSelection(draftRegions, value, isMetaPressed))}
 				/>
 			</FilterAccordionSection>
 
@@ -235,26 +288,26 @@
 				title: 'Capacity',
 				isFiltered: isCapacityFiltered,
 				bordered: true,
-				onclear: onclearcapacity,
+				onclear: () => (draftCapacity = [capacityMin, capacityMax]),
 				min: capacityMin,
 				max: capacityMax,
-				value: capacityRange,
+				value: draftCapacity,
 				step: 10,
 				formatValue: formatCapacity,
-				onchange: oncapacityrangechange
+				onchange: (range) => (draftCapacity = range)
 			})}
 
 			{@render rangeSection({
 				title: 'Commissioned',
 				isFiltered: isYearFiltered,
 				bordered: false,
-				onclear: onclearyears,
+				onclear: () => (draftYears = [yearMin, yearMax]),
 				min: yearMin,
 				max: yearMax,
-				value: yearRange,
+				value: draftYears,
 				step: 1,
 				formatValue: (v) => String(v),
-				onchange: onyearrangechange
+				onchange: (range) => (draftYears = range)
 			})}
 		</section>
 
@@ -263,10 +316,9 @@
 				<button
 					type="button"
 					class="w-full bg-dark-grey text-white rounded-lg py-4 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
-					onclick={onclose}
+					onclick={applyAll}
 				>
-					Show {filteredCount.toLocaleString()}
-					{filteredCount === 1 ? 'facility' : 'facilities'}
+					Apply filters
 				</button>
 			</footer>
 		{/snippet}

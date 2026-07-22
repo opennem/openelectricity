@@ -7,14 +7,16 @@
 
 	/**
 	 * Shared chrome for the filter dropdowns: pill trigger, portalled panel
-	 * with outside-click/scroll close, and a footer whose Apply button only
-	 * closes the panel (selections apply immediately as they change).
+	 * with outside-click/scroll close, and a footer whose Apply button commits
+	 * the caller's staged changes (via `onapply`) and closes the panel;
+	 * dismissing any other way discards them.
 	 * @type {{
 	 *   label: string,
 	 *   badge?: number | string | null,
 	 *   active?: boolean,
 	 *   compact?: boolean,
 	 *   onopenchange?: (open: boolean) => void,
+	 *   onapply?: () => void,
 	 *   footerLeft?: import('svelte').Snippet,
 	 *   children: import('svelte').Snippet
 	 * }}
@@ -25,6 +27,7 @@
 		active = false,
 		compact = false,
 		onopenchange,
+		onapply,
 		footerLeft,
 		children
 	} = $props();
@@ -43,8 +46,13 @@
 	}
 
 	function handleDocumentClick(/** @type {MouseEvent} */ e) {
-		const target = /** @type {Node} */ (e.target);
-		if (triggerEl?.contains(target) || panelEl?.contains(target)) return;
+		// composedPath (fixed at dispatch time) rather than live contains():
+		// a checkbox click can remove the exact node that was clicked (the tick
+		// icon swaps out), and by the time this handler runs the detached
+		// target no longer counts as "inside the panel" — which closed the
+		// panel on an inside click.
+		const path = e.composedPath();
+		if ((triggerEl && path.includes(triggerEl)) || (panelEl && path.includes(panelEl))) return;
 		setOpen(false);
 	}
 
@@ -82,7 +90,10 @@
 				<button
 					type="button"
 					class="ml-auto bg-dark-grey text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
-					onclick={() => setOpen(false)}
+					onclick={() => {
+						onapply?.();
+						setOpen(false);
+					}}
 				>
 					Apply
 				</button>

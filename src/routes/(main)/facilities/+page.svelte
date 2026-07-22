@@ -21,6 +21,7 @@
 		ALL_LOAD_STATUSES,
 		ALL_REGIONS,
 		FUEL_TECH_VALUES,
+		parseFuelTechsParam,
 		normaliseViewParam
 	} from '$lib/facilities/filters.js';
 	import { serialiseSelection, parseSelection } from '$lib/facilities/filter-options.js';
@@ -77,6 +78,7 @@
 		windowedHref
 	} from '$lib/utils/fullscreen-mode.js';
 	import { deriveCard } from '$lib/og/facility-card-data.js';
+	import { isFeatureEnabled } from '$lib/stores/app.js';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 
 	let { data } = $props();
@@ -100,22 +102,35 @@
 	const belowTablet = new MediaQuery(BELOW_TABLET_QUERY);
 	let isFullscreen = $derived(building ? true : belowTablet.current || isFullscreenUrl(page.url));
 
+	// facility_loads feature flag: gates the whole loads (data centres) UI —
+	// the Loads group in the Type filter, the Loads statuses, ACT/NT regions,
+	// the map layer and its legend. URL/server semantics are unchanged either
+	// way; with the flag off the datacentres param is simply never honoured.
+	// Enable via PUBLIC_FEATURE_FLAGS ('facility_loads': true) or, for a
+	// testing session, the ?facility_loads=true URL override.
+	const loadsFeature =
+		isFeatureEnabled('facility_loads') ||
+		(!building && page.url.searchParams.get('facility_loads') === 'true');
+	// URL-enabled overrides must survive filter navigations (buildUrl
+	// reconstructs the URL from scratch).
+	const loadsFeatureViaUrl = loadsFeature && !isFeatureEnabled('facility_loads');
+
 	// URL parsers for the client-side filter state — shared between the $state
 	// initialisers below and the afterNavigate re-sync, so the two can't drift.
 	/** @param {URLSearchParams} params */
-	const parseShowGenerators = (params) => params.get('generators') !== 'false';
-	/** @param {URLSearchParams} params */
-	const parseShowLoads = (params) => params.get('datacentres') === 'true';
+	const parseShowLoads = (params) => loadsFeature && params.get('datacentres') === 'true';
 	/** @param {URLSearchParams} params */
 	const parseLoadStatuses = (params) =>
 		parseSelection(params.get('load_statuses'), DEFAULT_LOAD_STATUSES).filter((s) =>
 			ALL_LOAD_STATUSES.includes(s)
 		);
 
-	// Type filter (Generators / Loads) flags — generators are the server-fetched
-	// OE facilities, loads are the data centres. Both persist in the URL
-	// (generators=false / datacentres=true, only when non-default).
-	let showGenerators = $state(parseShowGenerators(page.url.searchParams));
+	// The Type filter's generator side: the literal ticked technology leaves
+	// ([] = generators hidden, every leaf = no technology filter). The
+	// empty-means-all wire convention lives only at the URL/API boundary
+	// (buildUrl serialises via the codec; the server parses its inverse).
+	let selectedTechs = $state(parseFuelTechsParam(page.url.searchParams));
+	// The Loads side — data centres, persisted as datacentres=true.
 	let showLoads = $state(parseShowLoads(page.url.searchParams));
 
 	// Data centres (loads) — pseudo-facility objects mixed into the views when
@@ -150,13 +165,11 @@
 	});
 
 	// Server data (updates when server responds) + client-side loads mix-in.
-	// The Type filter gates each side: generators (server data) and loads
-	// (data centres) — everything downstream (views, map, bounds, summary)
+	// Generators are filtered entirely server-side (an empty technology
+	// selection already yields an empty data.facilities); loads mix in
+	// client-side — everything downstream (views, map, bounds, summary)
 	// derives from this combined set.
-	let facilities = $derived([
-		...(showGenerators ? (data.facilities ?? []) : []),
-		...loadFacilities
-	]);
+	let facilities = $derived([...(data.facilities ?? []), ...loadFacilities]);
 
 	// Optimistic local state for filters - updates immediately on user interaction
 	// Initialize empty and sync via $effect to avoid capturing stale initial values
@@ -164,38 +177,26 @@
 	let statuses = $state([]);
 	/** @type {string[]} */
 	let regions = $state([]);
-	/** @type {string[]} */
-	let fuelTechs = $state([]);
 
-	// Type filter selection. The Generators branch carries the fuel-tech tree:
-	// an empty fuelTechs state means "all technologies" (the server
-	// convention), which reads as every tech leaf ticked. Data centres are the
-	// only member of the Loads group today, so its leaf maps to showLoads.
-	let selectedTypes = $derived([
-		...(showGenerators ? (fuelTechs.length ? fuelTechs : FUEL_TECH_VALUES) : []),
-		...(showLoads ? ['data_centres'] : [])
-	]);
+	// Type filter selection: the ticked technology leaves plus the Loads leaf.
+	let selectedTypes = $derived([...selectedTechs, ...(showLoads ? ['data_centres'] : [])]);
 
 	/**
 	 * Type selection covers dispatch type AND technology. Tech changes need a
-	 * server round-trip (fuel_techs param); loads/generators visibility alone
-	 * is client-side and only syncs the URL.
+	 * server round-trip (fuel_techs param); a loads-only toggle is client-side
+	 * and only syncs the URL.
 	 * @param {string[]} values
 	 */
 	function handleTypesChange(values) {
 		const techSelection = values.filter((v) => v !== 'data_centres');
-		const allTechs = techSelection.length === FUEL_TECH_VALUES.length;
-		const newFuelTechs = allTechs ? [] : techSelection;
-
 		showLoads = values.includes('data_centres');
-		showGenerators = techSelection.length > 0;
 
-		if (newFuelTechs.join(',') !== fuelTechs.join(',')) {
-			fuelTechs = newFuelTechs;
+		if (techSelection.join(',') !== selectedTechs.join(',')) {
+			selectedTechs = techSelection;
 			navigateWithRefetch({
 				statuses,
 				regions,
-				fuelTechs: newFuelTechs,
+				fuelTechs: techSelection,
 				capacityRange,
 				yearRange,
 				view: selectedView,
@@ -321,7 +322,11 @@
 	$effect(() => {
 		statuses = data.statuses;
 		regions = data.regions;
-		fuelTechs = data.fuelTechs;
+		// Value-compare like the afterNavigate re-sync: the server returns a
+		// fresh array on every refetch even when the values are identical.
+		if (data.fuelTechs.join(',') !== selectedTechs.join(',')) {
+			selectedTechs = data.fuelTechs;
+		}
 	});
 
 	// Load the selected facility's auxiliary data — editorial profile (photos,
@@ -625,8 +630,11 @@
 		// writes are value-compared first: afterNavigate fires on every filter
 		// refetch, and an identical-but-fresh array would re-run the whole
 		// filteredFacilities → map chain a second time for nothing.
-		showGenerators = parseShowGenerators(params);
 		showLoads = parseShowLoads(params);
+		const parsedTechs = parseFuelTechsParam(params);
+		if (parsedTechs.join(',') !== selectedTechs.join(',')) {
+			selectedTechs = parsedTechs;
+		}
 		const parsedLoadStatuses = parseLoadStatuses(params);
 		if (parsedLoadStatuses.join(',') !== loadStatuses.join(',')) {
 			loadStatuses = parsedLoadStatuses;
@@ -691,12 +699,8 @@
 			params.delete('golf');
 		}
 
-		// generators: only include if false (default is true)
-		if (!showGenerators) {
-			params.set('generators', 'false');
-		} else {
-			params.delete('generators');
-		}
+		// Drop the legacy generators=… param (superseded by fuel_techs=none).
+		params.delete('generators');
 
 		// data centres: only include if true (default is false)
 		if (showLoads) {
@@ -960,9 +964,13 @@
 		view: v,
 		facility: f = null
 	}) {
-		let url = `/facilities?view=${v}&fuel_techs=${ft.join(',')}`;
+		let url = `/facilities?view=${v}`;
 		// Literal "ticked = shown" selections: default → omitted, none → 'none',
 		// otherwise the ticked subset (see serialiseSelection).
+		const techsSerialised = serialiseSelection(ft, FUEL_TECH_VALUES);
+		if (techsSerialised !== null) {
+			url += `&fuel_techs=${techsSerialised}`;
+		}
 		const statusesSerialised = serialiseSelection(s, DEFAULT_STATUSES);
 		if (statusesSerialised !== null) {
 			url += `&statuses=${statusesSerialised}`;
@@ -997,11 +1005,11 @@
 		if (mapShowGolfCourses) {
 			url += '&golf=true';
 		}
-		if (!showGenerators) {
-			url += '&generators=false';
-		}
 		if (showLoads) {
 			url += '&datacentres=true';
+		}
+		if (loadsFeatureViaUrl) {
+			url += '&facility_loads=true';
 		}
 		const loadStatusesSerialised = serialiseSelection(loadStatuses, DEFAULT_LOAD_STATUSES);
 		if (loadStatusesSerialised !== null) {
@@ -1142,7 +1150,7 @@
 		navigateWithRefetch({
 			statuses,
 			regions: values,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange,
 			view: selectedView
@@ -1169,7 +1177,7 @@
 		navigateWithRefetch({
 			statuses: values,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange,
 			view: selectedView
@@ -1188,7 +1196,7 @@
 		navigateWithoutRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange: range,
 			yearRange,
 			view: selectedView,
@@ -1208,7 +1216,7 @@
 		navigateWithoutRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange: range,
 			view: selectedView,
@@ -1235,7 +1243,7 @@
 		navigateWithoutRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange,
 			view: value,
@@ -1263,10 +1271,9 @@
 	function handleResetAll() {
 		statuses = [...DEFAULT_STATUSES];
 		loadStatuses = [...DEFAULT_LOAD_STATUSES];
-		showGenerators = true;
+		selectedTechs = [...FUEL_TECH_VALUES];
 		showLoads = false;
 		regions = [...ALL_REGIONS];
-		fuelTechs = [];
 		capacityRange = [capacityBounds.min, capacityBounds.max];
 		yearRange = [yearBounds.min, yearBounds.max];
 		capacityTouched = false;
@@ -1275,7 +1282,7 @@
 		navigateWithRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange,
 			view: selectedView,
@@ -1310,7 +1317,7 @@
 				navigateWithoutRefetch({
 					statuses,
 					regions,
-					fuelTechs,
+					fuelTechs: selectedTechs,
 					capacityRange,
 					yearRange,
 					view: selectedView,
@@ -1344,7 +1351,7 @@
 		navigateWithoutRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange,
 			view: selectedView,
@@ -1449,6 +1456,7 @@
 				{searchTerm}
 				{selectedView}
 				{isFullscreen}
+				{loadsFeature}
 				facilitySelected={!!selectedFacility}
 				darkMap={mapTheme !== 'light'}
 				showShortcuts={showShortcutsToast}
@@ -1474,8 +1482,6 @@
 				ondownloadcsv={handleDownloadCsv}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onshortcutinvoked={() => (showShortcutsToast = false)}
-				filteredCount={totalFacilitiesCount}
-				onresetall={handleResetAll}
 			/>
 		</div>
 	{/snippet}

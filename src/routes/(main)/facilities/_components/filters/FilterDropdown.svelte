@@ -5,7 +5,8 @@
 	import {
 		countSelectedLeaves,
 		getLeafValues,
-		isDefaultSelection
+		isDefaultSelection,
+		toggleInSelection
 	} from '$lib/facilities/filter-options.js';
 
 	/**
@@ -15,8 +16,10 @@
 
 	/**
 	 * Pill trigger + dropdown panel for multi-select filters (Type, Status,
-	 * Region). Selections apply immediately via `onchange`; the Apply
-	 * button only closes the panel.
+	 * Region). Checkbox changes are STAGED in a local draft — nothing applies
+	 * until the Apply button fires `onapply` with the final selection.
+	 * Dismissing the panel any other way (outside click, scroll, pill toggle)
+	 * discards the draft; it re-seeds from `selected` on the next open.
 	 * @type {{
 	 *   label: string,
 	 *   options: FilterOption[],
@@ -28,9 +31,7 @@
 	 *   clearLabel?: string,
 	 *   defaults?: string[] | null,
 	 *   listMaxHeight?: number,
-	 *   onchange?: (value: string | string[], isMetaPressed: boolean) => void,
-	 *   onclear?: () => void,
-	 *   onselectall?: () => void,
+	 *   onapply?: (values: string[]) => void,
 	 *   row?: import('svelte').Snippet<[FilterOption, RowState]>
 	 * }}
 	 */
@@ -46,20 +47,25 @@
 		defaults = null,
 		/** Scroll cap for the option list (px) — raise it for tall trees. */
 		listMaxHeight = 320,
-		onchange,
-		onclear,
-		onselectall,
+		onapply,
 		row
 	} = $props();
 
 	let panelSearchTerm = $state('');
 
+	// The staged selection while the panel is open. Seeded from the committed
+	// `selected` on open; committed via onapply; discarded on dismiss.
+	/** @type {string[]} */
+	let draft = $state([]);
+
+	let draftCount = $derived(countSelectedLeaves(options, draft));
 	let selectedCount = $derived(countSelectedLeaves(options, selected));
 
-	// Deviation-aware badge: with `defaults`, the pill only badges when the
-	// selection differs from its default — under the literal "ticked = shown"
-	// model a fresh page has many boxes ticked, and a raw count would read as
-	// a permanently active filter. Stray non-leaf values are ignored.
+	// Deviation-aware badge on the pill — always reflects the COMMITTED
+	// selection, not the draft. With `defaults`, the pill only badges when
+	// the selection differs from its default — under the literal "ticked =
+	// shown" model a fresh page has many boxes ticked, and a raw count would
+	// read as a permanently active filter. Stray non-leaf values are ignored.
 	let atDefault = $derived.by(() => {
 		if (!defaults) return false;
 		const leaves = new Set(getLeafValues(options));
@@ -77,14 +83,19 @@
 	active={defaults ? !atDefault : selectedCount > 0}
 	{compact}
 	onopenchange={(open) => {
-		if (!open) panelSearchTerm = '';
+		if (open) {
+			draft = [...selected];
+		} else {
+			panelSearchTerm = '';
+		}
 	}}
+	onapply={() => onapply?.(draft)}
 >
 	{#snippet footerLeft()}
 		<button
 			type="button"
 			class="text-sm text-dark-grey underline underline-offset-2 hover:text-black cursor-pointer"
-			onclick={() => onselectall?.()}
+			onclick={() => (draft = getLeafValues(options))}
 		>
 			Select all
 		</button>
@@ -105,12 +116,12 @@
 
 	<div class="px-4 pt-3 pb-1 flex items-center justify-between gap-4">
 		<span class="font-space uppercase text-xxs tracking-wider text-mid-grey">
-			{selectedCount} selected
+			{draftCount} selected
 		</span>
 		<button
 			type="button"
 			class="text-xs text-mid-grey hover:text-dark-grey underline underline-offset-2 transition-colors cursor-pointer"
-			onclick={() => onclear?.()}
+			onclick={() => (draft = defaults ? [...defaults] : [])}
 		>
 			{clearLabel}
 		</button>
@@ -119,11 +130,11 @@
 	<div class="px-2 py-1 overflow-y-auto" style="max-height: {listMaxHeight}px">
 		<FilterOptionList
 			{options}
-			{selected}
+			selected={draft}
 			{defaultExpanded}
 			searchTerm={panelSearchTerm}
 			dense
-			{onchange}
+			onchange={(value, isMetaPressed) => (draft = toggleInSelection(draft, value, isMetaPressed))}
 			{row}
 		/>
 	</div>

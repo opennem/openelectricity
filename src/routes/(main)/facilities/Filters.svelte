@@ -9,19 +9,19 @@
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 
-	import { activeLeafCount } from '$lib/facilities/filter-options.js';
+	import { activeLeafCount, isDefaultSelection } from '$lib/facilities/filter-options.js';
 	import {
 		regionOptions,
 		statusOptions,
 		loadStatusOptions,
 		typeOptions,
+		fuelTechOptions,
 		FUEL_TECH_OPTION_VALUES,
-		ALL_STATUSES,
 		DEFAULT_STATUSES,
-		ALL_LOAD_STATUSES,
 		DEFAULT_LOAD_STATUSES,
 		ALL_REGIONS,
-		ALL_TYPES,
+		GRID_REGION_OPTIONS,
+		GRID_REGIONS,
 		DEFAULT_TYPES,
 		VIEW_OPTIONS
 	} from '$lib/facilities/filters.js';
@@ -32,6 +32,7 @@
 	 *   selectedStatuses?: string[],
 	 *   selectedLoadStatuses?: string[],
 	 *   selectedTypes?: string[],
+	 *   loadsFeature?: boolean,
 	 *   capacityRange?: [number, number],
 	 *   capacityMin?: number,
 	 *   capacityMax?: number,
@@ -55,9 +56,7 @@
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
-	 *   onshortcutinvoked?: () => void,
-	 *   filteredCount?: number,
-	 *   onresetall?: () => void
+	 *   onshortcutinvoked?: () => void
 	 * }}
 	 */
 	let {
@@ -65,6 +64,10 @@
 		selectedStatuses = [],
 		selectedLoadStatuses = [],
 		selectedTypes = [],
+		// facility_loads feature flag: off restores the pre-loads filter UI —
+		// a flat Technologies tree, generator-only statuses, grid-only regions.
+		// URL/server semantics are identical either way.
+		loadsFeature = false,
 		capacityRange = [0, 10000],
 		capacityMin = 0,
 		capacityMax = 10000,
@@ -89,9 +92,7 @@
 		onfullscreenchange,
 		onshowshortcuts,
 		ondownloadcsv,
-		onshortcutinvoked,
-		filteredCount = 0,
-		onresetall
+		onshortcutinvoked
 	} = $props();
 
 	// ============================================
@@ -127,14 +128,30 @@
 		...DEFAULT_LOAD_STATUSES.map((s) => `${LOAD_PREFIX}${s}`)
 	];
 
+	// Flag-off variants: plain Technologies tree (no Generators/Loads groups),
+	// generator-only statuses without the section headers, grid-only regions.
+	// Selection values are shared between the variants, so switching the flag
+	// never invalidates state or URLs.
+	let typeFilterLabel = $derived(loadsFeature ? 'Type' : 'Technologies');
+	let typeFilterOptions = $derived(loadsFeature ? typeOptions : fuelTechOptions);
+	// Both the Type and Status trees share the generators/loads group values.
+	let sectionGroupsExpanded = $derived(loadsFeature ? ['generators', 'loads'] : []);
+	let statusFilterOptions = $derived(loadsFeature ? combinedStatusOptions : statusOptions);
+	let statusFilterDefaults = $derived(loadsFeature ? combinedDefaultStatuses : DEFAULT_STATUSES);
+	let regionFilterOptions = $derived(loadsFeature ? regionOptions : GRID_REGION_OPTIONS);
+	let regionFilterDefaults = $derived(loadsFeature ? ALL_REGIONS : GRID_REGIONS);
+	let statusFilterSelected = $derived(loadsFeature ? combinedSelectedStatuses : selectedStatuses);
+
 	// Under "ticked = shown", raw selected counts are permanent noise (a fresh
 	// page has most boxes ticked). A filter only counts as active when it
 	// deviates from its default; an empty (nothing-shown) selection counts 1.
-	let typeActiveCount = $derived(activeLeafCount(typeOptions, selectedTypes, DEFAULT_TYPES));
+	let typeActiveCount = $derived(activeLeafCount(typeFilterOptions, selectedTypes, DEFAULT_TYPES));
 	let statusActiveCount = $derived(
-		activeLeafCount(combinedStatusOptions, combinedSelectedStatuses, combinedDefaultStatuses)
+		activeLeafCount(statusFilterOptions, statusFilterSelected, statusFilterDefaults)
 	);
-	let regionActiveCount = $derived(activeLeafCount(regionOptions, selectedRegions, ALL_REGIONS));
+	let regionActiveCount = $derived(
+		activeLeafCount(regionFilterOptions, selectedRegions, regionFilterDefaults)
+	);
 
 	// Badges the mobile Filters button and is passed into the modal so both
 	// always agree. (Technology lives inside the Type tree now.)
@@ -235,85 +252,42 @@
 		}
 	}
 
-	/**
-	 * Toggle selection in an array
-	 * @param {string[]} currentSelection
-	 * @param {string} value
-	 * @param {boolean} isMetaPressed
-	 * @returns {string[]}
-	 */
-	function toggleSelection(currentSelection, value, isMetaPressed) {
-		if (isMetaPressed) return [value];
-		if (currentSelection.includes(value)) {
-			return currentSelection.filter((item) => item !== value);
-		}
-		return [...currentSelection, value];
-	}
+	// Apply handlers — both the desktop dropdowns and the mobile sheet stage
+	// drafts and hand back the final selection; unchanged selections are
+	// dropped here (or by the page-level handler) so Apply without edits
+	// never triggers a spurious refetch.
 
 	/**
-	 * Toggle a parent group's child values in a selection: meta-press selects
-	 * only the group; otherwise a fully-selected group is removed, a partial
-	 * one is unioned in. Shared by the region, status and fuel-tech handlers.
-	 * @param {string[]} currentSelection
 	 * @param {string[]} values
-	 * @param {boolean} isMetaPressed
-	 * @returns {string[]}
 	 */
-	function toggleGroupSelection(currentSelection, values, isMetaPressed) {
-		if (isMetaPressed) return [...values];
-		const allSelected = values.every((v) => currentSelection.includes(v));
-		return allSelected
-			? currentSelection.filter((item) => !values.includes(item))
-			: [...new Set([...currentSelection, ...values])];
+	function applyTypes(values) {
+		// The page-level handler already no-ops the navigation when unchanged.
+		ontypeschange?.(values);
 	}
 
 	/**
-	 * @param {string | string[]} value
-	 * @param {boolean} isMetaPressed
+	 * @param {string[]} values
 	 */
-	function handleRegionChange(value, isMetaPressed) {
-		onregionschange?.(
-			Array.isArray(value)
-				? toggleGroupSelection(selectedRegions, value, isMetaPressed)
-				: toggleSelection(selectedRegions, value, isMetaPressed)
-		);
+	function applyRegions(values) {
+		if (!isDefaultSelection(values, selectedRegions)) onregionschange?.(values);
 	}
 
 	/**
-	 * @param {string | string[]} value
-	 * @param {boolean} isMetaPressed
+	 * @param {string[]} values
 	 */
-	function handleTypeChange(value, isMetaPressed) {
-		ontypeschange?.(
-			Array.isArray(value)
-				? toggleGroupSelection(selectedTypes, value, isMetaPressed)
-				: toggleSelection(selectedTypes, value, isMetaPressed)
-		);
-	}
-
-	/**
-	 * @param {string | string[]} value
-	 * @param {boolean} isMetaPressed
-	 */
-	function handleStatusChange(value, isMetaPressed) {
-		if (Array.isArray(value)) {
-			// Section-header toggle — the array is one section's children, so it
-			// belongs entirely to either the generator or the load selection.
-			if (value.every((v) => v.startsWith(LOAD_PREFIX))) {
-				const values = value.map((v) => v.slice(LOAD_PREFIX.length));
-				onloadstatuseschange?.(toggleGroupSelection(selectedLoadStatuses, values, isMetaPressed));
-			} else {
-				onstatuseschange?.(toggleGroupSelection(selectedStatuses, value, isMetaPressed));
-			}
-			return;
+	function applyStatuses(values) {
+		const generatorStatuses = values.filter((v) => !v.startsWith(LOAD_PREFIX));
+		// Loads first: their URL sync is a replaceState that the subsequent
+		// generator-status navigation's buildUrl reads back from state. With the
+		// flag off the dropdown carries no load values — leave that state alone.
+		if (loadsFeature) {
+			const loadValues = values
+				.filter((v) => v.startsWith(LOAD_PREFIX))
+				.map((v) => v.slice(LOAD_PREFIX.length));
+			if (!isDefaultSelection(loadValues, selectedLoadStatuses)) onloadstatuseschange?.(loadValues);
 		}
-		if (value.startsWith(LOAD_PREFIX)) {
-			onloadstatuseschange?.(
-				toggleSelection(selectedLoadStatuses, value.slice(LOAD_PREFIX.length), isMetaPressed)
-			);
-		} else {
-			onstatuseschange?.(toggleSelection(selectedStatuses, value, isMetaPressed));
-		}
+		if (!isDefaultSelection(generatorStatuses, selectedStatuses))
+			onstatuseschange?.(generatorStatuses);
 	}
 
 	/**
@@ -343,38 +317,30 @@
 <!-- Mobile Filter Modal -->
 <MobileFilterModal
 	open={showMobileFilterOptions}
-	{typeOptions}
-	{regionOptions}
-	statusOptions={combinedStatusOptions}
-	typeCount={typeActiveCount}
-	statusCount={statusActiveCount}
-	regionCount={regionActiveCount}
+	typeTitle={typeFilterLabel}
+	typeOptions={typeFilterOptions}
+	typeExpanded={sectionGroupsExpanded}
+	regionOptions={regionFilterOptions}
+	statusOptions={statusFilterOptions}
+	typeDefaults={DEFAULT_TYPES}
+	statusDefaults={statusFilterDefaults}
+	regionDefaults={regionFilterDefaults}
 	{selectedTypes}
 	{selectedRegions}
-	selectedStatuses={combinedSelectedStatuses}
+	selectedStatuses={statusFilterSelected}
 	{capacityRange}
 	{capacityMin}
 	{capacityMax}
 	{formatCapacity}
-	onclose={() => (showMobileFilterOptions = false)}
-	onregionschange={handleRegionChange}
-	onstatuseschange={handleStatusChange}
-	oncapacityrangechange={(range) => oncapacityrangechange?.(range)}
 	{yearRange}
 	{yearMin}
 	{yearMax}
-	onyearrangechange={(range) => onyearrangechange?.(range)}
-	onclearyears={() => onyearrangechange?.([yearMin, yearMax])}
-	onclearregions={() => onregionschange?.([...ALL_REGIONS])}
-	ontypeschange={handleTypeChange}
-	oncleartypes={() => ontypeschange?.([...DEFAULT_TYPES])}
-	onclearstatuses={() => {
-		onstatuseschange?.([...DEFAULT_STATUSES]);
-		onloadstatuseschange?.([...DEFAULT_LOAD_STATUSES]);
-	}}
-	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
-	{filteredCount}
-	onresetall={() => onresetall?.()}
+	onclose={() => (showMobileFilterOptions = false)}
+	onapplytypes={applyTypes}
+	onapplystatuses={applyStatuses}
+	onapplyregions={applyRegions}
+	onapplycapacity={(range) => oncapacityrangechange?.(range)}
+	onapplyyears={(range) => onyearrangechange?.(range)}
 	{typeRow}
 />
 
@@ -470,51 +436,39 @@
 			>
 				<FilterDropdown
 					label="Region"
-					options={regionOptions}
+					options={regionFilterOptions}
 					selected={selectedRegions}
-					defaults={ALL_REGIONS}
+					defaults={regionFilterDefaults}
 					defaultExpanded={['nem']}
 					compact={isFullscreen}
 					clearLabel="Reset to defaults"
-					onchange={handleRegionChange}
-					onclear={() => onregionschange?.([...ALL_REGIONS])}
-					onselectall={() => onregionschange?.([...ALL_REGIONS])}
+					onapply={applyRegions}
 				/>
 
 				<FilterDropdown
-					label="Type"
-					options={typeOptions}
+					label={typeFilterLabel}
+					options={typeFilterOptions}
 					selected={selectedTypes}
 					defaults={DEFAULT_TYPES}
-					defaultExpanded={['generators', 'loads']}
+					defaultExpanded={sectionGroupsExpanded}
 					searchable
 					searchPlaceholder="Search technologies"
 					compact={isFullscreen}
 					clearLabel="Reset to defaults"
 					listMaxHeight={460}
-					onchange={handleTypeChange}
-					onclear={() => ontypeschange?.([...DEFAULT_TYPES])}
-					onselectall={() => ontypeschange?.([...ALL_TYPES])}
+					onapply={applyTypes}
 					row={typeRow}
 				/>
 
 				<FilterDropdown
 					label="Status"
-					options={combinedStatusOptions}
-					selected={combinedSelectedStatuses}
-					defaults={combinedDefaultStatuses}
-					defaultExpanded={['generators', 'loads']}
+					options={statusFilterOptions}
+					selected={statusFilterSelected}
+					defaults={statusFilterDefaults}
+					defaultExpanded={sectionGroupsExpanded}
 					compact={isFullscreen}
 					clearLabel="Reset to defaults"
-					onchange={handleStatusChange}
-					onclear={() => {
-						onstatuseschange?.([...DEFAULT_STATUSES]);
-						onloadstatuseschange?.([...DEFAULT_LOAD_STATUSES]);
-					}}
-					onselectall={() => {
-						onstatuseschange?.([...ALL_STATUSES]);
-						onloadstatuseschange?.([...ALL_LOAD_STATUSES]);
-					}}
+					onapply={applyStatuses}
 				/>
 
 				<FilterRangeDropdown
