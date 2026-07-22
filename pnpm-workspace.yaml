@@ -9,10 +9,19 @@ allowBuilds:
   workerd: true
 
 # Force-bump vulnerable transitive copies past their patched versions to clear
-# Dependabot alerts. Both are scoped to the affected version only:
-#   cookie@0.6.0  (GHSA-pxg6-pf52-xh8x) pulled by @sveltejs/kit + bits-ui/runed
-#   uuid@8.3.2    (GHSA-w5hq-g745-h8pq) pulled by @clerk/clerk-js' unused Solana
-#                 wallet adapters; >=11.1.1 dedupes onto the 14.0.0 already present
+# Dependabot alerts. Each key is scoped to the affected range only, so unrelated
+# older copies (e.g. ws@1.x/4.x/7.x) other packages need are left untouched.
+#   cookie@0.6.0    (GHSA-pxg6-pf52-xh8x) pulled by @sveltejs/kit + bits-ui/runed
+#   uuid@8.3.2      (GHSA-w5hq-g745-h8pq) pulled by @clerk/clerk-js' unused Solana
+#                   wallet adapters; >=11.1.1 dedupes onto the 14.0.0 already present
+#   undici@7.24.8   (6 alerts, incl. SOCKS5 highs) via adapter-cloudflare→wrangler→miniflare
+#   ws@8.18.x       (GHSA-96hv-2xvq-fx4p) via adapter-cloudflare + @clerk/clerk-js→viem/solana
+#   js-yaml@4.1.1   (GHSA-h67p-54hq-rp68) via eslint→@eslint/eslintrc
+#   esbuild@0.27.x  (GHSA-g7r4-m6w7-qqqr) via vite; forced past vite's own ^0.27.0 pin
 overrides:
   cookie@<0.7.0: ^0.7.0
   uuid@<11.1.1: '>=11.1.1'
+  undici@>=7.0.0 <7.28.0: ^7.28.0
+  ws@>=8.0.0 <8.21.0: ^8.21.0
+  js-yaml@>=4.0.0 <4.2.0: ^4.2.0
+  esbuild@>=0.27.3 <0.28.1: ^0.28.1
