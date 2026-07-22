@@ -18,6 +18,10 @@ allowBuilds:
 #   ws@8.18.x       (GHSA-96hv-2xvq-fx4p) via adapter-cloudflare + @clerk/clerk-js→viem/solana
 #   js-yaml@4.1.1   (GHSA-h67p-54hq-rp68) via eslint→@eslint/eslintrc
 #   esbuild@0.27.x  (GHSA-g7r4-m6w7-qqqr) via vite; forced past vite's own ^0.27.0 pin
+#   brace-expansion@1.1.14 (GHSA-3jxr-9vmj-r5cp) via eslint→minimatch; 1.x line only
+#   shell-quote@1.8.4      (GHSA-395f-4hp3-45gv) via @clerk/clerk-js' unused react-native
+#   sharp@0.34.5           (GHSA-f88m-g3jw-g9cj) via adapter-cloudflare→wrangler→miniflare
+#                          (our own sharp direct dep is already 0.35.1)
 overrides:
   cookie@<0.7.0: ^0.7.0
   uuid@<11.1.1: '>=11.1.1'
@@ -25,3 +29,6 @@ overrides:
   ws@>=8.0.0 <8.21.0: ^8.21.0
   js-yaml@>=4.0.0 <4.2.0: ^4.2.0
   esbuild@>=0.27.3 <0.28.1: ^0.28.1
+  brace-expansion@<1.1.16: ^1.1.16
+  shell-quote@<1.9.0: ^1.9.0
+  sharp@<0.35.0: ^0.35.0
