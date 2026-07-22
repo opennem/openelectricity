@@ -1,5 +1,6 @@
 import optionsReducer from '$lib/utils/options-reducer';
 import { statusColours } from '$lib/theme/openelectricity';
+import { STATUS_LABELS as LOAD_STATUS_LABELS } from '$lib/facilities/data-centres.js';
 
 export { statusColours };
 
@@ -28,6 +29,30 @@ export const statusOptions = [
 
 export const ALL_STATUSES = statusOptions.map((opt) => opt.value);
 export const DEFAULT_STATUSES = ['operating', 'commissioning'];
+
+// Data centre (load) statuses — a development pipeline distinct from the OE
+// facility lifecycle, so the Status filter carries a separate Loads section.
+// Built from the canonical bucket labels so filter UI and detail surfaces
+// can't drift.
+export const loadStatusOptions = Object.entries(LOAD_STATUS_LABELS).map(([value, label]) => ({
+	value,
+	label,
+	colour: statusColours[value]
+}));
+
+export const ALL_LOAD_STATUSES = loadStatusOptions.map((opt) => opt.value);
+export const DEFAULT_LOAD_STATUSES = ['operating', 'construction'];
+
+// Dispatch-type filter: generators (OE facilities) vs loads (data centres).
+// Selection is literal — what's ticked is what shows (unticking both empties
+// the map and views), unlike the empty-means-all convention elsewhere.
+export const typeOptions = [
+	{ label: 'Generators', value: 'generators' },
+	{ label: 'Loads', value: 'loads' }
+];
+
+export const ALL_TYPES = typeOptions.map((opt) => opt.value);
+export const DEFAULT_TYPES = ['generators'];
 // Play mode (the map's year animation) always animates the full grid history,
 // ignoring the user's status filter. Committed units have no commencement_date
 // yet, so playback reveals them at their expected_operation_date instead —
@@ -43,7 +68,12 @@ export const regions = [
 	{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS', longLabel: 'Tasmania' },
 	{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC', longLabel: 'Victoria' },
 	{ value: undefined, label: '', divider: true },
-	{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
+	{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' },
+	{ value: undefined, label: '', divider: true },
+	// Not OE network regions — data centres (loads) can sit in the ACT or NT,
+	// outside the NEM/WEM regions the generator facilities carry.
+	{ longValue: 'au.act', value: 'act', label: 'ACT', longLabel: 'Australian Capital Territory' },
+	{ longValue: 'au.nt', value: 'nt', label: 'NT', longLabel: 'Northern Territory' }
 ];
 
 export const networkRegionsOnly = ['nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
@@ -78,6 +108,15 @@ export const regionOptions = [
 	{
 		value: 'wem',
 		label: 'Western Australia'
+	},
+	// Outside the NEM/WEM — only data centres (loads) carry these regions.
+	{
+		value: 'act',
+		label: 'Australian Capital Territory'
+	},
+	{
+		value: 'nt',
+		label: 'Northern Territory'
 	}
 ];
 

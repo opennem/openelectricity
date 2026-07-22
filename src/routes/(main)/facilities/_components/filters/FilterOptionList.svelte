@@ -53,6 +53,12 @@
 	let isSearching = $derived(searchTerm.trim().length > 0);
 	let visibleOptions = $derived(isSearching ? filterOptionsBySearch(options, searchTerm) : options);
 
+	// Flat lists (no parents anywhere) skip the chevron-width spacer — the
+	// indent only exists to align childless rows with sibling parents.
+	let anyChildren = $derived(
+		visibleOptions.some((opt) => !!(opt.children && opt.children.length > 0))
+	);
+
 	/**
 	 * While searching every visible parent is treated as expanded so matches stay visible.
 	 * @param {string} value
@@ -177,7 +183,7 @@
 								: '-rotate-90'}"
 						/>
 					</button>
-				{:else}
+				{:else if anyChildren}
 					<div class="w-6 shrink-0"></div>
 				{/if}
 

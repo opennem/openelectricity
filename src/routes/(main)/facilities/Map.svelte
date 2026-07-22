@@ -15,6 +15,7 @@
 	import { sumUnitCapacities } from '$lib/utils/capacity';
 	import { fetchOsmPolygon } from '$lib/utils/osm.js';
 	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
+	import DataCentresLayer from './_components/DataCentresLayer.svelte';
 	import UnitGroup from './_components/UnitGroup.svelte';
 	import { groupUnits } from '$lib/facilities/units.js';
 	import FacilityCard from './_components/FacilityCard.svelte';
@@ -30,6 +31,7 @@
 	/**
 	 * @type {{
 	 *   facilities: any[],
+	 *   boundsFacilities?: any[] | null,
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
 	 *   osmWayId?: string | number | null,
@@ -40,6 +42,10 @@
 	 *   showTransmissionLines?: boolean,
 	 *   transmissionLineVisibility?: TransmissionLineVisibility,
 	 *   showGolfCourses?: boolean,
+	 *   showDataCentres?: boolean,
+	 *   dataCentres?: any[],
+	 *   selectedDataCentreId?: string | null,
+	 *   ondatacentreselect?: (properties: any) => void,
 	 *   scrollZoom?: boolean,
 	 *   cooperativeGestures?: boolean,
 	 *   suppressFitBounds?: boolean,
@@ -56,6 +62,10 @@
 	 */
 	let {
 		facilities = [],
+		// The set used for bounds fitting (initial fit, filter refits, Reset Map).
+		// The facilities prop excludes loads (they render via DataCentresLayer),
+		// so callers showing loads pass the full located set here instead.
+		boundsFacilities = null,
 		hoveredFacility = null,
 		selectedFacilityCode = null,
 		osmWayId = null,
@@ -66,6 +76,10 @@
 		showTransmissionLines = true,
 		transmissionLineVisibility = { high: true, medium: true, low: true, lowest: true },
 		showGolfCourses = false,
+		showDataCentres = false,
+		dataCentres = [],
+		selectedDataCentreId = null,
+		ondatacentreselect,
 		scrollZoom = false,
 		cooperativeGestures = false,
 		suppressFitBounds = false,
@@ -185,6 +199,9 @@
 
 	// Create a lookup map for facilities by code (memoized)
 	let facilitiesMap = $derived(new Map(facilities.map((f) => [f.code, f])));
+
+	// What bounds fitting frames — the caller's broader set when provided.
+	let fitSet = $derived(boundsFacilities ?? facilities);
 
 	// Get map-hovered facility from code
 	let mapHoveredFacility = $derived(
@@ -484,7 +501,13 @@
 	 */
 	export function resetView() {
 		closePopups();
-		fitMapToFacilities(facilities);
+		if (fitSet.length > 0) {
+			fitMapToFacilities(fitSet);
+		} else {
+			// Nothing to frame (filters left the set empty) — still honour the
+			// click by returning to the default Australia view.
+			mapInstance?.flyTo({ center, zoom: 3.5, duration: RESET_DURATION });
+		}
 	}
 
 	/**
@@ -546,10 +569,10 @@
 		}
 
 		// Only fit to all facilities if no specific facility is selected
-		if (facilities.length > 0 && !selectedFacilityCode) {
+		if (fitSet.length > 0 && !selectedFacilityCode) {
 			// Use idle event instead of setTimeout for reliable timing
 			mapInstance.once('idle', () => {
-				fitMapToFacilities(facilities);
+				fitMapToFacilities(fitSet);
 			});
 		}
 
@@ -579,14 +602,14 @@
 	/** @type {any[] | null} */
 	let lastFittedFacilities = null;
 	$effect(() => {
-		if (!mapInstance || !mapLoaded || facilities.length === 0) return;
-		const changed = facilities !== lastFittedFacilities;
+		if (!mapInstance || !mapLoaded || fitSet.length === 0) return;
+		const changed = fitSet !== lastFittedFacilities;
 		// Mark as seen even when the fit is skipped (facility selected, or the
 		// caller suppressed it) so a later deselect doesn't replay a stale fit.
-		lastFittedFacilities = facilities;
+		lastFittedFacilities = fitSet;
 		if (!changed || selectedFacilityCode || suppressFitBounds) return;
 		mapInstance.once('idle', () => {
-			fitMapToFacilities(facilities);
+			fitMapToFacilities(fitSet);
 		});
 	});
 
@@ -636,6 +659,30 @@
 				});
 			}
 		}
+	});
+
+	// Same for a selected data centre, resolved from the loads layer's set.
+	// Guarded on a selection CHANGE (not identity of `dataCentres`, which is
+	// rebuilt on every filter tweak) so refilters don't re-fly mid-pan or
+	// fight the Reset Map button.
+	/** @type {string | null} */
+	let lastFlownDataCentreId = null;
+	$effect(() => {
+		const id = selectedDataCentreId;
+		if (!id) {
+			lastFlownDataCentreId = null;
+			return;
+		}
+		if (!mapInstance || !mapLoaded || id === lastFlownDataCentreId) return;
+		const dataCentre = dataCentres.find((f) => f.code === id);
+		if (!dataCentre?.location) return;
+		lastFlownDataCentreId = id;
+		mapInstance.flyTo({
+			center: [dataCentre.location.lng, dataCentre.location.lat],
+			zoom: 12,
+			duration: ZOOM_DURATION,
+			offset: getFlyToOffset()
+		});
 	});
 
 	// Resolve the selected facility's OSM footprint when the selection changes.
@@ -955,6 +1002,17 @@
 				}}
 			/>
 		</GeoJSONSource>
+
+		<!-- Data centres (loads) overlay — beneath the facility markers so
+		     generators keep interaction priority -->
+		<DataCentresLayer
+			visible={showDataCentres}
+			loads={dataCentres}
+			{satelliteView}
+			map={mapInstance}
+			selectedId={selectedDataCentreId}
+			onselect={ondatacentreselect}
+		/>
 
 		<!-- Selected facility's OSM footprint (rendered beneath the markers) -->
 		<OsmFootprintLayer

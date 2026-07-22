@@ -14,8 +14,14 @@
 		regionOptions,
 		fuelTechOptions,
 		statusOptions,
+		loadStatusOptions,
+		typeOptions,
 		ALL_STATUSES,
 		DEFAULT_STATUSES,
+		ALL_LOAD_STATUSES,
+		DEFAULT_LOAD_STATUSES,
+		ALL_TYPES,
+		DEFAULT_TYPES,
 		VIEW_OPTIONS
 	} from '$lib/facilities/filters.js';
 
@@ -23,6 +29,8 @@
 	 * @type {{
 	 *   selectedRegions?: string[],
 	 *   selectedStatuses?: string[],
+	 *   selectedLoadStatuses?: string[],
+	 *   selectedTypes?: string[],
 	 *   selectedFuelTechs?: string[],
 	 *   capacityRange?: [number, number],
 	 *   capacityMin?: number,
@@ -34,6 +42,8 @@
 	 *   darkMap?: boolean,
 	 *   showShortcuts?: boolean,
 	 *   onstatuseschange?: (values: string[]) => void,
+	 *   onloadstatuseschange?: (values: string[]) => void,
+	 *   ontypeschange?: (values: string[]) => void,
 	 *   onregionschange?: (values: string[]) => void,
 	 *   onfueltechschange?: (values: string[]) => void,
 	 *   oncapacityrangechange?: (range: [number, number]) => void,
@@ -54,6 +64,8 @@
 	let {
 		selectedRegions = [],
 		selectedStatuses = [],
+		selectedLoadStatuses = [],
+		selectedTypes = [],
 		selectedFuelTechs = [],
 		capacityRange = [0, 10000],
 		capacityMin = 0,
@@ -66,6 +78,8 @@
 		darkMap = false,
 		showShortcuts = false,
 		onstatuseschange,
+		onloadstatuseschange,
+		ontypeschange,
 		onregionschange,
 		onfueltechschange,
 		oncapacityrangechange,
@@ -94,10 +108,29 @@
 	/** @type {SearchInput | null} */
 	let desktopSearchRef = $state(null);
 
-	// "N active" across status/technology/region — badges the mobile Filters
-	// button and is passed into the modal so both always agree.
+	// The Status dropdown carries two sections — Generators (OE facility
+	// statuses, server round-trip) and Loads (data centre buckets, client-side).
+	// Load values are prefixed inside the dropdown tree so they can't collide
+	// with the generator values ('operating'/'retired' exist in both).
+	const LOAD_PREFIX = 'load_';
+	const combinedStatusOptions = [
+		{ label: 'Generators', value: 'generators', children: statusOptions },
+		{
+			label: 'Loads',
+			value: 'loads',
+			children: loadStatusOptions.map((opt) => ({ ...opt, value: `${LOAD_PREFIX}${opt.value}` }))
+		}
+	];
+	let combinedSelectedStatuses = $derived([
+		...selectedStatuses,
+		...selectedLoadStatuses.map((s) => `${LOAD_PREFIX}${s}`)
+	]);
+
+	// "N active" across type/status/technology/region — badges the mobile
+	// Filters button and is passed into the modal so both always agree.
 	let activeFilterCount = $derived(
-		countSelectedLeaves(statusOptions, selectedStatuses) +
+		countSelectedLeaves(typeOptions, selectedTypes) +
+			countSelectedLeaves(combinedStatusOptions, combinedSelectedStatuses) +
 			countSelectedLeaves(fuelTechOptions, selectedFuelTechs) +
 			countSelectedLeaves(regionOptions, selectedRegions)
 	);
@@ -213,37 +246,68 @@
 	}
 
 	/**
+	 * Toggle a parent group's child values in a selection: meta-press selects
+	 * only the group; otherwise a fully-selected group is removed, a partial
+	 * one is unioned in. Shared by the region, status and fuel-tech handlers.
+	 * @param {string[]} currentSelection
+	 * @param {string[]} values
+	 * @param {boolean} isMetaPressed
+	 * @returns {string[]}
+	 */
+	function toggleGroupSelection(currentSelection, values, isMetaPressed) {
+		if (isMetaPressed) return [...values];
+		const allSelected = values.every((v) => currentSelection.includes(v));
+		return allSelected
+			? currentSelection.filter((item) => !values.includes(item))
+			: [...new Set([...currentSelection, ...values])];
+	}
+
+	/**
 	 * @param {string | string[]} value
 	 * @param {boolean} isMetaPressed
 	 */
 	function handleRegionChange(value, isMetaPressed) {
-		let newSelection = [];
-
-		if (Array.isArray(value)) {
-			const allSelected = value.every((v) => selectedRegions.includes(v));
-			if (isMetaPressed) {
-				newSelection = [...value];
-			} else if (allSelected) {
-				newSelection = selectedRegions.filter((item) => !value.includes(item));
-			} else {
-				newSelection = [...new Set([...selectedRegions, ...value])];
-			}
-		} else {
-			newSelection = toggleSelection(selectedRegions, value, isMetaPressed);
-		}
-
-		onregionschange?.(newSelection);
+		onregionschange?.(
+			Array.isArray(value)
+				? toggleGroupSelection(selectedRegions, value, isMetaPressed)
+				: toggleSelection(selectedRegions, value, isMetaPressed)
+		);
 	}
 
 	/**
-	 * Statuses are a flat list, so `value` is always a single string
+	 * Type is a flat two-option list, so `value` is always a single string
 	 * (arrays are only emitted for hierarchical parent options).
 	 * @param {string | string[]} value
 	 * @param {boolean} isMetaPressed
 	 */
-	function handleStatusChange(value, isMetaPressed) {
+	function handleTypeChange(value, isMetaPressed) {
 		if (Array.isArray(value)) return;
-		onstatuseschange?.(toggleSelection(selectedStatuses, value, isMetaPressed));
+		ontypeschange?.(toggleSelection(selectedTypes, value, isMetaPressed));
+	}
+
+	/**
+	 * @param {string | string[]} value
+	 * @param {boolean} isMetaPressed
+	 */
+	function handleStatusChange(value, isMetaPressed) {
+		if (Array.isArray(value)) {
+			// Section-header toggle — the array is one section's children, so it
+			// belongs entirely to either the generator or the load selection.
+			if (value.every((v) => v.startsWith(LOAD_PREFIX))) {
+				const values = value.map((v) => v.slice(LOAD_PREFIX.length));
+				onloadstatuseschange?.(toggleGroupSelection(selectedLoadStatuses, values, isMetaPressed));
+			} else {
+				onstatuseschange?.(toggleGroupSelection(selectedStatuses, value, isMetaPressed));
+			}
+			return;
+		}
+		if (value.startsWith(LOAD_PREFIX)) {
+			onloadstatuseschange?.(
+				toggleSelection(selectedLoadStatuses, value.slice(LOAD_PREFIX.length), isMetaPressed)
+			);
+		} else {
+			onstatuseschange?.(toggleSelection(selectedStatuses, value, isMetaPressed));
+		}
 	}
 
 	/**
@@ -251,22 +315,11 @@
 	 * @param {boolean} isMetaPressed
 	 */
 	function handleFuelTechChange(value, isMetaPressed) {
-		let newSelection = [];
-
-		if (Array.isArray(value)) {
-			const allSelected = value.every((v) => selectedFuelTechs.includes(v));
-			if (isMetaPressed) {
-				newSelection = [...value];
-			} else if (allSelected) {
-				newSelection = selectedFuelTechs.filter((item) => !value.includes(item));
-			} else {
-				newSelection = [...new Set([...selectedFuelTechs, ...value])];
-			}
-		} else {
-			newSelection = toggleSelection(selectedFuelTechs, value, isMetaPressed);
-		}
-
-		onfueltechschange?.(newSelection);
+		onfueltechschange?.(
+			Array.isArray(value)
+				? toggleGroupSelection(selectedFuelTechs, value, isMetaPressed)
+				: toggleSelection(selectedFuelTechs, value, isMetaPressed)
+		);
 	}
 
 	/**
@@ -287,11 +340,13 @@
 <!-- Mobile Filter Modal -->
 <MobileFilterModal
 	open={showMobileFilterOptions}
+	{typeOptions}
 	{regionOptions}
-	{statusOptions}
+	statusOptions={combinedStatusOptions}
 	{fuelTechOptions}
+	{selectedTypes}
 	{selectedRegions}
-	{selectedStatuses}
+	selectedStatuses={combinedSelectedStatuses}
 	{selectedFuelTechs}
 	{capacityRange}
 	{capacityMin}
@@ -308,7 +363,12 @@
 	onyearrangechange={(range) => onyearrangechange?.(range)}
 	onclearyears={() => onyearrangechange?.([yearMin, yearMax])}
 	onclearregions={() => onregionschange?.([])}
-	onclearstatuses={() => onstatuseschange?.([...DEFAULT_STATUSES])}
+	ontypeschange={handleTypeChange}
+	oncleartypes={() => ontypeschange?.([...DEFAULT_TYPES])}
+	onclearstatuses={() => {
+		onstatuseschange?.([...DEFAULT_STATUSES]);
+		onloadstatuseschange?.([...DEFAULT_LOAD_STATUSES]);
+	}}
 	onclearfueltechs={() => onfueltechschange?.([])}
 	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 	{filteredCount}
@@ -406,6 +466,17 @@
 					: 'pl-8'}"
 			>
 				<FilterDropdown
+					label="Type"
+					options={typeOptions}
+					selected={selectedTypes}
+					compact={isFullscreen}
+					clearLabel="Reset to defaults"
+					onchange={handleTypeChange}
+					onclear={() => ontypeschange?.([...DEFAULT_TYPES])}
+					onselectall={() => ontypeschange?.([...ALL_TYPES])}
+				/>
+
+				<FilterDropdown
 					label="Region"
 					options={regionOptions}
 					selected={selectedRegions}
@@ -418,13 +489,20 @@
 
 				<FilterDropdown
 					label="Status"
-					options={statusOptions}
-					selected={selectedStatuses}
+					options={combinedStatusOptions}
+					selected={combinedSelectedStatuses}
+					defaultExpanded={['generators', 'loads']}
 					compact={isFullscreen}
 					clearLabel="Reset to defaults"
 					onchange={handleStatusChange}
-					onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
-					onselectall={() => onstatuseschange?.([...ALL_STATUSES])}
+					onclear={() => {
+						onstatuseschange?.([...DEFAULT_STATUSES]);
+						onloadstatuseschange?.([...DEFAULT_LOAD_STATUSES]);
+					}}
+					onselectall={() => {
+						onstatuseschange?.([...ALL_STATUSES]);
+						onloadstatuseschange?.([...ALL_LOAD_STATUSES]);
+					}}
 				/>
 
 				<FilterDropdown

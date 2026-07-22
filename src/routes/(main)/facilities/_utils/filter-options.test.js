@@ -10,7 +10,7 @@ import { fuelTechOptions, regionOptions, statusOptions } from '$lib/facilities/f
 describe('getLeafValues', () => {
 	it('returns children of parents plus childless top-level options', () => {
 		const leaves = getLeafValues(regionOptions);
-		expect(leaves).toEqual(['nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem']);
+		expect(leaves).toEqual(['nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem', 'act', 'nt']);
 	});
 
 	it('never includes a parent value as a leaf (battery quirk: child reuses the value)', () => {

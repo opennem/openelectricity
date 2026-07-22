@@ -13,9 +13,11 @@
 	/**
 	 * @type {{
 	 *   open: boolean,
+	 *   typeOptions?: Array<{label: string, value: string, colour?: string}>,
 	 *   regionOptions: Array<{label: string, value: string, children?: Array<{label: string, value: string}>}>,
 	 *   statusOptions: Array<{label: string, value: string, colour?: string}>,
 	 *   fuelTechOptions: Array<{label: string, value: string, colour?: string, children?: Array<{label: string, value: string, colour?: string}>}>,
+	 *   selectedTypes?: string[],
 	 *   selectedRegions: string[],
 	 *   selectedStatuses: string[],
 	 *   selectedFuelTechs: string[],
@@ -26,6 +28,8 @@
 	 *   filteredCount: number,
 	 *   onclose: () => void,
 	 *   onresetall: () => void,
+	 *   ontypeschange?: (values: string[] | string, isMetaPressed: boolean) => void,
+	 *   oncleartypes?: () => void,
 	 *   onregionschange: (values: string[] | string, isMetaPressed: boolean) => void,
 	 *   onstatuseschange: (values: string[] | string, isMetaPressed: boolean) => void,
 	 *   onfueltechschange: (values: string[] | string, isMetaPressed: boolean) => void,
@@ -43,9 +47,11 @@
 	 */
 	let {
 		open,
+		typeOptions = [],
 		regionOptions,
 		statusOptions,
 		fuelTechOptions,
+		selectedTypes = [],
 		selectedRegions,
 		selectedStatuses,
 		selectedFuelTechs,
@@ -56,6 +62,8 @@
 		filteredCount,
 		onclose,
 		onresetall,
+		ontypeschange,
+		oncleartypes,
 		onregionschange,
 		onstatuseschange,
 		onfueltechschange,
@@ -73,6 +81,7 @@
 
 	let techSearchTerm = $state('');
 
+	let typeCount = $derived(countSelectedLeaves(typeOptions, selectedTypes));
 	let statusCount = $derived(countSelectedLeaves(statusOptions, selectedStatuses));
 	let fuelTechCount = $derived(countSelectedLeaves(fuelTechOptions, selectedFuelTechs));
 	let regionCount = $derived(countSelectedLeaves(regionOptions, selectedRegions));
@@ -164,6 +173,16 @@
 
 		<!-- Filter sections -->
 		<section class="px-6">
+			<FilterAccordionSection
+				title="Type"
+				tags={getSelectedLabels(typeOptions, selectedTypes)}
+				count={typeCount}
+				clearLabel="Reset to defaults"
+				onclear={oncleartypes}
+			>
+				<FilterOptionList options={typeOptions} selected={selectedTypes} onchange={ontypeschange} />
+			</FilterAccordionSection>
+
 			<FilterAccordionSection
 				title="Status"
 				tags={getSelectedLabels(statusOptions, selectedStatuses)}
