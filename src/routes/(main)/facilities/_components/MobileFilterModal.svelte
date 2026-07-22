@@ -38,11 +38,7 @@
 	 *   capacityMax: number,
 	 *   formatCapacity: (val: number) => string,
 	 *   onclose: () => void,
-	 *   onapplytypes?: (values: string[]) => void,
-	 *   onapplystatuses?: (values: string[]) => void,
-	 *   onapplyregions?: (values: string[]) => void,
-	 *   onapplycapacity?: (range: [number, number]) => void,
-	 *   onapplyyears?: (range: [number, number]) => void,
+	 *   onapply?: (drafts: { types: string[], statuses: string[], regions: string[], capacityRange: [number, number], yearRange: [number, number] }) => void,
 	 *   typeRow?: import('svelte').Snippet<[import('$lib/facilities/filter-options.js').FilterOption, any]>,
 	 *   yearRange: [number, number],
 	 *   yearMin: number,
@@ -67,11 +63,7 @@
 		capacityMax,
 		formatCapacity,
 		onclose,
-		onapplytypes,
-		onapplystatuses,
-		onapplyregions,
-		onapplycapacity,
-		onapplyyears,
+		onapply,
 		typeRow,
 		yearRange,
 		yearMin,
@@ -114,20 +106,16 @@
 		draftYears = [yearMin, yearMax];
 	}
 
-	/** Commit every changed draft, then close. Client-side range commits go
-	 * first (replaceState); the selection commits follow, so a final
-	 * navigation's buildUrl reads everything back from updated state. The
-	 * parent's apply handlers drop unchanged selections themselves. */
+	/** Hand the full draft snapshot to the single commit point (which diffs
+	 * every slice and issues at most one navigation), then close. */
 	function applyAll() {
-		if (draftCapacity[0] !== capacityRange[0] || draftCapacity[1] !== capacityRange[1]) {
-			onapplycapacity?.([draftCapacity[0], draftCapacity[1]]);
-		}
-		if (draftYears[0] !== yearRange[0] || draftYears[1] !== yearRange[1]) {
-			onapplyyears?.([draftYears[0], draftYears[1]]);
-		}
-		onapplyregions?.(draftRegions);
-		onapplystatuses?.(draftStatuses);
-		onapplytypes?.(draftTypes);
+		onapply?.({
+			types: draftTypes,
+			statuses: draftStatuses,
+			regions: draftRegions,
+			capacityRange: [draftCapacity[0], draftCapacity[1]],
+			yearRange: [draftYears[0], draftYears[1]]
+		});
 		onclose();
 	}
 

@@ -24,7 +24,11 @@
 		parseFuelTechsParam,
 		normaliseViewParam
 	} from '$lib/facilities/filters.js';
-	import { serialiseSelection, parseSelection } from '$lib/facilities/filter-options.js';
+	import {
+		serialiseSelection,
+		parseSelection,
+		isDefaultSelection
+	} from '$lib/facilities/filter-options.js';
 	import { facilitiesToCsv } from './_utils/facilities-csv.js';
 	import { sortFacilities } from './_utils/sort-facilities';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
@@ -182,28 +186,83 @@
 	let selectedTypes = $derived([...selectedTechs, ...(showLoads ? ['data_centres'] : [])]);
 
 	/**
-	 * Type selection covers dispatch type AND technology. Tech changes need a
-	 * server round-trip (fuel_techs param); a loads-only toggle is client-side
-	 * and only syncs the URL.
-	 * @param {string[]} values
+	 * The single commit point for the filter UI — desktop dropdown Applies
+	 * send one slice, the mobile sheet's Apply sends its whole batch. Each
+	 * provided slice is diffed against current state (set-equality), all
+	 * changed state is updated together, and the URL syncs exactly once: a
+	 * server navigation when a server-side filter changed, a replaceState
+	 * otherwise, nothing at all for a no-op batch.
+	 * @param {{
+	 *   statuses?: string[],
+	 *   loadStatuses?: string[],
+	 *   regions?: string[],
+	 *   fuelTechs?: string[],
+	 *   showLoads?: boolean,
+	 *   capacityRange?: [number, number],
+	 *   yearRange?: [number, number]
+	 * }} changes
 	 */
-	function handleTypesChange(values) {
-		const techSelection = values.filter((v) => v !== 'data_centres');
-		showLoads = values.includes('data_centres');
+	function handleFiltersApply(changes) {
+		let needsRefetch = false;
+		let changed = false;
 
-		if (techSelection.join(',') !== selectedTechs.join(',')) {
-			selectedTechs = techSelection;
-			navigateWithRefetch({
-				statuses,
-				regions,
-				fuelTechs: techSelection,
-				capacityRange,
-				yearRange,
-				view: selectedView,
-				facility: selectedFacility?.code ?? null
-			});
+		if (changes.statuses && !isDefaultSelection(changes.statuses, statuses)) {
+			statuses = changes.statuses;
+			needsRefetch = true;
+			changed = true;
+		}
+		if (changes.regions && !isDefaultSelection(changes.regions, regions)) {
+			regions = changes.regions;
+			needsRefetch = true;
+			changed = true;
+		}
+		if (changes.fuelTechs && !isDefaultSelection(changes.fuelTechs, selectedTechs)) {
+			selectedTechs = changes.fuelTechs;
+			needsRefetch = true;
+			changed = true;
+		}
+		if (changes.loadStatuses && !isDefaultSelection(changes.loadStatuses, loadStatuses)) {
+			loadStatuses = changes.loadStatuses;
+			changed = true;
+		}
+		if (changes.showLoads !== undefined && changes.showLoads !== showLoads) {
+			showLoads = changes.showLoads;
+			changed = true;
+		}
+		if (
+			changes.capacityRange &&
+			(changes.capacityRange[0] !== capacityRange[0] ||
+				changes.capacityRange[1] !== capacityRange[1])
+		) {
+			capacityRange = changes.capacityRange;
+			capacityTouched =
+				changes.capacityRange[0] > capacityBounds.min ||
+				changes.capacityRange[1] < capacityBounds.max;
+			changed = true;
+		}
+		if (
+			changes.yearRange &&
+			(changes.yearRange[0] !== yearRange[0] || changes.yearRange[1] !== yearRange[1])
+		) {
+			yearRange = changes.yearRange;
+			yearTouched = changes.yearRange[0] > yearBounds.min || changes.yearRange[1] < yearBounds.max;
+			changed = true;
+		}
+
+		if (!changed) return;
+		const params = {
+			statuses,
+			regions,
+			fuelTechs: selectedTechs,
+			capacityRange,
+			yearRange,
+			view: selectedView,
+			facility: selectedFacility?.code ?? null
+		};
+		if (needsRefetch) {
+			navigateWithRefetch(params);
 		} else {
-			updateMapOptionsUrl();
+			navigateWithoutRefetch(params);
 		}
 	}
 	// Loads (data centre) statuses — the Loads section of the Status filter.
@@ -1141,50 +1200,6 @@
 	}
 
 	/**
-	 * @param {string[]} values
-	 */
-	function handleRegionsChange(values) {
-		// Optimistic update - immediately update local state
-		regions = values;
-		// Then navigate to fetch new data (filter change requires refetch)
-		navigateWithRefetch({
-			statuses,
-			regions: values,
-			fuelTechs: selectedTechs,
-			capacityRange,
-			yearRange,
-			view: selectedView
-		});
-	}
-
-	/**
-	 * Loads (data centre) status selection — client-side only, so it syncs the
-	 * URL via replaceState instead of a server round-trip.
-	 * @param {string[]} values
-	 */
-	function handleLoadStatusesChange(values) {
-		loadStatuses = values;
-		updateMapOptionsUrl();
-	}
-
-	/**
-	 * @param {string[]} values
-	 */
-	function handleStatusesChange(values) {
-		// Optimistic update
-		statuses = values;
-		// Filter change requires refetch
-		navigateWithRefetch({
-			statuses: values,
-			regions,
-			fuelTechs: selectedTechs,
-			capacityRange,
-			yearRange,
-			view: selectedView
-		});
-	}
-
-	/**
 	 * @param {[number, number]} range
 	 */
 	function handleCapacityRangeChange(range) {
@@ -1471,10 +1486,7 @@
 				yearMin={yearBounds.min}
 				yearMax={yearBounds.max}
 				onsearchchange={handleSearchChange}
-				onstatuseschange={handleStatusesChange}
-				onloadstatuseschange={handleLoadStatusesChange}
-				ontypeschange={handleTypesChange}
-				onregionschange={handleRegionsChange}
+				onapply={handleFiltersApply}
 				oncapacityrangechange={handleCapacityRangeChange}
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}

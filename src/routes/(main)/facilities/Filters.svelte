@@ -9,7 +9,7 @@
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 
-	import { activeLeafCount, isDefaultSelection } from '$lib/facilities/filter-options.js';
+	import { activeLeafCount } from '$lib/facilities/filter-options.js';
 	import {
 		regionOptions,
 		statusOptions,
@@ -42,10 +42,15 @@
 	 *   facilitySelected?: boolean,
 	 *   darkMap?: boolean,
 	 *   showShortcuts?: boolean,
-	 *   onstatuseschange?: (values: string[]) => void,
-	 *   onloadstatuseschange?: (values: string[]) => void,
-	 *   ontypeschange?: (values: string[]) => void,
-	 *   onregionschange?: (values: string[]) => void,
+	 *   onapply?: (changes: {
+	 *     statuses?: string[],
+	 *     loadStatuses?: string[],
+	 *     regions?: string[],
+	 *     fuelTechs?: string[],
+	 *     showLoads?: boolean,
+	 *     capacityRange?: [number, number],
+	 *     yearRange?: [number, number]
+	 *   }) => void,
 	 *   oncapacityrangechange?: (range: [number, number]) => void,
 	 *   yearRange?: [number, number],
 	 *   yearMin?: number,
@@ -78,10 +83,7 @@
 		// Dark/satellite basemap behind the floating nav → white logo mark.
 		darkMap = false,
 		showShortcuts = false,
-		onstatuseschange,
-		onloadstatuseschange,
-		ontypeschange,
-		onregionschange,
+		onapply,
 		oncapacityrangechange,
 		yearRange = [1900, 2040],
 		yearMin = 1900,
@@ -253,41 +255,72 @@
 	}
 
 	// Apply handlers — both the desktop dropdowns and the mobile sheet stage
-	// drafts and hand back the final selection; unchanged selections are
-	// dropped here (or by the page-level handler) so Apply without edits
-	// never triggers a spurious refetch.
+	// drafts and hand back the final selection, translated here into change
+	// slices for the page's single commit point (which diffs each slice,
+	// updates state once and syncs the URL with at most one navigation).
+
+	/**
+	 * @param {string[]} values
+	 * @returns {{ fuelTechs: string[], showLoads: boolean }}
+	 */
+	function splitTypes(values) {
+		return {
+			fuelTechs: values.filter((v) => v !== 'data_centres'),
+			showLoads: values.includes('data_centres')
+		};
+	}
+
+	/**
+	 * @param {string[]} values
+	 * @returns {{ statuses: string[], loadStatuses?: string[] }}
+	 */
+	function splitStatuses(values) {
+		/** @type {{ statuses: string[], loadStatuses?: string[] }} */
+		const changes = { statuses: values.filter((v) => !v.startsWith(LOAD_PREFIX)) };
+		// With the flag off the dropdown carries no load rows — leave that
+		// state alone rather than committing an empty selection.
+		if (loadsFeature) {
+			changes.loadStatuses = values
+				.filter((v) => v.startsWith(LOAD_PREFIX))
+				.map((v) => v.slice(LOAD_PREFIX.length));
+		}
+		return changes;
+	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function applyTypes(values) {
-		// The page-level handler already no-ops the navigation when unchanged.
-		ontypeschange?.(values);
+		onapply?.(splitTypes(values));
 	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function applyRegions(values) {
-		if (!isDefaultSelection(values, selectedRegions)) onregionschange?.(values);
+		onapply?.({ regions: values });
 	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function applyStatuses(values) {
-		const generatorStatuses = values.filter((v) => !v.startsWith(LOAD_PREFIX));
-		// Loads first: their URL sync is a replaceState that the subsequent
-		// generator-status navigation's buildUrl reads back from state. With the
-		// flag off the dropdown carries no load values — leave that state alone.
-		if (loadsFeature) {
-			const loadValues = values
-				.filter((v) => v.startsWith(LOAD_PREFIX))
-				.map((v) => v.slice(LOAD_PREFIX.length));
-			if (!isDefaultSelection(loadValues, selectedLoadStatuses)) onloadstatuseschange?.(loadValues);
-		}
-		if (!isDefaultSelection(generatorStatuses, selectedStatuses))
-			onstatuseschange?.(generatorStatuses);
+		onapply?.(splitStatuses(values));
+	}
+
+	/**
+	 * The mobile sheet commits every draft at once — translate the combined
+	 * snapshot into one change set so the page issues a single navigation.
+	 * @param {{ types: string[], statuses: string[], regions: string[], capacityRange: [number, number], yearRange: [number, number] }} drafts
+	 */
+	function applyAllFilters(drafts) {
+		onapply?.({
+			...splitTypes(drafts.types),
+			...splitStatuses(drafts.statuses),
+			regions: drafts.regions,
+			capacityRange: drafts.capacityRange,
+			yearRange: drafts.yearRange
+		});
 	}
 
 	/**
@@ -336,11 +369,7 @@
 	{yearMin}
 	{yearMax}
 	onclose={() => (showMobileFilterOptions = false)}
-	onapplytypes={applyTypes}
-	onapplystatuses={applyStatuses}
-	onapplyregions={applyRegions}
-	onapplycapacity={(range) => oncapacityrangechange?.(range)}
-	onapplyyears={(range) => onyearrangechange?.(range)}
+	onapply={applyAllFilters}
 	{typeRow}
 />
 
