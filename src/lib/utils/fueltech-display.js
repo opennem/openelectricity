@@ -1,7 +1,14 @@
 import { fuelTechColourMap } from '$lib/theme/openelectricity';
 
 /** Fueltechs that need dark text for contrast on their background color */
-const LIGHT_FUELTECHS = ['solar_utility', 'solar', 'solar_rooftop', 'gas_ocgt', 'gas_recip'];
+const LIGHT_FUELTECHS = [
+	'solar_utility',
+	'solar',
+	'solar_rooftop',
+	'gas_ocgt',
+	'gas_recip',
+	'data_centre'
+];
 
 /**
  * Check if fueltech needs dark text (for light backgrounds)

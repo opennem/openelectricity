@@ -7,13 +7,28 @@
 	import { Flag, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
+	import DataCentresLegend from './_components/DataCentresLegend.svelte';
 	import { normaliseMetric } from './_utils/normalise-metric.js';
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import formatValue from './_utils/format-value';
 	import getUnitYear from './_utils/get-unit-year';
-	import { statusColours, DEFAULT_STATUSES, normaliseViewParam } from '$lib/facilities/filters.js';
+	import {
+		statusColours,
+		DEFAULT_STATUSES,
+		DEFAULT_LOAD_STATUSES,
+		ALL_LOAD_STATUSES,
+		ALL_REGIONS,
+		FUEL_TECH_VALUES,
+		parseFuelTechsParam,
+		normaliseViewParam
+	} from '$lib/facilities/filters.js';
+	import {
+		serialiseSelection,
+		parseSelection,
+		isDefaultSelection
+	} from '$lib/facilities/filter-options.js';
 	import { facilitiesToCsv } from './_utils/facilities-csv.js';
 	import { sortFacilities } from './_utils/sort-facilities';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
@@ -28,6 +43,9 @@
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
 	import FacilityPanelFooter from './_components/FacilityPanelFooter.svelte';
+	import DataCentreDetailPanel from './_components/DataCentreDetailPanel.svelte';
+	import DataCentrePanelHeader from './_components/DataCentrePanelHeader.svelte';
+	import { loadDataCentreFacilities } from '$lib/facilities/data-centres.js';
 	import {
 		FullscreenLayout,
 		FullscreenContainer,
@@ -64,6 +82,7 @@
 		windowedHref
 	} from '$lib/utils/fullscreen-mode.js';
 	import { deriveCard } from '$lib/og/facility-card-data.js';
+	import { isFeatureEnabled } from '$lib/stores/app.js';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 
 	let { data } = $props();
@@ -87,8 +106,74 @@
 	const belowTablet = new MediaQuery(BELOW_TABLET_QUERY);
 	let isFullscreen = $derived(building ? true : belowTablet.current || isFullscreenUrl(page.url));
 
-	// Server data (updates when server responds)
-	let facilities = $derived(data.facilities);
+	// facility_loads feature flag: gates the whole loads (data centres) UI —
+	// the Loads group in the Type filter, the Loads statuses, ACT/NT regions,
+	// the map layer and its legend. URL/server semantics are unchanged either
+	// way; with the flag off the datacentres param is simply never honoured.
+	// Enable via PUBLIC_FEATURE_FLAGS ('facility_loads': true) or, for a
+	// testing session, the ?facility_loads=true URL override.
+	const loadsFeature =
+		isFeatureEnabled('facility_loads') ||
+		(!building && page.url.searchParams.get('facility_loads') === 'true');
+	// URL-enabled overrides must survive filter navigations (buildUrl
+	// reconstructs the URL from scratch).
+	const loadsFeatureViaUrl = loadsFeature && !isFeatureEnabled('facility_loads');
+
+	// URL parsers for the client-side filter state — shared between the $state
+	// initialisers below and the afterNavigate re-sync, so the two can't drift.
+	/** @param {URLSearchParams} params */
+	const parseShowLoads = (params) => loadsFeature && params.get('datacentres') === 'true';
+	/** @param {URLSearchParams} params */
+	const parseLoadStatuses = (params) =>
+		parseSelection(params.get('load_statuses'), DEFAULT_LOAD_STATUSES).filter((s) =>
+			ALL_LOAD_STATUSES.includes(s)
+		);
+
+	// The Type filter's generator side: the literal ticked technology leaves
+	// ([] = generators hidden, every leaf = no technology filter). The
+	// empty-means-all wire convention lives only at the URL/API boundary
+	// (buildUrl serialises via the codec; the server parses its inverse).
+	let selectedTechs = $state(parseFuelTechsParam(page.url.searchParams));
+	// The Loads side — data centres, persisted as datacentres=true.
+	let showLoads = $state(parseShowLoads(page.url.searchParams));
+
+	// Data centres (loads) — pseudo-facility objects mixed into the views when
+	// the Loads layer is on. Fetched lazily on first toggle; $state.raw because
+	// the array is read-only here (no deep proxying of ~300 records).
+	/** @type {any[] | null} */
+	let loadFacilitiesRaw = $state.raw(null);
+	// No cancellation needed: the data is static and the promise is cached
+	// module-wide, so a late resolve can never write a stale value.
+	$effect(() => {
+		if (showLoads && !loadFacilitiesRaw) {
+			loadDataCentreFacilities().then((loads) => (loadFacilitiesRaw = loads));
+		}
+	});
+	// True while the Loads side is on but its dataset hasn't arrived yet — the
+	// views show a loader rather than a premature "no facilities" empty state.
+	let loadsPending = $derived(showLoads && !loadFacilitiesRaw);
+
+	// Loads filter on their own status dimension (the Loads section of the
+	// Status filter — DC buckets, not OE facility statuses) plus the shared
+	// region filter, applied client-side. Selections are literal ("ticked =
+	// shown"): an empty selection shows nothing. Loads without a mappable
+	// state (4 records) pass the region filter while any region is ticked.
+	let loadFacilities = $derived.by(() => {
+		if (!showLoads || !loadFacilitiesRaw) return [];
+		return loadFacilitiesRaw.filter(
+			(f) =>
+				loadStatuses.includes(f.units[0]?.status_id) &&
+				regions.length > 0 &&
+				(!f.network_region || regions.includes(f.network_region.toLowerCase()))
+		);
+	});
+
+	// Server data (updates when server responds) + client-side loads mix-in.
+	// Generators are filtered entirely server-side (an empty technology
+	// selection already yields an empty data.facilities); loads mix in
+	// client-side — everything downstream (views, map, bounds, summary)
+	// derives from this combined set.
+	let facilities = $derived([...(data.facilities ?? []), ...loadFacilities]);
 
 	// Optimistic local state for filters - updates immediately on user interaction
 	// Initialize empty and sync via $effect to avoid capturing stale initial values
@@ -96,8 +181,95 @@
 	let statuses = $state([]);
 	/** @type {string[]} */
 	let regions = $state([]);
+
+	// Type filter selection: the ticked technology leaves plus the Loads leaf.
+	let selectedTypes = $derived([...selectedTechs, ...(showLoads ? ['data_centres'] : [])]);
+
+	/**
+	 * The single commit point for the filter UI — desktop dropdown Applies
+	 * send one slice, the mobile sheet's Apply sends its whole batch. Each
+	 * provided slice is diffed against current state (set-equality), all
+	 * changed state is updated together, and the URL syncs exactly once: a
+	 * server navigation when a server-side filter changed, a replaceState
+	 * otherwise, nothing at all for a no-op batch.
+	 * @param {{
+	 *   statuses?: string[],
+	 *   loadStatuses?: string[],
+	 *   regions?: string[],
+	 *   fuelTechs?: string[],
+	 *   showLoads?: boolean,
+	 *   capacityRange?: [number, number],
+	 *   yearRange?: [number, number]
+	 * }} changes
+	 */
+	function handleFiltersApply(changes) {
+		let needsRefetch = false;
+		let changed = false;
+
+		if (changes.statuses && !isDefaultSelection(changes.statuses, statuses)) {
+			statuses = changes.statuses;
+			needsRefetch = true;
+			changed = true;
+		}
+		if (changes.regions && !isDefaultSelection(changes.regions, regions)) {
+			regions = changes.regions;
+			needsRefetch = true;
+			changed = true;
+		}
+		if (changes.fuelTechs && !isDefaultSelection(changes.fuelTechs, selectedTechs)) {
+			selectedTechs = changes.fuelTechs;
+			needsRefetch = true;
+			changed = true;
+		}
+		if (changes.loadStatuses && !isDefaultSelection(changes.loadStatuses, loadStatuses)) {
+			loadStatuses = changes.loadStatuses;
+			changed = true;
+		}
+		if (changes.showLoads !== undefined && changes.showLoads !== showLoads) {
+			showLoads = changes.showLoads;
+			changed = true;
+		}
+		if (
+			changes.capacityRange &&
+			(changes.capacityRange[0] !== capacityRange[0] ||
+				changes.capacityRange[1] !== capacityRange[1])
+		) {
+			capacityRange = changes.capacityRange;
+			capacityTouched =
+				changes.capacityRange[0] > capacityBounds.min ||
+				changes.capacityRange[1] < capacityBounds.max;
+			changed = true;
+		}
+		if (
+			changes.yearRange &&
+			(changes.yearRange[0] !== yearRange[0] || changes.yearRange[1] !== yearRange[1])
+		) {
+			yearRange = changes.yearRange;
+			yearTouched = changes.yearRange[0] > yearBounds.min || changes.yearRange[1] < yearBounds.max;
+			changed = true;
+		}
+
+		if (!changed) return;
+		const params = {
+			statuses,
+			regions,
+			fuelTechs: selectedTechs,
+			capacityRange,
+			yearRange,
+			view: selectedView,
+			facility: selectedFacility?.code ?? null
+		};
+		if (needsRefetch) {
+			navigateWithRefetch(params);
+		} else {
+			navigateWithoutRefetch(params);
+		}
+	}
+	// Loads (data centre) statuses — the Loads section of the Status filter.
+	// Client-side only (no server round-trip), so it initialises straight from
+	// the URL rather than syncing from server data like the filters above.
 	/** @type {string[]} */
-	let fuelTechs = $state([]);
+	let loadStatuses = $state(parseLoadStatuses(page.url.searchParams));
 	/** @type {[number, number]} */
 	let capacityRange = $state(/** @type {[number, number]} */ ([0, 10000]));
 	/** @type {[number, number]} */
@@ -150,9 +322,12 @@
 	// play the map shows the full unfiltered set, so facilities revealed outside
 	// the active filters must still resolve. ($derived.by: the play-mode state
 	// is declared further down; the closure defers evaluation past its TDZ.)
-	let lookupFacilities = $derived.by(() =>
-		playModeActive && allFacilities ? allFacilities : facilities
-	);
+	// Loads are appended unfiltered so a data centre clicked on the map always
+	// resolves, even when the status/region filters exclude it from the views.
+	let lookupFacilities = $derived.by(() => {
+		const base = playModeActive && allFacilities ? allFacilities : facilities;
+		return loadFacilitiesRaw ? [...base, ...loadFacilitiesRaw] : base;
+	});
 
 	/** @type {any | null} */
 	let selectedFacility = $derived.by(() => {
@@ -206,7 +381,11 @@
 	$effect(() => {
 		statuses = data.statuses;
 		regions = data.regions;
-		fuelTechs = data.fuelTechs;
+		// Value-compare like the afterNavigate re-sync: the server returns a
+		// fresh array on every refetch even when the values are identical.
+		if (data.fuelTechs.join(',') !== selectedTechs.join(',')) {
+			selectedTechs = data.fuelTechs;
+		}
 	});
 
 	// Load the selected facility's auxiliary data — editorial profile (photos,
@@ -217,7 +396,8 @@
 	// full facility arrives.
 	$effect(() => {
 		const code = selectedFacility?.code ?? null;
-		if (!code) {
+		// Loads have no OE profile/detail — render straight from the pseudo-facility.
+		if (!code || selectedFacility?.isLoad) {
 			selectedProfile = null;
 			profileLoading = false;
 			selectedFacilityFull = null;
@@ -255,29 +435,48 @@
 		};
 	});
 
-	// Separate effect to initialize capacity range when data changes
-	// Uses untrack to read capacityBounds without subscribing (prevents circular dep)
+	// Whether the user (or a shared URL) explicitly narrowed the capacity/year
+	// range. While untouched, the range tracks the data bounds — bounds move
+	// whenever the facility set changes (region refetch, loads mixing in/out),
+	// and a stale full-width range would otherwise read as an active filter
+	// and get serialised into the URL on the next navigation.
+	let capacityTouched = $state(false);
+	let yearTouched = $state(false);
+
+	// Sync capacity range: URL params win (and mark the range as touched);
+	// otherwise an untouched range follows the bounds as they move. The
+	// value-compare keeps a no-op bounds change from minting a new range array
+	// (which would re-run the whole filteredFacilities → map chain a second
+	// time per interaction).
 	$effect(() => {
-		// Subscribe to data changes only
 		const minFromUrl = data.capacityMin;
 		const maxFromUrl = data.capacityMax;
-
-		// Read capacityBounds without creating a dependency
-		const bounds = untrack(() => capacityBounds);
-		const minCapacity = minFromUrl ?? bounds.min;
-		const maxCapacity = maxFromUrl ?? bounds.max;
-		capacityRange = [minCapacity, maxCapacity];
+		const bounds = capacityBounds;
+		if (minFromUrl != null || maxFromUrl != null) {
+			capacityRange = [minFromUrl ?? bounds.min, maxFromUrl ?? bounds.max];
+			capacityTouched = true;
+		} else if (!untrack(() => capacityTouched)) {
+			const current = untrack(() => capacityRange);
+			if (current[0] !== bounds.min || current[1] !== bounds.max) {
+				capacityRange = [bounds.min, bounds.max];
+			}
+		}
 	});
 
-	// Separate effect to initialize year range when data changes
+	// Same for the year range.
 	$effect(() => {
 		const minFromUrl = data.yearMin;
 		const maxFromUrl = data.yearMax;
-
-		const bounds = untrack(() => yearBounds);
-		const minYear = minFromUrl ?? bounds.min;
-		const maxYear = maxFromUrl ?? bounds.max;
-		yearRange = [minYear, maxYear];
+		const bounds = yearBounds;
+		if (minFromUrl != null || maxFromUrl != null) {
+			yearRange = [minFromUrl ?? bounds.min, maxFromUrl ?? bounds.max];
+			yearTouched = true;
+		} else if (!untrack(() => yearTouched)) {
+			const current = untrack(() => yearRange);
+			if (current[0] !== bounds.min || current[1] !== bounds.max) {
+				yearRange = [bounds.min, bounds.max];
+			}
+		}
 	});
 
 	let showTodayButton = $state(false);
@@ -481,6 +680,37 @@
 			normaliseViewParam(params.get('view')) ?? undefined
 		);
 
+		// Re-derive the URL-initialised filter state too: same-route navigation
+		// doesn't remount the component, so without this a nav-bar "Facilities"
+		// click (or back/forward) changes the URL but leaves the Type filter,
+		// load statuses and touched ranges where they were. Statuses/regions
+		// sync from `data`; map chrome (theme, transmission, clustering) stays
+		// sticky by design — it's display preference, not a filter. Array
+		// writes are value-compared first: afterNavigate fires on every filter
+		// refetch, and an identical-but-fresh array would re-run the whole
+		// filteredFacilities → map chain a second time for nothing.
+		showLoads = parseShowLoads(params);
+		const parsedTechs = parseFuelTechsParam(params);
+		if (parsedTechs.join(',') !== selectedTechs.join(',')) {
+			selectedTechs = parsedTechs;
+		}
+		const parsedLoadStatuses = parseLoadStatuses(params);
+		if (parsedLoadStatuses.join(',') !== loadStatuses.join(',')) {
+			loadStatuses = parsedLoadStatuses;
+		}
+		if (!params.has('capacity_min') && !params.has('capacity_max')) {
+			capacityTouched = false;
+			if (capacityRange[0] !== capacityBounds.min || capacityRange[1] !== capacityBounds.max) {
+				capacityRange = [capacityBounds.min, capacityBounds.max];
+			}
+		}
+		if (!params.has('year_min') && !params.has('year_max')) {
+			yearTouched = false;
+			if (yearRange[0] !== yearBounds.min || yearRange[1] !== yearBounds.max) {
+				yearRange = [yearBounds.min, yearBounds.max];
+			}
+		}
+
 		if (routerReady) return;
 		queueMicrotask(() => {
 			routerReady = true;
@@ -526,6 +756,25 @@
 			params.set('golf', 'true');
 		} else {
 			params.delete('golf');
+		}
+
+		// Drop the legacy generators=… param (superseded by fuel_techs=none).
+		params.delete('generators');
+
+		// data centres: only include if true (default is false)
+		if (showLoads) {
+			params.set('datacentres', 'true');
+		} else {
+			params.delete('datacentres');
+		}
+
+		// load statuses: re-sourced from local state (like `facility` below) so a
+		// stale page.url after replaceState can't clobber it; only when non-default
+		const loadStatusesSerialised = serialiseSelection(loadStatuses, DEFAULT_LOAD_STATUSES);
+		if (loadStatusesSerialised !== null) {
+			params.set('load_statuses', loadStatusesSerialised);
+		} else {
+			params.delete('load_statuses');
 		}
 
 		params.delete('metric');
@@ -726,9 +975,17 @@
 	});
 	let displayFacilities = $derived(playFacilities ?? filteredFacilities);
 	let displayWithLocation = $derived(filterWithLocation(displayFacilities));
+	// The map draws loads via its own DataCentresLayer (status-opacity encoding,
+	// purple identity) — exclude them from the generator marker pipeline so they
+	// don't render twice. Timeline keeps the full located set.
+	let mapFacilities = $derived(displayWithLocation.filter((f) => !f.isLoad));
 
-	// Calculate totals for displayed facilities
-	let filteredUnits = $derived(displayFacilities?.flatMap((f) => f.units) ?? []);
+	// Calculate totals for displayed facilities. Loads are excluded — their MW
+	// is consumption, so folding it into the generation capacity badges (and
+	// the units count) would misstate the totals.
+	let filteredUnits = $derived(
+		displayFacilities?.filter((f) => !f.isLoad).flatMap((f) => f.units) ?? []
+	);
 	let totalCapacityMW = $derived(sumUnitCapacities(filteredUnits));
 	let totalFacilitiesCount = $derived(displayFacilities?.length ?? 0);
 	let totalUnitsCount = $derived(filteredUnits?.length ?? 0);
@@ -766,13 +1023,29 @@
 		view: v,
 		facility: f = null
 	}) {
-		let url = `/facilities?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}`;
-		// Only include capacity range if it's been filtered from defaults
-		if (cr[0] > capacityBounds.min || cr[1] < capacityBounds.max) {
+		let url = `/facilities?view=${v}`;
+		// Literal "ticked = shown" selections: default → omitted, none → 'none',
+		// otherwise the ticked subset (see serialiseSelection).
+		const techsSerialised = serialiseSelection(ft, FUEL_TECH_VALUES);
+		if (techsSerialised !== null) {
+			url += `&fuel_techs=${techsSerialised}`;
+		}
+		const statusesSerialised = serialiseSelection(s, DEFAULT_STATUSES);
+		if (statusesSerialised !== null) {
+			url += `&statuses=${statusesSerialised}`;
+		}
+		const regionsSerialised = serialiseSelection(r, ALL_REGIONS);
+		if (regionsSerialised !== null) {
+			url += `&regions=${regionsSerialised}`;
+		}
+		// Only include the capacity/year ranges when the user explicitly set
+		// them. Comparing against the live bounds alone is not enough: bounds
+		// move whenever the facility set changes, so an untouched range can
+		// transiently differ from them and would self-serialise as a filter.
+		if (capacityTouched && (cr[0] > capacityBounds.min || cr[1] < capacityBounds.max)) {
 			url += `&capacity_min=${cr[0]}&capacity_max=${cr[1]}`;
 		}
-		// Only include year range if it's been filtered from defaults
-		if (yr[0] > yearBounds.min || yr[1] < yearBounds.max) {
+		if (yearTouched && (yr[0] > yearBounds.min || yr[1] < yearBounds.max)) {
 			url += `&year_min=${yr[0]}&year_max=${yr[1]}`;
 		}
 		if (f) {
@@ -790,6 +1063,16 @@
 		}
 		if (mapShowGolfCourses) {
 			url += '&golf=true';
+		}
+		if (showLoads) {
+			url += '&datacentres=true';
+		}
+		if (loadsFeatureViaUrl) {
+			url += '&facility_loads=true';
+		}
+		const loadStatusesSerialised = serialiseSelection(loadStatuses, DEFAULT_LOAD_STATUSES);
+		if (loadStatusesSerialised !== null) {
+			url += `&load_statuses=${loadStatusesSerialised}`;
 		}
 		// Preserve windowed mode (fullscreen is the default and never serialised)
 		return windowedHref(url, !isFullscreen);
@@ -824,7 +1107,10 @@
 
 	function handleDownloadCsv() {
 		if (displayFacilities?.length) {
-			downloadCsv(facilitiesToCsv(displayFacilities), 'facilities.csv');
+			// Loads are excluded — their consumption MW under capacity columns
+			// would misstate a dataset users treat as OE generator data (same
+			// gate as the summary-bar totals).
+			downloadCsv(facilitiesToCsv(displayFacilities.filter((f) => !f.isLoad)), 'facilities.csv');
 		}
 	}
 
@@ -914,68 +1200,18 @@
 	}
 
 	/**
-	 * @param {string[]} values
-	 */
-	function handleRegionsChange(values) {
-		// Optimistic update - immediately update local state
-		regions = values;
-		// Then navigate to fetch new data (filter change requires refetch)
-		navigateWithRefetch({
-			statuses,
-			regions: values,
-			fuelTechs,
-			capacityRange,
-			yearRange,
-			view: selectedView
-		});
-	}
-
-	/**
-	 * @param {string[]} values
-	 */
-	function handleFuelTechsChange(values) {
-		// Optimistic update
-		fuelTechs = values;
-		// Filter change requires refetch
-		navigateWithRefetch({
-			statuses,
-			regions,
-			fuelTechs: values,
-			capacityRange,
-			yearRange,
-			view: selectedView
-		});
-	}
-
-	/**
-	 * @param {string[]} values
-	 */
-	function handleStatusesChange(values) {
-		// Optimistic update
-		statuses = values;
-		// Filter change requires refetch
-		navigateWithRefetch({
-			statuses: values,
-			regions,
-			fuelTechs,
-			capacityRange,
-			yearRange,
-			view: selectedView
-		});
-	}
-
-	/**
 	 * @param {[number, number]} range
 	 */
 	function handleCapacityRangeChange(range) {
-		// Optimistic update
+		// Optimistic update. Selecting the full bounds counts as clearing.
 		capacityRange = range;
+		capacityTouched = range[0] > capacityBounds.min || range[1] < capacityBounds.max;
 		// Capacity is client-side filtered, no refetch needed. Preserve the
 		// selection in the URL so it survives back/forward.
 		navigateWithoutRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange: range,
 			yearRange,
 			view: selectedView,
@@ -987,14 +1223,15 @@
 	 * @param {[number, number]} range
 	 */
 	function handleYearRangeChange(range) {
-		// Optimistic update
+		// Optimistic update. Selecting the full bounds counts as clearing.
 		yearRange = range;
+		yearTouched = range[0] > yearBounds.min || range[1] < yearBounds.max;
 		// Year is client-side filtered, no refetch needed. Preserve the selection
 		// in the URL so it survives back/forward.
 		navigateWithoutRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange: range,
 			view: selectedView,
@@ -1014,12 +1251,14 @@
 		// (timeline uses unit capacities, list/grid uses facility capacities)
 		capacityRange = [capacityBounds.min, capacityBounds.max];
 		yearRange = [yearBounds.min, yearBounds.max];
+		capacityTouched = false;
+		yearTouched = false;
 
 		// View change uses cached data, no refetch needed
 		navigateWithoutRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange,
 			view: value,
@@ -1046,15 +1285,19 @@
 	/** Reset every filter (and search) back to defaults. */
 	function handleResetAll() {
 		statuses = [...DEFAULT_STATUSES];
-		regions = [];
-		fuelTechs = [];
+		loadStatuses = [...DEFAULT_LOAD_STATUSES];
+		selectedTechs = [...FUEL_TECH_VALUES];
+		showLoads = false;
+		regions = [...ALL_REGIONS];
 		capacityRange = [capacityBounds.min, capacityBounds.max];
 		yearRange = [yearBounds.min, yearBounds.max];
+		capacityTouched = false;
+		yearTouched = false;
 		searchTerm = '';
 		navigateWithRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange,
 			view: selectedView,
@@ -1071,8 +1314,9 @@
 			// Mobile skips the detail preview sheet — selecting a facility goes
 			// straight to its page (same destination as the sheet's View facility
 			// button). The sheet still renders for URL-driven selection, e.g. a
-			// shared /facilities?facility=… link opened on a phone.
-			if (!isDesktop) {
+			// shared /facilities?facility=… link opened on a phone. Loads have no
+			// /facility/[code] page, so they fall through to the sheet selection.
+			if (!isDesktop && !facility.isLoad) {
 				goto(windowedHref(`/facility/${facility.code}`, !isFullscreen));
 				return;
 			}
@@ -1088,7 +1332,7 @@
 				navigateWithoutRefetch({
 					statuses,
 					regions,
-					fuelTechs,
+					fuelTechs: selectedTechs,
 					capacityRange,
 					yearRange,
 					view: selectedView,
@@ -1096,6 +1340,19 @@
 				});
 			}
 		}
+	}
+
+	/**
+	 * Handle a data centre marker click from the map layer — resolve the
+	 * pseudo-facility by the feature's id (same `dc-*` code scheme) and run it
+	 * through the normal selection flow.
+	 * @param {any} properties
+	 */
+	function handleDataCentreSelect(properties) {
+		const code = properties?.id;
+		if (!code) return;
+		const load = lookupFacilities?.find((f) => f.code === code);
+		if (load) handleFacilitySelect(load);
 	}
 
 	/**
@@ -1109,7 +1366,7 @@
 		navigateWithoutRefetch({
 			statuses,
 			regions,
-			fuelTechs,
+			fuelTechs: selectedTechs,
 			capacityRange,
 			yearRange,
 			view: selectedView,
@@ -1214,11 +1471,13 @@
 				{searchTerm}
 				{selectedView}
 				{isFullscreen}
+				{loadsFeature}
 				facilitySelected={!!selectedFacility}
 				darkMap={mapTheme !== 'light'}
 				showShortcuts={showShortcutsToast}
 				selectedStatuses={statuses}
-				selectedFuelTechs={fuelTechs}
+				selectedLoadStatuses={loadStatuses}
+				{selectedTypes}
 				selectedRegions={regions}
 				{capacityRange}
 				capacityMin={capacityBounds.min}
@@ -1227,9 +1486,7 @@
 				yearMin={yearBounds.min}
 				yearMax={yearBounds.max}
 				onsearchchange={handleSearchChange}
-				onstatuseschange={handleStatusesChange}
-				onregionschange={handleRegionsChange}
-				onfueltechschange={handleFuelTechsChange}
+				onapply={handleFiltersApply}
 				oncapacityrangechange={handleCapacityRangeChange}
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
@@ -1237,8 +1494,6 @@
 				ondownloadcsv={handleDownloadCsv}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onshortcutinvoked={() => (showShortcutsToast = false)}
-				filteredCount={totalFacilitiesCount}
-				onresetall={handleResetAll}
 			/>
 		</div>
 	{/snippet}
@@ -1260,9 +1515,23 @@
 						: 'tablet:transition-[width] tablet:duration-300 tablet:ease-out'}"
 					style="--list-w: {listPaneWidth}px"
 				>
-					{#if viewLoading}
+					{#if viewLoading || (displayFacilities.length === 0 && loadsPending)}
 						<div class="flex-1 flex items-center justify-center">
 							<LogoMarkLoader />
+						</div>
+					{:else if displayFacilities.length === 0 && !playModeActive}
+						<!-- Under "ticked = shown" semantics an empty selection is a
+						     legitimate dead end — make it legible and easy to leave. -->
+						<div class="flex-1 flex flex-col items-center justify-center gap-4 px-8 text-center">
+							<p class="m-0 text-sm text-mid-grey">
+								No facilities or loads match the current filters.
+							</p>
+							<button
+								onclick={handleResetAll}
+								class="rounded-lg border-2 border-warm-grey bg-white px-4 py-2 text-sm font-medium text-dark-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
+							>
+								Reset all filters
+							</button>
 						</div>
 					{:else if selectedView === 'grid'}
 						<div class="flex-1 overflow-y-auto min-h-0">
@@ -1369,9 +1638,14 @@
 						{#await import('./Map.svelte') then { default: Map }}
 							<Map
 								bind:this={mapRef}
-								facilities={displayWithLocation}
+								facilities={mapFacilities}
+								boundsFacilities={displayWithLocation}
 								{hoveredFacility}
-								selectedFacilityCode={selectedFacility?.code ?? null}
+								selectedFacilityCode={selectedFacility && !selectedFacility.isLoad
+									? selectedFacility.code
+									: null}
+								selectedDataCentreId={selectedFacility?.isLoad ? selectedFacility.code : null}
+								ondatacentreselect={handleDataCentreSelect}
 								osmWayId={selectedProfile?.osm_way_id ?? null}
 								{selectedView}
 								cardCodes={cardCodeSet}
@@ -1380,6 +1654,8 @@
 								showTransmissionLines={mapShowTransmissionLines}
 								{transmissionLineVisibility}
 								showGolfCourses={mapShowGolfCourses}
+								showDataCentres={showLoads}
+								dataCentres={loadFacilities}
 								{playYear}
 								appearYears={playAppearYears}
 								scrollZoom={!isYearPlaying}
@@ -1496,6 +1772,13 @@
 							/>
 						{/if}
 
+						{#if showLoads}
+							<DataCentresLegend
+								satelliteView={mapTheme !== 'light'}
+								raised={mapShowTransmissionLines}
+							/>
+						{/if}
+
 						<!-- Facility detail panel (desktop only) -->
 						{#if isDesktop}
 							<ResizablePanel
@@ -1514,36 +1797,52 @@
 								gripClass={detailGripClass}
 							>
 								{#snippet header()}
-									<FacilityPanelHeader
-										facility={detailFacility}
-										sanityFacility={selectedProfile}
-										card={detailCard}
-										dominantColour={detailColour}
-										darkText={detailDarkText}
-									>
-										{#snippet topBar(/** @type {boolean} */ darkText)}
-											{#if selectedFacility}
-												{@render facilityActionBar(darkText)}
-											{/if}
-										{/snippet}
-									</FacilityPanelHeader>
+									{#if detailFacility?.isLoad}
+										<DataCentrePanelHeader facility={detailFacility}>
+											{#snippet topBar(/** @type {boolean} */ darkText)}
+												{#if selectedFacility}
+													{@render facilityActionBar(darkText)}
+												{/if}
+											{/snippet}
+										</DataCentrePanelHeader>
+									{:else}
+										<FacilityPanelHeader
+											facility={detailFacility}
+											sanityFacility={selectedProfile}
+											card={detailCard}
+											dominantColour={detailColour}
+											darkText={detailDarkText}
+										>
+											{#snippet topBar(/** @type {boolean} */ darkText)}
+												{#if selectedFacility}
+													{@render facilityActionBar(darkText)}
+												{/if}
+											{/snippet}
+										</FacilityPanelHeader>
+									{/if}
 								{/snippet}
 								{#snippet footer()}
-									<FacilityPanelFooter
-										owners={selectedProfile?.owners ?? []}
-										facilityCode={selectedFacility?.code ?? null}
-										buttonColour={detailColour}
-										darkText={detailDarkText}
-										loading={profileLoading && !selectedProfile}
-										{isFullscreen}
-									/>
+									{#if !detailFacility?.isLoad}
+										<FacilityPanelFooter
+											owners={selectedProfile?.owners ?? []}
+											facilityCode={selectedFacility?.code ?? null}
+											buttonColour={detailColour}
+											darkText={detailDarkText}
+											loading={profileLoading && !selectedProfile}
+											{isFullscreen}
+										/>
+									{/if}
 								{/snippet}
-								<FacilityDetailPanel
-									facility={detailFacility}
-									profile={selectedProfile}
-									{profileLoading}
-									fillHeight={isFullscreen}
-								/>
+								{#if detailFacility?.isLoad}
+									<DataCentreDetailPanel facility={detailFacility} fillHeight={isFullscreen} />
+								{:else}
+									<FacilityDetailPanel
+										facility={detailFacility}
+										profile={selectedProfile}
+										{profileLoading}
+										fillHeight={isFullscreen}
+									/>
+								{/if}
 							</ResizablePanel>
 						{/if}
 					</div>
@@ -1588,7 +1887,13 @@
 						class="tablet:hidden z-30 [view-transition-name:facility-hero]"
 					>
 						{#snippet header()}
-							{#if selectedFacility}
+							{#if selectedFacility && detailFacility?.isLoad}
+								<DataCentrePanelHeader facility={detailFacility}>
+									{#snippet topBar(/** @type {boolean} */ darkText)}
+										{@render facilityActionBar(darkText)}
+									{/snippet}
+								</DataCentrePanelHeader>
+							{:else if selectedFacility}
 								<FacilityPanelHeader
 									facility={detailFacility}
 									sanityFacility={selectedProfile}
@@ -1603,7 +1908,9 @@
 								</FacilityPanelHeader>
 							{/if}
 						{/snippet}
-						{#if selectedFacility}
+						{#if selectedFacility && detailFacility?.isLoad}
+							<DataCentreDetailPanel facility={detailFacility} />
+						{:else if selectedFacility}
 							<FacilityDetailPanel
 								facility={detailFacility}
 								profile={selectedProfile}
@@ -1611,7 +1918,7 @@
 							/>
 						{/if}
 						{#snippet footer()}
-							{#if selectedFacility}
+							{#if selectedFacility && !detailFacility?.isLoad}
 								<FacilityPanelFooter
 									owners={selectedProfile?.owners ?? []}
 									facilityCode={selectedFacility?.code ?? null}

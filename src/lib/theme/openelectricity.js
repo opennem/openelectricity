@@ -58,6 +58,8 @@ const fuelTechColourMap = {
 	total_loads: '#CFA7FF',
 	total_sources: '#251C00',
 
+	data_centre: '#CFA7FF',
+
 	vre: '#069FAF',
 	residual: '#545353',
 	demand: '#6A6A6A'
@@ -77,5 +79,10 @@ const statusColours = {
 	operating: '#75e74d',
 	retired: '#6a6a6a'
 };
+// Data centre (load) lifecycle — a development pipeline OE has no equivalent
+// for. Construction shares the commissioning amber, announced the committed
+// grey, so load statuses read on the same visual scale as generators.
+statusColours.construction = statusColours.commissioning;
+statusColours.announced = statusColours.committed;
 
 export { fuelTechColourMap, carbonIntensityColourMap, statusColours };

@@ -34,6 +34,7 @@ export type FuelTechCode =
 	| 'interconnector'
 	| 'demand_response'
 	| 'demand'
+	| 'data_centre'
 	| 'bioenergy'
 	| 'coal'
 	| 'gas'

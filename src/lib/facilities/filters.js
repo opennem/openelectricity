@@ -1,5 +1,7 @@
 import optionsReducer from '$lib/utils/options-reducer';
 import { statusColours } from '$lib/theme/openelectricity';
+import { STATUS_LABELS as LOAD_STATUS_LABELS } from '$lib/facilities/data-centres.js';
+import { getLeafValues, parseSelection } from '$lib/facilities/filter-options.js';
 
 export { statusColours };
 
@@ -26,8 +28,21 @@ export const statusOptions = [
 	}
 ];
 
-export const ALL_STATUSES = statusOptions.map((opt) => opt.value);
 export const DEFAULT_STATUSES = ['operating', 'commissioning'];
+
+// Data centre (load) statuses — a development pipeline distinct from the OE
+// facility lifecycle, so the Status filter carries a separate Loads section.
+// Built from the canonical bucket labels so filter UI and detail surfaces
+// can't drift.
+export const loadStatusOptions = Object.entries(LOAD_STATUS_LABELS).map(([value, label]) => ({
+	value,
+	label,
+	colour: statusColours[value]
+}));
+
+export const ALL_LOAD_STATUSES = loadStatusOptions.map((opt) => opt.value);
+export const DEFAULT_LOAD_STATUSES = ['operating', 'construction'];
+
 // Play mode (the map's year animation) always animates the full grid history,
 // ignoring the user's status filter. Committed units have no commencement_date
 // yet, so playback reveals them at their expected_operation_date instead —
@@ -43,7 +58,12 @@ export const regions = [
 	{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS', longLabel: 'Tasmania' },
 	{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC', longLabel: 'Victoria' },
 	{ value: undefined, label: '', divider: true },
-	{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
+	{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' },
+	{ value: undefined, label: '', divider: true },
+	// Not OE network regions — data centres (loads) can sit in the ACT or NT,
+	// outside the NEM/WEM regions the generator facilities carry.
+	{ longValue: 'au.act', value: 'act', label: 'ACT', longLabel: 'Australian Capital Territory' },
+	{ longValue: 'au.nt', value: 'nt', label: 'NT', longLabel: 'Northern Territory' }
 ];
 
 export const networkRegionsOnly = ['nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
@@ -78,6 +98,15 @@ export const regionOptions = [
 	{
 		value: 'wem',
 		label: 'Western Australia'
+	},
+	// Outside the NEM/WEM — only data centres (loads) carry these regions.
+	{
+		value: 'act',
+		label: 'Australian Capital Territory'
+	},
+	{
+		value: 'nt',
+		label: 'Northern Territory'
 	}
 ];
 
@@ -164,6 +193,60 @@ function getFlatFuelTechOptions() {
 }
 
 export const fuelTechLabel = optionsReducer(getFlatFuelTechOptions());
+
+// The Type filter: one tree covering dispatch type AND technology.
+// Generators nests the full fuel-tech hierarchy (so Gas ▸ CCGT stays
+// individually selectable); Loads nests data centres, with room for the
+// dataset's other large loads (smelters, refineries, water) as future
+// siblings. Selection is literal — what's ticked is what shows (unticking
+// everything empties the map and views), unlike the empty-means-all
+// convention elsewhere.
+export const typeOptions = [
+	{ label: 'Generators', value: 'generators', children: fuelTechOptions },
+	{
+		label: 'Loads',
+		value: 'loads',
+		children: [{ label: 'Data Centres', value: 'data_centres' }]
+	}
+];
+
+/** All selectable region values — the Region filter's "everything shown" default. */
+export const ALL_REGIONS = getLeafValues(regionOptions);
+
+// Without the load-only territories (ACT/NT) — the Region filter when the
+// facility_loads feature flag is off. The URL/server codec keeps using
+// ALL_REGIONS as its default either way, so wire semantics don't change
+// with the flag.
+export const GRID_REGION_OPTIONS = regionOptions.filter(
+	(opt) => opt.value !== 'act' && opt.value !== 'nt'
+);
+export const GRID_REGIONS = getLeafValues(GRID_REGION_OPTIONS);
+
+/** All selectable fuel-tech leaf values (sub-technologies included). */
+export const FUEL_TECH_VALUES = getLeafValues(fuelTechOptions);
+/** Every value in the fuel-tech tree (groups + leaves) — for row rendering. */
+export const FUEL_TECH_OPTION_VALUES = new Set([
+	...fuelTechOptions.map((opt) => opt.value),
+	...FUEL_TECH_VALUES
+]);
+
+// Default: all generator technologies on, loads off (no fuel-tech filter).
+export const DEFAULT_TYPES = [...FUEL_TECH_VALUES];
+
+/**
+ * Parse the fuel_techs URL param — shared by the client page and the server
+ * load so the two boundaries can't drift. Handles the legacy prototype URLs
+ * that expressed "generators off" as generators=false instead of
+ * fuel_techs=none, and drops unknown values.
+ * @param {URLSearchParams} searchParams
+ * @returns {string[]}
+ */
+export function parseFuelTechsParam(searchParams) {
+	if (searchParams.get('generators') === 'false' && !searchParams.get('fuel_techs')) return [];
+	return parseSelection(searchParams.get('fuel_techs'), FUEL_TECH_VALUES).filter((v) =>
+		FUEL_TECH_VALUES.includes(v)
+	);
+}
 
 /** Region value → short label (NSW, QLD, …), e.g. for compact selection summaries */
 export const regionShortLabels = optionsReducer(regions.filter((r) => r.value));

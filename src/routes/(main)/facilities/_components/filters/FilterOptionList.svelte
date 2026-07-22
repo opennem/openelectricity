@@ -3,17 +3,18 @@
 
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
-	import { filterOptionsBySearch } from '../../_utils/filter-options.js';
+	import { filterOptionsBySearch, getLeafValues } from '$lib/facilities/filter-options.js';
 
 	/**
-	 * @typedef {import('../../_utils/filter-options.js').FilterOption} FilterOption
+	 * @typedef {import('$lib/facilities/filter-options.js').FilterOption} FilterOption
 	 * @typedef {{ selected: boolean, indeterminate: boolean, isChild: boolean }} RowState
 	 */
 
 	/**
-	 * Tri-state hierarchical checkbox list, shared by the desktop dropdown
-	 * panels and the mobile filter sheet. Only leaf values live in `selected`;
-	 * clicking a parent emits the array of its (visible) child values.
+	 * Tri-state hierarchical checkbox list (any nesting depth), shared by the
+	 * desktop dropdown panels and the mobile filter sheet. Only leaf values
+	 * live in `selected`; clicking a group emits the array of its (visible)
+	 * descendant leaf values.
 	 *
 	 * The `row` snippet renders everything right of the checkbox, so any row
 	 * variation (icons, right-aligned counts, meta text) can be supplied
@@ -54,7 +55,7 @@
 	let visibleOptions = $derived(isSearching ? filterOptionsBySearch(options, searchTerm) : options);
 
 	/**
-	 * While searching every visible parent is treated as expanded so matches stay visible.
+	 * While searching every visible group is treated as expanded so matches stay visible.
 	 * @param {string} value
 	 */
 	function isExpanded(value) {
@@ -62,15 +63,14 @@
 	}
 
 	/**
-	 * Handle option selection. Parents pass the (search-pruned) option so
-	 * toggling only affects the visible children.
+	 * Handle option selection. Groups pass the (search-pruned) option so
+	 * toggling only affects the visible descendant leaves.
 	 * @param {string} value
-	 * @param {FilterOption} [parentOption]
+	 * @param {FilterOption} [groupOption]
 	 */
-	function handleSelect(value, parentOption) {
-		if (parentOption?.children && parentOption.children.length > 0) {
-			const childValues = parentOption.children.map((c) => c.value);
-			onchange?.(childValues, isMetaPressed);
+	function handleSelect(value, groupOption) {
+		if (groupOption?.children && groupOption.children.length > 0) {
+			onchange?.(getLeafValues(groupOption.children), isMetaPressed);
 		} else {
 			onchange?.(value, isMetaPressed);
 		}
@@ -80,19 +80,21 @@
 	 * @param {FilterOption} opt
 	 * @returns {boolean}
 	 */
-	function areAllChildrenSelected(opt) {
-		if (!opt.children || opt.children.length === 0) return false;
-		return opt.children.every((child) => selected.includes(child.value));
+	function areAllLeavesSelected(opt) {
+		const leaves = getLeafValues(opt.children ?? []);
+		if (leaves.length === 0) return false;
+		return leaves.every((value) => selected.includes(value));
 	}
 
 	/**
 	 * @param {FilterOption} opt
 	 * @returns {boolean}
 	 */
-	function areSomeChildrenSelected(opt) {
-		if (!opt.children || opt.children.length === 0) return false;
-		const selectedCount = opt.children.filter((child) => selected.includes(child.value)).length;
-		return selectedCount > 0 && selectedCount < opt.children.length;
+	function areSomeLeavesSelected(opt) {
+		const leaves = getLeafValues(opt.children ?? []);
+		if (leaves.length === 0) return false;
+		const selectedCount = leaves.filter((value) => selected.includes(value)).length;
+		return selectedCount > 0 && selectedCount < leaves.length;
 	}
 
 	/**
@@ -155,13 +157,14 @@
 	</span>
 {/snippet}
 
-<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
-
-<ul class="flex flex-col text-sm">
-	{#each visibleOptions as opt (opt.value)}
+{#snippet optionRows(/** @type {FilterOption[]} */ opts, /** @type {number} */ depth)}
+	<!-- The chevron-width spacer only exists to align childless rows with
+	     sibling groups — flat sibling sets skip it. -->
+	{@const siblingsHaveChildren = opts.some((o) => !!(o.children && o.children.length > 0))}
+	{#each opts as opt (opt.value)}
 		{@const hasChildren = !!(opt.children && opt.children.length > 0)}
-		{@const allSelected = hasChildren ? areAllChildrenSelected(opt) : isSelected(opt.value)}
-		{@const someSelected = hasChildren ? areSomeChildrenSelected(opt) : false}
+		{@const allSelected = hasChildren ? areAllLeavesSelected(opt) : isSelected(opt.value)}
+		{@const someSelected = hasChildren ? areSomeLeavesSelected(opt) : false}
 		<li class="whitespace-nowrap">
 			<div class="flex items-center gap-1">
 				{#if hasChildren}
@@ -177,7 +180,7 @@
 								: '-rotate-90'}"
 						/>
 					</button>
-				{:else}
+				{:else if siblingsHaveChildren}
 					<div class="w-6 shrink-0"></div>
 				{/if}
 
@@ -192,35 +195,26 @@
 					{@render (row ?? defaultRow)(opt, {
 						selected: allSelected,
 						indeterminate: someSelected,
-						isChild: false
+						isChild: depth > 0
 					})}
 				</button>
 			</div>
 
 			{#if hasChildren && isExpanded(opt.value)}
-				<!-- ml-12 places the guide line centred beneath the parent checkbox
-				     (24px chevron + 4px gap + 8px button padding + 12px half-checkbox) -->
-				<ul class="ml-12 pl-2 border-l border-warm-grey">
-					{#each opt.children ?? [] as child (child.value)}
-						<li class="whitespace-nowrap">
-							<button
-								type="button"
-								class="w-full min-w-0 flex items-center gap-3 rounded-md text-dark-grey hover:bg-warm-grey cursor-pointer px-2 {dense
-									? 'py-2'
-									: 'py-2.5'}"
-								onclick={() => handleSelect(child.value)}
-							>
-								{@render checkbox(isSelected(child.value), false)}
-								{@render (row ?? defaultRow)(child, {
-									selected: isSelected(child.value),
-									indeterminate: false,
-									isChild: true
-								})}
-							</button>
-						</li>
-					{/each}
+				<!-- Top level: ml-12 places the guide line centred beneath the parent
+				     checkbox (24px chevron + 4px gap + 8px button padding + 12px
+				     half-checkbox). Deeper levels indent less so nested trees stay
+				     within the panel width. -->
+				<ul class="{depth === 0 ? 'ml-12' : 'ml-6'} pl-2 border-l border-warm-grey">
+					{@render optionRows(opt.children ?? [], depth + 1)}
 				</ul>
 			{/if}
 		</li>
 	{/each}
+{/snippet}
+
+<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
+
+<ul class="flex flex-col text-sm">
+	{@render optionRows(visibleOptions, 0)}
 </ul>

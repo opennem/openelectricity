@@ -7,7 +7,8 @@ export const loadFuelTechs = [
 	'storage_charging',
 	'exports',
 	'pumps',
-	'total_loads'
+	'total_loads',
+	'data_centre'
 ];
 export const isLoad = (/** @type {string} */ ftCode) => loadFuelTechs.includes(ftCode);
 
@@ -22,6 +23,8 @@ export const fuelTechNameMap = {
 
 	demand_response: 'Demand Response',
 	exports: 'Exports',
+
+	data_centre: 'Data Centre',
 
 	interconnector: 'Interconnector',
 	imports: 'Imports',

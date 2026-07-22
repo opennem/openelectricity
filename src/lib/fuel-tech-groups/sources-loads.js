@@ -14,7 +14,9 @@ const fuelTechMap = {
 
 		'pumps',
 
-		'exports'
+		'exports',
+
+		'data_centre'
 	],
 	total_sources: [
 		'demand_response',

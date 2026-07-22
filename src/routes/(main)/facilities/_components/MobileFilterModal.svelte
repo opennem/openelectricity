@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { X } from '@lucide/svelte';
 
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
@@ -6,81 +7,129 @@
 	import SearchInput from './SearchInput.svelte';
 	import FilterAccordionSection from './filters/FilterAccordionSection.svelte';
 	import FilterOptionList from './filters/FilterOptionList.svelte';
-	import FuelTechRowContent from './filters/FuelTechRowContent.svelte';
-	import { countSelectedLeaves, getSelectedLabels } from '../_utils/filter-options.js';
+	import {
+		getSelectedLabels,
+		activeLeafCount,
+		toggleInSelection
+	} from '$lib/facilities/filter-options.js';
 	import { regionShortLabels } from '$lib/facilities/filters.js';
 
 	/**
+	 * Mobile filter sheet. Like the desktop dropdowns, every control edits a
+	 * LOCAL DRAFT — nothing applies until the footer's Apply button commits
+	 * all changed drafts at once (via the onapply* callbacks) and closes.
+	 * Dismissing the sheet any other way discards the drafts; they re-seed
+	 * from the committed props on the next open.
 	 * @type {{
 	 *   open: boolean,
+	 *   typeTitle?: string,
+	 *   typeOptions?: Array<{label: string, value: string, colour?: string}>,
+	 *   typeExpanded?: string[],
 	 *   regionOptions: Array<{label: string, value: string, children?: Array<{label: string, value: string}>}>,
 	 *   statusOptions: Array<{label: string, value: string, colour?: string}>,
-	 *   fuelTechOptions: Array<{label: string, value: string, colour?: string, children?: Array<{label: string, value: string, colour?: string}>}>,
+	 *   typeDefaults?: string[],
+	 *   statusDefaults?: string[],
+	 *   regionDefaults?: string[],
+	 *   selectedTypes?: string[],
 	 *   selectedRegions: string[],
 	 *   selectedStatuses: string[],
-	 *   selectedFuelTechs: string[],
 	 *   capacityRange: [number, number],
 	 *   capacityMin: number,
 	 *   capacityMax: number,
 	 *   formatCapacity: (val: number) => string,
-	 *   filteredCount: number,
 	 *   onclose: () => void,
-	 *   onresetall: () => void,
-	 *   onregionschange: (values: string[] | string, isMetaPressed: boolean) => void,
-	 *   onstatuseschange: (values: string[] | string, isMetaPressed: boolean) => void,
-	 *   onfueltechschange: (values: string[] | string, isMetaPressed: boolean) => void,
-	 *   oncapacityrangechange: (range: [number, number]) => void,
-	 *   onclearregions: () => void,
-	 *   onclearstatuses: () => void,
-	 *   onclearfueltechs: () => void,
-	 *   onclearcapacity: () => void,
+	 *   onapply?: (drafts: { types: string[], statuses: string[], regions: string[], capacityRange: [number, number], yearRange: [number, number] }) => void,
+	 *   typeRow?: import('svelte').Snippet<[import('$lib/facilities/filter-options.js').FilterOption, any]>,
 	 *   yearRange: [number, number],
 	 *   yearMin: number,
-	 *   yearMax: number,
-	 *   onyearrangechange: (range: [number, number]) => void,
-	 *   onclearyears: () => void
+	 *   yearMax: number
 	 * }}
 	 */
 	let {
 		open,
+		typeTitle = 'Type',
+		typeOptions = [],
+		typeExpanded = [],
 		regionOptions,
 		statusOptions,
-		fuelTechOptions,
+		typeDefaults = [],
+		statusDefaults = [],
+		regionDefaults = [],
+		selectedTypes = [],
 		selectedRegions,
 		selectedStatuses,
-		selectedFuelTechs,
 		capacityRange,
 		capacityMin,
 		capacityMax,
 		formatCapacity,
-		filteredCount,
 		onclose,
-		onresetall,
-		onregionschange,
-		onstatuseschange,
-		onfueltechschange,
-		oncapacityrangechange,
-		onclearregions,
-		onclearstatuses,
-		onclearfueltechs,
-		onclearcapacity,
+		onapply,
+		typeRow,
 		yearRange,
 		yearMin,
-		yearMax,
-		onyearrangechange,
-		onclearyears
+		yearMax
 	} = $props();
 
 	let techSearchTerm = $state('');
 
-	let statusCount = $derived(countSelectedLeaves(statusOptions, selectedStatuses));
-	let fuelTechCount = $derived(countSelectedLeaves(fuelTechOptions, selectedFuelTechs));
-	let regionCount = $derived(countSelectedLeaves(regionOptions, selectedRegions));
+	// The staged selections while the sheet is open — seeded from the
+	// committed props each time it opens, discarded on dismiss.
+	/** @type {string[]} */
+	let draftTypes = $state([]);
+	/** @type {string[]} */
+	let draftStatuses = $state([]);
+	/** @type {string[]} */
+	let draftRegions = $state([]);
+	/** @type {[number, number]} */
+	let draftCapacity = $state([0, 10000]);
+	/** @type {[number, number]} */
+	let draftYears = $state([1900, 2040]);
+
+	$effect(() => {
+		if (!open) return;
+		untrack(() => {
+			draftTypes = [...selectedTypes];
+			draftStatuses = [...selectedStatuses];
+			draftRegions = [...selectedRegions];
+			draftCapacity = [capacityRange[0], capacityRange[1]];
+			draftYears = [yearRange[0], yearRange[1]];
+			techSearchTerm = '';
+		});
+	});
+
+	/** Reset every draft to its default — committed only when Apply is hit. */
+	function resetDrafts() {
+		draftTypes = [...typeDefaults];
+		draftStatuses = [...statusDefaults];
+		draftRegions = [...regionDefaults];
+		draftCapacity = [capacityMin, capacityMax];
+		draftYears = [yearMin, yearMax];
+	}
+
+	/** Hand the full draft snapshot to the single commit point (which diffs
+	 * every slice and issues at most one navigation), then close. */
+	function applyAll() {
+		onapply?.({
+			types: draftTypes,
+			statuses: draftStatuses,
+			regions: draftRegions,
+			capacityRange: [draftCapacity[0], draftCapacity[1]],
+			yearRange: [draftYears[0], draftYears[1]]
+		});
+		onclose();
+	}
+
+	// Under "ticked = shown", counts and tags only surface when a DRAFT
+	// deviates from its default (count 0 = at default) — otherwise a fresh
+	// sheet reads as filtered.
+	let typeCount = $derived(activeLeafCount(typeOptions, draftTypes, typeDefaults));
+	let statusCount = $derived(activeLeafCount(statusOptions, draftStatuses, statusDefaults));
+	let regionCount = $derived(activeLeafCount(regionOptions, draftRegions, regionDefaults));
 
 	let isCapacityFiltered = $derived(
-		capacityRange[0] > capacityMin || capacityRange[1] < capacityMax
+		draftCapacity[0] > capacityMin || draftCapacity[1] < capacityMax
 	);
-	let isYearFiltered = $derived(yearRange[0] > yearMin || yearRange[1] < yearMax);
+	let isYearFiltered = $derived(draftYears[0] > yearMin || draftYears[1] < yearMax);
 
 	// The sheet anchors to this full-viewport wrapper (kept mounted so the
 	// sheet's own open/close fly transition can play).
@@ -91,10 +140,6 @@
 	// here or (past the dismiss line) closes. A sliver of map stays visible.
 	const SHEET_FRACTION = 0.94;
 </script>
-
-{#snippet fuelTechRow(/** @type {import('../_utils/filter-options.js').FilterOption} */ option)}
-	<FuelTechRowContent {option} />
-{/snippet}
 
 {#snippet rangeSection(
 	/** @type {{title: string, isFiltered: boolean, bordered: boolean, onclear: () => void, min: number, max: number, value: [number, number], step: number, formatValue: (v: number) => string, onchange: (range: [number, number]) => void}} */ cfg
@@ -146,7 +191,7 @@
 				<button
 					type="button"
 					class="justify-self-start text-sm text-mid-grey hover:text-dark-grey font-medium underline underline-offset-2 transition-colors cursor-pointer"
-					onclick={onresetall}
+					onclick={resetDrafts}
 				>
 					Reset
 				</button>
@@ -165,24 +210,11 @@
 		<!-- Filter sections -->
 		<section class="px-6">
 			<FilterAccordionSection
-				title="Status"
-				tags={getSelectedLabels(statusOptions, selectedStatuses)}
-				count={statusCount}
+				title={typeTitle}
+				tags={typeCount === 0 ? [] : getSelectedLabels(typeOptions, draftTypes)}
+				count={typeCount}
 				clearLabel="Reset to defaults"
-				onclear={onclearstatuses}
-			>
-				<FilterOptionList
-					options={statusOptions}
-					selected={selectedStatuses}
-					onchange={onstatuseschange}
-				/>
-			</FilterAccordionSection>
-
-			<FilterAccordionSection
-				title="Technology"
-				tags={getSelectedLabels(fuelTechOptions, selectedFuelTechs)}
-				count={fuelTechCount}
-				onclear={onclearfueltechs}
+				onclear={() => (draftTypes = [...typeDefaults])}
 			>
 				<div class="pb-3">
 					<SearchInput
@@ -195,27 +227,48 @@
 					/>
 				</div>
 				<FilterOptionList
-					options={fuelTechOptions}
-					selected={selectedFuelTechs}
+					options={typeOptions}
+					selected={draftTypes}
+					defaultExpanded={typeExpanded}
 					searchTerm={techSearchTerm}
-					onchange={onfueltechschange}
-					row={fuelTechRow}
+					onchange={(value, isMetaPressed) =>
+						(draftTypes = toggleInSelection(draftTypes, value, isMetaPressed))}
+					row={typeRow}
+				/>
+			</FilterAccordionSection>
+
+			<FilterAccordionSection
+				title="Status"
+				tags={statusCount === 0 ? [] : getSelectedLabels(statusOptions, draftStatuses)}
+				count={statusCount}
+				clearLabel="Reset to defaults"
+				onclear={() => (draftStatuses = [...statusDefaults])}
+			>
+				<FilterOptionList
+					options={statusOptions}
+					selected={draftStatuses}
+					onchange={(value, isMetaPressed) =>
+						(draftStatuses = toggleInSelection(draftStatuses, value, isMetaPressed))}
 				/>
 			</FilterAccordionSection>
 
 			<FilterAccordionSection
 				title="Region"
-				tags={getSelectedLabels(regionOptions, selectedRegions, {
-					labelMap: regionShortLabels
-				})}
+				tags={regionCount === 0
+					? []
+					: getSelectedLabels(regionOptions, draftRegions, {
+							labelMap: regionShortLabels
+						})}
 				count={regionCount}
-				onclear={onclearregions}
+				clearLabel="Reset to defaults"
+				onclear={() => (draftRegions = [...regionDefaults])}
 			>
 				<FilterOptionList
 					options={regionOptions}
-					selected={selectedRegions}
+					selected={draftRegions}
 					defaultExpanded={['nem']}
-					onchange={onregionschange}
+					onchange={(value, isMetaPressed) =>
+						(draftRegions = toggleInSelection(draftRegions, value, isMetaPressed))}
 				/>
 			</FilterAccordionSection>
 
@@ -223,26 +276,26 @@
 				title: 'Capacity',
 				isFiltered: isCapacityFiltered,
 				bordered: true,
-				onclear: onclearcapacity,
+				onclear: () => (draftCapacity = [capacityMin, capacityMax]),
 				min: capacityMin,
 				max: capacityMax,
-				value: capacityRange,
+				value: draftCapacity,
 				step: 10,
 				formatValue: formatCapacity,
-				onchange: oncapacityrangechange
+				onchange: (range) => (draftCapacity = range)
 			})}
 
 			{@render rangeSection({
 				title: 'Commissioned',
 				isFiltered: isYearFiltered,
 				bordered: false,
-				onclear: onclearyears,
+				onclear: () => (draftYears = [yearMin, yearMax]),
 				min: yearMin,
 				max: yearMax,
-				value: yearRange,
+				value: draftYears,
 				step: 1,
 				formatValue: (v) => String(v),
-				onchange: onyearrangechange
+				onchange: (range) => (draftYears = range)
 			})}
 		</section>
 
@@ -251,10 +304,9 @@
 				<button
 					type="button"
 					class="w-full bg-dark-grey text-white rounded-lg py-4 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
-					onclick={onclose}
+					onclick={applyAll}
 				>
-					Show {filteredCount.toLocaleString()}
-					{filteredCount === 1 ? 'facility' : 'facilities'}
+					Apply filters
 				</button>
 			</footer>
 		{/snippet}
