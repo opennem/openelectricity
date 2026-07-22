@@ -50,14 +50,14 @@ This is a **Svelte 5 + SvelteKit** project — no React in the runtime. When add
 
 ### Core Framework
 
-- **SvelteKit 2.20.4** with **Svelte 5.25.7** (modern runes system)
-- **Vite 5.4.17** for build tooling and dev server
+- **SvelteKit 2.64.0** with **Svelte 5.56.3** (modern runes system)
+- **Vite 7.3.6** for build tooling and dev server
 - **Node.js >=22.12.0** requirement
 - **Cloudflare adapter** for edge deployment
 
 ### Styling & UI
 
-- **Tailwind CSS 4.1.11** with extensive custom configuration
+- **Tailwind CSS 4.3.0** with extensive custom configuration
 - **shadcn-svelte** components via `bits-ui` and `class-variance-authority`
 - **Tailwind Animate CSS** for animations
 - **Custom energy-focused color palette** for fuel technology visualization
@@ -65,16 +65,16 @@ This is a **Svelte 5 + SvelteKit** project — no React in the runtime. When add
 
 ### Data Visualization
 
-- **LayerCake 8.4.3** for composable SVG chart components
+- **LayerCake 10.0.2** for composable SVG chart components
 - **D3.js ecosystem** (d3-array, d3-interpolate, d3-format, d3-scale, d3-shape)
 - **Chroma.js** for advanced color manipulation and fuel tech theming
 - Custom chart element library in `src/lib/components/charts/elements/`
 
 ### Development Tools
 
-- **TypeScript 5.8.3** with JSDoc annotations for gradual typing
+- **TypeScript 5.9.3** with JSDoc annotations for gradual typing
 - **ESLint 9** with Prettier integration and Svelte plugin
-- **Vitest 2.1.9** for unit testing
+- **Vitest 4.1.6** for unit testing
 - **svelte-check** for TypeScript validation
 
 ## Architecture Overview
