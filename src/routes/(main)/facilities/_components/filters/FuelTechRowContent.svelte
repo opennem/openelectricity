@@ -8,7 +8,7 @@
 	 * nullish — per-option facility counts can be wired in later without any
 	 * component API change.
 	 * @type {{
-	 *   option: import('../../_utils/filter-options.js').FilterOption,
+	 *   option: import('$lib/facilities/filter-options.js').FilterOption,
 	 *   count?: number | null
 	 * }}
 	 */

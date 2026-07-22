@@ -3,9 +3,18 @@ import {
 	getLeafValues,
 	countSelectedLeaves,
 	filterOptionsBySearch,
-	getSelectedLabels
+	getSelectedLabels,
+	isDefaultSelection,
+	activeLeafCount,
+	serialiseSelection,
+	parseSelection
 } from './filter-options.js';
-import { fuelTechOptions, regionOptions, statusOptions } from '$lib/facilities/filters.js';
+import {
+	fuelTechOptions,
+	regionOptions,
+	statusOptions,
+	typeOptions
+} from '$lib/facilities/filters.js';
 
 describe('getLeafValues', () => {
 	it('returns children of parents plus childless top-level options', () => {
@@ -117,5 +126,89 @@ describe('getSelectedLabels', () => {
 			'SA',
 			'WA'
 		]);
+	});
+});
+
+describe('three-level trees (merged Type filter)', () => {
+	it('getLeafValues recurses through nested groups', () => {
+		const leaves = getLeafValues(typeOptions);
+		// Group values are never leaves at any depth
+		expect(leaves).not.toContain('generators');
+		expect(leaves).not.toContain('loads');
+		expect(leaves).not.toContain('gas');
+		// Sub-technology leaves two levels down survive
+		expect(leaves).toContain('gas_ccgt');
+		expect(leaves).toContain('wind');
+		expect(leaves).toContain('data_centres');
+	});
+
+	it('countSelectedLeaves counts deep leaves', () => {
+		expect(countSelectedLeaves(typeOptions, ['gas_ccgt', 'data_centres', 'generators'])).toBe(2);
+	});
+
+	it('filterOptionsBySearch keeps ancestors of a deep match and prunes siblings', () => {
+		const filtered = filterOptionsBySearch(typeOptions, 'ccgt');
+		expect(filtered).toHaveLength(1);
+		expect(filtered[0].value).toBe('generators');
+		const gas = filtered[0].children?.find((c) => c.value === 'gas');
+		expect(gas).toBeDefined();
+		expect(gas?.children?.every((c) => c.label.toLowerCase().includes('ccgt'))).toBe(true);
+		// Non-matching groups (Loads) are pruned entirely
+		expect(filtered[0].children?.some((c) => c.value === 'loads')).toBe(false);
+	});
+
+	it('getSelectedLabels resolves labels at any depth', () => {
+		expect(getSelectedLabels(typeOptions, ['gas_ccgt', 'data_centres'])).toEqual([
+			'Gas (CCGT)',
+			'Data Centres'
+		]);
+	});
+});
+
+describe('isDefaultSelection', () => {
+	it('is order-insensitive', () => {
+		expect(isDefaultSelection(['b', 'a'], ['a', 'b'])).toBe(true);
+	});
+
+	it('rejects subsets, supersets and empty-vs-default', () => {
+		expect(isDefaultSelection(['a'], ['a', 'b'])).toBe(false);
+		expect(isDefaultSelection(['a', 'b', 'c'], ['a', 'b'])).toBe(false);
+		expect(isDefaultSelection([], ['a', 'b'])).toBe(false);
+	});
+});
+
+describe('activeLeafCount', () => {
+	it('returns 0 at the default selection', () => {
+		expect(
+			activeLeafCount(statusOptions, ['operating', 'commissioning'], ['operating', 'commissioning'])
+		).toBe(0);
+	});
+
+	it('counts selected leaves when deviating', () => {
+		expect(activeLeafCount(statusOptions, ['operating'], ['operating', 'commissioning'])).toBe(1);
+	});
+
+	it('counts an empty (nothing-shown) selection as 1', () => {
+		expect(activeLeafCount(statusOptions, [], ['operating', 'commissioning'])).toBe(1);
+	});
+});
+
+describe('serialiseSelection / parseSelection round-trip', () => {
+	const DEFAULTS = ['operating', 'commissioning'];
+
+	it('omits the default selection and parses the omission back to it', () => {
+		expect(serialiseSelection(['commissioning', 'operating'], DEFAULTS)).toBe(null);
+		expect(parseSelection(null, DEFAULTS)).toEqual(DEFAULTS);
+	});
+
+	it("serialises an empty selection as 'none' and parses it back to empty", () => {
+		expect(serialiseSelection([], DEFAULTS)).toBe('none');
+		expect(parseSelection('none', DEFAULTS)).toEqual([]);
+	});
+
+	it('round-trips a subset', () => {
+		const serialised = serialiseSelection(['retired'], DEFAULTS);
+		expect(serialised).toBe('retired');
+		expect(parseSelection(serialised, DEFAULTS)).toEqual(['retired']);
 	});
 });

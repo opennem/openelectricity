@@ -6,8 +6,7 @@
 	import SearchInput from './SearchInput.svelte';
 	import FilterAccordionSection from './filters/FilterAccordionSection.svelte';
 	import FilterOptionList from './filters/FilterOptionList.svelte';
-	import FuelTechRowContent from './filters/FuelTechRowContent.svelte';
-	import { countSelectedLeaves, getSelectedLabels } from '../_utils/filter-options.js';
+	import { getSelectedLabels } from '$lib/facilities/filter-options.js';
 	import { regionShortLabels } from '$lib/facilities/filters.js';
 
 	/**
@@ -16,11 +15,12 @@
 	 *   typeOptions?: Array<{label: string, value: string, colour?: string}>,
 	 *   regionOptions: Array<{label: string, value: string, children?: Array<{label: string, value: string}>}>,
 	 *   statusOptions: Array<{label: string, value: string, colour?: string}>,
-	 *   fuelTechOptions: Array<{label: string, value: string, colour?: string, children?: Array<{label: string, value: string, colour?: string}>}>,
+	 *   typeCount?: number,
+	 *   statusCount?: number,
+	 *   regionCount?: number,
 	 *   selectedTypes?: string[],
 	 *   selectedRegions: string[],
 	 *   selectedStatuses: string[],
-	 *   selectedFuelTechs: string[],
 	 *   capacityRange: [number, number],
 	 *   capacityMin: number,
 	 *   capacityMax: number,
@@ -30,13 +30,12 @@
 	 *   onresetall: () => void,
 	 *   ontypeschange?: (values: string[] | string, isMetaPressed: boolean) => void,
 	 *   oncleartypes?: () => void,
+	 *   typeRow?: import('svelte').Snippet<[import('$lib/facilities/filter-options.js').FilterOption, any]>,
 	 *   onregionschange: (values: string[] | string, isMetaPressed: boolean) => void,
 	 *   onstatuseschange: (values: string[] | string, isMetaPressed: boolean) => void,
-	 *   onfueltechschange: (values: string[] | string, isMetaPressed: boolean) => void,
 	 *   oncapacityrangechange: (range: [number, number]) => void,
 	 *   onclearregions: () => void,
 	 *   onclearstatuses: () => void,
-	 *   onclearfueltechs: () => void,
 	 *   onclearcapacity: () => void,
 	 *   yearRange: [number, number],
 	 *   yearMin: number,
@@ -50,11 +49,14 @@
 		typeOptions = [],
 		regionOptions,
 		statusOptions,
-		fuelTechOptions,
+		// Deviation-aware active counts, computed once by Filters.svelte (0 = at
+		// default; an empty nothing-shown selection counts 1).
+		typeCount = 0,
+		statusCount = 0,
+		regionCount = 0,
 		selectedTypes = [],
 		selectedRegions,
 		selectedStatuses,
-		selectedFuelTechs,
 		capacityRange,
 		capacityMin,
 		capacityMax,
@@ -64,13 +66,12 @@
 		onresetall,
 		ontypeschange,
 		oncleartypes,
+		typeRow,
 		onregionschange,
 		onstatuseschange,
-		onfueltechschange,
 		oncapacityrangechange,
 		onclearregions,
 		onclearstatuses,
-		onclearfueltechs,
 		onclearcapacity,
 		yearRange,
 		yearMin,
@@ -81,10 +82,12 @@
 
 	let techSearchTerm = $state('');
 
-	let typeCount = $derived(countSelectedLeaves(typeOptions, selectedTypes));
-	let statusCount = $derived(countSelectedLeaves(statusOptions, selectedStatuses));
-	let fuelTechCount = $derived(countSelectedLeaves(fuelTechOptions, selectedFuelTechs));
-	let regionCount = $derived(countSelectedLeaves(regionOptions, selectedRegions));
+	// Under "ticked = shown", counts and tags only surface when a filter
+	// deviates from its default (count 0 = at default) — otherwise a fresh
+	// page reads as filtered.
+	let typeIsDefault = $derived(typeCount === 0);
+	let statusIsDefault = $derived(statusCount === 0);
+	let regionIsDefault = $derived(regionCount === 0);
 
 	let isCapacityFiltered = $derived(
 		capacityRange[0] > capacityMin || capacityRange[1] < capacityMax
@@ -100,10 +103,6 @@
 	// here or (past the dismiss line) closes. A sliver of map stays visible.
 	const SHEET_FRACTION = 0.94;
 </script>
-
-{#snippet fuelTechRow(/** @type {import('../_utils/filter-options.js').FilterOption} */ option)}
-	<FuelTechRowContent {option} />
-{/snippet}
 
 {#snippet rangeSection(
 	/** @type {{title: string, isFiltered: boolean, bordered: boolean, onclear: () => void, min: number, max: number, value: [number, number], step: number, formatValue: (v: number) => string, onchange: (range: [number, number]) => void}} */ cfg
@@ -175,33 +174,10 @@
 		<section class="px-6">
 			<FilterAccordionSection
 				title="Type"
-				tags={getSelectedLabels(typeOptions, selectedTypes)}
+				tags={typeIsDefault ? [] : getSelectedLabels(typeOptions, selectedTypes)}
 				count={typeCount}
 				clearLabel="Reset to defaults"
 				onclear={oncleartypes}
-			>
-				<FilterOptionList options={typeOptions} selected={selectedTypes} onchange={ontypeschange} />
-			</FilterAccordionSection>
-
-			<FilterAccordionSection
-				title="Status"
-				tags={getSelectedLabels(statusOptions, selectedStatuses)}
-				count={statusCount}
-				clearLabel="Reset to defaults"
-				onclear={onclearstatuses}
-			>
-				<FilterOptionList
-					options={statusOptions}
-					selected={selectedStatuses}
-					onchange={onstatuseschange}
-				/>
-			</FilterAccordionSection>
-
-			<FilterAccordionSection
-				title="Technology"
-				tags={getSelectedLabels(fuelTechOptions, selectedFuelTechs)}
-				count={fuelTechCount}
-				onclear={onclearfueltechs}
 			>
 				<div class="pb-3">
 					<SearchInput
@@ -214,19 +190,36 @@
 					/>
 				</div>
 				<FilterOptionList
-					options={fuelTechOptions}
-					selected={selectedFuelTechs}
+					options={typeOptions}
+					selected={selectedTypes}
+					defaultExpanded={['generators', 'loads']}
 					searchTerm={techSearchTerm}
-					onchange={onfueltechschange}
-					row={fuelTechRow}
+					onchange={ontypeschange}
+					row={typeRow}
+				/>
+			</FilterAccordionSection>
+
+			<FilterAccordionSection
+				title="Status"
+				tags={statusIsDefault ? [] : getSelectedLabels(statusOptions, selectedStatuses)}
+				count={statusCount}
+				clearLabel="Reset to defaults"
+				onclear={onclearstatuses}
+			>
+				<FilterOptionList
+					options={statusOptions}
+					selected={selectedStatuses}
+					onchange={onstatuseschange}
 				/>
 			</FilterAccordionSection>
 
 			<FilterAccordionSection
 				title="Region"
-				tags={getSelectedLabels(regionOptions, selectedRegions, {
-					labelMap: regionShortLabels
-				})}
+				tags={regionIsDefault
+					? []
+					: getSelectedLabels(regionOptions, selectedRegions, {
+							labelMap: regionShortLabels
+						})}
 				count={regionCount}
 				onclear={onclearregions}
 			>

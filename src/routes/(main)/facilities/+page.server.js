@@ -38,7 +38,8 @@ import {
 	filterFacilitiesByRegions
 } from '$lib/facilities/status-utils.js';
 import { fetchFacilityPhotos } from './_utils/fetch-facility-photos.js';
-import { DEFAULT_STATUSES, ALL_STATUSES, normaliseViewParam } from '$lib/facilities/filters.js';
+import { DEFAULT_STATUSES, ALL_REGIONS, normaliseViewParam } from '$lib/facilities/filters.js';
+import { parseSelection } from '$lib/facilities/filter-options.js';
 // Codes with a committed `static/og/facility/<code>.jpg`; lets the Grid view show
 // the build-generated card and fall back to a live card for the rest.
 import cardCodes from '$lib/server/og/facility-card-codes.json';
@@ -51,15 +52,12 @@ const client = new OpenElectricityClient({
 export async function load({ url }) {
 	const { searchParams } = url;
 	const view = normaliseViewParam(searchParams.get('view')) || 'list';
-	const statusesParam = searchParams.has('statuses')
-		? /** @type {string} */ (searchParams.get('statuses')).split(',').filter(Boolean)
-		: DEFAULT_STATUSES;
-
-	// Empty selection means "all statuses"
-	const statuses = statusesParam.length === 0 ? ALL_STATUSES : statusesParam;
-	const regions = searchParams.get('regions')
-		? /** @type {string} */ (searchParams.get('regions')).split(',')
-		: [];
+	// Literal "ticked = shown" selections: an omitted param means the default
+	// (curated statuses, all regions), 'none' means nothing selected — and
+	// nothing shown — and anything else is the ticked subset. parseSelection
+	// is the inverse of the client's serialiseSelection.
+	const statuses = parseSelection(searchParams.get('statuses'), DEFAULT_STATUSES);
+	const regions = parseSelection(searchParams.get('regions'), ALL_REGIONS);
 	const fuelTechs = searchParams.get('fuel_techs')
 		? /** @type {string} */ (searchParams.get('fuel_techs')).split(',')
 		: [];
@@ -84,8 +82,10 @@ export async function load({ url }) {
 	// still fetched lazily on selection — see the profile endpoint.
 	const photosPromise = fetchFacilityPhotos();
 
-	// Check server-side cache first
-	let facilities = getCachedFacilities(filterParams);
+	// An empty statuses/regions selection literally shows nothing — skip the
+	// API round-trip entirely. Otherwise check the server-side cache first.
+	let facilities =
+		statuses.length === 0 || regions.length === 0 ? [] : getCachedFacilities(filterParams);
 
 	if (!facilities) {
 		// Expand fuel tech selections to API IDs
@@ -121,7 +121,7 @@ export async function load({ url }) {
 	return {
 		facilities,
 		view,
-		statuses: statusesParam.length === 0 ? [] : statuses,
+		statuses,
 		regions,
 		fuelTechs,
 		capacityMin,

@@ -1,6 +1,7 @@
 import optionsReducer from '$lib/utils/options-reducer';
 import { statusColours } from '$lib/theme/openelectricity';
 import { STATUS_LABELS as LOAD_STATUS_LABELS } from '$lib/facilities/data-centres.js';
+import { getLeafValues } from '$lib/facilities/filter-options.js';
 
 export { statusColours };
 
@@ -43,16 +44,6 @@ export const loadStatusOptions = Object.entries(LOAD_STATUS_LABELS).map(([value,
 export const ALL_LOAD_STATUSES = loadStatusOptions.map((opt) => opt.value);
 export const DEFAULT_LOAD_STATUSES = ['operating', 'construction'];
 
-// Dispatch-type filter: generators (OE facilities) vs loads (data centres).
-// Selection is literal — what's ticked is what shows (unticking both empties
-// the map and views), unlike the empty-means-all convention elsewhere.
-export const typeOptions = [
-	{ label: 'Generators', value: 'generators' },
-	{ label: 'Loads', value: 'loads' }
-];
-
-export const ALL_TYPES = typeOptions.map((opt) => opt.value);
-export const DEFAULT_TYPES = ['generators'];
 // Play mode (the map's year animation) always animates the full grid history,
 // ignoring the user's status filter. Committed units have no commencement_date
 // yet, so playback reveals them at their expected_operation_date instead —
@@ -203,6 +194,39 @@ function getFlatFuelTechOptions() {
 }
 
 export const fuelTechLabel = optionsReducer(getFlatFuelTechOptions());
+
+// The Type filter: one tree covering dispatch type AND technology.
+// Generators nests the full fuel-tech hierarchy (so Gas ▸ CCGT stays
+// individually selectable); Loads nests data centres, with room for the
+// dataset's other large loads (smelters, refineries, water) as future
+// siblings. Selection is literal — what's ticked is what shows (unticking
+// everything empties the map and views), unlike the empty-means-all
+// convention elsewhere.
+export const typeOptions = [
+	{ label: 'Generators', value: 'generators', children: fuelTechOptions },
+	{
+		label: 'Loads',
+		value: 'loads',
+		children: [{ label: 'Data Centres', value: 'data_centres' }]
+	}
+];
+
+/** All selectable region values — the Region filter's "everything shown" default. */
+export const ALL_REGIONS = getLeafValues(regionOptions);
+
+/** All selectable fuel-tech leaf values (sub-technologies included). */
+export const FUEL_TECH_VALUES = getLeafValues(fuelTechOptions);
+/** Every value in the fuel-tech tree (groups + leaves) — for row rendering. */
+export const FUEL_TECH_OPTION_VALUES = new Set([
+	...fuelTechOptions.map((opt) => opt.value),
+	...FUEL_TECH_VALUES
+]);
+
+// Selectable leaves only — group values ('generators', 'loads', 'gas'…) are
+// never stored in a selection.
+export const ALL_TYPES = getLeafValues(typeOptions);
+// Default: all generator technologies on, loads off (no fuel-tech filter).
+export const DEFAULT_TYPES = [...FUEL_TECH_VALUES];
 
 /** Region value → short label (NSW, QLD, …), e.g. for compact selection summaries */
 export const regionShortLabels = optionsReducer(regions.filter((r) => r.value));

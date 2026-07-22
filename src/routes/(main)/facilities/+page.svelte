@@ -19,8 +19,11 @@
 		DEFAULT_STATUSES,
 		DEFAULT_LOAD_STATUSES,
 		ALL_LOAD_STATUSES,
+		ALL_REGIONS,
+		FUEL_TECH_VALUES,
 		normaliseViewParam
 	} from '$lib/facilities/filters.js';
+	import { serialiseSelection, parseSelection } from '$lib/facilities/filter-options.js';
 	import { facilitiesToCsv } from './_utils/facilities-csv.js';
 	import { sortFacilities } from './_utils/sort-facilities';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
@@ -97,11 +100,23 @@
 	const belowTablet = new MediaQuery(BELOW_TABLET_QUERY);
 	let isFullscreen = $derived(building ? true : belowTablet.current || isFullscreenUrl(page.url));
 
+	// URL parsers for the client-side filter state — shared between the $state
+	// initialisers below and the afterNavigate re-sync, so the two can't drift.
+	/** @param {URLSearchParams} params */
+	const parseShowGenerators = (params) => params.get('generators') !== 'false';
+	/** @param {URLSearchParams} params */
+	const parseShowLoads = (params) => params.get('datacentres') === 'true';
+	/** @param {URLSearchParams} params */
+	const parseLoadStatuses = (params) =>
+		parseSelection(params.get('load_statuses'), DEFAULT_LOAD_STATUSES).filter((s) =>
+			ALL_LOAD_STATUSES.includes(s)
+		);
+
 	// Type filter (Generators / Loads) flags — generators are the server-fetched
 	// OE facilities, loads are the data centres. Both persist in the URL
 	// (generators=false / datacentres=true, only when non-default).
-	let showGenerators = $state(page.url.searchParams.get('generators') !== 'false');
-	let showLoads = $state(page.url.searchParams.get('datacentres') === 'true');
+	let showGenerators = $state(parseShowGenerators(page.url.searchParams));
+	let showLoads = $state(parseShowLoads(page.url.searchParams));
 
 	// Data centres (loads) — pseudo-facility objects mixed into the views when
 	// the Loads layer is on. Fetched lazily on first toggle; $state.raw because
@@ -115,21 +130,22 @@
 			loadDataCentreFacilities().then((loads) => (loadFacilitiesRaw = loads));
 		}
 	});
+	// True while the Loads side is on but its dataset hasn't arrived yet — the
+	// views show a loader rather than a premature "no facilities" empty state.
+	let loadsPending = $derived(showLoads && !loadFacilitiesRaw);
 
 	// Loads filter on their own status dimension (the Loads section of the
 	// Status filter — DC buckets, not OE facility statuses) plus the shared
-	// region filter, applied client-side (empty selection means "all", matching
-	// the server's convention for generator filters). The fuel-tech filter is
-	// ignored — loads aren't a generation technology. Loads without a mappable
-	// state (4 records) always pass the region filter.
+	// region filter, applied client-side. Selections are literal ("ticked =
+	// shown"): an empty selection shows nothing. Loads without a mappable
+	// state (4 records) pass the region filter while any region is ticked.
 	let loadFacilities = $derived.by(() => {
 		if (!showLoads || !loadFacilitiesRaw) return [];
 		return loadFacilitiesRaw.filter(
 			(f) =>
-				(loadStatuses.length === 0 || loadStatuses.includes(f.units[0]?.status_id)) &&
-				(regions.length === 0 ||
-					!f.network_region ||
-					regions.includes(f.network_region.toLowerCase()))
+				loadStatuses.includes(f.units[0]?.status_id) &&
+				regions.length > 0 &&
+				(!f.network_region || regions.includes(f.network_region.toLowerCase()))
 		);
 	});
 
@@ -142,21 +158,6 @@
 		...loadFacilities
 	]);
 
-	// Type filter (Generators / Loads) selection, derived from the two flags.
-	let selectedTypes = $derived([
-		...(showGenerators ? ['generators'] : []),
-		...(showLoads ? ['loads'] : [])
-	]);
-
-	/**
-	 * @param {string[]} values
-	 */
-	function handleTypesChange(values) {
-		showGenerators = values.includes('generators');
-		showLoads = values.includes('loads');
-		updateMapOptionsUrl();
-	}
-
 	// Optimistic local state for filters - updates immediately on user interaction
 	// Initialize empty and sync via $effect to avoid capturing stale initial values
 	/** @type {string[]} */
@@ -165,20 +166,50 @@
 	let regions = $state([]);
 	/** @type {string[]} */
 	let fuelTechs = $state([]);
+
+	// Type filter selection. The Generators branch carries the fuel-tech tree:
+	// an empty fuelTechs state means "all technologies" (the server
+	// convention), which reads as every tech leaf ticked. Data centres are the
+	// only member of the Loads group today, so its leaf maps to showLoads.
+	let selectedTypes = $derived([
+		...(showGenerators ? (fuelTechs.length ? fuelTechs : FUEL_TECH_VALUES) : []),
+		...(showLoads ? ['data_centres'] : [])
+	]);
+
+	/**
+	 * Type selection covers dispatch type AND technology. Tech changes need a
+	 * server round-trip (fuel_techs param); loads/generators visibility alone
+	 * is client-side and only syncs the URL.
+	 * @param {string[]} values
+	 */
+	function handleTypesChange(values) {
+		const techSelection = values.filter((v) => v !== 'data_centres');
+		const allTechs = techSelection.length === FUEL_TECH_VALUES.length;
+		const newFuelTechs = allTechs ? [] : techSelection;
+
+		showLoads = values.includes('data_centres');
+		showGenerators = techSelection.length > 0;
+
+		if (newFuelTechs.join(',') !== fuelTechs.join(',')) {
+			fuelTechs = newFuelTechs;
+			navigateWithRefetch({
+				statuses,
+				regions,
+				fuelTechs: newFuelTechs,
+				capacityRange,
+				yearRange,
+				view: selectedView,
+				facility: selectedFacility?.code ?? null
+			});
+		} else {
+			updateMapOptionsUrl();
+		}
+	}
 	// Loads (data centre) statuses — the Loads section of the Status filter.
 	// Client-side only (no server round-trip), so it initialises straight from
 	// the URL rather than syncing from server data like the filters above.
 	/** @type {string[]} */
-	let loadStatuses = $state(
-		page.url.searchParams
-			.get('load_statuses')
-			?.split(',')
-			.filter((s) => ALL_LOAD_STATUSES.includes(s)) ?? [...DEFAULT_LOAD_STATUSES]
-	);
-	let isDefaultLoadStatuses = $derived(
-		loadStatuses.length === DEFAULT_LOAD_STATUSES.length &&
-			DEFAULT_LOAD_STATUSES.every((s) => loadStatuses.includes(s))
-	);
+	let loadStatuses = $state(parseLoadStatuses(page.url.searchParams));
 	/** @type {[number, number]} */
 	let capacityRange = $state(/** @type {[number, number]} */ ([0, 10000]));
 	/** @type {[number, number]} */
@@ -585,6 +616,34 @@
 			normaliseViewParam(params.get('view')) ?? undefined
 		);
 
+		// Re-derive the URL-initialised filter state too: same-route navigation
+		// doesn't remount the component, so without this a nav-bar "Facilities"
+		// click (or back/forward) changes the URL but leaves the Type filter,
+		// load statuses and touched ranges where they were. Statuses/regions
+		// sync from `data`; map chrome (theme, transmission, clustering) stays
+		// sticky by design — it's display preference, not a filter. Array
+		// writes are value-compared first: afterNavigate fires on every filter
+		// refetch, and an identical-but-fresh array would re-run the whole
+		// filteredFacilities → map chain a second time for nothing.
+		showGenerators = parseShowGenerators(params);
+		showLoads = parseShowLoads(params);
+		const parsedLoadStatuses = parseLoadStatuses(params);
+		if (parsedLoadStatuses.join(',') !== loadStatuses.join(',')) {
+			loadStatuses = parsedLoadStatuses;
+		}
+		if (!params.has('capacity_min') && !params.has('capacity_max')) {
+			capacityTouched = false;
+			if (capacityRange[0] !== capacityBounds.min || capacityRange[1] !== capacityBounds.max) {
+				capacityRange = [capacityBounds.min, capacityBounds.max];
+			}
+		}
+		if (!params.has('year_min') && !params.has('year_max')) {
+			yearTouched = false;
+			if (yearRange[0] !== yearBounds.min || yearRange[1] !== yearBounds.max) {
+				yearRange = [yearBounds.min, yearBounds.max];
+			}
+		}
+
 		if (routerReady) return;
 		queueMicrotask(() => {
 			routerReady = true;
@@ -648,8 +707,9 @@
 
 		// load statuses: re-sourced from local state (like `facility` below) so a
 		// stale page.url after replaceState can't clobber it; only when non-default
-		if (!isDefaultLoadStatuses) {
-			params.set('load_statuses', loadStatuses.join(','));
+		const loadStatusesSerialised = serialiseSelection(loadStatuses, DEFAULT_LOAD_STATUSES);
+		if (loadStatusesSerialised !== null) {
+			params.set('load_statuses', loadStatusesSerialised);
 		} else {
 			params.delete('load_statuses');
 		}
@@ -900,7 +960,17 @@
 		view: v,
 		facility: f = null
 	}) {
-		let url = `/facilities?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}`;
+		let url = `/facilities?view=${v}&fuel_techs=${ft.join(',')}`;
+		// Literal "ticked = shown" selections: default → omitted, none → 'none',
+		// otherwise the ticked subset (see serialiseSelection).
+		const statusesSerialised = serialiseSelection(s, DEFAULT_STATUSES);
+		if (statusesSerialised !== null) {
+			url += `&statuses=${statusesSerialised}`;
+		}
+		const regionsSerialised = serialiseSelection(r, ALL_REGIONS);
+		if (regionsSerialised !== null) {
+			url += `&regions=${regionsSerialised}`;
+		}
 		// Only include the capacity/year ranges when the user explicitly set
 		// them. Comparing against the live bounds alone is not enough: bounds
 		// move whenever the facility set changes, so an untouched range can
@@ -933,8 +1003,9 @@
 		if (showLoads) {
 			url += '&datacentres=true';
 		}
-		if (!isDefaultLoadStatuses) {
-			url += `&load_statuses=${loadStatuses.join(',')}`;
+		const loadStatusesSerialised = serialiseSelection(loadStatuses, DEFAULT_LOAD_STATUSES);
+		if (loadStatusesSerialised !== null) {
+			url += `&load_statuses=${loadStatusesSerialised}`;
 		}
 		// Preserve windowed mode (fullscreen is the default and never serialised)
 		return windowedHref(url, !isFullscreen);
@@ -1079,23 +1150,6 @@
 	}
 
 	/**
-	 * @param {string[]} values
-	 */
-	function handleFuelTechsChange(values) {
-		// Optimistic update
-		fuelTechs = values;
-		// Filter change requires refetch
-		navigateWithRefetch({
-			statuses,
-			regions,
-			fuelTechs: values,
-			capacityRange,
-			yearRange,
-			view: selectedView
-		});
-	}
-
-	/**
 	 * Loads (data centre) status selection — client-side only, so it syncs the
 	 * URL via replaceState instead of a server round-trip.
 	 * @param {string[]} values
@@ -1211,7 +1265,7 @@
 		loadStatuses = [...DEFAULT_LOAD_STATUSES];
 		showGenerators = true;
 		showLoads = false;
-		regions = [];
+		regions = [...ALL_REGIONS];
 		fuelTechs = [];
 		capacityRange = [capacityBounds.min, capacityBounds.max];
 		yearRange = [yearBounds.min, yearBounds.max];
@@ -1401,7 +1455,6 @@
 				selectedStatuses={statuses}
 				selectedLoadStatuses={loadStatuses}
 				{selectedTypes}
-				selectedFuelTechs={fuelTechs}
 				selectedRegions={regions}
 				{capacityRange}
 				capacityMin={capacityBounds.min}
@@ -1414,7 +1467,6 @@
 				onloadstatuseschange={handleLoadStatusesChange}
 				ontypeschange={handleTypesChange}
 				onregionschange={handleRegionsChange}
-				onfueltechschange={handleFuelTechsChange}
 				oncapacityrangechange={handleCapacityRangeChange}
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
@@ -1445,9 +1497,23 @@
 						: 'tablet:transition-[width] tablet:duration-300 tablet:ease-out'}"
 					style="--list-w: {listPaneWidth}px"
 				>
-					{#if viewLoading}
+					{#if viewLoading || (displayFacilities.length === 0 && loadsPending)}
 						<div class="flex-1 flex items-center justify-center">
 							<LogoMarkLoader />
+						</div>
+					{:else if displayFacilities.length === 0 && !playModeActive}
+						<!-- Under "ticked = shown" semantics an empty selection is a
+						     legitimate dead end — make it legible and easy to leave. -->
+						<div class="flex-1 flex flex-col items-center justify-center gap-4 px-8 text-center">
+							<p class="m-0 text-sm text-mid-grey">
+								No facilities or loads match the current filters.
+							</p>
+							<button
+								onclick={handleResetAll}
+								class="rounded-lg border-2 border-warm-grey bg-white px-4 py-2 text-sm font-medium text-dark-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
+							>
+								Reset all filters
+							</button>
 						</div>
 					{:else if selectedView === 'grid'}
 						<div class="flex-1 overflow-y-auto min-h-0">

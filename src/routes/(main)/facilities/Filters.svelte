@@ -9,17 +9,18 @@
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 
-	import { getLeafValues, countSelectedLeaves } from './_utils/filter-options.js';
+	import { activeLeafCount } from '$lib/facilities/filter-options.js';
 	import {
 		regionOptions,
-		fuelTechOptions,
 		statusOptions,
 		loadStatusOptions,
 		typeOptions,
+		FUEL_TECH_OPTION_VALUES,
 		ALL_STATUSES,
 		DEFAULT_STATUSES,
 		ALL_LOAD_STATUSES,
 		DEFAULT_LOAD_STATUSES,
+		ALL_REGIONS,
 		ALL_TYPES,
 		DEFAULT_TYPES,
 		VIEW_OPTIONS
@@ -31,7 +32,6 @@
 	 *   selectedStatuses?: string[],
 	 *   selectedLoadStatuses?: string[],
 	 *   selectedTypes?: string[],
-	 *   selectedFuelTechs?: string[],
 	 *   capacityRange?: [number, number],
 	 *   capacityMin?: number,
 	 *   capacityMax?: number,
@@ -45,7 +45,6 @@
 	 *   onloadstatuseschange?: (values: string[]) => void,
 	 *   ontypeschange?: (values: string[]) => void,
 	 *   onregionschange?: (values: string[]) => void,
-	 *   onfueltechschange?: (values: string[]) => void,
 	 *   oncapacityrangechange?: (range: [number, number]) => void,
 	 *   yearRange?: [number, number],
 	 *   yearMin?: number,
@@ -66,7 +65,6 @@
 		selectedStatuses = [],
 		selectedLoadStatuses = [],
 		selectedTypes = [],
-		selectedFuelTechs = [],
 		capacityRange = [0, 10000],
 		capacityMin = 0,
 		capacityMax = 10000,
@@ -81,7 +79,6 @@
 		onloadstatuseschange,
 		ontypeschange,
 		onregionschange,
-		onfueltechschange,
 		oncapacityrangechange,
 		yearRange = [1900, 2040],
 		yearMin = 1900,
@@ -125,15 +122,23 @@
 		...selectedStatuses,
 		...selectedLoadStatuses.map((s) => `${LOAD_PREFIX}${s}`)
 	]);
+	const combinedDefaultStatuses = [
+		...DEFAULT_STATUSES,
+		...DEFAULT_LOAD_STATUSES.map((s) => `${LOAD_PREFIX}${s}`)
+	];
 
-	// "N active" across type/status/technology/region — badges the mobile
-	// Filters button and is passed into the modal so both always agree.
-	let activeFilterCount = $derived(
-		countSelectedLeaves(typeOptions, selectedTypes) +
-			countSelectedLeaves(combinedStatusOptions, combinedSelectedStatuses) +
-			countSelectedLeaves(fuelTechOptions, selectedFuelTechs) +
-			countSelectedLeaves(regionOptions, selectedRegions)
+	// Under "ticked = shown", raw selected counts are permanent noise (a fresh
+	// page has most boxes ticked). A filter only counts as active when it
+	// deviates from its default; an empty (nothing-shown) selection counts 1.
+	let typeActiveCount = $derived(activeLeafCount(typeOptions, selectedTypes, DEFAULT_TYPES));
+	let statusActiveCount = $derived(
+		activeLeafCount(combinedStatusOptions, combinedSelectedStatuses, combinedDefaultStatuses)
 	);
+	let regionActiveCount = $derived(activeLeafCount(regionOptions, selectedRegions, ALL_REGIONS));
+
+	// Badges the mobile Filters button and is passed into the modal so both
+	// always agree. (Technology lives inside the Type tree now.)
+	let activeFilterCount = $derived(typeActiveCount + statusActiveCount + regionActiveCount);
 
 	// ============================================
 	// Browser Fullscreen API
@@ -275,14 +280,15 @@
 	}
 
 	/**
-	 * Type is a flat two-option list, so `value` is always a single string
-	 * (arrays are only emitted for hierarchical parent options).
 	 * @param {string | string[]} value
 	 * @param {boolean} isMetaPressed
 	 */
 	function handleTypeChange(value, isMetaPressed) {
-		if (Array.isArray(value)) return;
-		ontypeschange?.(toggleSelection(selectedTypes, value, isMetaPressed));
+		ontypeschange?.(
+			Array.isArray(value)
+				? toggleGroupSelection(selectedTypes, value, isMetaPressed)
+				: toggleSelection(selectedTypes, value, isMetaPressed)
+		);
 	}
 
 	/**
@@ -311,18 +317,6 @@
 	}
 
 	/**
-	 * @param {string | string[]} value
-	 * @param {boolean} isMetaPressed
-	 */
-	function handleFuelTechChange(value, isMetaPressed) {
-		onfueltechschange?.(
-			Array.isArray(value)
-				? toggleGroupSelection(selectedFuelTechs, value, isMetaPressed)
-				: toggleSelection(selectedFuelTechs, value, isMetaPressed)
-		);
-	}
-
-	/**
 	 * @param {{ value: string }} option
 	 */
 	function handleViewChange(option) {
@@ -333,8 +327,17 @@
 <svelte:window onkeydown={handleKeydown} />
 <svelte:document onfullscreenchange={handleFullscreenChange} />
 
-{#snippet fuelTechRow(/** @type {import('./_utils/filter-options.js').FilterOption} */ option)}
-	<FuelTechRowContent {option} />
+<!-- Rows in the merged Type tree: fuel-tech nodes get their coloured icon
+     badge; Data Centres borrows the data_centre badge; the Generators/Loads
+     group headers stay plain text. -->
+{#snippet typeRow(/** @type {import('$lib/facilities/filter-options.js').FilterOption} */ option)}
+	{#if option.value === 'data_centres'}
+		<FuelTechRowContent option={{ ...option, value: 'data_centre' }} />
+	{:else if FUEL_TECH_OPTION_VALUES.has(option.value)}
+		<FuelTechRowContent {option} />
+	{:else}
+		<span class="capitalize flex-1 text-left truncate font-medium">{option.label}</span>
+	{/if}
 {/snippet}
 
 <!-- Mobile Filter Modal -->
@@ -343,11 +346,12 @@
 	{typeOptions}
 	{regionOptions}
 	statusOptions={combinedStatusOptions}
-	{fuelTechOptions}
+	typeCount={typeActiveCount}
+	statusCount={statusActiveCount}
+	regionCount={regionActiveCount}
 	{selectedTypes}
 	{selectedRegions}
 	selectedStatuses={combinedSelectedStatuses}
-	{selectedFuelTechs}
 	{capacityRange}
 	{capacityMin}
 	{capacityMax}
@@ -355,24 +359,23 @@
 	onclose={() => (showMobileFilterOptions = false)}
 	onregionschange={handleRegionChange}
 	onstatuseschange={handleStatusChange}
-	onfueltechschange={handleFuelTechChange}
 	oncapacityrangechange={(range) => oncapacityrangechange?.(range)}
 	{yearRange}
 	{yearMin}
 	{yearMax}
 	onyearrangechange={(range) => onyearrangechange?.(range)}
 	onclearyears={() => onyearrangechange?.([yearMin, yearMax])}
-	onclearregions={() => onregionschange?.([])}
+	onclearregions={() => onregionschange?.([...ALL_REGIONS])}
 	ontypeschange={handleTypeChange}
 	oncleartypes={() => ontypeschange?.([...DEFAULT_TYPES])}
 	onclearstatuses={() => {
 		onstatuseschange?.([...DEFAULT_STATUSES]);
 		onloadstatuseschange?.([...DEFAULT_LOAD_STATUSES]);
 	}}
-	onclearfueltechs={() => onfueltechschange?.([])}
 	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 	{filteredCount}
 	onresetall={() => onresetall?.()}
+	{typeRow}
 />
 
 <!-- Mobile floating nav — the filter bar below is desktop-only; on mobile the
@@ -466,31 +469,40 @@
 					: 'pl-8'}"
 			>
 				<FilterDropdown
-					label="Type"
-					options={typeOptions}
-					selected={selectedTypes}
-					compact={isFullscreen}
-					clearLabel="Reset to defaults"
-					onchange={handleTypeChange}
-					onclear={() => ontypeschange?.([...DEFAULT_TYPES])}
-					onselectall={() => ontypeschange?.([...ALL_TYPES])}
-				/>
-
-				<FilterDropdown
 					label="Region"
 					options={regionOptions}
 					selected={selectedRegions}
+					defaults={ALL_REGIONS}
 					defaultExpanded={['nem']}
 					compact={isFullscreen}
+					clearLabel="Reset to defaults"
 					onchange={handleRegionChange}
-					onclear={() => onregionschange?.([])}
-					onselectall={() => onregionschange?.(getLeafValues(regionOptions))}
+					onclear={() => onregionschange?.([...ALL_REGIONS])}
+					onselectall={() => onregionschange?.([...ALL_REGIONS])}
+				/>
+
+				<FilterDropdown
+					label="Type"
+					options={typeOptions}
+					selected={selectedTypes}
+					defaults={DEFAULT_TYPES}
+					defaultExpanded={['generators', 'loads']}
+					searchable
+					searchPlaceholder="Search technologies"
+					compact={isFullscreen}
+					clearLabel="Reset to defaults"
+					listMaxHeight={460}
+					onchange={handleTypeChange}
+					onclear={() => ontypeschange?.([...DEFAULT_TYPES])}
+					onselectall={() => ontypeschange?.([...ALL_TYPES])}
+					row={typeRow}
 				/>
 
 				<FilterDropdown
 					label="Status"
 					options={combinedStatusOptions}
 					selected={combinedSelectedStatuses}
+					defaults={combinedDefaultStatuses}
 					defaultExpanded={['generators', 'loads']}
 					compact={isFullscreen}
 					clearLabel="Reset to defaults"
@@ -503,19 +515,6 @@
 						onstatuseschange?.([...ALL_STATUSES]);
 						onloadstatuseschange?.([...ALL_LOAD_STATUSES]);
 					}}
-				/>
-
-				<FilterDropdown
-					label="Technology"
-					options={fuelTechOptions}
-					selected={selectedFuelTechs}
-					searchable
-					searchPlaceholder="Search technologies"
-					compact={isFullscreen}
-					onchange={handleFuelTechChange}
-					onclear={() => onfueltechschange?.([])}
-					onselectall={() => onfueltechschange?.(getLeafValues(fuelTechOptions))}
-					row={fuelTechRow}
 				/>
 
 				<FilterRangeDropdown
