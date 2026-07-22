@@ -3,7 +3,7 @@
 	"version": "3.48.1",
 	"devDependencies": {
 		"@clerk/backend": "^3.5.0",
-		"@clerk/clerk-js": "^6.14.0",
+		"@clerk/clerk-js": "^6.25.5",
 		"@eslint/js": "^9.39.4",
 		"@fontsource/dm-sans": "^5.2.8",
 		"@fontsource/space-grotesk": "^5.2.10",
