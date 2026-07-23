@@ -1,0 +1,9 @@
+# Cloudflare _headers — custom response headers for static assets.
+# The @sveltejs/adapter-cloudflare build appends its own immutable-asset rules
+# below this file's contents (see adapter index.js: copyFileSync + append).
+
+# Allow cross-origin (browser) reads of the public static data files under
+# /data — e.g. the world emissions CSVs that opennem-fe's /emissions/world page
+# fetches from this origin. It's a simple GET (no preflight), so ACAO is enough.
+/data/*
+  Access-Control-Allow-Origin: *

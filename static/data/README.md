@@ -3,7 +3,13 @@
 Static datasets served at `/data/*` and consumed client-side. This README
 documents `data-centres-au.json`; the other files here are the transmission
 lines overlay (`transmission-lines.geojson`), the golf-courses easter egg
-(`golf-courses*.geojson`) and precomputed scenario models (`scenarios/`).
+(`golf-courses*.geojson`), precomputed scenario models (`scenarios/`) and the
+world emissions CSVs (`emissions/world/`, see below).
+
+All of `/data/*` is served with `Access-Control-Allow-Origin: *` (via the
+project-root `_headers` file), so other origins — e.g. the OpenNEM Data Tracker
+([`opennem-fe`](https://github.com/opennem/opennem-fe)) — can fetch these public
+files from the browser.
 
 ## data-centres-au.json
 
@@ -98,3 +104,21 @@ Re-export from the source workbook (`data-centres-au.xlsx`, not in this repo)
 and replace this file, keeping the `_meta` block up to date. If field
 semantics change, update `src/lib/facilities/data-centres.js` and its tests
 (`data-centres.test.js`) alongside.
+
+## emissions/world/
+
+Three CSVs powering the OpenNEM Data Tracker's `/emissions/world` page
+(`opennem-fe/pages/emissions/world.vue`), migrated here from the retired
+`data.opennem.org.au/v1/emissions/world/` host:
+
+| File                              | Header                                             | Used for                                                        |
+| --------------------------------- | -------------------------------------------------- | --------------------------------------------------------------- |
+| `categories.csv`                  | `code,description`                                 | IPCC category code → label lookup                               |
+| `country-codes-all.csv`           | `country,alpha-2-code,alpha-3-code,numeric-code`   | country ↔ ISO-code dictionaries                                 |
+| `country-emissions-20241209.csv`  | `area (ISO3),category (IPCC2006_PRIMAP),<year>…`   | per-country/category emissions time series (PRIMAP-hist)        |
+
+opennem-fe fetches them from `${EDGE_DATA_BASE_URL}/data/emissions/world/…` and
+parses them with PapaParse (quoted fields with embedded commas are handled).
+They're plain static files — to update, replace the CSV; if the source revision
+changes, bump the datestamped filename here **and** the reference in
+`world.vue`.
