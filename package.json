@@ -1,6 +1,6 @@
 {
 	"name": "open-electriciy-web",
-	"version": "3.48.2",
+	"version": "3.49.0",
 	"devDependencies": {
 		"@clerk/backend": "^3.5.0",
 		"@clerk/clerk-js": "^6.25.5",
