@@ -32,10 +32,10 @@ from disk at runtime, and are unit-testable in isolation.
 
 `index.js` exports:
 
-| Export                 | Purpose                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------- |
-| `EMISSIONS_PERIODS`    | The periods with a bundled dataset — `['quarter', 'year']`.                                       |
-| `getEmissions(period)` | Returns `{ ...meta, data }` for the period, or `null` if unknown. `data` is parsed with `d3-dsv`. |
+| Export                 | Purpose                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `EMISSIONS_PERIODS`    | The periods with a bundled dataset — `['quarter', 'year']`.                                                        |
+| `getEmissions(period)` | Returns `{ ...meta, data }` for the period, or `null` if unknown. `data` is header-keyed CSV rows (string values). |
 
 ## Response shape
 
@@ -147,4 +147,16 @@ pnpm exec vitest run src/lib/server/emissions/index.test.js
 # Eyeball the live output with the dev server running (pnpm run dev)
 curl -s http://localhost:5173/api/emissions/au/quarter | python3 -m json.tool | head
 curl -sD - -o /dev/null http://localhost:5173/api/emissions/au/year   # inspect headers (CORS, cache)
+```
+
+**Before deploying, verify in the Workers runtime.** `vite dev` and Vitest run in
+Node, which — unlike Cloudflare's `workerd` — permits `new Function`/`eval`, so
+they can't catch runtime-only incompatibilities. (This bit us once: `d3-dsv`'s
+`csvParse` builds its row objects with `new Function`, which threw a 500 only on
+the deployed Worker; hence the hand-rolled `parseCsv`.)
+
+```bash
+pnpm run build
+pnpm exec wrangler pages dev .svelte-kit/cloudflare --port 8788 --compatibility-date 2024-11-01
+curl -s http://localhost:8788/api/emissions/au/year | python3 -m json.tool | head
 ```
