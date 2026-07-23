@@ -1,0 +1,10 @@
+{
+  "id": "year",
+  "path": "/data/au-2025-emissions-projections-fig-5.csv",
+  "projectionStartYear": 2026,
+  "prefix": "t",
+  "source": {
+    "label": "Australia's emissions projections 2025 (fig. 5)",
+    "url": "https://www.dcceew.gov.au/climate-change/emissions-reporting/projecting-emissions"
+  }
+}

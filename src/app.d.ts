@@ -23,3 +23,10 @@ declare global {
 export {};
 
 declare module 'chroma-js';
+
+// Vite's `?raw` suffix imports a file's contents as a string. The project's
+// jsconfig `types` array doesn't pull in `vite/client`, so declare it here.
+declare module '*?raw' {
+	const content: string;
+	export default content;
+}

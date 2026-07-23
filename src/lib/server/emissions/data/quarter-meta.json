@@ -1,0 +1,9 @@
+{
+  "id": "quarter",
+  "path": "/data/nggi-emissions-2004-2025-quarterly.csv",
+  "prefix": "t",
+  "source": {
+    "label": "National Greenhouse Gas Inventory: Quarterly updates",
+    "url": "https://www.dcceew.gov.au/climate-change/publications/national-greenhouse-gas-inventory-quarterly-updates"
+  }
+}

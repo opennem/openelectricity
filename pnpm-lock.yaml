@@ -85,6 +85,9 @@ importers:
       '@types/chroma-js':
         specifier: ^3.1.2
         version: 3.1.2
+      '@types/d3-dsv':
+        specifier: ^3.0.7
+        version: 3.0.7
       '@types/d3-format':
         specifier: ^3.0.4
         version: 3.0.4
@@ -115,6 +118,9 @@ importers:
       d3-color:
         specifier: ^3.1.0
         version: 3.1.0
+      d3-dsv:
+        specifier: ^3.0.1
+        version: 3.0.1
       d3-format:
         specifier: ^3.1.2
         version: 3.1.2
@@ -1728,6 +1734,9 @@ packages:
 
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
+
+  '@types/d3-dsv@3.0.7':
+    resolution: {integrity: sha512-n6QBF9/+XASqcKK6waudgL0pf/S5XHPPI8APyMLLUHd8NqouBGLsU8MgtO7NINGtPBtk9Kko/W4ea0oAspwh9g==}
 
   '@types/d3-format@3.0.4':
     resolution: {integrity: sha512-fALi2aI6shfg7vM5KiR1wNJnZ7r6UuggVqtDA+xiEdPZQwy/trcQaHnwShLuLdta2rTymCNpxYTiMZX/e09F4g==}
@@ -5493,9 +5502,11 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 12.20.55
+      '@types/node': 26.1.1
 
   '@types/cookie@0.6.0': {}
+
+  '@types/d3-dsv@3.0.7': {}
 
   '@types/d3-format@3.0.4': {}
 
@@ -5547,7 +5558,7 @@ snapshots:
 
   '@types/ws@7.4.7':
     dependencies:
-      '@types/node': 12.20.55
+      '@types/node': 26.1.1
 
   '@types/ws@8.18.1':
     dependencies:
