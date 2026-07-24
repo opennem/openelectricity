@@ -29,6 +29,12 @@ on:
 permissions:
   contents: write
 
+# Never run two regens at once (e.g. a manual dispatch landing during the
+# scheduled run) — the second run queues until the first finishes.
+concurrency:
+  group: og-cards
+  cancel-in-progress: false
+
 jobs:
   regenerate:
     runs-on: ubuntu-latest
@@ -66,7 +72,15 @@ jobs:
             echo "No OG card changes."
           else
             git commit -m "Regenerate facility OG cards"
-            # main may have moved during the render — replay our commit on top
-            git pull --rebase origin main
-            git push
+            # main may have moved during the render — replay our commit on
+            # top, retrying in case it moves again before the push lands
+            pushed=false
+            for attempt in 1 2 3; do
+              if git pull --rebase origin main && git push; then
+                pushed=true
+                break
+              fi
+              sleep 5
+            done
+            "$pushed" || { echo "Push failed after 3 attempts"; exit 1; }
           fi
