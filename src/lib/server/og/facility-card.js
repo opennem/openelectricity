@@ -26,6 +26,14 @@ import { retiredHatch } from '../../og/retired-hatch.js';
 
 const ROOT = process.cwd();
 
+/**
+ * Bump when card render output changes without a data/photo change — markup or
+ * styling here, fonts, icons, logo, the Sanity transform params in the generator,
+ * or jpeg/sharp settings. The generator stores it per card in
+ * facility-card-state.json, so a bump invalidates every card on the next run.
+ */
+export const OG_CARD_VERSION = 1;
+
 // Fueltechs whose colour is light enough to need dark glyphs/text (mirrors
 // $lib/utils/fueltech-display so this module stays node-importable without $lib).
 const LIGHT_FUELTECHS = new Set([

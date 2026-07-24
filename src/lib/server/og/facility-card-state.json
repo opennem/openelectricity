@@ -1,0 +1,30 @@
+{
+	"HAZEL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/abc480263358589ab7b7248fcf93903c675d4471-650x488.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_brown"
+			],
+			"dominant": "coal_brown",
+			"capacity": 1640,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Hazelwood"
+		}
+	},
+	"NARROGINWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 179,
+			"status": "committed",
+			"region": "WEM",
+			"name": "Narrogin"
+		}
+	}
+}

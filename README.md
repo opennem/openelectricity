@@ -156,21 +156,31 @@ GitHub Actions picks up the `v*` tag and triggers the Cloudflare build.
 Per-facility social cards live under `static/og/facility/<code>.jpg` as **committed
 static assets** — they are intentionally **not** generated during the deploy build
 (regenerating all ~600 cards exceeded the Cloudflare build time limit). Regenerate
-them **monthly** (or whenever facility data/photos change) and commit the result:
+them whenever facility data or Sanity photos change and commit the result:
 
 ```bash
-pnpm build:og              # generate cards for any new facilities (skips existing)
-OG_FORCE=1 pnpm build:og   # force-refresh every card
+pnpm build:og                    # incremental: re-render only cards whose inputs changed
+pnpm build:og --dry-run          # report what would regenerate/prune, write nothing
+pnpm build:og --code=HAZEL,APS   # limit the run to specific facility codes
+pnpm build:og:force              # force-refresh every card
 ```
 
-`pnpm build:og` also rewrites `src/lib/server/og/facility-card-codes.json` — the
-manifest of codes that have a card — so commit it alongside the images. The facility
-page falls back to the default OG image (`/img/preview.jpg`) for any facility **not**
-in that manifest, so a newly-added facility never shows a broken preview before the
-next regeneration.
+Incremental runs diff each card against `src/lib/server/og/facility-card-state.json`
+— a committed record of what every card was built from (template version, Sanity
+photo URL, derived facility data) — so photos added or replaced in the CMS, facility
+changes (name, capacity, status), and template bumps (`OG_CARD_VERSION` in
+`facility-card.js`) all trigger exactly the right re-renders. Cards for facilities
+no longer in the OE API are pruned.
 
-The `og-cards` GitHub workflow automates this (monthly schedule + manual dispatch)
-and commits only the cards that changed — once its OE/Sanity secrets are configured.
+`pnpm build:og` also rewrites `src/lib/server/og/facility-card-codes.json` — the
+manifest of codes that have a card — so commit it and the state file alongside the
+images. The facility page falls back to the default OG image (`/img/preview.jpg`)
+for any facility **not** in that manifest, so a newly-added facility never shows a
+broken preview before the next regeneration.
+
+The `og-cards` GitHub workflow automates this (weekly schedule + manual dispatch,
+with a `force` input for full refreshes) and commits only the cards that changed —
+once its OE/Sanity secrets are configured.
 
 ## Licence
 

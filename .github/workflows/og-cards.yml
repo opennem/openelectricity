@@ -4,6 +4,12 @@ name: Regenerate facility OG cards
 # so the deploy build no longer generates them (it was blowing the build time
 # limit). This job refreshes them out-of-band and commits any that changed.
 #
+# Runs are incremental: the generator diffs each card against the committed
+# facility-card-state.json (photo added/changed in Sanity, facility data
+# changed, template version bumped) and only re-renders what moved. Dispatch
+# with force=true for a full re-render (recovery, or after a renderer change
+# without an OG_CARD_VERSION bump).
+#
 # Requires repo secrets: PUBLIC_OE_API_URL, PUBLIC_OE_API_KEY,
 # PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET. The push to main needs
 # github-actions to be allowed past branch protection (or swap GITHUB_TOKEN for
@@ -11,8 +17,13 @@ name: Regenerate facility OG cards
 
 on:
   schedule:
-    - cron: '0 3 1 * *' # monthly, 1st at 03:00 UTC
+    - cron: '0 3 * * 1' # weekly, Mondays at 03:00 UTC
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force re-render all cards (ignore the state diff)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -32,19 +43,24 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Regenerate OG cards (force refresh all)
+      - name: Regenerate OG cards
         env:
           PUBLIC_OE_API_URL: ${{ secrets.PUBLIC_OE_API_URL }}
           PUBLIC_OE_API_KEY: ${{ secrets.PUBLIC_OE_API_KEY }}
           PUBLIC_SANITY_PROJECT_ID: ${{ secrets.PUBLIC_SANITY_PROJECT_ID }}
           PUBLIC_SANITY_DATASET: ${{ secrets.PUBLIC_SANITY_DATASET }}
-        run: pnpm build:og:force
+        run: |
+          if [ "${{ inputs.force }}" = "true" ]; then
+            pnpm build:og:force
+          else
+            pnpm build:og
+          fi
 
       - name: Commit changed cards
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add static/og/facility
+          git add static/og/facility src/lib/server/og/facility-card-codes.json src/lib/server/og/facility-card-state.json
           if git diff --staged --quiet; then
             echo "No OG card changes."
           else
