@@ -5,13 +5,19 @@
 	 *   onclick?: () => void,
 	 *   kbd?: string | string[],
 	 *   href?: string,
+	 *   external?: boolean,
 	 *   children: import('svelte').Snippet
 	 * }}
 	 */
-	let { icon, onclick, kbd, href, children } = $props();
+	let { icon, onclick, kbd, href, external, children } = $props();
 
 	const Icon = $derived(icon);
 	const kbdKeys = $derived(kbd ? (Array.isArray(kbd) ? kbd : [kbd]) : null);
+	// A caller-declared `external` wins. When undefined, fall back to the
+	// heuristic: absolute URLs open in a new tab; root-relative hrefs are
+	// in-app links the SvelteKit router handles in place (with `onclick` still
+	// firing, e.g. to close the menu).
+	const isExternal = $derived(external ?? (href ? /^https?:\/\//.test(href) : false));
 
 	const rowClass =
 		'w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left text-dark-grey no-underline hover:no-underline';
@@ -40,7 +46,13 @@
 {/snippet}
 
 {#if href}
-	<a {href} target="_blank" rel="noopener noreferrer" class={rowClass}>
+	<a
+		{href}
+		{onclick}
+		target={isExternal ? '_blank' : undefined}
+		rel={isExternal ? 'noopener noreferrer' : undefined}
+		class={rowClass}
+	>
 		{@render inner()}
 	</a>
 {:else}

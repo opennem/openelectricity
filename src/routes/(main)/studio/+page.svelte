@@ -10,6 +10,11 @@
 			link: '/studio/explorer'
 		},
 		{
+			title: 'Tracker map',
+			description: 'Unified tracker + facilities map — three transition prototypes.',
+			link: '/studio/tracker-map'
+		},
+		{
 			title: 'CMS Facilities',
 			description:
 				'Inspect and manage facility metadata from the CMS with AI-assisted exploration.',

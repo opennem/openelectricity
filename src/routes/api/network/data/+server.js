@@ -1,6 +1,7 @@
 import { OpenElectricityClient, NoDataFound } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
+import { MARKET_METRIC_NAMES } from '$lib/components/charts/network/market-metric-names.js';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -11,14 +12,18 @@ const client = new OpenElectricityClient({
  * Network-level time-series for the Explorer dashboard.
  *
  * One endpoint backs every Explorer panel. Generation (`metric=power|energy`)
- * comes from `getNetworkData` grouped per fuel tech; price (`metric=price`) from
- * `getMarket`. The response is returned under `{ response }` so the client-side
+ * comes from `getNetworkData` grouped per fuel tech; market metrics (price,
+ * demand, curtailment, flows — see `MARKET_METRIC_NAMES`) from `getMarket`.
+ * Curtailment fans out to the solar/wind splits so charts can stack by source;
+ * flows returns both directions (imports/exports) for the selected region, and
+ * the `_energy` variants let panels ladder power↔energy with the interval. The
+ * response is returned under `{ response }` so the client-side
  * `ChartDataManager` (which reads `json.response`) can drive it through the same
  * pan/zoom/cache pipeline as the facility charts.
  *
  * Query params (built by `ChartDataManager` + the NetworkChart fetch-url closure):
  *   region      — Explorer region value ('_all', 'nsw1'…, 'wem')
- *   metric      — 'power' | 'energy' | 'price'
+ *   metric      — 'power' | 'energy' | one of the MARKET_METRIC_NAMES keys
  *   interval    — native OE interval ('5m', '1h', '1d', '1M', '3M', '1y')
  *   date_start  — timezone-naive local start (YYYY-MM-DDTHH:mm:ss)
  *   date_end    — timezone-naive local end
@@ -36,7 +41,9 @@ export async function GET({ url, setHeaders }) {
 	try {
 		let response;
 
-		if (metric === 'price') {
+		const marketMetrics = MARKET_METRIC_NAMES[metric];
+
+		if (marketMetrics) {
 			/** @type {import('openelectricity').IMarketTimeSeriesParams} */
 			const options = {
 				interval: /** @type {any} */ (interval),
@@ -44,11 +51,7 @@ export async function GET({ url, setHeaders }) {
 				dateEnd,
 				network_region: networkRegion
 			};
-			({ response } = await client.getMarket(
-				networkId,
-				[/** @type {import('openelectricity').MarketMetric} */ ('price')],
-				options
-			));
+			({ response } = await client.getMarket(networkId, marketMetrics, options));
 		} else {
 			/** @type {import('openelectricity').INetworkTimeSeriesParams} */
 			const options = {
