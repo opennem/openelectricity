@@ -1,4 +1,3115 @@
 {
+	"0WNSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 100,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Winton North"
+		}
+	},
+	"ADP": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"hydro",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 26.369999999999997,
+			"status": "operating",
+			"region": "SA",
+			"name": "Adelaide Desalination"
+		}
+	},
+	"AGLHAL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ca15f00a143f9d51c39dc8e5918a5f5afdf1c5ab-439x292.png",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 255,
+			"status": "operating",
+			"region": "SA",
+			"name": "Hallett"
+		}
+	},
+	"AGLNOW1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "retired",
+			"region": "NSW",
+			"name": "West Nowra"
+		}
+	},
+	"AGLSITA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 2,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Kemps Creek"
+		}
+	},
+	"AGLSOM": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/80be41341a8063148d106375c60fd133097a8fb9-1200x900.webp",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 170,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Somerton"
+		}
+	},
+	"ALBANY": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ac627059b73b64c2bcd7501b680e91f6fc90a322-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 21.6,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Albany"
+		}
+	},
+	"ALCOA_WGP": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/25655c19e5547d129e0551f3852a6e372b31dc39-650x629.png",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 418,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Wagerup"
+		}
+	},
+	"ALDGASF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/26e3a43f5beac3fcc363a646322395771f7bdd6d-2000x1125.png",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 387,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Aldoga"
+		}
+	},
+	"ALINTA_PNJ": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 286,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Pinjarra"
+		}
+	},
+	"ALINTA_WWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f64dd7401c3764e9f9d56e293d09cb88e0f3ad46-650x365.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 89.1,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Walkaway"
+		}
+	},
+	"AMBRISOLAR": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 0.96,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Metro"
+		}
+	},
+	"AMCORGR": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 4,
+			"status": "retired",
+			"region": "SA",
+			"name": "Amcor Glass"
+		}
+	},
+	"ANGASTON": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2f22dde7854bb97e7b420d63d9c432c223ca485f-768x584.jpg",
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 50,
+			"status": "operating",
+			"region": "SA",
+			"name": "Angaston"
+		}
+	},
+	"APPIN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e6ce23142ee5f4380aff85ef826a864b3b327709-718x580.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 55,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Appin"
+		}
+	},
+	"APS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/80964b88768b3dbc4208133d20661794e2ec3c83-2910x1882.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_brown"
+			],
+			"dominant": "coal_brown",
+			"capacity": 165,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Anglesea"
+		}
+	},
+	"ARWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/8d5146a089f6a982e6984f93238df1606f5d8255-2048x1363.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 241,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Ararat"
+		}
+	},
+	"ATLAS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1.23,
+			"status": "retired",
+			"region": "WEM",
+			"name": "Mirrabooka"
+		}
+	},
+	"AVLSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a2c9d9d279429acb2f1f4215aeb2bc8a3dbafb1d-1280x720.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 190,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Avonlie"
+		}
+	},
+	"AWABAREF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Awaba"
+		}
+	},
+	"B2PS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/308c01ad5bff7e4f5c929f266b9abb0a87e1a77e-3504x2336.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 519,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Braemar 2"
+		}
+	},
+	"BADGINGARRA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/10c5ff1e80ce1090e659fe44893bec2007701680-2000x3000.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 130,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Badgingarra"
+		}
+	},
+	"BAKING": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c7f7476305ce6a860757b8f6bbadae047e729b52-1646x923.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 14,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Baking Board"
+		}
+	},
+	"BALBESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/90d457ec00d10c94bc1c4088d922e7765920a9f5-1200x674.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 30,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Ballarat"
+		}
+	},
+	"BANGOWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/54783192d83e5beec6dca6f323a7f3fb3f34b482-1536x1150.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 237,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Bango"
+		}
+	},
+	"BANKSPT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 1,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Bankstown Sports Club"
+		}
+	},
+	"BANNSP": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ec24938d32291bc6072c9204dd0d2ce628c2fde3-350x350.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 88,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Bannerton"
+		}
+	},
+	"BAPS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 13,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Banimboola"
+		}
+	},
+	"BARCALDN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9b39e5ac4f44e17ba1fe91c9109a4cf73a0d6576-1100x619.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 37,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Barcaldine"
+		}
+	},
+	"BARCSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/8a8bde0ff80e09032e0024b9b8138a5a9a43a619-1920x1440.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 20,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Barcaldine"
+		}
+	},
+	"BARKIPS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5aa860d4cfafc570b7ec888a23bd2fed2ed4318e-1200x900.webp",
+		"data": {
+			"fuelTechs": [
+				"gas_recip"
+			],
+			"dominant": "gas_recip",
+			"capacity": 210,
+			"status": "operating",
+			"region": "SA",
+			"name": "Barker Inlet"
+		}
+	},
+	"BARRON": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e59613294e417d36a727a5d5d80deed4cc8e4f36-8782x3859.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 66,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Barron Gorge"
+		}
+	},
+	"BASTYAN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 88,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Bastyan"
+		}
+	},
+	"BAYSW": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9f07390b99133fe32883fcaf06631606c945b04d-650x431.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 2715,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Bayswater"
+		}
+	},
+	"BBASEHOS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_recip"
+			],
+			"dominant": "gas_recip",
+			"capacity": 3,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Ballarat Hospital"
+		}
+	},
+	"BBATTERY": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/37199b301c2d0ff7a89c0c205f6acb777c6d697d-1600x1200.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 50,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Bouldercombe"
+		}
+	},
+	"BBDISEL1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 75,
+			"status": "retired",
+			"region": "TAS",
+			"name": "Bell Bay"
+		}
+	},
+	"BBP31": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 205,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Bell Bay Three"
+		}
+	},
+	"BCBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Bennetts Creek"
+		}
+	},
+	"BCWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 221.2,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Boulder Creek"
+		}
+	},
+	"BDONGHYD": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 19,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Burrendong"
+		}
+	},
+	"BELLBAY": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/72510ba137d540b1e114af2f3f7724491e5fde91-650x433.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_steam"
+			],
+			"dominant": "gas_steam",
+			"capacity": 240,
+			"status": "retired",
+			"region": "TAS",
+			"name": "Bell Bay"
+		}
+	},
+	"BERWICK": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 7,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Berwick"
+		}
+	},
+	"BERYLSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/7f6734f99e126bd4e08a767aa18ede25e5a94c43-640x978.heif",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 87,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Beryl"
+		}
+	},
+	"BHB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f67d8d5077954cc76b20f24859ea3078505633f3-1200x674.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 50,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Broken Hill Battery"
+		}
+	},
+	"BHBBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 204,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Bellambi"
+		}
+	},
+	"BHILLGT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 50,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Broken Hill"
+		}
+	},
+	"BHWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/39ca4956d02b9b922e8fcc4883a69508bf9740fc-960x640.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 106,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Bald Hills"
+		}
+	},
+	"BIALAWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2ec8a3642747706e16b63c99008cf986392c52f2-1600x1200.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 107,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Biala"
+		}
+	},
+	"BIOGAS01": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 2,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Richgro"
+		}
+	},
+	"BLAIRFOX_BEROSRD_WF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 9.5,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Beros Road"
+		}
+	},
+	"BLAIRFOX_KARAKIN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 5,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Karakin"
+		}
+	},
+	"BLAIRFOX_WESTHILLS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 5,
+			"status": "operating",
+			"region": "WEM",
+			"name": "West Hills"
+		}
+	},
+	"BLAYNEY": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a4c30af6e90f1a945e4e3e83501ede9e618e36a5-650x379.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 9.9,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Blayney"
+		}
+	},
+	"BLINDCREEK": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 543,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Blind Creek"
+		}
+	},
+	"BLUEGSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9864fc086de9abf91198aeecc05a611413ebc72f-1200x800.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 148,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Blue Grass"
+		}
+	},
+	"BLUEWATERS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f1f780f1a0351a2929392bc0d7700f06b7958364-2048x1367.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 434,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Bluewaters"
+		}
+	},
+	"BLUFF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cafd064fae96a672de40b49a48419304de9f1d97-730x410.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 53,
+			"status": "operating",
+			"region": "SA",
+			"name": "The Bluff"
+		}
+	},
+	"BLULAKE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 1,
+			"status": "retired",
+			"region": "SA",
+			"name": "Blue Lake Milling"
+		}
+	},
+	"BLYTHB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/01a8802867a575e9929620deb2b2b1e8709417b4-1920x1484.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 200,
+			"status": "operating",
+			"region": "SA",
+			"name": "Blyth"
+		}
+	},
+	"BNGSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/432d5a909c3361cc7bb44c12fd747a78697caae0-1500x1001.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 110,
+			"status": "operating",
+			"region": "SA",
+			"name": "Bungala One"
+		}
+	},
+	"BNGSF2": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/432d5a909c3361cc7bb44c12fd747a78697caae0-1500x1001.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 110,
+			"status": "operating",
+			"region": "SA",
+			"name": "Bungala Two"
+		}
+	},
+	"BOCOROCK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/bd2dc08caaea20bb501ba6371fed44ca29bd1321-800x488.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 111,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Boco Rock"
+		}
+	},
+	"BODWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/186e591579dbc41e462610777428595f35f8e94b-1920x1280.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 111,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Bodangora"
+		}
+	},
+	"BOGGABRI": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 5,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Boggabri"
+		}
+	},
+	"BOLIVAR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a5c1d89c4aefcfd833067a1256a44fbea91553f6-600x337.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery",
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 18,
+			"status": "operating",
+			"region": "SA",
+			"name": "Bolivar"
+		}
+	},
+	"BOLIVPS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 127,
+			"status": "operating",
+			"region": "SA",
+			"name": "Bolivar"
+		}
+	},
+	"BOMENSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9dd64170b837f53caca0e14100f59b3da36924c2-2560x1707.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 100,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Bomen"
+		}
+	},
+	"BPLANDF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 2,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Browns Plains"
+		}
+	},
+	"BRAEMARA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e811121529fce51882f002cfd46753a3f2965328-1600x852.heif",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 564,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Braemar"
+		}
+	},
+	"BRDD": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b14aa7122eaa417a481f418047678bd09bcfdb01-1280x720.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 476,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Broadsound"
+		}
+	},
+	"BREMER_BAY": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 0.6,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Bremer Bay"
+		}
+	},
+	"BRIDGETOWN_BIOMASS_PLANT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 40,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Manjimup"
+		}
+	},
+	"BRNDBES": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2365b2ca4b2e5e9320691dca21dd8eeb84ed65c0-2560x1440.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 205,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Brendale"
+		}
+	},
+	"BROADMDW": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 5,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Broadmeadows"
+		}
+	},
+	"BROKENH": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e1871e81931e5fad79d459dbd36b10db27222c34-650x418.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 53,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Broken Hill"
+		}
+	},
+	"BROOKLYN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 3,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Brooklyn"
+		}
+	},
+	"BROWNMT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 6,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Brown Mountain"
+		}
+	},
+	"BRYB1WF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e1cd4b38b4451685ec7e41d2d8d6290842d34509-755x567.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 280.9,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Berrybank"
+		}
+	},
+	"BULGANA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f025dfa7b92350f23c299ce71913fc47cb88433d-1920x750.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind",
+				"battery"
+			],
+			"dominant": "wind",
+			"capacity": 224,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Bulgana Green Power Hub"
+		}
+	},
+	"BUNGAMB": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 150,
+			"status": "operating",
+			"region": "SA",
+			"name": "Bungama"
+		}
+	},
+	"BUSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c4455ed6ca8742c98411d6d4e6f34a2a8aa07bdc-2560x1707.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 78,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Bundaberg"
+		}
+	},
+	"BWTR1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/1be716731dea833d2679e28398ca0bd2f60ef4c9-2560x769.webp",
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 38,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Broadwater"
+		}
+	},
+	"CALBESS1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 150,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Calala 1"
+		}
+	},
+	"CALBESS2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Calala 2"
+		}
+	},
+	"CALLIDEC1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/492b256533490a3720a45d9dc5837772652a7ff1-400x271.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 932,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Callide C"
+		}
+	},
+	"CALL_A": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 120,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Callide A"
+		}
+	},
+	"CALL_B": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/93a9bfe5efde47b116a9aa3a849684686fcadea6-400x271.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 770,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Callide B"
+		}
+	},
+	"CANUNDA1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a7b80b8b7f1977b95db56db3ff1836b334e93114-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 46,
+			"status": "operating",
+			"region": "SA",
+			"name": "Canunda"
+		}
+	},
+	"CAPBES": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/8ce957c902853a72ae4fafdf7c9bdbfa7c35f3f8-473x260.png",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Capital"
+		}
+	},
+	"CAPTL_WF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5678a268ba2eb7eefe6bee3213a74627b8ad69d0-650x83.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 140,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Capital"
+		}
+	},
+	"CARAG": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 16,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Carag"
+		}
+	},
+	"CATHROCK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/dff8c66e3e8fe1bb22b94c50fd1527c688c54664-2000x1125.png",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 66,
+			"status": "operating",
+			"region": "SA",
+			"name": "Cathedral Rocks"
+		}
+	},
+	"CBWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3b166192d14bb3f674300b4dbad4018c84b24911-961x689.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 20,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Coonoer Bridge"
+		}
+	},
+	"CBWWBA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5ca6082eec692ef0ab685dab5b2ca84ac9200912-1124x600.avif",
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery",
+				"distillate",
+				"bioenergy_biogas"
+			],
+			"dominant": "solar_utility",
+			"capacity": 7.33,
+			"status": "operating",
+			"region": "SA",
+			"name": "Christies Beach"
+		}
+	},
+	"CESF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5678a268ba2eb7eefe6bee3213a74627b8ad69d0-650x83.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 1,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Capital East"
+		}
+	},
+	"CETHANA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9a2d015a9761519ef0a2194e6fea8a5380049061-705x528.webp",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 100,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Cethana"
+		}
+	},
+	"CHALLWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/adea6c168031c34150ec2be1caf0b9d9dd389f70-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 52,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Challicum Hills"
+		}
+	},
+	"CHBESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3702934f52cfc797714a7dafbf8c0a29cfe67e7c-850x578.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Chinchilla"
+		}
+	},
+	"CHILDSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9b484804682326125ef174e357f3b4dc3d9ae989-1890x1232.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 56,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Childers"
+		}
+	},
+	"CHPSTWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/fa9f2e81cb31f379cbcdc30b0187fc95253eae99-1920x1440.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 6,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Chepstowe"
+		}
+	},
+	"CHWF1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 247,
+			"status": "committed",
+			"region": "SA",
+			"name": "Carmody's Hill"
+		}
+	},
+	"CHYTWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2657aa8ae9df1e259f0ce7ab4a0de9befba3732d-431x233.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 57,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Cherry Tree"
+		}
+	},
+	"CLARESF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/00a936ffd1ec5628e2686a2ff5da061c697d0ed0-959x539.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 100,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Clare"
+		}
+	},
+	"CLAYTON": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 11,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Clayton"
+		}
+	},
+	"CLEMGPWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2463960be720df780d17aee18a08d429b424aa24-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind",
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 117,
+			"status": "operating",
+			"region": "SA",
+			"name": "Clements Gap"
+		}
+	},
+	"CLERMSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9c9a19d6ceeb3fe8c535c1b44a587e2e1cbf27a6-2500x1875.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 75,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Clermont"
+		}
+	},
+	"CLOVER": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 37.5,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Clover"
+		}
+	},
+	"CLRKCWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/18c21129ea143e4da14a2b6798a7251c53f11663-2048x1534.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 439,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Clarke Creek"
+		}
+	},
+	"CLUNY": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9ecbe1b13d86784ef1e2f448341d0c9149afeae7-859x462.webp",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 22,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Cluny"
+		}
+	},
+	"COCKBURN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d45641f3292d8650fc54b819f179a7bd547333dc-220x140.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 249.7,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Cockburn"
+		}
+	},
+	"CODRGTON": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d83ad256a081da01654693ef7d927439d993c47d-650x760.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 18,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Codrington"
+		}
+	},
+	"COHUNSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d27cbee6d8fe6211d2ecac5183d8da284b2c6480-2400x1800.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 27,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Cohuna"
+		}
+	},
+	"COLEASF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5b32535ac7aba21c58bbeb3e4531e7bf8f55cfef-1164x1778.heif",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 150,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Coleambally"
+		}
+	},
+	"COLLIE": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/dab2418a75c43aeb6a71096520f3d8815c91d307-1800x1200.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 318.3,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Collie"
+		}
+	},
+	"COLLIE_BESS2": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d31b6fe4dbc66c578885397eb26f14bba93d7441-1024x905.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 341,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Collie 2"
+		}
+	},
+	"COLLIE_ESR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/631e777110c027fa1cbf4b8caa5c2564c5a4c300-1024x540.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 219,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Collie 1"
+		}
+	},
+	"COLLIE_ESR4": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ec936d865ad64641cedae9e2f165fb8368fdc98a-1280x853.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 250,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Collie"
+		}
+	},
+	"COLLIE_ESR5": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 250,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Collie 2"
+		}
+	},
+	"COLNSV": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/43be025b084939c00d4a3c61ebac77e6831f09c9-1000x750.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 186,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Collinsville"
+		}
+	},
+	"COLONGRA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/826ccad129bbb5779debe508e3adf060c13ae8d1-1000x760.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 724,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Colongra"
+		}
+	},
+	"COLUMSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/0f6deb541e6c3e07d67efd1f525eb9952cdfbc88-2560x1440.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 162,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Columboola"
+		}
+	},
+	"COLWF01": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/10267f9d11017f0940d71523a3b41bd8ac3c996a-500x375.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 219,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Collector"
+		}
+	},
+	"CONDONG1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5473eb60091c28f3630e49448e000bc5c486e910-1415x425.webp",
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 30,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Condong"
+		}
+	},
+	"COOPGWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c8fde142f7488fdb4caf0396ca58c4ea1ba29462-6000x4000.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 440,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Coopers Gap"
+		}
+	},
+	"COPTNHYD": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 23,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Copeton"
+		}
+	},
+	"CORIO": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Corio"
+		}
+	},
+	"CPSA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c76f88c1a758cafdf0deca853579da463a37f35a-800x533.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 144,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Condamine A"
+		}
+	},
+	"CROOKWEL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/1023b3a7504f8246a74a3d52a646793558a158dc-1920x1280.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 4.8,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Crookwell"
+		}
+	},
+	"CROOKWF2": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/50a3ebd4e5566868404754654ea2f91b486082e7-1440x960.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 91,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Crookwell 2"
+		}
+	},
+	"CROOKWF3": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 53,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Crookwell 3"
+		}
+	},
+	"CROWLWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/411a8a974f871528d46211190274dc5765732e27-800x650.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 79,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Crowlands"
+		}
+	},
+	"CRURWF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ac696d916e34b4d52c12a9c53f4b30ff6df453a8-2000x1333.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 138,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Crudine Ridge"
+		}
+	},
+	"CRWARP": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b4292feb21ae12209dea54da4cf5600a3c21654d-1920x1080.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 150,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Carwarp"
+		}
+	},
+	"CRWASF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e2b8ef221228dc96306f23777ee515f252bfa9f4-2560x970.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 30,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Corowa"
+		}
+	},
+	"CSPVPS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/8bd2a431205bb9d181ff6c826e6281d5666634a1-1000x750.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 40,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Collinsville"
+		}
+	},
+	"CTHLWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/0771295bc74585c076dde589dd5278a024db9cda-1024x683.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 144,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Cattle Hill"
+		}
+	},
+	"CULCSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/7e7ff04da0a950dcd7ee161e6f06d59c3f23662d-1920x1080.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 550,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Culcairn"
+		}
+	},
+	"CULLERIN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4fb13da8b4bc7ca42294783a47168e9692764dcf-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 30,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Cullerin Range"
+		}
+	},
+	"DAANDINE": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c5a50ad270828583c7a40183217a2460dff347b0-1800x1200.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_recip"
+			],
+			"dominant": "gas_recip",
+			"capacity": 33,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Daandine"
+		}
+	},
+	"DALNTH": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/202f506f601691da9629225347e8cd4055ad192a-800x600.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 30,
+			"status": "operating",
+			"region": "SA",
+			"name": "Dalrymple North"
+		}
+	},
+	"DARLSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/eacad246b5fa753459c8b5aa5b9e15e0b5a2f790-3000x2250.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 275,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Darlington Point"
+		}
+	},
+	"DARTM": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/28af6388c053b6f1e2ef5c58efa3f75a316ab69c-600x600.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 185,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Dartmouth"
+		}
+	},
+	"DAYDSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ea6271fc6c9aa990af79aad397fb4c19e86329d5-1072x704.png",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 150,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Daydream"
+		}
+	},
+	"DCWL_DENMARK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e00e8effc22c897bf62b92f774560a79ae9dbb66-862x575.heif",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 1.44,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Denmark"
+		}
+	},
+	"DDPS1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/91d286904895a85f105490193d5e4e8227ce21d0-523x303.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 663,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Darling Downs"
+		}
+	},
+	"DDSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/eacad246b5fa753459c8b5aa5b9e15e0b5a2f790-3000x2250.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 108,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Darling Downs"
+		}
+	},
+	"DEIBDL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2b6d010f6202c3559207299b9ec611a6a9570ae5-220x148.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 96,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Bairnsdale"
+		}
+	},
+	"DELBURNWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 205,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Delburn"
+		}
+	},
+	"DEVILS_G": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e43d3a498cae3d116eec3907a1146782a1aecb05-650x488.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 67,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Devils Gate"
+		}
+	},
+	"DIAPURWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ab3d734264535dd5cea5b35cb15530cf93a759d5-1920x1440.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 7,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Diapur 2"
+		}
+	},
+	"DPNTB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d8e65f5599e0eb4f85ac24b9c1ad75ab5167213d-1072x704.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 25,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Darlington Point"
+		}
+	},
+	"DRYCGT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 171,
+			"status": "operating",
+			"region": "SA",
+			"name": "Dry Creek"
+		}
+	},
+	"DULAWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/1063df444209bdf031c59241eb6a9f605c6465c8-2355x1252.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 173,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Dulacca"
+		}
+	},
+	"DUNDWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/7d4ef502505da52f9694339816e24150030e918f-1643x669.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 336,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Dundonnell"
+		}
+	},
+	"EASTCRK": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 5,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Eastern Creek"
+		}
+	},
+	"EASTCRK2": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/0451de92dfc02e9665b97c609bc1b381e3c1a811-2880x1620.jpg",
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 6.74,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Eastern Creek 2"
+		}
+	},
+	"EDENVSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/dc4ca04bf762bbac2864a5d0cac638da54680585-3840x2160.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 146,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Edenvale"
+		}
+	},
+	"EDLRGNRD": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 2,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Roghan Road"
+		}
+	},
+	"EDWFMAN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/87af9c49ef3de33b24fdd614ec62b85db66d95ab-410x599.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 79.2,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Emu Downs"
+		}
+	},
+	"EILDON": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5c432f36e5c00cfbb2bf026006011361d2f4ae2b-650x433.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 120,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Eildon"
+		}
+	},
+	"EILDONPD": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 5,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Eildon"
+		}
+	},
+	"ELAINEBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 310.98,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Elaine"
+		}
+	},
+	"ELAINEWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/880c6b2dc9837d3b0f304a9d90b0aaff66131029-1920x1280.heif",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 82,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Elaine"
+		}
+	},
+	"EMERASF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/6268e4ce808379dbf361383449422151f9b4da40-500x375.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 72,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Emerald"
+		}
+	},
+	"ENERGYB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/34d7951af615ea62b8328727e4dc8fcc1ba3450e-650x465.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_brown"
+			],
+			"dominant": "coal_brown",
+			"capacity": 195,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Energy Brix"
+		}
+	},
+	"ERARING": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f1d34e5d25fbe5962f469289e0be8ef5f58054fc-650x433.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 3000,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Eraring"
+		}
+	},
+	"ERB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/80473c1a4a65b29f20b10369f86e7d59c13b1cd0-600x400.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 460,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Eraring"
+		}
+	},
+	"ERB2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 240,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Eraring 2"
+		}
+	},
+	"ERGT01": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f1d34e5d25fbe5962f469289e0be8ef5f58054fc-650x433.jpg",
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 56,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Eraring"
+		}
+	},
+	"FINLEYSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b2f19dcafc66e9df46d6030ae1155c3fb3818f07-2048x1364.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 133,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Finley"
+		}
+	},
+	"FISHER": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 46,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Fisher"
+		}
+	},
+	"FLATROCKS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2de376a74ef2352826742af29bac430cb89defda-1500x1124.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 75.6,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Flat Rocks"
+		}
+	},
+	"FLYCRKWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/286d9db9f18e32036265f3c27763a9889197cfe3-862x575.heif",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 140,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Flyers Creek"
+		}
+	},
+	"FULHAMSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 144,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Fulham"
+		}
+	},
+	"FWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ea500793b680ee9ce7e53ad8e3f750f149b93b7f-1920x1440.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 10,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Ferguson"
+		}
+	},
+	"GANGARR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/6426f6e1f52e2473856c5fc215d8f4fef1445a54-752x580.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 120,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Gangarri"
+		}
+	},
+	"GANNBESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4c4c8596ec8617abd9e2bcda9c5e4c106567e997-1200x720.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 30,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Gannawarra"
+		}
+	},
+	"GANNSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b7a02982ebc641b3291f3b4f4f5ee494a3cb7b94-1072x704.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 50,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Gannawarra"
+		}
+	},
+	"GBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 226,
+			"status": "committed",
+			"region": "SA",
+			"name": "Goyder"
+		}
+	},
+	"GEORGTWN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 34,
+			"status": "retired",
+			"region": "TAS",
+			"name": "George Town"
+		}
+	},
+	"GERMCRK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b2bf79e04e061c7df74b5593434fbbbc299b7494-1024x682.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 45,
+			"status": "operating",
+			"region": "QLD",
+			"name": "German Creek"
+		}
+	},
+	"GESF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/eec8e3be2fc4e467e201bbe478cd789813a7edfb-584x557.heif",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 200,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Glenellen"
+		}
+	},
+	"GGAP": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 600,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Guthrie's Gap"
+		}
+	},
+	"GIRGSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d7eb8b3941ea449102f5641eed22387e682f4798-1920x1080.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 76,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Girgarre"
+		}
+	},
+	"GLBWNHYD": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 6,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Glenbawn"
+		}
+	},
+	"GLENMAGG": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 4,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Glenmaggie"
+		}
+	},
+	"GLENNCRK": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 12,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Glennies Creek"
+		}
+	},
+	"GLENSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/98f6f4fd939a61579d91676968006948d925a865-2400x1344.png",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 102,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Glenrowan"
+		}
+	},
+	"GLRWNSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/761b187ad30be1054fd73fa76c70b9a1ab46b2d7-2560x1440.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 110,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Glenrowan West"
+		}
+	},
+	"GNARWARREBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 250,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Gnarwarre"
+		}
+	},
+	"GNNDHSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/03cd2a7b8881dc3af0a1d09bd8280d38236af3e9-599x399.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 110,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Gunnedah"
+		}
+	},
+	"GOESF1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 250,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Goorambat East"
+		}
+	},
+	"GOONUMSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/851578a149cc2f25418992f1980c0f847ec1d663-2560x1440.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 69,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Goonumbla"
+		}
+	},
+	"GORDON": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/950694367620d712c3ff2948eb77161a02d15085-650x1002.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 475,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Gordon"
+		}
+	},
+	"GOSNELLS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "retired",
+			"region": "WEM",
+			"name": "Gosnells"
+		}
+	},
+	"GPWBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 149.5,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Golden Plains"
+		}
+	},
+	"GPWFEST": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b17fc811dc366d544fe5538c735b82ea54b29838-828x828.png",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 733,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Golden Plains East"
+		}
+	},
+	"GPWFWST": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b17fc811dc366d544fe5538c735b82ea54b29838-828x828.png",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 557,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Golden Plains West"
+		}
+	},
+	"GRANGEAV": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 2,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Grange Avenue"
+		}
+	},
+	"GRANWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/33f2b4a17373475220278a6b8c5a7741c37a1b92-1920x1080.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 111,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Granville Harbour"
+		}
+	},
+	"GRASMERE": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/eb474d80f8b78142d528968a08a278bccc27c727-2500x1875.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 13.8,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Grasmere"
+		}
+	},
+	"GREENB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a98c82bf4a59f83163d0ba793ae1b56cffaad318-850x547.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 200,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Greenbank"
+		}
+	},
+	"GRIFSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/571c4ace5b50b5c5dd5ea4b1d8f4fbb000713af9-1089x612.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 27,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Griffith"
+		}
+	},
+	"GRIVSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 499,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Goulburn River"
+		}
+	},
+	"GROSV1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/00deadca8b5888991307d9dd602e9b61b694bc9e-6480x4320.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 21,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Grosvenor 1"
+		}
+	},
+	"GROSV2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 15,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Grosvenor 2"
+		}
+	},
+	"GSTONE": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b83520528033c320356ecfced7b8b911c41a297a-650x491.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 1710,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Gladstone"
+		}
+	},
+	"GSWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f107dd43d56896b1f223e69a73ce4d3ac8845f22-1920x738.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 397,
+			"status": "operating",
+			"region": "SA",
+			"name": "Goyder South"
+		}
+	},
+	"GULLRGWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/48dbb90b75d9cdcbf6ee654e405ccf5e8c080e6b-1000x450.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 171,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Gullen Range"
+		}
+	},
+	"GUNNING": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/22f5e6aca2be8881d37e3f2e4fb9368fb8fec4b8-2000x1300.png",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 47,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Gunning"
+		}
+	},
+	"GUSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/eec8e3be2fc4e467e201bbe478cd789813a7edfb-584x557.heif",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 94,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Gunsynd"
+		}
+	},
+	"HALAMRD": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 9,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Hallam Road"
+		}
+	},
+	"HALLETTB": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 50,
+			"status": "committed",
+			"region": "SA",
+			"name": "Hallett"
+		}
+	},
+	"HALLWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/87119250602f4d48ca9058a3f3e2d8bc74d7733d-2500x1664.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 95,
+			"status": "operating",
+			"region": "SA",
+			"name": "Hallett 1"
+		}
+	},
+	"HALLWF2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 71,
+			"status": "operating",
+			"region": "SA",
+			"name": "Hallett 2"
+		}
+	},
+	"HAMISF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b0f60396668c82e93b0de911d8c0831283f7fac5-2560x1440.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 56,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Hamilton"
+		}
+	},
+	"HAMPTON": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 1.32,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Hampton"
+		}
+	},
+	"HASTING": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 42.99,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Hastings"
+		}
+	},
+	"HAUGHT1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c953689de4ea4e979ad6a4506b014fef51332932-1600x525.png",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 100,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Haughton"
+		}
+	},
+	"HAYMSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3ea19ea38f8ac9895498f10d10c163cec1848dda-1072x704.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 50,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Hayman"
+		}
+	},
 	"HAZEL": {
 		"v": 1,
 		"photo": "https://cdn.sanity.io/images/bjedimft/production/abc480263358589ab7b7248fcf93903c675d4471-650x488.jpg",
@@ -13,6 +3124,1964 @@
 			"name": "Hazelwood"
 		}
 	},
+	"HBESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/dc1652ad930b32c2644e6840ff8326e3cfbc0f90-1512x800.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 150,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Hazelwood BESS"
+		}
+	},
+	"HD1WF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/38ac228c71cb686b9693fd9cfae3ef97379138e7-2000x1125.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 89,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Hawkesdale"
+		}
+	},
+	"HENDERSON_RENEWABLE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 3,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Henderson"
+		}
+	},
+	"HEPWIND": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/71cbd517786206d0dd34de4efa91f50ca1c5e07f-650x455.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 4,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Hepburn"
+		}
+	},
+	"HEZ": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 28,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Hunter Economic Zone"
+		}
+	},
+	"HIGHBRY": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 2,
+			"status": "retired",
+			"region": "SA",
+			"name": "Highbury"
+		}
+	},
+	"HILLSTN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3899c103425215a120b209fc1c48d630b4237a67-5472x3648.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 85,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Hillston Sun"
+		}
+	},
+	"HLMSEW01": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 1,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Hallam"
+		}
+	},
+	"HORNSDAL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/0df3e1766afa3811aa88ab010d47ebd26e48c284-1920x984.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 102,
+			"status": "operating",
+			"region": "SA",
+			"name": "Hornsdale"
+		}
+	},
+	"HORNSDAL2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 102,
+			"status": "operating",
+			"region": "SA",
+			"name": "Hornsdale 2"
+		}
+	},
+	"HORNSDAL3": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 109,
+			"status": "operating",
+			"region": "SA",
+			"name": "Hornsdale 3"
+		}
+	},
+	"HORNSDPR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3d66f8537ee60e2f6a86e5cb9e1c7b66c7b81c92-1024x767.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 150,
+			"status": "operating",
+			"region": "SA",
+			"name": "Hornsdale Power Reserve"
+		}
+	},
+	"HORSHAMSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 218.8,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Horsham"
+		}
+	},
+	"HUGSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/56ea4f2ab1d1a486d1c25ecfba4a1550b81d1517-1170x658.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 18,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Hughenden"
+		}
+	},
+	"HUMENSW": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c9e9c07ef134f062f88c50c5508c012a4ca4637c-2400x1602.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 70,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Hume"
+		}
+	},
+	"HUMEV": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c9e9c07ef134f062f88c50c5508c012a4ca4637c-2400x1602.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 70,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Hume"
+		}
+	},
+	"HUNTER": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 750,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Hunter"
+		}
+	},
+	"HUNTVGT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 50,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Hunter Valley"
+		}
+	},
+	"HVWW": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cf69252acc6325aaec81eea2c6d656fcaa2c50d6-1920x1080.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 12,
+			"status": "operating",
+			"region": "SA",
+			"name": "Happy Valley"
+		}
+	},
+	"ICSM": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f9a3cb6112e310b500cfd5f87f42a521ad216807-1615x980.jpg",
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 25,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Isis Central Sugar Mill"
+		}
+	},
+	"INVESTEC_COLLGAR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a91e7c9525579a9f7dfa40bd07fc87cc567a6197-650x867.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 222,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Collgar"
+		}
+	},
+	"INVICTA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ec916f42d1c657470f6aafeb86e22edacbcad7f6-600x400.jpg",
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 51,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Invicta Sugar Mill"
+		}
+	},
+	"JACKSGUL": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 2,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Jacks Gully"
+		}
+	},
+	"JBUTTERS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 144,
+			"status": "operating",
+			"region": "TAS",
+			"name": "John Butters"
+		}
+	},
+	"JEERA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a192e512c516800e8a9a509f91c5f091ce57efe2-1024x658.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 260,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Jeeralang A"
+		}
+	},
+	"JEERB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a192e512c516800e8a9a509f91c5f091ce57efe2-1024x658.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 300,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Jeeralang B"
+		}
+	},
+	"JEMALNG1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/0811b5e50e67336869fd43b735807184a5ca1ae5-1274x1100.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 50,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Jemalong"
+		}
+	},
+	"JNDSHPS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 1,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Jindabyne"
+		}
+	},
+	"JOUNAMA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 14,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Jounama"
+		}
+	},
+	"JUNEESF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/83dbe3aaecb8c0a6ac6eee946ff230f056817d50-2560x1919.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 30,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Junee"
+		}
+	},
+	"KABANWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/67e34dd2caf0eeded7af5a7da20e8dd774ac8301-1500x938.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 152,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Kaban"
+		}
+	},
+	"KALAMUNDA_SG": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1.3,
+			"status": "retired",
+			"region": "WEM",
+			"name": "Kalamunda"
+		}
+	},
+	"KALBARRI": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 1.6,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Kalbarri"
+		}
+	},
+	"KAREEYA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f577884939b4e4801af81b9cc3e8b37167589709-2560x2311.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 95,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Kareeya"
+		}
+	},
+	"KARSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5464bb2253b1e61618d20016d12a55b0ed07579b-1636x1192.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 90,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Karadoc"
+		}
+	},
+	"KEEPIT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 8,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Keepit"
+		}
+	},
+	"KEMERTON": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4df3b5b73519ab2d723b0aef3783717c64bd77b9-750x1000.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 309.4,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Kemerton"
+		}
+	},
+	"KENNEDY": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c447b449a1f27441fe9c34ca42c78c0ea9096d56-640x427.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"wind",
+				"battery_discharging",
+				"battery_charging"
+			],
+			"dominant": "wind",
+			"capacity": 62,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Kennedy Energy Park"
+		}
+	},
+	"KERNGSP": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c9ec9306c9a43ab8e4d6e0ceb68c70396ef62638-1800x1201.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 30,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Kerang"
+		}
+	},
+	"KESS1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/564167720e126bcc79d929dfc7c6c4ebea81e294-1072x704.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 185,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Koorangie"
+		}
+	},
+	"KIAMSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/01c2ca7df6a2c210cb5e53eb830f721b76cc453c-1000x667.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 200,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Kiamal"
+		}
+	},
+	"KIATAWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f6057a64ebd9be96f0ca9efdab8e0cf9fc3c039d-2560x1707.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 31,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Kiata"
+		}
+	},
+	"KIDSTON": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 250,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Kidston"
+		}
+	},
+	"KINCUMB": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Kincumber"
+		}
+	},
+	"KINGASF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/18b9eed18c5d0dd5aae5a2babecb9552c6c3aabf-2000x1124.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 40,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Kingaroy"
+		}
+	},
+	"KINGS_ROCK_WF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 105,
+			"status": "committed",
+			"region": "WEM",
+			"name": "Kings Rock"
+		}
+	},
+	"KOGANCK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b3ff8f11f3a03af2da3717ae3662b19ccd4d0e6a-850x566.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 781,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Kogan Creek"
+		}
+	},
+	"KOOLKHAN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 25,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Koolkhan"
+		}
+	},
+	"KOOLUNGA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 200,
+			"status": "committed",
+			"region": "SA",
+			"name": "Koolunga"
+		}
+	},
+	"KRCCOGEN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 5,
+			"status": "retired",
+			"region": "QLD",
+			"name": "KRC Cogen"
+		}
+	},
+	"KSP1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/765c2a6e32026839807e622590638a2545d91e27-1274x1100.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 47.7,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Kidston"
+		}
+	},
+	"KWINANA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4c374cc85355bf9658bcc9de851b7377c30374d7-220x140.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt",
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 206.4,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Kwinana"
+		}
+	},
+	"KWINANA_ESR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d4a26c227f014ad7242a124acc1b79330ed95262-872x545.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Kwinana Battery"
+		}
+	},
+	"KWINANA_ESR2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 225,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Kwinana Battery 2"
+		}
+	},
+	"LADBROKE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 100,
+			"status": "operating",
+			"region": "SA",
+			"name": "Ladbroke Grove"
+		}
+	},
+	"LANCSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 106,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Lancaster"
+		}
+	},
+	"LBBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 25,
+			"status": "operating",
+			"region": "SA",
+			"name": "Lake Bonney"
+		}
+	},
+	"LCNBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 250,
+			"status": "committed",
+			"region": "SA",
+			"name": "Limestone Coast North"
+		}
+	},
+	"LEM_WIL": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 86,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Lemonthyme / Wilmot"
+		}
+	},
+	"LIDDELL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/7a85f3f3ea52d7335bb87e28754bafe4eaf27316-650x326.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 2200,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Liddell"
+		}
+	},
+	"LILYVASF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4273c2fc02c237f114e1fc1ac1097c4345e4d0be-2560x1920.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 100,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Lilyvale"
+		}
+	},
+	"LIMBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 50,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Limondale"
+		}
+	},
+	"LIMOSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5770fcf3aa79790b78b0a875d2d6b85538f9e7b1-3840x1560.png",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 220,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Limondale"
+		}
+	},
+	"LIMOSF2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 29,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Limondale 2"
+		}
+	},
+	"LI_WY_CA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/bdb6004712550ba88eed5c143c0cd31a39c099a3-680x300.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro",
+				"distillate"
+			],
+			"dominant": "hydro",
+			"capacity": 192,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Catagunya / Liapootah / Wayatinah"
+		}
+	},
+	"LKBONNY1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 81,
+			"status": "operating",
+			"region": "SA",
+			"name": "Lake Bonney"
+		}
+	},
+	"LKBONNY3": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 39,
+			"status": "operating",
+			"region": "SA",
+			"name": "Lake Bonney 3"
+		}
+	},
+	"LKBONNY_2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 159,
+			"status": "operating",
+			"region": "SA",
+			"name": "Lake Bonney 2"
+		}
+	},
+	"LK_ECHO": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 34,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Lake Echo"
+		}
+	},
+	"LNGS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d7b0aa60f82d1af41f6736f2450307f3a4f63982-650x253.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 344,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Laverton North"
+		}
+	},
+	"LOCKHART": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 20,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Lockhart"
+		}
+	},
+	"LONGFORD": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 46.4,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Longford"
+		}
+	},
+	"LONSDALE": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a77ac106fc835ebbfb1e688f4bae6e7e21851a74-768x584.jpg",
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 21,
+			"status": "operating",
+			"region": "SA",
+			"name": "Lonsdale"
+		}
+	},
+	"LOTUSCRKWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 285.2,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Lotus Creek"
+		}
+	},
+	"LOYYANGA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3387705a116b32ad03d1111d6470501a6ba3da6a-1200x799.webp",
+		"data": {
+			"fuelTechs": [
+				"coal_brown"
+			],
+			"dominant": "coal_brown",
+			"capacity": 2295,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Loy Yang A"
+		}
+	},
+	"LOYYB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3387705a116b32ad03d1111d6470501a6ba3da6a-1200x799.webp",
+		"data": {
+			"fuelTechs": [
+				"coal_brown"
+			],
+			"dominant": "coal_brown",
+			"capacity": 1200,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Loy Yang B"
+		}
+	},
+	"LRSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c71854960d7266417fd428615553208172ad4934-600x400.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 15,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Longreach"
+		}
+	},
+	"LUCAS2S2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 5,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Lucas Heights 2"
+		}
+	},
+	"LUCASHGT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 13,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Lucas Heights"
+		}
+	},
+	"LVES": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/19fae0b5337af46e370932fc7f167afc2c3c753f-2560x1707.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Latrobe Valley"
+		}
+	},
+	"LW": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 562,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Lower Wonga"
+		}
+	},
+	"MACARTH": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/25589ccf033f8fbda1c928590637fa8fb6318a54-1200x900.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 420,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Macarthur"
+		}
+	},
+	"MACKAY": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 34,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Mackay"
+		}
+	},
+	"MACKNTSH": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 89,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Mackintosh"
+		}
+	},
+	"MANNSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 29,
+			"status": "operating",
+			"region": "SA",
+			"name": "Mannum 2"
+		}
+	},
+	"MANNUMB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/6a19a0622d7d75c369727f39e86e12f13c5ef366-1599x1204.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "SA",
+			"name": "Mannum"
+		}
+	},
+	"MANSLR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/116465adbc4a57f40983e7a31561b8dd0a48b079-1436x956.heif",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 46,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Manildra"
+		}
+	},
+	"MAPS2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 25.4,
+			"status": "operating",
+			"region": "SA",
+			"name": "Mannum Pumping Station"
+		}
+	},
+	"MAROOWF1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 6,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Maroona"
+		}
+	},
+	"MARYRSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 27,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Maryrorough"
+		}
+	},
+	"MARYVALE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 344,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Maryvale"
+		}
+	},
+	"MBAHNTH": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/463ef4653ce78f2c8d5610df0122f26e7e8c2710-1000x850.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 63,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Moranbah North"
+		}
+	},
+	"MBPS2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 10.3,
+			"status": "operating",
+			"region": "SA",
+			"name": "Murray Bridge-Onkaparinga"
+		}
+	},
+	"MCKAY": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 300,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Bogong / Mackay"
+		}
+	},
+	"MEADOWBK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d3a798842202ac773985e665f586af64de1e31e9-650x448.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro",
+				"distillate"
+			],
+			"dominant": "hydro",
+			"capacity": 44,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Meadowbank"
+		}
+	},
+	"MERREDINBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "committed",
+			"region": "WEM",
+			"name": "Merredin"
+		}
+	},
+	"MERSOLAR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/929d287421c3ec380bf7edeb516f676d8285fb2c-1920x1080.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 100,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Merredin"
+		}
+	},
+	"METZSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 115,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Metz N"
+		}
+	},
+	"MEWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a19a4fbbaa4d90fe0a8b6c268a609ca5fde9ec1b-1000x750.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 178,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Mt Emerald"
+		}
+	},
+	"MIDDLSF1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 26,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Middlemount"
+		}
+	},
+	"MIDLDPS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 7,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Midlands"
+		}
+	},
+	"MILLMERN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/225c42c17fe9b0eec920ba671fbce389f4115583-6000x4000.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 870,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Millmerran"
+		}
+	},
+	"MINTARO": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 130,
+			"status": "operating",
+			"region": "SA",
+			"name": "Mintaro"
+		}
+	},
+	"MLB": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 300,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Mortlake"
+		}
+	},
+	"MLLFGEF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 4,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Mugga Lane"
+		}
+	},
+	"MLSP": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e9e4b568400fd90389b3df989441e1580c6ad1eb-960x720.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 12,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Mugga Lane"
+		}
+	},
+	"MLWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b8234f1069d2c6a1b6b868c72b53e53592ffc9e5-1000x500.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 20,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Mortons Lane"
+		}
+	},
+	"MM": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4a89a459aae5e73309ff0e03276ce81d7863fc7f-650x431.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 600,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Munmorah"
+		}
+	},
+	"MOKOSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/1746ae7b9c290eac6268a92a24949f6923bcd61a-1920x1440.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 46,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Mokoan"
+		}
+	},
+	"MOLNGSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/33e2abfcab56c4083a2dffa7b6e1f6de6740eddc-1200x675.png",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 30,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Molong"
+		}
+	},
+	"MOORAWF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/806b43c186089f7d05360318213bacb258ae717a-950x490.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 305,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Moorabool"
+		}
+	},
+	"MORANBAH": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/82ff3c899125e5f96a559388d94e217f28fa5049-536x715.webp",
+		"data": {
+			"fuelTechs": [
+				"gas_recip"
+			],
+			"dominant": "gas_recip",
+			"capacity": 13,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Moranbah"
+		}
+	},
+	"MOREESF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/64fdad00b80cfb46136271752eedb4415931f46a-754x404.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 56,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Moree"
+		}
+	},
+	"MORNBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 240,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Mornington"
+		}
+	},
+	"MORNW": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Mornington Disposal"
+		}
+	},
+	"MORTLK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/bf17c04151f32419cfe967c6365851c471d29741-1536x1151.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 584,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Mortlake"
+		}
+	},
+	"MOUSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e9738c4e081763150633c209d7634d5e99cb4b00-1920x1440.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 82,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Moura"
+		}
+	},
+	"MP": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 1400,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Mt Piper"
+		}
+	},
+	"MREH": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/52c8a1d0a975da29f56b85c2c5724c400bd78e70-763x979.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 200,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Melbourne A1"
+		}
+	},
+	"MREHA2": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/52c8a1d0a975da29f56b85c2c5724c400bd78e70-763x979.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 200,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Melbourne A2"
+		}
+	},
+	"MREHA3": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/52c8a1d0a975da29f56b85c2c5724c400bd78e70-763x979.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 200,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Melbourne A3"
+		}
+	},
+	"MRTLSWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c55d192211ee5e7c877ef3afb2c223de7a21c68f-2000x1125.png",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 153,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Mortlake South"
+		}
+	},
+	"MSTUART": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 443,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Mt Stuart"
+		}
+	},
+	"MTGELWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cdebf1b9fd6c60b76c1082ab67ea2b00c22eaabb-2000x1125.png",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 132,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Mt Gellibrand"
+		}
+	},
+	"MTMERCER": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a0779a48c9d0a02a97dcab018d644b97092173be-1346x1346.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 131,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Mt Mercer"
+		}
+	},
+	"MTMILLAR": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 70,
+			"status": "operating",
+			"region": "SA",
+			"name": "Mt Millar"
+		}
+	},
+	"MUCHEABESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 164,
+			"status": "committed",
+			"region": "WEM",
+			"name": "Muchea"
+		}
+	},
+	"MUCRKSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4edfad69cf43a9f02345e9bec0f6c618e4cd9692-1379x775.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 120,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Munna Creek"
+		}
+	},
+	"MUJA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 425.2,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Muja CD"
+		}
+	},
+	"MUJA_AB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/77bfc60c9450875fa4f12931691e613aad38a9aa-1280x960.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 240,
+			"status": "retired",
+			"region": "WEM",
+			"name": "Muja AB"
+		}
+	},
+	"MULWASF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 25,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Mulwala"
+		}
+	},
+	"MUNGARRA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 117,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Mungarra"
+		}
+	},
+	"MURRAY": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cf6598aa29a76402952e5367fd8653e90d99a18f-2771x1847.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 1575,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Murray"
+		}
+	},
+	"MUSSELRO": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/6685cf3abcd3d5a140fdb713b49b1c08283c5247-800x533.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 168,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Musselroe"
+		}
+	},
+	"MUSWELLBROOK": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 293.3,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Muswellbrook"
+		}
+	},
+	"MUWAWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4a6c2fa0bd983bf7a9b4b0401ba082d903ea286b-11680x6572.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 428.7,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Murra Warra"
+		}
+	},
+	"MWF_MUMBIDA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9a6480712979f25feed405813a8b1f089d6dc8a0-862x485.heif",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 55,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Mumbida"
+		}
+	},
+	"MWPS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 18,
+			"status": "operating",
+			"region": "SA",
+			"name": "Morganwhyalla Pipeline"
+		}
+	},
+	"NAMKKN_MERR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/40edfa591a4fbc3f1dc08cae5a5c51b935c3da82-1203x672.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 92.6,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Merredin"
+		}
+	},
 	"NARROGINWF": {
 		"v": 1,
 		"photo": null,
@@ -25,6 +5094,3445 @@
 			"status": "committed",
 			"region": "WEM",
 			"name": "Narrogin"
+		}
+	},
+	"NASF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 9,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Narromine"
+		}
+	},
+	"NBHWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cccf3ec32953e830c5092a479814f10d9c99684c-3000x2247.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 132,
+			"status": "operating",
+			"region": "SA",
+			"name": "North Brown Hill"
+		}
+	},
+	"NESBESS1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "NSW",
+			"name": "New England 1"
+		}
+	},
+	"NESBESS2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "NSW",
+			"name": "New England 2"
+		}
+	},
+	"NEVERSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/6127c93e718364992e1abb3444e8c66fd5679cdd-1665x857.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 105,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Nevertire"
+		}
+	},
+	"NEWENSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/943d341c0274422df899edb7a9742702974195d4-1597x1197.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 400,
+			"status": "operating",
+			"region": "NSW",
+			"name": "New England"
+		}
+	},
+	"NEWGEN_KWINANA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/77576c13eba4182ea852b37a83467c86f18b44b6-1500x1002.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 327.8,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Newgen Kwinana"
+		}
+	},
+	"NEWGEN_NEERABUP": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/0765d1ccd7da6de728b6ae174214513cf40b9136-862x485.heif",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 342,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Neerabup"
+		}
+	},
+	"NEWPORT": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a060bdbe9f375789671f843efb080a71d4198f37-650x867.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_steam"
+			],
+			"dominant": "gas_steam",
+			"capacity": 510,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Newport"
+		}
+	},
+	"NINEWIL": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 3,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Willoughby"
+		}
+	},
+	"NORTHAM_SF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/41304596ab5b3d04405b60983e863eb9096020aa-1000x641.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 10,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Northam"
+		}
+	},
+	"NORTHGT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 50,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Northern"
+		}
+	},
+	"NORTHP": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3f07ed88b9bdb8fd04aa02abd2dac60d80ddcd7e-1200x677.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_brown"
+			],
+			"dominant": "coal_brown",
+			"capacity": 730,
+			"status": "retired",
+			"region": "SA",
+			"name": "Northern"
+		}
+	},
+	"NPPPPS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/53e393460b6081763d44dbabfaa1b00adf44737f-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 522,
+			"status": "operating",
+			"region": "SA",
+			"name": "Pelican Point"
+		}
+	},
+	"NUMURKSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b8efd4eeb8697301f37f800ba0a0fd7fbca25903-1536x1152.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 100,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Numurkah"
+		}
+	},
+	"NYNGAN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cbad243e411c6e6e6967f821dc8ab8eaf5da3b06-650x433.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 102,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Nyngan"
+		}
+	},
+	"OAKEY": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/fe5d47adad1e3da3ba8244412f3b727075727645-650x378.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 346,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Oakey"
+		}
+	},
+	"OAKEY1SF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/1b3a43f8bea449955d7fb726a61ecf7ca94c5619-800x506.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 25,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Oakey Solar Farm"
+		}
+	},
+	"OAKEY2SF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/1b3a43f8bea449955d7fb726a61ecf7ca94c5619-800x506.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 55,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Oakey 2"
+		}
+	},
+	"OAKLAND": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5ac68ccbb702eb21faefcbd60d87e1db20b1d5a7-1200x900.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 63,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Oaklands Hill"
+		}
+	},
+	"OAKY2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 15,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Oaky Creek 2"
+		}
+	},
+	"OCPS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/bca61d34fc5796be0cc2b6ba4d6ce1cf111e79ec-852x370.webp",
+		"data": {
+			"fuelTechs": [
+				"gas_recip"
+			],
+			"dominant": "gas_recip",
+			"capacity": 20,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Oaky Creek"
+		}
+	},
+	"ORABESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ece18c69208402098d7866da6a0063324a124425-1000x626.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 415,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Orana"
+		}
+	},
+	"OSBORNE": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/da19973aff164a52db7a5a8a17143abaaccaf0f1-650x641.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 204,
+			"status": "operating",
+			"region": "SA",
+			"name": "Osborne"
+		}
+	},
+	"PALMERWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 288,
+			"status": "committed",
+			"region": "SA",
+			"name": "Palmer"
+		}
+	},
+	"PALOONA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/eb3b3f954036bd1b60358a9a40e63e2777fd93dd-650x408.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 33,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Paloona"
+		}
+	},
+	"PAREPW": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 278,
+			"status": "operating",
+			"region": "SA",
+			"name": "Port Augusta Energy Park"
+		}
+	},
+	"PEDLER": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 3,
+			"status": "retired",
+			"region": "SA",
+			"name": "Pedler Creek"
+		}
+	},
+	"PERTHENERGY_KWINANA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cad4911e269a93876e3ed24b25424bea779f835c-1200x864.webp",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 336,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Kwinana Swift"
+		}
+	},
+	"PHOENIX_KWINANA_WTE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 43,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Phoenix"
+		}
+	},
+	"PIBESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/7d53e1f0b8f92126e1e838e7153e1b76f08b92bc-500x332.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 5,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Phillip Island"
+		}
+	},
+	"PINDARI": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 6,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Pindari"
+		}
+	},
+	"PINJAR": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 600.6,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Pinjar"
+		}
+	},
+	"PIONEER": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e375e8e7f4856ca5d3ddc26f1d824c3bb21cf660-600x400.jpg",
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 68,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Pioneer Sugar Mill"
+		}
+	},
+	"PLAYF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3f07ed88b9bdb8fd04aa02abd2dac60d80ddcd7e-1200x677.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_brown"
+			],
+			"dominant": "coal_brown",
+			"capacity": 480,
+			"status": "retired",
+			"region": "SA",
+			"name": "Playford B"
+		}
+	},
+	"PLBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 250,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Pine Lodge"
+		}
+	},
+	"PLWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 21,
+			"status": "committed",
+			"region": "TAS",
+			"name": "Port Latta"
+		}
+	},
+	"PMATTAEP": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_recip"
+			],
+			"dominant": "gas_recip",
+			"capacity": 4,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Earthpower"
+		}
+	},
+	"PORTLATT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 20,
+			"status": "retired",
+			"region": "TAS",
+			"name": "Port Latta"
+		}
+	},
+	"PORTLCN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 78,
+			"status": "operating",
+			"region": "SA",
+			"name": "Port Lincoln"
+		}
+	},
+	"PORTWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/eb5cf27e3bdb2c0a35d9b1ac4ddcc39037b5c833-650x433.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 148,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Portland"
+		}
+	},
+	"PPBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 200,
+			"status": "committed",
+			"region": "SA",
+			"name": "Pelican Point"
+		}
+	},
+	"PRDSO_WALPOLE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 1.5,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Walpole"
+		}
+	},
+	"PRK_AG": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c6050afd6a348f923cecb503029fc2478cb86ea9-597x416.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 110,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Parkeston"
+		}
+	},
+	"PSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b9f6d2cbd5ef892e5c2dc21ca32803dfbd83b1e4-4032x2268.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 50.5,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Parkes"
+		}
+	},
+	"PTINA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 397,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Poatina"
+		}
+	},
+	"QBYNB": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 10,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Queanbeyan"
+		}
+	},
+	"QP": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 99,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Quorn Park"
+		}
+	},
+	"QUARANTN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f32ba1a2f6ef8574e5e4ab35534f2395d25b8b19-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 237,
+			"status": "operating",
+			"region": "SA",
+			"name": "Quarantine"
+		}
+	},
+	"QUERIVER": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 24,
+			"status": "retired",
+			"region": "TAS",
+			"name": "Que River"
+		}
+	},
+	"RACOMIL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/26d6fdf4cc58840de4a7b00237a11b7cacd4a536-1920x1080.jpg",
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 48,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Racecourse Mill"
+		}
+	},
+	"RANGEB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5259ca1abc6d83cefafddf794435335c90ed68de-1920x1279.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 200,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Rangebank"
+		}
+	},
+	"REDBANK1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a6f3cb6459206c2ec784624076248e84c4951c20-3112x1874.webp",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 150,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Redbank"
+		}
+	},
+	"RED_HILL": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 3.64,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Red Hill"
+		}
+	},
+	"REECE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 238,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Reece"
+		}
+	},
+	"REMOUNT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 2,
+			"status": "retired",
+			"region": "TAS",
+			"name": "Remount"
+		}
+	},
+	"REPULSE": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4000aef8072c812411dd4e0c01387e5a2b6b6ad2-4968x3720.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 34,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Repulse"
+		}
+	},
+	"RESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d8e65f5599e0eb4f85ac24b9c1ad75ab5167213d-1072x704.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 60,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Riverina 1"
+		}
+	},
+	"RIVERINASF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 32.4,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Riverina"
+		}
+	},
+	"RIVNB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d8e65f5599e0eb4f85ac24b9c1ad75ab5167213d-1072x704.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 65,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Riverina 2"
+		}
+	},
+	"ROCHEDAL": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 7.7,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Rochedale"
+		}
+	},
+	"ROCKINGHAM": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 4.2,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Rockingham"
+		}
+	},
+	"ROMA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 84,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Roma"
+		}
+	},
+	"ROWALLAN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 11,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Rowallan"
+		}
+	},
+	"ROYALLA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b74f179f189319dfb14268e1b287a3fea9f071c7-862x485.heif",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 20,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Royalla"
+		}
+	},
+	"RPBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 250,
+			"status": "committed",
+			"region": "SA",
+			"name": "Reeves Plains"
+		}
+	},
+	"RPCG": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 30,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Rocky Point Cogen"
+		}
+	},
+	"RRSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/0e9dc580e03d78f7703894e0af53b7fe90d55bd4-1300x867.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 116,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Ross River"
+		}
+	},
+	"RUBICON": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 13,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Rubicon"
+		}
+	},
+	"RUGBYR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/7a713a04e6ee19f4a4a5cde2a6a58fb474191ba6-1400x787.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 65,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Rugby Run"
+		}
+	},
+	"RYANCWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 205,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Ryan Corner"
+		}
+	},
+	"RYEPARK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/6b453b8272cfe3ca3a26f1b52522908a07206065-1086x678.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 384,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Rye Park"
+		}
+	},
+	"SALTCRK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c8575eb86e7cd6782cb63745f4128059e9004ec6-1920x1281.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 54,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Salt Creek"
+		}
+	},
+	"SAPHWF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/822876feb0743c59fc6379e29d7c8651da1a4625-2000x2000.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 270,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Sapphire"
+		}
+	},
+	"SATGN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 154,
+			"status": "retired",
+			"region": "SA",
+			"name": "Temporary Generation North"
+		}
+	},
+	"SATGS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 123,
+			"status": "retired",
+			"region": "SA",
+			"name": "Temporary Generation South"
+		}
+	},
+	"SBSOLAR1_CUNDERDIN_PV": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/943d990592199df07a49e585bea22a421f5c8256-2560x1918.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 128,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Cunderdin"
+		}
+	},
+	"SEBSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/6efe517f32b4f3fb4b050ba2818f795fdd565eac-1246x831.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 90,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Sebastopol"
+		}
+	},
+	"SEPPP": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 85,
+			"status": "committed",
+			"region": "WEM",
+			"name": "South Erregulla"
+		}
+	},
+	"SHEP1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Shepparton"
+		}
+	},
+	"SHOAL": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 54,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Shoalhaven Starches"
+		}
+	},
+	"SHOALHAV": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro",
+				"pumps"
+			],
+			"dominant": "hydro",
+			"capacity": 487,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Shoalhaven"
+		}
+	},
+	"SITHE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 125,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Smithfield"
+		}
+	},
+	"SKSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 13,
+			"status": "operating",
+			"region": "NSW",
+			"name": "South Keswick"
+		}
+	},
+	"SKYFRM_MTBARKER": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 2.43,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Mount Barker"
+		}
+	},
+	"SLDCBLK": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery_charging"
+			],
+			"dominant": "battery_charging",
+			"capacity": 20,
+			"status": "retired",
+			"region": "TAS",
+			"name": "St Leonards Data Centre"
+		}
+	},
+	"SMCSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 121,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Sun Metals"
+		}
+	},
+	"SMFBESS1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 120,
+			"status": "operating",
+			"region": "SA",
+			"name": "Summerfield 1"
+		}
+	},
+	"SMFBESS2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 120,
+			"status": "operating",
+			"region": "SA",
+			"name": "Summerfield 2"
+		}
+	},
+	"SMOKY": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 600,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Smoky Creek"
+		}
+	},
+	"SMTHBES1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 65,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Smithfield"
+		}
+	},
+	"SNAPPER": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2f4619e60553be439a9f2a308bd3368bfb60f1c4-500x335.heif",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 150,
+			"status": "operating",
+			"region": "SA",
+			"name": "Snapper Point"
+		}
+	},
+	"SNB1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/342c7f860843d54503dc95254af559cc652b94c6-2560x769.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 260,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Supernode"
+		}
+	},
+	"SNB3": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 260.3,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Supernode 3"
+		}
+	},
+	"SNOWNTH": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 144,
+			"status": "operating",
+			"region": "SA",
+			"name": "Snowtown North"
+		}
+	},
+	"SNOWSTH": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 126,
+			"status": "operating",
+			"region": "SA",
+			"name": "Snowtown South"
+		}
+	},
+	"SNOWTOWN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/7bca81d48ee9a49b8567d0881f15e4ce7a755caa-2560x1706.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 99,
+			"status": "operating",
+			"region": "SA",
+			"name": "Snowtown"
+		}
+	},
+	"SNOWY2": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b5e7038ab79d49b05885892efc426ded1c00f7bb-1920x1440.webp",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 665,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Tumut"
+		}
+	},
+	"SNOWY20": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 2200,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Snowy 2.0"
+		}
+	},
+	"SNOWY3": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/1650578d35413a30d302a2c0e519826cb09d2358-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 80,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Guthega"
+		}
+	},
+	"SNOWY4": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 0,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Snowy"
+		}
+	},
+	"SNOWY5": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 0,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Snowy"
+		}
+	},
+	"SNOWY6": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/05cba619ac2c7c36c5b61331b22149eecbda456b-862x485.heif",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 80,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Blowering"
+		}
+	},
+	"SNUG": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 90,
+			"status": "operating",
+			"region": "SA",
+			"name": "Snuggery"
+		}
+	},
+	"SNWYGJP2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"pumps"
+			],
+			"dominant": "pumps",
+			"capacity": 70,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Jindabyne Pump At Guthega"
+		}
+	},
+	"SOUTH_CARDUP": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 4.16,
+			"status": "operating",
+			"region": "WEM",
+			"name": "South Cardup"
+		}
+	},
+	"SRSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5d4fc889ece9c311950973f7dfc845d71e2fbfa7-1920x1006.heif",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 75,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Susan River"
+		}
+	},
+	"STABESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 300,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Stanwell"
+		}
+	},
+	"STANVAC": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 65,
+			"status": "operating",
+			"region": "SA",
+			"name": "Port Stanvac"
+		}
+	},
+	"STANWELL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/849135e7ba05383a683b54f357e8ccc6188ab290-4271x2680.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 1540,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Stanwell"
+		}
+	},
+	"STAPYLTON": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 3,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Stapylton"
+		}
+	},
+	"STARFHILL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/90226de3892058003de81296797f5aad82ce8144-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 35,
+			"status": "operating",
+			"region": "SA",
+			"name": "Starfish Hill"
+		}
+	},
+	"STGEORGE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 1,
+			"status": "retired",
+			"region": "NSW",
+			"name": "St George Leagues Club"
+		}
+	},
+	"STHBKTEC": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 1,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Southbank Institute Of Technology"
+		}
+	},
+	"STHRNCRS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 23,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Kambalda"
+		}
+	},
+	"STOCKYD": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cc56f9a27261e17286c407c5c8cd7ee4bbd009b6-2500x1405.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 511,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Stockyard Hill"
+		}
+	},
+	"STUBSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a975c3159c30453288d7a640025201c8c045eb84-680x350.png",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 400,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Stubbo"
+		}
+	},
+	"STWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a4f63e18dcdd518bc173e8b54cab9eebba2a1ef2-2560x1704.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 198,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Silverton"
+		}
+	},
+	"SUNCOAST": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 1,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Suncoast Gold Macadamias"
+		}
+	},
+	"SUNRSF1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 200,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Sunraysia"
+		}
+	},
+	"SUNTPSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/81cf441a4be39b2984fbf34165a1bca8a23aea64-605x398.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 150,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Suntop"
+		}
+	},
+	"SUPERNODE2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 260,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Supernode 2"
+		}
+	},
+	"SVALE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 5,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Springvale"
+		}
+	},
+	"SWANBBF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/038076c83d481af80abcc75beaa788adbfa8ec59-2560x1775.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 250,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Swanbank"
+		}
+	},
+	"SWAN_B": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt",
+				"coal_black"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 1017,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Swanbank B"
+		}
+	},
+	"SWAN_E": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 385,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Swanbank E"
+		}
+	},
+	"TABMILL2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 17,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Tableland Mill"
+		}
+	},
+	"TAHMOOR": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 7,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Tahmoor"
+		}
+	},
+	"TALLAWAR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9568af7fd637dca3d0c1dfaab3e4a0ec0a12773b-650x488.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 480,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Tallawarra"
+		}
+	},
+	"TALWB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/025c6087767be28172640976e70469949535e1e0-862x575.heif",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 320,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Tallawarra B"
+		}
+	},
+	"TAMALA_PARK": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 6,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Tamala Park"
+		}
+	},
+	"TARALGA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/6947f41d0b0c0b7c1c390c92b0f9676bc3620b24-1600x525.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 106,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Taralga"
+		}
+	},
+	"TARBESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/580ee216ddf4dba73ac19e052c90864887691eb4-1200x674.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 300,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Tarong"
+		}
+	},
+	"TARONG": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2a8ec326930ecfd374f7719bd80d0b7b885d7c72-3840x2880.webp",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 1540,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Tarong"
+		}
+	},
+	"TARONGN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/dd2b373e12958d41db0fb35b9b7ebcaac143105c-1024x679.webp",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 480,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Tarong North"
+		}
+	},
+	"TARRALEA": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/bdfc05a5891638837a301d1d3cc226cbd76c14de-650x442.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 94,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Tarraleah"
+		}
+	},
+	"TATIARA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 1,
+			"status": "operating",
+			"region": "SA",
+			"name": "Tataria"
+		}
+	},
+	"TATURA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Tatura"
+		}
+	},
+	"TB2SF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d8955b80fffad75df50940826dbb84bde811df74-696x359.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 128,
+			"status": "operating",
+			"region": "SA",
+			"name": "Tailem Bend 2"
+		}
+	},
+	"TBBESS3": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 204,
+			"status": "committed",
+			"region": "SA",
+			"name": "Tailem Bend 3"
+		}
+	},
+	"TBSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/ebfa171bfd88ea6cd7a0ac3511c284bfecde4980-1920x685.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 95,
+			"status": "operating",
+			"region": "SA",
+			"name": "Tailem Bend"
+		}
+	},
+	"TEATREE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "retired",
+			"region": "SA",
+			"name": "Tea Tree Gully"
+		}
+	},
+	"TEMPB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d684d9cc4d14685822ae43f5b98ac5c04cc1c5ff-500x500.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 111,
+			"status": "operating",
+			"region": "SA",
+			"name": "Templers"
+		}
+	},
+	"TERALBA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 3,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Teralba"
+		}
+	},
+	"TERANGBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Terang"
+		}
+	},
+	"TERMSTOR": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 2,
+			"status": "retired",
+			"region": "SA",
+			"name": "Terminal"
+		}
+	},
+	"TESLA_GERALDTON": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 10,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Geraldton"
+		}
+	},
+	"TESLA_KEMERTON": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 10,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Kemerton"
+		}
+	},
+	"TESLA_NORTHAM": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/8a18e2c2105c7947cee0eeef6d8545ad63cf740d-862x485.heif",
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 10,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Northam"
+		}
+	},
+	"TESLA_PICTON": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 10,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Picton"
+		}
+	},
+	"TGNSS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_recip"
+			],
+			"dominant": "gas_recip",
+			"capacity": 10,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Traralgon Network Support"
+		}
+	},
+	"THEDROP": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 3,
+			"status": "operating",
+			"region": "NSW",
+			"name": "The Drop"
+		}
+	},
+	"TIB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b84be66963e673b6488d62a62023a91a732d59ac-1200x898.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 250,
+			"status": "operating",
+			"region": "SA",
+			"name": "Torrens Island"
+		}
+	},
+	"TILBSF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 249,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Tilbuster"
+		}
+	},
+	"TIMWEST": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 7.2,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Timboon West"
+		}
+	},
+	"TITREE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 2,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Veolia Ti Tree"
+		}
+	},
+	"TIWEST_COG1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 42.1,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Kwinana Cogen"
+		}
+	},
+	"TOMAGOBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 500,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Tomago"
+		}
+	},
+	"TOORAWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/1904b88099cfe4d158c01b5dfb21391407968d17-650x433.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 21,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Toora"
+		}
+	},
+	"TORRIS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/503e1c4d664dd09f873d0148d6d434a50d18fcb1-650x867.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_steam"
+			],
+			"dominant": "gas_steam",
+			"capacity": 840,
+			"status": "operating",
+			"region": "SA",
+			"name": "Torrens Island"
+		}
+	},
+	"TOWER": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_wcmg"
+			],
+			"dominant": "gas_wcmg",
+			"capacity": 41,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Tower"
+		}
+	},
+	"TREVALLN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c97aff97f840ddc9c511afbc3bc0d3ac7d557c1c-650x657.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 107,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Trevallyn"
+		}
+	},
+	"TRIBUTE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 117,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Tribute"
+		}
+	},
+	"TULLYSM": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9008db6b67e012c41f9ad94fc67b0594555ae6d7-980x551.jpg",
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 10,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Tully Sugar Mill"
+		}
+	},
+	"TUMUT3": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a61acd88bff1d9eba617df2ac40a0fc884f321b9-2272x1704.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro",
+				"pumps"
+			],
+			"dominant": "hydro",
+			"capacity": 2400,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Tumut 3"
+		}
+	},
+	"TUNGATIN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/19da6c30f18ddb67f6a6b34bb002f85ee6547240-650x488.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 142,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Tungatinah"
+		}
+	},
+	"TVCCPS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9f74d076f85b99e039e5d607027c65b706fc2384-480x640.webp",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 208,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Tamar Valley"
+		}
+	},
+	"ULBESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/877215e0ec8c77b1de724286a3294bba62335918-750x422.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 155,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Ulinda Park"
+		}
+	},
+	"URANQ": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e0b165da3efae5bd6d8a81c6a915ac775e93d8fa-650x339.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 692,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Uranquinty"
+		}
+	},
+	"UUNGULAWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 414,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Uungula"
+		}
+	},
+	"VALDORA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 15,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Sunshine Coast"
+		}
+	},
+	"VBB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d21e791cd68e83e3f86ec29c8c4b6a99278e863f-768x614.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 300,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Victorian Big Battery"
+		}
+	},
+	"VICMILL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3bbce67e6feb197107f93194a509ded084d59930-600x400.jpg",
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biomass"
+			],
+			"dominant": "bioenergy_biomass",
+			"capacity": 24,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Victoria Mill"
+		}
+	},
+	"VP": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/54479281fb9f2cf106ce251ba100796d474a3929-1760x1168.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 1360,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Vales Point B"
+		}
+	},
+	"VPGS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4d4bea350d33a666976df6d44867f57506a4f0f3-1000x760.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 360,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Valley Power Peaking"
+		}
+	},
+	"WADDIWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 108,
+			"status": "committed",
+			"region": "WEM",
+			"name": "Waddi"
+		}
+	},
+	"WAGERUP_BESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "committed",
+			"region": "WEM",
+			"name": "Wagerup"
+		}
+	},
+	"WAGGNSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b434a2a322e3c9491adad808fd461a6c0e79a182-2560x1745.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 48,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wagga North"
+		}
+	},
+	"WALGRV": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cba0bb856a7c21cbfd03d93db674ac5ba15707f7-1078x563.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 50,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wallgrove"
+		}
+	},
+	"WAMBOWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5a923395caa332cfccb02c32fa7be7988f46b59e-2560x1440.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 492,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Wambo"
+		}
+	},
+	"WANDBG": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cac2a5885e0768ae9b8825685f767f6026571982-1500x1000.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Wandoan South"
+		}
+	},
+	"WANDSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/efe72f9e2fc186df00958489319f36fbda6a4b85-2048x1151.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 365,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Wandoan"
+		}
+	},
+	"WARRADARGE": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2c69a5ae7806193a0df5a4d881d7aaf88e286263-2500x1667.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 283,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Warradarge"
+		}
+	},
+	"WARWSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5a2bf013c7dca74f099664b5ca4c0b821a37a0a8-1138x758.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 64,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Warwick"
+		}
+	},
+	"WATERLWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4a7b468e4e11f66c5665498d057c0fd950eed147-650x490.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 130,
+			"status": "operating",
+			"region": "SA",
+			"name": "Waterloo"
+		}
+	},
+	"WAUBRAWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/209d342c56bf7cfc0fe0c9b97c2c8d44ae340ab7-650x270.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 192,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Waubra"
+		}
+	},
+	"WDBESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f728ce86f17671ad40442f6f93b067ad8d375e2f-1024x589.jpg",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 255,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Western Downs"
+		}
+	},
+	"WDBESS2": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/b6122dc7de693df0879d4829d14dec492f8b67a1-1920x738.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 255,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Western Downs 2"
+		}
+	},
+	"WDBESS3": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 305,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Western Downs 3"
+		}
+	},
+	"WDGPH": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/0e5a491ef56c528b9ed5c69bd9b6979fe4575ab6-2560x1917.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 400,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Western Downs"
+		}
+	},
+	"WDLNGN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 7,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Woodlawn"
+		}
+	},
+	"WELLINGTONBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 302,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Bulabul"
+		}
+	},
+	"WELLSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/fc46b0de2ed2380fbd46c9c2be089ef66f38e389-2000x800.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 170,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wellington"
+		}
+	},
+	"WELNSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/0837da6010bb3c0f2475aec988a1d85715c7b242-2560x1438.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 330,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wellington North"
+		}
+	},
+	"WEMENSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/fd36022cb663bdf28ca006c71835bfdaa9dd31c4-2500x1872.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 88,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Wemen"
+		}
+	},
+	"WESTCBT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 1,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Western Suburbs League Club"
+		}
+	},
+	"WESTILLA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 1,
+			"status": "operating",
+			"region": "NSW",
+			"name": "West Illawarra Leagues Club"
+		}
+	},
+	"WEST_KALGOORLIE": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"distillate"
+			],
+			"dominant": "distillate",
+			"capacity": 64.5,
+			"status": "operating",
+			"region": "WEM",
+			"name": "West Kalgoorlie"
+		}
+	},
+	"WG": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 50,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Warragamba"
+		}
+	},
+	"WGWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/159203f02826396c24b3218824a005103ecd40c0-1500x1125.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 119,
+			"status": "operating",
+			"region": "SA",
+			"name": "Willogoleche"
+		}
+	},
+	"WHIT1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Whitwood Road"
+		}
+	},
+	"WHITSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/35015c57ff94f674a018ec0ace23e76bb4a53a89-1072x704.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 56,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Whitsunday"
+		}
+	},
+	"WILGAPK": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/7861d097c8c7f7bcef0b8676f4677cc67e7dda8a-800x500.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_recip"
+			],
+			"dominant": "gas_recip",
+			"capacity": 10,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wilga Park"
+		}
+	},
+	"WILGAPKB": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_recip"
+			],
+			"dominant": "gas_recip",
+			"capacity": 12,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wilga Park B"
+		}
+	},
+	"WILLBES": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 250,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Williamsdale"
+		}
+	},
+	"WILLHOV": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 2,
+			"status": "operating",
+			"region": "VIC",
+			"name": "William Hovel"
+		}
+	},
+	"WINDHILL": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5301892c991a59d29e37dae123606c7758500b84-650x433.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 12,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Windy Hill"
+		}
+	},
+	"WINGF1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 5,
+			"status": "operating",
+			"region": "SA",
+			"name": "Wingfield"
+		}
+	},
+	"WINGF2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 5,
+			"status": "operating",
+			"region": "SA",
+			"name": "Wingfield 2"
+		}
+	},
+	"WINTSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/7ba05875c060068355d55ca501d7eb7af4f14910-1800x672.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 85,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Winton"
+		}
+	},
+	"WIVENHOE": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/792fdd2648f7ea7d122ff584be1c77572c844cb6-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro",
+				"pumps"
+			],
+			"dominant": "hydro",
+			"capacity": 1060,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Wivenhoe"
+		}
+	},
+	"WIVENSH": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 5,
+			"status": "retired",
+			"region": "QLD",
+			"name": "Wivenhoe"
+		}
+	},
+	"WKIEWA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 68,
+			"status": "operating",
+			"region": "VIC",
+			"name": "West Kiewa"
+		}
+	},
+	"WLWLSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/05c42e1bfc94b6704fecc4c9e7e15fec8be2876f-1200x675.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 300,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Walla Walla"
+		}
+	},
+	"WNSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/64bf463ec1140d74105f3a9d4c57f3ac14f5ec61-2560x1440.png",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 22,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Wangaratta"
+		}
+	},
+	"WOLARSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c3119a7cecfeedef96fab6cc8fbe486ec0b19100-790x586.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 280,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wollar"
+		}
+	},
+	"WOLLERT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 7,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Wollert"
+		}
+	},
+	"WONWP": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2a5035d583c4daca514b2e8a71231fbcf39bfafd-650x179.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 12,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Wonthaggi"
+		}
+	},
+	"WOODLWN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/5678a268ba2eb7eefe6bee3213a74627b8ad69d0-650x83.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 48,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Woodlawn"
+		}
+	},
+	"WOOLGSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/15631ce9a616380f513c570999daacea19464f52-2000x800.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 398,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Woolooga"
+		}
+	},
+	"WOOLNTH1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/c25312de6140fae6878ea321e8ffb243edecf981-650x341.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 140,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Woolnorth"
+		}
+	},
+	"WOORBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 350,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Wooreen"
+		}
+	},
+	"WOYWOY": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Woy Woy"
+		}
+	},
+	"WPWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/967c79e5f878cdf2e6a586fb307fc5b53ed2b20e-650x975.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 91,
+			"status": "operating",
+			"region": "SA",
+			"name": "Wattle Point"
+		}
+	},
+	"WRSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/f7382fa5669c9a7990b56c260413052d501e8c37-383x647.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 20,
+			"status": "operating",
+			"region": "NSW",
+			"name": "White Rock Solar Farm"
+		}
+	},
+	"WRWF1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 172,
+			"status": "operating",
+			"region": "NSW",
+			"name": "White Rock Wind Farm"
+		}
+	},
+	"WSTWYSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/33f908d4fabe4235e4dd14c40319522cb73c02c6-2000x800.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 90,
+			"status": "operating",
+			"region": "NSW",
+			"name": "West Wyalong"
+		}
+	},
+	"WTAHB": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4ec8fce492731982cc3025c5bcde91fdf5bda1c7-1366x769.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 850,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Waratah Super Battery"
+		}
+	},
+	"WUNUSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e460403df0e1384809a584636a9c100806beb47f-960x768.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 75,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Wunghnu"
+		}
+	},
+	"WW": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/37896bd8f12cb2892280019f95a662f102568e7c-650x487.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 1000,
+			"status": "retired",
+			"region": "NSW",
+			"name": "Wallerawang"
+		}
+	},
+	"WYANGALA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 20,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wyangala A"
+		}
+	},
+	"WYANGALB": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 4,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wyangala B"
+		}
+	},
+	"WYASF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/caf049f19a4204a57f31212a387a8aa5fa0174f7-2018x793.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 53,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Wyalong"
+		}
+	},
+	"WYNDW": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"bioenergy_biogas"
+			],
+			"dominant": "bioenergy_biogas",
+			"capacity": 1,
+			"status": "retired",
+			"region": "VIC",
+			"name": "Wyndham"
+		}
+	},
+	"YABULU": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/20f76a38871bfca3dec23e5ca5a5fb0f415310f7-1000x750.jpg",
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 258,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Townsville"
+		}
+	},
+	"YALLOURN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cbe7d21b01e6142beda4fe6843e65781124c2553-1280x827.jpg",
+		"data": {
+			"fuelTechs": [
+				"coal_brown"
+			],
+			"dominant": "coal_brown",
+			"capacity": 1600,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Yallourn W"
+		}
+	},
+	"YAMBUK": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 30,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Yambuk"
+		}
+	},
+	"YANDIN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/6e5e53304d0ccb57e8910ae2cbf73d2a1e1de579-750x563.heif",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 214,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Yandin"
+		}
+	},
+	"YARANSF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/9a055c5c9cc9cb2f295694dea2737a31a06b0cee-900x600.jpg",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 103,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Yarranlea"
+		}
+	},
+	"YARWUN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ccgt"
+			],
+			"dominant": "gas_ccgt",
+			"capacity": 180,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Yarwun"
+		}
+	},
+	"YATSF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/43f17a9e82b809e0256801d7e129e3afc99ffbe1-640x360.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 81,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Yatpool"
+		}
+	},
+	"YAWWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/376d0a1c07d9cf1c3e1f626823e6879fa9a28828-768x767.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 7.2,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Yawong"
+		}
+	},
+	"YENDONWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/d2ab048c6f64ca5afe2a3062e20509298788431f-1720x1714.webp",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 142,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Yendon"
+		}
+	},
+	"YSWF": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/a7261f99048f9674723cd25e1c5993b8e18648a7-1600x525.jpg",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 28,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Yaloak South"
+		}
+	},
+	"YWNGAHYD": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 9,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Yarrawonga"
 		}
 	}
 }
