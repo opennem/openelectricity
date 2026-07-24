@@ -66,5 +66,7 @@ jobs:
             echo "No OG card changes."
           else
             git commit -m "Regenerate facility OG cards"
+            # main may have moved during the render — replay our commit on top
+            git pull --rebase origin main
             git push
           fi
