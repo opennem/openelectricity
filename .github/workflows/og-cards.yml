@@ -10,10 +10,11 @@ name: Regenerate facility OG cards
 # with force=true for a full re-render (recovery, or after a renderer change
 # without an OG_CARD_VERSION bump).
 #
-# Requires repo secrets: PUBLIC_OE_API_URL, PUBLIC_OE_API_KEY,
-# PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET. The push to main needs
-# github-actions to be allowed past branch protection (or swap GITHUB_TOKEN for
-# a PAT / convert this to a pull request).
+# Requires one repo secret: DOPPLER_TOKEN — a read-only Doppler service token
+# for the openelectricity/dev config (where the PUBLIC_OE_API_* and
+# PUBLIC_SANITY_* values live); `doppler run` injects them at runtime. The push
+# to main needs github-actions to be allowed past branch protection (or swap
+# GITHUB_TOKEN for a PAT / convert this to a pull request).
 
 on:
   schedule:
@@ -43,17 +44,17 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
       - name: Regenerate OG cards
         env:
-          PUBLIC_OE_API_URL: ${{ secrets.PUBLIC_OE_API_URL }}
-          PUBLIC_OE_API_KEY: ${{ secrets.PUBLIC_OE_API_KEY }}
-          PUBLIC_SANITY_PROJECT_ID: ${{ secrets.PUBLIC_SANITY_PROJECT_ID }}
-          PUBLIC_SANITY_DATASET: ${{ secrets.PUBLIC_SANITY_DATASET }}
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
         run: |
           if [ "${{ inputs.force }}" = "true" ]; then
-            pnpm build:og:force
+            doppler run -- pnpm build:og:force
           else
-            pnpm build:og
+            doppler run -- pnpm build:og
           fi
 
       - name: Commit changed cards
