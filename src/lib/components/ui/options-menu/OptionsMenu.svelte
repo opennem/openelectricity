@@ -114,7 +114,9 @@
 					<OptionsMenuDivider />
 				{/if}
 
-				<OptionsMenuItem icon={BookOpen} href={DOCS_URL}>Documentation</OptionsMenuItem>
+				<OptionsMenuItem icon={BookOpen} href={DOCS_URL} external={true}
+					>Documentation</OptionsMenuItem
+				>
 			{/if}
 		</div>
 	{/if}

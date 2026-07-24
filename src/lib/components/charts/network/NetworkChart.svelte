@@ -5,8 +5,9 @@
 	 * Network analogue of `FacilityChart`: drives a `ChartStore` + `ChartDataManager`
 	 * through `StratumChart`, reusing the same pan/zoom, gap-aware caching and
 	 * display-aggregation pipeline. Data comes from `/api/network/data` instead of
-	 * the facility endpoint, and series are fuel-tech groups (Generation) or a
-	 * single spot-price line (Price).
+	 * the facility endpoint, and series are fuel-tech groups (Generation), a
+	 * single spot-price line (Price), or market series — demand, curtailment and
+	 * flows plus their `_energy` variants — configured via `market-metrics.js`.
 	 */
 
 	import { untrack } from 'svelte';
@@ -27,6 +28,8 @@
 	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 	import { processNetworkData } from './process-network-data.js';
 	import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
+	import { processMarketData } from './process-market-data.js';
+	import { getMarketMetricConfig } from './market-metrics.js';
 	import { getGroup } from './groups.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { loadFuelTechs } from '$lib/fuel_techs';
@@ -37,7 +40,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} region - Explorer region value ('_all', 'nsw1'…, 'wem')
-	 * @property {'power' | 'energy' | 'price'} [metric] - API metric
+	 * @property {'power' | 'energy' | 'price' | 'demand' | 'demand_energy' | 'curtailment' | 'curtailment_energy' | 'flows' | 'flows_energy'} [metric] - API metric
 	 * @property {string} [interval] - Native OE interval (5m, 1h, 1d, 1M…)
 	 * @property {string} [displayInterval] - Display interval for aggregation
 	 * @property {string} [group] - Fuel-tech grouping value (Generation only)
@@ -95,7 +98,8 @@
 
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let isPriceKind = $derived(chartKind === 'line');
-	let isEnergyMetric = $derived(metric === 'energy');
+	let marketConfig = $derived(getMarketMetricConfig(metric));
+	let isEnergyMetric = $derived(metric === 'energy' || metric.endsWith('_energy'));
 
 	/** Fine grain (sub-daily) drives the power-style viewport limits. */
 	let fineGrain = $derived(interval === '5m' || interval === '1h');
@@ -121,11 +125,17 @@
 	let groupConfig = $derived(getGroup(group));
 
 	/**
-	 * Process function for the active panel — fuel-tech-grouped generation or a
-	 * single price line. Captured into the data manager so it runs on every fetch.
+	 * Process function for the active panel — fuel-tech-grouped generation, a
+	 * single price line, or configured market series. Captured into the data
+	 * manager so it runs on every fetch.
 	 */
 	let processResponseFn = $derived.by(() => {
 		const tz = timeZone || '+10:00';
+		if (marketConfig) {
+			const cfg = marketConfig;
+			return (/** @type {any} */ resp) =>
+				processMarketData(resp, { seriesDefs: cfg.seriesDefs, networkTimezone: tz });
+		}
 		if (isPriceKind) {
 			return (/** @type {any} */ resp) =>
 				processPriceData(resp, { metricFilter: 'price', networkTimezone: tz });
@@ -195,8 +205,10 @@
 		const currentMetric = metric;
 		const currentInterval = interval;
 		const currentKind = chartKind;
-		// The processed series set is group-dependent for generation panels.
-		const currentSeriesKey = isPriceKind ? '' : group;
+		const currentMarketConfig = marketConfig;
+		// The processed series set is group-dependent for generation panels only —
+		// price and market metrics carry a fixed series set.
+		const currentSeriesKey = isPriceKind || currentMarketConfig ? '' : group;
 		// `processResponseFn` already depends on `group` (via groupConfig), so a
 		// group change recomputes it and re-runs this effect with a fresh manager.
 		const processFn = processResponseFn;
@@ -276,9 +288,52 @@
 	// Chart store
 	// ============================================
 
+	/**
+	 * Presentation shared by every panel kind — height, padding and tick
+	 * snapping. Called inside the `chartStore` derived so the prop reads
+	 * (chartHeight, chartHeightPx) stay tracked exactly as before.
+	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 */
+	function applyCommonStyles(chart) {
+		chart.chartStyles.chartHeightClasses = chartHeight;
+		if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
+		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
+		chart.chartStyles.snapTicks = true;
+	}
+
+	/**
+	 * Time-axis tick labels for the market and generation arms — the price arm
+	 * keeps the ChartStore default.
+	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 */
+	function applyTimeTickFormat(chart) {
+		chart.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
+	}
+
 	/** @type {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} */
 	let chartStore = $derived.by(() => {
 		// Recreated when the panel kind flips (isPriceKind tracks chartKind).
+		if (marketConfig) {
+			const chart = new ChartStore({
+				key: Symbol('network-market'),
+				title: title || 'Market',
+				prefix: /** @type {SiPrefix} */ (marketConfig.prefix),
+				displayPrefix: /** @type {SiPrefix} */ (marketConfig.prefix),
+				baseUnit: marketConfig.baseUnit,
+				// Line kind renders as a line; stacked kind takes the constructor's
+				// 'stacked-area' default, same as the generation store.
+				chartType: marketConfig.chartKind === 'line' ? 'line' : undefined,
+				timeZone
+			});
+			applyCommonStyles(chart);
+			chart.hideDataOptions = true;
+			chart.hideChartTypeOptions = true;
+			chart.useDivergingStack = marketConfig.diverging ?? useDivergingStack;
+			if (marketConfig.chartKind === 'line') chart.chartTooltips.showTotal = false;
+			applyTimeTickFormat(chart);
+			return chart;
+		}
+
 		if (isPriceKind) {
 			const chart = new ChartStore({
 				key: Symbol('network-price'),
@@ -289,10 +344,7 @@
 				chartType: 'line',
 				timeZone
 			});
-			chart.chartStyles.chartHeightClasses = chartHeight;
-			if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
-			chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
-			chart.chartStyles.snapTicks = true;
+			applyCommonStyles(chart);
 			chart.hideDataOptions = true;
 			chart.hideChartTypeOptions = true;
 			chart.chartTooltips.showTotal = false;
@@ -309,12 +361,9 @@
 			baseUnit: 'W',
 			timeZone
 		});
-		chart.chartStyles.chartHeightClasses = chartHeight;
-		if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
-		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
-		chart.chartStyles.snapTicks = true;
+		applyCommonStyles(chart);
 		chart.useDivergingStack = useDivergingStack;
-		chart.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
+		applyTimeTickFormat(chart);
 		return chart;
 	});
 
@@ -325,7 +374,8 @@
 
 	// Title sync
 	$effect(() => {
-		if (chartStore) chartStore.title = title || (isPriceKind ? 'Price' : 'Generation');
+		if (chartStore)
+			chartStore.title = title || (marketConfig ? 'Market' : isPriceKind ? 'Price' : 'Generation');
 	});
 
 	// Series metadata
@@ -340,6 +390,17 @@
 	// Metric-dependent options (unit + curve)
 	$effect(() => {
 		if (!chartStore) return;
+		if (marketConfig) {
+			chartStore.chartOptions.baseUnit = marketConfig.baseUnit;
+			chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
+				marketConfig.chartKind === 'line'
+					? (getIntervalSpec(displayInterval)?.curveType ?? 'straight')
+					: isEnergyMetric
+						? 'step'
+						: 'straight'
+			);
+			return;
+		}
 		if (isPriceKind) {
 			chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
 				getIntervalSpec(displayInterval)?.curveType ?? 'straight'
