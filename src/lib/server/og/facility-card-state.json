@@ -1141,6 +1141,20 @@
 			"name": "Bungama"
 		}
 	},
+	"BURRIN": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/e1fefb3ea2ac745559f9800bf7c931cae9fa6896-960x640.webp",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 34,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Burrinjuck"
+		}
+	},
 	"BUSF": {
 		"v": 1,
 		"photo": "https://cdn.sanity.io/images/bjedimft/production/c4455ed6ca8742c98411d6d4e6f34a2a8aa07bdc-2560x1707.jpg",
@@ -1153,6 +1167,20 @@
 			"status": "operating",
 			"region": "QLD",
 			"name": "Bundaberg"
+		}
+	},
+	"BUTLERSG": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/aa6348bd317b5edae90498a1d0e5de648708cce1-650x434.jpg",
+		"data": {
+			"fuelTechs": [
+				"hydro"
+			],
+			"dominant": "hydro",
+			"capacity": 15,
+			"status": "operating",
+			"region": "TAS",
+			"name": "Butlers Gorge"
 		}
 	},
 	"BWTR1": {
@@ -2392,6 +2420,21 @@
 			"name": "Eraring"
 		}
 	},
+	"FCOAST": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 470,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Fraser Coast"
+		}
+	},
 	"FINLEYSF": {
 		"v": 1,
 		"photo": "https://cdn.sanity.io/images/bjedimft/production/b2f19dcafc66e9df46d6030ae1155c3fb3818f07-2048x1364.jpg",
@@ -2854,6 +2897,20 @@
 			"status": "operating",
 			"region": "QLD",
 			"name": "Greenbank"
+		}
+	},
+	"GREENOUGH_RIVER": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3e4fcbef2184894de8211db400b0f2d139935162-2500x1554.webp",
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 40,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Greenough River"
 		}
 	},
 	"GRIFSF": {
@@ -3942,6 +3999,20 @@
 			"name": "Limestone Coast North"
 		}
 	},
+	"LDBESS": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3c2b771c6a495b5c6c1e35fcb6640bfe29400906-1200x676.webp",
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 500,
+			"status": "operating",
+			"region": "NSW",
+			"name": "Liddell"
+		}
+	},
 	"LEM_WIL": {
 		"v": 1,
 		"photo": null,
@@ -3954,6 +4025,21 @@
 			"status": "operating",
 			"region": "TAS",
 			"name": "Lemonthyme / Wilmot"
+		}
+	},
+	"LGAPWF1": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/3657211c9165f01d7a537b31d29ef0ec6d812d8a-750x561.heif",
+		"data": {
+			"fuelTechs": [
+				"wind",
+				"battery"
+			],
+			"dominant": "wind",
+			"capacity": 221,
+			"status": "operating",
+			"region": "SA",
+			"name": "Lincoln Gap"
 		}
 	},
 	"LIDDELL": {
@@ -4436,6 +4522,20 @@
 			"name": "Murray Bridge-Onkaparinga"
 		}
 	},
+	"MCINTYR": {
+		"v": 1,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/1f1a4730ad69e200ae65eda3e15d374751213ea0-2000x1125.png",
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 890,
+			"status": "operating",
+			"region": "QLD",
+			"name": "MacIntyre"
+		}
+	},
 	"MCKAY": {
 		"v": 1,
 		"photo": null,
@@ -4652,10 +4752,11 @@
 		"photo": "https://cdn.sanity.io/images/bjedimft/production/1746ae7b9c290eac6268a92a24949f6923bcd61a-1920x1440.webp",
 		"data": {
 			"fuelTechs": [
-				"solar_utility"
+				"solar_utility",
+				"battery"
 			],
 			"dominant": "solar_utility",
-			"capacity": 46,
+			"capacity": 86,
 			"status": "operating",
 			"region": "VIC",
 			"name": "Mokoan"
@@ -5553,7 +5654,7 @@
 				"gas_ocgt"
 			],
 			"dominant": "gas_ocgt",
-			"capacity": 600.6,
+			"capacity": 600.5999999999999,
 			"status": "operating",
 			"region": "WEM",
 			"name": "Pinjar"
@@ -5908,6 +6009,21 @@
 			"status": "operating",
 			"region": "NSW",
 			"name": "Riverina 1"
+		}
+	},
+	"RICHMOND": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 475,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Richmond Valley"
 		}
 	},
 	"RIVERINASF": {
