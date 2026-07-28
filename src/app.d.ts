@@ -1,6 +1,14 @@
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
 declare global {
+	// Fathom Analytics, loaded via the CDN snippet in app.html. Optional
+	// because the deferred script may not have loaded (or is ad-blocked).
+	interface Window {
+		fathom?: {
+			trackEvent(name: string): void;
+		};
+	}
+
 	namespace App {
 		// interface Error {}
 		// interface Locals {}

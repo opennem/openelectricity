@@ -4,6 +4,7 @@
 	import AnimationTimeline from '$lib/components/playback/AnimationTimeline.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import clamp from '$lib/utils/clamp.js';
+	import { trackEvent } from '$lib/utils/analytics.js';
 	import formatValue from '../_utils/format-value';
 	import { CAPACITY_TOOLTIP } from '../_utils/capacity-tooltip.js';
 
@@ -83,6 +84,7 @@
 	}
 
 	function handleOpen() {
+		trackEvent('facilities: play animation');
 		pendingPlay = true;
 		onopen?.();
 	}
