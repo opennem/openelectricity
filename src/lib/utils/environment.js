@@ -18,3 +18,15 @@ export function isNonProductionHost(hostname) {
 	if (h.endsWith('.pages.dev') && h.split('.').length > 3) return true;
 	return false;
 }
+
+/**
+ * Returns true if the given hostname belongs to an Open Electricity site —
+ * the apex domain or any subdomain (e.g. `explore.openelectricity.org.au`).
+ *
+ * @param {string | undefined | null} hostname
+ * @returns {boolean}
+ */
+export function isOpenElectricityHost(hostname) {
+	if (!hostname) return false;
+	return /(^|\.)openelectricity\.org\.au$/.test(hostname.toLowerCase());
+}
