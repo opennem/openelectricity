@@ -53,35 +53,6 @@ pnpm run doppler-dev     # runs vite dev with secrets injected from Doppler
 
 `doppler-dev`, `doppler-build`, and `doppler-preview` are maintainer conveniences that wrap their plain counterparts in `doppler run --`. The plain scripts (with a local `.env`) remain the canonical path for contributors and forks — no Doppler account required.
 
-#### Feature flags
-
-Build-time toggles for incomplete or experimental UI live in `PUBLIC_FEATURE_FLAGS` — a single JSON-string env var. Flags are parsed in `src/lib/stores/app.js` and read via `isFeatureEnabled('flag_name')`. Flip a value and restart the dev server to apply.
-
-Current flags:
-
-| Flag           | Default | Effect                                                                           |
-| -------------- | ------- | -------------------------------------------------------------------------------- |
-| `tracker2_nav` | `false` | Surfaces the in-progress **Tracker2** (Explorer dashboard) link in the main nav. |
-
-Toggle locally via `.env`:
-
-```bash
-# .env
-PUBLIC_FEATURE_FLAGS='{
-  "tracker2_nav": true
-}'
-```
-
-Toggle in Doppler (maintainers — apply per environment):
-
-```bash
-doppler secrets set PUBLIC_FEATURE_FLAGS='{"tracker2_nav": true}' --config dev
-doppler secrets set PUBLIC_FEATURE_FLAGS='{"tracker2_nav": true}' --config stg
-doppler secrets set PUBLIC_FEATURE_FLAGS='{"tracker2_nav": true}' --config prd
-```
-
-The full JSON object replaces the previous value, so include every flag you want to keep — run `doppler secrets get PUBLIC_FEATURE_FLAGS --plain --config <name>` first to see the current value.
-
 ## Commands
 
 | Command                    | Description                                                                |
