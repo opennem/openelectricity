@@ -16,6 +16,7 @@
 		FacilityEmissionsVolumeChart,
 		FacilityEmissionsDataProvider,
 		FacilityPollutionPanel,
+		FacilityCurtailmentPanel,
 		FacilityMetrics
 	} from '$lib/components/charts/facility';
 	import { clickoutside } from '@svelte-put/clickoutside';
@@ -138,6 +139,12 @@
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let powerChart = $state(undefined);
 
+	/** The curtailment panel re-exports `setViewport`/`reconcileFetches` from the
+	 *  NetworkChart it wraps, so the range controller drives it as a peer of the
+	 *  generation chart. Undefined for facilities with no curtailment split. */
+	/** @type {import('$lib/components/charts/facility/curtailment/FacilityCurtailmentPanel.svelte').default | undefined} */
+	let curtailmentPanel = $state(undefined);
+
 	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
 
 	// Facility location for the mobile Map tab (mirrors FacilityMediaPanel's source).
@@ -217,7 +224,9 @@
 			viewStart = startMs;
 			viewEnd = endMs;
 		},
-		chart: () => powerChart,
+		// Both charts that own a viewport internally. The controller pushes ranges
+		// into them inside one echo-guarded window and reconciles them together.
+		charts: () => [powerChart, curtailmentPanel],
 		timeZone: () => timeZone,
 		earliestDate: () => earliestDate,
 		initialRangeDays: data.rangeDays ?? 3
@@ -559,9 +568,7 @@
 							<section class={chartCardClass}>
 								<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 									<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
-									<span
-										class="rounded bg-light-warm-grey px-2 py-0.5 text-xs uppercase tracking-wider text-dark-grey"
-									>
+									<span class="rounded bg-light-warm-grey px-2 py-0.5 text-xs text-dark-grey">
 										{getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval}
 									</span>
 								</div>
@@ -629,6 +636,28 @@
 							</section>
 
 							{#if !showEmptyState}
+								<!-- Regional curtailment for this facility's fuel tech — directly
+								     under Generation, the series it gives context to. Renders itself
+								     away when the facility has no applicable split (WEM, or no
+								     wind/utility-solar units). -->
+								<FacilityCurtailmentPanel
+									bind:this={curtailmentPanel}
+									facility={selectedFacility}
+									{timeZone}
+									basis={range.activeMetric}
+									interval={range.activeInterval}
+									displayInterval={range.displayInterval}
+									{viewStart}
+									{viewEnd}
+									cardClass={chartCardClass}
+									{hoverTime}
+									{hiddenUnitCodes}
+									onhoverchange={handleHoverChange}
+									onviewportchange={(r) => range.handleDerivedViewportChange(r, curtailmentPanel)}
+									onviewportsettle={range.handleViewportSettle}
+									bind:panZoomEngaged
+								/>
+
 								<FacilityFinancialDataProvider
 									facility={activeFacility}
 									priceFacility={splitFacility}

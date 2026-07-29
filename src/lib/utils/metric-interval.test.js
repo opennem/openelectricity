@@ -65,12 +65,12 @@ describe('getHysteresisSwitch', () => {
 
 	it('never targets a non-native interval', () => {
 		const native = new Set(['5m', '1d', '1M', '1y']);
-		for (const [m, i] of [
+		for (const [m, i] of /** @type {Array<['power' | 'energy', string]>} */ ([
 			['power', '5m'],
 			['energy', '1d'],
 			['energy', '1M'],
 			['energy', '1y']
-		]) {
+		])) {
 			for (const d of [1, 20, 400, 1000, 2000, 9000]) {
 				const r = getHysteresisSwitch(m, i, d);
 				if (r) expect(native.has(r.interval)).toBe(true);

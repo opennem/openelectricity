@@ -41,7 +41,7 @@ const HYST_DAILY_TO_POWER = 8;
  * is selected. For pan/zoom use `getHysteresisSwitch` instead.
  *
  * @param {number} days
- * @returns {{ metric: string, interval: string }}
+ * @returns {{ metric: 'power' | 'energy', interval: string }}
  */
 export function getMetricIntervalForDays(days) {
 	if (days < POWER_THRESHOLD) {
@@ -62,10 +62,10 @@ export function getMetricIntervalForDays(days) {
  * otherwise `{ metric, interval }`. Operates only on the native ladder
  * `5m ↔ 1d ↔ 1M ↔ 1y`.
  *
- * @param {string} currentMetric
+ * @param {'power' | 'energy'} currentMetric
  * @param {string} currentInterval
  * @param {number} durationDays
- * @returns {{ metric: string, interval: string } | null}
+ * @returns {{ metric: 'power' | 'energy', interval: string } | null}
  */
 export function getHysteresisSwitch(currentMetric, currentInterval, durationDays) {
 	let targetMetric = currentMetric;
@@ -128,10 +128,10 @@ export function getHysteresisSwitch(currentMetric, currentInterval, durationDays
  * `durationDays` (the out-threshold of every rung exceeds its in-threshold,
  * so a step can never reverse). Returns `null` when no switch is needed.
  *
- * @param {string} currentMetric
+ * @param {'power' | 'energy'} currentMetric
  * @param {string} currentInterval
  * @param {number} durationDays
- * @returns {{ metric: string, interval: string } | null}
+ * @returns {{ metric: 'power' | 'energy', interval: string } | null}
  */
 export function getHysteresisTarget(currentMetric, currentInterval, durationDays) {
 	let metric = currentMetric;
