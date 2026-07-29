@@ -18,7 +18,7 @@
  *     rooftop solar is excluded
  */
 
-import { regionsWithLabels } from '$lib/regions.js';
+import { getRegionLongLabel } from '$lib/facilities/filters.js';
 
 /**
  * Facility fuel techs the OE API publishes a curtailment split for.
@@ -36,11 +36,17 @@ const CURTAILMENT_NETWORK = 'NEM';
  * @typedef {'wind' | 'solar' | 'both'} CurtailmentKind
  */
 
+/** @type {Record<CurtailmentKind, string>} */
+const CURTAILMENT_LABELS = {
+	wind: 'Wind curtailment',
+	solar: 'Solar curtailment',
+	both: 'Wind & solar curtailment'
+};
+
 /**
  * @typedef {Object} CurtailmentScope
  * @property {CurtailmentKind} kind - Which fuel-tech split(s) apply
  * @property {string} region - Explorer region value for NetworkChart ('vic1'…)
- * @property {string} regionLabel - Market region code ('VIC1')
  * @property {string} regionName - Region as shown to the reader ('Victoria')
  * @property {string} label - Panel heading
  * @property {string} note - The non-attribution caveat, for the heading's tooltip
@@ -73,16 +79,13 @@ export function facilityCurtailmentScope(facility) {
 	/** @type {CurtailmentKind} */
 	const kind = kinds.size > 1 ? 'both' : /** @type {CurtailmentKind} */ ([...kinds][0]);
 
-	const regionValue = String(region).toLowerCase();
-	const regionLabel = String(region).toUpperCase();
-	// Friendly name for display ('Victoria'); falls back to the market code for
-	// any region not in the options list.
-	const regionName = regionsWithLabels[regionValue] ?? regionLabel;
+	// Same region-name source every other facility surface reads (the picker bar,
+	// cards, map), so a label edit reaches all of them at once.
+	const regionName = getRegionLongLabel(facility.network_id, String(region));
 
 	return {
 		kind,
-		region: regionValue,
-		regionLabel,
+		region: String(region).toLowerCase(),
 		regionName,
 		label: CURTAILMENT_LABELS[kind],
 		note:
@@ -90,13 +93,6 @@ export function facilityCurtailmentScope(facility) {
 			'It is not attributed to this facility, and may be occurring entirely at other sites.'
 	};
 }
-
-/** @type {Record<CurtailmentKind, string>} */
-const CURTAILMENT_LABELS = {
-	wind: 'Wind curtailment',
-	solar: 'Solar curtailment',
-	both: 'Wind & solar curtailment'
-};
 
 /**
  * @typedef {'curtailment' | 'curtailment_energy' | 'curtailment_wind'

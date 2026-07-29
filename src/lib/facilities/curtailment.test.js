@@ -16,7 +16,6 @@ describe('facilityCurtailmentScope', () => {
 		expect(facilityCurtailmentScope(facility())).toEqual({
 			kind: 'wind',
 			region: 'vic1',
-			regionLabel: 'VIC1',
 			regionName: 'Victoria',
 			label: 'Wind curtailment',
 			note: expect.stringContaining('Victoria')

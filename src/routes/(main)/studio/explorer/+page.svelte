@@ -189,7 +189,7 @@
 			durationDays
 		);
 		if (next) {
-			activeMetric = /** @type {'power' | 'energy'} */ (next.metric);
+			activeMetric = next.metric;
 			activeInterval = next.interval;
 		}
 	}

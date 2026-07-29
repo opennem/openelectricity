@@ -20,6 +20,7 @@
 	 * `onviewportchange` / `onviewportsettle`.
 	 */
 
+	import { untrack } from 'svelte';
 	import { Info } from '@lucide/svelte';
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
@@ -38,8 +39,6 @@
 	 * @property {string} displayInterval - Display interval for aggregation
 	 * @property {number} viewStart
 	 * @property {number} viewEnd
-	 * @property {string} [dateStart] - Initial viewport start (before the first push)
-	 * @property {string} [dateEnd] - Initial viewport end
 	 * @property {string} [cardClass] - Section card chrome from the page
 	 * @property {string} [chartHeight]
 	 * @property {number | undefined} [hoverTime]
@@ -47,7 +46,6 @@
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportsettle]
 	 * @property {number} [reconcileSeq] - Bumped by the range control when a peer gesture settles
-	 * @property {number} [minDateMs]
 	 * @property {boolean} [panZoomEngaged]
 	 */
 
@@ -60,8 +58,6 @@
 		displayInterval,
 		viewStart,
 		viewEnd,
-		dateStart = '',
-		dateEnd = '',
 		cardClass = '',
 		chartHeight = 'h-[160px]',
 		hoverTime = undefined,
@@ -69,45 +65,58 @@
 		onviewportchange,
 		onviewportsettle,
 		reconcileSeq = 0,
-		minDateMs = undefined,
 		panZoomEngaged = $bindable(false)
 	} = $props();
 
 	let scope = $derived(facilityCurtailmentScope(facility));
-	/** The `?? 'both'` fallback never renders — the panel is gated on `scope` —
-	 *  but keeps this a valid NetworkChart metric rather than an empty string. */
-	let metric = $derived(curtailmentMetric(scope?.kind ?? 'both', basis));
 
 	/** @type {NetworkChart | undefined} */
 	let chart = $state(undefined);
 
 	/** Last range mirrored into (or reported by) the chart. Plain object, not
 	 *  `$state` — it's bookkeeping to break the push/echo cycle, and making it
-	 *  reactive would re-run the mirroring effect on every write. */
+	 *  reactive would re-run the mirroring effect on every write. Reset when the
+	 *  chart goes away so a remount is never skipped by a stale match (retired
+	 *  facilities can produce byte-identical ranges across navigations). */
 	let applied = { start: 0, end: 0 };
 
-	// Mirror the page's viewport down. Skipped when it already matches what the
-	// chart last reported, so a gesture here doesn't get pushed straight back.
+	// Mirror the page's viewport down. `NetworkChart` owns its viewport
+	// internally, so this is the only thing that gives it one — no `dateStart`
+	// seed, which would fetch a default window before the page's real range is
+	// known and then throw it away on the first push.
 	$effect(() => {
 		const start = viewStart;
 		const end = viewEnd;
 		const c = chart;
-		if (!start || !end || !c) return;
+		if (!c) {
+			applied = { start: 0, end: 0 };
+			return;
+		}
+		if (!start || !end) return;
 		if (applied.start === start && applied.end === end) return;
 		applied = { start, end };
 		c.setViewport(start, end);
 	});
 
 	// A gesture settled on a peer chart: prune this chart's now-stale in-flight
-	// fetches. Mirrors how the derived providers consume `reconcileSeq`.
+	// fetches. Mirrors how the derived providers consume `reconcileSeq` — the
+	// seq dedupe plus `untrack` keeps it from firing on mount or on an unrelated
+	// chart-identity change.
+	let lastReconcileSeq = 0;
 	$effect(() => {
 		const seq = reconcileSeq;
-		if (!seq) return;
-		chart?.reconcileFetches();
+		if (seq === lastReconcileSeq) return;
+		lastReconcileSeq = seq;
+		untrack(() => chart?.reconcileFetches());
 	});
 
 	/** @param {{ start: number, end: number }} range */
 	function handleViewportChange(range) {
+		// Ignore the chart echoing back a viewport we just pushed into it —
+		// forwarding it would re-enter the range controller, which is not
+		// echo-guarded on this path and would push the range into the generation
+		// chart mid-gesture. A clamped (genuinely different) range still reports.
+		if (applied.start === range.start && applied.end === range.end) return;
 		applied = { start: range.start, end: range.end };
 		onviewportchange?.(range);
 	}
@@ -131,27 +140,25 @@
 			</span>
 		</div>
 
-		<NetworkChart
-			bind:this={chart}
-			region={scope.region}
-			{metric}
-			{interval}
-			{displayInterval}
-			chartKind="stacked"
-			{timeZone}
-			{dateStart}
-			{dateEnd}
-			title="Curtailment"
-			{chartHeight}
-			showContainer={false}
-			tooltipMode="floating"
-			{hoverTime}
-			{onhoverchange}
-			onviewportchange={handleViewportChange}
-			{onviewportsettle}
-			panZoomMode="tap-to-engage"
-			bind:panZoomEngaged
-			{minDateMs}
-		/>
+		{#if viewStart && viewEnd}
+			<NetworkChart
+				bind:this={chart}
+				region={scope.region}
+				metric={curtailmentMetric(scope.kind, basis)}
+				{interval}
+				{displayInterval}
+				{timeZone}
+				title="Curtailment"
+				{chartHeight}
+				showContainer={false}
+				tooltipMode="floating"
+				{hoverTime}
+				{onhoverchange}
+				onviewportchange={handleViewportChange}
+				{onviewportsettle}
+				panZoomMode="tap-to-engage"
+				bind:panZoomEngaged
+			/>
+		{/if}
 	</section>
 {/if}

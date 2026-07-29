@@ -640,8 +640,6 @@
 									displayInterval={range.displayInterval}
 									{viewStart}
 									{viewEnd}
-									{dateStart}
-									{dateEnd}
 									cardClass={chartCardClass}
 									{hoverTime}
 									onhoverchange={handleHoverChange}

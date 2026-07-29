@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { MARKET_METRIC_NAMES } from './market-metric-names.js';
 import { MARKET_METRIC_CONFIG, getMarketMetricConfig } from './market-metrics.js';
+import { curtailmentMetric } from '$lib/facilities/curtailment.js';
 
 /**
  * The market layer is split across two files by design — `market-metric-names.js`
@@ -32,14 +33,24 @@ describe('market metric config', () => {
 		}
 	});
 
-	it('gives the single-fuel-tech curtailment metrics exactly one series each', () => {
-		for (const metric of ['curtailment_wind', 'curtailment_solar']) {
-			const config = getMarketMetricConfig(metric);
-			expect(config?.seriesDefs).toHaveLength(1);
-			expect(config?.baseUnit).toBe('W');
-		}
+	it('splits curtailment by fuel tech, with the combined key keeping both', () => {
+		expect(getMarketMetricConfig('curtailment_wind')?.seriesDefs).toHaveLength(1);
+		expect(getMarketMetricConfig('curtailment_solar')?.seriesDefs).toHaveLength(1);
 		// The combined key keeps both splits, for facilities with wind and solar.
 		expect(getMarketMetricConfig('curtailment')?.seriesDefs).toHaveLength(2);
+	});
+
+	it('resolves every metric the facility curtailment panel can request', () => {
+		// The panel picks its metric in $lib/facilities/curtailment.js, a different
+		// package from this registry. Renaming a key here (or there) would silently
+		// fall through to the generation arm of NetworkChart and render nothing —
+		// this is the assertion that catches the drift.
+		for (const kind of /** @type {const} */ (['wind', 'solar', 'both'])) {
+			for (const basis of /** @type {const} */ (['power', 'energy'])) {
+				const metric = curtailmentMetric(kind, basis);
+				expect(getMarketMetricConfig(metric), `${kind}/${basis} → ${metric}`).toBeDefined();
+			}
+		}
 	});
 
 	it('pairs each power metric with an energy variant carrying Wh', () => {
