@@ -651,6 +651,7 @@
 									{viewEnd}
 									cardClass={chartCardClass}
 									{hoverTime}
+									{hiddenUnitCodes}
 									onhoverchange={handleHoverChange}
 									onviewportchange={(r) => range.handleDerivedViewportChange(r, curtailmentPanel)}
 									onviewportsettle={range.handleViewportSettle}

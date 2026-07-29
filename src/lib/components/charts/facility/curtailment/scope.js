@@ -94,5 +94,51 @@ export function facilityCurtailmentScope(facility) {
 	};
 }
 
+/** Series id `market-metrics.js` gives each split, for hiding them by name. */
+const SPLIT_SERIES_ID = /** @type {const} */ ({
+	wind: 'curtailment_wind',
+	solar: 'curtailment_solar'
+});
+
+/**
+ * Curtailment series to hide, given the units currently toggled off in the
+ * units panel.
+ *
+ * A facility with wind and utility solar draws both splits, and hiding its wind
+ * units should take the wind split with it. The mapping is all-or-nothing per
+ * split: the series is a whole-of-region aggregate, so hiding *some* wind units
+ * says nothing about it — only when a facility has no visible unit of that fuel
+ * tech left does the split stop being relevant to what's on screen.
+ *
+ * Returns nothing when that would empty the chart, mirroring the hide-all guard
+ * on the units panel itself.
+ *
+ * @param {any} facility
+ * @param {string[]} hiddenUnitCodes
+ * @returns {string[]} Series ids for `NetworkChart`'s `hiddenSeriesNames`
+ */
+export function hiddenCurtailmentSeries(facility, hiddenUnitCodes) {
+	const units = facility?.units ?? [];
+	if (!units.length || !hiddenUnitCodes?.length) return [];
+
+	const hidden = new Set(hiddenUnitCodes);
+	/** @type {Set<'wind' | 'solar'>} */
+	const drawn = new Set();
+	/** @type {Set<'wind' | 'solar'>} */
+	const visible = new Set();
+
+	for (const unit of units) {
+		const split = CURTAILMENT_BY_FUELTECH[unit?.fueltech_id];
+		if (!split) continue;
+		drawn.add(split);
+		if (!hidden.has(unit.code)) visible.add(split);
+	}
+
+	// Every split lost its units — keep the chart as it was rather than blanking it.
+	if (visible.size === 0) return [];
+
+	return [...drawn].filter((split) => !visible.has(split)).map((split) => SPLIT_SERIES_ID[split]);
+}
+
 // The kind → `/api/network/data` metric mapping lives with the metric registry
 // it has to agree with, in `network/market-metrics.js` — see `curtailmentMetric`.

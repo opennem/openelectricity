@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { facilityCurtailmentScope } from './scope.js';
+import { facilityCurtailmentScope, hiddenCurtailmentSeries } from './scope.js';
 
 /**
  * @param {Partial<{ network_id: string, network_region: string, units: any[] }>} overrides
@@ -94,3 +94,50 @@ describe('facilityCurtailmentScope', () => {
 
 // `curtailmentMetric` moved to network/market-metrics.js, next to the registry
 // its keys must agree with — its tests live in market-metrics.test.js.
+
+describe('hiddenCurtailmentSeries', () => {
+	/** A wind + solar hybrid, the case where both splits are drawn. */
+	const hybrid = facility({
+		units: [
+			{ code: 'W1', fueltech_id: 'wind' },
+			{ code: 'W2', fueltech_id: 'wind' },
+			{ code: 'S1', fueltech_id: 'solar_utility' }
+		]
+	});
+
+	it('hides nothing when no units are toggled off', () => {
+		expect(hiddenCurtailmentSeries(hybrid, [])).toEqual([]);
+	});
+
+	it('hides a split once its last unit is toggled off', () => {
+		expect(hiddenCurtailmentSeries(hybrid, ['S1'])).toEqual(['curtailment_solar']);
+		expect(hiddenCurtailmentSeries(hybrid, ['W1', 'W2'])).toEqual(['curtailment_wind']);
+	});
+
+	it('keeps a split while any of its units is still visible', () => {
+		// The series is a whole-of-region aggregate — hiding one of two wind units
+		// says nothing about it.
+		expect(hiddenCurtailmentSeries(hybrid, ['W1'])).toEqual([]);
+	});
+
+	it('keeps everything when hiding would empty the chart', () => {
+		// Mirrors the units panel's own hide-all guard.
+		expect(hiddenCurtailmentSeries(hybrid, ['W1', 'W2', 'S1'])).toEqual([]);
+	});
+
+	it('ignores units with no curtailment split of their own', () => {
+		const windBattery = facility({
+			units: [
+				{ code: 'W1', fueltech_id: 'wind' },
+				{ code: 'B1', fueltech_id: 'battery_charging' }
+			]
+		});
+		// Hiding the battery leaves wind visible, so nothing drops out.
+		expect(hiddenCurtailmentSeries(windBattery, ['B1'])).toEqual([]);
+	});
+
+	it('handles a missing facility or units', () => {
+		expect(hiddenCurtailmentSeries(null, ['W1'])).toEqual([]);
+		expect(hiddenCurtailmentSeries(facility({ units: undefined }), ['W1'])).toEqual([]);
+	});
+});

@@ -61,6 +61,9 @@
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once
 	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata]
+	 * @property {string[]} [hiddenSeriesNames] - Series ids to hide, e.g. a market
+	 *   split whose source is toggled off elsewhere on the page. Applied on top of
+	 *   the chart's own legend toggles, so it wins until the caller clears it.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode]
 	 * @property {boolean} [panZoomEngaged]
 	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
@@ -89,6 +92,7 @@
 		onviewportchange,
 		onviewportsettle,
 		onvisibledata,
+		hiddenSeriesNames = /** @type {string[]} */ ([]),
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
 		minDateMs = EARLIEST_DATA_MS
@@ -385,6 +389,12 @@
 		chartStore.seriesNames = processed.seriesNames;
 		chartStore.seriesColours = processed.seriesColours;
 		chartStore.seriesLabels = processed.seriesLabels;
+	});
+
+	// Caller-driven series hiding, kept separate from the metadata effect so a
+	// refetch doesn't clear it and a toggle doesn't re-run series setup.
+	$effect(() => {
+		if (chartStore) chartStore.hiddenSeriesNames = hiddenSeriesNames;
 	});
 
 	// Metric-dependent options (unit + curve)

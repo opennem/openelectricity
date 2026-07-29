@@ -26,7 +26,11 @@
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import { curtailmentMetric } from '$lib/components/charts/network/market-metrics.js';
-	import { facilityCurtailmentScope, CURTAILMENT_DOCS_HREF } from './scope.js';
+	import {
+		facilityCurtailmentScope,
+		hiddenCurtailmentSeries,
+		CURTAILMENT_DOCS_HREF
+	} from './scope.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -43,6 +47,8 @@
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportsettle]
+	 * @property {string[]} [hiddenUnitCodes] - Units toggled off in the units panel;
+	 *   a split whose units are all hidden drops out of the chart
 	 * @property {boolean} [panZoomEngaged]
 	 */
 
@@ -61,10 +67,12 @@
 		onhoverchange,
 		onviewportchange,
 		onviewportsettle,
+		hiddenUnitCodes = [],
 		panZoomEngaged = $bindable(false)
 	} = $props();
 
 	let scope = $derived(facilityCurtailmentScope(facility));
+	let hiddenSeriesNames = $derived(hiddenCurtailmentSeries(facility, hiddenUnitCodes));
 
 	/** @type {NetworkChart | undefined} */
 	let chart = $state(undefined);
@@ -114,6 +122,7 @@
 				showContainer={false}
 				tooltipMode="floating"
 				{hoverTime}
+				{hiddenSeriesNames}
 				{onhoverchange}
 				{onviewportchange}
 				{onviewportsettle}
