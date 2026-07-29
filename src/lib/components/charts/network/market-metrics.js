@@ -80,70 +80,42 @@ const seriesDefsFor = (publicMetric) =>
  * @property {import('./process-market-data.js').MarketSeriesDef[]} seriesDefs
  */
 
-/** @type {Record<string, MarketMetricConfig>} */
+/**
+ * Build a config entry. Every field except the render style follows mechanically
+ * from the metric name: the `_energy` variants carry MWh, everything else MW,
+ * and the SI prefix is always M. Spelling those out per entry is what lets a
+ * power key end up declaring Wh — a mismatch nothing else would catch.
+ *
+ * @param {string} publicMetric
+ * @param {{ chartKind?: 'stacked' | 'line', diverging?: boolean }} [options]
+ * @returns {MarketMetricConfig}
+ */
+function marketMetricConfig(publicMetric, { chartKind = 'stacked', diverging } = {}) {
+	return {
+		chartKind,
+		baseUnit: publicMetric.endsWith('_energy') ? 'Wh' : 'W',
+		prefix: 'M',
+		...(diverging ? { diverging: true } : {}),
+		seriesDefs: seriesDefsFor(publicMetric)
+	};
+}
+
+/**
+ * Keys stay listed one per line rather than derived from `MARKET_METRIC_NAMES`,
+ * so every public metric is greppable by name from this table.
+ * @type {Record<string, MarketMetricConfig>}
+ */
 export const MARKET_METRIC_CONFIG = {
-	demand: {
-		chartKind: 'line',
-		baseUnit: 'W',
-		prefix: 'M',
-		seriesDefs: seriesDefsFor('demand')
-	},
-	demand_energy: {
-		chartKind: 'line',
-		baseUnit: 'Wh',
-		prefix: 'M',
-		seriesDefs: seriesDefsFor('demand_energy')
-	},
-	curtailment: {
-		chartKind: 'stacked',
-		baseUnit: 'W',
-		prefix: 'M',
-		seriesDefs: seriesDefsFor('curtailment')
-	},
-	curtailment_energy: {
-		chartKind: 'stacked',
-		baseUnit: 'Wh',
-		prefix: 'M',
-		seriesDefs: seriesDefsFor('curtailment_energy')
-	},
-	curtailment_wind: {
-		chartKind: 'stacked',
-		baseUnit: 'W',
-		prefix: 'M',
-		seriesDefs: seriesDefsFor('curtailment_wind')
-	},
-	curtailment_wind_energy: {
-		chartKind: 'stacked',
-		baseUnit: 'Wh',
-		prefix: 'M',
-		seriesDefs: seriesDefsFor('curtailment_wind_energy')
-	},
-	curtailment_solar: {
-		chartKind: 'stacked',
-		baseUnit: 'W',
-		prefix: 'M',
-		seriesDefs: seriesDefsFor('curtailment_solar')
-	},
-	curtailment_solar_energy: {
-		chartKind: 'stacked',
-		baseUnit: 'Wh',
-		prefix: 'M',
-		seriesDefs: seriesDefsFor('curtailment_solar_energy')
-	},
-	flows: {
-		chartKind: 'stacked',
-		baseUnit: 'W',
-		prefix: 'M',
-		diverging: true,
-		seriesDefs: seriesDefsFor('flows')
-	},
-	flows_energy: {
-		chartKind: 'stacked',
-		baseUnit: 'Wh',
-		prefix: 'M',
-		diverging: true,
-		seriesDefs: seriesDefsFor('flows_energy')
-	}
+	demand: marketMetricConfig('demand', { chartKind: 'line' }),
+	demand_energy: marketMetricConfig('demand_energy', { chartKind: 'line' }),
+	curtailment: marketMetricConfig('curtailment'),
+	curtailment_energy: marketMetricConfig('curtailment_energy'),
+	curtailment_wind: marketMetricConfig('curtailment_wind'),
+	curtailment_wind_energy: marketMetricConfig('curtailment_wind_energy'),
+	curtailment_solar: marketMetricConfig('curtailment_solar'),
+	curtailment_solar_energy: marketMetricConfig('curtailment_solar_energy'),
+	flows: marketMetricConfig('flows', { diverging: true }),
+	flows_energy: marketMetricConfig('flows_energy', { diverging: true })
 };
 
 /**
