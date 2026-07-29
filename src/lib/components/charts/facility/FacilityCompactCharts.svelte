@@ -107,7 +107,7 @@
 			viewStart = startMs;
 			viewEnd = endMs;
 		},
-		chart: () => powerChart,
+		charts: () => [powerChart],
 		timeZone: () => timeZone,
 		earliestDate: () => earliestDate,
 		// Initial value by design — the controller is created once per mount

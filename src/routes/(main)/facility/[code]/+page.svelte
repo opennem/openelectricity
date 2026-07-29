@@ -139,6 +139,12 @@
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let powerChart = $state(undefined);
 
+	/** The curtailment panel re-exports `setViewport`/`reconcileFetches` from the
+	 *  NetworkChart it wraps, so the range controller drives it as a peer of the
+	 *  generation chart. Undefined for facilities with no curtailment split. */
+	/** @type {import('$lib/components/charts/facility/curtailment/FacilityCurtailmentPanel.svelte').default | undefined} */
+	let curtailmentPanel = $state(undefined);
+
 	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
 
 	// Facility location for the mobile Map tab (mirrors FacilityMediaPanel's source).
@@ -218,7 +224,9 @@
 			viewStart = startMs;
 			viewEnd = endMs;
 		},
-		chart: () => powerChart,
+		// Both charts that own a viewport internally. The controller pushes ranges
+		// into them inside one echo-guarded window and reconciles them together.
+		charts: () => [powerChart, curtailmentPanel],
 		timeZone: () => timeZone,
 		earliestDate: () => earliestDate,
 		initialRangeDays: data.rangeDays ?? 3
@@ -633,6 +641,7 @@
 								     away when the facility has no applicable split (WEM, or no
 								     wind/utility-solar units). -->
 								<FacilityCurtailmentPanel
+									bind:this={curtailmentPanel}
 									facility={selectedFacility}
 									{timeZone}
 									basis={range.activeMetric}
@@ -643,9 +652,8 @@
 									cardClass={chartCardClass}
 									{hoverTime}
 									onhoverchange={handleHoverChange}
-									onviewportchange={range.handleDerivedViewportChange}
+									onviewportchange={(r) => range.handleDerivedViewportChange(r, curtailmentPanel)}
 									onviewportsettle={range.handleViewportSettle}
-									reconcileSeq={range.reconcileSeq}
 									bind:panZoomEngaged
 								/>
 

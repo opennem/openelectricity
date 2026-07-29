@@ -15,12 +15,13 @@
 	 * the page can mount it unconditionally.
 	 *
 	 * Viewport: `NetworkChart` owns its viewport internally (like the generation
-	 * chart, unlike the derived-rate providers), so the page's range is mirrored
-	 * in imperatively and gestures are reported back out through
-	 * `onviewportchange` / `onviewportsettle`.
+	 * chart, unlike the derived-rate providers), so this panel re-exports the
+	 * imperative surface the range controller drives — `setViewport` and
+	 * `reconcileFetches`. The page lists it in the controller's `charts`, which
+	 * owns the echo suppression for every chart at once; gestures here report
+	 * back through `onviewportchange` / `onviewportsettle`.
 	 */
 
-	import { untrack } from 'svelte';
 	import { Info } from '@lucide/svelte';
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
@@ -42,7 +43,6 @@
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportsettle]
-	 * @property {number} [reconcileSeq] - Bumped by the range control when a peer gesture settles
 	 * @property {boolean} [panZoomEngaged]
 	 */
 
@@ -61,7 +61,6 @@
 		onhoverchange,
 		onviewportchange,
 		onviewportsettle,
-		reconcileSeq = 0,
 		panZoomEngaged = $bindable(false)
 	} = $props();
 
@@ -70,52 +69,17 @@
 	/** @type {NetworkChart | undefined} */
 	let chart = $state(undefined);
 
-	/** Last range mirrored into (or reported by) the chart. Plain object, not
-	 *  `$state` — it's bookkeeping to break the push/echo cycle, and making it
-	 *  reactive would re-run the mirroring effect on every write. Reset when the
-	 *  chart goes away so a remount is never skipped by a stale match (retired
-	 *  facilities can produce byte-identical ranges across navigations). */
-	let applied = { start: 0, end: 0 };
+	// The imperative surface the range controller drives, forwarded to the chart.
+	// No-ops before the chart mounts (no scope, or no viewport yet), which is the
+	// same contract the controller already tolerates for the generation chart.
 
-	// Mirror the page's viewport down. `NetworkChart` owns its viewport
-	// internally, so this is the only thing that gives it one — no `dateStart`
-	// seed, which would fetch a default window before the page's real range is
-	// known and then throw it away on the first push.
-	$effect(() => {
-		const start = viewStart;
-		const end = viewEnd;
-		const c = chart;
-		if (!c) {
-			applied = { start: 0, end: 0 };
-			return;
-		}
-		if (!start || !end) return;
-		if (applied.start === start && applied.end === end) return;
-		applied = { start, end };
-		c.setViewport(start, end);
-	});
+	/** @param {number} startMs @param {number} endMs */
+	export function setViewport(startMs, endMs) {
+		chart?.setViewport(startMs, endMs);
+	}
 
-	// A gesture settled on a peer chart: prune this chart's now-stale in-flight
-	// fetches. Mirrors how the derived providers consume `reconcileSeq` — the
-	// seq dedupe plus `untrack` keeps it from firing on mount or on an unrelated
-	// chart-identity change.
-	let lastReconcileSeq = 0;
-	$effect(() => {
-		const seq = reconcileSeq;
-		if (seq === lastReconcileSeq) return;
-		lastReconcileSeq = seq;
-		untrack(() => chart?.reconcileFetches());
-	});
-
-	/** @param {{ start: number, end: number }} range */
-	function handleViewportChange(range) {
-		// Ignore the chart echoing back a viewport we just pushed into it —
-		// forwarding it would re-enter the range controller, which is not
-		// echo-guarded on this path and would push the range into the generation
-		// chart mid-gesture. A clamped (genuinely different) range still reports.
-		if (applied.start === range.start && applied.end === range.end) return;
-		applied = { start: range.start, end: range.end };
-		onviewportchange?.(range);
+	export function reconcileFetches() {
+		chart?.reconcileFetches();
 	}
 </script>
 
@@ -151,7 +115,7 @@
 				tooltipMode="floating"
 				{hoverTime}
 				{onhoverchange}
-				onviewportchange={handleViewportChange}
+				{onviewportchange}
 				{onviewportsettle}
 				panZoomMode="tap-to-engage"
 				bind:panZoomEngaged

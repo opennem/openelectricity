@@ -7,9 +7,16 @@
  * pan/zoom hysteresis. The *viewport values* stay with the owner (they belong
  * to the chart and its sibling consumers): the controller reads them through
  * the `viewport`/`defaultViewport` getters and stores them back through
- * `setViewport`. Pushing a range into the generation chart (with the echo
- * suppressed) is handled here, so both owners share one copy of the
- * sync protocol.
+ * `setViewport`. Pushing a range into the charts that own their viewport
+ * internally (with the echo suppressed) is handled here, so every owner shares
+ * one copy of the sync protocol.
+ *
+ * Two kinds of consumer sync differently, and the split matters:
+ *   - *Imperative charts* own a viewport internally and are pushed to through
+ *     `setViewport` — the generation chart, and any `NetworkChart` alongside it.
+ *     They're listed in `charts`.
+ *   - *Providers* (price/market-value, intensity/emissions-volume) take the
+ *     owner's viewport as props and need no push; they only report back.
  */
 
 import {
@@ -30,11 +37,18 @@ import { createEchoGuard } from '$lib/components/charts/v2/echo-guard.js';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * A chart that owns its viewport internally and is driven imperatively.
+ * @typedef {Object} RangeControlChart
+ * @property {(startMs: number, endMs: number) => void} setViewport
+ * @property {() => void} [reconcileFetches]
+ */
+
+/**
  * @param {{
  *   viewport: () => { start: number, end: number },
  *   defaultViewport: () => { start: number, end: number },
  *   setViewport: (startMs: number, endMs: number) => void,
- *   chart: () => { setViewport: (startMs: number, endMs: number) => void, reconcileFetches?: () => void } | undefined | null,
+ *   charts: () => Array<RangeControlChart | undefined | null>,
  *   timeZone: () => string,
  *   earliestDate?: () => string | null,
  *   initialRangeDays?: number
@@ -42,12 +56,13 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  *   - `viewport` — the live chart viewport (zeros before the chart first reports)
  *   - `defaultViewport` — fallback bounds while the live viewport is unset
  *   - `setViewport` — store the new viewport in the owner's state
- *   - `chart` — the generation chart instance (viewport pushes are echo-suppressed)
+ *   - `charts` — the charts that own their viewport internally; pushes to them
+ *     are echo-suppressed, and they're reconciled together when a gesture settles
  *   - `timeZone` — network offset (e.g. '+10:00') for picker date strings
  *   - `earliestDate` — earliest data date, the floor for the "All" preset
  */
 export function createChartRangeControl(config) {
-	const { viewport, defaultViewport, setViewport, chart, timeZone, earliestDate } = config;
+	const { viewport, defaultViewport, setViewport, charts, timeZone, earliestDate } = config;
 	const initialRangeDays = config.initialRangeDays ?? 3;
 
 	function initialDisplayInterval() {
@@ -82,18 +97,25 @@ export function createChartRangeControl(config) {
 	 *  manager holding a reference has cancelled (sharedFetch refcounts). */
 	let reconcileSeq = $state(0);
 
-	/** Suppression guard so pushing a viewport into the generation chart doesn't
-	 *  echo back through its own `onviewportchange`. */
+	/** Suppression guard so pushing a viewport into the charts doesn't echo back
+	 *  through their own `onviewportchange`. */
 	const echo = createEchoGuard();
 
 	/**
+	 * Mirror a range into every imperative chart, inside one guarded window so
+	 * none of their echoes re-enter the controller.
 	 * @param {number} startMs
 	 * @param {number} endMs
+	 * @param {RangeControlChart | null} [source] - The chart the range came from,
+	 *   skipped so a gesture isn't pushed back into the chart being dragged.
 	 */
-	function pushToChart(startMs, endMs) {
-		const c = chart();
-		if (!c) return;
-		echo.run(() => c.setViewport(startMs, endMs));
+	function pushToCharts(startMs, endMs, source = null) {
+		echo.run(() => {
+			for (const c of charts()) {
+				if (!c || c === source) continue;
+				c.setViewport(startMs, endMs);
+			}
+		});
 	}
 
 	/** Live viewport with default fallbacks while the chart hasn't reported. */
@@ -148,7 +170,7 @@ export function createChartRangeControl(config) {
 		activeInterval = spec.apiInterval;
 		displayInterval = intervalId;
 		setViewport(startMs, endMs);
-		pushToChart(startMs, endMs);
+		pushToCharts(startMs, endMs);
 	}
 
 	/** @param {number} days */
@@ -198,22 +220,29 @@ export function createChartRangeControl(config) {
 		updateLiveDisplayInterval(range);
 	}
 
-	/** Viewport change emitted by a derived-chart provider (financial OR
-	 *  emissions). Providers react to the owner's viewport state; the generation
-	 *  chart owns its viewport internally, so the new range is mirrored into it
-	 *  with the echo suppressed. */
-	/** @param {{ start: number, end: number }} range */
-	function handleDerivedViewportChange(range) {
+	/** Viewport change emitted by anything other than the generation chart — a
+	 *  derived-chart provider (financial OR emissions), or another imperative
+	 *  chart such as the curtailment panel. Providers react to the owner's
+	 *  viewport state and need nothing pushed back; the imperative charts own
+	 *  their viewport internally, so the new range is mirrored into them with the
+	 *  echo suppressed.
+	 *
+	 *  Pass `source` when the emitter is itself one of `charts` — it's skipped, so
+	 *  a gesture is never pushed back into the chart being dragged (which would
+	 *  re-request its range every frame).
+	 *  @param {{ start: number, end: number }} range
+	 *  @param {RangeControlChart | null} [source] */
+	function handleDerivedViewportChange(range, source = null) {
 		if (echo.suppressed) return;
 		setViewport(range.start, range.end);
 		selectedRange = null;
 		updateLiveDisplayInterval(range);
-		pushToChart(range.start, range.end);
+		pushToCharts(range.start, range.end, source);
 	}
 
-	/** A gesture on the generation chart or a derived chart came to rest:
-	 *  evaluate the hysteresis switch once with the final viewport, then prune
-	 *  stale in-flight fetches everywhere — the generation chart directly, the
+	/** A gesture on any of the charts or a derived chart came to rest: evaluate
+	 *  the hysteresis switch once with the final viewport, then prune stale
+	 *  in-flight fetches everywhere — the imperative charts directly, the
 	 *  providers via `reconcileSeq`. Both are no-ops for the component that
 	 *  settled (it reconciled itself) and skip the old grain when a switch fired.
 	 *
@@ -226,7 +255,7 @@ export function createChartRangeControl(config) {
 	function handleViewportSettle(range) {
 		applyMetricSwitch(range);
 		reconcileSeq++;
-		chart()?.reconcileFetches?.();
+		for (const c of charts()) c?.reconcileFetches?.();
 	}
 
 	/** Clear the pending pulse once switched data settles (load-complete or the
