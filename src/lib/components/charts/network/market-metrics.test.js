@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { MARKET_METRIC_NAMES } from './market-metric-names.js';
-import { MARKET_METRIC_CONFIG, getMarketMetricConfig } from './market-metrics.js';
-import { curtailmentMetric } from '$lib/facilities/curtailment.js';
+import {
+	MARKET_METRIC_CONFIG,
+	getMarketMetricConfig,
+	curtailmentMetric
+} from './market-metrics.js';
 
 /**
  * The market layer is split across two files by design — `market-metric-names.js`
@@ -33,6 +36,18 @@ describe('market metric config', () => {
 		}
 	});
 
+	it('ladders each fuel-tech split between power and energy', () => {
+		expect(curtailmentMetric('wind', 'power')).toBe('curtailment_wind');
+		expect(curtailmentMetric('wind', 'energy')).toBe('curtailment_wind_energy');
+		expect(curtailmentMetric('solar', 'power')).toBe('curtailment_solar');
+		expect(curtailmentMetric('solar', 'energy')).toBe('curtailment_solar_energy');
+	});
+
+	it('maps a wind + solar facility to the combined key', () => {
+		expect(curtailmentMetric('both', 'power')).toBe('curtailment');
+		expect(curtailmentMetric('both', 'energy')).toBe('curtailment_energy');
+	});
+
 	it('splits curtailment by fuel tech, with the combined key keeping both', () => {
 		expect(getMarketMetricConfig('curtailment_wind')?.seriesDefs).toHaveLength(1);
 		expect(getMarketMetricConfig('curtailment_solar')?.seriesDefs).toHaveLength(1);
@@ -41,10 +56,10 @@ describe('market metric config', () => {
 	});
 
 	it('resolves every metric the facility curtailment panel can request', () => {
-		// The panel picks its metric in $lib/facilities/curtailment.js, a different
-		// package from this registry. Renaming a key here (or there) would silently
-		// fall through to the generation arm of NetworkChart and render nothing —
-		// this is the assertion that catches the drift.
+		// CURTAILMENT_METRICS and MARKET_METRIC_NAMES are separate tables that have
+		// to agree. A key renamed in one and not the other leaves the panel asking
+		// for a metric that doesn't resolve — NetworkChart falls through to its
+		// generation arm and renders nothing. This is what catches that.
 		for (const kind of /** @type {const} */ (['wind', 'solar', 'both'])) {
 			for (const basis of /** @type {const} */ (['power', 'energy'])) {
 				const metric = curtailmentMetric(kind, basis);

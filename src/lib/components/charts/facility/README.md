@@ -10,7 +10,7 @@ The facility pages (`src/routes/(main)/facility/[code]/` and the `/facilities` d
 2. **Page component**: Manages the active range/interval via `createChartRangeControl`, syncs ChartRangeBar ↔ chart viewport, handles auto metric/interval switching.
 3. **ChartRangeBar** (`v2/ChartRangeBar.svelte`): Unified toolbar with range presets (1D/3D/7D/30D/1Y/All), calendar popover (DateRangePicker), and an interval dropdown whose options follow the selected range (resolved from `range-interval-config.js`).
 4. **FacilityChart**: Owns the viewport state (`viewStart`/`viewEnd`), creates data managers via `createFacilityDataManager()`, renders via StratumChart → StackedAreaChart.
-5. **`curtailment/FacilityCurtailmentPanel.svelte`**: Regional curtailment context, shown only for NEM wind/utility-solar facilities (scoping rules in `$lib/facilities/curtailment.js`). Unlike the derived-rate providers — which take `viewStart`/`viewEnd` as props — it wraps a `network/NetworkChart`, which owns its viewport internally like FacilityChart, so the page's range is mirrored in via `setViewport` behind a local applied-range guard that breaks the push/echo cycle.
+5. **`curtailment/FacilityCurtailmentPanel.svelte`**: Regional curtailment context, shown only for NEM wind/utility-solar facilities (scoping rules in `curtailment/scope.js`; the kind → API metric mapping lives with the registry it must agree with, in `network/market-metrics.js`). Unlike the derived-rate providers — which take `viewStart`/`viewEnd` as props — it wraps a `network/NetworkChart`, which owns its viewport internally like FacilityChart, so the page's range is mirrored in via `setViewport` behind a local applied-range guard that breaks the push/echo cycle.
 
 ## Files
 

@@ -147,6 +147,41 @@ export const MARKET_METRIC_CONFIG = {
 };
 
 /**
+ * Curtailment metric per fuel-tech split, by chart basis. Spelt out rather than
+ * built by convention so the keys are literal types and greppable.
+ *
+ * Lives here rather than with the facility-side scoping that calls it: these
+ * are keys of the table above, and a rename that missed one would fall through
+ * to NetworkChart's generation arm and render an empty chart. Keeping the
+ * mapping next to the registry makes that drift a same-file edit.
+ *
+ * @typedef {'curtailment' | 'curtailment_energy' | 'curtailment_wind'
+ *   | 'curtailment_wind_energy' | 'curtailment_solar' | 'curtailment_solar_energy'
+ * } CurtailmentMetric
+ *
+ * @type {Record<'wind' | 'solar' | 'both', Record<'power' | 'energy', CurtailmentMetric>>}
+ */
+const CURTAILMENT_METRICS = {
+	wind: { power: 'curtailment_wind', energy: 'curtailment_wind_energy' },
+	solar: { power: 'curtailment_solar', energy: 'curtailment_solar_energy' },
+	// A facility with both wind and utility solar units reuses the combined key,
+	// which fans out to both OE splits and stacks them.
+	both: { power: 'curtailment', energy: 'curtailment_energy' }
+};
+
+/**
+ * Curtailment metric for a fuel-tech split, laddering power↔energy with the
+ * chart's interval exactly as the generation and market charts do.
+ *
+ * @param {'wind' | 'solar' | 'both'} split
+ * @param {'power' | 'energy'} basis
+ * @returns {CurtailmentMetric}
+ */
+export function curtailmentMetric(split, basis) {
+	return CURTAILMENT_METRICS[split][basis];
+}
+
+/**
  * @param {string} metric
  * @returns {MarketMetricConfig | undefined}
  */

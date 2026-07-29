@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { facilityCurtailmentScope, curtailmentMetric } from './curtailment.js';
+import { facilityCurtailmentScope } from './scope.js';
 
 /**
  * @param {Partial<{ network_id: string, network_region: string, units: any[] }>} overrides
@@ -92,16 +92,5 @@ describe('facilityCurtailmentScope', () => {
 	});
 });
 
-describe('curtailmentMetric', () => {
-	it('ladders each kind between power and energy', () => {
-		expect(curtailmentMetric('wind', 'power')).toBe('curtailment_wind');
-		expect(curtailmentMetric('wind', 'energy')).toBe('curtailment_wind_energy');
-		expect(curtailmentMetric('solar', 'power')).toBe('curtailment_solar');
-		expect(curtailmentMetric('solar', 'energy')).toBe('curtailment_solar_energy');
-	});
-
-	it('maps a hybrid facility to the combined key that fans out to both splits', () => {
-		expect(curtailmentMetric('both', 'power')).toBe('curtailment');
-		expect(curtailmentMetric('both', 'energy')).toBe('curtailment_energy');
-	});
-});
+// `curtailmentMetric` moved to network/market-metrics.js, next to the registry
+// its keys must agree with — its tests live in market-metrics.test.js.

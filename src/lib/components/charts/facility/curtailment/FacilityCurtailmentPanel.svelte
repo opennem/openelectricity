@@ -7,9 +7,9 @@
 	 * series. So this panel shows the *region's* curtailment for the facility's
 	 * own fuel tech — it is context, not this facility's lost output. The region
 	 * badge carries that at a glance; the heading's tooltip spells it out and
-	 * links to the OE curtailment guide. See `$lib/facilities/curtailment.js` for
-	 * the scoping rules (NEM only, wind and utility solar only) and
-	 * `market-metrics.js` for the series presentation.
+	 * links to the OE curtailment guide. See `./scope.js` for the scoping rules
+	 * (NEM only, wind and utility solar only) and `network/market-metrics.js` for
+	 * the metric mapping and series presentation.
 	 *
 	 * Renders nothing when the facility has no applicable curtailment split, so
 	 * the page can mount it unconditionally.
@@ -24,11 +24,8 @@
 	import { Info } from '@lucide/svelte';
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
-	import {
-		facilityCurtailmentScope,
-		curtailmentMetric,
-		CURTAILMENT_DOCS_HREF
-	} from '$lib/facilities/curtailment.js';
+	import { curtailmentMetric } from '$lib/components/charts/network/market-metrics.js';
+	import { facilityCurtailmentScope, CURTAILMENT_DOCS_HREF } from './scope.js';
 
 	/**
 	 * @typedef {Object} Props

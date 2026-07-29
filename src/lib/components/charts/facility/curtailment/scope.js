@@ -94,32 +94,5 @@ export function facilityCurtailmentScope(facility) {
 	};
 }
 
-/**
- * @typedef {'curtailment' | 'curtailment_energy' | 'curtailment_wind'
- *   | 'curtailment_wind_energy' | 'curtailment_solar' | 'curtailment_solar_energy'
- * } CurtailmentMetric
- */
-
-/**
- * Public `/api/network/data` metric per kind, by chart basis.
- * @type {Record<CurtailmentKind, Record<'power' | 'energy', CurtailmentMetric>>}
- */
-const CURTAILMENT_METRICS = {
-	wind: { power: 'curtailment_wind', energy: 'curtailment_wind_energy' },
-	solar: { power: 'curtailment_solar', energy: 'curtailment_solar_energy' },
-	// A facility with both wind and solar units reuses the combined key, which
-	// fans out to both OE splits and stacks them.
-	both: { power: 'curtailment', energy: 'curtailment_energy' }
-};
-
-/**
- * The `/api/network/data` metric for a scope, laddering power↔energy with the
- * chart's interval exactly as the generation and market charts do.
- *
- * @param {CurtailmentKind} kind
- * @param {'power' | 'energy'} basis
- * @returns {CurtailmentMetric}
- */
-export function curtailmentMetric(kind, basis) {
-	return CURTAILMENT_METRICS[kind][basis];
-}
+// The kind → `/api/network/data` metric mapping lives with the metric registry
+// it has to agree with, in `network/market-metrics.js` — see `curtailmentMetric`.
