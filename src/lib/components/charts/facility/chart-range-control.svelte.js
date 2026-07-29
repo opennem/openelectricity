@@ -58,6 +58,7 @@ export function createChartRangeControl(config) {
 	}
 
 	let activeInterval = $state('5m');
+	/** @type {'power' | 'energy'} */
 	let activeMetric = $state('power');
 	let displayInterval = $state(initialDisplayInterval());
 
@@ -125,7 +126,9 @@ export function createChartRangeControl(config) {
 		if (!next) return;
 		stickyDisplay = false;
 		displayInterval = getDisplayIntervalForDays(next.metric, next.interval, durationDays);
-		activeMetric = next.metric;
+		// The hysteresis ladder only ever emits 'power' or 'energy'; metric-interval.js
+		// types them as plain strings throughout.
+		activeMetric = /** @type {'power' | 'energy'} */ (next.metric);
 		activeInterval = next.interval;
 	}
 

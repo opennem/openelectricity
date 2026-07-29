@@ -16,6 +16,7 @@
 		FacilityEmissionsVolumeChart,
 		FacilityEmissionsDataProvider,
 		FacilityPollutionPanel,
+		FacilityCurtailmentPanel,
 		FacilityMetrics
 	} from '$lib/components/charts/facility';
 	import { clickoutside } from '@svelte-put/clickoutside';
@@ -559,9 +560,7 @@
 							<section class={chartCardClass}>
 								<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 									<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
-									<span
-										class="rounded bg-light-warm-grey px-2 py-0.5 text-xs uppercase tracking-wider text-dark-grey"
-									>
+									<span class="rounded bg-light-warm-grey px-2 py-0.5 text-xs text-dark-grey">
 										{getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval}
 									</span>
 								</div>
@@ -629,6 +628,29 @@
 							</section>
 
 							{#if !showEmptyState}
+								<!-- Regional curtailment for this facility's fuel tech — directly
+								     under Generation, the series it gives context to. Renders itself
+								     away when the facility has no applicable split (WEM, or no
+								     wind/utility-solar units). -->
+								<FacilityCurtailmentPanel
+									facility={selectedFacility}
+									{timeZone}
+									basis={range.activeMetric}
+									interval={range.activeInterval}
+									displayInterval={range.displayInterval}
+									{viewStart}
+									{viewEnd}
+									{dateStart}
+									{dateEnd}
+									cardClass={chartCardClass}
+									{hoverTime}
+									onhoverchange={handleHoverChange}
+									onviewportchange={range.handleDerivedViewportChange}
+									onviewportsettle={range.handleViewportSettle}
+									reconcileSeq={range.reconcileSeq}
+									bind:panZoomEngaged
+								/>
+
 								<FacilityFinancialDataProvider
 									facility={activeFacility}
 									priceFacility={splitFacility}

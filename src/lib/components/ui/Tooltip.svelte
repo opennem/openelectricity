@@ -35,7 +35,7 @@
 		<T.Portal>
 			<T.Content {side} {sideOffset} class="z-[9999]">
 				<div
-					class="bg-dark-grey rounded-lg py-3 px-4 shadow text-white text-xs font-space max-w-xs leading-snug"
+					class="bg-dark-grey rounded-lg py-3 px-4 shadow text-white text-xs font-space max-w-sm leading-relaxed"
 				>
 					{text}
 					{#if learnMoreHref}
@@ -43,7 +43,7 @@
 							href={learnMoreHref}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="inline-block mt-1.5 underline text-white visited:text-white hover:opacity-80"
+							class="block mt-1.5 underline text-white visited:text-white hover:opacity-80"
 						>
 							Learn more →
 						</a>

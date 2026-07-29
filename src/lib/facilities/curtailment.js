@@ -1,0 +1,129 @@
+/**
+ * Which regional curtailment series (if any) belongs on a facility's page.
+ *
+ * Curtailment is published by the OE API only as a *network* market metric,
+ * aggregated per region and split by fuel tech — there is no per-facility or
+ * per-unit series (`/data/facilities` rejects the metric outright). So the most
+ * a facility page can show is the curtailment happening around it: the region's
+ * curtailment for the facility's own fuel tech.
+ *
+ * That series is deliberately NOT attributable to the facility. VIC1 wind
+ * curtailment of 100 MW says the region curtailed wind; it may have been
+ * entirely other wind farms. The panel presents it as regional context and must
+ * never be read as this facility's lost output.
+ *
+ * Two constraints come from the API and decide whether a page gets a panel:
+ *   - curtailment exists on the NEM only (the WEM publishes none)
+ *   - it is split into wind and utility solar only — no other fuel tech, and
+ *     rooftop solar is excluded
+ */
+
+import { regionsWithLabels } from '$lib/regions.js';
+
+/**
+ * Facility fuel techs the OE API publishes a curtailment split for.
+ * @type {Record<string, 'wind' | 'solar'>}
+ */
+const CURTAILMENT_BY_FUELTECH = {
+	wind: 'wind',
+	solar_utility: 'solar'
+};
+
+/** Curtailment is a NEM-only metric. */
+const CURTAILMENT_NETWORK = 'NEM';
+
+/**
+ * @typedef {'wind' | 'solar' | 'both'} CurtailmentKind
+ */
+
+/**
+ * @typedef {Object} CurtailmentScope
+ * @property {CurtailmentKind} kind - Which fuel-tech split(s) apply
+ * @property {string} region - Explorer region value for NetworkChart ('vic1'…)
+ * @property {string} regionLabel - Market region code ('VIC1')
+ * @property {string} regionName - Region as shown to the reader ('Victoria')
+ * @property {string} label - Panel heading
+ * @property {string} note - The non-attribution caveat, for the heading's tooltip
+ */
+
+/** Docs page explaining how OE calculates curtailment. */
+export const CURTAILMENT_DOCS_HREF = 'https://docs.openelectricity.org.au/guides/curtailment';
+
+/**
+ * Resolve the curtailment context for a facility, or null when the page should
+ * show no panel at all (WEM, or no wind/utility-solar units).
+ *
+ * @param {any} facility
+ * @returns {CurtailmentScope | null}
+ */
+export function facilityCurtailmentScope(facility) {
+	if (!facility || facility.network_id !== CURTAILMENT_NETWORK) return null;
+
+	const region = facility.network_region;
+	if (!region) return null;
+
+	const kinds = new Set(
+		(facility.units ?? [])
+			.map((/** @type {any} */ unit) => CURTAILMENT_BY_FUELTECH[unit?.fueltech_id])
+			.filter(Boolean)
+	);
+
+	if (kinds.size === 0) return null;
+
+	/** @type {CurtailmentKind} */
+	const kind = kinds.size > 1 ? 'both' : /** @type {CurtailmentKind} */ ([...kinds][0]);
+
+	const regionValue = String(region).toLowerCase();
+	const regionLabel = String(region).toUpperCase();
+	// Friendly name for display ('Victoria'); falls back to the market code for
+	// any region not in the options list.
+	const regionName = regionsWithLabels[regionValue] ?? regionLabel;
+
+	return {
+		kind,
+		region: regionValue,
+		regionLabel,
+		regionName,
+		label: CURTAILMENT_LABELS[kind],
+		note:
+			`Curtailment is published for ${regionName} as a whole. ` +
+			'It is not attributed to this facility, and may be occurring entirely at other sites.'
+	};
+}
+
+/** @type {Record<CurtailmentKind, string>} */
+const CURTAILMENT_LABELS = {
+	wind: 'Wind curtailment',
+	solar: 'Solar curtailment',
+	both: 'Wind & solar curtailment'
+};
+
+/**
+ * @typedef {'curtailment' | 'curtailment_energy' | 'curtailment_wind'
+ *   | 'curtailment_wind_energy' | 'curtailment_solar' | 'curtailment_solar_energy'
+ * } CurtailmentMetric
+ */
+
+/**
+ * Public `/api/network/data` metric per kind, by chart basis.
+ * @type {Record<CurtailmentKind, Record<'power' | 'energy', CurtailmentMetric>>}
+ */
+const CURTAILMENT_METRICS = {
+	wind: { power: 'curtailment_wind', energy: 'curtailment_wind_energy' },
+	solar: { power: 'curtailment_solar', energy: 'curtailment_solar_energy' },
+	// A facility with both wind and solar units reuses the combined key, which
+	// fans out to both OE splits and stacks them.
+	both: { power: 'curtailment', energy: 'curtailment_energy' }
+};
+
+/**
+ * The `/api/network/data` metric for a scope, laddering power↔energy with the
+ * chart's interval exactly as the generation and market charts do.
+ *
+ * @param {CurtailmentKind} kind
+ * @param {'power' | 'energy'} basis
+ * @returns {CurtailmentMetric}
+ */
+export function curtailmentMetric(kind, basis) {
+	return CURTAILMENT_METRICS[kind][basis];
+}

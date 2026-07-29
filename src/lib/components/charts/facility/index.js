@@ -22,5 +22,6 @@ export {
 } from './helpers.js';
 export { processFacilityPower } from './process-facility-power.js';
 export { analyzeUnits } from './unit-analysis.js';
+export { default as FacilityCurtailmentPanel } from './curtailment/FacilityCurtailmentPanel.svelte';
 export { default as PollutionSection } from './pollution/PollutionSection.svelte';
 export { default as FacilityPollutionPanel } from './pollution/FacilityPollutionPanel.svelte';
