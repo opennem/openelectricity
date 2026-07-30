@@ -2,10 +2,12 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [classes]
+	 * @property {boolean} [animated] - when false, the fill cycle is disabled and
+	 * the mark takes its fill from CSS (e.g. a `fill-*` utility in `classes`)
 	 */
 
 	/** @type {Props} */
-	let { classes = 'w-24 h-24' } = $props();
+	let { classes = 'w-24 h-24', animated = true } = $props();
 </script>
 
 <svg
@@ -23,11 +25,13 @@
 		stroke="white"
 		stroke-width="0.303563"
 	>
-		<animate
-			attributeName="fill"
-			values="#594929;#A6A36F;#E9FFAA;#9ED48B;#52A972;#9ED48B;#E9FFAA;#A6A36F;#594929"
-			dur="5s"
-			repeatCount="indefinite"
-		/>
+		{#if animated}
+			<animate
+				attributeName="fill"
+				values="#594929;#A6A36F;#E9FFAA;#9ED48B;#52A972;#9ED48B;#E9FFAA;#A6A36F;#594929"
+				dur="5s"
+				repeatCount="indefinite"
+			/>
+		{/if}
 	</path>
 </svg>
