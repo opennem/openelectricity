@@ -1,9 +1,14 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { Layers, ChevronDown, Flag, Sparkles } from '@lucide/svelte';
+	import { Layers, Flag, Sparkles } from '@lucide/svelte';
+	import { MAP_FAB_CLASS } from './map-style.js';
 
 	/**
+	 * Floating map-display options dropdown, shared by every map surface
+	 * (/facilities, /facility/[code], /explorer). The trigger is always the
+	 * same circular Layers icon so the control is recognisable across maps;
+	 * per-map rows are opted out via the `show*Option` props.
 	 * @type {{
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   showTransmissionLines?: boolean,
@@ -14,7 +19,6 @@
 	 *   showClusteringOption?: boolean,
 	 *   showLegend?: boolean,
 	 *   showLegendOption?: boolean,
-	 *   iconOnly?: boolean,
 	 *   onmapthemechange?: (value: 'light' | 'dark' | 'satellite') => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
 	 *   ongolfcourseschange?: (value: boolean) => void,
@@ -34,8 +38,6 @@
 		showLegendOption = true,
 		/** Hide the clustering row for maps with a single point (e.g. one facility). */
 		showClusteringOption = true,
-		/** Circular icon-only trigger — used by the mobile floating map controls. */
-		iconOnly = false,
 		onmapthemechange,
 		ontransmissionlineschange,
 		ongolfcourseschange,
@@ -105,19 +107,13 @@
 <div class="relative" use:clickoutside onclickoutside={handleClickOutside}>
 	<button
 		onclick={() => (isOpen = !isOpen)}
-		class="bg-white flex items-center hover:bg-light-warm-grey transition-colors border-2 border-warm-grey {iconOnly
-			? 'size-11 rounded-full justify-center shadow-lg'
-			: 'rounded-lg px-3 py-2 text-xs font-medium gap-2'}"
+		class="size-11 {MAP_FAB_CLASS}"
 		title="Map display options"
 	>
 		{#if showMagicIndicator}
-			<Sparkles class="size-5" style="color: #facc15;" />
+			<Sparkles class="size-6" style="color: #facc15;" />
 		{:else}
-			<Layers class={iconOnly ? 'size-5' : 'size-4'} />
-		{/if}
-		{#if !iconOnly}
-			<span>Map options</span>
-			<ChevronDown class="size-3 transition-transform {isOpen ? 'rotate-180' : ''}" />
+			<Layers class="size-6" />
 		{/if}
 	</button>
 

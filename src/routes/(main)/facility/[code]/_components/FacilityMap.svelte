@@ -1,16 +1,11 @@
 <script>
-	import {
-		MapLibre,
-		Marker,
-		GeoJSONSource,
-		LineLayer,
-		AttributionControl
-	} from 'svelte-maplibre-gl';
+	import { MapLibre, Marker, AttributionControl } from 'svelte-maplibre-gl';
 	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
+	import TransmissionLinesLayer from '$lib/components/map/TransmissionLinesLayer.svelte';
 	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
-	import MapOptionsDropdown from '../../../facilities/_components/MapOptionsDropdown.svelte';
+	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
+	import { mapStyleForTheme } from '$lib/components/map/map-style.js';
 	import { fetchOsmPolygon, featureBounds } from '$lib/utils/osm.js';
-	import { BAND_MIN, bandColours } from '$lib/facilities/transmission-bands.js';
 
 	/**
 	 * Full-bleed, interactive facility location map. Unlike the sidebar
@@ -38,19 +33,7 @@
 	let mapTheme = $state('satellite');
 	let showTransmissionLines = $state(false);
 
-	let mapStyle = $derived(
-		mapTheme === 'satellite'
-			? '/map-styles/satellite.json'
-			: mapTheme === 'dark'
-				? '/map-styles/dark-matter.json'
-				: '/map-styles/positron.json'
-	);
-
-	// Band colours for the active basemap, indexed highest → lowest voltage. Keyed
-	// on the theme, not satellite alone — the dark style needs the bright set too,
-	// and the map key resolves its swatches through the same function. Read as
-	// plain strings inside the paint expression so its tuple inference holds.
-	let lineColours = $derived(bandColours(mapTheme));
+	let mapStyle = $derived(mapStyleForTheme(mapTheme));
 
 	// Stable references — a fresh object/array only when the coords change, so
 	// svelte-maplibre-gl recentres on navigation without fighting the fitBounds
@@ -102,32 +85,14 @@
 		{zoom}
 		attributionControl={false}
 	>
-		{#if showTransmissionLines}
-			<!-- Mounted on demand — the source geojson is large, so it only loads
-			     once the layer is switched on. -->
-			<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
-				<LineLayer
-					id="transmission-lines-layer"
-					paint={{
-						// Colours and thresholds come from TRANSMISSION_BANDS, highest
-						// band first — the same table the /facilities map and its key read.
-						'line-color': [
-							'case',
-							['>=', ['get', 'capacitykv'], BAND_MIN[0]],
-							lineColours[0],
-							['>=', ['get', 'capacitykv'], BAND_MIN[1]],
-							lineColours[1],
-							['>=', ['get', 'capacitykv'], BAND_MIN[2]],
-							lineColours[2],
-							lineColours[3]
-						],
-						'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.5, 16, 4],
-						'line-opacity': 0.85
-					}}
-					layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-				/>
-			</GeoJSONSource>
-		{/if}
+		<!-- Zoomed-in width/opacity profile — the shared overview ladder is tuned
+		     for continent-level zooms. -->
+		<TransmissionLinesLayer
+			{mapTheme}
+			visible={showTransmissionLines}
+			lineWidth={['interpolate', ['linear'], ['zoom'], 10, 1.5, 16, 4]}
+			lineOpacity={0.85}
+		/>
 		<OsmFootprintLayer feature={osmPolygon} {color} emphasise={mapTheme !== 'light'} />
 		<Marker lnglat={markerLngLat} content={markerContent} />
 		<AttributionControl position="bottom-right" compact={true} />
@@ -141,7 +106,6 @@
 			showGolfOption={false}
 			showClusteringOption={false}
 			showLegendOption={false}
-			iconOnly={true}
 			onmapthemechange={(v) => (mapTheme = v)}
 			ontransmissionlineschange={(v) => (showTransmissionLines = v)}
 		/>

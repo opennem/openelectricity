@@ -7,7 +7,6 @@
 		GeoJSONSource,
 		CircleLayer,
 		SymbolLayer,
-		LineLayer,
 		FillLayer
 	} from 'svelte-maplibre-gl';
 	import { backOut } from 'svelte/easing';
@@ -15,6 +14,8 @@
 	import { sumUnitCapacities } from '$lib/utils/capacity';
 	import { fetchOsmPolygon } from '$lib/utils/osm.js';
 	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
+	import TransmissionLinesLayer from '$lib/components/map/TransmissionLinesLayer.svelte';
+	import { mapStyleForTheme, AUSTRALIA_VIEW } from '$lib/components/map/map-style.js';
 	import DataCentresLayer from './_components/DataCentresLayer.svelte';
 	import UnitGroup from './_components/UnitGroup.svelte';
 	import { groupUnits } from '$lib/facilities/units.js';
@@ -23,7 +24,7 @@
 	import { getRegionLabel } from '$lib/facilities/filters.js';
 	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
 	import { CIRCLE_MIN, CIRCLE_MAX, buildCircleStops } from './_utils/marker-radius.js';
-	import { TRANSMISSION_BANDS, BAND_MIN, bandColours } from '$lib/facilities/transmission-bands.js';
+	import { TRANSMISSION_BANDS } from '$lib/facilities/transmission-bands.js';
 	import { X } from '@lucide/svelte';
 
 	/**
@@ -107,12 +108,6 @@
 
 	let satelliteView = $derived(mapTheme === 'satellite');
 
-	// Band colours for the active basemap, indexed highest → lowest voltage. Keyed
-	// on the theme, not `satelliteView` — the dark style needs the bright set too,
-	// and the map key resolves its swatches through the same function. Read as
-	// plain strings inside the paint expression so its tuple inference holds.
-	let lineColours = $derived(bandColours(mapTheme));
-
 	// One condition per visible band, walked off TRANSMISSION_BANDS. Each band
 	// runs from its own floor up to the previous band's — writing that by hand
 	// meant stating every threshold twice, so a boundary could be moved on one
@@ -144,8 +139,8 @@
 		]);
 	});
 
-	// Australia center coordinates (default fallback)
-	const center = { lng: 134, lat: -25 };
+	// Australia overview framing (default fallback), shared with /explorer
+	const center = AUSTRALIA_VIEW.center;
 
 	// Animation durations (in milliseconds)
 	const ZOOM_DURATION = 400; // flyTo when selecting a facility
@@ -160,17 +155,7 @@
 	let isDragging = $state(false);
 	let isZooming = $state(false);
 
-	// Map style derives from the theme tri-state. Dark uses a locally-hosted
-	// copy of CARTO's dark-matter style with the glyphs URL swapped to our
-	// own `/fonts/...` path — CARTO's hosted fonts CDN 404s on `DM_Mono`,
-	// which broke labels when we pointed straight at the upstream JSON.
-	let mapStyle = $derived(
-		mapTheme === 'satellite'
-			? '/map-styles/satellite.json'
-			: mapTheme === 'dark'
-				? '/map-styles/dark-matter.json'
-				: '/map-styles/positron.json'
-	);
+	let mapStyle = $derived(mapStyleForTheme(mapTheme));
 
 	// Cluster panel state
 	/** @type {any[]} */
@@ -489,7 +474,7 @@
 		} else {
 			// Nothing to frame (filters left the set empty) — still honour the
 			// click by returning to the default Australia view.
-			mapInstance?.flyTo({ center, zoom: 3.5, duration: RESET_DURATION });
+			mapInstance?.flyTo({ center, zoom: AUSTRALIA_VIEW.zoom, duration: RESET_DURATION });
 		}
 	}
 
@@ -852,7 +837,7 @@
 		style={mapStyle}
 		class="w-full h-full"
 		{center}
-		zoom={3.5}
+		zoom={AUSTRALIA_VIEW.zoom}
 		maxZoom={18}
 		minZoom={3}
 		{scrollZoom}
@@ -923,72 +908,11 @@
 			/>
 		</GeoJSONSource>
 
-		<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
-			<LineLayer
-				id="transmission-lines-layer"
-				filter={transmissionFilter}
-				paint={{
-					// Colours and thresholds come from TRANSMISSION_BANDS, highest band
-					// first — the same table the detail map and the map key read. The
-					// line-width ladder below still carries its own literals: deriving three
-					// zoom-step arrays would need a spread, which widens the paint cast.
-					'line-color': [
-						'case',
-						['>=', ['get', 'capacitykv'], BAND_MIN[0]],
-						lineColours[0],
-						['>=', ['get', 'capacitykv'], BAND_MIN[1]],
-						lineColours[1],
-						['>=', ['get', 'capacitykv'], BAND_MIN[2]],
-						lineColours[2],
-						lineColours[3]
-					],
-					'line-width': [
-						'interpolate',
-						['linear'],
-						['zoom'],
-						3,
-						[
-							'case',
-							['>=', ['get', 'capacitykv'], 400],
-							1.5,
-							['>=', ['get', 'capacitykv'], 220],
-							1,
-							['>=', ['get', 'capacitykv'], 110],
-							0.7,
-							0.5
-						],
-						8,
-						[
-							'case',
-							['>=', ['get', 'capacitykv'], 400],
-							4,
-							['>=', ['get', 'capacitykv'], 220],
-							3,
-							['>=', ['get', 'capacitykv'], 110],
-							2,
-							1.5
-						],
-						14,
-						[
-							'case',
-							['>=', ['get', 'capacitykv'], 400],
-							6,
-							['>=', ['get', 'capacitykv'], 220],
-							5,
-							['>=', ['get', 'capacitykv'], 110],
-							4,
-							3
-						]
-					],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.5, 8, 0.7, 12, 0.85]
-				}}
-				layout={{
-					'line-cap': 'round',
-					'line-join': 'round',
-					visibility: showTransmissionLines ? 'visible' : 'none'
-				}}
-			/>
-		</GeoJSONSource>
+		<TransmissionLinesLayer
+			{mapTheme}
+			visible={showTransmissionLines}
+			filter={transmissionFilter}
+		/>
 
 		<!-- Data centres (loads) overlay — beneath the facility markers so
 		     generators keep interaction priority -->

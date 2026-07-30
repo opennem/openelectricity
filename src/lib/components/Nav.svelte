@@ -48,8 +48,8 @@
 			class="block fixed top-0 left-0 h-full w-full z-999 bg-white pt-36 px-10 md:w-auto md:static md:px-0 md:py-2 md:flex md:justify-between md:gap-16 lg:gap-20"
 			class:hidden={!mobileNavActive}
 		>
-			{#each navItems as { name, href, children, show } (name)}
-				{#if show !== false}
+			{#each navItems as { name, href, children, show, dropdownOnly } (name)}
+				{#if show !== false && !dropdownOnly}
 					<!-- Active matching compares paths only — hrefs may carry a query
 					     string (e.g. /facilities?fullscreen=false). -->
 					{@const hrefPath = href.split('?')[0]}

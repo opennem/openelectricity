@@ -10,6 +10,11 @@
 	 * with outside-click/scroll close, and a footer whose Apply button commits
 	 * the caller's staged changes (via `onapply`) and closes the panel;
 	 * dismissing any other way discards them.
+	 *
+	 * The footer only renders when `onapply`/`footerLeft` is passed —
+	 * immediate-apply consumers (e.g. the explorer's single-select
+	 * RegionDropdown) skip it and instead call the `close` function handed to
+	 * the `children` snippet when a pick lands.
 	 * @type {{
 	 *   label: string,
 	 *   badge?: number | string | null,
@@ -18,7 +23,7 @@
 	 *   onopenchange?: (open: boolean) => void,
 	 *   onapply?: () => void,
 	 *   footerLeft?: import('svelte').Snippet,
-	 *   children: import('svelte').Snippet
+	 *   children: import('svelte').Snippet<[() => void]>
 	 * }}
 	 */
 	let {
@@ -83,21 +88,23 @@
 			class="fixed z-50 bg-white border border-mid-warm-grey rounded-lg shadow-md min-w-[280px] max-w-[340px] flex flex-col overflow-hidden"
 			transition:fly={{ y: -5, duration: 150 }}
 		>
-			{@render children()}
+			{@render children(() => setOpen(false))}
 
-			<div class="border-t border-warm-grey px-4 py-3 flex items-center gap-4">
-				{@render footerLeft?.()}
-				<button
-					type="button"
-					class="ml-auto bg-dark-grey text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
-					onclick={() => {
-						onapply?.();
-						setOpen(false);
-					}}
-				>
-					Apply
-				</button>
-			</div>
+			{#if onapply || footerLeft}
+				<div class="border-t border-warm-grey px-4 py-3 flex items-center gap-4">
+					{@render footerLeft?.()}
+					<button
+						type="button"
+						class="ml-auto bg-dark-grey text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
+						onclick={() => {
+							onapply?.();
+							setOpen(false);
+						}}
+					>
+						Apply
+					</button>
+				</div>
+			{/if}
 		</div>
 	{/if}
 </div>

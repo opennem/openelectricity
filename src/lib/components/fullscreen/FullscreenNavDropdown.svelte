@@ -16,6 +16,8 @@
 	 */
 	let { light = false } = $props();
 
+	// Unlike the header Nav, this dropdown renders `dropdownOnly` items too —
+	// that's where in-development entries (e.g. Explorer) surface.
 	/** @type {{ name: string, href: string }[]} */
 	let navItems = $derived([
 		{ name: 'Home', href: '/' },

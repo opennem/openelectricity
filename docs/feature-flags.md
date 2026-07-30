@@ -4,10 +4,11 @@ Build-time toggles for incomplete or experimental UI live in `PUBLIC_FEATURE_FLA
 
 Current flags:
 
-| Flag             | Default | Effect                                                                                                                                             |
-| ---------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tracker2_nav`   | `false` | Surfaces the in-progress **Tracker2** (Explorer dashboard) link in the main nav.                                                                   |
+| Flag             | Default | Effect                                                                                                                                     |
+| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tracker2_nav`   | `false` | Surfaces the in-progress **Tracker2** (Explorer dashboard) link in the main nav.                                                           |
 | `facility_loads` | `false` | Enables the loads (data centres) UI on `/facilities`. Can also be enabled per browser session via the `?facility_loads=true` URL override. |
+| `explorer_nav`   | `false` | Surfaces the in-progress **Explorer** map page (`/explorer`) in the fullscreen logo dropdown only — never in the main header nav.          |
 
 Toggle locally via `.env`:
 

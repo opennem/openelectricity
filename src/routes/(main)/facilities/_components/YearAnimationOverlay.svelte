@@ -1,6 +1,7 @@
 <script>
 	import { onDestroy } from 'svelte';
 	import { Play, X } from '@lucide/svelte';
+	import { MAP_FAB_CLASS } from '$lib/components/map/map-style.js';
 	import AnimationTimeline from '$lib/components/playback/AnimationTimeline.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import clamp from '$lib/utils/clamp.js';
@@ -131,8 +132,10 @@
 </script>
 
 {#if active}
+	<!-- Same material and anchor as the collapsed pill below, so expanding
+	     doesn't jump or change finish. -->
 	<div
-		class="absolute top-3 left-4 z-20 w-[400px] bg-white rounded-xl border-2 border-warm-grey shadow-lg hidden tablet:flex flex-col overflow-hidden"
+		class="absolute top-5 left-4 z-20 w-[400px] bg-white/95 backdrop-blur-sm rounded-xl border border-mid-warm-grey shadow-md hidden tablet:flex flex-col overflow-hidden"
 	>
 		<!-- Header -->
 		<div
@@ -227,12 +230,18 @@
 		{/if}
 	</div>
 {:else}
-	<button
-		onclick={handleOpen}
-		class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2 text-xs font-medium hidden tablet:flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
-		title="Play year animation"
-	>
-		<Play class="size-4 text-mid-grey" />
-		<span>Play</span>
-	</button>
+	<!-- Same material as the other floating map buttons (MAP_FAB_CLASS), as a
+	     labelled pill. The breakpoint gate lives on the wrapper so `hidden`
+	     can't fight the `flex` inside the shared class; top-5 lines the pill
+	     up with the reset/options buttons across the map. -->
+	<div class="absolute top-5 left-4 z-20 hidden tablet:block">
+		<button
+			onclick={handleOpen}
+			class="h-11 px-4 gap-2 text-xs font-medium {MAP_FAB_CLASS}"
+			title="Play year animation"
+		>
+			<Play class="size-5 text-mid-grey" />
+			<span>Play</span>
+		</button>
+	</div>
 {/if}

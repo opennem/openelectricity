@@ -1,26 +1,32 @@
 <script>
 	/**
 	 * FullscreenFilterBar — shared chrome for the filter bar at the top of
-	 * /facilities and /facility/[code]. Owns the outer flex wrapper, the
-	 * common spacing and fullscreen rounded-card styling, the desktop
-	 * divider in front of the options menu, and the `view-transition-name`
-	 * hooks used to animate cross-route transitions between the two pages:
+	 * /facilities, /facility/[code] and /explorer. Owns the outer flex
+	 * wrapper, the common spacing and fullscreen rounded-card styling, the
+	 * desktop divider in front of the options menu, and the
+	 * `view-transition-name` hooks used to animate cross-route transitions
+	 * between these pages:
 	 *
 	 *   - `filter-bar-back`       → back button, only on /facility/[code].
 	 *     Unpaired: slides in from the left on entry, back out on exit.
-	 *   - `filter-bar-stable`     → logo + first crumb. Paired across both
-	 *     routes; the group's position animates, so it slides sideways to
-	 *     make room for the back button (the images don't cross-fade).
+	 *   - `{stableName}`          → logo + first crumb. The two facilities
+	 *     routes share the default `filter-bar-stable`, so it pairs: the
+	 *     group's position animates (slides sideways to make room for the
+	 *     back button) and the images don't cross-fade. Pages whose stable
+	 *     content ISN'T pixel-identical to that pair (e.g. /explorer's
+	 *     "logo + Explorer") pass their own `stableName` — unpaired regions
+	 *     get the default cross-fade instead of rendering both texts stacked.
 	 *   - `filter-bar-rest-{key}` → page-specific middle content. Unpaired
 	 *     so it slides without zooming.
 	 *   - `filter-bar-options`    → options dropdown on the right. Paired
-	 *     across both routes, animation: none.
+	 *     across all routes, animation: none.
 	 *
 	 * The animation keyframes live in `(main)/+layout.svelte`.
 	 *
 	 * @type {{
 	 *   isFullscreen: boolean,
 	 *   routeKey: string,
+	 *   stableName?: string,
 	 *   paddingX?: string,
 	 *   bgClass?: string,
 	 *   back?: import('svelte').Snippet,
@@ -32,6 +38,7 @@
 	let {
 		isFullscreen,
 		routeKey,
+		stableName = 'filter-bar-stable',
 		paddingX = 'px-4',
 		bgClass = 'tablet:bg-light-warm-grey/75',
 		back,
@@ -55,10 +62,7 @@
 					</div>
 				{/if}
 				{#if stable}
-					<div
-						class="flex items-center gap-1 shrink-0"
-						style="view-transition-name: filter-bar-stable"
-					>
+					<div class="flex items-center gap-1 shrink-0" style="view-transition-name: {stableName}">
 						{@render stable()}
 					</div>
 				{/if}

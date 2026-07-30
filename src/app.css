@@ -383,3 +383,28 @@
 		@apply text-dark-grey;
 	}
 }
+
+/* MapLibre built-in controls (zoom +/-) — matched to the floating map chrome
+   (MAP_FAB_CLASS in $lib/components/map/map-style.js): the legends' material
+   (white/95 + blur + soft shadow) with a thin border and slightly rounded
+   corners, with slightly smaller buttons than the 44px FABs. Doubled-up
+   `.maplibregl-ctrl` prefix: MapLibre's own stylesheet arrives with the
+   lazy-loaded map chunk (after this file), so these must outrank its
+   single-class selectors — only box-shadow also needs !important, because
+   MapLibre's `.maplibregl-ctrl-group:not(:empty)` rule ties on specificity. */
+.maplibregl-ctrl.maplibregl-ctrl-group {
+	@apply bg-white/95 backdrop-blur-sm border border-mid-warm-grey rounded-[10px] overflow-hidden;
+	/* shadow-md, forced past the `:not(:empty)` tie */
+	box-shadow:
+		0 4px 6px -1px rgb(0 0 0 / 0.1),
+		0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+}
+.maplibregl-ctrl.maplibregl-ctrl-group button {
+	@apply size-8;
+}
+.maplibregl-ctrl.maplibregl-ctrl-group button + button {
+	@apply border-t border-mid-warm-grey;
+}
+.maplibregl-ctrl.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+	background-size: 24px 24px;
+}

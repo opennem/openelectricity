@@ -205,21 +205,27 @@
 {/if}
 
 <style>
-	/* Experimental: paired view-transition for /facilities ↔ /facility/[code].
-	   The logomark + first breadcrumb (filter-bar-stable) and the options
-	   dropdown (filter-bar-options) stay put across the route swap; only the
+	/* Experimental: paired view-transition between the fullscreen map/detail
+	   routes (/facilities ↔ /facility/[code] ↔ /explorer). The logomark +
+	   first breadcrumb (filter-bar-stable) and the options dropdown
+	   (filter-bar-options) stay put across the route swap; only the
 	   page-specific middle region (filter-bar-rest-{routeKey}) slides in
 	   from the left. Body card (page-body) uses the browser default
 	   cross-fade. Remove this block plus the matching `view-transition-name`
-	   hooks in the two routes to revert. */
+	   hooks in the routes to revert. */
 	:global {
 		/* Logo + first breadcrumb on the left: the pair's content is identical
-		   on both routes, so the images don't cross-fade (animation: none) but
-		   the GROUP keeps its default position animation — it slides right to
-		   make room for the back button entering on /facility/[code], and back
-		   left on the way out. The options dropdown stays visually fixed. */
-		::view-transition-old(filter-bar-stable),
-		::view-transition-new(filter-bar-stable),
+		   on both facilities routes, so the images don't cross-fade
+		   (animation: none) but the GROUP keeps its default position animation
+		   — it slides right to make room for the back button entering on
+		   /facility/[code], and back left on the way out. Scoped to paired
+		   captures (`:not(:only-child)`): when the other side is a route with
+		   its own stable name (e.g. /explorer's filter-bar-stable-explorer),
+		   the unpaired capture falls back to the default cross-fade instead of
+		   freezing at full opacity and popping at the end. The options
+		   dropdown is identical on all routes and stays visually fixed. */
+		::view-transition-old(filter-bar-stable):not(:only-child),
+		::view-transition-new(filter-bar-stable):not(:only-child),
 		::view-transition-group(filter-bar-options),
 		::view-transition-old(filter-bar-options),
 		::view-transition-new(filter-bar-options) {
@@ -246,15 +252,18 @@
 			}
 		}
 		/* The middle (page-specific) region uses its OWN view-transition-name
-		   per route (-list on /facilities, -detail on /facility/[code]). The
-		   names don't pair, so each side keeps its natural width and
-		   slides/fades without the default group-size morph (the "zoom"). */
+		   per route (-list on /facilities, -detail on /facility/[code],
+		   -explorer on /explorer). The names don't pair, so each side keeps
+		   its natural width and slides/fades without the default group-size
+		   morph (the "zoom"). */
 		::view-transition-old(filter-bar-rest-list),
-		::view-transition-old(filter-bar-rest-detail) {
+		::view-transition-old(filter-bar-rest-detail),
+		::view-transition-old(filter-bar-rest-explorer) {
 			animation: facilities-filter-bar-slide-out 240ms ease both;
 		}
 		::view-transition-new(filter-bar-rest-list),
-		::view-transition-new(filter-bar-rest-detail) {
+		::view-transition-new(filter-bar-rest-detail),
+		::view-transition-new(filter-bar-rest-explorer) {
 			animation: facilities-filter-bar-slide-in 240ms ease both;
 		}
 		@keyframes facilities-filter-bar-slide-out {

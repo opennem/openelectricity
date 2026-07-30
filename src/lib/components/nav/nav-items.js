@@ -7,6 +7,8 @@ import { windowedHref } from '$lib/utils/fullscreen-mode.js';
  * @property {NavItem[]} [children]
  * @property {boolean} [show]
  * @property {boolean} [beta]
+ * @property {boolean} [dropdownOnly] - Rendered only by the fullscreen logo
+ *   dropdown, never the header nav — for in-development entries.
  */
 
 /**
@@ -31,6 +33,11 @@ export function getNavItems(trackerLink, featureFlags = {}, { windowed = false }
 	const items = [
 		{ name: 'Tracker', href: trackerLink },
 		{ name: 'Facilities', href: windowedHref('/facilities', windowed) },
+		// explorer_nav: the in-development Explorer map page is dropdown-only —
+		// Nav.svelte skips dropdownOnly items (see docs/feature-flags.md).
+		...(featureFlags.explorer_nav
+			? [{ name: 'Explorer', href: '/explorer', dropdownOnly: true }]
+			: []),
 		{ name: 'Scenarios', href: '/scenarios' },
 		{ name: 'Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },

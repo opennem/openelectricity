@@ -4,8 +4,9 @@
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { building } from '$app/environment';
-	import { Flag, X, Zap } from '@lucide/svelte';
-	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
+	import { Flag, RotateCcw, X, Zap } from '@lucide/svelte';
+	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
+	import { MAP_FAB_CLASS, MAP_THEMES } from '$lib/components/map/map-style.js';
 	import MapKey from './_components/MapKey.svelte';
 	import DataCentresLegend from './_components/DataCentresLegend.svelte';
 	import { normaliseMetric, metricMax } from './_utils/normalise-metric.js';
@@ -509,13 +510,11 @@
 
 	// Map options - read initial values from URL params
 	// satellite: default false, transmission: default true, clustering: default false, golf: default false
-	const VALID_THEMES = /** @type {const} */ (['light', 'dark', 'satellite']);
-
 	const initialTheme = page.url.searchParams.get('theme') ?? 'light';
 
 	let mapTheme = $state(
 		/** @type {'light' | 'dark' | 'satellite'} */ (
-			VALID_THEMES.includes(/** @type {any} */ (initialTheme)) ? initialTheme : 'light'
+			MAP_THEMES.includes(initialTheme) ? initialTheme : 'light'
 		)
 	);
 	let mapShowTransmissionLines = $state(page.url.searchParams.get('transmission') !== 'false');
@@ -563,12 +562,6 @@
 		initial: 480,
 		storageKey: 'facilities-list-width'
 	});
-
-	// Circular white floating buttons over the mobile map (zoom, back) — one
-	// definition so the FABs can't drift apart. Size is set per button (the
-	// back button matches the nav-bar controls, the zoom stack is smaller).
-	const mapFabClass =
-		'rounded-full bg-white border-2 border-warm-grey shadow-lg flex items-center justify-center hover:bg-light-warm-grey transition-colors cursor-pointer';
 
 	// The detail panel opens to ~2/3 of the map height on both breakpoints
 	// (desktop: drag-resizable ResizablePanel; mobile: the detail bottom sheet's
@@ -1695,9 +1688,8 @@
 							/>
 						{/await}
 
-						{#snippet mapOptionsDropdown(/** @type {boolean} */ iconOnly)}
+						{#snippet mapOptionsDropdown()}
 							<MapOptionsDropdown
-								{iconOnly}
 								{mapTheme}
 								showTransmissionLines={mapShowTransmissionLines}
 								showGolfCourses={mapShowGolfCourses}
@@ -1733,7 +1725,7 @@
 						{/snippet}
 
 						<!-- Map controls (desktop) -->
-						<div class="absolute top-3 right-20 z-20 hidden tablet:flex items-center gap-2">
+						<div class="absolute top-5 right-20 z-20 hidden tablet:flex items-center gap-2">
 							<button
 								onclick={() => {
 									mapRef?.resetView();
@@ -1741,12 +1733,13 @@
 										closeFacilityDetail();
 									}
 								}}
-								class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
+								class="size-11 {MAP_FAB_CLASS}"
 								title="Reset map to show all facilities"
+								aria-label="Reset map to show all facilities"
 							>
-								Reset Map
+								<RotateCcw class="size-6" />
 							</button>
-							{@render mapOptionsDropdown(false)}
+							{@render mapOptionsDropdown()}
 						</div>
 
 						<!-- Map controls (mobile) — a floating stack below the nav bar:
@@ -1755,20 +1748,20 @@
 						<div
 							class="tablet:hidden absolute top-20 right-3 z-20 flex flex-col items-center gap-2"
 						>
-							{@render mapOptionsDropdown(true)}
+							{@render mapOptionsDropdown()}
 							<button
 								onclick={() => mapRef?.zoomIn()}
-								class="size-11 {mapFabClass}"
+								class="size-11 {MAP_FAB_CLASS}"
 								aria-label="Zoom in"
 							>
-								<IconPlus class="size-5" />
+								<IconPlus class="size-6" />
 							</button>
 							<button
 								onclick={() => mapRef?.zoomOut()}
-								class="size-11 {mapFabClass}"
+								class="size-11 {MAP_FAB_CLASS}"
 								aria-label="Zoom out"
 							>
-								<IconMinus class="size-5" />
+								<IconMinus class="size-6" />
 							</button>
 						</div>
 
@@ -1777,7 +1770,7 @@
 						{#if !isDesktop && selectedFacility}
 							<button
 								onclick={closeFacilityDetail}
-								class="tablet:hidden absolute top-3 left-3 z-30 size-13 {mapFabClass}"
+								class="tablet:hidden absolute top-3 left-3 z-30 size-13 {MAP_FAB_CLASS}"
 								aria-label="Back to facilities list"
 							>
 								<IconChevronLeft class="size-6" />
