@@ -6,9 +6,10 @@
 	import { building } from '$app/environment';
 	import { Flag, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
-	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
+	import MapKey from './_components/MapKey.svelte';
 	import DataCentresLegend from './_components/DataCentresLegend.svelte';
-	import { normaliseMetric } from './_utils/normalise-metric.js';
+	import { normaliseMetric, metricMax } from './_utils/normalise-metric.js';
+	import { capacityLegendStops } from './_utils/marker-radius.js';
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
@@ -530,6 +531,11 @@
 		return m;
 	});
 	let metricValues = $derived(normaliseMetric(capacityValuesByCode));
+
+	// Reference circles for the map key, drawn at the radii the map itself paints.
+	// Round stops off the same maximum the normalisation used, so the key stays
+	// true as the set changes (play mode swaps in every facility).
+	let capacityStops = $derived(capacityLegendStops(metricMax(capacityValuesByCode)));
 
 	/** @type {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} */
 	let transmissionLineVisibility = $state({ high: true, medium: true, low: true, lowest: true });
@@ -1764,19 +1770,25 @@
 							onclose={handlePlayClose}
 						/>
 
-						{#if mapShowTransmissionLines}
-							<TransmissionLinesLegend
-								satelliteView={mapTheme !== 'light'}
+						<!-- Map overlays are plain cards and the page places them, so a new
+						     one claims a corner rather than inventing its own offsets. -->
+						<div class="absolute bottom-4 left-4 z-10">
+							<!-- One key for both marker encodings. `satelliteView` tracks the
+							     transmission layer's own condition, not the theme, so the
+							     swatches always show the colours the map is actually drawing. -->
+							<MapKey
+								{capacityStops}
+								showTransmission={mapShowTransmissionLines}
+								satelliteView={mapTheme === 'satellite'}
 								visibility={transmissionLineVisibility}
 								onvisibilitychange={(v) => (transmissionLineVisibility = v)}
 							/>
-						{/if}
+						</div>
 
 						{#if showLoads}
-							<DataCentresLegend
-								satelliteView={mapTheme !== 'light'}
-								raised={mapShowTransmissionLines}
-							/>
+							<div class="absolute bottom-4 right-4 z-10">
+								<DataCentresLegend satelliteView={mapTheme !== 'light'} />
+							</div>
 						{/if}
 
 						<!-- Facility detail panel (desktop only) -->

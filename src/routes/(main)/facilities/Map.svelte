@@ -22,6 +22,8 @@
 	import FacilityCardImage from './_components/FacilityCardImage.svelte';
 	import { getRegionLabel } from '$lib/facilities/filters.js';
 	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
+	import { CIRCLE_MIN, CIRCLE_MAX, buildCircleStops } from './_utils/marker-radius.js';
+	import { TRANSMISSION_BANDS, BAND_MIN, bandColours } from '$lib/facilities/transmission-bands.js';
 	import { X } from '@lucide/svelte';
 
 	/**
@@ -98,56 +100,35 @@
 		onload
 	} = $props();
 
-	// Circle radius interpolation stops (5-stop linear from min → max). The
-	// hovered variant matches the existing curve's +2 px bump.
-	function buildCircleStops(/** @type {number} */ min, /** @type {number} */ max) {
-		const span = max - min;
-		return [
-			0,
-			min,
-			0.25,
-			min + span * 0.25,
-			0.5,
-			min + span * 0.5,
-			0.75,
-			min + span * 0.75,
-			1,
-			max
-		];
-	}
-	// Circle radius range (px) — was tunable via the (removed) experiments panel.
-	const CIRCLE_MIN = 4;
-	const CIRCLE_MAX = 28;
+	// Radius curve for the metric-sized markers. The hovered variant offsets the
+	// whole curve by +2 px. Shared with the map's size legend via _utils.
 	let circleStops = $derived(buildCircleStops(CIRCLE_MIN, CIRCLE_MAX));
 	let circleStopsHovered = $derived(buildCircleStops(CIRCLE_MIN + 2, CIRCLE_MAX + 2));
 
 	let satelliteView = $derived(mapTheme === 'satellite');
 
-	// Build filter for transmission lines based on visibility settings
+	// Band colours for the active basemap, indexed highest → lowest voltage. Read
+	// as plain strings inside the paint expression so its tuple inference holds.
+	let lineColours = $derived(bandColours(satelliteView));
+
+	// One condition per visible band, walked off TRANSMISSION_BANDS. Each band
+	// runs from its own floor up to the previous band's — writing that by hand
+	// meant stating every threshold twice, so a boundary could be moved on one
+	// side of a pair and not the other.
 	let transmissionFilter = $derived.by(() => {
 		/** @type {any[]} */
 		const voltageConditions = [];
 
-		if (transmissionLineVisibility.high) {
-			voltageConditions.push(['>=', ['get', 'capacitykv'], 400]);
-		}
-		if (transmissionLineVisibility.medium) {
-			voltageConditions.push([
-				'all',
-				['>=', ['get', 'capacitykv'], 220],
-				['<', ['get', 'capacitykv'], 400]
-			]);
-		}
-		if (transmissionLineVisibility.low) {
-			voltageConditions.push([
-				'all',
-				['>=', ['get', 'capacitykv'], 110],
-				['<', ['get', 'capacitykv'], 220]
-			]);
-		}
-		if (transmissionLineVisibility.lowest) {
-			voltageConditions.push(['<', ['get', 'capacitykv'], 110]);
-		}
+		TRANSMISSION_BANDS.forEach((band, i) => {
+			if (!transmissionLineVisibility[band.key]) return;
+			/** @type {any[]} */
+			const clauses = [];
+			// The top band has no ceiling and the bottom band no floor; the rest are
+			// bounded both ways by their own min and the band above's.
+			if (band.min > 0) clauses.push(['>=', ['get', 'capacitykv'], band.min]);
+			if (i > 0) clauses.push(['<', ['get', 'capacitykv'], TRANSMISSION_BANDS[i - 1].min]);
+			voltageConditions.push(clauses.length === 1 ? clauses[0] : ['all', ...clauses]);
+		});
 
 		if (voltageConditions.length === 0) {
 			// Never match any features
@@ -945,15 +926,19 @@
 				id="transmission-lines-layer"
 				filter={transmissionFilter}
 				paint={{
+					// Colours and thresholds come from TRANSMISSION_BANDS, highest band
+					// first — the same table the detail map and the map key read. The
+					// line-width ladder below still carries its own literals: deriving three
+					// zoom-step arrays would need a spread, which widens the paint cast.
 					'line-color': [
 						'case',
-						['>=', ['get', 'capacitykv'], 400],
-						satelliteView ? '#ff6b6b' : '#c0392b',
-						['>=', ['get', 'capacitykv'], 220],
-						satelliteView ? '#ffd93d' : '#c49b00',
-						['>=', ['get', 'capacitykv'], 110],
-						satelliteView ? '#6bcb77' : '#27ae60',
-						satelliteView ? '#74b9ff' : '#2980b9'
+						['>=', ['get', 'capacitykv'], BAND_MIN[0]],
+						lineColours[0],
+						['>=', ['get', 'capacitykv'], BAND_MIN[1]],
+						lineColours[1],
+						['>=', ['get', 'capacitykv'], BAND_MIN[2]],
+						lineColours[2],
+						lineColours[3]
 					],
 					'line-width': [
 						'interpolate',

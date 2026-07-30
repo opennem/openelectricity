@@ -10,6 +10,7 @@
 	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
 	import MapOptionsDropdown from '../../../facilities/_components/MapOptionsDropdown.svelte';
 	import { fetchOsmPolygon, featureBounds } from '$lib/utils/osm.js';
+	import { BAND_MIN, bandColours } from '$lib/facilities/transmission-bands.js';
 
 	/**
 	 * Full-bleed, interactive facility location map. Unlike the sidebar
@@ -45,6 +46,10 @@
 				: '/map-styles/positron.json'
 	);
 	let satelliteView = $derived(mapTheme === 'satellite');
+
+	// Band colours for the active basemap, indexed highest → lowest voltage. Read
+	// as plain strings inside the paint expression so its tuple inference holds.
+	let lineColours = $derived(bandColours(satelliteView));
 
 	// Stable references — a fresh object/array only when the coords change, so
 	// svelte-maplibre-gl recentres on navigation without fighting the fitBounds
@@ -103,15 +108,17 @@
 				<LineLayer
 					id="transmission-lines-layer"
 					paint={{
+						// Colours and thresholds come from TRANSMISSION_BANDS, highest
+						// band first — the same table the /facilities map and its key read.
 						'line-color': [
 							'case',
-							['>=', ['get', 'capacitykv'], 400],
-							satelliteView ? '#ff6b6b' : '#c0392b',
-							['>=', ['get', 'capacitykv'], 220],
-							satelliteView ? '#ffd93d' : '#c49b00',
-							['>=', ['get', 'capacitykv'], 110],
-							satelliteView ? '#6bcb77' : '#27ae60',
-							satelliteView ? '#74b9ff' : '#2980b9'
+							['>=', ['get', 'capacitykv'], BAND_MIN[0]],
+							lineColours[0],
+							['>=', ['get', 'capacitykv'], BAND_MIN[1]],
+							lineColours[1],
+							['>=', ['get', 'capacitykv'], BAND_MIN[2]],
+							lineColours[2],
+							lineColours[3]
 						],
 						'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.5, 16, 4],
 						'line-opacity': 0.85

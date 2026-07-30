@@ -5,15 +5,13 @@
 	 * Legend for the data centres (loads) map layer — status buckets are encoded
 	 * as fill opacity on the purple markers, so the chips mirror that.
 	 *
-	 * `raised` lifts the legend above the transmission-lines legend when both
-	 * layers are visible (they share the bottom-right corner).
+	 * Renders as a plain card; the page places it, the same way it places MapKey.
 	 *
 	 * @type {{
-	 *   satelliteView?: boolean,
-	 *   raised?: boolean
+	 *   satelliteView?: boolean
 	 * }}
 	 */
-	let { satelliteView = false, raised = false } = $props();
+	let { satelliteView = false } = $props();
 
 	let fill = $derived(satelliteView ? DC_MARKER.satelliteFill : DC_MARKER.fill);
 
@@ -26,11 +24,7 @@
 	]);
 </script>
 
-<div
-	class="absolute right-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs {raised
-		? 'bottom-14'
-		: 'bottom-4'}"
->
+<div class="bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs">
 	<div class="flex items-center gap-3">
 		<span class="font-medium text-dark-grey">Data centres</span>
 		{#each BUCKETS as { label, opacity } (label)}
