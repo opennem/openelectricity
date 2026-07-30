@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TRANSMISSION_BANDS, bandColours } from './transmission-bands.js';
+import { TRANSMISSION_BANDS, bandColour, bandColours } from './transmission-bands.js';
 
 describe('TRANSMISSION_BANDS', () => {
 	// Map.svelte's `line-color` expression indexes straight into this order —
@@ -29,14 +29,27 @@ describe('TRANSMISSION_BANDS', () => {
 	});
 });
 
+describe('bandColour', () => {
+	// The key reads this per band and the layers read it via bandColours, so a
+	// disagreement here is a key that lies about what the map is drawing.
+	it('uses the deep tones only on the light basemap', () => {
+		for (const band of TRANSMISSION_BANDS) {
+			expect(bandColour(band, 'light')).toBe(band.colour);
+			expect(bandColour(band, 'dark')).toBe(band.brightColour);
+			expect(bandColour(band, 'satellite')).toBe(band.brightColour);
+		}
+	});
+});
+
 describe('bandColours', () => {
-	it('returns the basemap-appropriate colour per band, in band order', () => {
-		expect(bandColours(false)).toEqual(TRANSMISSION_BANDS.map((band) => band.colour));
-		expect(bandColours(true)).toEqual(TRANSMISSION_BANDS.map((band) => band.satelliteColour));
+	// Per-theme resolution is bandColour's contract, tested above; what this form
+	// adds is the band order the layers' `case` expressions index into.
+	it('returns one colour per band, in band order', () => {
+		expect(bandColours('light')).toEqual(TRANSMISSION_BANDS.map((band) => band.colour));
 	});
 
 	it('gives every band a distinct colour in both sets', () => {
-		expect(new Set(bandColours(false)).size).toBe(TRANSMISSION_BANDS.length);
-		expect(new Set(bandColours(true)).size).toBe(TRANSMISSION_BANDS.length);
+		expect(new Set(bandColours('light')).size).toBe(TRANSMISSION_BANDS.length);
+		expect(new Set(bandColours('dark')).size).toBe(TRANSMISSION_BANDS.length);
 	});
 });

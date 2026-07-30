@@ -3,7 +3,8 @@
 	import { formatCapacity } from '$lib/utils/formatters.js';
 	import {
 		TRANSMISSION_BANDS,
-		TRANSMISSION_SOURCE_HREF
+		TRANSMISSION_SOURCE_HREF,
+		bandColour
 	} from '$lib/facilities/transmission-bands.js';
 
 	/**
@@ -31,7 +32,7 @@
 	 * @type {{
 	 *   capacityStops?: { value: number, radius: number }[],
 	 *   showTransmission?: boolean,
-	 *   satelliteView?: boolean,
+	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   visibility?: Visibility,
 	 *   onvisibilitychange?: (visibility: Visibility) => void
 	 * }}
@@ -39,7 +40,7 @@
 	let {
 		capacityStops = [],
 		showTransmission = false,
-		satelliteView = false,
+		mapTheme = 'light',
 		visibility = { high: true, medium: true, low: true, lowest: true },
 		onvisibilitychange
 	} = $props();
@@ -151,9 +152,7 @@
 							     pins the item bottoms, so widening this gap only lifts the swatch. -->
 							<span
 								class="w-5 rounded-full"
-								style="height: {band.width}px; background-color: {satelliteView
-									? band.satelliteColour
-									: band.colour};"
+								style="height: {band.width}px; background-color: {bandColour(band, mapTheme)};"
 							></span>
 							<span class="text-[10px] leading-none tabular-nums text-mid-grey">{band.label}</span>
 						</button>

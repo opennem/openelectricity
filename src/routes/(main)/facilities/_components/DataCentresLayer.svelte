@@ -1,6 +1,6 @@
 <script>
 	import { GeoJSONSource, CircleLayer, Popup } from 'svelte-maplibre-gl';
-	import { toGeoJSON, DC_MARKER } from '$lib/facilities/data-centres.js';
+	import { toGeoJSON, DC_MARKER, dcFill } from '$lib/facilities/data-centres.js';
 
 	/**
 	 * Data centres (large loads) overlay for the facilities map. Renders purple
@@ -20,7 +20,7 @@
 	 * @type {{
 	 *   visible?: boolean,
 	 *   loads?: any[],
-	 *   satelliteView?: boolean,
+	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   map?: any,
 	 *   selectedId?: string | null,
 	 *   onselect?: (properties: any) => void
@@ -29,7 +29,7 @@
 	let {
 		visible = false,
 		loads = [],
-		satelliteView = false,
+		mapTheme = 'light',
 		map = null,
 		selectedId = null,
 		onselect
@@ -88,7 +88,7 @@
 			4
 		]);
 		return /** @type {import('svelte').ComponentProps<typeof CircleLayer>['paint']} */ ({
-			'circle-color': satelliteView ? DC_MARKER.satelliteFill : DC_MARKER.fill,
+			'circle-color': dcFill(mapTheme),
 			'circle-radius': selectedId
 				? ['case', selectedMatch, ['+', baseRadius, 2], baseRadius]
 				: baseRadius,

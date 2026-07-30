@@ -107,9 +107,11 @@
 
 	let satelliteView = $derived(mapTheme === 'satellite');
 
-	// Band colours for the active basemap, indexed highest → lowest voltage. Read
-	// as plain strings inside the paint expression so its tuple inference holds.
-	let lineColours = $derived(bandColours(satelliteView));
+	// Band colours for the active basemap, indexed highest → lowest voltage. Keyed
+	// on the theme, not `satelliteView` — the dark style needs the bright set too,
+	// and the map key resolves its swatches through the same function. Read as
+	// plain strings inside the paint expression so its tuple inference holds.
+	let lineColours = $derived(bandColours(mapTheme));
 
 	// One condition per visible band, walked off TRANSMISSION_BANDS. Each band
 	// runs from its own floor up to the previous band's — writing that by hand
@@ -993,7 +995,7 @@
 		<DataCentresLayer
 			visible={showDataCentres}
 			loads={dataCentres}
-			{satelliteView}
+			{mapTheme}
 			map={mapInstance}
 			selectedId={selectedDataCentreId}
 			onselect={ondatacentreselect}

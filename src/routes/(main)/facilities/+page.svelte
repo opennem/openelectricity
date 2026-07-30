@@ -521,6 +521,10 @@
 	let mapShowTransmissionLines = $state(page.url.searchParams.get('transmission') !== 'false');
 	let mapClustering = $state(page.url.searchParams.get('clustering') === 'true');
 	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
+	// Map chrome rather than a layer — shows the key and the data-centre legend.
+	// Off by default: the map reads cleaner without it, and the encodings are
+	// there to be looked up rather than kept on screen.
+	let mapShowLegend = $state(page.url.searchParams.get('legend') === 'true');
 
 	// Capacity per facility (maximum falling back to registered), normalised to
 	// 0..1 — sizes the map markers (circle radius). Sourced from the play set
@@ -537,8 +541,13 @@
 	// true as the set changes (play mode swaps in every facility).
 	let capacityStops = $derived(capacityLegendStops(metricMax(capacityValuesByCode)));
 
-	/** @type {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} */
-	let transmissionLineVisibility = $state({ high: true, medium: true, low: true, lowest: true });
+	/**
+	 * Every band on. A factory rather than a shared const, so the initial state
+	 * and the reset in `onshowlegendchange` can't end up aliasing one object.
+	 * @returns {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }}
+	 */
+	const allBandsVisible = () => ({ high: true, medium: true, low: true, lowest: true });
+	let transmissionLineVisibility = $state(allBandsVisible());
 
 	// Map loading state
 	let mapLoaded = $state(false);
@@ -748,6 +757,13 @@
 			params.set('transmission', 'false');
 		} else {
 			params.delete('transmission');
+		}
+
+		// legend: only include if true (default is false)
+		if (mapShowLegend) {
+			params.set('legend', 'true');
+		} else {
+			params.delete('legend');
 		}
 
 		// clustering: only include if true (default is false)
@@ -1069,6 +1085,9 @@
 		}
 		if (mapShowGolfCourses) {
 			url += '&golf=true';
+		}
+		if (mapShowLegend) {
+			url += '&legend=true';
 		}
 		if (showLoads) {
 			url += '&datacentres=true';
@@ -1685,6 +1704,7 @@
 								showGolfOption={showGolf}
 								showMagicIndicator={showGolf}
 								clustering={mapClustering}
+								showLegend={mapShowLegend}
 								onmapthemechange={(v) => {
 									mapTheme = v;
 									updateMapOptionsUrl();
@@ -1699,6 +1719,14 @@
 								}}
 								onclusteringchange={(v) => {
 									mapClustering = v;
+									updateMapOptionsUrl();
+								}}
+								onshowlegendchange={(v) => {
+									mapShowLegend = v;
+									// The key's voltage swatches are the only control for the band
+									// filter, so hiding the key would strand a filtered layer with
+									// no affordance to restore it. Put every band back as it goes.
+									if (!v) transmissionLineVisibility = allBandsVisible();
 									updateMapOptionsUrl();
 								}}
 							/>
@@ -1771,24 +1799,28 @@
 						/>
 
 						<!-- Map overlays are plain cards and the page places them, so a new
-						     one claims a corner rather than inventing its own offsets. -->
-						<div class="absolute bottom-4 left-4 z-10">
-							<!-- One key for both marker encodings. `satelliteView` tracks the
-							     transmission layer's own condition, not the theme, so the
-							     swatches always show the colours the map is actually drawing. -->
-							<MapKey
-								{capacityStops}
-								showTransmission={mapShowTransmissionLines}
-								satelliteView={mapTheme === 'satellite'}
-								visibility={transmissionLineVisibility}
-								onvisibilitychange={(v) => (transmissionLineVisibility = v)}
-							/>
-						</div>
-
-						{#if showLoads}
-							<div class="absolute bottom-4 right-4 z-10">
-								<DataCentresLegend satelliteView={mapTheme !== 'light'} />
+						     one claims a corner rather than inventing its own offsets. Both
+						     answer to the one "Show legend" option — a reader turning the key
+						     off means all of it, not the generator half. -->
+						{#if mapShowLegend}
+							<div class="absolute bottom-4 left-4 z-10">
+								<!-- One key for both marker encodings. It resolves swatch colours
+								     through the same theme-keyed helper the layers paint with, so
+								     it always shows what the map is actually drawing. -->
+								<MapKey
+									{capacityStops}
+									showTransmission={mapShowTransmissionLines}
+									{mapTheme}
+									visibility={transmissionLineVisibility}
+									onvisibilitychange={(v) => (transmissionLineVisibility = v)}
+								/>
 							</div>
+
+							{#if showLoads}
+								<div class="absolute bottom-4 right-4 z-10">
+									<DataCentresLegend {mapTheme} />
+								</div>
+							{/if}
 						{/if}
 
 						<!-- Facility detail panel (desktop only) -->

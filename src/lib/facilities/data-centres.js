@@ -21,12 +21,14 @@ export const STATUS_LABELS = {
 
 /**
  * Single source of truth for the data-centre marker identity, shared by the
- * map layer and its legend so the two can't drift.
+ * map layer and its legend so the two can't drift. Resolve the fill through
+ * `dcFill` rather than picking a field — sharing the values but not the rule
+ * for choosing between them is what let the two disagree on the dark basemap.
  */
 export const DC_MARKER = {
 	fill: fuelTechColourMap.data_centre,
-	// Lighter fill over satellite imagery, mirroring the golf-layer treatment.
-	satelliteFill: '#E9DBFF',
+	// Lighter fill for the dark and satellite basemaps, mirroring the golf layer.
+	brightFill: '#E9DBFF',
 	stroke: '#5A2EBB',
 	/** Status → fill opacity (announced sites read as faint hollow rings). */
 	statusOpacity: /** @type {Record<DataCentreStatusBucket, number>} */ ({
@@ -36,6 +38,18 @@ export const DC_MARKER = {
 		retired: 0.15
 	})
 };
+
+/**
+ * The marker fill for the given basemap. Mirrors `bandColour` in
+ * transmission-bands.js: takes the theme rather than a boolean, so the layer
+ * and the legend can't answer "is this basemap dark?" differently.
+ *
+ * @param {'light' | 'dark' | 'satellite'} mapTheme
+ * @returns {string}
+ */
+export function dcFill(mapTheme) {
+	return mapTheme === 'light' ? DC_MARKER.fill : DC_MARKER.brightFill;
+}
 
 /**
  * Normalise the source sheet's free-text status into buckets.

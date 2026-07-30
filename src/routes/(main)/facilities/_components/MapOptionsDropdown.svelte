@@ -12,11 +12,14 @@
 	 *   showMagicIndicator?: boolean,
 	 *   clustering?: boolean,
 	 *   showClusteringOption?: boolean,
+	 *   showLegend?: boolean,
+	 *   showLegendOption?: boolean,
 	 *   iconOnly?: boolean,
 	 *   onmapthemechange?: (value: 'light' | 'dark' | 'satellite') => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
 	 *   ongolfcourseschange?: (value: boolean) => void,
-	 *   onclusteringchange?: (value: boolean) => void
+	 *   onclusteringchange?: (value: boolean) => void,
+	 *   onshowlegendchange?: (value: boolean) => void
 	 * }}
 	 */
 	let {
@@ -26,6 +29,9 @@
 		showGolfOption = false,
 		showMagicIndicator = false,
 		clustering = true,
+		showLegend = false,
+		/** Hide the legend row for maps that have no legend (e.g. the facility detail map). */
+		showLegendOption = true,
 		/** Hide the clustering row for maps with a single point (e.g. one facility). */
 		showClusteringOption = true,
 		/** Circular icon-only trigger — used by the mobile floating map controls. */
@@ -33,7 +39,8 @@
 		onmapthemechange,
 		ontransmissionlineschange,
 		ongolfcourseschange,
-		onclusteringchange
+		onclusteringchange,
+		onshowlegendchange
 	} = $props();
 
 	let isOpen = $state(false);
@@ -49,6 +56,52 @@
 	]);
 </script>
 
+{#snippet tick()}
+	<svg
+		class="w-3 h-3 text-white"
+		fill="none"
+		viewBox="0 0 24 24"
+		stroke="currentColor"
+		stroke-width="3"
+	>
+		<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+	</svg>
+{/snippet}
+
+{#snippet flag()}
+	<Flag class="w-3 h-3 text-white" />
+{/snippet}
+
+<!-- Every toggle in the menu. `tint` and `mark` exist for the golf row, which
+     fills its box in course-green and marks it with a flag; leaving it as its own
+     copy of this markup is how it ended up without a pressed state or a button
+     type when the rest gained them. -->
+{#snippet checkboxRow(
+	/** @type {string} */ label,
+	/** @type {boolean} */ checked,
+	/** @type {((value: boolean) => void) | undefined} */ onchange,
+	/** @type {string} */ tint = '',
+	/** @type {import('svelte').Snippet} */ mark = tick
+)}
+	<button
+		type="button"
+		onclick={() => onchange?.(!checked)}
+		aria-pressed={checked}
+		class="w-full cursor-pointer px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
+	>
+		<span
+			class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+			class:bg-dark-grey={checked && !tint}
+			class:border-dark-grey={checked && !tint}
+			class:border-mid-warm-grey={!checked}
+			style={checked && tint ? `background-color: ${tint}; border-color: ${tint};` : ''}
+		>
+			{#if checked}{@render mark()}{/if}
+		</span>
+		<span class="flex-1">{label}</span>
+	</button>
+{/snippet}
+
 <div class="relative" use:clickoutside onclickoutside={handleClickOutside}>
 	<button
 		onclick={() => (isOpen = !isOpen)}
@@ -63,7 +116,7 @@
 			<Layers class={iconOnly ? 'size-5' : 'size-4'} />
 		{/if}
 		{#if !iconOnly}
-			<span>Layers</span>
+			<span>Map options</span>
 			<ChevronDown class="size-3 transition-transform {isOpen ? 'rotate-180' : ''}" />
 		{/if}
 	</button>
@@ -100,86 +153,29 @@
 			<div class="border-t border-warm-grey my-2"></div>
 
 			<!-- Transmission lines toggle -->
-			<button
-				onclick={() => {
-					ontransmissionlineschange?.(!showTransmissionLines);
-				}}
-				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
-			>
-				<span
-					class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
-					class:bg-dark-grey={showTransmissionLines}
-					class:border-dark-grey={showTransmissionLines}
-					class:border-mid-warm-grey={!showTransmissionLines}
-				>
-					{#if showTransmissionLines}
-						<svg
-							class="w-3 h-3 text-white"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="3"
-						>
-							<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-						</svg>
-					{/if}
-				</span>
-				<span class="flex-1">Transmission lines</span>
-			</button>
+			{@render checkboxRow('Transmission lines', showTransmissionLines, ontransmissionlineschange)}
 
 			<!-- Clustering toggle -->
 			{#if showClusteringOption}
-				<button
-					onclick={() => {
-						onclusteringchange?.(!clustering);
-					}}
-					class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 transition-colors text-left hover:bg-light-warm-grey"
-				>
-					<span
-						class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
-						class:bg-dark-grey={clustering}
-						class:border-dark-grey={clustering}
-						class:border-mid-warm-grey={!clustering}
-					>
-						{#if clustering}
-							<svg
-								class="w-3 h-3 text-white"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-								stroke-width="3"
-							>
-								<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-							</svg>
-						{/if}
-					</span>
-					<span class="flex-1">Clustering</span>
-				</button>
+				{@render checkboxRow('Clustering', clustering, onclusteringchange)}
 			{/if}
 
 			{#if showGolfOption}
 				<div class="border-t border-warm-grey my-1"></div>
+				{@render checkboxRow(
+					'Golf courses',
+					showGolfCourses,
+					ongolfcourseschange,
+					mapTheme === 'satellite' ? '#4ade80' : '#16a34a',
+					flag
+				)}
+			{/if}
 
-				<!-- Golf courses toggle -->
-				<button
-					onclick={() => {
-						ongolfcourseschange?.(!showGolfCourses);
-					}}
-					class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
-				>
-					<span
-						class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
-						class:border-mid-warm-grey={!showGolfCourses}
-						style={showGolfCourses
-							? `background-color: ${mapTheme === 'satellite' ? '#4ade80' : '#16a34a'}; border-color: ${mapTheme === 'satellite' ? '#4ade80' : '#16a34a'};`
-							: ''}
-					>
-						{#if showGolfCourses}
-							<Flag class="w-3 h-3 text-white" />
-						{/if}
-					</span>
-					<span class="flex-1">Golf courses</span>
-				</button>
+			{#if showLegendOption}
+				<!-- Last, below a rule: this one shows map chrome rather than toggling
+				     a layer, so it doesn't belong with the rows above it. -->
+				<div class="border-t border-warm-grey my-1"></div>
+				{@render checkboxRow('Show legend', showLegend, onshowlegendchange)}
 			{/if}
 		</div>
 	{/if}

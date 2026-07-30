@@ -21,6 +21,9 @@
 	 * dominate the legend. Swatches scale down proportionally to stay under it. */
 	const LEGEND_MAX_RADIUS = 10;
 
+	/** Smallest swatch that still reads as a circle (px diameter). */
+	const LEGEND_MIN_DIAMETER = 6;
+
 	/** Default formatter — overridden per-spec via `formatValue` (e.g. the chart's value format).
 	 * @param {number} n */
 	function defaultFormat(n) {
@@ -91,11 +94,19 @@
 			{/if}
 			<div class="flex items-end gap-3">
 				{#each size.stops as stop (stop.value)}
-					{@const diameter = stop.radius * legendScale * 2}
+					<!-- Even whole pixels: a fractional diameter leaves the swatch on a half
+					     pixel, and the browser then rounds width and height apart — small
+					     stops render visibly as eggs. -->
+					{@const diameter = Math.max(
+						LEGEND_MIN_DIAMETER,
+						Math.round(stop.radius * legendScale) * 2
+					)}
 					<div class="flex flex-col items-center gap-0.5">
+						<!-- `aspect-square` ties height to width, so no flex context can
+						     squash one axis and not the other. -->
 						<span
-							class="rounded-full border border-mid-grey/60 bg-mid-grey/20"
-							style="width: {diameter}px; height: {diameter}px;"
+							class="block aspect-square shrink-0 rounded-full border border-mid-grey/60 bg-mid-grey/20"
+							style="width: {diameter}px;"
 						></span>
 						<span class="text-[10px] tabular-nums text-mid-grey">{sizeFormat(stop.value)}</span>
 					</div>

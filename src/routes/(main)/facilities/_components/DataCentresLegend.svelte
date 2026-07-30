@@ -1,5 +1,5 @@
 <script>
-	import { STATUS_LABELS, DC_MARKER } from '$lib/facilities/data-centres.js';
+	import { STATUS_LABELS, DC_MARKER, dcFill } from '$lib/facilities/data-centres.js';
 
 	/**
 	 * Legend for the data centres (loads) map layer — status buckets are encoded
@@ -8,12 +8,13 @@
 	 * Renders as a plain card; the page places it, the same way it places MapKey.
 	 *
 	 * @type {{
-	 *   satelliteView?: boolean
+	 *   mapTheme?: 'light' | 'dark' | 'satellite'
 	 * }}
 	 */
-	let { satelliteView = false } = $props();
+	let { mapTheme = 'light' } = $props();
 
-	let fill = $derived(satelliteView ? DC_MARKER.satelliteFill : DC_MARKER.fill);
+	// Same resolver the layer paints with, so the chips can't drift from it.
+	let fill = $derived(dcFill(mapTheme));
 
 	// Mirrors the layer's status→opacity encoding via the shared DC_MARKER.
 	// Retired is omitted — no retired site in the dataset has coordinates.

@@ -45,11 +45,12 @@
 				? '/map-styles/dark-matter.json'
 				: '/map-styles/positron.json'
 	);
-	let satelliteView = $derived(mapTheme === 'satellite');
 
-	// Band colours for the active basemap, indexed highest → lowest voltage. Read
-	// as plain strings inside the paint expression so its tuple inference holds.
-	let lineColours = $derived(bandColours(satelliteView));
+	// Band colours for the active basemap, indexed highest → lowest voltage. Keyed
+	// on the theme, not satellite alone — the dark style needs the bright set too,
+	// and the map key resolves its swatches through the same function. Read as
+	// plain strings inside the paint expression so its tuple inference holds.
+	let lineColours = $derived(bandColours(mapTheme));
 
 	// Stable references — a fresh object/array only when the coords change, so
 	// svelte-maplibre-gl recentres on navigation without fighting the fitBounds
@@ -139,6 +140,7 @@
 			{showTransmissionLines}
 			showGolfOption={false}
 			showClusteringOption={false}
+			showLegendOption={false}
 			iconOnly={true}
 			onmapthemechange={(v) => (mapTheme = v)}
 			ontransmissionlineschange={(v) => (showTransmissionLines = v)}

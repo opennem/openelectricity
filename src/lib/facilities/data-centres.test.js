@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { normaliseStatus, bestMw, toGeoJSON, toLoadFacilities } from './data-centres.js';
+import {
+	normaliseStatus,
+	bestMw,
+	toGeoJSON,
+	toLoadFacilities,
+	DC_MARKER,
+	dcFill
+} from './data-centres.js';
 
 describe('normaliseStatus', () => {
 	it('maps construction variants to construction', () => {
@@ -221,5 +228,16 @@ describe('toLoadFacilities', () => {
 		expect(act).toMatchObject({ network_id: 'NEM', network_region: 'ACT' });
 		expect(nt).toMatchObject({ network_id: null, network_region: 'NT' });
 		expect(syd).toMatchObject({ network_id: 'NEM', network_region: 'NSW1' });
+	});
+});
+
+describe('dcFill', () => {
+	// The layer paints this and the legend's chips mirror it. They used to pick
+	// the field themselves and disagreed on the dark basemap, so the point of the
+	// helper is that there is exactly one answer per theme.
+	it('uses the deep fill only on the light basemap', () => {
+		expect(dcFill('light')).toBe(DC_MARKER.fill);
+		expect(dcFill('dark')).toBe(DC_MARKER.brightFill);
+		expect(dcFill('satellite')).toBe(DC_MARKER.brightFill);
 	});
 });
