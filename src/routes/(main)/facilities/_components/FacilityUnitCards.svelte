@@ -5,7 +5,7 @@
 	import GenCapViz from '$lib/components/facilities/GenCapViz.svelte';
 	import { fuelTechName } from '$lib/fuel_techs';
 	import { groupUnits } from '$lib/facilities/units.js';
-	import formatValue from '../_utils/format-value';
+	import formatValue from '$lib/facilities/format-value.js';
 	import { getPercentage, getParsedDate, formatTimestampLabel } from '../_utils/unit-helpers';
 	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 

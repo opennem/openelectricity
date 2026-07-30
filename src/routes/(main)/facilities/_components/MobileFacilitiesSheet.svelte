@@ -6,7 +6,7 @@
 	import Timeline from '../Timeline.svelte';
 	import SortDropdown from './SortDropdown.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
-	import formatValue from '../_utils/format-value';
+	import formatValue from '$lib/facilities/format-value.js';
 	import { sortFacilities } from '../_utils/sort-facilities';
 	import { VIEW_OPTIONS } from '$lib/facilities/filters.js';
 	import { createLocalStorageState } from '$lib/utils/local-storage-state.svelte.js';

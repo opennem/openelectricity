@@ -3,7 +3,7 @@
 	import { deriveCard, formatCardSubtitle } from '$lib/og/facility-card-data.js';
 	import { retiredHatch } from '$lib/og/retired-hatch.js';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
-	import { facilityPhotoSrc } from '../_utils/facility-photo.js';
+	import { facilityPhotoSrc } from '$lib/facilities/facility-photo.js';
 
 	/**
 	 * Facilities card-grid tile. The social-card design rendered natively (no

@@ -1,6 +1,6 @@
 <script>
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
-	import FilterPanel from '../facilities/_components/filters/FilterPanel.svelte';
+	import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
 	import { regionOptions } from '$lib/regions.js';
 
 	/**

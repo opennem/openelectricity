@@ -6,8 +6,8 @@
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import clamp from '$lib/utils/clamp.js';
 	import { trackEvent } from '$lib/utils/analytics.js';
-	import formatValue from '../_utils/format-value';
-	import { CAPACITY_TOOLTIP } from '../_utils/capacity-tooltip.js';
+	import formatValue from '$lib/facilities/format-value.js';
+	import { CAPACITY_TOOLTIP } from '$lib/facilities/capacity-tooltip.js';
 
 	/**
 	 * The map's year animation ("play mode"): a collapsed Play pill that expands

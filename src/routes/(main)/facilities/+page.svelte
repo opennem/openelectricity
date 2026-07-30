@@ -14,7 +14,7 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
-	import formatValue from './_utils/format-value';
+	import formatValue from '$lib/facilities/format-value.js';
 	import getUnitYear from './_utils/get-unit-year';
 	import {
 		statusColours,
@@ -43,7 +43,7 @@
 	import YearAnimationOverlay from './_components/YearAnimationOverlay.svelte';
 	import MobileFacilitiesSheet from './_components/MobileFacilitiesSheet.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
-	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
+	import FacilityPanelHeader from '$lib/components/facilities/FacilityPanelHeader.svelte';
 	import FacilityPanelFooter from './_components/FacilityPanelFooter.svelte';
 	import DataCentreDetailPanel from './_components/DataCentreDetailPanel.svelte';
 	import DataCentrePanelHeader from './_components/DataCentrePanelHeader.svelte';

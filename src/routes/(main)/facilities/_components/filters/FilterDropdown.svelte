@@ -1,6 +1,6 @@
 <script>
 	import SearchInput from '../SearchInput.svelte';
-	import FilterPanel from './FilterPanel.svelte';
+	import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
 	import FilterOptionList from './FilterOptionList.svelte';
 	import {
 		countSelectedLeaves,

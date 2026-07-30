@@ -1,6 +1,6 @@
 <script>
 	import RangeSlider from '$lib/components/ui/range-slider/RangeSlider.svelte';
-	import FilterPanel from './FilterPanel.svelte';
+	import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
 
 	/**
 	 * Pill trigger + dropdown panel wrapping a two-thumb range slider

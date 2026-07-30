@@ -10,21 +10,25 @@
 	 */
 
 	import { Battery, BookOpen, ExternalLink, Globe, Zap } from '@lucide/svelte';
-	import { groupUnits, hasBidirectionalBattery, filterDerivedBatteryUnits } from '$lib/facilities/units.js';
+	import {
+		groupUnits,
+		hasBidirectionalBattery,
+		filterDerivedBatteryUnits
+	} from '$lib/facilities/units.js';
 	import { getRegionLabel, getRegionLongLabel } from '$lib/facilities/filters.js';
-	import formatValue from '../_utils/format-value';
+	import formatValue from '$lib/facilities/format-value.js';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import FuelTechBadgeStack from '$lib/components/FuelTechBadgeStack.svelte';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import { Tooltip as BitsTooltip } from 'bits-ui';
-	import { CAPACITY_TOOLTIP } from '../_utils/capacity-tooltip.js';
+	import { CAPACITY_TOOLTIP } from '$lib/facilities/capacity-tooltip.js';
 	import { EXTERNAL_LINKS } from '$lib/constants/external-links.js';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 	import { deriveCard } from '$lib/og/facility-card-data.js';
 	import { retiredHatch } from '$lib/og/retired-hatch.js';
-	import { facilityPhotoSrc } from '../_utils/facility-photo.js';
+	import { facilityPhotoSrc } from '$lib/facilities/facility-photo.js';
 
 	/**
 	 * `topBar` renders chrome flush at the top of the colour wash, above the
