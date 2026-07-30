@@ -92,7 +92,11 @@
 </script>
 
 {#if scope}
-	<section class={cardClass}>
+	<!-- `pb-3` stands in for the 12px resize-handle strip that closes out every
+	     sibling chart card (Generation, Market, Emissions). This chart is a fixed
+	     compact context strip, so it has no handle — without the padding its axis
+	     would sit flush against the card edge. -->
+	<section class="{cardClass} pb-3">
 		<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 			<h3 class="m-0 text-sm font-semibold text-dark-grey">
 				<Tooltip
