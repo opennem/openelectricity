@@ -4,8 +4,9 @@
  * client imports so the month-boundary logic can be unit-tested in isolation.
  */
 
-/** NEM energy data is anchored to a fixed `+10:00` offset (no DST). */
-const NEM_OFFSET_MS = 10 * 60 * 60 * 1000;
+// NEM energy data is anchored to a fixed `+10:00` offset (no DST); the value
+// comes from the shared NEM-time module rather than a local re-declaration.
+import { NEM_OFFSET_MS } from '$lib/flows/nem-time.js';
 
 /**
  * Latest `history.last` across a set of StatsData (ISO-8601 sorts

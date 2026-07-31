@@ -22,6 +22,7 @@ import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { transformOeToStatsData } from '$lib/oe-api/transform';
 import { processPower7d } from '$lib/server/tracker/process-power-7d';
+import { NEM_OFFSET_MS } from '$lib/flows/nem-time.js';
 
 const oe = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -30,7 +31,6 @@ const oe = new OpenElectricityClient({
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STEP_MS = 5 * 60 * 1000; // OE fetch interval (5m)
-const NEM_OFFSET_MS = 10 * 60 * 60 * 1000; // NEM market time is AEST (+10:00) year-round
 
 // Rooftop solar is a 30-minute series step-held across the 5m grid; fill gaps up
 // to one 30m block (5 slots) so the step is continuous, but never bridge longer
