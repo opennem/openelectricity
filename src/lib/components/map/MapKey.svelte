@@ -4,15 +4,17 @@
 	import {
 		TRANSMISSION_BANDS,
 		TRANSMISSION_SOURCE_HREF,
+		allBandsVisible,
 		bandColour
 	} from '$lib/facilities/transmission-bands.js';
 
 	/**
-	 * @typedef {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} Visibility
+	 * @typedef {import('$lib/facilities/transmission-bands.js').BandVisibility} Visibility
 	 */
 
 	/**
-	 * Map key — what a mark on the facilities map stands for.
+	 * Map key — what a mark on a map stands for. Shared by /facilities (both
+	 * channels) and /tracker (transmission only).
 	 *
 	 * The map draws a grid: facilities as graduated circles, transmission as a
 	 * colour and weight ladder. Both channels share one card, one type scale and
@@ -23,8 +25,9 @@
 	 * channel headings, leaving every value a bare numeral.
 	 *
 	 * The voltage marks double as the layer's band filter; the capacity marks are
-	 * reference only. Each channel drops out with its layer, so a key with
-	 * transmission switched off is just the capacity series.
+	 * reference only. Each channel drops out with its layer (an empty
+	 * `capacityStops` drops the circles entirely), so a key can be just the
+	 * capacity series or just the voltage ladder.
 	 *
 	 * `capacityStops` must arrive ascending by value — `capacityLegendStops`
 	 * returns them that way, and the largest is read off the end to scale the rest.
@@ -41,7 +44,7 @@
 		capacityStops = [],
 		showTransmission = false,
 		mapTheme = 'light',
-		visibility = { high: true, medium: true, low: true, lowest: true },
+		visibility = allBandsVisible(),
 		onvisibilitychange
 	} = $props();
 

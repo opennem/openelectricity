@@ -52,8 +52,8 @@ describe('processPairwiseFlows', () => {
 
 	it('labels corridors with their interconnector names', () => {
 		const result = processPairwiseFlows(flowsResponse);
-		expect(result?.seriesLabels['NSW1->QLD1']).toBe('QNI (NSW–QLD)');
-		expect(result?.seriesLabels['TAS1->VIC1']).toBe('Basslink (TAS–VIC)');
+		expect(result?.seriesLabels['NSW1->QLD1']).toBe('New South Wales – Queensland');
+		expect(result?.seriesLabels['TAS1->VIC1']).toBe('Tasmania – Victoria');
 	});
 
 	it('reads the energy metric pair for flows_energy', () => {

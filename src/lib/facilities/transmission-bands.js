@@ -1,8 +1,8 @@
 /**
  * Voltage bands for the transmission-lines layers — the single definition every
  * surface that draws or explains them reads from, so a colour can't be changed
- * in one and forgotten in another. Three consumers: the /facilities map, the
- * /facility/[code] detail map, and the /facilities map key.
+ * in one and forgotten in another. Consumers: the /facilities map, the
+ * /facility/[code] detail map, the /tracker map and the shared map key.
  *
  * Ordered highest → lowest, matching the `case` expression's fall-through. (The
  * key displays them in reverse; only the map's expression depends on this order.)
@@ -92,6 +92,60 @@ export function bandColour(band, mapTheme) {
  */
 export function bandColours(mapTheme) {
 	return TRANSMISSION_BANDS.map((band) => bandColour(band, mapTheme));
+}
+
+/**
+ * Which bands a map is drawing, keyed by band. The map key's swatches toggle
+ * these; the maps feed them to `transmissionBandFilter`.
+ *
+ * @typedef {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} BandVisibility
+ */
+
+/**
+ * Every band on — the default visibility, and the state the legend-hide
+ * policy restores. A factory (fresh object per call) so two owners can't end
+ * up aliasing one shared object; derived from TRANSMISSION_BANDS, so a new
+ * band is visible-by-default automatically.
+ * @returns {BandVisibility}
+ */
+export function allBandsVisible() {
+	return /** @type {BandVisibility} */ (
+		Object.fromEntries(TRANSMISSION_BANDS.map((band) => [band.key, true]))
+	);
+}
+
+/**
+ * MapLibre filter expression for a transmission layer given per-band
+ * visibility — one condition per visible band, walked off TRANSMISSION_BANDS.
+ * Each band runs from its own floor up to the previous band's; writing that by
+ * hand meant stating every threshold twice, so a boundary could be moved on
+ * one side of a pair and not the other. Operational lines only — the dataset's
+ * proposed/decommissioned features are noise on every surface.
+ *
+ * @param {BandVisibility} visibility
+ * @returns {any}
+ */
+export function transmissionBandFilter(visibility) {
+	/** @type {any[]} */
+	const voltageConditions = [];
+
+	TRANSMISSION_BANDS.forEach((band, i) => {
+		if (!visibility[band.key]) return;
+		/** @type {any[]} */
+		const clauses = [];
+		// The top band has no ceiling and the bottom band no floor; the rest are
+		// bounded both ways by their own min and the band above's.
+		if (band.min > 0) clauses.push(['>=', ['get', 'capacitykv'], band.min]);
+		if (i > 0) clauses.push(['<', ['get', 'capacitykv'], TRANSMISSION_BANDS[i - 1].min]);
+		voltageConditions.push(clauses.length === 1 ? clauses[0] : ['all', ...clauses]);
+	});
+
+	// Never match any features
+	if (voltageConditions.length === 0) {
+		return ['==', ['get', 'operationalstatus'], '__never_match__'];
+	}
+
+	return ['all', ['==', ['get', 'operationalstatus'], 'Operational'], ['any', ...voltageConditions]];
 }
 
 /** Source of the transmission-lines dataset, credited in the map key. */

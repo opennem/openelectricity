@@ -12,19 +12,23 @@
 
 	import { MapLibre, NavigationControl, AttributionControl } from 'svelte-maplibre-gl';
 	import TransmissionLinesLayer from '$lib/components/map/TransmissionLinesLayer.svelte';
+	import { allBandsVisible, transmissionBandFilter } from '$lib/facilities/transmission-bands.js';
 	import FlowArcsLayer from '$lib/components/map/FlowArcsLayer.svelte';
 	import RegionPriceMarkers from '$lib/components/map/RegionPriceMarkers.svelte';
 	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
 	import { mapStyleForTheme } from '$lib/components/map/map-style.js';
 	import { coordsBounds } from '$lib/utils/osm.js';
-	import { INTERCONNECTORS, getInterconnector } from '$lib/flows/region-geo.js';
+	import { INTERCONNECTORS, getInterconnector, corridorCoords } from '$lib/flows/region-geo.js';
 
 	/**
 	 * Default framing — tighter than the shared AUSTRALIA_VIEW (zoom 3.5) and
-	 * biased slightly south-east so the NEM (where all the flow/price content
-	 * lives) fills the frame; also the "full view" a corridor Back returns to.
+	 * biased south-east so the NEM (where all the flow/price content lives)
+	 * fills the frame; also the "full view" a corridor Back returns to. The
+	 * centre sits well south of the landmass midpoint: the content ends at the
+	 * QLD chip (~-23.5), so centring higher just banks empty far-north
+	 * Queensland while pushing VIC/TAS into the bottom edge.
 	 */
-	const DEFAULT_VIEW = Object.freeze({ center: { lng: 135.5, lat: -27 }, zoom: 4.1 });
+	const DEFAULT_VIEW = Object.freeze({ center: { lng: 135.5, lat: -33 }, zoom: 4.1 });
 
 	/**
 	 * `panelInsetLeftPx`/`panelInsetBottomPx` shift the corridor-zoom framing
@@ -34,6 +38,7 @@
 	 * @type {{
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   showTransmissionLines?: boolean,
+	 *   transmissionLineVisibility?: import('$lib/facilities/transmission-bands.js').BandVisibility,
 	 *   showFlows?: boolean,
 	 *   flows?: Record<string, number>,
 	 *   prices?: Record<string, number>,
@@ -49,6 +54,7 @@
 	let {
 		mapTheme = 'light',
 		showTransmissionLines = true,
+		transmissionLineVisibility = allBandsVisible(),
 		showFlows = true,
 		flows = {},
 		prices = {},
@@ -87,11 +93,23 @@
 			: []
 	);
 
+	// Band filter shared with /facilities — the map key's swatches drive it. The
+	// interconnector casing layer filters by objectid, so a corridor keeps its
+	// emphasis even when its own band is switched off.
+	let transmissionFilter = $derived(transmissionBandFilter(transmissionLineVisibility));
+
 	function handleMapLoad() {
-		mapInstance?.once('idle', () => collapseMapAttribution(mapInstance));
 		mapReady = true;
 		onload?.();
 	}
+
+	// Collapse the attribution as soon as the map binds — the utility's own
+	// observer handles MapLibre mounting it expanded, so there's no need to
+	// wait for `idle` (which the overlay layers can delay by seconds).
+	$effect(() => {
+		if (!mapInstance) return;
+		return collapseMapAttribution(mapInstance);
+	});
 
 	// ============================================
 	// Corridor focus zoom
@@ -121,7 +139,7 @@
 			const canvas = map.getCanvas();
 			const left = Math.min(60 + panelInsetLeftPx, canvas.clientWidth * 0.6);
 			const bottom = Math.min(60 + panelInsetBottomPx, canvas.clientHeight * 0.55);
-			map.fitBounds(coordsBounds(ic.path), {
+			map.fitBounds(coordsBounds(corridorCoords(ic)), {
 				padding: { top: 60, right: 60, bottom, left },
 				duration: FOCUS_ZOOM_DURATION,
 				maxZoom: 7
@@ -155,6 +173,7 @@
 		<TransmissionLinesLayer
 			{mapTheme}
 			visible={showTransmissionLines}
+			filter={transmissionFilter}
 			{highlightObjectIds}
 			{selectedObjectIds}
 		/>

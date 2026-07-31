@@ -6,9 +6,10 @@
  * page as fullscreen so the root layout hides the global chrome at SSR (no
  * first-paint flash, same contract as /facilities). Map chrome params share
  * the /facilities vocabulary, but the Tracker defaults to the dark theme:
- * `theme` (only serialised when not dark), `transmission=false` and
- * `flows=false` (only serialised when off), and `ic` (only when a corridor
- * panel is open).
+ * `theme` (only serialised when not dark), `transmission=true` (lines off by
+ * default, only serialised when on), `flows=false` (only serialised when
+ * off), `legend=true` (the key is off by default, only serialised when
+ * shown), and `ic` (only when a corridor panel is open).
  */
 
 import { regionOptions } from '$lib/regions.js';
@@ -31,8 +32,9 @@ export function load({ url }) {
 	return {
 		region,
 		mapTheme: /** @type {'light' | 'dark' | 'satellite'} */ (mapTheme),
-		showTransmissionLines: url.searchParams.get('transmission') !== 'false',
+		showTransmissionLines: url.searchParams.get('transmission') === 'true',
 		showFlows: url.searchParams.get('flows') !== 'false',
+		showLegend: url.searchParams.get('legend') === 'true',
 		// `?ic=nsw1-qld1` deep-links a corridor panel; unknown slugs resolve null.
 		interconnector: icFromSlug(url.searchParams.get('ic')),
 		fullscreen: true

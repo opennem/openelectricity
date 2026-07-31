@@ -43,13 +43,17 @@
 {#each chips as chip (chip.code)}
 	<Marker lnglat={chip.lnglat}>
 		{#snippet content()}
+			<!-- One size down from the flow layer's MW boxes — flows are the map's
+			     thesis, prices are context. pb one step under pt: the all-caps +
+			     digits label has no descenders, so the font's descender space reads
+			     as extra bottom padding unless trimmed. -->
 			<div
-				class="pointer-events-none select-none rounded-full border border-black/10 px-2 py-0.5 font-mono text-[10px] font-semibold leading-4 shadow-sm transition-opacity duration-300 {chip.dimmed
+				class="pointer-events-none select-none rounded-lg border border-black/10 px-2 pt-1.5 pb-1 font-mono text-xs font-semibold leading-4 tabular-nums shadow-sm transition-opacity duration-300 {chip.dimmed
 					? 'opacity-40'
 					: 'opacity-100'}"
 				style="background-color: {chip.background}; color: {chip.colour};"
 			>
-				{chip.label}<span class="font-normal opacity-70">/MWh</span>
+				{chip.label}<span class="text-[9px] font-normal opacity-70">/MWh</span>
 			</div>
 		{/snippet}
 	</Marker>

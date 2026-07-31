@@ -7,7 +7,8 @@
 	import { Flag, RotateCcw, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
 	import { MAP_FAB_CLASS, MAP_THEMES } from '$lib/components/map/map-style.js';
-	import MapKey from './_components/MapKey.svelte';
+	import MapKey from '$lib/components/map/MapKey.svelte';
+	import { allBandsVisible } from '$lib/facilities/transmission-bands.js';
 	import DataCentresLegend from './_components/DataCentresLegend.svelte';
 	import { normaliseMetric, metricMax } from './_utils/normalise-metric.js';
 	import { capacityLegendStops } from './_utils/marker-radius.js';
@@ -540,12 +541,6 @@
 	// true as the set changes (play mode swaps in every facility).
 	let capacityStops = $derived(capacityLegendStops(metricMax(capacityValuesByCode)));
 
-	/**
-	 * Every band on. A factory rather than a shared const, so the initial state
-	 * and the reset in `onshowlegendchange` can't end up aliasing one object.
-	 * @returns {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }}
-	 */
-	const allBandsVisible = () => ({ high: true, medium: true, low: true, lowest: true });
 	let transmissionLineVisibility = $state(allBandsVisible());
 
 	// Map loading state

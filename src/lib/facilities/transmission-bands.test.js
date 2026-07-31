@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { TRANSMISSION_BANDS, bandColour, bandColours } from './transmission-bands.js';
+import {
+	TRANSMISSION_BANDS,
+	allBandsVisible,
+	bandColour,
+	bandColours,
+	transmissionBandFilter
+} from './transmission-bands.js';
 
 describe('TRANSMISSION_BANDS', () => {
 	// Map.svelte's `line-color` expression indexes straight into this order —
@@ -38,6 +44,61 @@ describe('bandColour', () => {
 			expect(bandColour(band, 'dark')).toBe(band.brightColour);
 			expect(bandColour(band, 'satellite')).toBe(band.brightColour);
 		}
+	});
+});
+
+describe('allBandsVisible', () => {
+	it('covers every band, each on, as a fresh object per call', () => {
+		expect(allBandsVisible()).toEqual({ high: true, medium: true, low: true, lowest: true });
+		expect(allBandsVisible()).not.toBe(allBandsVisible());
+	});
+});
+
+describe('transmissionBandFilter', () => {
+	const allOn = allBandsVisible();
+
+	// Both maps hand this straight to MapLibre, so the tests pin the expression
+	// shape, not just its intent.
+	it('gates every visible band behind Operational status', () => {
+		const filter = transmissionBandFilter(allOn);
+		expect(filter[0]).toBe('all');
+		expect(filter[1]).toEqual(['==', ['get', 'operationalstatus'], 'Operational']);
+		expect(filter[2][0]).toBe('any');
+		expect(filter[2]).toHaveLength(1 + TRANSMISSION_BANDS.length);
+	});
+
+	// Adjacent bands must tile the voltage axis: each floor is the band below's
+	// ceiling, the top band unbounded above, the bottom unbounded below.
+	it('bounds each band by its own floor and the band above’s', () => {
+		const [, , [, high, medium, low, lowest]] = transmissionBandFilter(allOn);
+		expect(high).toEqual(['>=', ['get', 'capacitykv'], 400]);
+		expect(medium).toEqual([
+			'all',
+			['>=', ['get', 'capacitykv'], 220],
+			['<', ['get', 'capacitykv'], 400]
+		]);
+		expect(low).toEqual([
+			'all',
+			['>=', ['get', 'capacitykv'], 110],
+			['<', ['get', 'capacitykv'], 220]
+		]);
+		expect(lowest).toEqual(['<', ['get', 'capacitykv'], 110]);
+	});
+
+	it('keeps only the selected bands', () => {
+		const filter = transmissionBandFilter({
+			high: true,
+			medium: false,
+			low: false,
+			lowest: false
+		});
+		expect(filter[2]).toEqual(['any', ['>=', ['get', 'capacitykv'], 400]]);
+	});
+
+	it('matches nothing when every band is off', () => {
+		expect(
+			transmissionBandFilter({ high: false, medium: false, low: false, lowest: false })
+		).toEqual(['==', ['get', 'operationalstatus'], '__never_match__']);
 	});
 });
 

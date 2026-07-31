@@ -43,16 +43,25 @@ describe('interconnectorsForRegion', () => {
 });
 
 describe('corridorLiveStatus', () => {
-	it('reports a live flow with its capacity fraction', () => {
+	// The capability denominators are direction-aware: a negative flow runs
+	// against the key direction, so the fraction is over the reverse rating.
+	it('reports a reverse flow against the reverse capability', () => {
 		const status = corridorLiveStatus({ 'NSW1->QLD1': -650 }, qni);
 		expect(status.value).toBe(-650);
 		expect(status.mw).toBe(650);
 		expect(status.idle).toBe(false);
-		expect(status.fraction).toBeCloseTo(650 / qni.capacityMW, 6);
+		expect(status.capacity).toBe(qni.capacityMW.reverse);
+		expect(status.fraction).toBeCloseTo(650 / qni.capacityMW.reverse, 6);
 	});
 
-	it('clamps the fraction at full capacity', () => {
-		const status = corridorLiveStatus({ 'NSW1->QLD1': qni.capacityMW * 2 }, qni);
+	it('reports a forward flow against the forward capability', () => {
+		const status = corridorLiveStatus({ 'NSW1->QLD1': 650 }, qni);
+		expect(status.capacity).toBe(qni.capacityMW.forward);
+		expect(status.fraction).toBeCloseTo(650 / qni.capacityMW.forward, 6);
+	});
+
+	it('clamps the fraction at full capability', () => {
+		const status = corridorLiveStatus({ 'NSW1->QLD1': qni.capacityMW.forward * 2 }, qni);
 		expect(status.fraction).toBe(1);
 	});
 
@@ -73,5 +82,10 @@ describe('directionLabel', () => {
 	it('follows the sign of the flow', () => {
 		expect(directionLabel(qni, 500)).toBe('NSW1 → QLD1');
 		expect(directionLabel(qni, -500)).toBe('QLD1 → NSW1');
+	});
+
+	it('renders display codes in short mode', () => {
+		expect(directionLabel(qni, 500, { short: true })).toBe('NSW → QLD');
+		expect(directionLabel(qni, -500, { short: true })).toBe('QLD → NSW');
 	});
 });

@@ -33,6 +33,8 @@
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
+	import MapKey from '$lib/components/map/MapKey.svelte';
+	import { allBandsVisible } from '$lib/facilities/transmission-bands.js';
 	import { MAP_FAB_CLASS } from '$lib/components/map/map-style.js';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import BottomSheet from '$lib/components/ui/bottom-sheet/BottomSheet.svelte';
@@ -47,7 +49,7 @@
 		toggleFullscreenMode
 	} from '$lib/utils/fullscreen-mode.js';
 
-	/** @type {{ data: { region: string, mapTheme: 'light' | 'dark' | 'satellite', showTransmissionLines: boolean, showFlows: boolean, interconnector: string | null } }} */
+	/** @type {{ data: { region: string, mapTheme: 'light' | 'dark' | 'satellite', showTransmissionLines: boolean, showFlows: boolean, showLegend: boolean, interconnector: string | null } }} */
 	let { data } = $props();
 
 	let showShortcutsToast = $state(false);
@@ -70,6 +72,7 @@
 	let mapTheme = $state(data.mapTheme);
 	let showTransmissionLines = $state(data.showTransmissionLines);
 	let showFlows = $state(data.showFlows);
+	let showLegend = $state(data.showLegend);
 	/** @type {string | null} */
 	let selectedIc = $state(data.interconnector);
 	// Re-sync on back/forward — $state doesn't re-init when the load re-runs.
@@ -78,8 +81,11 @@
 		mapTheme = data.mapTheme;
 		showTransmissionLines = data.showTransmissionLines;
 		showFlows = data.showFlows;
+		showLegend = data.showLegend;
 		selectedIc = data.interconnector;
 	});
+
+	let bandVisibility = $state(allBandsVisible());
 
 	// Live flows + prices for the map arcs, price chips and panel stat block —
 	// polls /api/flows + /api/prices every dispatch-ish interval.
@@ -135,10 +141,12 @@
 		else url.searchParams.set('region', selectedRegion);
 		if (mapTheme === 'dark') url.searchParams.delete('theme');
 		else url.searchParams.set('theme', mapTheme);
-		if (showTransmissionLines) url.searchParams.delete('transmission');
-		else url.searchParams.set('transmission', 'false');
+		if (showTransmissionLines) url.searchParams.set('transmission', 'true');
+		else url.searchParams.delete('transmission');
 		if (showFlows) url.searchParams.delete('flows');
 		else url.searchParams.set('flows', 'false');
+		if (showLegend) url.searchParams.set('legend', 'true');
+		else url.searchParams.delete('legend');
 		if (selectedIc) url.searchParams.set('ic', icSlug(selectedIc));
 		else url.searchParams.delete('ic');
 		replaceState(`${url.pathname}${url.search}`, {});
@@ -266,6 +274,7 @@
 					<TrackerMap
 						{mapTheme}
 						{showTransmissionLines}
+						transmissionLineVisibility={bandVisibility}
 						{showFlows}
 						flows={grid.flows}
 						prices={grid.prices}
@@ -290,21 +299,51 @@
 						showFlowsOption
 						showGolfOption={false}
 						showClusteringOption={false}
-						showLegendOption={false}
+						{showLegend}
 						onmapthemechange={(v) => {
 							mapTheme = v;
 							updateUrl();
 						}}
 						ontransmissionlineschange={(v) => {
 							showTransmissionLines = v;
+							// The band colours are unreadable without the key naming them,
+							// so switching the lines on brings the key with them. Off leaves
+							// the key state alone — it renders nothing without its
+							// transmission channel.
+							if (v) showLegend = true;
 							updateUrl();
 						}}
 						onflowschange={(v) => {
 							showFlows = v;
 							updateUrl();
 						}}
+						onshowlegendchange={(v) => {
+							showLegend = v;
+							// The key's voltage swatches are the only control for the band
+							// filter, so hiding the key would strand a filtered layer with
+							// no affordance to restore it. Put every band back as it goes.
+							if (!v) bandVisibility = allBandsVisible();
+							updateUrl();
+						}}
 					/>
 				</div>
+
+				<!-- Transmission key (desktop only — the mobile sheet owns the bottom
+				     of the frame, as on /facilities; off by default, switched on with
+				     the transmission layer or from the layers menu). Bottom-right
+				     lifted clear of the collapsed attribution ⓘ; bottom-left belongs
+				     to the panel. Its voltage swatches double as the layer's band
+				     filter. -->
+				{#if showLegend}
+					<div class="absolute bottom-10 right-4 z-10 hidden tablet:block">
+						<MapKey
+							showTransmission={showTransmissionLines}
+							{mapTheme}
+							visibility={bandVisibility}
+							onvisibilitychange={(v) => (bandVisibility = v)}
+						/>
+					</div>
+				{/if}
 
 				<!-- Interconnector panel — open on load with every corridor's latest
 				     metrics; a row (or arc) click swaps to that corridor's charts and

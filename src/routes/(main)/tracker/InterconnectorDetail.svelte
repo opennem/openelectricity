@@ -14,6 +14,7 @@
 	 * the module-level completed-response cache.
 	 */
 
+	import { untrack } from 'svelte';
 	import { LineChart } from '@lucide/svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
@@ -44,14 +45,22 @@
 
 	const NEM_TZ = '+10:00';
 	const DAY_MS = 24 * 60 * 60 * 1000;
-	const INITIAL_RANGE_DAYS = 3;
+	// 1 day picks up the 1D preset, whose default interval is the dispatch-level
+	// 5m — the corridor panel is about what the interconnector is doing now.
+	const INITIAL_RANGE_DAYS = 1;
 
-	// Window end anchor, fixed at mount — the host keeps this component mounted
-	// across corridor switches, so the viewport carries over.
-	const defaultEnd = Date.now();
-	const defaultStart = defaultEnd - INITIAL_RANGE_DAYS * DAY_MS;
-	const dateStart = toNetworkDateString(defaultStart, NEM_TZ);
-	const dateEnd = toNetworkDateString(defaultEnd, NEM_TZ);
+	// Window end anchor — starts at mount (the host keeps this component
+	// mounted across corridor switches, so the viewport carries over) and then
+	// re-anchors on every new dispatch snapshot (see the live-edge effect), so
+	// preset clicks and the calendar ceiling always mean "now", not mount time.
+	const mountEnd = Date.now();
+	let anchorEnd = $state(mountEnd);
+	// The window start always trails the live anchor by the initial range.
+	let anchorStart = $derived(anchorEnd - INITIAL_RANGE_DAYS * DAY_MS);
+	// Initial chart viewport strings only — superseded once the load-complete
+	// preset apply lands, so these deliberately stay at the mount anchor.
+	const dateStart = toNetworkDateString(mountEnd - INITIAL_RANGE_DAYS * DAY_MS, NEM_TZ);
+	const dateEnd = toNetworkDateString(mountEnd, NEM_TZ);
 
 	const ianaTimeZone = ianaFromOffset(NEM_TZ);
 
@@ -80,8 +89,8 @@
 	let viewEnd = $state(0);
 
 	let dateRangeLabel = $derived.by(() => {
-		const start = viewStart || defaultStart;
-		const end = viewEnd || defaultEnd;
+		const start = viewStart || anchorStart;
+		const end = viewEnd || anchorEnd;
 		return formatDateRange(new Date(start), new Date(end), ianaTimeZone, {
 			yearIfNotCurrent: true
 		});
@@ -94,7 +103,7 @@
 
 	const range = createChartRangeControl({
 		viewport: () => ({ start: viewStart, end: viewEnd }),
-		defaultViewport: () => ({ start: defaultStart, end: defaultEnd }),
+		defaultViewport: () => ({ start: anchorStart, end: anchorEnd }),
 		setViewport: (startMs, endMs) => {
 			viewStart = startMs;
 			viewEnd = endMs;
@@ -102,6 +111,28 @@
 		charts: () => [flowChart, priceChart],
 		timeZone: () => NEM_TZ,
 		initialRangeDays: INITIAL_RANGE_DAYS
+	});
+
+	// Live-edge advance, keyed on the grid-live dispatch snapshot — the same
+	// signal that updates the stat block, so the chart tail and the "as at"
+	// figures tick forward together. The advance itself is untracked: it moves
+	// the viewport and anchors, none of which may re-trigger this effect. The
+	// mount-time snapshot is skipped — the window is already anchored there.
+	/** Non-reactive last-seen guard, same pattern as the map's lastFocusKey. */
+	let lastDispatch = '';
+	$effect(() => {
+		const ts = dispatchDateTimeString;
+		if (!ts || ts === lastDispatch) return;
+		const isFirst = lastDispatch === '';
+		lastDispatch = ts;
+		if (isFirst) return;
+		untrack(() => {
+			const newEnd = Date.now();
+			// Pinned test reads the pre-advance anchor, so slide before re-anchoring
+			// (anchorStart follows as a derived).
+			range.advanceLiveEdge(newEnd);
+			anchorEnd = newEnd;
+		});
 	});
 
 	// The controller ladders power↔energy; the flow chart maps that onto the
@@ -119,7 +150,7 @@
 	let noData = $derived(flowLoaded && !flowHasData);
 
 	// Apply the default preset once the self-seeded window settles (same pattern
-	// as FacilityCompactCharts) so the view matches a later 3D click exactly.
+	// as FacilityCompactCharts) so the view matches a later 1D click exactly.
 	let rangeApplied = false;
 
 	/** @param {{ hasData: boolean }} state */

@@ -36,6 +36,11 @@ import { createEchoGuard } from '$lib/components/charts/v2/echo-guard.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** How far the viewport's right edge may trail the live anchor and still count
+ *  as "pinned to live" for `advanceLiveEdge` — two dispatch intervals, so a
+ *  zoom that lands fractionally off the edge doesn't strand the chart. */
+const LIVE_EDGE_TOLERANCE_MS = 10 * 60 * 1000;
+
 /**
  * A chart that owns its viewport internally and is driven imperatively.
  * @typedef {Object} RangeControlChart
@@ -263,6 +268,25 @@ export function createChartRangeControl(config) {
 		for (const c of charts()) c?.reconcileFetches?.();
 	}
 
+	/** Ambient live-edge tick: slide the viewport (and every imperative chart)
+	 *  forward to `newEndMs` keeping the current span — but only while the user
+	 *  is still pinned to the previous live edge (within
+	 *  LIVE_EDGE_TOLERANCE_MS of `defaultViewport().end`); a viewport panned or
+	 *  zoomed into history is left alone. Unlike `applyRangeSwitch` this
+	 *  deliberately touches neither selectedRange / metric / interval /
+	 *  displayInterval nor `rangeSwitchPending` — the span is unchanged and the
+	 *  tick is ambient, not an explicit pick. The charts' own setViewport
+	 *  fetches the new tail. Callers must update their default-viewport anchor
+	 *  AFTER calling — the pinned test reads the previous anchor. */
+	/** @param {number} newEndMs */
+	function advanceLiveEdge(newEndMs) {
+		const { start, end } = boundedViewport();
+		if (end < defaultViewport().end - LIVE_EDGE_TOLERANCE_MS) return;
+		const newStart = newEndMs - (end - start);
+		setViewport(newStart, newEndMs);
+		pushToCharts(newStart, newEndMs);
+	}
+
 	/** Clear the pending pulse once switched data settles (load-complete or the
 	 *  debounced visible-data callback, whichever fires first). */
 	function settle() {
@@ -321,6 +345,7 @@ export function createChartRangeControl(config) {
 		handleChartViewportChange,
 		handleDerivedViewportChange,
 		handleViewportSettle,
+		advanceLiveEdge,
 		settle,
 		reset
 	};

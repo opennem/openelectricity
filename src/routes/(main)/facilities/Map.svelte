@@ -24,11 +24,11 @@
 	import { getRegionLabel } from '$lib/facilities/filters.js';
 	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
 	import { CIRCLE_MIN, CIRCLE_MAX, buildCircleStops } from './_utils/marker-radius.js';
-	import { TRANSMISSION_BANDS } from '$lib/facilities/transmission-bands.js';
+	import { allBandsVisible, transmissionBandFilter } from '$lib/facilities/transmission-bands.js';
 	import { X } from '@lucide/svelte';
 
 	/**
-	 * @typedef {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} TransmissionLineVisibility
+	 * @typedef {import('$lib/facilities/transmission-bands.js').BandVisibility} TransmissionLineVisibility
 	 */
 
 	/**
@@ -77,7 +77,7 @@
 		clustering = false,
 		mapTheme = 'light',
 		showTransmissionLines = true,
-		transmissionLineVisibility = { high: true, medium: true, low: true, lowest: true },
+		transmissionLineVisibility = allBandsVisible(),
 		showGolfCourses = false,
 		showDataCentres = false,
 		dataCentres = [],
@@ -108,36 +108,7 @@
 
 	let satelliteView = $derived(mapTheme === 'satellite');
 
-	// One condition per visible band, walked off TRANSMISSION_BANDS. Each band
-	// runs from its own floor up to the previous band's — writing that by hand
-	// meant stating every threshold twice, so a boundary could be moved on one
-	// side of a pair and not the other.
-	let transmissionFilter = $derived.by(() => {
-		/** @type {any[]} */
-		const voltageConditions = [];
-
-		TRANSMISSION_BANDS.forEach((band, i) => {
-			if (!transmissionLineVisibility[band.key]) return;
-			/** @type {any[]} */
-			const clauses = [];
-			// The top band has no ceiling and the bottom band no floor; the rest are
-			// bounded both ways by their own min and the band above's.
-			if (band.min > 0) clauses.push(['>=', ['get', 'capacitykv'], band.min]);
-			if (i > 0) clauses.push(['<', ['get', 'capacitykv'], TRANSMISSION_BANDS[i - 1].min]);
-			voltageConditions.push(clauses.length === 1 ? clauses[0] : ['all', ...clauses]);
-		});
-
-		if (voltageConditions.length === 0) {
-			// Never match any features
-			return /** @type {any} */ (['==', ['get', 'operationalstatus'], '__never_match__']);
-		}
-
-		return /** @type {any} */ ([
-			'all',
-			['==', ['get', 'operationalstatus'], 'Operational'],
-			['any', ...voltageConditions]
-		]);
-	});
+	let transmissionFilter = $derived(transmissionBandFilter(transmissionLineVisibility));
 
 	// Australia overview framing (default fallback)
 	const center = AUSTRALIA_VIEW.center;
@@ -156,6 +127,13 @@
 	let isZooming = $state(false);
 
 	let mapStyle = $derived(mapStyleForTheme(mapTheme));
+
+	// Collapse the attribution as soon as the map binds — same idiom as
+	// PointMap/FacilityMap/tracker Map, with the utility's cleanup honoured.
+	$effect(() => {
+		if (!mapInstance) return;
+		return collapseMapAttribution(mapInstance);
+	});
 
 	// Cluster panel state
 	/** @type {any[]} */
@@ -543,9 +521,6 @@
 				fitMapToFacilities(fitSet);
 			});
 		}
-
-		// Use idle event for attribution compacting
-		mapInstance.once('idle', () => collapseMapAttribution(mapInstance));
 
 		// Track dragging state to prevent popup dismissal during pan
 		mapInstance.on('dragstart', () => {
