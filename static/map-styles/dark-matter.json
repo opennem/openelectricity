@@ -386,7 +386,7 @@
       "type": "line",
       "source": "carto",
       "source-layer": "boundary",
-      "minzoom": 4,
+      "minzoom": 3,
       "filter": [
         "all",
         [
@@ -403,6 +403,10 @@
       "paint": {
         "line-color": {
           "stops": [
+            [
+              3,
+              "rgba(128, 128, 140, 1)"
+            ],
             [
               4,
               "rgba(103, 103, 114, 1)"

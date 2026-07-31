@@ -32,12 +32,14 @@ export function getNavItems(trackerLink, featureFlags = {}, { windowed = false }
 	/** @type {NavItem[]} */
 	const items = [
 		{ name: 'Tracker', href: trackerLink },
-		{ name: 'Facilities', href: windowedHref('/facilities', windowed) },
-		// explorer_nav: the in-development Explorer map page is dropdown-only —
-		// Nav.svelte skips dropdownOnly items (see docs/feature-flags.md).
-		...(featureFlags.explorer_nav
-			? [{ name: 'Explorer', href: '/explorer', dropdownOnly: true }]
+		// tracker_nav: the in-development Tracker map page is dropdown-only —
+		// Nav.svelte skips dropdownOnly items (see docs/feature-flags.md). The
+		// (alpha) suffix distinguishes it from the legacy data-tracker entry
+		// above, which it will eventually replace.
+		...(featureFlags.tracker_nav
+			? [{ name: 'Tracker (alpha)', href: '/tracker', dropdownOnly: true }]
 			: []),
+		{ name: 'Facilities', href: windowedHref('/facilities', windowed) },
 		{ name: 'Scenarios', href: '/scenarios' },
 		{ name: 'Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },

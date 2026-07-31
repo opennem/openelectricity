@@ -48,7 +48,7 @@
 
 	/**
 	 * Transmission-lines overlay — the single source + line layer every map
-	 * surface renders (/facilities, /facility/[code], /explorer), so the band
+	 * surface renders (/facilities, /facility/[code], /tracker), so the band
 	 * colours and geojson wiring can't drift between them.
 	 *
 	 * The source geojson is large, so nothing mounts until the layer is first
@@ -59,12 +59,19 @@
 	 * `lineWidth`/`lineOpacity` default to the overview profile (continent-level
 	 * zooms); the facility detail map passes its own zoomed-in profile.
 	 *
+	 * `highlightObjectIds`/`selectedObjectIds` draw a casing beneath the named
+	 * features (matched by `objectid` — the geojson has no interconnector flag)
+	 * so the tracker can emphasise the physical interconnector lines while the
+	 * band colours stay on top. Defaults keep every other map unchanged.
+	 *
 	 * @type {{
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   visible?: boolean,
 	 *   filter?: any,
 	 *   lineWidth?: any,
-	 *   lineOpacity?: any
+	 *   lineOpacity?: any,
+	 *   highlightObjectIds?: number[],
+	 *   selectedObjectIds?: number[]
 	 * }}
 	 */
 	let {
@@ -72,7 +79,9 @@
 		visible = true,
 		filter = undefined,
 		lineWidth = OVERVIEW_LINE_WIDTH,
-		lineOpacity = OVERVIEW_LINE_OPACITY
+		lineOpacity = OVERVIEW_LINE_OPACITY,
+		highlightObjectIds = [],
+		selectedObjectIds = []
 	} = $props();
 
 	// Band colours for the active basemap, indexed highest → lowest voltage.
@@ -88,10 +97,49 @@
 		if (visible) everVisible = true;
 		return visible || everVisible;
 	});
+
+	// Casing under the highlighted features. Matched by objectid only — some
+	// `operationalstatus` values carry trailing spaces, so status filters would
+	// silently drop features. Expressions typed `any` like the base layer's
+	// filter/width props — the MapLibre spec types reject hand-built arrays.
+	let casingIds = $derived([...new Set([...highlightObjectIds, ...selectedObjectIds])]);
+	/** @type {any} */
+	let casingFilter = $derived(['in', ['get', 'objectid'], ['literal', casingIds]]);
+	/** @type {any} */
+	let selectedTest = $derived(['in', ['get', 'objectid'], ['literal', selectedObjectIds]]);
+	let casingColour = $derived(mapTheme === 'light' ? '#33475c' : '#c9d9ec');
+	/** @type {any} */
+	let casingPaint = $derived({
+		'line-color': casingColour,
+		'line-width': [
+			'interpolate',
+			['linear'],
+			['zoom'],
+			3,
+			['case', selectedTest, 3, 2],
+			8,
+			['case', selectedTest, 7, 5],
+			14,
+			['case', selectedTest, 10, 7]
+		],
+		'line-opacity': ['case', selectedTest, 0.9, 0.4]
+	});
 </script>
 
 {#if mounted}
 	<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
+		{#if casingIds.length > 0}
+			<LineLayer
+				id="transmission-lines-casing"
+				filter={casingFilter}
+				paint={casingPaint}
+				layout={{
+					'line-cap': 'round',
+					'line-join': 'round',
+					visibility: visible ? 'visible' : 'none'
+				}}
+			/>
+		{/if}
 		<LineLayer
 			id="transmission-lines-layer"
 			{filter}

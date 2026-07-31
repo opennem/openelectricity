@@ -206,7 +206,7 @@
 
 <style>
 	/* Experimental: paired view-transition between the fullscreen map/detail
-	   routes (/facilities ↔ /facility/[code] ↔ /explorer). The logomark +
+	   routes (/facilities ↔ /facility/[code] ↔ /tracker). The logomark +
 	   first breadcrumb (filter-bar-stable) and the options dropdown
 	   (filter-bar-options) stay put across the route swap; only the
 	   page-specific middle region (filter-bar-rest-{routeKey}) slides in
@@ -220,7 +220,7 @@
 		   — it slides right to make room for the back button entering on
 		   /facility/[code], and back left on the way out. Scoped to paired
 		   captures (`:not(:only-child)`): when the other side is a route with
-		   its own stable name (e.g. /explorer's filter-bar-stable-explorer),
+		   its own stable name (e.g. /tracker's filter-bar-stable-tracker),
 		   the unpaired capture falls back to the default cross-fade instead of
 		   freezing at full opacity and popping at the end. The options
 		   dropdown is identical on all routes and stays visually fixed. */
@@ -253,17 +253,17 @@
 		}
 		/* The middle (page-specific) region uses its OWN view-transition-name
 		   per route (-list on /facilities, -detail on /facility/[code],
-		   -explorer on /explorer). The names don't pair, so each side keeps
+		   -tracker on /tracker). The names don't pair, so each side keeps
 		   its natural width and slides/fades without the default group-size
 		   morph (the "zoom"). */
 		::view-transition-old(filter-bar-rest-list),
 		::view-transition-old(filter-bar-rest-detail),
-		::view-transition-old(filter-bar-rest-explorer) {
+		::view-transition-old(filter-bar-rest-tracker) {
 			animation: facilities-filter-bar-slide-out 240ms ease both;
 		}
 		::view-transition-new(filter-bar-rest-list),
 		::view-transition-new(filter-bar-rest-detail),
-		::view-transition-new(filter-bar-rest-explorer) {
+		::view-transition-new(filter-bar-rest-tracker) {
 			animation: facilities-filter-bar-slide-in 240ms ease both;
 		}
 		@keyframes facilities-filter-bar-slide-out {

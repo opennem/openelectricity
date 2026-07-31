@@ -6,12 +6,14 @@
 
 	/**
 	 * Floating map-display options dropdown, shared by every map surface
-	 * (/facilities, /facility/[code], /explorer). The trigger is always the
+	 * (/facilities, /facility/[code], /tracker). The trigger is always the
 	 * same circular Layers icon so the control is recognisable across maps;
 	 * per-map rows are opted out via the `show*Option` props.
 	 * @type {{
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   showTransmissionLines?: boolean,
+	 *   showFlows?: boolean,
+	 *   showFlowsOption?: boolean,
 	 *   showGolfCourses?: boolean,
 	 *   showGolfOption?: boolean,
 	 *   showMagicIndicator?: boolean,
@@ -21,6 +23,7 @@
 	 *   showLegendOption?: boolean,
 	 *   onmapthemechange?: (value: 'light' | 'dark' | 'satellite') => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
+	 *   onflowschange?: (value: boolean) => void,
 	 *   ongolfcourseschange?: (value: boolean) => void,
 	 *   onclusteringchange?: (value: boolean) => void,
 	 *   onshowlegendchange?: (value: boolean) => void
@@ -29,6 +32,9 @@
 	let {
 		mapTheme = 'light',
 		showTransmissionLines = true,
+		showFlows = true,
+		/** Show the interconnector-flows row (the tracker map only). */
+		showFlowsOption = false,
 		showGolfCourses = false,
 		showGolfOption = false,
 		showMagicIndicator = false,
@@ -40,6 +46,7 @@
 		showClusteringOption = true,
 		onmapthemechange,
 		ontransmissionlineschange,
+		onflowschange,
 		ongolfcourseschange,
 		onclusteringchange,
 		onshowlegendchange
@@ -150,6 +157,11 @@
 
 			<!-- Transmission lines toggle -->
 			{@render checkboxRow('Transmission lines', showTransmissionLines, ontransmissionlineschange)}
+
+			<!-- Interconnector flows toggle -->
+			{#if showFlowsOption}
+				{@render checkboxRow('Interconnector flows', showFlows, onflowschange)}
+			{/if}
 
 			<!-- Clustering toggle -->
 			{#if showClusteringOption}

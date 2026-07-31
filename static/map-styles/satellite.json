@@ -34,7 +34,7 @@
 			"type": "line",
 			"source": "carto",
 			"source-layer": "boundary",
-			"minzoom": 4,
+			"minzoom": 3,
 			"filter": ["all", ["==", "admin_level", 4], ["==", "maritime", 0]],
 			"paint": {
 				"line-color": "rgba(255, 255, 255, 0.5)",

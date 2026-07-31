@@ -139,7 +139,7 @@
 		]);
 	});
 
-	// Australia overview framing (default fallback), shared with /explorer
+	// Australia overview framing (default fallback)
 	const center = AUSTRALIA_VIEW.center;
 
 	// Animation durations (in milliseconds)

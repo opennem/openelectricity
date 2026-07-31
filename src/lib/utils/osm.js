@@ -51,18 +51,13 @@ export function isOsmCached(osmId) {
 }
 
 /**
- * Compute a bounding box `[[minLng, minLat], [maxLng, maxLat]]` from a GeoJSON
- * Polygon/MultiPolygon feature — used to fit a map viewport to the shape.
- * @param {GeoJSON.Feature} feature
+ * Compute a bounding box `[[minLng, minLat], [maxLng, maxLat]]` from a flat
+ * list of `[lng, lat]` positions — the shared core behind fitting a map
+ * viewport to any geometry (polygon footprints, corridor LineStrings).
+ * @param {number[][]} coords
  * @returns {[[number, number], [number, number]]}
  */
-export function featureBounds(feature) {
-	const geom = feature.geometry;
-	const coords =
-		geom.type === 'MultiPolygon'
-			? /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(2))
-			: /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(1));
-
+export function coordsBounds(coords) {
 	let minLng = Infinity;
 	let maxLng = -Infinity;
 	let minLat = Infinity;
@@ -78,6 +73,22 @@ export function featureBounds(feature) {
 		[minLng, minLat],
 		[maxLng, maxLat]
 	];
+}
+
+/**
+ * Compute a bounding box `[[minLng, minLat], [maxLng, maxLat]]` from a GeoJSON
+ * Polygon/MultiPolygon feature — used to fit a map viewport to the shape.
+ * @param {GeoJSON.Feature} feature
+ * @returns {[[number, number], [number, number]]}
+ */
+export function featureBounds(feature) {
+	const geom = feature.geometry;
+	const coords =
+		geom.type === 'MultiPolygon'
+			? /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(2))
+			: /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(1));
+
+	return coordsBounds(coords);
 }
 
 /**

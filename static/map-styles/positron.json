@@ -196,11 +196,12 @@
 			"type": "line",
 			"source": "carto",
 			"source-layer": "boundary",
-			"minzoom": 4,
+			"minzoom": 3,
 			"filter": ["all", ["==", "admin_level", 4], ["==", "maritime", 0]],
 			"paint": {
 				"line-color": {
 					"stops": [
+						[3, "#dcc0c3"],
 						[4, "#ead5d7"],
 						[5, "#ead5d7"],
 						[6, "#e1c5c7"]

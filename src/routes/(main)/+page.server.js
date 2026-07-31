@@ -1,61 +1,9 @@
 import { client } from '$lib/sanity';
 import { getHomepageRenewablesCached } from '$lib/oe-api/renewables-cache.server';
+import { processFlows, processPrices } from '$lib/flows/process-flows.js';
 
 // Disable prerendering - homepage has dynamic real-time data
 export const prerender = false;
-
-/**
- * Process flows API response
- * @param {Response} res
- */
-async function processFlows(res) {
-	const { data: jsonData } = await res.json();
-
-	/** @type {*} */
-	const regionFlows = {};
-	if (jsonData) {
-		jsonData.forEach((/** @type {*} */ region) => {
-			regionFlows[region.code] = region.history.data[region.history.data.length - 1];
-		});
-
-		return {
-			dispatchDateTimeString: jsonData[0].history.last,
-			regionFlows,
-			originalJsons: jsonData
-		};
-	}
-
-	return {
-		dispatchDateTimeString: '',
-		regionFlows,
-		originalJsons: null
-	};
-}
-
-/**
- * Process prices API response
- * @param {Response} res
- */
-async function processPrices(res) {
-	const { data: jsonData } = await res.json();
-	/** @type {*} */
-	const regionPrices = {};
-
-	if (jsonData) {
-		jsonData.forEach((/** @type {*} */ region) => {
-			regionPrices[region.code] = region.history.data[region.history.data.length - 1];
-		});
-		return {
-			regionPrices,
-			originalJsons: jsonData
-		};
-	}
-
-	return {
-		regionPrices,
-		originalJsons: null
-	};
-}
 
 /**
  * Safely fetch JSON with error handling
@@ -99,10 +47,10 @@ export async function load({ fetch, platform }) {
 		),
 		fetch('/api/flows')
 			.then(processFlows)
-			.catch(() => ({ dispatchDateTimeString: '', regionFlows: {}, originalJsons: null })),
+			.catch(() => ({ dispatchDateTimeString: '', regionFlows: {} })),
 		fetch('/api/prices')
 			.then(processPrices)
-			.catch(() => ({ regionPrices: {}, originalJsons: null })),
+			.catch(() => ({ regionPrices: {} })),
 		safeFetchJson(fetch, '/api/tracker/7d-processed?regionPath=au/NEM&interval=30m', null)
 	]);
 

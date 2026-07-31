@@ -17,7 +17,7 @@
 	let { light = false } = $props();
 
 	// Unlike the header Nav, this dropdown renders `dropdownOnly` items too —
-	// that's where in-development entries (e.g. Explorer) surface.
+	// that's where in-development entries (e.g. the new Tracker) surface.
 	/** @type {{ name: string, href: string }[]} */
 	let navItems = $derived([
 		{ name: 'Home', href: '/' },
@@ -123,7 +123,9 @@
 			in:fly={{ y: -5, duration: 150 }}
 			role="menu"
 		>
-			{#each navItems as item, i (item.name)}
+			<!-- Keyed by href — the stable unique identity; labels are display
+			     text and may repeat or change. -->
+			{#each navItems as item, i (item.href)}
 				{@const isCurrentRoute =
 					item.href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(item.href)}
 				{@const isHighlighted = activeIndex === i}

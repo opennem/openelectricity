@@ -22,11 +22,14 @@ const client = new OpenElectricityClient({
  * pan/zoom/cache pipeline as the facility charts.
  *
  * Query params (built by `ChartDataManager` + the NetworkChart fetch-url closure):
- *   region      — Explorer region value ('_all', 'nsw1'…, 'wem')
- *   metric      — 'power' | 'energy' | one of the MARKET_METRIC_NAMES keys
- *   interval    — native OE interval ('5m', '1h', '1d', '1M', '3M', '1y')
- *   date_start  — timezone-naive local start (YYYY-MM-DDTHH:mm:ss)
- *   date_end    — timezone-naive local end
+ *   region           — Explorer region value ('_all', 'nsw1'…, 'wem')
+ *   metric           — 'power' | 'energy' | one of the MARKET_METRIC_NAMES keys
+ *   interval         — native OE interval ('5m', '1h', '1d', '1M', '3M', '1y')
+ *   date_start       — timezone-naive local start (YYYY-MM-DDTHH:mm:ss)
+ *   date_end         — timezone-naive local end
+ *   primary_grouping — 'network_region' to split a market metric per region
+ *                      (the tracker's pairwise-flow derivation needs every
+ *                      region's series in one response); market branch only
  */
 export async function GET({ url, setHeaders }) {
 	const { searchParams } = url;
@@ -35,6 +38,7 @@ export async function GET({ url, setHeaders }) {
 	const interval = searchParams.get('interval') || '5m';
 	const dateStart = searchParams.get('date_start') || undefined;
 	const dateEnd = searchParams.get('date_end') || undefined;
+	const primaryGrouping = searchParams.get('primary_grouping') || undefined;
 
 	const { networkId, networkRegion } = regionToNetwork(region);
 
@@ -51,6 +55,7 @@ export async function GET({ url, setHeaders }) {
 				dateEnd,
 				network_region: networkRegion
 			};
+			if (primaryGrouping === 'network_region') options.primaryGrouping = 'network_region';
 			({ response } = await client.getMarket(networkId, marketMetrics, options));
 		} else {
 			/** @type {import('openelectricity').INetworkTimeSeriesParams} */

@@ -1,7 +1,7 @@
 <script>
 	/**
 	 * FullscreenFilterBar — shared chrome for the filter bar at the top of
-	 * /facilities, /facility/[code] and /explorer. Owns the outer flex
+	 * /facilities, /facility/[code] and /tracker. Owns the outer flex
 	 * wrapper, the common spacing and fullscreen rounded-card styling, the
 	 * desktop divider in front of the options menu, and the
 	 * `view-transition-name` hooks used to animate cross-route transitions
@@ -13,8 +13,8 @@
 	 *     routes share the default `filter-bar-stable`, so it pairs: the
 	 *     group's position animates (slides sideways to make room for the
 	 *     back button) and the images don't cross-fade. Pages whose stable
-	 *     content ISN'T pixel-identical to that pair (e.g. /explorer's
-	 *     "logo + Explorer") pass their own `stableName` — unpaired regions
+	 *     content ISN'T pixel-identical to that pair (e.g. /tracker's
+	 *     "logo + Tracker") pass their own `stableName` — unpaired regions
 	 *     get the default cross-fade instead of rendering both texts stacked.
 	 *   - `filter-bar-rest-{key}` → page-specific middle content. Unpaired
 	 *     so it slides without zooming.

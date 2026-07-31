@@ -10,15 +10,16 @@ export const MAP_FAB_CLASS =
 
 /**
  * The base-map theme vocabulary — the single list the URL validators
- * (/facilities, /explorer `?theme=`) agree on. UI labels stay with the
+ * (/facilities, /tracker `?theme=`) agree on. UI labels stay with the
  * controls (MapOptionsDropdown).
  * @type {readonly string[]}
  */
 export const MAP_THEMES = ['light', 'dark', 'satellite'];
 
 /**
- * Default overview framing for the continent-level maps (/facilities,
- * /explorer) — one definition so their initial views can't drift.
+ * Default overview framing for the continent-level /facilities map. The
+ * tracker map frames itself tighter with its own route-local DEFAULT_VIEW —
+ * its content is NEM-biased.
  */
 export const AUSTRALIA_VIEW = Object.freeze({
 	center: Object.freeze({ lng: 134, lat: -25 }),
@@ -27,7 +28,7 @@ export const AUSTRALIA_VIEW = Object.freeze({
 
 /**
  * Map style URL for a theme — the single definition shared by every MapLibre
- * surface (/facilities, /facility/[code], /explorer). Styles are locally
+ * surface (/facilities, /facility/[code], /tracker). Styles are locally
  * hosted copies with the glyphs URL swapped to our own `/fonts/...` path —
  * CARTO's hosted fonts CDN 404s on `DM_Mono`, which broke labels when we
  * pointed straight at the upstream JSON.
