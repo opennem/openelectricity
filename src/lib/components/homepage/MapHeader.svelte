@@ -19,8 +19,8 @@
 	<div class="my-8 md:my-0">
 		<Switch
 			buttons={[
-				{ label: 'Carbon Intensity', value: 'annual' }
-				// { label: 'Live Flows', value: 'live', icon: 'live' }
+				{ label: 'Carbon Intensity', value: 'annual' },
+				{ label: 'Live Flows', value: 'live', icon: 'live' }
 			]}
 			selected={mapMode}
 			class="justify-center my-4"
@@ -31,12 +31,6 @@
 	{#if dispatch}
 		<div class="font-space text-mid-grey uppercase text-sm tracking-wider text-center">
 			{dispatch}
-		</div>
-	{/if}
-
-	{#if mapMode === 'live'}
-		<div class="font-space text-dark-red uppercase text-xxs tracking-wider text-center">
-			Live flows and price data are currently unavailable.
 		</div>
 	{/if}
 </header>

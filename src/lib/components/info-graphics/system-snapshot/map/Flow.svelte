@@ -4,29 +4,42 @@
 	 * @property {number | string} [flow]
 	 * @property {number} [x]
 	 * @property {number} [y]
+	 * @property {number} [scale] - Render scale for the tag artwork, centred
+	 *   on x/y — the fit belongs to the map (see FLOW_SCALE in Map.svelte)
 	 * @property {string} [direction]
 	 * @property {string} [colour]
 	 */
 
 	/** @type {Props} */
-	let { flow = 0, x = 0, y = 0, direction = 'left', colour = 'black' } = $props();
+	let { flow = 0, x = 0, y = 0, scale = 1, direction = 'left', colour = 'black' } = $props();
 
 	const dur = '1.5s';
 	const values = '0.5;1;0';
 
+	/** Intrinsic size of the tag artwork (the viewBox below). */
+	const ARTWORK_W = 57;
+	const ARTWORK_H = 50;
+	let width = $derived(ARTWORK_W * scale);
+	let height = $derived(ARTWORK_H * scale);
+
 	let showAnimation = $state(false);
 
-	setInterval(() => {
-		showAnimation = !showAnimation;
-	}, 6000);
+	// Torn down with the instance — Flow unmounts on every mode switch, and a
+	// bare setInterval would keep ticking dead instances for the page's life.
+	$effect(() => {
+		const id = setInterval(() => {
+			showAnimation = !showAnimation;
+		}, 6000);
+		return () => clearInterval(id);
+	});
 </script>
 
 <svg
-	x={x - 28.5}
-	y={y - 25}
-	width="57"
-	height="50"
-	viewBox="0 0 57 50"
+	x={x - width / 2}
+	y={y - height / 2}
+	{width}
+	{height}
+	viewBox={`0 0 ${ARTWORK_W} ${ARTWORK_H}`}
 	fill="none"
 	xmlns="http://www.w3.org/2000/svg"
 >

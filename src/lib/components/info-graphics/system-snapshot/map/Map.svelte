@@ -127,6 +127,10 @@
 		}
 	];
 
+	// Flow tags render at 78% of their artwork size — full size crowded the
+	// 443x416 layout. Lives here beside the x/y anchors it was tuned against.
+	const FLOW_SCALE = 0.78;
+
 	let modeLive = $derived(mode === 'live');
 
 	let tasText = $derived(
@@ -293,10 +297,11 @@
 				onmouseleave={flowLeave}
 			>
 				<Flow
+					scale={FLOW_SCALE}
 					direction={flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
 					flow={isNumber(flows['NSW1->QLD1']) ? absRound(flows['NSW1->QLD1']) : '—'}
 					x={360}
-					y={227}
+					y={215}
 				/><!-- QLD <-> NSW -->
 			</g>
 
@@ -307,10 +312,11 @@
 				onmouseleave={flowLeave}
 			>
 				<Flow
+					scale={FLOW_SCALE}
 					direction={flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
 					flow={isNumber(flows['NSW1->VIC1']) ? absRound(flows['NSW1->VIC1']) : '—'}
 					x={346}
-					y={310}
+					y={300}
 				/><!-- VIC <-> NSW -->
 			</g>
 
@@ -321,10 +327,11 @@
 				onmouseleave={flowLeave}
 			>
 				<Flow
+					scale={FLOW_SCALE}
 					direction={flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
 					flow={isNumber(flows['TAS1->VIC1']) ? absRound(flows['TAS1->VIC1']) : '—'}
 					x={353}
-					y={356}
+					y={365}
 				/><!-- VIC <-> TAS -->
 			</g>
 
@@ -335,10 +342,11 @@
 				onmouseleave={flowLeave}
 			>
 				<Flow
+					scale={FLOW_SCALE}
 					direction={flows['SA1->VIC1'] > 0 ? 'right' : 'left'}
 					flow={isNumber(flows['SA1->VIC1']) ? absRound(flows['SA1->VIC1']) : '—'}
 					x={301}
-					y={317}
+					y={308}
 				/><!-- VIC <-> SA -->
 			</g>
 		{/if}
