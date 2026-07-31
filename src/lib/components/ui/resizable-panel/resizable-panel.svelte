@@ -31,6 +31,11 @@
 		/** Colour classes for the grip pill, so it can stay legible when the strip
 		 *  is given a non-default background via `dragHandleStyle`. */
 		gripClass = 'bg-mid-warm-grey group-hover:bg-mid-grey',
+		/** Reports the panel's live size (percent of `containerSize`) whenever it
+		 *  changes — open reset, programmatic resize, or each drag frame — so
+		 *  callers can keep dependent layout (e.g. map framing insets) truthful
+		 *  to the real panel width rather than assuming the default. */
+		onresize = undefined,
 		header = undefined,
 		footer = undefined,
 		children
@@ -57,6 +62,11 @@
 				currentSize = size;
 			}
 		});
+	});
+
+	// Report live size to the caller (see the `onresize` prop doc).
+	$effect(() => {
+		onresize?.(currentSize);
 	});
 
 	// Distance to slide the panel fully off-screen when closed = its own size

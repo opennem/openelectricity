@@ -104,17 +104,24 @@
 
 	// Panel geometry, defined once: these constants feed both the panel/sheet
 	// props and the corridor-zoom insets, so resizing tweaks can't silently
-	// desync the map framing from the actual panel. (The inset assumes the
-	// default width — a hand-dragged panel isn't tracked.)
+	// desync the map framing from the actual panel.
 	const PANEL_FRACTION = 0.38;
 	const PANEL_MIN_PX = 400;
 	const PANEL_EDGE_PX = 16; // matches the panel's left-4 inset
 	const SHEET_PEEK_FRACTION = 0.45;
-	let panelInsetLeftPx = $derived(
-		!belowTablet.current && panelOpen
-			? Math.max(PANEL_MIN_PX, containerWidth * PANEL_FRACTION) + PANEL_EDGE_PX
-			: 0
-	);
+
+	// Live panel size reported by ResizablePanel (percent of containerWidth) —
+	// keeps the corridor-zoom framing truthful after a hand drag; 0 until the
+	// panel first reports, when the default geometry stands in.
+	let panelSizePct = $state(0);
+	let panelInsetLeftPx = $derived.by(() => {
+		if (belowTablet.current || !panelOpen) return 0;
+		const widthPx =
+			panelSizePct > 0
+				? (panelSizePct / 100) * containerWidth
+				: Math.max(PANEL_MIN_PX, containerWidth * PANEL_FRACTION);
+		return widthPx + PANEL_EDGE_PX;
+	});
 	let panelInsetBottomPx = $derived(
 		belowTablet.current ? containerHeight * SHEET_PEEK_FRACTION : 0
 	);
@@ -312,6 +319,7 @@
 						defaultSize={PANEL_FRACTION * 100}
 						minSize={PANEL_MIN_PX}
 						containerSize={containerWidth}
+						onresize={(pct) => (panelSizePct = pct)}
 						closedOffset="1rem"
 						class="hidden tablet:flex absolute top-4 bottom-4 left-4 max-w-[calc(100%_-_2rem)] bg-white rounded-lg border border-mid-warm-grey shadow-lg z-20"
 					>
