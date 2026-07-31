@@ -319,7 +319,7 @@
 						defaultSize={PANEL_FRACTION * 100}
 						minSize={PANEL_MIN_PX}
 						containerSize={containerWidth}
-						onresize={(pct) => (panelSizePct = pct)}
+						onresize={(/** @type {number} */ pct) => (panelSizePct = pct)}
 						closedOffset="1rem"
 						class="hidden tablet:flex absolute top-4 bottom-4 left-4 max-w-[calc(100%_-_2rem)] bg-white rounded-lg border border-mid-warm-grey shadow-lg z-20"
 					>
