@@ -9,12 +9,8 @@
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 	import { createFacilityDataManager } from './facility-data-manager.js';
-	import { createManagerStash, managerKey } from '$lib/components/charts/v2/manager-stash.js';
-	import {
-		createViewportGestures,
-		isViewportPinned
-	} from '$lib/components/charts/v2/viewport-gestures.js';
-	import { viewportDurationLimits } from './range-interval-config.js';
+	import { managerKey } from '$lib/components/charts/v2/manager-stash.js';
+	import { createChartHost } from '$lib/components/charts/v2/chart-host.svelte.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { analyzeUnits, unitSeriesIds } from './unit-analysis.js';
@@ -147,27 +143,11 @@
 	 *  must recreate the managers even though facility/interval/metric match. */
 	let unitsKey = $derived(analysis?.unitsKey ?? '');
 
-	// ============================================
-	// Viewport State
-	// ============================================
-
-	/** @type {number} */
-	let viewStart = $state(0);
-	/** @type {number} */
-	let viewEnd = $state(0);
-
 	/** Whether we're showing energy data (1d interval) vs power (5m) */
 	let isEnergyMetric = $derived(metric === 'energy');
 
-	/** Zoom-duration limits: 1h–16d for power, 5d–50y for energy (shared rules) */
-	let MIN_VIEWPORT_MS = $derived(viewportDurationLimits(!isEnergyMetric).minMs);
-	let MAX_VIEWPORT_MS = $derived(viewportDurationLimits(!isEnergyMetric).maxMs);
-
 	/** Prefetch buffer multiplier — energy uses wider buffers since intervals are daily */
 	let fetchBufferMultiplier = $derived(isEnergyMetric ? 3 : 1);
-
-	/** Whether we're currently in a pan gesture */
-	let isPanning = $state(false);
 
 	// ============================================
 	// Data Manager
@@ -193,38 +173,10 @@
 		return buildCombinedMetricsUrl(code, combinedMetricsFor(metricForBundle));
 	}
 
-	/** @type {ChartDataManager | null} */
-	let dataManager = $state(null);
-
 	/** Guards the one-shot empty-window retry (see the load-completion effect): set
 	 *  once a facility's first window settles, so only that initial window can
 	 *  auto-retry — a later grain switch keeps the user's viewport. Reset per facility. */
 	let firstWindowSettled = false;
-
-	/**
-	 * Stashed managers keyed by grain + series identity (managerKey) — background
-	 * prefetches plus previously-active managers kept warm so switching back to
-	 * a range renders instantly from cache. Keys include the seriesKey so
-	 * managers for different unit sets (battery net ⇄ split) coexist and a flip
-	 * back revives the warm cache instead of refetching.
-	 */
-	const managerStash = createManagerStash();
-
-	/**
-	 * Stash the outgoing manager for instant back-switch, or retire it when it
-	 * belongs to another facility (facility-navigation policy lives here; the
-	 * LRU mechanics live in manager-stash.js).
-	 * @param {ChartDataManager | null | undefined} manager
-	 * @param {string} currentCode
-	 */
-	function stashOrDispose(manager, currentCode) {
-		if (!manager) return;
-		// Dispose first — aborts the outgoing grain's in-flight fetches (refcounted
-		// in sharedFetch, so shared URLs survive) while keeping the cache warm.
-		manager.dispose();
-		if (manager.cacheKey !== currentCode) return;
-		managerStash.stash(managerKey(manager.interval, manager.metric, manager.seriesKey), manager);
-	}
 
 	/**
 	 * Convert a YYYY-MM-DD date range (interpreted in the network tz) to epoch-ms
@@ -243,113 +195,76 @@
 		};
 	}
 
-	// Initialize/reinitialize data manager when facility or interval/metric changes
-	$effect(() => {
-		if (!facility) {
-			untrack(() => dataManager)?.dispose();
-			dataManager = null;
-			managerStash.clear();
-			return;
-		}
+	// ============================================
+	// Chart host — shared manager lifecycle, viewport + pan/zoom recipe.
+	// Facility-specific behaviour rides the hooks: SSR power seeding inside
+	// createManager, first-viewport from the seeded cache, per-facility stash
+	// scope re-arming the empty-window retry, and debounced (non-immediate)
+	// revival/seed requests.
+	// ============================================
 
-		// Track interval, metric and the unit set as dependencies
-		const currentInterval = interval;
-		const currentMetric = metric;
-		const currentCode = facility.code;
-		const currentUnitsKey = unitsKey;
-
-		// Clear prefetch cache if facility changed
-		const existingCode = untrack(() => dataManager?.cacheKey);
-		if (existingCode && existingCode !== currentCode) {
-			managerStash.clear();
-			// Re-arm the empty-window retry (see the load-completion effect) for the
-			// new facility.
-			firstWindowSettled = false;
-		}
-
-		// Skip recreation if existing manager already matches
-		const existing = untrack(() => dataManager);
-		if (
-			existing &&
-			existing.cacheKey === currentCode &&
-			existing.interval === currentInterval &&
-			existing.metric === currentMetric &&
-			existing.seriesKey === currentUnitsKey
-		) {
-			return;
-		}
-
-		// Check the stash before creating a new manager
-		const prefetchKey = managerKey(currentInterval, currentMetric, currentUnitsKey);
-		const prefetched = managerStash.take(prefetchKey);
-		if (prefetched && prefetched.cacheKey === currentCode) {
-			stashOrDispose(existing, currentCode);
-			dataManager = prefetched;
-
-			// Still need to request the viewport range (may already be cached)
-			const start = untrack(() => viewStart);
-			const end = untrack(() => viewEnd);
-			if (start && end) {
-				const duration = end - start;
-				const bufferMultiplier = currentMetric === 'energy' ? 3 : 1;
-				const buffer = duration * bufferMultiplier;
-				prefetched.requestRange(start - buffer, Math.min(end + buffer, Date.now()));
+	const host = createChartHost({
+		cacheKey: () => facility?.code ?? null,
+		interval: () => interval,
+		metric: () => metric,
+		seriesKey: () => unitsKey,
+		stashScope: () => facility?.code ?? '',
+		createManager: () => {
+			const manager = createFacilityDataManager({
+				facilityCode: facility.code,
+				networkId: facility.network_id,
+				interval,
+				metric,
+				unitFuelTechMap,
+				orderedCodes,
+				loadCodes,
+				getLabel,
+				getColour,
+				buildFetchUrl: bundledFetchUrl(facility.code, metric)
+			});
+			// Seed with server power data if available synchronously — read
+			// untracked so its later arrival doesn't re-swap the manager (the
+			// async seeding effect below handles that).
+			const currentPowerData = untrack(() => powerData);
+			if (metric === 'power' && currentPowerData) {
+				manager.seedCache(currentPowerData);
 			}
-			return;
-		}
-		// Unreachable in practice (the stash is cleared on facility change), but a
-		// taken manager for another facility must not leak.
-		prefetched?.dispose();
-
-		// Read powerData without tracking — seeding is handled by a separate effect
-		const currentPowerData = untrack(() => powerData);
-
-		const manager = createFacilityDataManager({
-			facilityCode: currentCode,
-			networkId: facility.network_id,
-			interval: currentInterval,
-			metric: currentMetric,
-			unitFuelTechMap,
-			orderedCodes,
-			loadCodes,
-			getLabel,
-			getColour,
-			buildFetchUrl: bundledFetchUrl(currentCode, currentMetric)
-		});
-
-		// Seed with server power data if available synchronously
-		if (currentMetric === 'power' && currentPowerData) {
-			manager.seedCache(currentPowerData);
-		}
-
-		// Use untrack so viewStart/viewEnd don't become dependencies of this effect.
-		const start = untrack(() => viewStart);
-		const end = untrack(() => viewEnd);
-
-		if (!start && !end) {
-			// First load — set viewport from seeded cache
+			return manager;
+		},
+		initialViewport: (manager) => {
+			// First load — viewport from the seeded cache, data already present.
 			if (manager.cacheStart !== null && manager.cacheEnd !== null) {
-				viewStart = manager.cacheStart;
-				viewEnd = Math.min(manager.cacheEnd, Date.now());
-			} else if (dateStart && dateEnd) {
-				// No seeded cache (e.g. energy mode on page load) — use date props
-				const { startMs, endMs } = dateBoundsMs(dateStart, dateEnd, timeZone);
-				viewStart = startMs;
-				viewEnd = endMs;
-				const buffer = (endMs - startMs) * fetchBufferMultiplier;
-				manager.requestRange(startMs - buffer, Math.min(endMs + buffer, Date.now()));
+				return {
+					start: manager.cacheStart,
+					end: Math.min(manager.cacheEnd, Date.now()),
+					request: false
+				};
 			}
-		} else {
-			// Switching interval/metric — keep current viewport, fetch immediately
-			// (no debounce) so data loads even during continuous zoom gestures
-			const buffer = (end - start) * fetchBufferMultiplier;
-			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
-		}
-
-		// Keep the outgoing manager's cache warm for an instant back-switch.
-		stashOrDispose(existing, currentCode);
-		dataManager = manager;
+			// No seeded cache (e.g. energy mode on page load) — use date props.
+			if (dateStart && dateEnd) {
+				const { startMs, endMs } = dateBoundsMs(dateStart, dateEnd, timeZone);
+				return { start: startMs, end: endMs };
+			}
+			return null;
+		},
+		fetchBufferMultiplier: () => fetchBufferMultiplier,
+		minDateMs: () => minDateMs,
+		fineViewportLimits: () => !isEnergyMetric,
+		reviveRequestImmediate: false,
+		seedRequestImmediate: false,
+		// Re-arm the empty-window retry for the new facility.
+		onScopeChange: () => {
+			firstWindowSettled = false;
+		},
+		onGestureStart: () => chartStore?.clearHover(),
+		onviewportchange: (range) => onviewportchange?.(range),
+		onviewportsettle: (range) => onviewportsettle?.(range)
 	});
+
+	let dataManager = $derived(host.dataManager);
+	let viewStart = $derived(host.viewStart);
+	let viewEnd = $derived(host.viewEnd);
+	let isPanning = $derived(host.isPanning);
 
 	// Seed manager with server power data when it arrives asynchronously
 	$effect(() => {
@@ -366,8 +281,8 @@
 		const start = viewStart;
 		const end = viewEnd;
 		if (!start && !end && manager.cacheStart !== null && manager.cacheEnd !== null) {
-			viewStart = manager.cacheStart;
-			viewEnd = Math.min(manager.cacheEnd, Date.now());
+			host.viewStart = manager.cacheStart;
+			host.viewEnd = Math.min(manager.cacheEnd, Date.now());
 		}
 	});
 
@@ -397,9 +312,11 @@
 			const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 			manager.requestRange(sevenDaysAgo, now);
 
-			// 2. Background energy/1d manager for 1-year range
+			// 2. Background energy/1d manager for 1-year range, stashed on the
+			// host so a later energy switch revives it warm (and unmount
+			// cleanup — owned by the host — retires it).
 			const energyKey = managerKey('1d', 'energy', currentUnitsKey);
-			if (managerStash.has(energyKey)) return;
+			if (host.managerStash.has(energyKey)) return;
 
 			const energyManager = createFacilityDataManager({
 				facilityCode: currentCode,
@@ -416,18 +333,8 @@
 
 			const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
 			energyManager.requestRange(oneYearAgo, now);
-			managerStash.stash(energyKey, energyManager);
+			host.managerStash.stash(energyKey, energyManager);
 		});
-	});
-
-	// Retire all managers on unmount so in-flight fetches settle as no-ops
-	// instead of calling back into destroyed component state.
-	$effect(() => {
-		return () => {
-			dataManager?.dispose();
-			managerStash.clear();
-			disposeGestures();
-		};
 	});
 
 	// ============================================
@@ -614,65 +521,6 @@
 
 	let showLoadingOverlay = $derived(computeShowLoadingOverlay(dataManager, chartStore));
 
-	// ============================================
-	// Pan / Zoom Handlers
-	// ============================================
-
-	const {
-		handlePanStart,
-		handlePan,
-		handlePanEnd,
-		handleZoom,
-		zoomIn,
-		zoomOut,
-		dispose: disposeGestures
-	} = createViewportGestures({
-		viewport: () => ({ start: viewStart, end: viewEnd }),
-		apply: (start, end) => {
-			viewStart = start;
-			viewEnd = end;
-		},
-		minDurationMs: () => MIN_VIEWPORT_MS,
-		maxDurationMs: () => MAX_VIEWPORT_MS,
-		minDateMs: () => minDateMs,
-		onGestureStart: () => {
-			isPanning = true;
-			// Clear hover during pan
-			chartStore?.clearHover();
-		},
-		onGestureEnd: () => {
-			isPanning = false;
-		},
-		// Request data for any uncached range (wider buffer for energy)
-		onMove: (start, end) => {
-			const buffer = (end - start) * fetchBufferMultiplier;
-			dataManager?.requestRange(start - buffer, end + buffer);
-		},
-		// Prefetch ahead in the pan direction (wider for energy)
-		onPanEnd: (direction, start, end) => {
-			const prefetch = (end - start) * fetchBufferMultiplier;
-			if (direction === -1) {
-				dataManager?.requestRange(end, Math.min(end + prefetch, Date.now()));
-			} else {
-				dataManager?.requestRange(start - prefetch, start);
-			}
-		},
-		onSettle: (start, end) => {
-			// Parent first — it may flip metric/interval synchronously (grain
-			// switch); reconcileFetches skips the old grain when that happens.
-			onviewportsettle?.({ start, end });
-			reconcileFetches();
-		}
-	});
-
-	// Reactively notify parent whenever viewport changes (pan, zoom, setViewport, initial load, metric switch)
-	$effect(() => {
-		const start = viewStart;
-		const end = viewEnd;
-		if (!start || !end) return;
-		onviewportchange?.({ start, end });
-	});
-
 	// Report load completion to the parent once the in-flight fetch settles.
 	// `initialLoadComplete` flips true after the first seed/fetch settles (even when
 	// empty); `cacheStart` is a stable "data was found" signal that survives panning.
@@ -706,8 +554,8 @@
 					untrack(() => timeZone)
 				);
 				if (untrack(() => viewStart) !== startMs || untrack(() => viewEnd) !== endMs) {
-					viewStart = startMs;
-					viewEnd = endMs;
+					host.viewStart = startMs;
+					host.viewEnd = endMs;
 					const buffer = (endMs - startMs) * untrack(() => fetchBufferMultiplier);
 					manager.requestRange(startMs - buffer, Math.min(endMs + buffer, Date.now()), {
 						immediate: true
@@ -718,11 +566,6 @@
 		}
 		onloadcomplete?.({ hasData });
 	});
-
-	let isAtMinZoom = $derived(viewEnd - viewStart <= MIN_VIEWPORT_MS);
-	let isAtMaxZoom = $derived(
-		viewEnd - viewStart >= MAX_VIEWPORT_MS || isViewportPinned(viewStart, viewEnd, minDateMs)
-	);
 
 	// ============================================
 	// Hover/Focus Handlers
@@ -787,29 +630,14 @@
 	// ============================================
 
 	/**
-	 * Set viewport to a specific time range (e.g. from DateRangePicker)
+	 * Set viewport to a specific time range (e.g. from DateRangePicker).
+	 * Delegated to the shared chart host, which also guards against fetching a
+	 * pending grain switch's stale manager.
 	 * @param {number} startMs
 	 * @param {number} endMs
 	 */
 	export function setViewport(startMs, endMs) {
-		const now = Date.now();
-		viewStart = Math.max(startMs, minDateMs);
-		viewEnd = Math.min(endMs, now);
-
-		// If an interval/metric switch is pending (the props have changed but the
-		// data-manager $effect hasn't swapped the manager yet), don't fetch against
-		// the stale manager — e.g. selecting "All" flips to energy/1y, but the live
-		// manager is still power/5m and would request a multi-year 5m range the API
-		// rejects. The init $effect creates the correct manager and fetches this
-		// viewport immediately.
-		if (dataManager && (dataManager.interval !== interval || dataManager.metric !== metric)) {
-			return;
-		}
-
-		// Prefetch with buffer so panning has data ready
-		const duration = viewEnd - viewStart;
-		const buffer = duration * fetchBufferMultiplier;
-		dataManager?.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, now));
+		host.setViewport(startMs, endMs);
 	}
 
 	/**
@@ -817,13 +645,7 @@
 	 * final gaps immediately. Called when a gesture settles.
 	 */
 	export function reconcileFetches() {
-		if (!viewStart || !viewEnd || !dataManager) return;
-		// A grain switch is pending (props flipped, manager not yet swapped) —
-		// don't fetch the old grain; the manager-swap effect fetches the new one
-		// immediately and its dispose-before-stash aborts the stale work.
-		if (dataManager.interval !== interval || dataManager.metric !== metric) return;
-		const buffer = (viewEnd - viewStart) * fetchBufferMultiplier;
-		dataManager.reconcileWindow(viewStart - buffer, Math.min(viewEnd + buffer, Date.now()));
+		host.reconcileFetches();
 	}
 
 	/**
@@ -845,19 +667,19 @@
 			{tooltipMode}
 			{tightAxisClip}
 			zoomMode={showZoomControls ? zoomMode : 'none'}
-			onzoomin={zoomIn}
-			onzoomout={zoomOut}
-			{isAtMinZoom}
-			{isAtMaxZoom}
+			onzoomin={host.zoomIn}
+			onzoomout={host.zoomOut}
+			isAtMinZoom={host.isAtMinZoom}
+			isAtMaxZoom={host.isAtMaxZoom}
 			zoomOverlayInsetPx={overlayInsetPx}
 			tooltipInsetPx={overlayInsetPx}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
-			onpanstart={handlePanStart}
-			onpan={handlePan}
-			onpanend={handlePanEnd}
-			onzoom={handleZoom}
+			onpanstart={host.handlePanStart}
+			onpan={host.handlePan}
+			onpanend={host.handlePanEnd}
+			onzoom={host.handleZoom}
 			{enablePan}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}

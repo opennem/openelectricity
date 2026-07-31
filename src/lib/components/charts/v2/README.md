@@ -474,7 +474,7 @@ Toggle between time intervals:
 
 ### Zoom buttons
 
-StratumChart owns the +/- zoom button rendering — pass `zoomMode` plus the click handlers and it picks the layout. The handlers themselves come from [`viewport-gestures.js`](./viewport-gestures.js): `createViewportGestures()` holds the shared pan/zoom maths (invert the drag delta, clamp to now, anchor zoom at the pointer, centre-anchored 1.5× button zoom) used by FacilityChart, NetworkChart and the facility providers:
+StratumChart owns the +/- zoom button rendering — pass `zoomMode` plus the click handlers and it picks the layout. The handlers themselves come from [`viewport-gestures.js`](./viewport-gestures.js): `createViewportGestures()` holds the shared pan/zoom maths (invert the drag delta, clamp to now, anchor zoom at the pointer, centre-anchored 1.5× button zoom). The facility providers use it directly; FacilityChart, NetworkChart and InterconnectorChart get it via [`chart-host.svelte.js`](./chart-host.svelte.js), whose `createChartHost()` bundles the gestures with the manager lifecycle/stash, viewport state and the `setViewport`/`reconcileFetches` contract:
 
 ```svelte
 <script>
@@ -910,8 +910,9 @@ src/lib/components/charts/v2/
 ├── legacy-transform.js         # Legacy StatisticV2 → TimeSeriesV2 pipeline (processData, processForChart, createProcessor)
 ├── series-rows.js              # Timestamp-union processor core ('set' / 'sum' modes) under processFacilityPower / processNetworkData / processPriceData
 ├── display-aggregation.js      # createVisibleAggregation() — viewport slice + aggregation memo with stable array identity
-├── manager-stash.js            # createManagerStash() — LRU of warm ChartDataManagers (FacilityChart, NetworkChart)
-├── viewport-gestures.js        # createViewportGestures() — shared pan/zoom viewport maths
+├── chart-host.svelte.js        # createChartHost() — shared manager lifecycle/stash, viewport + gesture wiring, setViewport/reconcileFetches (FacilityChart, NetworkChart, InterconnectorChart)
+├── manager-stash.js            # createManagerStash() — LRU of warm ChartDataManagers (used via chart-host)
+├── viewport-gestures.js        # createViewportGestures() — shared pan/zoom viewport maths (used via chart-host)
 ├── echo-guard.js               # createEchoGuard() — suppress viewport pushes echoing back via onviewportchange
 ├── perf.js                     # perfSpan() — dev-only performance.mark/measure wrapper for hot chart paths
 ├── binary-search.js            # bisectTime / indexOfTime / mergeSortedByTime for time-sorted rows
