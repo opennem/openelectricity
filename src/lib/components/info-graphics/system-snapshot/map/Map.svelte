@@ -19,7 +19,7 @@
 
 	import CrossBorderExport from '$lib/components/info-graphics/system-snapshot/CrossBorderExport.svelte';
 
-	import { priceColour } from '$lib/components/info-graphics/system-snapshot/helpers';
+	import { priceColour } from '$lib/price-scale.js';
 
 	import { carbonIntensityColour } from '$lib/stores/theme';
 

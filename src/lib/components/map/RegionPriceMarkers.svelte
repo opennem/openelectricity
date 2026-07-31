@@ -10,7 +10,7 @@
 	 */
 	import { Marker } from 'svelte-maplibre-gl';
 	import { REGION_ANCHORS } from '$lib/flows/region-geo.js';
-	import { priceColour } from '$lib/components/info-graphics/system-snapshot/helpers.js';
+	import { priceColour } from '$lib/price-scale.js';
 	import { contrastText, displayCode, formatPrice, numberOrUndefined } from '$lib/flows/format.js';
 
 	/**

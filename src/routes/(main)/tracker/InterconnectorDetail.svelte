@@ -29,7 +29,7 @@
 		formatPrice,
 		numberOrUndefined
 	} from '$lib/flows/format.js';
-	import { priceColour } from '$lib/components/info-graphics/system-snapshot/helpers.js';
+	import { priceColour } from '$lib/price-scale.js';
 	import CorridorMetrics from './CorridorMetrics.svelte';
 
 	/**
