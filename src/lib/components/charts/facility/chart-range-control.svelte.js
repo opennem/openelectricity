@@ -210,8 +210,13 @@ export function createChartRangeControl(config) {
 		applyRangeSwitch(start, end, value, { sticky: true });
 	}
 
-	/** Pan/zoom-driven viewport change from the generation chart. The
-	 *  metric/interval switch waits for the gesture to settle. */
+	/** Pan/zoom-driven viewport change from the generation chart when it is the
+	 *  ONLY imperative chart (FacilityCompactCharts — its siblings are
+	 *  providers that follow the owner's viewport props, so nothing needs
+	 *  pushing). Hosts with peer imperative charts (the facility page's
+	 *  curtailment panel) must wire the generation chart through
+	 *  `handleDerivedViewportChange(range, powerChart)` instead, or its
+	 *  gestures never mirror into the peers. */
 	/** @param {{ start: number, end: number }} range */
 	function handleChartViewportChange(range) {
 		if (echo.suppressed) return;

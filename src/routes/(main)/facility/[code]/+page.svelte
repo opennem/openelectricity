@@ -596,7 +596,7 @@
 											showContainer={false}
 											{hoverTime}
 											onhoverchange={handleHoverChange}
-											onviewportchange={range.handleChartViewportChange}
+											onviewportchange={(r) => range.handleDerivedViewportChange(r, powerChart)}
 											onviewportsettle={range.handleViewportSettle}
 											onloadcomplete={handlePowerLoadComplete}
 											onvisibledata={(d) => {
