@@ -141,6 +141,20 @@
 			"name": "Pinjarra"
 		}
 	},
+	"ALINTA_WGP_ESR": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "WEM",
+			"name": "Wagerup"
+		}
+	},
 	"ALINTA_WWF": {
 		"v": 1,
 		"photo": "https://cdn.sanity.io/images/bjedimft/production/f64dd7401c3764e9f9d56e293d09cb88e0f3ad46-650x365.jpg",
@@ -2570,10 +2584,24 @@
 				"battery"
 			],
 			"dominant": "battery",
-			"capacity": 226,
+			"capacity": 227,
 			"status": "committed",
 			"region": "SA",
 			"name": "Goyder"
+		}
+	},
+	"GBESS2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 227,
+			"status": "committed",
+			"region": "SA",
+			"name": "Goyder 2"
 		}
 	},
 	"GEORGTWN": {
@@ -3906,9 +3934,10 @@
 		"data": {
 			"fuelTechs": [
 				"gas_ocgt",
+				"gas_steam",
 				"coal_black"
 			],
-			"dominant": "coal_black",
+			"dominant": "gas_steam",
 			"capacity": 206.4,
 			"status": "operating",
 			"region": "WEM",
@@ -3959,14 +3988,14 @@
 	},
 	"LANCSF": {
 		"v": 1,
-		"photo": null,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/2d8dd6401fcfadc77895a613d7ad96789f177416-1600x900.jpg",
 		"data": {
 			"fuelTechs": [
 				"solar_utility"
 			],
 			"dominant": "solar_utility",
 			"capacity": 106,
-			"status": "committed",
+			"status": "operating",
 			"region": "VIC",
 			"name": "Lancaster"
 		}
@@ -4818,20 +4847,6 @@
 			"name": "Moree"
 		}
 	},
-	"MORNBESS": {
-		"v": 1,
-		"photo": null,
-		"data": {
-			"fuelTechs": [
-				"battery"
-			],
-			"dominant": "battery",
-			"capacity": 240,
-			"status": "operating",
-			"region": "VIC",
-			"name": "Mornington"
-		}
-	},
 	"MORNW": {
 		"v": 1,
 		"photo": null,
@@ -4928,6 +4943,20 @@
 			"status": "operating",
 			"region": "VIC",
 			"name": "Melbourne A3"
+		}
+	},
+	"MRNBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 240,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Mornington"
 		}
 	},
 	"MRTLSWF": {
@@ -5065,7 +5094,7 @@
 			],
 			"dominant": "solar_utility",
 			"capacity": 25,
-			"status": "committed",
+			"status": "operating",
 			"region": "NSW",
 			"name": "Mulwala"
 		}
@@ -5373,7 +5402,7 @@
 				"coal_brown"
 			],
 			"dominant": "coal_brown",
-			"capacity": 730,
+			"capacity": 530,
 			"status": "retired",
 			"region": "SA",
 			"name": "Northern"
@@ -5654,7 +5683,7 @@
 				"gas_ocgt"
 			],
 			"dominant": "gas_ocgt",
-			"capacity": 600.5999999999999,
+			"capacity": 600.6,
 			"status": "operating",
 			"region": "WEM",
 			"name": "Pinjar"
@@ -6435,7 +6464,7 @@
 	},
 	"SMFBESS1": {
 		"v": 1,
-		"photo": null,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cb36cd306ad10b2f6320bc088f424dd61888de1f-1018x608.webp",
 		"data": {
 			"fuelTechs": [
 				"battery"
@@ -6449,7 +6478,7 @@
 	},
 	"SMFBESS2": {
 		"v": 1,
-		"photo": null,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/cb36cd306ad10b2f6320bc088f424dd61888de1f-1018x608.webp",
 		"data": {
 			"fuelTechs": [
 				"battery"
@@ -6502,6 +6531,20 @@
 			"status": "operating",
 			"region": "SA",
 			"name": "Snapper Point"
+		}
+	},
+	"SNB02": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 260,
+			"status": "operating",
+			"region": "QLD",
+			"name": "Supernode 2"
 		}
 	},
 	"SNB1": {
@@ -6910,20 +6953,6 @@
 			"name": "Suntop"
 		}
 	},
-	"SUPERNODE2": {
-		"v": 1,
-		"photo": null,
-		"data": {
-			"fuelTechs": [
-				"battery"
-			],
-			"dominant": "battery",
-			"capacity": 260,
-			"status": "operating",
-			"region": "QLD",
-			"name": "Supernode 2"
-		}
-	},
 	"SVALE": {
 		"v": 1,
 		"photo": null,
@@ -7234,20 +7263,6 @@
 			"name": "Teralba"
 		}
 	},
-	"TERANGBESS": {
-		"v": 1,
-		"photo": null,
-		"data": {
-			"fuelTechs": [
-				"battery"
-			],
-			"dominant": "battery",
-			"capacity": 100,
-			"status": "operating",
-			"region": "VIC",
-			"name": "Terang"
-		}
-	},
 	"TERMSTOR": {
 		"v": 1,
 		"photo": null,
@@ -7486,6 +7501,20 @@
 			"name": "Trevallyn"
 		}
 	},
+	"TRGBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 100,
+			"status": "operating",
+			"region": "VIC",
+			"name": "Terang"
+		}
+	},
 	"TRIBUTE": {
 		"v": 1,
 		"photo": null,
@@ -7681,20 +7710,6 @@
 			"status": "committed",
 			"region": "WEM",
 			"name": "Waddi"
-		}
-	},
-	"WAGERUP_BESS": {
-		"v": 1,
-		"photo": null,
-		"data": {
-			"fuelTechs": [
-				"battery"
-			],
-			"dominant": "battery",
-			"capacity": 100,
-			"status": "committed",
-			"region": "WEM",
-			"name": "Wagerup"
 		}
 	},
 	"WAGGNSF": {
@@ -8077,7 +8092,7 @@
 	},
 	"WILLBES": {
 		"v": 1,
-		"photo": null,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/444f4cb3691db21c7c2dd3c3b83e111a024524b9-2560x1440.jpg",
 		"data": {
 			"fuelTechs": [
 				"battery"
@@ -8327,6 +8342,20 @@
 			"status": "committed",
 			"region": "VIC",
 			"name": "Wooreen"
+		}
+	},
+	"WORSLEY": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"coal_black"
+			],
+			"dominant": "coal_black",
+			"capacity": 120,
+			"status": "retired",
+			"region": "WEM",
+			"name": "Worsley Cogeneration"
 		}
 	},
 	"WOYWOY": {
