@@ -5,6 +5,7 @@ import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.
 import { retiredAnchorMs } from '$lib/components/charts/facility/data-end.js';
 import { sumUnitCapacities } from '$lib/utils/capacity';
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
+import { facilityJsonLdString } from '$lib/seo/facility-jsonld.js';
 import facilityCardCodes from '$lib/server/og/facility-card-codes.json';
 
 const DEFAULT_RANGE_DAYS = 3;
@@ -102,14 +103,24 @@ export async function load({ params, setHeaders }) {
 	// prerendered behaviour while keeping the build fast.
 	setHeaders({ 'cache-control': 'public, max-age=3600' });
 
+	const ogImage = FACILITY_CARD_CODES.has(code) ? `${OG_IMAGE_BASE}/${code}.jpg` : DEFAULT_OG_IMAGE;
+	const ogDescription = buildOgDescription(facility, sanityFacility);
+
 	return {
 		facility,
 		sanityFacility,
 		timeZone,
 		retiredEndMs: computeRetiredEndMs(facility),
 		rangeDays: DEFAULT_RANGE_DAYS,
-		ogImage: FACILITY_CARD_CODES.has(code) ? `${OG_IMAGE_BASE}/${code}.jpg` : DEFAULT_OG_IMAGE,
-		ogDescription: buildOgDescription(facility, sanityFacility),
+		ogImage,
+		ogDescription,
+		schemaJsonLd: facilityJsonLdString({
+			facility,
+			sanityFacility,
+			url: `${SITE}/facility/${code}`,
+			image: ogImage,
+			description: ogDescription
+		}),
 		// Split width is restored client-side from the cookie; the chart self-fetches
 		// its series on mount.
 		chartsFraction: CHARTS_FRACTION_DEFAULT,

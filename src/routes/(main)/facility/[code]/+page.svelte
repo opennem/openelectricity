@@ -461,6 +461,7 @@
 	imageHeight={OG_CARD_HEIGHT}
 	imageType={OG_CARD_TYPE}
 	path={`/facility/${data.facility?.code ?? ''}`}
+	jsonLd={data.schemaJsonLd}
 />
 
 <!-- Morph target — pairs with the /facilities detail panel
