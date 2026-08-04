@@ -40,7 +40,11 @@ For each grouping file (`simple.js`, `detailed.js`, `renewables-fossils.js`, `si
 
 When in doubt, open the existing file and match the convention for its closest sibling (e.g. adding `wind_floating` → group wherever `wind_offshore` appears).
 
-### 4. Icon (optional)
+### 4. `src/lib/seo/facility-jsonld.js` (optional but check)
+
+`FUELTECH_WIKIDATA_CLASS` maps fuel-tech codes to Wikidata power-station classes for facility-page JSON-LD. An unmapped code silently falls back to the generic "power station" entity — fine for loads/aggregates, but a new generation fuel-tech should get an entry. **Verify the QID against wikidata.org before adding** (fetch the entity and check its English label); plausible-looking QIDs frequently resolve to unrelated entities.
+
+### 5. Icon (optional)
 
 If an SVG icon exists for the new fuel-tech, drop it under `src/lib/icons/fuel-techs/`. Follow the naming convention of existing files (e.g. `WindSm.svelte`, `SolarUtilitySm.svelte`). The user typically provides the SVG — don't invent one.
 
@@ -60,5 +64,6 @@ After all edits:
 
 - `src/lib/theme/openelectricity.js` — `fuelTechColourMap`.
 - `src/lib/fuel_techs.js` — `fuelTechNameMap`, `loadFuelTechs`, `isLoad`.
+- `src/lib/seo/facility-jsonld.js` — `FUELTECH_WIKIDATA_CLASS` for facility JSON-LD.
 - `src/lib/fuel-tech-groups/simple.js` — canonical grouping shape (`fuelTechMap`, `order`, `labels`, `fuelTechNameReducer`).
 - `src/lib/icons/fuel-techs/` — per-fueltech SVG icons.

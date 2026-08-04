@@ -1,5 +1,6 @@
 <script>
 	import { page } from '$app/stores';
+	import { jsonLdToString } from '$lib/seo/jsonld.js';
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [type] - or article, or music.album etc. See https://ogp.me/#types
@@ -14,6 +15,7 @@
 	 * @property {string} [siteTitle]
 	 * @property {boolean} [useSuffix]
 	 * @property {boolean | string} [canonical] - false suppresses the canonical link (e.g. draft/preview routes); a string overrides the URL
+	 * @property {Record<string, any> | null} [jsonLd] - schema.org JSON-LD object; stringified and escaped here (the single {@html} sink) so callers never handle escaping
 	 */
 
 	/** @type {Props} */
@@ -29,7 +31,8 @@
 		domain = 'https://openelectricity.org.au',
 		siteTitle = 'Open Electricity',
 		useSuffix = true,
-		canonical = true
+		canonical = true,
+		jsonLd = null
 	} = $props();
 	let titleWithSuffix = $derived(
 		siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle
@@ -39,9 +42,20 @@
 	// og:image should be an absolute URL — prefix the domain for root-relative paths.
 	let imageUrl = $derived(image && !/^https?:\/\//.test(image) ? `${domain}${image}` : image);
 	let canonicalUrl = $derived(canonical === true ? fullURI : canonical || null);
+	// A literal "</script" anywhere in this file — even inside a string — ends
+	// the component script block early, so the closing delimiter is assembled
+	// from pieces. Safe as {@html}: jsonLdToString escapes "<" so content can
+	// never close the tag.
+	let jsonLdTag = $derived(
+		jsonLd ? `<script type="application/ld+json">${jsonLdToString(jsonLd)}${'<'}/script>` : null
+	);
 </script>
 
 <svelte:head>
+	{#if jsonLdTag}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- jsonLdToString escapes "<" so content cannot break out of the script tag -->
+		{@html jsonLdTag}
+	{/if}
 	<meta property="og:type" content={type} />
 	<meta property="og:site_name" content={siteTitle} />
 	<meta property="og:url" content={fullURI} />
