@@ -1,0 +1,18 @@
+# Open Electricity — openelectricity.org.au
+# All crawlers are welcome here, including AI/LLM agents (GPTBot, ClaudeBot,
+# PerplexityBot, Google-Extended, CCBot and friends). The disallowed paths are
+# app tooling and embed duplicates, not content.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /studio
+Disallow: /article-drafts
+Disallow: /records-checker
+Disallow: /data-tracker
+Disallow: /record/
+Disallow: /strata-embed/
+Disallow: /stratify
+Disallow: /widget
+
+Sitemap: https://openelectricity.org.au/sitemap.xml

@@ -22,6 +22,7 @@ const config = {
 					'/og/*',
 					'/map-styles/*',
 					'/favicon.png',
+					'/robots.txt',
 					'/studio/lens-on-emissions/data/*',
 					'/analysis/*',
 					'/content/*',
