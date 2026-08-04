@@ -5,7 +5,7 @@ import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.
 import { retiredAnchorMs } from '$lib/components/charts/facility/data-end.js';
 import { sumUnitCapacities } from '$lib/utils/capacity';
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
-import { facilityJsonLdString } from '$lib/seo/facility-jsonld.js';
+import { buildFacilityJsonLd } from '$lib/seo/facility-jsonld.js';
 import facilityCardCodes from '$lib/server/og/facility-card-codes.json';
 
 const DEFAULT_RANGE_DAYS = 3;
@@ -114,7 +114,7 @@ export async function load({ params, setHeaders }) {
 		rangeDays: DEFAULT_RANGE_DAYS,
 		ogImage,
 		ogDescription,
-		schemaJsonLd: facilityJsonLdString({
+		schemaJsonLd: buildFacilityJsonLd({
 			facility,
 			sanityFacility,
 			url: `${SITE}/facility/${code}`,

@@ -15,7 +15,6 @@ import { regionsWithShortLabels } from '$lib/regions.js';
 import { EXTERNAL_LINKS } from '$lib/constants/external-links.js';
 import { sumUnitCapacities } from '$lib/utils/capacity';
 import { primaryFuelTech } from '$lib/utils/fueltech-display';
-import { jsonLdToString } from './jsonld.js';
 
 // Entity URI, deliberately not EXTERNAL_LINKS.wikidata's /wiki/ page URL —
 // sameAs/additionalType want the canonical entity form.
@@ -66,7 +65,8 @@ function httpUrlOrNull(value) {
 }
 
 /**
- * Build the JSON-LD graph (Place + BreadcrumbList) for a facility page.
+ * Build the JSON-LD graph (Place + BreadcrumbList) for a facility page, for
+ * Meta.svelte's `jsonLd` prop (which handles stringifying and escaping).
  * Returns null when there's no facility to describe.
  *
  * @param {Object} args
@@ -75,7 +75,7 @@ function httpUrlOrNull(value) {
  * @param {string} args.url - absolute canonical page URL
  * @param {string} args.image - absolute OG image URL
  * @param {string} args.description
- * @returns {object | null}
+ * @returns {Record<string, any> | null}
  */
 export function buildFacilityJsonLd({ facility, sanityFacility, url, image, description }) {
 	if (!facility?.name) return null;
@@ -161,15 +161,4 @@ export function buildFacilityJsonLd({ facility, sanityFacility, url, image, desc
 		'@context': 'https://schema.org',
 		'@graph': [place, breadcrumb]
 	};
-}
-
-/**
- * Pre-escaped JSON-LD string for a facility page, ready for Meta.svelte's
- * `jsonLd` prop; null when there's nothing to describe.
- * @param {Parameters<typeof buildFacilityJsonLd>[0]} args
- * @returns {string | null}
- */
-export function facilityJsonLdString(args) {
-	const jsonLd = buildFacilityJsonLd(args);
-	return jsonLd ? jsonLdToString(jsonLd) : null;
 }

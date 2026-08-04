@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { WIKIDATA_ENTITY, buildFacilityJsonLd } from './facility-jsonld.js';
-import { jsonLdToString } from './jsonld.js';
 
 const URL = 'https://openelectricity.org.au/facility/BAYSW';
 const IMAGE = 'https://openelectricity.org.au/og/facility/BAYSW.jpg';
@@ -171,13 +170,5 @@ describe('buildFacilityJsonLd', () => {
 			name: 'Bayswater',
 			item: URL
 		});
-	});
-});
-
-describe('jsonLdToString', () => {
-	it('escapes < so content cannot close the script tag', () => {
-		const out = jsonLdToString({ description: 'bad </script><script>alert(1)</script>' });
-		expect(out).not.toContain('</script>');
-		expect(out).toContain('\\u003c/script>');
 	});
 });

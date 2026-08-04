@@ -1,5 +1,6 @@
 <script>
 	import { page } from '$app/stores';
+	import { jsonLdToString } from '$lib/seo/jsonld.js';
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [type] - or article, or music.album etc. See https://ogp.me/#types
@@ -14,7 +15,7 @@
 	 * @property {string} [siteTitle]
 	 * @property {boolean} [useSuffix]
 	 * @property {boolean | string} [canonical] - false suppresses the canonical link (e.g. draft/preview routes); a string overrides the URL
-	 * @property {string | null} [jsonLd] - schema.org JSON-LD, pre-escaped with $lib/seo/jsonld.js jsonLdToString so it's safe for the {@html} sink
+	 * @property {Record<string, any> | null} [jsonLd] - schema.org JSON-LD object; stringified and escaped here (the single {@html} sink) so callers never handle escaping
 	 */
 
 	/** @type {Props} */
@@ -41,17 +42,18 @@
 	// og:image should be an absolute URL — prefix the domain for root-relative paths.
 	let imageUrl = $derived(image && !/^https?:\/\//.test(image) ? `${domain}${image}` : image);
 	let canonicalUrl = $derived(canonical === true ? fullURI : canonical || null);
-	// The script-tag delimiters are assembled from pieces — Svelte's parser
-	// treats a literal "<script" anywhere in the file, even inside a string,
-	// as a component script block. Safe as {@html}: jsonLd is pre-escaped
-	// (jsonLdToString escapes "<") so content can never close the tag early.
+	// A literal "</script" anywhere in this file — even inside a string — ends
+	// the component script block early, so the closing delimiter is assembled
+	// from pieces. Safe as {@html}: jsonLdToString escapes "<" so content can
+	// never close the tag.
 	let jsonLdTag = $derived(
-		jsonLd ? `${'<'}script type="application/ld+json">${jsonLd}${'<'}/script>` : null
+		jsonLd ? `<script type="application/ld+json">${jsonLdToString(jsonLd)}${'<'}/script>` : null
 	);
 </script>
 
 <svelte:head>
 	{#if jsonLdTag}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- jsonLdToString escapes "<" so content cannot break out of the script tag -->
 		{@html jsonLdTag}
 	{/if}
 	<meta property="og:type" content={type} />
