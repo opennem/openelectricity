@@ -9,27 +9,6 @@ const unitConversions = {
 };
 
 /**
- * Market metrics whose response payload is actually in GWh even though the OE
- * API metadata reports `unit: "MWh"`. Verified by inspecting the raw API
- * response — values for these metrics are ~1000× smaller than the data-endpoint
- * fueltech energy values they should match in scale. Skipping the MWh→GWh
- * divisor for these prevents double-conversion.
- *
- * @type {Set<string>}
- */
-const METRICS_RETURNED_AS_GWH = new Set([
-	'demand_gross_energy',
-	'demand_energy',
-	'generation_renewable_energy',
-	'generation_renewable_with_storage_energy',
-	'curtailment_energy',
-	'curtailment_solar_utility_energy',
-	'curtailment_wind_energy',
-	'flow_imports_energy',
-	'flow_exports_energy'
-]);
-
-/**
  * Transform OE API INetworkTimeSeries response into StatsData[] format
  * that the processing pipeline expects.
  *
@@ -38,8 +17,7 @@ const METRICS_RETURNED_AS_GWH = new Set([
  */
 export function transformOeToStatsData(oeTimeSeries) {
 	const { metric, unit, network_code } = oeTimeSeries;
-	const isMislabeledGwh = unit === 'MWh' && METRICS_RETURNED_AS_GWH.has(metric);
-	const conversion = isMislabeledGwh ? { divisor: 1, unit: 'GWh' } : unitConversions[unit];
+	const conversion = unitConversions[unit];
 	const divisor = conversion?.divisor ?? 1;
 	const outputUnit = conversion?.unit ?? unit;
 

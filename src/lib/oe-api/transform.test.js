@@ -115,10 +115,10 @@ describe('transformOeToStatsData', () => {
 		expect(result[0].history.last).toBe('');
 	});
 
-	it('does NOT divide by 1000 for market metrics that come back already in GWh', () => {
-		// The OE API mislabels these metrics: the response says unit=MWh but the
-		// actual values are GWh. Without this guard, the pipeline divides them by
-		// 1000 a second time and the percentage downstream blows up.
+	it('divides market energy metrics by 1000 like every other MWh series', () => {
+		// The market_summary energy columns used to come back 1000× low (GWh
+		// values labelled MWh) and were special-cased here. opennem#605 fixed the
+		// backend, so they now take the plain MWh→GWh path with everything else.
 		/** @type {import('openelectricity').INetworkTimeSeries} */
 		const demand = {
 			...mockEnergyTimeSeries,
@@ -131,8 +131,8 @@ describe('transformOeToStatsData', () => {
 					date_end: '2024-02-01T00:00:00+10:00',
 					columns: {},
 					data: [
-						['2024-01-01T00:00:00+10:00', 16260.146],
-						['2024-02-01T00:00:00+10:00', 15648.4243]
+						['2024-01-01T00:00:00+10:00', 16260146],
+						['2024-02-01T00:00:00+10:00', 15648424.3]
 					]
 				}
 			]
@@ -140,11 +140,10 @@ describe('transformOeToStatsData', () => {
 
 		const result = transformOeToStatsData(demand);
 		expect(result[0].units).toBe('GWh');
-		// values pass through unchanged (no /1000)
 		expect(result[0].history.data).toEqual([16260.146, 15648.4243]);
 	});
 
-	it('does NOT divide by 1000 for generation_renewable_energy market metric', () => {
+	it('divides generation_renewable_energy by 1000', () => {
 		/** @type {import('openelectricity').INetworkTimeSeries} */
 		const renewable = {
 			...mockEnergyTimeSeries,
@@ -156,7 +155,7 @@ describe('transformOeToStatsData', () => {
 					date_start: '2024-01-01T00:00:00+10:00',
 					date_end: '2024-01-01T00:00:00+10:00',
 					columns: {},
-					data: [['2024-01-01T00:00:00+10:00', 4868.8033]]
+					data: [['2024-01-01T00:00:00+10:00', 4868803.3]]
 				}
 			]
 		};
@@ -164,6 +163,29 @@ describe('transformOeToStatsData', () => {
 		const result = transformOeToStatsData(renewable);
 		expect(result[0].units).toBe('GWh');
 		expect(result[0].history.data).toEqual([4868.8033]);
+	});
+
+	it('divides flow energy metrics by 1000', () => {
+		// These were never 1000× off upstream — they always returned true MWh.
+		/** @type {import('openelectricity').INetworkTimeSeries} */
+		const flows = {
+			...mockEnergyTimeSeries,
+			metric: /** @type {any} */ ('flow_imports_energy'),
+			unit: 'MWh',
+			results: [
+				{
+					name: 'flow_imports_energy_total',
+					date_start: '2024-01-01T00:00:00+10:00',
+					date_end: '2024-01-01T00:00:00+10:00',
+					columns: {},
+					data: [['2024-01-01T00:00:00+10:00', 250000]]
+				}
+			]
+		};
+
+		const result = transformOeToStatsData(flows);
+		expect(result[0].units).toBe('GWh');
+		expect(result[0].history.data).toEqual([250]);
 	});
 
 	it('still divides fueltech energy (genuine MWh) by 1000', () => {
