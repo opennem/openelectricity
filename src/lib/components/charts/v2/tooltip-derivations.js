@@ -25,13 +25,19 @@ export function getActiveData(chart) {
 /**
  * Which series key the tooltip should treat as "the one under the cursor".
  * An explicit `chartTooltips.valueKey` (set by consumers that want to pin a
- * series) wins over the reactive `hoverKey`.
+ * series) wins over the reactive `hoverKey`; a chart with exactly one visible
+ * series pins that series — otherwise a single-line chart with the total
+ * hidden (price, corridor flow) would show only the date unless the cursor
+ * sat exactly on the path.
  *
  * @param {ChartStoreLike} chart
  * @returns {string | undefined}
  */
 export function getValueKey(chart) {
-	return chart.chartTooltips.valueKey || chart.hoverKey;
+	const pinned = chart.chartTooltips.valueKey || chart.hoverKey;
+	if (pinned) return pinned;
+	const names = chart.visibleSeriesNames;
+	return names?.length === 1 ? names[0] : undefined;
 }
 
 /**

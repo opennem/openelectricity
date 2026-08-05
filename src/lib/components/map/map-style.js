@@ -8,6 +8,12 @@
 export const MAP_FAB_CLASS =
 	'rounded-full bg-white/95 backdrop-blur-sm border border-mid-warm-grey shadow-md flex items-center justify-center hover:bg-light-warm-grey transition-colors cursor-pointer';
 
+/** The map's neutral white chip/card surface — price chips, the tracker's
+ *  on-anchor chart cards and the map-charts range annotation all share it so
+ *  the "white card on basemap" look stays one decision. Compose per-surface
+ *  padding/typography on top. */
+export const MAP_CHIP_CLASS = 'rounded-lg border border-black/10 bg-white/95 shadow-sm';
+
 /**
  * The base-map theme vocabulary — the single list the URL validators
  * (/facilities, /tracker `?theme=`) agree on. UI labels stay with the

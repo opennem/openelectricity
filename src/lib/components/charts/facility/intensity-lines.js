@@ -17,6 +17,18 @@
 import { buildEnergyMap, sumSeries } from './energy-basis.js';
 
 /**
+ * The intensity convention shared by the facility and network derivations:
+ * tonnes → kg (×1000) over MWh, null when there is no generated energy to
+ * attribute the emissions to.
+ * @param {number | null} emissionsTonnes
+ * @param {number} energyMWh
+ * @returns {number | null}
+ */
+export function intensityKgPerMWh(emissionsTonnes, energyMWh) {
+	return emissionsTonnes !== null && energyMWh > 0 ? (emissionsTonnes * 1000) / energyMWh : null;
+}
+
+/**
  * Derive the intensity rows from display-aggregated emissions and basis
  * (power/energy) rows.
  *
@@ -43,8 +55,7 @@ export function deriveIntensityRows({
 		return {
 			date: row.date,
 			time: row.time,
-			// tonnes → kg (×1000), divided by MWh → kgCO₂e/MWh
-			intensity: energyMWh > 0 ? (emissionsTotal * 1000) / energyMWh : null
+			intensity: intensityKgPerMWh(emissionsTotal, energyMWh)
 		};
 	});
 }

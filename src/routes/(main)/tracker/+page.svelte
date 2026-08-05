@@ -4,15 +4,25 @@
 	 *
 	 * The base map carries live NEM interconnector status: flow arcs (MW +
 	 * direction from the 5-minutely grid-live poll), regional price chips, and
-	 * a corridor panel (desktop left slide-in / mobile bottom sheet) that opens
-	 * on load listing every corridor's latest metrics — picking one swaps to
-	 * its Stratum flow + price charts and zooms the map to the corridor
-	 * (deep-linked via `?ic=`), and Back restores the list + full view. Reuses
-	 * the
-	 * /facilities fullscreen system (FullscreenLayout + FullscreenFilterBar +
-	 * FullscreenContainer) so the cross-route view transitions with /facilities
-	 * and /facility/[code] line up. Reached via the `tracker_nav` feature flag
-	 * (logo dropdown only) while in development.
+	 * two display modes toggled by `?view=`: the side panel (default; desktop
+	 * left slide-in / mobile bottom sheet) or `?view=map`, which swaps the
+	 * panel for on-anchor mini charts per region (`?chart=` picks their
+	 * metric). The panel's content is selection-driven off the existing URL
+	 * state:
+	 *   `?ic=` set        → that corridor's Stratum flow + price charts
+	 *   region `_all`/wem → grid generation (whole NEM / WEM)
+	 *   any other region  → that region's generation
+	 * The generation views carry the explore-style stacked fuel-tech chart,
+	 * price chart and a metrics grid (GenerationPanel), with the scope's
+	 * corridor flow charts inline beneath — picking one (card header or map
+	 * arc) swaps to the corridor view. The map flies with the selection:
+	 * corridor fitBounds, else the dropdown region's framing (incl. WEM), else
+	 * the national default; Back/Esc restores the generation view. Reuses the
+	 * /facilities fullscreen system
+	 * (FullscreenLayout + FullscreenFilterBar + FullscreenContainer) so the
+	 * cross-route view transitions with /facilities and /facility/[code] line
+	 * up. Reached via the `tracker_nav` feature flag (logo dropdown only) while
+	 * in development.
 	 */
 
 	import { page } from '$app/state';
@@ -35,21 +45,27 @@
 	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
 	import MapKey from '$lib/components/map/MapKey.svelte';
 	import { allBandsVisible } from '$lib/facilities/transmission-bands.js';
-	import { MAP_FAB_CLASS } from '$lib/components/map/map-style.js';
+	import { MAP_CHIP_CLASS, MAP_FAB_CLASS } from '$lib/components/map/map-style.js';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import BottomSheet from '$lib/components/ui/bottom-sheet/BottomSheet.svelte';
+	import { fade } from 'svelte/transition';
+	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import RegionDropdown from './RegionDropdown.svelte';
 	import InterconnectorDetail from './InterconnectorDetail.svelte';
-	import InterconnectorList from './InterconnectorList.svelte';
+	import GenerationPanel from './GenerationPanel.svelte';
+	import { createMapCharts } from './map-charts.svelte.js';
+	import { DEFAULT_MINI_METRIC, MINI_METRIC_OPTIONS } from './map-minis.js';
+	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
 	import { createGridLive } from '$lib/flows/grid-live.svelte.js';
 	import { getInterconnector, icSlug } from '$lib/flows/region-geo.js';
+	import { regionOptions } from '$lib/regions.js';
 	import {
 		BELOW_TABLET_QUERY,
 		isFullscreenUrl,
 		toggleFullscreenMode
 	} from '$lib/utils/fullscreen-mode.js';
 
-	/** @type {{ data: { region: string, mapTheme: 'light' | 'dark' | 'satellite', showTransmissionLines: boolean, showFlows: boolean, showLegend: boolean, interconnector: string | null } }} */
+	/** @type {{ data: { region: string, view: 'panel' | 'map', mapChart: 'power' | 'price' | 'emissions', mapTheme: 'light' | 'dark' | 'satellite', showTransmissionLines: boolean, showFlows: boolean, showLegend: boolean, interconnector: string | null } }} */
 	let { data } = $props();
 
 	let showShortcutsToast = $state(false);
@@ -73,6 +89,10 @@
 	let showTransmissionLines = $state(data.showTransmissionLines);
 	let showFlows = $state(data.showFlows);
 	let showLegend = $state(data.showLegend);
+	/** @type {'panel' | 'map'} */
+	let viewMode = $state(data.view);
+	/** @type {'power' | 'price' | 'emissions'} */
+	let mapChartMetric = $state(data.mapChart);
 	/** @type {string | null} */
 	let selectedIc = $state(data.interconnector);
 	// Re-sync on back/forward — $state doesn't re-init when the load re-runs.
@@ -82,6 +102,8 @@
 		showTransmissionLines = data.showTransmissionLines;
 		showFlows = data.showFlows;
 		showLegend = data.showLegend;
+		viewMode = data.view;
+		mapChartMetric = data.mapChart;
 		selectedIc = data.interconnector;
 	});
 
@@ -95,13 +117,51 @@
 		return () => grid.stop();
 	});
 
-	// The panel opens on load showing every corridor's latest metrics; picking
-	// one (list row or map arc) swaps it to that corridor's charts and zooms
-	// the map, and Back returns to the list + full national view. Desktop can
-	// collapse the panel entirely (FAB reopens it); the mobile sheet is
-	// persistent, with a minimised snap instead of a dismissal.
+	// Map-view mini charts: refetched when the view/metric changes and on every
+	// dispatch tick (the same signal that refreshes the arcs/prices).
+	const mapCharts = createMapCharts();
+	$effect(() => {
+		const metric = mapChartMetric;
+		const tick = grid.dispatchDateTimeString;
+		if (viewMode !== 'map') return;
+		mapCharts.load(metric, tick);
+	});
+
+	// The mini charts share one rolling window — annotate its range once at the
+	// map's bottom centre (NEM time; the WA card covers the same absolute
+	// span). Formatted through the chart date-label policy so the month
+	// spelling matches every other chart surface.
+	let mapChartsRange = $derived.by(() => {
+		if (viewMode !== 'map') return '';
+		for (const processed of Object.values(mapCharts.charts)) {
+			const rows = processed?.data;
+			if (rows?.length) {
+				const start = formatTooltipDateTime(new Date(rows[0].time), 'Australia/Brisbane', '30m');
+				const end = formatTooltipDateTime(
+					new Date(rows[rows.length - 1].time),
+					'Australia/Brisbane',
+					'30m'
+				);
+				return `${start} – ${end} AEST`;
+			}
+		}
+		return '';
+	});
+
+	// The panel opens on load showing the selected scope's generation view;
+	// picking a corridor (list row or map arc) swaps it to that corridor's
+	// charts and zooms the map, and Back returns to the generation view + full
+	// national frame. Desktop can collapse the panel entirely (FAB reopens it);
+	// the mobile sheet is persistent, with a minimised snap instead of a
+	// dismissal.
 	let panelOpen = $state(true);
 	let detailTitle = $derived(getInterconnector(selectedIc)?.label ?? 'Interconnector');
+	let regionTitle = $derived.by(() => {
+		const opt = regionOptions.find((r) => r.value === selectedRegion);
+		if (!opt) return 'National Electricity Market';
+		// The dropdown's "NEM Regions" reads oddly as a panel heading.
+		return opt.shortLabel === 'NEM' ? 'National Electricity Market' : opt.label;
+	});
 
 	// Bounding box of the map container — the desktop panel sizes against its
 	// width, the mobile sheet snaps against its height.
@@ -120,8 +180,14 @@
 	// keeps the corridor-zoom framing truthful after a hand drag; 0 until the
 	// panel first reports, when the default geometry stands in.
 	let panelSizePct = $state(0);
+
+	// The panel/sheet renders in the panel view, and in the map view only while
+	// a corridor is open (the corridor detail overlays either view; Back/Esc
+	// returns to the on-map charts).
+	let showPanel = $derived(viewMode === 'panel' || selectedIc !== null);
+
 	let panelInsetLeftPx = $derived.by(() => {
-		if (belowTablet.current || !panelOpen) return 0;
+		if (belowTablet.current || !panelOpen || !showPanel) return 0;
 		const widthPx =
 			panelSizePct > 0
 				? (panelSizePct / 100) * containerWidth
@@ -129,7 +195,7 @@
 		return widthPx + PANEL_EDGE_PX;
 	});
 	let panelInsetBottomPx = $derived(
-		belowTablet.current ? containerHeight * SHEET_PEEK_FRACTION : 0
+		belowTablet.current && showPanel ? containerHeight * SHEET_PEEK_FRACTION : 0
 	);
 
 	// Defaults are omitted so the URL stays clean; the load's fallbacks restore
@@ -147,14 +213,34 @@
 		else url.searchParams.set('flows', 'false');
 		if (showLegend) url.searchParams.set('legend', 'true');
 		else url.searchParams.delete('legend');
+		if (viewMode === 'map') url.searchParams.set('view', 'map');
+		else url.searchParams.delete('view');
+		if (mapChartMetric !== DEFAULT_MINI_METRIC) url.searchParams.set('chart', mapChartMetric);
+		else url.searchParams.delete('chart');
 		if (selectedIc) url.searchParams.set('ic', icSlug(selectedIc));
 		else url.searchParams.delete('ic');
 		replaceState(`${url.pathname}${url.search}`, {});
 	}
 
 	/** @param {string} value */
+	function handleViewChange(value) {
+		viewMode = /** @type {'panel' | 'map'} */ (value);
+		updateUrl();
+	}
+
+	/** @param {string} value */
+	function handleMapChartChange(value) {
+		mapChartMetric = /** @type {'power' | 'price' | 'emissions'} */ (value);
+		updateUrl();
+	}
+
+	/** @param {string} value */
 	function handleRegionChange(value) {
 		selectedRegion = value;
+		// A region pick is an explicit view switch — leave any open corridor so
+		// the panel shows the picked scope's generation view, not an unrelated
+		// corridor under a region title.
+		selectedIc = null;
 		updateUrl();
 	}
 
@@ -165,7 +251,7 @@
 		updateUrl();
 	}
 
-	/** Back to the corridor list + the full national map view. */
+	/** Back to the scope's generation view + the full national map frame. */
 	function backToList() {
 		selectedIc = null;
 		updateUrl();
@@ -233,12 +319,29 @@
 						<div class="h-8 border-l border-warm-grey shrink-0"></div>
 					{/if}
 
-					<div class={isFullscreen ? 'pl-3' : ''}>
+					<div class="flex items-center gap-3 {isFullscreen ? 'pl-3' : ''}">
 						<RegionDropdown
 							selected={selectedRegion}
 							compact={isFullscreen}
 							onchange={handleRegionChange}
 						/>
+
+						<!-- Panel ⇄ on-map charts, plus the map charts' metric. -->
+						<SwitchTabs
+							buttons={[
+								{ label: 'Panel', value: 'panel' },
+								{ label: 'Map', value: 'map' }
+							]}
+							selected={viewMode}
+							onChange={handleViewChange}
+						/>
+						{#if viewMode === 'map'}
+							<SwitchTabs
+								buttons={[...MINI_METRIC_OPTIONS]}
+								selected={mapChartMetric}
+								onChange={handleMapChartChange}
+							/>
+						{/if}
 					</div>
 				{/snippet}
 
@@ -282,6 +385,10 @@
 						selectedInterconnector={selectedIc}
 						{panelInsetLeftPx}
 						{panelInsetBottomPx}
+						showRegionCharts={viewMode === 'map'}
+						regionCharts={mapCharts.charts}
+						chartMetric={mapChartMetric}
+						regionChartsLoading={mapChartMetric !== mapCharts.loadedMetric}
 						onselectinterconnector={handleSelectInterconnector}
 						cooperativeGestures={!isFullscreen}
 						onload={() => setTimeout(() => (mapLoaded = true), 250)}
@@ -345,12 +452,29 @@
 					</div>
 				{/if}
 
-				<!-- Interconnector panel — open on load with every corridor's latest
-				     metrics; a row (or arc) click swaps to that corridor's charts and
-				     zooms the map, Back restores the list + full view. Desktop: left
-				     slide-in panel over the map (grip on its right edge, collapsible
-				     via the FAB); mobile: persistent bottom sheet. -->
-				{#if !belowTablet.current}
+				<!-- Map-charts view: the shared window of every mini chart, once,
+				     rather than a footer per card. -->
+				{#if viewMode === 'map' && mapChartsRange}
+					<div class="pointer-events-none absolute bottom-10 left-1/2 z-10 -translate-x-1/2">
+						<div
+							class="{MAP_CHIP_CLASS} px-3 pt-1.5 pb-1 font-mono text-xs tabular-nums text-dark-grey"
+						>
+							Last 24 hrs · {mapChartsRange}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Tracker panel — open on load with the selected scope's generation
+				     view (charts + metrics + corridors); a corridor click swaps to
+				     that corridor's charts and zooms the map, Back restores the
+				     generation view + full frame. Desktop: left slide-in panel over
+				     the map (grip on its right edge, collapsible via the FAB);
+				     mobile: persistent bottom sheet. Hidden in the map-charts view
+				     unless a corridor is open. -->
+				{#if !showPanel}
+					<!-- Map-charts view: no panel/sheet — the on-anchor cards carry
+					     the content. -->
+				{:else if !belowTablet.current}
 					<ResizablePanel
 						open={panelOpen}
 						onclose={() => (panelOpen = false)}
@@ -373,7 +497,7 @@
 							<button
 								onclick={() => (panelOpen = true)}
 								class="size-11 {MAP_FAB_CLASS}"
-								title="Show interconnectors"
+								title="Show panel"
 							>
 								<PanelLeftOpen class="size-6" />
 							</button>
@@ -404,9 +528,10 @@
 </FullscreenLayout>
 
 <!-- Shared panel content for the desktop ResizablePanel and mobile BottomSheet:
-     corridor list by default, the selected corridor's charts behind a Back
-     button. The sheet's header omits the top padding/border (its drag grip
-     supplies the top chrome) and never shows the desktop collapse button. -->
+     the selected scope's generation view by default, the selected corridor's
+     charts behind a Back button. The sheet's header omits the top
+     padding/border (its drag grip supplies the top chrome) and never shows
+     the desktop collapse button. -->
 {#snippet panelHeader(/** @type {boolean} */ isSheet)}
 	<header
 		class="flex shrink-0 items-center gap-1 {isSheet
@@ -418,14 +543,14 @@
 				type="button"
 				onclick={backToList}
 				class="shrink-0 cursor-pointer rounded-lg p-1.5 text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey"
-				aria-label="Back to all interconnectors"
+				aria-label="Back to {regionTitle}"
 			>
 				<ChevronLeft size={20} />
 			</button>
 			<h2 class="m-0 min-w-0 truncate text-base font-medium text-dark-grey">{detailTitle}</h2>
 		{:else}
 			<h2 class="m-0 min-w-0 flex-1 truncate px-1 text-base font-medium text-dark-grey">
-				Interconnectors
+				{regionTitle}
 			</h2>
 			{#if !isSheet}
 				<button
@@ -441,20 +566,28 @@
 	</header>
 {/snippet}
 
+<!-- Component swap only fades the incoming view — a both-mounted crossfade
+     would jump the layout in the scrolling panel body. -->
 {#snippet panelBody()}
 	{#if selectedIc}
-		<InterconnectorDetail
-			interconnectorKey={selectedIc}
-			flows={grid.flows}
-			prices={grid.prices}
-			dispatchDateTimeString={grid.dispatchDateTimeString}
-		/>
+		<div in:fade={{ duration: 150 }}>
+			<InterconnectorDetail
+				interconnectorKey={selectedIc}
+				flows={grid.flows}
+				prices={grid.prices}
+				dispatchDateTimeString={grid.dispatchDateTimeString}
+			/>
+		</div>
 	{:else}
-		<InterconnectorList
-			flows={grid.flows}
-			dispatchDateTimeString={grid.dispatchDateTimeString}
-			onselect={handleSelectInterconnector}
-		/>
+		<div class="min-h-full" in:fade={{ duration: 150 }}>
+			<GenerationPanel
+				region={selectedRegion}
+				flows={grid.flows}
+				prices={grid.prices}
+				dispatchDateTimeString={grid.dispatchDateTimeString}
+				onselectinterconnector={handleSelectInterconnector}
+			/>
+		</div>
 	{/if}
 {/snippet}
 

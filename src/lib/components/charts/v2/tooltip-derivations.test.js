@@ -82,6 +82,23 @@ describe('getValueKey', () => {
 	it('returns undefined when neither is set', () => {
 		expect(getValueKey(makeChart())).toBeUndefined();
 	});
+
+	it('pins the only series of a single-series chart', () => {
+		// Single-line charts with the total hidden (price, corridor flow) must
+		// still show a value wherever the cursor is, not just on the path.
+		const chart = makeChart({ visibleSeriesNames: ['price'] });
+		expect(getValueKey(chart)).toBe('price');
+	});
+
+	it('does not pin when several series are visible', () => {
+		const chart = makeChart({ visibleSeriesNames: ['coal', 'gas'] });
+		expect(getValueKey(chart)).toBeUndefined();
+	});
+
+	it('hoverKey still wins over the single-series pin', () => {
+		const chart = makeChart({ hoverKey: 'coal', visibleSeriesNames: ['price'] });
+		expect(getValueKey(chart)).toBe('coal');
+	});
 });
 
 describe('getTotalForRow', () => {

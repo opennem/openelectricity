@@ -21,5 +21,9 @@ export const MARKET_METRIC_NAMES = {
 	curtailment_solar: ['curtailment_solar_utility'],
 	curtailment_solar_energy: ['curtailment_solar_utility_energy'],
 	flows: ['flow_imports', 'flow_exports'],
-	flows_energy: ['flow_imports_energy', 'flow_exports_energy']
+	flows_energy: ['flow_imports_energy', 'flow_exports_energy'],
+	// Renewables-share inputs (homepage methodology: renewables ÷ gross demand).
+	// Fetched headlessly for the tracker's metrics grid — never charted directly.
+	renewables: ['generation_renewable', 'demand_gross'],
+	renewables_energy: ['generation_renewable_energy', 'demand_gross_energy']
 };

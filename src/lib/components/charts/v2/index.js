@@ -52,6 +52,7 @@ export { default as DateBrush } from './DateBrush.svelte';
 export { default as IntervalSelector } from './IntervalSelector.svelte';
 export { default as ChartRangeBar } from './ChartRangeBar.svelte';
 export { toolbarTrayClass } from './toolbar-tray.js';
+export { sectionCardClass } from './section-card.js';
 
 // Data management
 export { default as ChartDataManager } from './ChartDataManager.svelte.js';

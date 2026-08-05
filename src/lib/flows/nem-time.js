@@ -15,16 +15,19 @@ export const HOURS_MS = 3600_000;
 export const NEM_OFFSET_MS = offsetMsFromOffset('+10:00');
 
 /**
- * Timezone-naive NEM-local date range spanning the last `msBack` milliseconds,
- * ending now — formatted as `YYYY-MM-DDTHH:mm:ss` for the OE API's
- * `dateStart`/`dateEnd` params.
+ * Timezone-naive network-local date range spanning the last `msBack`
+ * milliseconds, ending now — formatted as `YYYY-MM-DDTHH:mm:ss` for the OE
+ * API's `dateStart`/`dateEnd` params. Defaults to NEM time; pass '+08:00'
+ * for WEM windows.
  * @param {number} msBack - Window length in milliseconds
+ * @param {string} [offset] - Network offset string (default NEM '+10:00')
  * @returns {{ dateStart: string, dateEnd: string }}
  */
-export function nemNaiveRange(msBack) {
+export function nemNaiveRange(msBack, offset = '+10:00') {
+	const offsetMs = offsetMsFromOffset(offset);
 	const nowMs = Date.now();
 	return {
-		dateStart: new Date(nowMs + NEM_OFFSET_MS - msBack).toISOString().slice(0, 19),
-		dateEnd: new Date(nowMs + NEM_OFFSET_MS).toISOString().slice(0, 19)
+		dateStart: new Date(nowMs + offsetMs - msBack).toISOString().slice(0, 19),
+		dateEnd: new Date(nowMs + offsetMs).toISOString().slice(0, 19)
 	};
 }

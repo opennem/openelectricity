@@ -3,6 +3,7 @@ import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
 
 import { alignStatsDataToCommonRange } from './align-stats-data';
+import { FOSSIL_FUEL_TECHS, RENEWABLE_FUEL_TECHS, LOAD_FUEL_TECHS } from './fuel-tech-classes.js';
 
 /** @typedef {'legacy_opennem' | 'oe_proportion' | 'oe_secondary_renewable' | 'oe_homepage'} RenewableMode */
 
@@ -89,30 +90,7 @@ const METRIC = {
 	nonRenewableAggregate: 'generation_non_renewable_aggregate'
 };
 
-/** @type {FuelTechCode[]} */
-export const FOSSIL_FUEL_TECHS = [
-	'coal_black',
-	'coal_brown',
-	'gas_ccgt',
-	'gas_ocgt',
-	'gas_recip',
-	'gas_steam',
-	'gas_wcmg',
-	'distillate'
-];
-
-/** @type {FuelTechCode[]} */
-export const RENEWABLE_FUEL_TECHS = [
-	'solar_utility',
-	'solar_rooftop',
-	'wind',
-	'hydro',
-	'bioenergy_biogas',
-	'bioenergy_biomass'
-];
-
-/** @type {FuelTechCode[]} */
-export const LOAD_FUEL_TECHS = ['exports', 'battery_charging', 'pumps'];
+export { FOSSIL_FUEL_TECHS, RENEWABLE_FUEL_TECHS, LOAD_FUEL_TECHS } from './fuel-tech-classes.js';
 
 const DOMAIN_GROUPS = {
 	fossil_fuels: FOSSIL_FUEL_TECHS,

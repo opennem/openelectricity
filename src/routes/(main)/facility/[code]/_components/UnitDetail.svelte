@@ -29,7 +29,7 @@
 	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
 	import { FacilityCompactCharts } from '$lib/components/charts/facility';
 	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
-	import { sectionCardClass } from '../_utils/section-card.js';
+	import { sectionCardClass } from '$lib/components/charts/v2/section-card.js';
 
 	/**
 	 * `facility` powers the per-unit snapshot charts — the unit is charted by

@@ -37,6 +37,10 @@ export const REGION_ANCHORS = {
 	VIC1: [143.9, -36.9]
 };
 
+/** The WEM/SWIS anchor — kept separate from REGION_ANCHORS, which several
+ *  call sites iterate assuming NEM-only. @type {[number, number]} */
+export const WEM_ANCHOR = [117.7, -31.9];
+
 /**
  * @typedef {Object} InterconnectorDef
  * @property {string} key - Directed flow key as served by /api/flows

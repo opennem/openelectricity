@@ -43,7 +43,7 @@
 		CHARTS_FRACTION_MIN,
 		CHARTS_FRACTION_MAX
 	} from './_utils/charts-fraction.js';
-	import { sectionCardClass } from './_utils/section-card.js';
+	import { sectionCardClass } from '$lib/components/charts/v2/section-card.js';
 	import {
 		parseRangeParams,
 		applyRangeParams,

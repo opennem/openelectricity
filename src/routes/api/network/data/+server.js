@@ -23,14 +23,33 @@ const client = new OpenElectricityClient({
  *
  * Query params (built by `ChartDataManager` + the NetworkChart fetch-url closure):
  *   region           — Explorer region value ('_all', 'nsw1'…, 'wem')
- *   metric           — 'power' | 'energy' | one of the MARKET_METRIC_NAMES keys
+ *   metric           — 'power' | 'energy' | 'emissions' | 'emissions_intensity'
+ *                      | one of the MARKET_METRIC_NAMES keys
  *   interval         — native OE interval ('5m', '1h', '1d', '1M', '3M', '1y')
  *   date_start       — timezone-naive local start (YYYY-MM-DDTHH:mm:ss)
  *   date_end         — timezone-naive local end
- *   primary_grouping — 'network_region' to split a market metric per region
- *                      (the tracker's pairwise-flow derivation needs every
- *                      region's series in one response); market branch only
+ *   primary_grouping — 'network_region' to split the metric per region in one
+ *                      response (the tracker's pairwise-flow derivation and
+ *                      the map-view mini charts); both branches
+ *
+ * `emissions_intensity` fans out to `['emissions', basis]` in one request —
+ * the intensity ratio needs an energy denominator, which is `power` at
+ * sub-daily grains (converted client-side via bucket hours) and `energy`
+ * at daily-and-coarser.
  */
+
+/**
+ * @param {string} metric
+ * @param {string} interval
+ * @returns {import('openelectricity').DataMetric[]}
+ */
+function dataMetricsFor(metric, interval) {
+	if (metric === 'emissions_intensity') {
+		const fine = interval === '5m' || interval === '1h';
+		return ['emissions', fine ? 'power' : 'energy'];
+	}
+	return [/** @type {import('openelectricity').DataMetric} */ (metric)];
+}
 export async function GET({ url, setHeaders }) {
 	const { searchParams } = url;
 	const region = searchParams.get('region') || '_all';
@@ -66,9 +85,10 @@ export async function GET({ url, setHeaders }) {
 				network_region: networkRegion,
 				secondaryGrouping: ['fueltech']
 			};
+			if (primaryGrouping === 'network_region') options.primaryGrouping = 'network_region';
 			({ response } = await client.getNetworkData(
 				networkId,
-				[/** @type {import('openelectricity').DataMetric} */ (metric)],
+				dataMetricsFor(metric, interval),
 				options
 			));
 		}

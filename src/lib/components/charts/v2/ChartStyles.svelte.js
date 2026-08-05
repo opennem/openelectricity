@@ -51,6 +51,10 @@ export default class ChartStyles {
 	/** @type {ChartPadding} */
 	chartPadding = $state({ top: 0, right: 0, bottom: 40, left: 0 });
 
+	/** Render the x/y axes (ticks, labels, gridlines). Off for sparkline-style
+	 *  minis — e.g. the tracker map's on-anchor charts. @type {boolean} */
+	showAxes = $state(true);
+
 	// X-axis styling
 	/** @type {string} */
 	xAxisFill = $state('white');

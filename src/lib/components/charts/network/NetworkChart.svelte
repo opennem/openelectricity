@@ -19,8 +19,14 @@
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
 	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 	import { processNetworkData } from './process-network-data.js';
+	import {
+		processEmissionsIntensity,
+		deriveIntensityDisplayRows,
+		INTENSITY_SERIES_ID
+	} from './process-emissions-intensity.js';
 	import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
 	import { processMarketData } from './process-market-data.js';
+	import { LINE_COLOUR } from '$lib/components/charts/facility/colours.js';
 	import { getMarketMetricConfig } from './market-metrics.js';
 	import { getGroup } from './groups.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
@@ -28,11 +34,12 @@
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import { ianaFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
+	import nighttimes from '$lib/utils/nighttimes';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} region - Explorer region value ('_all', 'nsw1'…, 'wem')
-	 * @property {'power' | 'energy' | 'price' | 'demand' | 'demand_energy' | 'curtailment' | 'curtailment_energy' | 'curtailment_wind' | 'curtailment_wind_energy' | 'curtailment_solar' | 'curtailment_solar_energy' | 'flows' | 'flows_energy'} [metric] - API metric
+	 * @property {'power' | 'energy' | 'emissions' | 'emissions_intensity' | 'price' | 'demand' | 'demand_energy' | 'curtailment' | 'curtailment_energy' | 'curtailment_wind' | 'curtailment_wind_energy' | 'curtailment_solar' | 'curtailment_solar_energy' | 'flows' | 'flows_energy'} [metric] - API metric
 	 * @property {string} [interval] - Native OE interval (5m, 1h, 1d, 1M…)
 	 * @property {string} [displayInterval] - Display interval for aggregation
 	 * @property {string} [group] - Fuel-tech grouping value (Generation only)
@@ -53,12 +60,17 @@
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once
 	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata]
+	 * @property {((info: {hasData: boolean}) => void)} [onloadcomplete] - Fired whenever a settled
+	 *   fetch leaves the manager idle; the first fire is the initial load, where
+	 *   parents apply their default range preset
 	 * @property {string[]} [hiddenSeriesNames] - Series ids to hide, e.g. a market
 	 *   split whose source is toggled off elsewhere on the page. Applied on top of
 	 *   the chart's own legend toggles, so it wins until the caller clears it.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode]
 	 * @property {boolean} [panZoomEngaged]
 	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
+	 * @property {boolean} [nightShading] - Shade nighttime bands like the homepage
+	 *   7-day chart; only renders at sub-daily grain, coarser grains clear it
 	 */
 
 	/** @type {Props} */
@@ -84,10 +96,12 @@
 		onviewportchange,
 		onviewportsettle,
 		onvisibledata,
+		onloadcomplete,
 		hiddenSeriesNames = /** @type {string[]} */ ([]),
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
-		minDateMs = EARLIEST_DATA_MS
+		minDateMs = EARLIEST_DATA_MS,
+		nightShading = false
 	} = $props();
 
 	const dollarFormatter = getNumberFormat(0);
@@ -95,7 +109,41 @@
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let isPriceKind = $derived(chartKind === 'line');
 	let marketConfig = $derived(getMarketMetricConfig(metric));
+	let isEmissionsMetric = $derived(metric === 'emissions');
+	let isIntensityMetric = $derived(metric === 'emissions_intensity');
 	let isEnergyMetric = $derived(metric === 'energy' || metric.endsWith('_energy'));
+
+	/** The five panel kinds in priority order. The order is load-bearing —
+	 *  intensity and line-kind market metrics also pass chartKind="line", so
+	 *  every branch site must consult THIS discriminator, never the raw flags,
+	 *  or those kinds fall through to the price arm. */
+	let panelKind = $derived(
+		isIntensityMetric
+			? /** @type {const} */ ('intensity')
+			: isEmissionsMetric
+				? /** @type {const} */ ('emissions')
+				: marketConfig
+					? /** @type {const} */ ('market')
+					: isPriceKind
+						? /** @type {const} */ ('price')
+						: /** @type {const} */ ('generation')
+	);
+
+	/** Default header title per panel kind — the constructors and the title
+	 *  sync effect both read this so the ladder lives once. */
+	let defaultTitle = $derived(
+		{
+			intensity: 'Emissions Intensity',
+			emissions: 'Emissions',
+			market: 'Market',
+			price: 'Price',
+			generation: 'Generation'
+		}[panelKind]
+	);
+
+	/** Per-bucket quantities (MWh, tonnes, intensity components) aggregate by
+	 *  sum; instantaneous ones (MW, $/MWh) by mean. */
+	let sumsForDisplay = $derived(isEnergyMetric || isEmissionsMetric || isIntensityMetric);
 
 	/** Fine grain (sub-daily) drives the power-style viewport limits. */
 	let fineGrain = $derived(interval === '5m' || interval === '1h');
@@ -111,14 +159,23 @@
 	 * single price line, or configured market series. Captured into the data
 	 * manager so it runs on every fetch.
 	 */
+	/** Native bucket length for the intensity MWh conversion — only read at the
+	 *  sub-daily grains where the route fetches a power basis. */
+	let intervalHours = $derived(interval === '5m' ? 5 / 60 : interval === '1h' ? 1 : 24);
+
 	let processResponseFn = $derived.by(() => {
 		const tz = timeZone || '+10:00';
-		if (marketConfig) {
-			const cfg = marketConfig;
+		if (panelKind === 'intensity') {
+			const hours = intervalHours;
+			return (/** @type {any} */ resp) =>
+				processEmissionsIntensity(resp, { intervalHours: hours, networkTimezone: tz });
+		}
+		if (panelKind === 'market') {
+			const cfg = /** @type {NonNullable<typeof marketConfig>} */ (marketConfig);
 			return (/** @type {any} */ resp) =>
 				processMarketData(resp, { seriesDefs: cfg.seriesDefs, networkTimezone: tz });
 		}
-		if (isPriceKind) {
+		if (panelKind === 'price') {
 			return (/** @type {any} */ resp) =>
 				processPriceData(resp, { metricFilter: 'price', networkTimezone: tz });
 		}
@@ -126,7 +183,9 @@
 			groupMap: groupConfig.fuelTechs,
 			groupOrder: groupConfig.order,
 			groupLabels: groupConfig.labels,
-			loadsToInvert: loadFuelTechs,
+			// Emissions are only ever produced — the charging/pumping fuel techs
+			// carry zero-or-positive tonnes, so nothing inverts.
+			loadsToInvert: panelKind === 'emissions' ? [] : loadFuelTechs,
 			getColour: getFuelTechColour,
 			metricFilter: metric,
 			networkTimezone: tz
@@ -156,7 +215,7 @@
 	// price and market metrics carry a fixed series set. `processResponseFn`
 	// already depends on `group` (via groupConfig), so a group change swaps the
 	// manager with a fresh processor.
-	let seriesKey = $derived(isPriceKind || marketConfig ? '' : group);
+	let seriesKey = $derived(panelKind === 'generation' || panelKind === 'emissions' ? group : '');
 
 	const host = createChartHost({
 		cacheKey: () => `${region}:${chartKind}`,
@@ -224,11 +283,31 @@
 
 	/** @type {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} */
 	let chartStore = $derived.by(() => {
-		// Recreated when the panel kind flips (isPriceKind tracks chartKind).
-		if (marketConfig) {
+		// Recreated when the panel kind flips.
+		if (panelKind === 'intensity' || panelKind === 'emissions') {
+			const intensity = panelKind === 'intensity';
+			const chart = new ChartStore({
+				key: Symbol(`network-${panelKind}`),
+				title: title || defaultTitle,
+				prefix: '',
+				displayPrefix: '',
+				baseUnit: intensity ? 'kgCO₂e/MWh' : 't',
+				chartType: intensity ? 'line' : undefined,
+				timeZone
+			});
+			applyCommonStyles(chart);
+			chart.hideDataOptions = true;
+			chart.hideChartTypeOptions = true;
+			// Single-series line — the strip total would just repeat the value.
+			if (intensity) chart.chartTooltips.showTotal = false;
+			applyTimeTickFormat(chart);
+			return chart;
+		}
+
+		if (panelKind === 'market' && marketConfig) {
 			const chart = new ChartStore({
 				key: Symbol('network-market'),
-				title: title || 'Market',
+				title: title || defaultTitle,
 				prefix: /** @type {SiPrefix} */ (marketConfig.prefix),
 				displayPrefix: /** @type {SiPrefix} */ (marketConfig.prefix),
 				baseUnit: marketConfig.baseUnit,
@@ -246,10 +325,10 @@
 			return chart;
 		}
 
-		if (isPriceKind) {
+		if (panelKind === 'price') {
 			const chart = new ChartStore({
 				key: Symbol('network-price'),
-				title: title || 'Price',
+				title: title || defaultTitle,
 				prefix: '',
 				displayPrefix: '',
 				baseUnit: '$/MWh',
@@ -267,7 +346,7 @@
 
 		const chart = new ChartStore({
 			key: Symbol('network-generation'),
-			title: title || 'Generation',
+			title: title || defaultTitle,
 			prefix: 'M',
 			displayPrefix: 'M',
 			baseUnit: 'W',
@@ -286,13 +365,21 @@
 
 	// Title sync
 	$effect(() => {
-		if (chartStore)
-			chartStore.title = title || (marketConfig ? 'Market' : isPriceKind ? 'Price' : 'Generation');
+		if (chartStore) chartStore.title = title || defaultTitle;
 	});
 
-	// Series metadata
+	// Series metadata. The intensity line is derived at display time from the
+	// manager's component series (emissions + energy), so its store meta is
+	// fixed rather than copied from the processed cache.
 	$effect(() => {
-		if (!chartStore || !dataManager?.processedCache) return;
+		if (!chartStore) return;
+		if (panelKind === 'intensity') {
+			chartStore.seriesNames = [INTENSITY_SERIES_ID];
+			chartStore.seriesColours = { [INTENSITY_SERIES_ID]: LINE_COLOUR };
+			chartStore.seriesLabels = { [INTENSITY_SERIES_ID]: 'Emissions Intensity (kgCO₂e/MWh)' };
+			return;
+		}
+		if (!dataManager?.processedCache) return;
 		const processed = dataManager.processedCache;
 		chartStore.seriesNames = processed.seriesNames;
 		chartStore.seriesColours = processed.seriesColours;
@@ -308,7 +395,7 @@
 	// Metric-dependent options (unit + curve)
 	$effect(() => {
 		if (!chartStore) return;
-		if (marketConfig) {
+		if (panelKind === 'market' && marketConfig) {
 			chartStore.chartOptions.baseUnit = marketConfig.baseUnit;
 			chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
 				marketConfig.chartKind === 'line'
@@ -319,15 +406,19 @@
 			);
 			return;
 		}
-		if (isPriceKind) {
+		if (panelKind === 'price' || panelKind === 'intensity') {
 			chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
 				getIntervalSpec(displayInterval)?.curveType ?? 'straight'
 			);
 			return;
 		}
-		chartStore.chartOptions.baseUnit = isEnergyMetric ? 'Wh' : 'W';
+		chartStore.chartOptions.baseUnit = isEnergyMetric
+			? 'Wh'
+			: panelKind === 'emissions'
+				? 't'
+				: 'W';
 		chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
-			isEnergyMetric ? 'step' : 'straight'
+			isEnergyMetric || panelKind === 'emissions' ? 'step' : 'straight'
 		);
 	});
 
@@ -335,6 +426,11 @@
 	// sample reuse the previous rows array (stable reference → the seriesData
 	// assignment below is a signal no-op on a hit).
 	const visibleAggregation = createVisibleAggregation();
+
+	// Intensity derivation memo, keyed on the aggregation result's identity so
+	// aggregation memo hits stay signal no-ops for the store too.
+	/** @type {any[] | null} */ let lastIntensitySource = null;
+	/** @type {any[]} */ let lastIntensityRows = [];
 
 	// Visible data + axis
 	$effect(() => {
@@ -345,7 +441,7 @@
 			const start = viewStart;
 			const end = viewEnd;
 			const currentDisplayInterval = displayInterval;
-			const isEnergy = isEnergyMetric;
+			const sums = sumsForDisplay;
 
 			const visibleData = visibleAggregation(manager.processedCache, {
 				viewStart: start,
@@ -353,20 +449,32 @@
 				apiInterval: interval,
 				displayInterval: currentDisplayInterval,
 				ianaTimeZone,
-				method: isEnergy ? 'sum' : 'mean'
+				method: sums ? 'sum' : 'mean'
 			});
 
-			chartStore.seriesData = visibleData;
+			// The intensity line renders a ratio of the aggregated component
+			// series — derived per display bucket, matching the facility charts.
+			let renderData = visibleData;
+			if (panelKind === 'intensity') {
+				if (lastIntensitySource !== visibleData) {
+					lastIntensitySource = visibleData;
+					lastIntensityRows = deriveIntensityDisplayRows(visibleData);
+				}
+				renderData = lastIntensityRows;
+			}
+
+			chartStore.seriesData = renderData;
 			chartStore.setXDomain(start, end);
 			chartStore.setYDomain(undefined);
 
 			applyFacilityTimeAxis(chartStore, {
-				data: visibleData,
+				data: renderData,
 				viewStart: start,
 				viewEnd: end,
 				ianaTimeZone,
 				timeZone,
-				isEnergy: isEnergy || getIntervalSpec(displayInterval)?.curveType === 'step',
+				isEnergy:
+					(sums && !isIntensityMetric) || getIntervalSpec(displayInterval)?.curveType === 'step',
 				displayInterval: currentDisplayInterval
 			});
 		});
@@ -381,7 +489,7 @@
 		const currentDisplayInterval = displayInterval;
 		const currentInterval = interval;
 		const currentIana = ianaTimeZone;
-		const isEnergy = isEnergyMetric;
+		const sums = sumsForDisplay;
 		const manager = dataManager;
 		const _cache = manager?.processedCache;
 		const callback = onvisibledata;
@@ -399,7 +507,7 @@
 				apiInterval: currentInterval,
 				displayInterval: currentDisplayInterval,
 				ianaTimeZone: currentIana,
-				method: isEnergy ? 'sum' : 'mean'
+				method: sums ? 'sum' : 'mean'
 			});
 			callback({ data: rows, seriesNames: meta.seriesNames, seriesLabels: meta.seriesLabels });
 		}, 300);
@@ -409,7 +517,33 @@
 		};
 	});
 
+	// Homepage-style nighttime shading, regenerated for the visible window. Only
+	// meaningful against sub-daily power curves — daily-and-coarser grains clear
+	// it rather than painting bands narrower than a data bucket.
+	$effect(() => {
+		if (!chartStore) return;
+		if (!nightShading || !fineGrain) {
+			chartStore.bgShadingData = [];
+			return;
+		}
+		chartStore.bgShadingData = nighttimes(
+			new Date(viewStart),
+			new Date(viewEnd),
+			timeZone || '+10:00'
+		);
+		chartStore.bgShadingFill = '#33333311';
+	});
+
 	let showLoadingOverlay = $derived(computeShowLoadingOverlay(dataManager, chartStore));
+
+	// Report load completion once the in-flight fetch settles — `cacheStart` is a
+	// stable "data was found" signal that survives panning.
+	$effect(() => {
+		const manager = dataManager;
+		if (!manager?.initialLoadComplete) return;
+		if (manager.hasPendingFetch) return;
+		onloadcomplete?.({ hasData: manager.cacheStart !== null });
+	});
 
 	// ============================================
 	// Hover / focus

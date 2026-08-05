@@ -252,6 +252,7 @@
 				<LineY
 					yValue={refLine.value}
 					label={refLine.label}
+					labelPosition={refLine.labelPosition}
 					strokeColour={refLine.colour || '#666'}
 				/>
 			{/each}
@@ -330,53 +331,55 @@
 			</g>
 		</Svg>
 
-		<!-- Axes -->
-		<Svg pointerEvents={false}>
-			<defs>
-				<ClipPath id={axesClipPathId} customPaddingLeft={0} customPaddingRight={0} />
-				<ClipPath
-					id={axesClipPathAxisId}
-					customPaddingLeft={axisBufferLeft}
-					customPaddingRight={axisBufferRight}
-				/>
-			</defs>
-			<g clip-path={axesClipPath}>
-				<AxisY
-					ticks={yTicksWhenEmpty}
-					formatTick={chart.useFormatY
-						? chart.formatY
-						: chart.chartOptions.isDataTransformTypeProportion
-							? (/** @type {number} */ d) => d
-							: chart.convertAndFormatValue}
-					gridlines={true}
-					stroke={styles.yAxisStroke}
-					zeroValueStroke={styles.zeroValueStroke || styles.yAxisStroke}
-					showLastTick={styles.showLastYTick}
-					lastTickDy={styles.lastYTickDy}
-					yLabelStartPos={styles.yLabelStartPos}
-					xTick={tightAxisClip ? 8 : 0}
-					dxTick={styles.yLabelStartPos ? 6 : 0}
-					tickMarks={!!styles.yLabelStartPos}
-					{animate}
-				/>
+		<!-- Axes (skipped entirely for sparkline-style minis) -->
+		{#if styles.showAxes}
+			<Svg pointerEvents={false}>
+				<defs>
+					<ClipPath id={axesClipPathId} customPaddingLeft={0} customPaddingRight={0} />
+					<ClipPath
+						id={axesClipPathAxisId}
+						customPaddingLeft={axisBufferLeft}
+						customPaddingRight={axisBufferRight}
+					/>
+				</defs>
+				<g clip-path={axesClipPath}>
+					<AxisY
+						ticks={yTicksWhenEmpty}
+						formatTick={chart.useFormatY
+							? chart.formatY
+							: chart.chartOptions.isDataTransformTypeProportion
+								? (/** @type {number} */ d) => d
+								: chart.convertAndFormatValue}
+						gridlines={true}
+						stroke={styles.yAxisStroke}
+						zeroValueStroke={styles.zeroValueStroke || styles.yAxisStroke}
+						showLastTick={styles.showLastYTick}
+						lastTickDy={styles.lastYTickDy}
+						yLabelStartPos={styles.yLabelStartPos}
+						xTick={tightAxisClip ? 8 : 0}
+						dxTick={styles.yLabelStartPos ? 6 : 0}
+						tickMarks={!!styles.yLabelStartPos}
+						{animate}
+					/>
 
-				<AxisX
-					ticks={chart.xTicks}
-					gridlineTicks={chart.xGridlineTicks}
-					highlightTicks={chart.xHighlightTicks}
-					mobileHiddenTicks={chart.xMobileHiddenTicks}
-					formatTick={chart.formatTickXWithTimeZone}
-					gridlines={styles.xGridlines}
-					tickMarks={true}
-					snapTicks={styles.snapTicks}
-					stroke={styles.xAxisStroke}
-					fill={styles.xAxisFill}
-					xTextClasses={styles.xTextClasses}
-					yTick={styles.xAxisYTick}
-					stepMode={isStepMode}
-					{animate}
-				/>
-			</g>
-		</Svg>
+					<AxisX
+						ticks={chart.xTicks}
+						gridlineTicks={chart.xGridlineTicks}
+						highlightTicks={chart.xHighlightTicks}
+						mobileHiddenTicks={chart.xMobileHiddenTicks}
+						formatTick={chart.formatTickXWithTimeZone}
+						gridlines={styles.xGridlines}
+						tickMarks={true}
+						snapTicks={styles.snapTicks}
+						stroke={styles.xAxisStroke}
+						fill={styles.xAxisFill}
+						xTextClasses={styles.xTextClasses}
+						yTick={styles.xAxisYTick}
+						stepMode={isStepMode}
+						{animate}
+					/>
+				</g>
+			</Svg>
+		{/if}
 	</LayerCake>
 </div>

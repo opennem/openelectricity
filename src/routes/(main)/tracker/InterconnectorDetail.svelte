@@ -23,15 +23,8 @@
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 	import InterconnectorChart from '$lib/components/charts/flows/InterconnectorChart.svelte';
 	import { INTERCONNECTORS, getInterconnector } from '$lib/flows/region-geo.js';
-	import {
-		contrastText,
-		displayCode,
-		formatDispatchLabel,
-		formatPrice,
-		numberOrUndefined
-	} from '$lib/flows/format.js';
-	import { priceColour } from '$lib/price-scale.js';
 	import CorridorMetrics from './CorridorMetrics.svelte';
+	import PriceChipRow from './PriceChipRow.svelte';
 
 	/**
 	 * @type {{
@@ -65,21 +58,6 @@
 	const ianaTimeZone = ianaFromOffset(NEM_TZ);
 
 	let ic = $derived(getInterconnector(interconnectorKey) ?? INTERCONNECTORS[0]);
-
-	// ============================================
-	// Live stats (grid-live snapshot values)
-	// ============================================
-
-	let regionChips = $derived(
-		[ic.from, ic.to].flatMap((code) => {
-			const price = numberOrUndefined(prices?.[code]);
-			if (price === undefined) return [];
-			const background = priceColour(price);
-			return [{ code, background, colour: contrastText(background), price }];
-		})
-	);
-
-	let dispatchLabel = $derived(formatDispatchLabel(dispatchDateTimeString));
 
 	// ============================================
 	// Range control + charts
@@ -183,22 +161,7 @@
 	<div class="space-y-2">
 		<CorridorMetrics interconnector={ic} {flows} large />
 
-		<div class="flex items-center justify-between gap-2">
-			<div class="flex items-center gap-1.5">
-				{#each regionChips as chip (chip.code)}
-					<span
-						class="rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold leading-4"
-						style="background-color: {chip.background}; color: {chip.colour};"
-					>
-						{displayCode(chip.code)}
-						{formatPrice(chip.price)}<span class="font-normal opacity-70">/MWh</span>
-					</span>
-				{/each}
-			</div>
-			{#if dispatchLabel}
-				<span class="text-[10px] text-mid-grey">as at {dispatchLabel}</span>
-			{/if}
-		</div>
+		<PriceChipRow codes={[ic.from, ic.to]} {prices} {dispatchDateTimeString} />
 	</div>
 
 	<!-- Range toolbar (flat treatment — the panel surface is plain white) -->
@@ -245,7 +208,7 @@
 					{dateEnd}
 					title={range.activeMetric === 'energy' ? 'Energy' : 'Flow'}
 					chartHeight="h-[180px]"
-					tooltipMode="floating"
+					tooltipMode="strip"
 					{hoverTime}
 					onhoverchange={handleHoverChange}
 					onviewportchange={(r) => range.handleDerivedViewportChange(r, flowChart)}
@@ -267,7 +230,7 @@
 					{dateEnd}
 					title="Price"
 					chartHeight="h-[140px]"
-					tooltipMode="floating"
+					tooltipMode="strip"
 					{hoverTime}
 					onhoverchange={handleHoverChange}
 					onviewportchange={(r) => range.handleDerivedViewportChange(r, priceChart)}

@@ -13,6 +13,7 @@
  */
 
 import { regionOptions } from '$lib/regions.js';
+import { DEFAULT_MINI_METRIC, MINI_METRIC_OPTIONS } from './map-minis.js';
 import { MAP_THEMES } from '$lib/components/map/map-style.js';
 import { icFromSlug } from '$lib/flows/region-geo.js';
 
@@ -29,14 +30,25 @@ export function load({ url }) {
 	let mapTheme = url.searchParams.get('theme') || 'dark';
 	if (!MAP_THEMES.includes(mapTheme)) mapTheme = 'dark';
 
+	// `?view=map` swaps the side panel for on-anchor mini charts; `?chart=`
+	// picks their metric (generation is the omitted default).
+	const view = url.searchParams.get('view') === 'map' ? 'map' : 'panel';
+	const chartParam = url.searchParams.get('chart');
+	const mapChart = /** @type {'power' | 'price' | 'emissions'} */ (
+		MINI_METRIC_OPTIONS.some((o) => o.value === chartParam) ? chartParam : DEFAULT_MINI_METRIC
+	);
+
 	return {
 		region,
+		view: /** @type {'panel' | 'map'} */ (view),
+		mapChart,
 		mapTheme: /** @type {'light' | 'dark' | 'satellite'} */ (mapTheme),
 		showTransmissionLines: url.searchParams.get('transmission') === 'true',
 		showFlows: url.searchParams.get('flows') !== 'false',
 		showLegend: url.searchParams.get('legend') === 'true',
-		// `?ic=nsw1-qld1` deep-links a corridor panel; unknown slugs resolve null.
-		interconnector: icFromSlug(url.searchParams.get('ic')),
+		// `?ic=nsw1-qld1` deep-links a corridor panel; unknown slugs resolve null,
+		// and corridors are NEM-only so a WEM deep link drops the corridor.
+		interconnector: region === 'wem' ? null : icFromSlug(url.searchParams.get('ic')),
 		fullscreen: true
 	};
 }
