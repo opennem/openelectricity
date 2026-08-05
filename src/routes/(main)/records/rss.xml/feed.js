@@ -1,4 +1,5 @@
 import { parseISO } from 'date-fns';
+import { escapeXml } from '$lib/seo/xml.js';
 import { stripDateTimezone } from '$lib/utils/date-format.js';
 import generateDescription from '../page-data-options/record-description.js';
 import { formatRecordValue } from '../page-data-options/formatters.js';
@@ -8,16 +9,9 @@ import { formatRecordValue } from '../page-data-options/formatters.js';
 /** Number of records the feed exposes (also the API page size). */
 export const FEED_SIZE = 100;
 
-/** @type {Record<string, string>} */
-const XML_ENTITIES = { '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' };
-
-/**
- * Escape a string for safe inclusion in XML text/attribute content.
- * @param {string} str
- */
-export function escapeXml(str) {
-	return str.replace(/[<>&'"]/g, (c) => XML_ENTITIES[c]);
-}
+// Re-exported so existing consumers/tests keep their import path; the
+// implementation moved to $lib/seo/xml.js when the sitemap routes needed it.
+export { escapeXml };
 
 /**
  * The OE API returns interval timestamps in the network's local time, but the
