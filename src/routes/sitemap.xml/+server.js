@@ -2,7 +2,7 @@ import { sitemapIndexXml, xmlResponse } from '$lib/seo/sitemap.js';
 
 /**
  * Index pointing at the child sitemaps (referenced from static/robots.txt).
- * @param {{ url: URL }} event
+ * @type {import('./$types').RequestHandler}
  */
 export function GET({ url }) {
 	return xmlResponse(

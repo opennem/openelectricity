@@ -31,7 +31,11 @@ const config = {
 			}
 		}),
 		prerender: {
-			handleHttpError: 'warn'
+			handleHttpError: 'warn',
+			// Absolute URLs emitted during prerender (e.g. /sitemap-articles.xml)
+			// resolve against the production domain instead of the default
+			// http://sveltekit-prerender placeholder.
+			origin: 'https://openelectricity.org.au'
 		},
 		version: {
 			name: pkg.version,

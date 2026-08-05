@@ -7,7 +7,7 @@ import { urlsetXml, xmlResponse } from '$lib/seo/sitemap.js';
  * pages too. 503 on upstream failure rather than serving an empty urlset: a
  * transient empty sitemap risks deindexing every facility page until the
  * next crawl.
- * @param {{ url: URL }} event
+ * @type {import('./$types').RequestHandler}
  */
 export async function GET({ url }) {
 	const facilities = await fetchAllFacilities();
