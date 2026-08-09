@@ -38,7 +38,7 @@
 			],
 			"dominant": "gas_ocgt",
 			"capacity": 255,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "SA",
 			"name": "Hallett"
 		}
@@ -150,7 +150,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 100,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "WEM",
 			"name": "Wagerup"
 		}
@@ -1206,7 +1206,7 @@
 			],
 			"dominant": "bioenergy_biomass",
 			"capacity": 38,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "NSW",
 			"name": "Broadwater"
 		}
@@ -1560,7 +1560,7 @@
 			],
 			"dominant": "hydro",
 			"capacity": 37.5,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "VIC",
 			"name": "Clover"
 		}
@@ -1672,7 +1672,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 341,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "WEM",
 			"name": "Collie 2"
 		}
@@ -2429,7 +2429,7 @@
 			],
 			"dominant": "distillate",
 			"capacity": 56,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "NSW",
 			"name": "Eraring"
 		}
@@ -2447,6 +2447,21 @@
 			"status": "committed",
 			"region": "QLD",
 			"name": "Fraser Coast"
+		}
+	},
+	"FGLEN": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 180,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Forest Glen"
 		}
 	},
 	"FINLEYSF": {
@@ -2557,7 +2572,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 30,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "VIC",
 			"name": "Gannawarra"
 		}
@@ -2641,7 +2656,7 @@
 			],
 			"dominant": "solar_utility",
 			"capacity": 200,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "NSW",
 			"name": "Glenellen"
 		}
@@ -3372,7 +3387,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 150,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "SA",
 			"name": "Hornsdale Power Reserve"
 		}
@@ -3429,7 +3444,7 @@
 			],
 			"dominant": "hydro",
 			"capacity": 70,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "VIC",
 			"name": "Hume"
 		}
@@ -3995,7 +4010,7 @@
 			],
 			"dominant": "solar_utility",
 			"capacity": 106,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "VIC",
 			"name": "Lancaster"
 		}
@@ -4560,7 +4575,7 @@
 			],
 			"dominant": "wind",
 			"capacity": 890,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "QLD",
 			"name": "MacIntyre"
 		}
@@ -4954,7 +4969,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 240,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "VIC",
 			"name": "Mornington"
 		}
@@ -4996,7 +5011,7 @@
 			],
 			"dominant": "wind",
 			"capacity": 132,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "VIC",
 			"name": "Mt Gellibrand"
 		}
@@ -5094,7 +5109,7 @@
 			],
 			"dominant": "solar_utility",
 			"capacity": 25,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "NSW",
 			"name": "Mulwala"
 		}
@@ -5683,7 +5698,7 @@
 				"gas_ocgt"
 			],
 			"dominant": "gas_ocgt",
-			"capacity": 600.6,
+			"capacity": 600.5999999999999,
 			"status": "operating",
 			"region": "WEM",
 			"name": "Pinjar"
@@ -5698,7 +5713,7 @@
 			],
 			"dominant": "bioenergy_biomass",
 			"capacity": 68,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "QLD",
 			"name": "Pioneer Sugar Mill"
 		}
@@ -5838,7 +5853,7 @@
 			],
 			"dominant": "gas_ocgt",
 			"capacity": 110,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "WEM",
 			"name": "Parkeston"
 		}
@@ -6204,7 +6219,7 @@
 			],
 			"dominant": "hydro",
 			"capacity": 13,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "VIC",
 			"name": "Rubicon"
 		}
@@ -6316,7 +6331,7 @@
 			],
 			"dominant": "solar_utility",
 			"capacity": 128,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "WEM",
 			"name": "Cunderdin"
 		}
@@ -6471,7 +6486,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 120,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "SA",
 			"name": "Summerfield 1"
 		}
@@ -6485,7 +6500,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 120,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "SA",
 			"name": "Summerfield 2"
 		}
@@ -6766,7 +6781,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 300,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "QLD",
 			"name": "Stanwell"
 		}
@@ -8099,7 +8114,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 250,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "NSW",
 			"name": "Williamsdale"
 		}
