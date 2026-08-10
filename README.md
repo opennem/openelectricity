@@ -28,7 +28,10 @@ cp .env.example .env   # fill in your own keys — see "Environment variables" b
 pnpm run dev
 ```
 
-The dev server starts at `http://localhost:5173`.
+The dev server starts at `http://openelectricity.localhost:7602` — a
+`*.localhost` hostname (resolves to loopback, no `/etc/hosts` entry needed)
+with a pinned port, so the app keeps a cookie jar of its own instead of
+sharing the plain `localhost` jar with every other local project.
 
 ### Environment variables
 
