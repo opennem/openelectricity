@@ -17,6 +17,7 @@
 	 * @property {number} [strokeWidth] - Line width
 	 * @property {string} [label] - Optional label for the line
 	 * @property {string} [labelPosition] - Label position: 'left' or 'right'
+	 * @property {string} [labelClass] - Label font classes (size only — fill stays separate)
 	 */
 
 	/** @type {Props} */
@@ -26,7 +27,8 @@
 		strokeColour = '#666',
 		strokeWidth = 1,
 		label = '',
-		labelPosition = 'right'
+		labelPosition = 'right',
+		labelClass = 'text-[10px]'
 	} = $props();
 
 	// Calculate Y position using the scale
@@ -50,7 +52,7 @@
 			x={labelPosition === 'left' ? 4 : $width - 4}
 			y={yPos - 4}
 			text-anchor={labelPosition === 'left' ? 'start' : 'end'}
-			class="text-[10px] fill-mid-grey"
+			class="{labelClass} fill-mid-grey"
 		>
 			{label}
 		</text>

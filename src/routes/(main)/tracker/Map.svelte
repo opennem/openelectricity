@@ -20,16 +20,18 @@
 	import { mapStyleForTheme } from '$lib/components/map/map-style.js';
 	import { coordsBounds } from '$lib/utils/osm.js';
 	import { INTERCONNECTORS, getInterconnector, corridorCoords } from '$lib/flows/region-geo.js';
+	import { ALL_CARD_CODES, CARD_PX, NEM_CARD_CODES, cardPlacement } from './card-geometry.js';
+	import { isWholeNetworkScope } from './tracker-regions.js';
 
 	/**
-	 * Default framing — tighter than the shared AUSTRALIA_VIEW (zoom 3.5) and
-	 * biased south-east so the NEM (where all the flow/price content lives)
-	 * fills the frame; also the "full view" a corridor Back returns to. The
-	 * centre sits well south of the landmass midpoint: the content ends at the
-	 * QLD chip (~-23.5), so centring higher just banks empty far-north
-	 * Queensland while pushing VIC/TAS into the bottom edge.
+	 * Default framing — the whole-of-Australia view for the All Regions ('au')
+	 * default scope: the SWIS in the west through the NEM east coast, TAS to
+	 * the QLD chip; also the "full view" a corridor Back returns to. The
+	 * centre still sits south of the landmass midpoint — the content ends at
+	 * the QLD chip (~-23.5), so centring higher just banks empty far-north
+	 * country while pushing VIC/TAS into the bottom edge.
 	 */
-	const DEFAULT_VIEW = Object.freeze({ center: { lng: 135.5, lat: -33 }, zoom: 4.1 });
+	const DEFAULT_VIEW = Object.freeze({ center: { lng: 133.5, lat: -30.5 }, zoom: 3.7 });
 
 	/**
 	 * `panelInsetLeftPx`/`panelInsetBottomPx` shift the corridor-zoom framing
@@ -63,7 +65,7 @@
 		showFlows = true,
 		flows = {},
 		prices = {},
-		selectedRegion = '_all',
+		selectedRegion = 'au',
 		selectedInterconnector = null,
 		panelInsetLeftPx = 0,
 		panelInsetBottomPx = 0,
@@ -82,12 +84,14 @@
 	let mapInstance = $state(null);
 	let mapReady = $state(false);
 
-	// The NEM flow layers make no sense on a WEM-focused map; `_all` and NEM
-	// regions keep them, with the non-adjacent corridors/chips dimmed.
+	// The NEM flow layers make no sense on a WEM-focused map; 'au', `_all` and
+	// NEM regions keep them, with the non-adjacent corridors/chips dimmed.
+	// The whole-network scopes ('au', '_all') highlight nothing — a pseudo
+	// region code here would dim every arc, chip and card.
 	let isWem = $derived(selectedRegion === 'wem');
 	let showFlowLayers = $derived(showFlows && !isWem);
 	let highlightRegion = $derived(
-		selectedRegion !== '_all' && !isWem ? selectedRegion.toUpperCase() : null
+		!isWholeNetworkScope(selectedRegion) && !isWem ? selectedRegion.toUpperCase() : null
 	);
 
 	// Physical interconnector lines (matched by objectid) get a casing while
@@ -165,15 +169,86 @@
 		wem: [
 			[114.0, -35.3],
 			[122.2, -28.3]
+		],
+		// NEM-wide (with TAS) — '_all' is no longer the default scope, so it
+		// zooms like any other region pick.
+		_all: [
+			[129.0, -43.8],
+			[153.7, -16.5]
 		]
 	});
 
-	// Fly to the current focus: the selected corridor wins, then the dropdown
-	// region, then the full national framing — corridor/region fits padded
-	// clear of the overlaid panel. Tracked with a non-reactive last-key so
-	// pans/other prop churn never re-trigger the animation; deep links (`?ic=`,
-	// `?region=`) animate from the default view on load, while the initial
-	// unfocused state doesn't fly at all.
+	/**
+	 * Whole-of-Australia box for the All Regions ('au') default scope — SWIS
+	 * in the west through the NEM east coast, TAS to the populated QLD extent.
+	 * Framed via fitBounds like the region boxes so the panel insets bake into
+	 * the computed centre/zoom (see the REGION_BOUNDS comment for why never
+	 * flyTo with camera padding). DEFAULT_VIEW approximates this box's
+	 * unpadded fit for the mount view.
+	 * @type {[[number, number], [number, number]]}
+	 */
+	const AU_BOUNDS = [
+		[114.0, -43.8],
+		[153.7, -16.5]
+	];
+
+	/**
+	 * Extend a map-view fit so the given regions' chart cards stay fully on
+	 * screen: each card's anchor joins the bounds, and every attachment side
+	 * in play reserves the card's pixel footprint as extra canvas padding.
+	 * The padding maxes are global (not per-anchor position) — that
+	 * guarantees a card anchored right at the fitted edge still fits, and
+	 * merely over-reserves for interior anchors.
+	 *
+	 * @param {[[number, number], [number, number]]} bounds
+	 * @param {{ top: number, right: number, bottom: number, left: number }} padding
+	 * @param {string[]} codes
+	 */
+	function withCardExtents(bounds, padding, codes) {
+		const placements = codes.map((code) => cardPlacement(code));
+		const pad = { ...padding };
+		for (const { side } of placements) {
+			if (side === 'left') {
+				// Card body extends east of its anchor.
+				pad.right = Math.max(pad.right, 60 + CARD_PX.width);
+			} else if (side === 'right') {
+				pad.left = Math.max(pad.left, 60 + CARD_PX.width);
+			} else {
+				// Bottom-anchored: body floats above the anchor, centred on it.
+				pad.top = Math.max(pad.top, 60 + CARD_PX.height);
+				pad.left = Math.max(pad.left, 60 + CARD_PX.width / 2);
+				pad.right = Math.max(pad.right, 60 + CARD_PX.width / 2);
+			}
+		}
+		return {
+			bounds: /** @type {[[number, number], [number, number]]} */ (
+				coordsBounds([...bounds, ...placements.map((p) => p.lnglat)])
+			),
+			padding: pad
+		};
+	}
+
+	/** The card codes a scope's fit must keep visible (map view only).
+	 *  @param {string} region */
+	function cardCodesForRegion(region) {
+		if (region === 'au') return ALL_CARD_CODES;
+		if (region === '_all') return NEM_CARD_CODES;
+		if (region === 'wem') return ['WEM'];
+		return [region.toUpperCase()];
+	}
+
+	// Fit the current focus: the selected corridor wins, then the dropdown
+	// region, then the national AU_BOUNDS frame — every fit padded clear of
+	// the overlaid panel, and region/national fits in the map-charts view
+	// additionally extended so the scope's cards stay on screen. Tracked with
+	// a non-reactive last-key so pans/other prop churn never re-trigger the
+	// animation; the key also carries a panel-on bit and the card-view bit so
+	// opening/closing the panel or switching Panel⇄Map view re-centres the
+	// current focus for the new chrome. Hand drag-resizes keep the panel bit
+	// true and deliberately don't re-frame. Deep links (`?ic=`, `?region=`)
+	// animate from the default view on load; the initial unfocused state only
+	// fits (instantly) when a panel or the card extents change the mount
+	// view's framing.
 	/** @type {string | undefined} */
 	let lastFocusKey = undefined;
 	$effect(() => {
@@ -181,7 +256,9 @@
 		const icKey = selectedInterconnector;
 		const region = selectedRegion;
 		if (!map || !mapReady) return;
-		const key = icKey ? `ic:${icKey}` : region !== '_all' ? `region:${region}` : 'default';
+		const insetOn = panelInsetLeftPx > 0 || panelInsetBottomPx > 0;
+		const focus = icKey ? `ic:${icKey}` : `region:${region}`;
+		const key = `${focus}|panel:${insetOn}|cards:${showRegionCharts}`;
 		if (key === lastFocusKey) return;
 		const isFirst = lastFocusKey === undefined;
 		lastFocusKey = key;
@@ -191,28 +268,39 @@
 		const canvas = map.getCanvas();
 		const left = Math.min(60 + panelInsetLeftPx, canvas.clientWidth * 0.6);
 		const bottom = Math.min(60 + panelInsetBottomPx, canvas.clientHeight * 0.55);
+		const padding = { top: 60, right: 60, bottom, left };
+
+		/** @param {[[number, number], [number, number]]} bounds */
+		const fitFor = (bounds) =>
+			showRegionCharts
+				? withCardExtents(bounds, padding, cardCodesForRegion(region))
+				: { bounds, padding };
 
 		if (icKey) {
 			const ic = getInterconnector(icKey);
 			if (!ic) return;
 			map.fitBounds(coordsBounds(corridorCoords(ic)), {
-				padding: { top: 60, right: 60, bottom, left },
+				padding,
 				duration: FOCUS_ZOOM_DURATION,
 				maxZoom: 7
 			});
-		} else if (region !== '_all') {
-			const bounds = REGION_BOUNDS[region];
-			if (!bounds) return;
-			map.fitBounds(bounds, {
-				padding: { top: 60, right: 60, bottom, left },
+		} else if (region !== 'au') {
+			const regionBounds = REGION_BOUNDS[region];
+			if (!regionBounds) return;
+			const fit = fitFor(regionBounds);
+			map.fitBounds(fit.bounds, {
+				padding: fit.padding,
 				duration: FOCUS_ZOOM_DURATION,
 				maxZoom: 6.5
 			});
-		} else if (!isFirst) {
-			map.flyTo({
-				center: DEFAULT_VIEW.center,
-				zoom: DEFAULT_VIEW.zoom,
-				duration: FOCUS_ZOOM_DURATION
+		} else if (!isFirst || insetOn || showRegionCharts) {
+			// The mount view already shows the unpadded national frame — a
+			// panel overlay or the card extents need an (instant) corrective
+			// fit on first paint.
+			const fit = fitFor(AU_BOUNDS);
+			map.fitBounds(fit.bounds, {
+				padding: fit.padding,
+				duration: isFirst ? 0 : FOCUS_ZOOM_DURATION
 			});
 		}
 	});

@@ -417,7 +417,7 @@ export default class ChartStore {
 
 	// Reference lines (horizontal annotations)
 	/**
-	 * @type {Array<{value: number, label?: string, colour?: string, labelPosition?: 'left' | 'right'}>}
+	 * @type {Array<{value: number, label?: string, colour?: string, labelPosition?: 'left' | 'right', labelClass?: string}>}
 	 */
 	yReferenceLines = $state([]);
 

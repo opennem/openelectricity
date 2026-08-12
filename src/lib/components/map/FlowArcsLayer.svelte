@@ -382,7 +382,7 @@
 						border-color: {c.selected ? palette.selected : palette.boxBorder};"
 				>
 					<span
-						class="text-[9px] font-medium leading-3 tracking-wide {c.selected ? 'opacity-80' : ''}"
+						class="text-[10px] font-medium leading-3 tracking-wide {c.selected ? 'opacity-80' : ''}"
 						style={c.selected ? '' : `color: ${palette.boxMutedInk};`}
 					>
 						{c.direction}

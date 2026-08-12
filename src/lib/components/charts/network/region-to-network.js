@@ -7,8 +7,11 @@
  *   - `networkId`     — 'NEM' or 'WEM'
  *   - `networkRegion` — undefined for a whole network, or a region code (NSW1…)
  *
- * `_all` → whole NEM (no region filter); `wem` → whole WEM; everything else is a
- * NEM sub-region (the region value upper-cased, e.g. `nsw1` → `NSW1`).
+ * `au` → NEM+WEM combined (the tracker's All Regions scope — the API route
+ * merges two upstream calls itself, so `networkId: 'AU'` is informational and
+ * never sent to the OE client; consumers read the NEM-clock `timeZone`);
+ * `_all` → whole NEM (no region filter); `wem` → whole WEM; everything else is
+ * a NEM sub-region (the region value upper-cased, e.g. `nsw1` → `NSW1`).
  */
 
 /**
@@ -23,6 +26,9 @@
  * @returns {NetworkTarget}
  */
 export function regionToNetwork(region) {
+	if (region === 'au') {
+		return { networkId: 'AU', networkRegion: undefined, timeZone: '+10:00' };
+	}
 	if (region === 'wem') {
 		return { networkId: 'WEM', networkRegion: undefined, timeZone: '+08:00' };
 	}

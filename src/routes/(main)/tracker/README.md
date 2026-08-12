@@ -9,21 +9,42 @@ from the sitemap.
 ## View model
 
 Two display modes, toggled by the filter bar's Panel|Map switcher
-(`?view=map`; panel is the omitted default):
+(`?view=panel`; map is the omitted default):
 
+- **Map view** — on-anchor mini charts plus the docked All-Australia card
+  replace the panel (see "Map charts view"); the panel only appears while a
+  corridor is open.
 - **Panel view** — the side panel (desktop `ResizablePanel` / mobile
   `BottomSheet`) carrying the charts below.
-- **Map view** — on-anchor mini charts replace the panel (see "Map charts
-  view"); the panel only appears while a corridor is open.
+
+Below the tablet breakpoint an unqualified URL falls back to the panel view —
+the map view has no sheet and the marker cards overwhelm a phone frame. An
+explicit `?view=` always wins; since map is the omitted default, a mobile
+user's explicit Map pick doesn't survive a reload (the safe view wins on an
+ambiguous phone URL).
 
 Within the panel, the content is selection-driven from existing URL state:
 
-| URL state                  | Panel view                                      |
-| -------------------------- | ----------------------------------------------- |
-| `?ic=nsw1-qld1`            | Interconnector view (`InterconnectorDetail`)    |
-| `?region` omitted / `_all` | Grid generation — whole NEM (`GenerationPanel`) |
-| `?region=wem`              | Grid generation — WEM (no corridors)            |
-| `?region=sa1` (etc.)       | Region generation (`GenerationPanel`)           |
+| URL state                | Panel view                                                 |
+| ------------------------ | ---------------------------------------------------------- |
+| `?ic=nsw1-qld1`          | Interconnector view (`InterconnectorDetail`)               |
+| `?region` omitted / `au` | Grid generation — All Regions, NEM+WEM (`GenerationPanel`) |
+| `?region=_all`           | Grid generation — whole NEM (`GenerationPanel`)            |
+| `?region=wem`            | Grid generation — WEM (no corridors)                       |
+| `?region=sa1` (etc.)     | Region generation (`GenerationPanel`)                      |
+
+The region dropdown uses a tracker-local option list (`tracker-regions.js`) —
+the shared `$lib/regions.js` list plus the "All Regions" (`au`) entry, which is
+deliberately not added to the shared list (scenarios and the studio explorer
+can't handle a two-network scope). The `au` panel data comes from
+`/api/network/data?region=au`, which merges one NEM and one WEM upstream call
+server-side (`$lib/server/network-data-au.js`): sub-daily WEM rows are
+relabelled +2h onto the AEST clock (absolute-time join — the OE API's own AU
+network joins on wall-clock strings and displaces WEM by 2 real hours) and the
+merged series trim to the two networks' common live edge; daily+ rows join on
+their local calendar-day labels. Having no national spot price, the `au` scope
+drops the price chart and the avgPrice metric cell (the NEM chips stay — each
+is labelled with its own region).
 
 Transitions:
 
@@ -93,9 +114,18 @@ sub-regions, and no live price chip since `/api/prices` is NEM-only).
   omitted default), shown in the filter bar while the map view is active.
 - **Fixed window** — the last 24 hours, fetched at native 5m and
   display-aggregated to 30m (`map-minis.js`), refreshed on every grid-live
-  dispatch tick. Two requests cover all six charts: one region-grouped NEM
+  dispatch tick. Two requests cover all seven charts: one region-grouped NEM
   fetch (`primary_grouping=network_region`) + one WEM fetch
   (`map-charts.svelte.js`).
+- **All-Australia card** — docked bottom-centre (not a map marker), a wider
+  mini chart of the national NEM+WEM sum with the minis' shared 24h window as
+  its footer and the newest bucket's source total in its header. Built
+  client-side (`miniSeriesForAu`) from the same two responses: the API's `AU`
+  network joins the grids on naive wall-clock strings (WEM displaced 2 real
+  hours, newest ~2h NEM-only), so each response is collected with its own
+  offset and summed on absolute time instead, trimmed to the two networks'
+  overlap so the live edge can't cliff. No national price exists — the price
+  metric shows the plain range chip instead.
 - **Simplified fuel-tech grouping** for generation/emissions minis (Detailed
   is unreadable at mini size); generation keeps the homepage stack visual
   (loads pull the area below zero); price is a line.
@@ -146,9 +176,11 @@ All shallow `replaceState`, built from `window.location.href` (never
 `page.url`, which goes stale after shallow updates); defaults are omitted so
 the canonical URL stays clean.
 
-- `region`, `ic` — the view state (above). `?region=wem` forces `ic` null in
-  the load (corridors are NEM-only).
-- `view` — `map` for the on-anchor charts view (panel default omitted);
+- `region`, `ic` — the view state (above). `au` (All Regions) is the omitted
+  region default; every other scope — including NEM-wide `_all` — serialises
+  explicitly. `?region=wem` forces `ic` null in the load (corridors are
+  NEM-only).
+- `view` — `panel` for the panel view (map default omitted);
   `chart` — the map charts' metric (`price` | `emissions`; generation omitted).
 - `theme`, `transmission`, `flows`, `legend`, `fullscreen` — map/chrome state.
 - `range`, `start`, `end`, `interval` — the generation view's chart range

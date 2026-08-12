@@ -22,6 +22,7 @@ import {
 	rowsFromSeriesMaps
 } from '$lib/components/charts/v2/series-rows.js';
 import { aggregateForDisplay } from '$lib/components/charts/v2/dataProcessing.js';
+import { peakBucket } from '$lib/components/charts/facility/metrics/metrics-calc.js';
 
 /** @type {'power' | 'price' | 'emissions'} */
 export const DEFAULT_MINI_METRIC = 'power';
@@ -53,6 +54,69 @@ function seriesInRegion(series, region) {
 	if (region === null) return true;
 	const seriesRegion = series.columns?.region ?? series.name?.split('|')[0]?.split('_').pop();
 	return seriesRegion === region;
+}
+
+/**
+ * Collect a response's fuel-tech series onto Simplified groups, keyed on real
+ * epoch ms via the network offset. `region: null` accepts every series —
+ * `mode: 'sum'` then folds a region-grouped response's regions into one
+ * value per group.
+ * @param {any} response
+ * @param {'power' | 'emissions'} metric
+ * @param {string} networkTimezone
+ * @param {string | null} region
+ */
+function collectFuelTechSeries(response, metric, networkTimezone, region) {
+	const invertLoads = metric === 'power';
+	return collectSeriesByTimestamp(response, {
+		metricFilter: metric,
+		networkTimezone,
+		mode: 'sum',
+		shouldInvert: (groupId) => invertLoads && loadFuelTechs.includes(groupId),
+		classifySeries: (series) => {
+			if (!seriesInRegion(series, region)) return null;
+			const fuelTech = series.columns?.fueltech || series.name;
+			// The aggregate battery series nets its charging/discharging splits —
+			// the Simplified group maps the splits, so the aggregate double-counts.
+			if (fuelTech === 'battery') return null;
+			const groupId = FT_TO_SIMPLE_GROUP[fuelTech];
+			return groupId ? { id: groupId } : null;
+		}
+	});
+}
+
+/**
+ * Order, label, colour and display-aggregate collected group series into the
+ * mini-chart shape.
+ * @param {Map<string, Map<number, number>>} seriesMaps
+ * @param {Set<number> | number[]} timestamps
+ * @param {'power' | 'emissions'} metric
+ * @param {string} ianaTimeZone
+ */
+function finaliseFuelTechSeries(seriesMaps, timestamps, metric, ianaTimeZone) {
+	const seriesNames = orderSeriesIds([...seriesMaps.keys()], simple.order);
+	/** @type {Record<string, string>} */
+	const seriesLabels = {};
+	/** @type {Record<string, string>} */
+	const seriesColours = {};
+	for (const groupId of seriesNames) {
+		seriesLabels[groupId] = simple.labels[groupId] ?? groupId;
+		seriesColours[groupId] = getFuelTechColour(groupId);
+	}
+
+	const nativeRows = rowsFromSeriesMaps(seriesMaps, timestamps, seriesNames);
+	return {
+		// Per-bucket tonnes sum; instantaneous MW average.
+		data: aggregateForDisplay(nativeRows, seriesNames, {
+			apiInterval: '5m',
+			displayInterval: '30m',
+			ianaTimeZone,
+			method: metric === 'emissions' ? 'sum' : 'mean'
+		}),
+		seriesNames,
+		seriesLabels,
+		seriesColours
+	};
 }
 
 /**
@@ -103,45 +167,79 @@ export function miniSeriesForRegion(response, config) {
 		};
 	}
 
-	const invertLoads = metric === 'power';
-	const { seriesMaps, timestamps } = collectSeriesByTimestamp(response, {
-		metricFilter: metric,
+	const { seriesMaps, timestamps } = collectFuelTechSeries(
+		response,
+		metric,
 		networkTimezone,
-		mode: 'sum',
-		shouldInvert: (groupId) => invertLoads && loadFuelTechs.includes(groupId),
-		classifySeries: (series) => {
-			if (!seriesInRegion(series, region)) return null;
-			const fuelTech = series.columns?.fueltech || series.name;
-			// The aggregate battery series nets its charging/discharging splits —
-			// the Simplified group maps the splits, so the aggregate double-counts.
-			if (fuelTech === 'battery') return null;
-			const groupId = FT_TO_SIMPLE_GROUP[fuelTech];
-			return groupId ? { id: groupId } : null;
-		}
-	});
+		region
+	);
 	if (seriesMaps.size === 0) return null;
 
-	const seriesNames = orderSeriesIds([...seriesMaps.keys()], simple.order);
-	/** @type {Record<string, string>} */
-	const seriesLabels = {};
-	/** @type {Record<string, string>} */
-	const seriesColours = {};
-	for (const groupId of seriesNames) {
-		seriesLabels[groupId] = simple.labels[groupId] ?? groupId;
-		seriesColours[groupId] = getFuelTechColour(groupId);
+	return finaliseFuelTechSeries(seriesMaps, timestamps, metric, ianaTimeZone);
+}
+
+/**
+ * Merged NEM+WEM national series for the All-Australia card.
+ *
+ * The API's AU network joins the two grids on naive wall-clock strings, which
+ * displaces WEM by two real hours and leaves the newest ~2h NEM-only — so the
+ * national sum is built here instead. Each response is collected with its own
+ * offset (rows key on real epoch ms, so buckets align on absolute time), the
+ * region-grouped NEM response summing all five regions per Simplified group in
+ * one pass, then WEM's values are added per instant. The merged rows are
+ * trimmed to the two networks' overlap so the stack can't cliff by WEM's
+ * contribution at a ragged live edge. A missing/failed WEM response degrades
+ * to the untrimmed NEM-only sum — the same failure that silently drops the
+ * WEM card.
+ *
+ * No national spot price exists, so `metric: 'price'` returns null.
+ *
+ * @param {any} nemResponse - Region-grouped NEM response
+ * @param {any} wemResponse - Single-region WEM response (null on fetch failure)
+ * @param {{ metric: 'power' | 'price' | 'emissions' }} config
+ * @returns {ReturnType<typeof miniSeriesForRegion>}
+ */
+export function miniSeriesForAu(nemResponse, wemResponse, { metric }) {
+	if (metric === 'price') return null;
+
+	const nem = collectFuelTechSeries(nemResponse, metric, '+10:00', null);
+	if (nem.seriesMaps.size === 0) return null;
+	const wem = collectFuelTechSeries(wemResponse, metric, '+08:00', null);
+
+	for (const [groupId, wemMap] of wem.seriesMaps) {
+		let target = nem.seriesMaps.get(groupId);
+		if (!target) {
+			target = new Map();
+			nem.seriesMaps.set(groupId, target);
+		}
+		for (const [ms, value] of wemMap) target.set(ms, (target.get(ms) ?? 0) + value);
 	}
 
-	const nativeRows = rowsFromSeriesMaps(seriesMaps, timestamps, seriesNames);
-	return {
-		// Per-bucket tonnes sum; instantaneous MW average.
-		data: aggregateForDisplay(nativeRows, seriesNames, {
-			apiInterval: '5m',
-			displayInterval: '30m',
-			ianaTimeZone,
-			method: metric === 'emissions' ? 'sum' : 'mean'
-		}),
-		seriesNames,
-		seriesLabels,
-		seriesColours
-	};
+	/** @type {Set<number> | number[]} */
+	let timestamps = nem.timestamps;
+	if (wem.timestamps.size > 0) {
+		const start = Math.max(Math.min(...nem.timestamps), Math.min(...wem.timestamps));
+		const end = Math.min(Math.max(...nem.timestamps), Math.max(...wem.timestamps));
+		for (const ms of wem.timestamps) nem.timestamps.add(ms);
+		timestamps = [...nem.timestamps].filter((ms) => ms >= start && ms <= end);
+	}
+
+	// Brisbane buckets deliberately — no DST, and they match the NEM cards' 30m
+	// edges; WEM's whole-hour offset lands cleanly on them.
+	return finaliseFuelTechSeries(nem.seriesMaps, timestamps, metric, 'Australia/Brisbane');
+}
+
+/**
+ * Stacked total of a processed mini-series' newest display bucket — the sum
+ * of the last row's source values (loads are negative and excluded), for the
+ * All-Australia card's header. Null when there's nothing to show.
+ *
+ * @param {ReturnType<typeof miniSeriesForRegion>} processed
+ * @returns {number | null}
+ */
+export function latestStackedTotal(processed) {
+	if (!processed?.data.length) return null;
+	const rows = processed.data;
+	const total = peakBucket([rows[rows.length - 1]], processed.seriesNames)?.value ?? 0;
+	return total > 0 ? total : null;
 }

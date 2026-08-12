@@ -253,6 +253,7 @@
 					yValue={refLine.value}
 					label={refLine.label}
 					labelPosition={refLine.labelPosition}
+					labelClass={refLine.labelClass}
 					strokeColour={refLine.colour || '#666'}
 				/>
 			{/each}

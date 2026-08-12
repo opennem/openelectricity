@@ -2,6 +2,7 @@ import { OpenElectricityClient, NoDataFound } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 import { MARKET_METRIC_NAMES } from '$lib/components/charts/network/market-metric-names.js';
+import { auUpstreamRanges, mergeAuResponses } from '$lib/server/network-data-au.js';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -22,7 +23,9 @@ const client = new OpenElectricityClient({
  * pan/zoom/cache pipeline as the facility charts.
  *
  * Query params (built by `ChartDataManager` + the NetworkChart fetch-url closure):
- *   region           — Explorer region value ('_all', 'nsw1'…, 'wem')
+ *   region           — Explorer region value ('_all', 'nsw1'…, 'wem'), or 'au'
+ *                      for NEM+WEM merged server-side (network-data-au.js;
+ *                      metric=price stays NEM-only — no national spot price)
  *   metric           — 'power' | 'energy' | 'emissions' | 'emissions_intensity'
  *                      | one of the MARKET_METRIC_NAMES keys
  *   interval         — native OE interval ('5m', '1h', '1d', '1M', '3M', '1y')
@@ -50,6 +53,61 @@ function dataMetricsFor(metric, interval) {
 	}
 	return [/** @type {import('openelectricity').DataMetric} */ (metric)];
 }
+
+/**
+ * One upstream OE call for a single network — the shared leg of both the
+ * single-network path and the 'au' NEM+WEM merge.
+ *
+ * @param {Object} params
+ * @param {import('openelectricity').NetworkCode} params.networkId
+ * @param {string} [params.networkRegion]
+ * @param {string} params.metric
+ * @param {string} params.interval
+ * @param {string} [params.dateStart]
+ * @param {string} [params.dateEnd]
+ * @param {string} [params.primaryGrouping]
+ */
+async function fetchNetworkResponse({
+	networkId,
+	networkRegion,
+	metric,
+	interval,
+	dateStart,
+	dateEnd,
+	primaryGrouping
+}) {
+	const marketMetrics = MARKET_METRIC_NAMES[metric];
+
+	if (marketMetrics) {
+		/** @type {import('openelectricity').IMarketTimeSeriesParams} */
+		const options = {
+			interval: /** @type {any} */ (interval),
+			dateStart,
+			dateEnd,
+			network_region: networkRegion
+		};
+		if (primaryGrouping === 'network_region') options.primaryGrouping = 'network_region';
+		const { response } = await client.getMarket(networkId, marketMetrics, options);
+		return response;
+	}
+
+	/** @type {import('openelectricity').INetworkTimeSeriesParams} */
+	const options = {
+		interval: /** @type {any} */ (interval),
+		dateStart,
+		dateEnd,
+		network_region: networkRegion,
+		secondaryGrouping: ['fueltech']
+	};
+	if (primaryGrouping === 'network_region') options.primaryGrouping = 'network_region';
+	const { response } = await client.getNetworkData(
+		networkId,
+		dataMetricsFor(metric, interval),
+		options
+	);
+	return response;
+}
+
 export async function GET({ url, setHeaders }) {
 	const { searchParams } = url;
 	const region = searchParams.get('region') || '_all';
@@ -64,33 +122,36 @@ export async function GET({ url, setHeaders }) {
 	try {
 		let response;
 
-		const marketMetrics = MARKET_METRIC_NAMES[metric];
-
-		if (marketMetrics) {
-			/** @type {import('openelectricity').IMarketTimeSeriesParams} */
-			const options = {
-				interval: /** @type {any} */ (interval),
-				dateStart,
-				dateEnd,
-				network_region: networkRegion
-			};
-			if (primaryGrouping === 'network_region') options.primaryGrouping = 'network_region';
-			({ response } = await client.getMarket(networkId, marketMetrics, options));
+		if (region === 'au' && metric !== 'price') {
+			// All Regions: NEM+WEM merged server-side (see network-data-au.js —
+			// the OE API's own AU network joins the grids on wall-clock strings,
+			// displacing WEM by 2 real hours). The WEM leg degrades to NEM-only
+			// on failure; a NEM failure falls through to the usual handlers.
+			const ranges = auUpstreamRanges(interval, dateStart, dateEnd);
+			const [nemResponse, wemResponse] = await Promise.all([
+				fetchNetworkResponse({ networkId: 'NEM', metric, interval, ...ranges.nem }),
+				fetchNetworkResponse({ networkId: 'WEM', metric, interval, ...ranges.wem }).catch((err) => {
+					if (!(err instanceof NoDataFound)) console.error('WEM leg of au fetch failed:', err);
+					return null;
+				})
+			]);
+			response = mergeAuResponses(nemResponse, wemResponse, interval);
 		} else {
-			/** @type {import('openelectricity').INetworkTimeSeriesParams} */
-			const options = {
-				interval: /** @type {any} */ (interval),
+			// 'au' price resolves to the whole-NEM series — no national spot
+			// price exists, so serving NEM keeps the endpoint total (the tracker
+			// hides its price panel for 'au').
+			const upstream =
+				region === 'au'
+					? { networkId: /** @type {import('openelectricity').NetworkCode} */ ('NEM') }
+					: { networkId, networkRegion };
+			response = await fetchNetworkResponse({
+				...upstream,
+				metric,
+				interval,
 				dateStart,
 				dateEnd,
-				network_region: networkRegion,
-				secondaryGrouping: ['fueltech']
-			};
-			if (primaryGrouping === 'network_region') options.primaryGrouping = 'network_region';
-			({ response } = await client.getNetworkData(
-				networkId,
-				dataMetricsFor(metric, interval),
-				options
-			));
+				primaryGrouping
+			});
 		}
 
 		setHeaders({ 'Cache-Control': 'public, max-age=300' });

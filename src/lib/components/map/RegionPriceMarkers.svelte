@@ -45,11 +45,11 @@
 			     digits label has no descenders, so the font's descender space reads
 			     as extra bottom padding unless trimmed. -->
 			<div
-				class="pointer-events-none select-none {MAP_CHIP_CLASS} px-2 pt-1.5 pb-1 font-mono text-xs font-semibold leading-4 tabular-nums text-dark-grey transition-opacity duration-300 {chip.dimmed
+				class="pointer-events-none select-none {MAP_CHIP_CLASS} px-2 pt-1.5 pb-1 font-mono text-sm font-semibold leading-5 tabular-nums text-dark-grey transition-opacity duration-300 {chip.dimmed
 					? 'opacity-40'
 					: 'opacity-100'}"
 			>
-				{chip.label}<span class="text-[9px] font-normal opacity-70">/MWh</span>
+				{chip.label}<span class="text-[10px] font-normal opacity-70">/MWh</span>
 			</div>
 		{/snippet}
 	</Marker>

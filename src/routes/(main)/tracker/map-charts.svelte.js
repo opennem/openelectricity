@@ -1,16 +1,18 @@
 /**
  * Data factory for the map view's on-anchor mini charts.
  *
- * Two requests cover all six charts: one region-grouped NEM fetch
+ * Two requests cover all seven charts (six regions plus the docked
+ * All-Australia card): one region-grouped NEM fetch
  * (`primary_grouping=network_region` splits every region's series in a single
- * response) plus one WEM fetch. Fixed rolling window — the last 24 hours at
+ * response) plus one WEM fetch, with the national series summed client-side
+ * from both. Fixed rolling window — the last 24 hours at
  * native 5m, display-aggregated to 30m by `miniSeriesForRegion` — refreshed by
  * the page whenever the grid-live dispatch snapshot ticks. Stale responses are
  * dropped by a sequence guard; a failed refresh keeps the previous charts.
  */
 
 import { nemNaiveRange } from '$lib/flows/nem-time.js';
-import { miniSeriesForRegion } from './map-minis.js';
+import { miniSeriesForAu, miniSeriesForRegion } from './map-minis.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NEM_MINI_CODES = ['NSW1', 'QLD1', 'SA1', 'TAS1', 'VIC1'];
@@ -99,6 +101,12 @@ export function createMapCharts() {
 				networkTimezone: '+08:00',
 				ianaTimeZone: 'Australia/Perth'
 			});
+		}
+		// National sum from the same two responses — zero extra requests. Null
+		// for price (no national price exists); the docked card hides instead.
+		if (nem) {
+			const au = miniSeriesForAu(nem, wem, { metric });
+			if (au) next.AU = au;
 		}
 
 		// A failed refresh keeps the previous charts (and their metric) rather

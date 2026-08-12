@@ -1,13 +1,14 @@
 <script>
 	/**
-	 * RegionMiniChart — one on-map mini chart (inside a map Marker card).
+	 * RegionMiniChart — one map-view mini chart (inside a region Marker card,
+	 * or the docked All-Australia card, which passes a taller `chartHeightPx`).
 	 *
 	 * A bare Stratum render of pre-processed rows from `map-minis.js`: no
-	 * header, no tooltip, no pan/zoom — the marker layer is pointer-events-none
-	 * so map gestures pass straight through. Instead of full axes, two dashed
-	 * reference lines carry the scale (zero, and the window's stacked-total
-	 * max with its value); the shared window's date range renders once as the
-	 * page's bottom-centre map annotation, not per card.
+	 * header, no tooltip, no pan/zoom — the chart surfaces are
+	 * pointer-events-none so map gestures pass straight through. Instead of
+	 * full axes, two dashed reference lines carry the scale (zero, and the
+	 * window's stacked-total max with its value); the shared window's date
+	 * range renders once in the All-Australia card's footer, not per card.
 	 * Generation/emissions stack with the homepage visual (cumulative stack,
 	 * loads below zero); price is a line. The fixed 24h window means the store
 	 * is fully re-fed on each refresh rather than managed.
@@ -20,10 +21,11 @@
 	/**
 	 * @type {{
 	 *   processed: { data: any[], seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string> },
-	 *   metric?: 'power' | 'price' | 'emissions'
+	 *   metric?: 'power' | 'price' | 'emissions',
+	 *   chartHeightPx?: number
 	 * }}
 	 */
-	let { processed, metric = 'power' } = $props();
+	let { processed, metric = 'power', chartHeightPx = 80 } = $props();
 
 	const fmt0 = getNumberFormat(0);
 	const REF_LINE_COLOUR = '#33333355';
@@ -39,8 +41,8 @@
 		});
 		// Sparkline treatment: no axes — the 0/max reference lines carry the
 		// scale. Top padding gives the max label (drawn above its line) room.
-		chart.chartStyles.chartHeightPx = 72;
-		chart.chartStyles.chartPadding = { top: 14, right: 0, bottom: 4, left: 0 };
+		chart.chartStyles.chartHeightPx = chartHeightPx;
+		chart.chartStyles.chartPadding = { top: 16, right: 0, bottom: 4, left: 0 };
 		chart.chartStyles.showAxes = false;
 		if (metric === 'emissions') {
 			chart.chartOptions.selectedCurveType = /** @type {any} */ ('step');
@@ -101,8 +103,20 @@
 		}
 		chartStore.yReferenceLines = maxLabel
 			? [
-					{ value: 0, label: '0', colour: REF_LINE_COLOUR, labelPosition: 'left' },
-					{ value: refMax, label: maxLabel, colour: REF_LINE_COLOUR, labelPosition: 'right' }
+					{
+						value: 0,
+						label: '0',
+						colour: REF_LINE_COLOUR,
+						labelPosition: 'left',
+						labelClass: 'text-xs'
+					},
+					{
+						value: refMax,
+						label: maxLabel,
+						colour: REF_LINE_COLOUR,
+						labelPosition: 'right',
+						labelClass: 'text-xs'
+					}
 				]
 			: [];
 	});

@@ -4,11 +4,11 @@
 	 *
 	 * The base map carries live NEM interconnector status: flow arcs (MW +
 	 * direction from the 5-minutely grid-live poll), regional price chips, and
-	 * two display modes toggled by `?view=`: the side panel (default; desktop
-	 * left slide-in / mobile bottom sheet) or `?view=map`, which swaps the
-	 * panel for on-anchor mini charts per region (`?chart=` picks their
-	 * metric). The panel's content is selection-driven off the existing URL
-	 * state:
+	 * two display modes toggled by `?view=`: the map view (desktop default) of
+	 * on-anchor mini charts per region plus a docked All-Australia card
+	 * (`?chart=` picks their metric), or `?view=panel` for the side panel
+	 * (desktop left slide-in / mobile bottom sheet; the default below tablet).
+	 * The panel's content is selection-driven off the existing URL state:
 	 *   `?ic=` set        → that corridor's Stratum flow + price charts
 	 *   region `_all`/wem → grid generation (whole NEM / WEM)
 	 *   any other region  → that region's generation
@@ -30,7 +30,7 @@
 	import { afterNavigate, replaceState } from '$app/navigation';
 	import { MediaQuery } from 'svelte/reactivity';
 
-	import { ChevronLeft, PanelLeftOpen, X } from '@lucide/svelte';
+	import { ChevronLeft, LoaderCircle, PanelLeftOpen, X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import {
 		FullscreenLayout,
@@ -54,18 +54,20 @@
 	import InterconnectorDetail from './InterconnectorDetail.svelte';
 	import GenerationPanel from './GenerationPanel.svelte';
 	import { createMapCharts } from './map-charts.svelte.js';
-	import { DEFAULT_MINI_METRIC, MINI_METRIC_OPTIONS } from './map-minis.js';
+	import { DEFAULT_MINI_METRIC, MINI_METRIC_OPTIONS, latestStackedTotal } from './map-minis.js';
+	import RegionMiniChart from './RegionMiniChart.svelte';
 	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
+	import { formatSI } from '$lib/utils/si-units.js';
 	import { createGridLive } from '$lib/flows/grid-live.svelte.js';
 	import { getInterconnector, icSlug } from '$lib/flows/region-geo.js';
-	import { regionOptions } from '$lib/regions.js';
+	import { DEFAULT_REGION, TRACKER_REGION_OPTIONS } from './tracker-regions.js';
 	import {
 		BELOW_TABLET_QUERY,
 		isFullscreenUrl,
 		toggleFullscreenMode
 	} from '$lib/utils/fullscreen-mode.js';
 
-	/** @type {{ data: { region: string, view: 'panel' | 'map', mapChart: 'power' | 'price' | 'emissions', mapTheme: 'light' | 'dark' | 'satellite', showTransmissionLines: boolean, showFlows: boolean, showLegend: boolean, interconnector: string | null } }} */
+	/** @type {{ data: { region: string, view: 'panel' | 'map', viewExplicit: boolean, mapChart: 'power' | 'price' | 'emissions', mapTheme: 'light' | 'dark' | 'satellite', showTransmissionLines: boolean, showFlows: boolean, showLegend: boolean, interconnector: string | null } }} */
 	let { data } = $props();
 
 	let showShortcutsToast = $state(false);
@@ -89,8 +91,13 @@
 	let showTransmissionLines = $state(data.showTransmissionLines);
 	let showFlows = $state(data.showFlows);
 	let showLegend = $state(data.showLegend);
+	// The map view is the desktop default, but below tablet it has no
+	// panel/sheet and the marker cards overwhelm a phone frame — an
+	// unqualified URL falls back to the panel there. An explicit ?view=
+	// always wins.
+	const effectiveView = () => (data.viewExplicit || !belowTablet.current ? data.view : 'panel');
 	/** @type {'panel' | 'map'} */
-	let viewMode = $state(data.view);
+	let viewMode = $state(effectiveView());
 	/** @type {'power' | 'price' | 'emissions'} */
 	let mapChartMetric = $state(data.mapChart);
 	/** @type {string | null} */
@@ -102,7 +109,7 @@
 		showTransmissionLines = data.showTransmissionLines;
 		showFlows = data.showFlows;
 		showLegend = data.showLegend;
-		viewMode = data.view;
+		viewMode = effectiveView();
 		mapChartMetric = data.mapChart;
 		selectedIc = data.interconnector;
 	});
@@ -148,6 +155,16 @@
 		return '';
 	});
 
+	// Latest stacked total for the All-Australia card header (MW → GW for
+	// power; emissions stay in tonnes).
+	let auLatestTotal = $derived.by(() => {
+		const total = latestStackedTotal(mapCharts.charts.AU);
+		if (total === null) return '';
+		return mapChartMetric === 'power'
+			? formatSI(total, { fromPrefix: 'M', toPrefix: 'G', baseUnit: 'W', maximumFractionDigits: 1 })
+			: formatSI(total, { baseUnit: 't', maximumFractionDigits: 0 });
+	});
+
 	// The panel opens on load showing the selected scope's generation view;
 	// picking a corridor (list row or map arc) swaps it to that corridor's
 	// charts and zooms the map, and Back returns to the generation view + full
@@ -157,8 +174,8 @@
 	let panelOpen = $state(true);
 	let detailTitle = $derived(getInterconnector(selectedIc)?.label ?? 'Interconnector');
 	let regionTitle = $derived.by(() => {
-		const opt = regionOptions.find((r) => r.value === selectedRegion);
-		if (!opt) return 'National Electricity Market';
+		const opt = TRACKER_REGION_OPTIONS.find((r) => r.value === selectedRegion);
+		if (!opt) return 'All Regions';
 		// The dropdown's "NEM Regions" reads oddly as a panel heading.
 		return opt.shortLabel === 'NEM' ? 'National Electricity Market' : opt.label;
 	});
@@ -203,7 +220,9 @@
 	// a shallow replaceState. This also leaves `?fullscreen=false` untouched.
 	function updateUrl() {
 		const url = new URL(window.location.href);
-		if (selectedRegion === '_all') url.searchParams.delete('region');
+		// All Regions ('au') is the omitted default; every other scope —
+		// including the NEM-wide '_all' — serialises explicitly.
+		if (selectedRegion === DEFAULT_REGION) url.searchParams.delete('region');
 		else url.searchParams.set('region', selectedRegion);
 		if (mapTheme === 'dark') url.searchParams.delete('theme');
 		else url.searchParams.set('theme', mapTheme);
@@ -213,7 +232,10 @@
 		else url.searchParams.set('flows', 'false');
 		if (showLegend) url.searchParams.set('legend', 'true');
 		else url.searchParams.delete('legend');
-		if (viewMode === 'map') url.searchParams.set('view', 'map');
+		// Map is the omitted default — a mobile user who explicitly taps "Map"
+		// therefore gets a clean URL, so a reload falls back to the mobile panel
+		// default. Accepted: the safe view wins on an ambiguous phone URL.
+		if (viewMode === 'panel') url.searchParams.set('view', 'panel');
 		else url.searchParams.delete('view');
 		if (mapChartMetric !== DEFAULT_MINI_METRIC) url.searchParams.set('chart', mapChartMetric);
 		else url.searchParams.delete('chart');
@@ -452,16 +474,56 @@
 					</div>
 				{/if}
 
-				<!-- Map-charts view: the shared window of every mini chart, once,
-				     rather than a footer per card. -->
-				{#if viewMode === 'map' && mapChartsRange}
-					<div class="pointer-events-none absolute bottom-10 left-1/2 z-10 -translate-x-1/2">
+				<!-- Map-charts view, bottom centre: the docked All-Australia card —
+				     the national NEM+WEM sum built from the same two responses as
+				     the region cards — with the minis' shared 24h window as its
+				     footer. No national price exists, so the price metric keeps the
+				     plain range chip instead. -->
+				{#if viewMode === 'map'}
+					{#if mapChartMetric !== 'price'}
 						<div
-							class="{MAP_CHIP_CLASS} px-3 pt-1.5 pb-1 font-mono text-xs tabular-nums text-dark-grey"
+							class="pointer-events-none absolute bottom-10 left-1/2 z-10 -translate-x-1/2 select-none"
 						>
-							Last 24 hrs · {mapChartsRange}
+							<div class="w-80 overflow-hidden {MAP_CHIP_CLASS}">
+								<div
+									class="flex items-baseline justify-between gap-2 border-b border-mid-warm-grey/40 bg-light-warm-grey/60 px-3 pt-2 pb-1.5 text-sm font-semibold leading-5 text-dark-grey"
+								>
+									<span class="font-space">All Australia</span>
+									{#if auLatestTotal}
+										<span class="font-mono tabular-nums">{auLatestTotal}</span>
+									{/if}
+								</div>
+								{#if mapChartMetric !== mapCharts.loadedMetric}
+									<div class="flex h-[104px] items-center justify-center">
+										<LoaderCircle class="size-4 animate-spin text-mid-grey" />
+									</div>
+								{:else if mapCharts.charts.AU}
+									<div class="px-1.5 pt-1 pb-1">
+										<RegionMiniChart
+											processed={mapCharts.charts.AU}
+											metric={mapChartMetric}
+											chartHeightPx={96}
+										/>
+									</div>
+								{/if}
+								{#if mapChartsRange}
+									<div
+										class="border-t border-mid-warm-grey/40 px-3 pt-1 pb-1 font-mono text-xs tabular-nums text-mid-grey"
+									>
+										Last 24 hrs · {mapChartsRange}
+									</div>
+								{/if}
+							</div>
 						</div>
-					</div>
+					{:else if mapChartsRange}
+						<div class="pointer-events-none absolute bottom-10 left-1/2 z-10 -translate-x-1/2">
+							<div
+								class="{MAP_CHIP_CLASS} px-3 pt-1.5 pb-1 font-mono text-sm tabular-nums text-dark-grey"
+							>
+								Last 24 hrs · {mapChartsRange}
+							</div>
+						</div>
+					{/if}
 				{/if}
 
 				<!-- Tracker panel — open on load with the selected scope's generation

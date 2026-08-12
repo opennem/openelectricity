@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { miniSeriesForRegion } from './map-minis.js';
+import { latestStackedTotal, miniSeriesForAu, miniSeriesForRegion } from './map-minis.js';
 
 /**
  * Region-grouped response entry (primary_grouping=network_region shape).
@@ -105,5 +105,116 @@ describe('miniSeriesForRegion', () => {
 	it('returns null when the region has no series', () => {
 		expect(miniSeriesForRegion(response, { metric: 'power', region: 'SA1' })).toBeNull();
 		expect(miniSeriesForRegion({ data: [] }, { metric: 'power', region: 'NSW1' })).toBeNull();
+	});
+});
+
+describe('miniSeriesForAu', () => {
+	// The same six instants as TIMES, on WEM's clock: 12:00–12:25 AEST is
+	// 10:00–10:25 AWST. A wall-clock join (the AU endpoint's bug) would land
+	// these two hours apart; the absolute-time merge must land them together.
+	const WEM_TIMES = [0, 5, 10, 15, 20, 25].map(
+		(m) => `2026-08-05T10:${String(m).padStart(2, '0')}:00+08:00`
+	);
+	/** @param {number} value */
+	const wemFlat = (value) => WEM_TIMES.map((t) => /** @type {[string, number]} */ ([t, value]));
+	/** @param {Array<[string, number]>} values */
+	const wemResponseWith = (values) => ({
+		data: [
+			{
+				metric: 'power',
+				results: [{ name: 'power_coal_black', columns: { fueltech: 'coal_black' }, data: values }]
+			}
+		]
+	});
+
+	const nemResponse = {
+		data: [
+			groupedEntry('power', [
+				{ region: 'NSW1', fueltech: 'coal_black', values: flat(5000) },
+				{ region: 'NSW1', fueltech: 'coal_brown', values: flat(1000) },
+				{ region: 'QLD1', fueltech: 'coal_black', values: flat(4000) }
+			])
+		]
+	};
+
+	it('sums every NEM region and adds WEM on the same absolute instants', () => {
+		const result = miniSeriesForAu(nemResponse, wemResponseWith(wemFlat(700)), {
+			metric: 'power'
+		});
+		// One shared 30m bucket — a misaligned (wall-clock) join would split
+		// the window into separate buckets instead.
+		expect(result?.data).toHaveLength(1);
+		// NSW 5000+1000 + QLD 4000 + WEM 700, all coal.
+		expect(result?.data[0].coal).toBe(10700);
+	});
+
+	it('trims the merged rows to the two networks’ overlap', () => {
+		// NEM covers two 30m buckets; WEM ends after the first — the second
+		// bucket would cliff by WEM's contribution, so it must be trimmed off.
+		const lateTimes = [30, 35, 40, 45, 50, 55].map((m) => `2026-08-05T12:${m}:00+10:00`);
+		const twoBucketNem = {
+			data: [
+				groupedEntry('power', [
+					{
+						region: 'NSW1',
+						fueltech: 'coal_black',
+						values: [
+							...flat(1000),
+							...lateTimes.map((t) => /** @type {[string, number]} */ ([t, 1000]))
+						]
+					}
+				])
+			]
+		};
+		const result = miniSeriesForAu(twoBucketNem, wemResponseWith(wemFlat(500)), {
+			metric: 'power'
+		});
+		expect(result?.data).toHaveLength(1);
+		expect(result?.data[0].coal).toBe(1500);
+	});
+
+	it('returns null for price — no national price exists', () => {
+		expect(
+			miniSeriesForAu(nemResponse, wemResponseWith(wemFlat(700)), { metric: 'price' })
+		).toBeNull();
+	});
+
+	it('degrades to the untrimmed NEM-only sum without a WEM response', () => {
+		const result = miniSeriesForAu(nemResponse, null, { metric: 'power' });
+		expect(result?.data).toHaveLength(1);
+		expect(result?.data[0].coal).toBe(10000);
+	});
+
+	it('returns null when NEM produced nothing', () => {
+		expect(
+			miniSeriesForAu({ data: [] }, wemResponseWith(wemFlat(700)), { metric: 'power' })
+		).toBeNull();
+	});
+});
+
+describe('latestStackedTotal', () => {
+	it('sums the newest bucket’s sources and excludes negative loads', () => {
+		const processed = miniSeriesForRegion(
+			{
+				data: [
+					groupedEntry('power', [
+						{ region: 'NSW1', fueltech: 'coal_black', values: flat(5000) },
+						{ region: 'NSW1', fueltech: 'battery_charging', values: flat(200) }
+					])
+				]
+			},
+			{ metric: 'power', region: 'NSW1' }
+		);
+		// battery_charging is inverted to −200 in the rows and must not offset
+		// the coal contribution.
+		expect(latestStackedTotal(processed)).toBe(5000);
+	});
+
+	it('returns null when there is nothing to show', () => {
+		expect(latestStackedTotal(null)).toBeNull();
+		expect(latestStackedTotal(/** @type {any} */ ({ data: [], seriesNames: [] }))).toBeNull();
+		expect(
+			latestStackedTotal(/** @type {any} */ ({ data: [{ time: 0, coal: 0 }], seriesNames: ['coal'] }))
+		).toBeNull();
 	});
 });

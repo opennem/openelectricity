@@ -2,10 +2,12 @@
 	/**
 	 * GenerationPanel — the tracker panel's grid/region generation view, the
 	 * explore-style counterpart to InterconnectorDetail. One component covers
-	 * both scopes: `region` ('_all' | NEM region | 'wem') parameterises the
-	 * charts, metrics and corridor list, so switching scope morphs the live
+	 * every scope: `region` ('au' | '_all' | NEM region | 'wem') parameterises
+	 * the charts, metrics and corridor list, so switching scope morphs the live
 	 * instance (NetworkChart swaps its warm-stashed data manager and the
-	 * viewport carries over) rather than remounting.
+	 * viewport carries over) rather than remounting. 'au' is NEM+WEM combined —
+	 * /api/network/data merges the two networks server-side; having no national
+	 * spot price, the scope drops the price chart and avgPrice metric.
 	 *
 	 * Layout matches /facility/[code]: a grey canvas of white sectionCardClass
 	 * cards — the metrics card headed by the range/date tray, then the
@@ -42,7 +44,9 @@
 	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 	import { createNetworkMarketData } from '$lib/components/charts/network/network-market-data.svelte.js';
 	import { INTERCONNECTORS, interconnectorsForRegion } from '$lib/flows/region-geo.js';
+	import { NETWORK_METRIC_KEYS } from '$lib/components/charts/network/network-metric-definitions.js';
 	import { regionsNemOnlyOptions } from '$lib/regions.js';
+	import { isWholeNetworkScope, hasSpotPrice } from './tracker-regions.js';
 	import NetworkMetrics from './NetworkMetrics.svelte';
 	import PriceChipRow from './PriceChipRow.svelte';
 	import CorridorMetrics from './CorridorMetrics.svelte';
@@ -92,9 +96,17 @@
 		.filter((r) => r.value !== '_all')
 		.map((r) => r.value.toUpperCase());
 
+	// 'au' shows the NEM chips like '_all' — spot prices are NEM-only and each
+	// chip is labelled with its own region code, so they stay honest under a
+	// national heading.
 	let chipCodes = $derived(
-		region === 'wem' ? [] : region === '_all' ? NEM_CHIP_CODES : [region.toUpperCase()]
+		region === 'wem' ? [] : isWholeNetworkScope(region) ? NEM_CHIP_CODES : [region.toUpperCase()]
 	);
+
+	// No national spot price exists — the All Regions scope drops the price
+	// chart (its $state ref stays undefined; the range control skips falsy
+	// chart entries) and the avgPrice metric cell.
+	let hasPriceChart = $derived(hasSpotPrice(region));
 
 	// ============================================
 	// Range control + charts
@@ -161,6 +173,21 @@
 			chart.reconcileFetches();
 		}
 	}
+
+	// A scope switch away from 'au' mounts the price chart fresh while the
+	// other charts stay warm — sync the new instance to the live viewport
+	// (same treatment as the emissions tab switch). Keyed on the bind ref
+	// only; the viewport reads are untracked so pans don't re-trigger it.
+	$effect(() => {
+		const chart = priceChart;
+		if (!chart) return;
+		untrack(() => {
+			if (viewStart && viewEnd) {
+				chart.setViewport(viewStart, viewEnd);
+				chart.reconcileFetches();
+			}
+		});
+	});
 
 	// The controller ladders power↔energy; the corridor charts map that onto
 	// the OE flows metric pair (same as InterconnectorDetail).
@@ -312,10 +339,12 @@
 	// Interconnectors for this scope
 	// ============================================
 
+	// Whole-network scopes surface every corridor (they're NEM-only but still
+	// meaningful nationally); WEM has none.
 	let regionInterconnectors = $derived(
 		region === 'wem'
 			? []
-			: region === '_all'
+			: isWholeNetworkScope(region)
 				? INTERCONNECTORS
 				: interconnectorsForRegion(region.toUpperCase())
 	);
@@ -354,6 +383,9 @@
 				basis={range.activeMetric}
 				displayInterval={range.displayInterval}
 				timeZone={tz}
+				metricKeys={hasPriceChart
+					? NETWORK_METRIC_KEYS
+					: NETWORK_METRIC_KEYS.filter((k) => k !== 'avgPrice')}
 				onpeakhighlight={handleHoverChange}
 			/>
 		</div>
@@ -415,32 +447,35 @@
 				</section>
 
 				<!-- No card h3 — the chart's own header carries the "Price" title with
-				     the pan/zoom controls, matching the corridor flow cards. -->
-				<section class={engagedCardClass}>
-					<div class="px-2 py-2">
-						<NetworkChart
-							bind:this={priceChart}
-							{region}
-							metric="price"
-							interval={range.activeInterval}
-							displayInterval={range.displayInterval}
-							chartKind="line"
-							timeZone={tz}
-							{dateStart}
-							{dateEnd}
-							chartHeight="h-[140px]"
-							showContainer={false}
-							tooltipMode="strip"
-							{hoverTime}
-							onhoverchange={handleHoverChange}
-							onviewportchange={(r) => range.handleDerivedViewportChange(r, priceChart)}
-							onviewportsettle={range.handleViewportSettle}
-							onvisibledata={handlePriceVisibleData}
-							panZoomMode="tap-to-engage"
-							bind:panZoomEngaged
-						/>
-					</div>
-				</section>
+				     the pan/zoom controls, matching the corridor flow cards. Absent
+				     for All Regions: there is no national spot price. -->
+				{#if hasPriceChart}
+					<section class={engagedCardClass}>
+						<div class="px-2 py-2">
+							<NetworkChart
+								bind:this={priceChart}
+								{region}
+								metric="price"
+								interval={range.activeInterval}
+								displayInterval={range.displayInterval}
+								chartKind="line"
+								timeZone={tz}
+								{dateStart}
+								{dateEnd}
+								chartHeight="h-[140px]"
+								showContainer={false}
+								tooltipMode="strip"
+								{hoverTime}
+								onhoverchange={handleHoverChange}
+								onviewportchange={(r) => range.handleDerivedViewportChange(r, priceChart)}
+								onviewportsettle={range.handleViewportSettle}
+								onvisibledata={handlePriceVisibleData}
+								panZoomMode="tap-to-engage"
+								bind:panZoomEngaged
+							/>
+						</div>
+					</section>
+				{/if}
 
 				<!-- Emissions — Volume ⇄ Intensity toggle per the facility design; the
 				     chart's own header carries the variant title + pan/zoom controls. -->

@@ -32,6 +32,7 @@
 	 *   basis?: 'power' | 'energy',
 	 *   displayInterval?: string,
 	 *   timeZone?: string,
+	 *   metricKeys?: readonly string[],
 	 *   onpeakhighlight?: (time: number | undefined) => void
 	 * }}
 	 */
@@ -44,6 +45,7 @@
 		basis = 'power',
 		displayInterval = '30m',
 		timeZone = '+10:00',
+		metricKeys = NETWORK_METRIC_KEYS,
 		onpeakhighlight
 	} = $props();
 
@@ -72,7 +74,7 @@
      the viewport-based sm: breakpoint must not widen the grid. -->
 <div class="overflow-hidden">
 	<div class="grid grid-cols-2 -mr-px -mb-px">
-		{#each NETWORK_METRIC_KEYS as key (key)}
+		{#each metricKeys as key (key)}
 			{@const result = NETWORK_METRICS[key].compute(ctx)}
 			{@const interactive = result.highlightTime != null}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->

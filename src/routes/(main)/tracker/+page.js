@@ -12,27 +12,31 @@
  * shown), and `ic` (only when a corridor panel is open).
  */
 
-import { regionOptions } from '$lib/regions.js';
 import { DEFAULT_MINI_METRIC, MINI_METRIC_OPTIONS } from './map-minis.js';
+import { DEFAULT_REGION, TRACKER_REGION_OPTIONS } from './tracker-regions.js';
 import { MAP_THEMES } from '$lib/components/map/map-style.js';
 import { icFromSlug } from '$lib/flows/region-geo.js';
 
-const REGION_VALUES = regionOptions.map((r) => r.value);
+const REGION_VALUES = TRACKER_REGION_OPTIONS.map((r) => r.value);
 
 /**
  * @param {Object} params
  * @param {URL} params.url
  */
 export function load({ url }) {
-	let region = url.searchParams.get('region') || '_all';
-	if (!REGION_VALUES.includes(region)) region = '_all';
+	let region = url.searchParams.get('region') || DEFAULT_REGION;
+	if (!REGION_VALUES.includes(region)) region = DEFAULT_REGION;
 
 	let mapTheme = url.searchParams.get('theme') || 'dark';
 	if (!MAP_THEMES.includes(mapTheme)) mapTheme = 'dark';
 
-	// `?view=map` swaps the side panel for on-anchor mini charts; `?chart=`
-	// picks their metric (generation is the omitted default).
-	const view = url.searchParams.get('view') === 'map' ? 'map' : 'panel';
+	// The map view (on-anchor mini charts) is the default; `?view=panel` opts
+	// back into the side panel. `?chart=` picks the minis' metric (generation
+	// is the omitted default). `viewExplicit` lets the page distinguish a
+	// deliberate `?view=` from the default — below tablet an unqualified URL
+	// falls back to the panel (the map view has no sheet on a phone frame).
+	const viewParam = url.searchParams.get('view');
+	const view = viewParam === 'panel' ? 'panel' : 'map';
 	const chartParam = url.searchParams.get('chart');
 	const mapChart = /** @type {'power' | 'price' | 'emissions'} */ (
 		MINI_METRIC_OPTIONS.some((o) => o.value === chartParam) ? chartParam : DEFAULT_MINI_METRIC
@@ -41,6 +45,7 @@ export function load({ url }) {
 	return {
 		region,
 		view: /** @type {'panel' | 'map'} */ (view),
+		viewExplicit: viewParam !== null,
 		mapChart,
 		mapTheme: /** @type {'light' | 'dark' | 'satellite'} */ (mapTheme),
 		showTransmissionLines: url.searchParams.get('transmission') === 'true',

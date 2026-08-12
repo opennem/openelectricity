@@ -18,30 +18,8 @@
 	import { REGION_ANCHORS, WEM_ANCHOR } from '$lib/flows/region-geo.js';
 	import { displayCode, formatPrice, numberOrUndefined } from '$lib/flows/format.js';
 	import { MAP_CHIP_CLASS } from '$lib/components/map/map-style.js';
+	import { CARD_ANCHORS, CARD_SIDES } from './card-geometry.js';
 	import RegionMiniChart from './RegionMiniChart.svelte';
-
-	/** Card positions that differ from the region anchor — pushed out to sea so
-	 *  the busy corridor labels stay readable (NSW/VIC east into the Tasman,
-	 *  TAS west clear of the Basslink label); a dotted leader ties each card
-	 *  back to its region point. @type {Record<string, [number, number]>} */
-	const CARD_ANCHORS = {
-		NSW1: [155.2, -31.8],
-		VIC1: [151.4, -39.4],
-		TAS1: [141.8, -42.5]
-	};
-
-	/** Which of the card's four mid-edge anchor points (top/bottom/left/right,
-	 *  always the middle of that edge) sits on the card's lnglat. Offshore
-	 *  cards attach on the edge facing their region — NSW/VIC sit east so the
-	 *  leader meets their left-middle, TAS sits west so its right-middle — and
-	 *  the junction gets a small filled circle. On-anchor cards keep
-	 *  bottom-middle, floating just above their region dot.
-	 *  @type {Record<string, 'left' | 'right' | 'top' | 'bottom'>} */
-	const CARD_SIDES = {
-		NSW1: 'left',
-		VIC1: 'left',
-		TAS1: 'right'
-	};
 
 	/** Junction-dot placement per side-anchored edge (bottom-anchored cards
 	 *  point at their region dot instead). @type {Record<string, string>} */
@@ -147,14 +125,14 @@
 					? 'opacity-40'
 					: 'opacity-100'}"
 			>
-				<div class="w-48 overflow-hidden {MAP_CHIP_CLASS}">
+				<div class="w-52 overflow-hidden {MAP_CHIP_CLASS}">
 					<div
-						class="flex items-baseline justify-between gap-2 border-b border-mid-warm-grey/40 bg-light-warm-grey/60 px-2.5 pt-2 pb-1.5 text-xs font-semibold leading-4 text-dark-grey"
+						class="flex items-baseline justify-between gap-2 border-b border-mid-warm-grey/40 bg-light-warm-grey/60 px-2.5 pt-2 pb-1.5 text-sm font-semibold leading-5 text-dark-grey"
 					>
 						<span class="font-space">{displayCode(marker.code)}</span>
 						{#if marker.price !== undefined}
 							<span class="font-mono tabular-nums">
-								{formatPrice(marker.price)}<span class="text-[9px] font-normal opacity-70"
+								{formatPrice(marker.price)}<span class="text-[10px] font-normal opacity-70"
 									>/MWh</span
 								>
 							</span>
@@ -164,7 +142,7 @@
 					     in flight — a spinner (height-matched to the chart) replaces
 					     them so the new palette never flashes over stale series. -->
 					{#if loading}
-						<div class="flex h-[80px] items-center justify-center">
+						<div class="flex h-[88px] items-center justify-center">
 							<LoaderCircle class="size-4 animate-spin text-mid-grey" />
 						</div>
 					{:else if marker.processed}
