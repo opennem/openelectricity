@@ -4,6 +4,12 @@
 
 	const projects = [
 		{
+			title: 'Design System',
+			description:
+				'The visual language of Open Electricity — colours, fuel-tech palette, typography, components and chart styling, rendered live from the code.',
+			link: '/studio/design-system'
+		},
+		{
 			title: 'Explorer',
 			description:
 				'A reimagined, customisable Tracker — generation and price by region, range and fuel-tech grouping, with a live fuel-tech breakdown.',

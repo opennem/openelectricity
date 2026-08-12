@@ -34,3 +34,11 @@ export const getContrastedTextColour = (colour) => {
 	const contrastRatio = contrast(colour, white);
 	return contrastRatio >= minContrastRatio ? white : black;
 };
+
+/**
+ * As `getContrastedTextColour`, but takes a hex string and returns a CSS
+ * colour string — the common case for swatch and pill labels.
+ * @param {string} hex
+ * @returns {string}
+ */
+export const getContrastedTextCss = (hex) => getContrastedTextColour(chroma(hex)).css();
