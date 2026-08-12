@@ -312,7 +312,7 @@
 	/** @type {string} */ kicker,
 	/** @type {string} */ title,
 	/** @type {string} */ srcLabel,
-	/** @type {string} */ srcHref
+	/** @type {string} */ srcHref = ''
 )}
 	<div
 		class="border-t-2 border-dark-grey pt-6 mb-8 flex flex-wrap items-baseline justify-between gap-4"
@@ -323,12 +323,14 @@
 			</p>
 			<h2 class="font-space mb-0">{title}</h2>
 		</div>
-		<a
-			href={srcHref}
-			class="font-mono text-xs text-mid-grey border border-warm-grey bg-light-warm-grey rounded-full px-6 py-2 hover:text-red hover:no-underline"
-		>
-			{srcLabel}
-		</a>
+		{#if srcHref}
+			<a
+				href={srcHref}
+				class="font-mono text-xs text-mid-grey border border-warm-grey bg-light-warm-grey rounded-full px-6 py-2 hover:text-red hover:no-underline"
+			>
+				{srcLabel}
+			</a>
+		{/if}
 	</div>
 {/snippet}
 
@@ -962,12 +964,7 @@
 
 	<!-- Compositions -->
 	<section id="compositions" class="scroll-mt-24">
-		{@render sectionHead(
-			'07 · Compositions',
-			'Summary & social cards',
-			'src/routes/(micro)/record/[id]',
-			`${REPO_TREE}src/routes/(micro)/record/[id]`
-		)}
+		{@render sectionHead('07 · Compositions', 'Summary & social cards', '')}
 		<p class="text-sm text-mid-grey max-w-3xl mb-8">
 			Composed artefacts built from the foundations above — report and social cards that combine
 			stat tiles, fuel-tech bars, records and the network glyph.
