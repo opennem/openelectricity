@@ -32,6 +32,7 @@
 	import SwatchGrid from './_components/SwatchGrid.svelte';
 	import DemoChart from './_components/DemoChart.svelte';
 	import WeeklySummaryCard from './_components/WeeklySummaryCard.svelte';
+	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import ResizeStage from './_components/ResizeStage.svelte';
 
 	// Shared specimen-stage surface — referenced by every component stage below.
@@ -96,10 +97,7 @@
 	];
 	const accents = [
 		{ name: 'red', hex: '#C74523', note: 'primary accent — links, focus' },
-		{ name: 'dark-red', hex: '#963F29', note: 'link hover, brush handles' },
-		{ name: 'success-green', hex: '#70D26E', note: 'success' },
-		{ name: 'error-red', hex: '#FA6060', note: 'errors' },
-		{ name: 'alert-yellow', hex: '#EB1F70', note: 'alerts (actually magenta)' }
+		{ name: 'dark-red', hex: '#963F29', note: 'link hover, brush handles' }
 	];
 
 	const regions = regionOptions.map((region) => ({
@@ -363,7 +361,7 @@
 		<h3 class="subhead-primary mb-4">Neutrals — the warm ramp</h3>
 		<SwatchGrid items={neutrals} />
 
-		<h3 class="subhead-primary mt-12 mb-4">Accent &amp; semantic</h3>
+		<h3 class="subhead-primary mt-12 mb-4">Accent</h3>
 		<SwatchGrid items={accents} />
 
 		<h3 class="subhead-primary mt-12 mb-4">Categorical &amp; regions</h3>
@@ -989,10 +987,133 @@
 				<WeeklySummaryCard network="WEM" />
 			</ResizeStage>
 		</div>
-		<p class="text-xs text-mid-grey mt-2 mb-10 text-center">
+		<p class="text-xs text-mid-grey mt-2 text-center">
 			Drag either side handle to test a card across widths — each card resizes independently,
 			staying centred.
 		</p>
+		<details class="max-w-4xl border border-warm-grey rounded-lg mt-6">
+			<summary
+				class="cursor-pointer px-6 py-4 font-space uppercase text-xs text-mid-grey select-none"
+				>Build spec — weekly summary card</summary
+			>
+			<ul class="text-sm px-10 pb-6 flex flex-col gap-3 list-disc list-outside">
+				<li>
+					<strong>Card</strong>: <code>bg-light-warm-grey rounded-xl p-10</code>, children stacked
+					with <code>flex flex-col gap-8</code> (20px gaps on the 10px root).
+				</li>
+				<li>
+					<strong>Header</strong>: <code>flex items-start justify-between</code> — title
+					<code>text-xl leading-xl font-semibold</code> with the date
+					<code>text-sm text-mid-grey</code> beneath; the Australia glyph is a fixed
+					<code>w-24 shrink-0</code> on the right.
+				</li>
+				<li>
+					<strong>Stat tiles</strong>: <code>grid grid-cols-3 gap-4</code>; each tile
+					<code>bg-white border border-warm-grey rounded-lg px-6 py-5</code>. Label
+					<code>text-sm</code>; value <code>font-mono font-medium text-lg tabular-nums</code> with
+					the unit as a smaller <code>text-xs text-mid-grey</code> suffix; the trend line sits flush
+					under the value (no top margin), <code>font-mono text-xs</code>, coloured
+					<code>text-success-green</code> ▲ up / <code>text-error-red</code> ▼ down, triangle
+					separated from the number by <code>ml-2</code>.
+				</li>
+				<li>
+					<strong>Fuel-tech table</strong>:
+					<code>bg-white rounded-lg border border-warm-grey divide-y divide-warm-grey</code>; each
+					row is <code>flex items-stretch h-14</code> (35px tall).
+				</li>
+				<li>
+					<strong>Bar</strong>: absolutely positioned inside the row's flexible first cell (<code
+						>absolute inset-y-0 left-0</code
+					>), full row height, anchored to the left edge.
+					<strong>Bar width literally equals the row's share percentage</strong>
+					(<code>width: {'{share}'}%</code>) — 57.4% share renders a 57.4%-wide bar; it is NOT
+					scaled relative to the largest row. A 100% bar would fill the whole flexible cell, which
+					ends just right of the label.
+				</li>
+				<li>
+					<strong>Label</strong>: right-aligned in the same flexible cell, layered over the bar (<code
+						>relative z-10</code
+					>), <code>text-sm font-medium whitespace-nowrap</code> — it never truncates; a
+					<code>bg-white/70 rounded-sm px-1</code> pill keeps it legible where the bar runs beneath. The
+					10px colour dot sits in its own cell after the label, outside the bar's reach.
+				</li>
+				<li>
+					<strong>Numeric columns</strong>: fixed widths (energy <code>w-36</code>, share
+					<code>w-24</code>, trend <code>w-32</code>), all right-aligned
+					<code>font-mono text-sm tabular-nums</code> so digits line up; energy carries a
+					<code>text-xs text-mid-grey</code> GWh suffix; trend colours/triangles follow the tile rule.
+				</li>
+				<li>
+					<strong>Australia glyph</strong>: viewBox <code>0 0 443 416</code> (the state-map
+					coordinate space), simplified state paths. Member states fill
+					<code>#353535</code>, non-members <code>#C6C6C6</code>; NT is always light (it belongs to
+					neither market); strokes are <code>#FAF9F6</code> (the card background) at width 6 with
+					<code>stroke-linejoin: round</code>, so states read as separate pieces.
+				</li>
+				<li>
+					<strong>Footer</strong>: <code>flex items-center justify-between</code> with an extra
+					<code>mt-6</code>; source line <code>text-xs text-mid-grey</code>; wordmark image
+					<code>h-8</code> (20px).
+				</li>
+			</ul>
+		</details>
+
+		<hr class="border-0 border-t border-warm-grey my-20" />
+
+		<h3 class="subhead-primary mb-4">Record card</h3>
+		<p class="text-sm text-mid-grey max-w-3xl mb-6">
+			The shared <code>RecordCard</code> — the pinned-record card rendered on the homepage and
+			/records, here with fixed specimen values.
+			<a href="{REPO}src/lib/components/records/RecordCard.svelte"
+				>$lib/components/records/RecordCard.svelte</a
+			>
+		</p>
+		<div class="max-w-[220px]">
+			<RecordCard
+				href="/records/au.nem.battery_discharging.power.interval.high"
+				fuelTech="battery_discharging"
+				regionLabel="NEM"
+				description="Highest ever battery (discharging) generation"
+				value="1,270"
+				unit="MW"
+				timeLabel="2 hours ago"
+			/>
+		</div>
+
+		<details class="max-w-4xl border border-warm-grey rounded-lg mt-6">
+			<summary
+				class="cursor-pointer px-6 py-4 font-space uppercase text-xs text-mid-grey select-none"
+				>Build spec — record card</summary
+			>
+			<ul class="text-sm px-10 pb-6 flex flex-col gap-3 list-disc list-outside">
+				<li>
+					<strong>Frame</strong>: constrained to <code>max-w-[220px]</code>;
+					<code>min-h-[200px] p-6 rounded-xl bg-white border border-mid-warm-grey</code>, border
+					darkening to <code>dark-grey</code> on hover. The whole card is one link with no underline.
+				</li>
+				<li>
+					<strong>Vertical layout</strong>: <code>grid grid-cols-1 gap-4 content-between</code> — the
+					description block and the value row are pushed to opposite ends, so the value row always pins
+					to the bottom regardless of description length.
+				</li>
+				<li>
+					<strong>Top row</strong>: <code>flex items-center justify-between</code> — fuel-tech chip
+					left (<code>rounded-full p-3</code>, background = the fueltech colour, glyph stroked
+					white, or black on light backgrounds like solar), region label
+					<code>text-sm text-mid-grey</code> right.
+				</li>
+				<li>
+					<strong>Description</strong>: <code>text-base leading-base</code> (16/20px) with
+					<code>my-8</code> above and below.
+				</li>
+				<li>
+					<strong>Value row</strong>: separated by <code>border-t border-mid-warm-grey pt-6</code>;
+					value <code>font-mono</code> with the unit in <code>&lt;small&gt;</code>
+					<code>text-mid-grey</code>; relative time <code>text-xxs text-mid-grey</code>, right end
+					on large screens, stacked beneath on small.
+				</li>
+			</ul>
+		</details>
 
 		<hr class="border-0 border-t border-warm-grey my-20" />
 

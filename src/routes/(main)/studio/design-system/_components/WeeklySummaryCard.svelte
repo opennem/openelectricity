@@ -8,7 +8,6 @@
 
 	import { fuelTechColourMap } from '$lib/theme/openelectricity.js';
 	import { getNumberFormat } from '$lib/utils/formatters';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -34,25 +33,22 @@
 	];
 
 	const rows = [
-		{ code: 'solar', label: 'Solar', energy: 725, share: '20.2%', change: '22%', up: false },
-		{ code: 'wind', label: 'Wind', energy: 320, share: '8.9%', change: '42%', up: false },
-		{ code: 'hydro', label: 'Hydro', energy: 259, share: '7.2%', change: '42%', up: true },
+		{ code: 'solar', label: 'Solar', energy: 725, share: 20.2, change: '22%', up: false },
+		{ code: 'wind', label: 'Wind', energy: 320, share: 8.9, change: '42%', up: false },
+		{ code: 'hydro', label: 'Hydro', energy: 259, share: 7.2, change: '42%', up: true },
 		{
 			code: 'battery_discharging',
 			label: 'Battery Discharge',
 			energy: 53,
-			share: '1.5%',
+			share: 1.5,
 			change: '2%',
 			up: false
 		},
-		{ code: 'gas', label: 'Gas', energy: 165, share: '4.6%', change: '73%', up: true },
-		{ code: 'coal', label: 'Coal', energy: 2060, share: '57.4%', change: '12%', up: true }
+		{ code: 'gas', label: 'Gas', energy: 165, share: 4.6, change: '73%', up: true },
+		{ code: 'coal', label: 'Coal', energy: 2060, share: 57.4, change: '12%', up: true }
 	];
 
 	const energyFormat = getNumberFormat(0);
-	const maxEnergy = Math.max(...rows.map((row) => row.energy));
-	/** @param {number} energy */
-	const barWidth = (energy) => `${(energy / maxEnergy) * 100}%`;
 	/** @param {string} code */
 	const ftColour = (code) => /** @type {Record<string, string>} */ (fuelTechColourMap)[code];
 </script>
@@ -121,16 +117,22 @@
 	>
 		{#each rows as row (row.code)}
 			<div class="flex items-stretch h-14">
-				<div class="w-32 flex justify-start items-stretch shrink-0">
-					<div style:width={barWidth(row.energy)} style:background-color={ftColour(row.code)}></div>
+				<!-- The bar underlays the label area, so a 100% bar spans the full
+				     stretch up to the numbers boundary; the right-aligned label rides
+				     over it with a translucent bg to stay legible. -->
+				<div class="flex-1 relative min-w-0">
+					<div
+						class="absolute inset-y-0 left-0"
+						style:width="{row.share}%"
+						style:background-color={ftColour(row.code)}
+					></div>
+					<div class="relative z-10 h-full flex items-center justify-end pl-6 pr-2">
+						<span class="text-sm font-medium whitespace-nowrap bg-white/70 rounded-sm px-1"
+							>{row.label}</span
+						>
+					</div>
 				</div>
-				<!-- z-10 + visible overflow: at narrow widths the right-aligned label
-				     rides left over the colour bar instead of truncating; the
-				     translucent bg keeps it legible. -->
-				<div class="flex-1 flex items-center justify-end gap-4 px-6 min-w-0 relative z-10">
-					<span class="text-sm font-medium whitespace-nowrap bg-white/70 rounded-sm px-1"
-						>{row.label}</span
-					>
+				<div class="flex items-center pl-2 shrink-0">
 					<span
 						class="w-2.5 h-2.5 rounded-full shrink-0"
 						style:background-color={ftColour(row.code)}
@@ -143,7 +145,7 @@
 					>
 				</div>
 				<div class="w-24 flex items-center justify-end shrink-0">
-					<span class="font-mono text-sm tabular-nums">{row.share}</span>
+					<span class="font-mono text-sm tabular-nums">{row.share}%</span>
 				</div>
 				<div class="w-32 flex items-center justify-end pr-6 shrink-0">
 					<span
@@ -156,36 +158,6 @@
 				</div>
 			</div>
 		{/each}
-	</div>
-
-	<!-- Record card — the homepage PinnedRecords design, as a static specimen -->
-	<div class="max-w-[220px]">
-		<p class="font-space uppercase text-xxs text-mid-grey m-0 mb-3">Record</p>
-		<a
-			href="/records/au.nem.battery_discharging.power.interval.high"
-			class="text-base text-black bg-white border border-mid-warm-grey hover:border-dark-grey no-underline! rounded-xl p-6 min-h-[200px] grid grid-cols-1 gap-4 content-between transition-all"
-		>
-			<div>
-				<div class="flex items-center gap-2 justify-between">
-					<span
-						class="rounded-full p-3 inline-block text-white"
-						style:background-color={ftColour('battery_discharging')}
-					>
-						<FuelTechBadge fuelTech="battery_discharging" iconOnly iconSize={12} />
-					</span>
-					<div class="text-sm text-mid-grey">{inNem ? 'NEM' : 'WA'}</div>
-				</div>
-				<div class="text-base leading-base my-8">Highest ever battery (discharging) generation</div>
-			</div>
-			<div
-				class="flex flex-col items-start lg:flex-row lg:items-center lg:justify-between border-t border-mid-warm-grey pt-6"
-			>
-				<div class="font-mono text-base tabular-nums">
-					1,270 <small class="text-mid-grey">MW</small>
-				</div>
-				<time class="text-xxs text-mid-grey">2 hours ago</time>
-			</div>
-		</a>
 	</div>
 
 	<!-- Footer -->

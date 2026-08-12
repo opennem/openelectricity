@@ -5,6 +5,7 @@
 	import getRelativeTime from '../page-data-options/relative-time';
 	import recordDescription from '../page-data-options/record-description';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import dateTimeQuery from '../page-data-options/date-time-query';
 	import {
 		PINNED_CONFIG as pinned,
@@ -39,9 +40,8 @@
 	/**
 	 * Format a date
 	 * @param {string} interval
-	 * @param {string} period
 	 */
-	function formatDate(interval, period) {
+	function formatDate(interval) {
 		const date = parseISO(interval);
 		return getRelativeTime(date);
 	}
@@ -102,50 +102,22 @@
 			{#if !showSkeleton}
 				{#if recordData}
 					{@const path = `/records/${encodeURIComponent(recordData.recordId)}?${dateTimeQuery(recordData.interval)}&focus=${recordData.time}`}
-					<a
+					<RecordCard
 						href={path}
-						class="text-black bg-white border border-mid-warm-grey hover:border-dark-grey no-underline! rounded-xl p-6 h-full min-h-[200px] grid grid-cols-1 gap-4 content-between transition-all"
-					>
-						<div>
-							<div class="flex items-center gap-2 justify-between">
-								<span
-									class="bg-{fuelTech} rounded-full p-3 inline-block"
-									class:text-black={fuelTech === 'solar'}
-									class:text-white={fuelTech !== 'solar'}
-								>
-									<FuelTechBadge {fuelTech} iconOnly iconSize={12} />
-								</span>
-
-								{#if showRegionLabel}
-									<div class="text-sm text-mid-grey">
-										{getRegionLabel(recordData.networkId, recordData.networkRegion)}
-									</div>
-								{/if}
-							</div>
-
-							<div class="my-8 leading-base">
-								{recordDescription(
-									recordData.period,
-									recordData.aggregate,
-									recordData.metric,
-									fuelTech
-								)}
-							</div>
-						</div>
-
-						<div
-							class="flex flex-col items-start lg:flex-row lg:items-center lg:justify-between border-t border-mid-warm-grey pt-6"
-						>
-							<div class="font-mono">
-								{formatRecordValue(recordData.value, /** @type {FuelTechCode} */ (fuelTech))}
-								<small class="text-mid-grey">{recordData.unit}</small>
-							</div>
-
-							<time class="text-xxs text-mid-grey">
-								{formatDate(recordData.interval, recordData.period)}
-							</time>
-						</div>
-					</a>
+						{fuelTech}
+						regionLabel={showRegionLabel
+							? getRegionLabel(recordData.networkId, recordData.networkRegion)
+							: ''}
+						description={recordDescription(
+							recordData.period,
+							recordData.aggregate,
+							recordData.metric,
+							fuelTech
+						)}
+						value={formatRecordValue(recordData.value, /** @type {FuelTechCode} */ (fuelTech))}
+						unit={recordData.unit}
+						timeLabel={formatDate(recordData.interval)}
+					/>
 				{:else}
 					<div class="text-black block border border-mid-warm-grey rounded-xl h-full p-6">
 						<span
