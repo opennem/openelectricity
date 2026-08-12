@@ -5,6 +5,7 @@
 
 User-agent: *
 Allow: /
+Allow: /studio/design-system
 Disallow: /api/
 Disallow: /studio
 Disallow: /article-drafts
