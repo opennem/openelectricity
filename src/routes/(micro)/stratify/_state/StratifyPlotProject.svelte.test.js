@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import StratifyPlotProject from './StratifyPlotProject.svelte.js';
+import { examples } from '../_utils/examples.js';
 
 /**
  * Build a fresh project. The constructor schedules $effect calls; in a
@@ -11,6 +12,25 @@ import StratifyPlotProject from './StratifyPlotProject.svelte.js';
 function createProject() {
 	return new StratifyPlotProject();
 }
+
+describe('StratifyPlotProject — tooltip date format', () => {
+	it('defaults to date and round-trips date plus time', () => {
+		const project = createProject();
+		expect(project.tooltipDateFormat).toBe('date');
+
+		project.tooltipDateFormat = 'date-time';
+		const restored = createProject();
+		restored.loadFromSnapshot(project.toJSON());
+		expect(restored.tooltipDateFormat).toBe('date-time');
+	});
+
+	it('reset restores date-only formatting', () => {
+		const project = createProject();
+		project.tooltipDateFormat = 'time';
+		project.reset();
+		expect(project.tooltipDateFormat).toBe('date');
+	});
+});
 
 describe('StratifyPlotProject — showLegend', () => {
 	it('defaults to true on a fresh project', () => {
@@ -200,5 +220,182 @@ describe('StratifyPlotProject — map fields', () => {
 		const project = createProject();
 		project.csvText = 'name,lat,lng,fueltech\nBayswater,-32.4,150.9,coal';
 		expect(project.mapColourGroupNames).toEqual([]);
+	});
+});
+
+describe('StratifyPlotProject — line range fields', () => {
+	it('uses defaults and preserves explicit zero opacity through JSON', () => {
+		const project = createProject();
+		expect(project.lineRangeMinColumn).toBeNull();
+		expect(project.lineRangeMaxColumn).toBeNull();
+		expect(project.lineRangeOpacity).toBe(0.2);
+
+		project.lineRangeMinColumn = 'minimum';
+		project.lineRangeMaxColumn = 'maximum';
+		project.lineRangeOpacity = 0;
+		const restored = createProject();
+		restored.loadFromSnapshot(project.toJSON());
+
+		expect(restored.lineRangeMinColumn).toBe('minimum');
+		expect(restored.lineRangeMaxColumn).toBe('maximum');
+		expect(restored.lineRangeOpacity).toBe(0);
+	});
+
+	it('excludes range columns from line series while preserving their row values', () => {
+		const project = createProject();
+		project.csvText = 'date,mean,minimum,maximum\n2025-01-01,20,10,30\n2025-01-02,25,12,36';
+		project.lineRangeMinColumn = 'minimum';
+		project.lineRangeMaxColumn = 'maximum';
+
+		expect(project.orderedSeriesNames).toEqual(['mean']);
+		expect(project.visibleData[0]).toMatchObject({ mean: 20, minimum: 10, maximum: 30 });
+	});
+
+	it('keeps a single partially configured bound available as a line series', () => {
+		const project = createProject();
+		project.csvText = 'date,mean,minimum,maximum\n2025-01-01,20,10,30';
+		project.lineRangeMinColumn = 'minimum';
+
+		expect(project.orderedSeriesNames).toEqual(['mean', 'minimum', 'maximum']);
+	});
+
+	it('does not hide mapped range columns from non-line chart types', () => {
+		const project = createProject();
+		project.csvText = 'category,mean,minimum,maximum\nA,20,10,30';
+		project.lineRangeMinColumn = 'minimum';
+		project.lineRangeMaxColumn = 'maximum';
+		project.chartType = 'column';
+
+		expect(project.orderedSeriesNames).toEqual(['mean', 'minimum', 'maximum']);
+	});
+
+	it('clears missing, non-numeric and duplicate range mappings', () => {
+		const project = createProject();
+		project.csvText = 'date,mean,minimum,label\n2025-01-01,20,10,low';
+		project.lineRangeMinColumn = 'minimum';
+		project.lineRangeMaxColumn = 'label';
+		project.validateLineRangeColumns();
+		expect(project.lineRangeMinColumn).toBe('minimum');
+		expect(project.lineRangeMaxColumn).toBeNull();
+
+		project.lineRangeMaxColumn = 'minimum';
+		project.validateLineRangeColumns();
+		expect(project.lineRangeMaxColumn).toBeNull();
+
+		project.csvText = 'date,mean\n2025-01-01,20';
+		project.validateLineRangeColumns();
+		expect(project.lineRangeMinColumn).toBeNull();
+	});
+
+	it('reset restores line range defaults', () => {
+		const project = createProject();
+		project.lineRangeMinColumn = 'minimum';
+		project.lineRangeMaxColumn = 'maximum';
+		project.lineRangeOpacity = 0.8;
+		project.reset();
+
+		expect(project.lineRangeMinColumn).toBeNull();
+		expect(project.lineRangeMaxColumn).toBeNull();
+		expect(project.lineRangeOpacity).toBe(0.2);
+	});
+});
+
+describe('StratifyPlotProject — scatter fields', () => {
+	it('uses the documented defaults', () => {
+		const project = createProject();
+		expect(project.scatterSizeColumn).toBeNull();
+		expect(project.scatterPointRadius).toBe(4);
+		expect(project.scatterMinRadius).toBe(3);
+		expect(project.scatterMaxRadius).toBe(18);
+		expect(project.scatterPointOpacity).toBe(0.7);
+	});
+
+	it('round-trips through JSON and preserves explicit zero values', () => {
+		const project = createProject();
+		project.chartType = 'scatter';
+		project.scatterSizeColumn = 'demand';
+		project.scatterPointRadius = 0;
+		project.scatterMinRadius = 0;
+		project.scatterMaxRadius = 22;
+		project.scatterPointOpacity = 0;
+
+		const restored = createProject();
+		restored.loadFromSnapshot(project.toJSON());
+
+		expect(restored.chartType).toBe('scatter');
+		expect(restored.scatterSizeColumn).toBe('demand');
+		expect(restored.scatterPointRadius).toBe(0);
+		expect(restored.scatterMinRadius).toBe(0);
+		expect(restored.scatterMaxRadius).toBe(22);
+		expect(restored.scatterPointOpacity).toBe(0);
+	});
+
+	it('reset restores scatter defaults', () => {
+		const project = createProject();
+		project.scatterSizeColumn = 'demand';
+		project.scatterPointRadius = 9;
+		project.scatterMinRadius = 5;
+		project.scatterMaxRadius = 30;
+		project.scatterPointOpacity = 0.2;
+		project.reset();
+
+		expect(project.scatterSizeColumn).toBeNull();
+		expect(project.scatterPointRadius).toBe(4);
+		expect(project.scatterMinRadius).toBe(3);
+		expect(project.scatterMaxRadius).toBe(18);
+		expect(project.scatterPointOpacity).toBe(0.7);
+	});
+
+	it('excludes the selected size column from rendered Y series', () => {
+		const project = createProject();
+		project.csvText = 'x,nsw,vic,nem\n14,6900,4700,21100\n16,7100,4900,21800';
+		project.displayMode = 'linear';
+		project.chartType = 'scatter';
+		project.scatterSizeColumn = 'nem';
+
+		expect(project.orderedSeriesNames).toEqual(['nsw', 'vic']);
+		expect(project.visibleSeriesNames).toEqual(['nsw', 'vic']);
+		expect(project.visibleData[0].nem).toBe(21100);
+	});
+
+	it('restores the size column as a Y series outside scatter mode', () => {
+		const project = createProject();
+		project.csvText = 'x,nsw,nem\n14,6900,21100';
+		project.displayMode = 'linear';
+		project.scatterSizeColumn = 'nem';
+		project.chartType = 'line';
+
+		expect(project.orderedSeriesNames).toEqual(['nsw', 'nem']);
+	});
+
+	it('clears the size mapping when its numeric column disappears', () => {
+		const project = createProject();
+		project.csvText = 'x,y,size\n1,2,10\n2,3,20';
+		project.displayMode = 'linear';
+		project.scatterSizeColumn = 'size';
+		project.validateScatterSizeColumn();
+		expect(project.scatterSizeColumn).toBe('size');
+
+		project.csvText = 'x,y\n1,2\n2,3';
+		project.validateScatterSizeColumn();
+		expect(project.scatterSizeColumn).toBeNull();
+	});
+
+	it('loads the built-in bubble scatter example with its configured mapping', () => {
+		const example = examples.find((item) => item.chartType === 'scatter');
+		expect(example).toBeDefined();
+		const project = createProject();
+		project.loadExample(/** @type {any} */ (example));
+
+		expect(project.chartType).toBe('scatter');
+		expect(project.displayMode).toBe('linear');
+		expect(project.scatterSizeColumn).toBe('nem_demand_mw');
+		expect(project.visibleSeriesNames).toEqual(['nsw_demand_mw', 'vic_demand_mw']);
+	});
+
+	it('keeps legacy dot snapshot migration unchanged', () => {
+		const project = createProject();
+		project.loadFromSnapshot(/** @type {any} */ ({ chartType: 'dot' }));
+		expect(project.chartType).toBe('line');
 	});
 });

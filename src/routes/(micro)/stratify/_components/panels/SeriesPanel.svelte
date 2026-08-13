@@ -3,6 +3,7 @@
 	import { flip } from 'svelte/animate';
 	import SeriesConfig from '../SeriesConfig.svelte';
 	import SectionHeader from '../SectionHeader.svelte';
+	import ControlInput, { CONTROL_INPUT_CLASS } from '../ControlInput.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
 	import { WATERFALL_TYPES } from '$lib/stratify/chart-types.js';
 
@@ -12,6 +13,7 @@
 	// Waterfall charts render a fixed tooltip (the bar/column), so the
 	// per-column tooltip picker below doesn't apply.
 	let isWaterfall = $derived(WATERFALL_TYPES.has(project.chartType));
+	let isTimeSeries = $derived(!project.isCategory && !project.isLinear);
 
 	// Single/sum waterfalls let the user choose semantic vs per-row colouring.
 	let isWaterfallColourable = $derived(
@@ -33,7 +35,7 @@
 		tooltipDndItems = ordered.map((col) => ({
 			id: col.key,
 			key: col.key,
-			label: col === all[0] && !project.isCategory ? 'Date' : col.label
+			label: col.label
 		}));
 	});
 
@@ -89,6 +91,25 @@
 
 {#if project.hasData && !isWaterfall}
 	<SectionHeader label="Tooltip">
+		{#if isTimeSeries}
+			<div class="mb-3">
+				<ControlInput label="Date format">
+					<select
+						value={project.tooltipDateFormat}
+						onchange={(e) => {
+							project.tooltipDateFormat = /** @type {'date' | 'time' | 'date-time'} */ (
+								e.currentTarget.value
+							);
+						}}
+						class={`${CONTROL_INPUT_CLASS} flex-1`}
+					>
+						<option value="date">Date</option>
+						<option value="time">Time (24-hour)</option>
+						<option value="date-time">Date + time (24-hour)</option>
+					</select>
+				</ControlInput>
+			</div>
+		{/if}
 		<div
 			class="flex flex-col gap-1"
 			use:dndzone={{

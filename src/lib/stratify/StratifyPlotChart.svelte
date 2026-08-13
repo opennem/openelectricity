@@ -1,10 +1,11 @@
 <script>
 	import PlotChart from '$lib/components/charts/plot/PlotChart.svelte';
-	import { ruleX, ruleY, tip, pointerX, pointerY, axisY } from '@observablehq/plot';
+	import { ruleX, ruleY, tip, pointer, pointerX, pointerY, axisY } from '@observablehq/plot';
 	import { scaleLinear } from 'd3-scale';
 	import {
 		createStackedAreaOptions,
 		createLineOptions,
+		createScatterOptions,
 		createStackedBarOptions,
 		createGroupedBarOptions,
 		createHorizontalBarOptions,
@@ -14,6 +15,7 @@
 		createMixedMarkOptions,
 		buildTooltipChannels,
 		makeValueFormatter,
+		buildScatterData,
 		toLong,
 		buildFacetGrid,
 		FACET_X_FIELD,
@@ -23,19 +25,17 @@
 	import { applyPlotOverrides } from './plot-overrides.js';
 	import { uniqueColumnValues } from './chart-data.js';
 	import {
+		createAustralianDateAxisFormatter,
+		createAustralianDateAxisTicks,
+		formatTooltipDate
+	} from './tooltip-date.js';
+	import {
 		HORIZONTAL_TYPES,
 		COLUMN_TYPES,
 		TIME_SERIES_TYPES,
 		GROUPED_TYPES,
 		WATERFALL_TYPES
 	} from '$lib/stratify/chart-types.js';
-
-	const dateFmt = new Intl.DateTimeFormat('en-AU', {
-		day: 'numeric',
-		month: 'short',
-		year: 'numeric',
-		timeZone: 'UTC'
-	});
 
 	// Hide the synthetic facet channels (data fields and Plot's scale names)
 	// from every tooltip — Plot inherits both on tip marks in faceted charts.
@@ -50,6 +50,7 @@
 	const CONFIG_MAP = {
 		area: createStackedAreaOptions,
 		line: createLineOptions,
+		scatter: createScatterOptions,
 		column: createStackedBarOptions,
 		'column-stacked': createStackedBarOptions,
 		'column-grouped': createGroupedBarOptions,
@@ -95,12 +96,21 @@
 	 *   y2Min?: number | null,
 	 *   y2Max?: number | null,
 	 *   tooltipColumns?: string[],
+	 *   tooltipDateFormat?: 'date' | 'time' | 'date-time',
 	 *   dateColumnKey?: string,
 	 *   dateColumnLabel?: string,
 	 *   xDomain?: string[],
 	 *   yDomain?: string[],
 	 *   showXTickLabels?: boolean,
 	 *   showLegend?: boolean,
+	 *   lineRangeMinColumn?: string | null,
+	 *   lineRangeMaxColumn?: string | null,
+	 *   lineRangeOpacity?: number,
+	 *   scatterSizeColumn?: string | null,
+	 *   scatterPointRadius?: number,
+	 *   scatterMinRadius?: number,
+	 *   scatterMaxRadius?: number,
+	 *   scatterPointOpacity?: number,
 	 *   facetColumn?: string | null,
 	 *   facetPanelsPerRow?: number,
 	 *   xTicks?: number,
@@ -146,12 +156,21 @@
 		y2Min = null,
 		y2Max = null,
 		tooltipColumns = [],
+		tooltipDateFormat = 'date',
 		dateColumnKey = '',
 		dateColumnLabel = '',
 		xDomain = undefined,
 		yDomain = undefined,
 		showXTickLabels = true,
 		showLegend = true,
+		lineRangeMinColumn = null,
+		lineRangeMaxColumn = null,
+		lineRangeOpacity = 0.2,
+		scatterSizeColumn = null,
+		scatterPointRadius = 4,
+		scatterMinRadius = 3,
+		scatterMaxRadius = 18,
+		scatterPointOpacity = 0.7,
 		facetColumn = null,
 		facetPanelsPerRow = 0,
 		xTicks = 0,
@@ -171,6 +190,14 @@
 			.filter((name) => seriesNames.includes(name))
 	);
 	const hasRightAxis = $derived(rightAxisSeries.length > 0);
+	const lineRangeColumns = $derived(
+		chartType === 'line' &&
+			lineRangeMinColumn &&
+			lineRangeMaxColumn &&
+			lineRangeMinColumn !== lineRangeMaxColumn
+			? [lineRangeMinColumn, lineRangeMaxColumn]
+			: []
+	);
 
 	// --- Facet grid layout (small multiples wrap into 2-D grid) ---
 	const MIN_PANEL_WIDTH = 250;
@@ -204,6 +231,7 @@
 
 	let plotOptions = $derived.by(() => {
 		if (!data.length || !seriesNames.length) return null;
+		const isTimeSeriesData = 'date' in data[0];
 
 		// --- Dual Y-axis: rescale right-axis series data ---
 		let chartData = data;
@@ -213,6 +241,7 @@
 		if (hasRightAxis) {
 			const leftSeries = seriesNames.filter((n) => !rightAxisSeries.includes(n));
 			const rightSet = new Set(rightAxisSeries);
+			const rangeOnRight = rightSet.has(seriesNames[0]);
 
 			// Single pass: compute domains for both axes
 			let leftMin = Infinity,
@@ -221,10 +250,10 @@
 				rightMax = -Infinity;
 
 			for (const row of data) {
-				for (const name of seriesNames) {
+				for (const name of [...seriesNames, ...lineRangeColumns]) {
 					const v = row[name];
 					if (v == null || !isFinite(v)) continue;
-					if (rightSet.has(name)) {
+					if (rightSet.has(name) || (lineRangeColumns.includes(name) && rangeOnRight)) {
 						if (v < rightMin) rightMin = v;
 						if (v > rightMax) rightMax = v;
 					} else {
@@ -252,6 +281,11 @@
 				const newRow = { ...row };
 				for (const name of rightAxisSeries) {
 					if (newRow[name] != null) newRow[name] = scale(newRow[name]);
+				}
+				if (rangeOnRight) {
+					for (const name of lineRangeColumns) {
+						if (newRow[name] != null) newRow[name] = scale(newRow[name]);
+					}
 				}
 				return newRow;
 			});
@@ -292,6 +326,14 @@
 			...mergedOptions,
 			seriesLineStyles,
 			legend: showLegend,
+			lineRangeMinColumn: lineRangeColumns[0] ?? null,
+			lineRangeMaxColumn: lineRangeColumns[1] ?? null,
+			lineRangeOpacity,
+			scatterSizeColumn,
+			scatterPointRadius,
+			scatterMinRadius,
+			scatterMaxRadius,
+			scatterPointOpacity,
 			facetColumn,
 			facetGrid,
 			waterfallMode,
@@ -368,7 +410,10 @@
 				tickFormat: formatCompact
 			};
 			if (yMinMax) {
-				const leftSeries = seriesNames.filter((n) => !rightAxisSeries.includes(n));
+				const leftSeries = [
+					...seriesNames.filter((n) => !rightAxisSeries.includes(n)),
+					...lineRangeColumns
+				];
 				let min = Infinity,
 					max = -Infinity;
 				for (const row of chartData) {
@@ -404,7 +449,7 @@
 				let min = Infinity,
 					max = -Infinity;
 				for (const row of chartData) {
-					for (const name of seriesNames) {
+					for (const name of [...seriesNames, ...lineRangeColumns]) {
 						const v = row[name];
 						if (v != null && isFinite(v)) {
 							if (v < min) min = v;
@@ -438,7 +483,7 @@
 					let dMin = Infinity,
 						dMax = -Infinity;
 					for (const row of chartData) {
-						for (const name of seriesNames) {
+						for (const name of [...seriesNames, ...lineRangeColumns]) {
 							const v = row[name];
 							if (v != null && isFinite(v)) {
 								if (v < dMin) dMin = v;
@@ -474,8 +519,40 @@
 			}
 		}
 
+		// Observable Plot defaults temporal ticks to U.S. English. Apply one
+		// explicit en-AU policy to every scale that can carry the CSV date axis.
+		if (isTimeSeriesData) {
+			const dateTickFormat = createAustralianDateAxisFormatter(data);
+			const dateTicks = createAustralianDateAxisTicks(data, xTicks || 8);
+			const dateScaleKey =
+				chartType === 'waterfall-horizontal' || chartType === 'bar' || chartType === 'bar-stacked'
+					? 'y'
+					: chartType === 'bar-grouped'
+						? 'fy'
+						: chartType === 'column-grouped'
+							? facetColumn
+								? 'fy'
+								: 'fx'
+							: 'x';
+			const scale = opts[dateScaleKey] || {};
+			const existingTickFormat = scale.tickFormat;
+			const nonDateTicks = Array.isArray(scale.domain)
+				? scale.domain.filter((/** @type {any} */ value) => !(value instanceof Date))
+				: [];
+			opts[dateScaleKey] = {
+				...scale,
+				ticks: [...dateTicks, ...nonDateTicks],
+				tickFormat: (/** @type {any} */ value) =>
+					value instanceof Date
+						? dateTickFormat(value)
+						: typeof existingTickFormat === 'function'
+							? existingTickFormat(value)
+							: String(value)
+			};
+		}
+
 		// Apply x-axis tick count if configured (before showXTickLabels so it can override)
-		if (xTicks > 0) {
+		if (xTicks > 0 && !isTimeSeriesData) {
 			const xScale = opts.x || {};
 			if (xScale.type === 'band' || xScale.type === 'point') {
 				const domain =
@@ -521,7 +598,7 @@
 		}
 
 		// Add single tooltip mark with filtered channels
-		const isTimeSeries = data.length > 0 && 'date' in data[0];
+		const isTimeSeries = isTimeSeriesData;
 		const isLinear = data.length > 0 && 'linear' in data[0];
 
 		// Formats displayed series values in every tooltip (waterfall supplies its own).
@@ -532,10 +609,66 @@
 			colourSeries && Object.keys(dataColumnLabels).length > 0
 				? dataColumnLabels
 				: Object.fromEntries(seriesNames.map((n) => [n, seriesLabels[n] || n]));
+		if (chartType === 'line') {
+			for (const key of lineRangeColumns) {
+				tooltipLabels[key] = dataColumnLabels[key] || key;
+			}
+		}
 
 		if (isWaterfall) {
 			// createWaterfallOptions supplies its own tooltip (Category / Change / Total)
 			// bound to the precomputed cumulative bars, so skip the generic channels.
+		} else if (chartType === 'scatter') {
+			const xKey = isTimeSeries ? 'date' : isLinear ? 'linear' : 'category';
+			const scatterPoints = buildScatterData(chartData, seriesNames, xKey, {
+				sizeColumn: scatterSizeColumn,
+				pointRadius: scatterPointRadius,
+				minRadius: scatterMinRadius,
+				maxRadius: scatterMaxRadius,
+				facetColumn,
+				facetGrid
+			});
+			for (const point of scatterPoints) {
+				point.displayValue = data[point.rowIndex]?.[point.series];
+			}
+			const xColumnLabel = dateColumnLabel || (isTimeSeries ? 'Date' : isLinear ? 'X' : 'Category');
+			const sizeLabel = scatterSizeColumn
+				? dataColumnLabels[scatterSizeColumn] || scatterSizeColumn
+				: null;
+			const scatterChannels = {
+				Series: {
+					value: (/** @type {any} */ d) => seriesLabels[d.series] || d.series
+				},
+				[xColumnLabel]: {
+					value: (/** @type {any} */ d) =>
+						isTimeSeries
+							? formatTooltipDate(d.x, tooltipDateFormat, data[d.rowIndex]?._dateStr ?? null)
+							: d.x
+				},
+				Y: { value: (/** @type {any} */ d) => formatValue(d.displayValue) },
+				...(sizeLabel
+					? { [sizeLabel]: { value: (/** @type {any} */ d) => formatValue(d.sizeValue) } }
+					: {})
+			};
+			const scatterFacet = facetColumn
+				? facetGrid
+					? { fx: FACET_X_FIELD, fy: FACET_Y_FIELD }
+					: { fx: 'facet' }
+				: {};
+			opts.marks.push(
+				tip(
+					scatterPoints,
+					pointer({
+						x: 'x',
+						y: 'value',
+						...scatterFacet,
+						channels: scatterChannels,
+						format: { x: false, y: false, ...TIP_HIDE_FACET },
+						lineHeight: 1.3,
+						fontSize: 11
+					})
+				)
+			);
 		} else if (isTimeSeries) {
 			// Build channels in tooltipColumns order, interleaving Date at the right position
 			const showDate =
@@ -547,8 +680,9 @@
 			if (tooltipColumns.length > 0) {
 				for (const key of tooltipColumns) {
 					if (key === dateColumnKey && showDate) {
-						tipChannels.Date = {
-							value: (/** @type {any} */ d) => dateFmt.format(d.date)
+						tipChannels[dateColumnLabel || 'Date'] = {
+							value: (/** @type {any} */ d) =>
+								formatTooltipDate(d.date, tooltipDateFormat, d._dateStr)
 						};
 					} else if (key in tooltipLabels) {
 						const label = tooltipLabels[key];
@@ -557,8 +691,9 @@
 				}
 			} else {
 				if (showDate) {
-					tipChannels.Date = {
-						value: (/** @type {any} */ d) => dateFmt.format(d.date)
+					tipChannels[dateColumnLabel || 'Date'] = {
+						value: (/** @type {any} */ d) =>
+							formatTooltipDate(d.date, tooltipDateFormat, d._dateStr)
 					};
 				}
 				const channels = buildTooltipChannels(tooltipLabels, formatValue);

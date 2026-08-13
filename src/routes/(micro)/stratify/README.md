@@ -4,7 +4,7 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 
 ## Features
 
-- **Chart types**: Line, Area, Column, Stacked Columns, Grouped Columns, Bar, Stacked Bars, Grouped Bars, Map (lat/lng point map)
+- **Chart types**: Line, Scatterplot, Area, Column, Stacked Columns, Grouped Columns, Bar, Stacked Bars, Grouped Bars, Map (lat/lng point map)
 - **Per-series chart type**: Override the chart type for individual series (e.g. one series as a line, another as a bar)
 - **Data input**: Paste CSV or tab-separated data (e.g. from Google Sheets)
 - **Auto-detection**: Automatically detects dates vs categories, delimiter type
@@ -120,6 +120,7 @@ src/lib/components/text-components/    # Article content rendering
 | Value                  | Family    | Description                            |
 | ---------------------- | --------- | -------------------------------------- |
 | `line`                 | Line      | Multi-series line chart                |
+| `scatter`              | Scatter   | Multi-series fixed or bubble points    |
 | `area`                 | Area      | Stacked area (time-series)             |
 | `column`               | Column    | Vertical bars                          |
 | `column-stacked`       | Column    | Stacked vertical bars                  |
@@ -131,7 +132,54 @@ src/lib/components/text-components/    # Article content rendering
 | `waterfall-horizontal` | Waterfall | Running-cumulative horizontal bars     |
 | `map`                  | Map       | Lat/lng point map (MapLibre, not Plot) |
 
-Time-series types (`area`, `line`) auto-detect dates from the first column. Column and bar charts support both time-series and category modes. Horizontal bar types use `barX` in Observable Plot; column types use `barY`/`rectY`. The `map` type takes a different render path entirely — see [Map Chart Type](#map-chart-type) below.
+Time-series types (`area`, `line`, `scatter`) auto-detect dates from the first column. Column and bar charts support both time-series and category modes. Horizontal bar types use `barX` in Observable Plot; column types use `barY`/`rectY`. The `map` type takes a different render path entirely — see [Map Chart Type](#map-chart-type) below.
+
+## Line Min/Max Range Bands
+
+Line charts can render one shaded envelope behind the visible lines. In **Data
+Encoding**, choose numeric **Range minimum** and **Range maximum** columns, then
+set the **Range opacity**. The bound columns are excluded from the rendered
+Y-series list but remain available in the nearest-X tooltip. The band follows
+the selected line curve, facets and data transform, and inherits the first
+visible line's colour. Clearing either mapping disables it.
+
+The range fields persist in previews, published Strata pages and embeds as
+`lineRangeMinColumn`, `lineRangeMaxColumn` and `lineRangeOpacity`. Missing or
+non-numeric mappings are cleared when CSV columns change.
+
+## Scatterplot Chart Type
+
+`scatter` uses the same X/Y mappings, multi-series colours and labels, linear,
+temporal and ordinal X modes, axes, dual axes, facets, annotations and layout
+controls as a line chart. Its Data Encoding controls replace curve styling with
+a fixed point radius and opacity. Choosing a numeric **Size by** column enables
+bubbles, square-root scaled from `scatterMinRadius` to `scatterMaxRadius`; the
+size column is excluded from the Y-series list. Invalid size values use the
+minimum radius, while a constant size column uses `scatterPointRadius`.
+
+The built-in **Temperature and electricity demand (bubble scatter)** example is
+synthetic illustrative data. It plots mean temperature as linear X, NSW and
+Victorian demand as the two Y series, and total NEM demand as shared bubble size:
+
+```csv
+Mean temperature (°C),NSW demand (MW),VIC demand (MW),NEM demand (MW)
+14,6900,4700,21100
+16,7100,4900,21800
+18,7350,5100,22600
+20,7600,5350,23400
+22,7900,5600,24300
+24,8350,5900,25500
+26,8900,6300,27000
+28,9600,6900,29100
+30,10400,7600,31600
+32,11300,8400,34400
+34,12100,9200,37100
+```
+
+The nearest-point tooltip reports the series, X, Y and selected size value. A
+compact size legend is shown alongside the series legend when legends are on.
+Legacy saved charts with the old top-level `dot` value still migrate to `line`;
+only the new canonical `scatter` value enables this chart type.
 
 ## Map Chart Type
 
@@ -341,13 +389,22 @@ Series can be assigned to the left or right Y-axis. When any series is on the ri
 
 In the Series panel, each series row has an L/R dropdown to set its Y-axis. The Chart panel shows Y2-axis label and tick controls when any series is assigned to the right.
 
-## Tooltip Columns
+## Tooltip Columns and Date/Time Formatting
 
-The Chart panel includes a "Tooltip columns" section with checkboxes for each data column. Unchecking a column removes it from the tooltip.
+The Series panel includes a Tooltip section with checkboxes for each data column. Unchecking a column removes it from the tooltip.
 
 - Empty selection (all checked) = show all columns (default)
-- Date columns display as "Date" in the picker and show formatted dates (`1 Jan 2025`) in the tooltip
+- Time-series charts can format the X value as **Date** (`1 January 2025`), **Time (24-hour)** (`18:00`), or **Date + time (24-hour)** (`1 January 2025, 18:00`)
+- ISO-like timezone-qualified input preserves the wall-clock value written in the CSV; `2026-07-01T18:00:00+10:00` therefore displays `18:00` in Time mode
 - The tooltip uses Observable Plot's channel system with `pointerX` for x-snapping
+
+All temporal chart axes use an explicit `en-AU` formatter rather than
+Observable Plot's U.S. English default. The formatter adapts to the data span:
+short charts use 24-hour time, multi-day charts use date + time, then wider
+ranges use day/month, month/year or year labels. Timezone-qualified CSV input
+is shifted back to its written wall-clock value for axis labels as well as
+tooltips. Default temporal ticks are selected from source timestamps, avoiding
+UTC-aligned drift such as `01:00, 04:00…` for `+10:00` hourly data.
 
 ## Small Multiples (Faceting)
 
@@ -579,9 +636,18 @@ The JSON format used for persistence (localStorage, file export, Sanity CMS):
 	"seriesYAxis": { "demand": "right" },
 	"y2Label": "Demand (MW)",
 	"tooltipColumns": ["solar", "wind"],
+	"tooltipDateFormat": "date",
 	"showLegend": true,
 	"facetColumn": null,
 	"animateAsOneChart": false,
+	"lineRangeMinColumn": null,
+	"lineRangeMaxColumn": null,
+	"lineRangeOpacity": 0.2,
+	"scatterSizeColumn": null,
+	"scatterPointRadius": 4,
+	"scatterMinRadius": 3,
+	"scatterMaxRadius": 18,
+	"scatterPointOpacity": 0.7,
 	"latColumn": null,
 	"lngColumn": null,
 	"labelColumn": null,
@@ -608,6 +674,7 @@ v1 snapshots are fully backward compatible. Missing fields get defaults:
 - `yTicks`, `y2Ticks` default to `0` (auto)
 - `yMinMax`, `y2MinMax` default to `false`
 - `tooltipColumns` defaults to `[]` (show all)
+- `tooltipDateFormat` defaults to `'date'`; supported values are `'date'`, `'time'`, and `'date-time'`
 - `showLegend` defaults to `true` (legend visible — preserves prior behaviour)
 - `facetColumn` defaults to `null` (no faceting — single-panel render as before)
 - `animateAsOneChart` defaults to `false` (small multiples instead of animated single chart)
@@ -616,6 +683,8 @@ v1 snapshots are fully backward compatible. Missing fields get defaults:
 - `facetPanelsPerRow` defaults to `0` (auto-fit columns based on container width and `MIN_PANEL_WIDTH`)
 - `chartBorderWidth` defaults to `0.5` (faint stroke around bar/column/area marks; `0` = none, accepts fractional values)
 - `chartBorderColour` defaults to `#000000` (stroke colour applied when `chartBorderWidth > 0`)
+- `lineRangeMinColumn` and `lineRangeMaxColumn` default to `null`; `lineRangeOpacity` defaults to `0.2`
+- `scatterSizeColumn` defaults to `null`; point radius defaults to `4`, bubble radii to `3`–`18`, and point opacity to `0.7`
 - `latColumn`, `lngColumn`, `labelColumn`, `sizeColumn`, `colourColumn` default to `null` (map chart type only)
 - `mapColourMode` defaults to `'single'` (one colour for every marker)
 - `singleMarkerColour` defaults to `'#3b82f6'`

@@ -28,7 +28,25 @@
 	let xColumnLabel = $derived(project.allColumns[0]?.label ?? '');
 	let nonFirstColumns = $derived(project.allColumns.slice(1));
 	let numericColumns = $derived(project.allColumns.filter((c) => c.isNumeric));
+	let scatterSizeColumns = $derived(nonFirstColumns.filter((c) => c.isNumeric));
 	let isMap = $derived(project.chartType === 'map');
+	let isScatter = $derived(project.chartType === 'scatter');
+	let isLine = $derived(project.chartType === 'line');
+	let hasLineRange = $derived(
+		isLine &&
+			project.lineRangeMinColumn &&
+			project.lineRangeMaxColumn &&
+			project.lineRangeMinColumn !== project.lineRangeMaxColumn
+	);
+	let lineRangeColumns = $derived(
+		nonFirstColumns.filter(
+			(c) =>
+				c.isNumeric &&
+				c.key !== project.colourSeries &&
+				c.key !== project.facetColumn &&
+				(!isScatter || c.key !== project.scatterSizeColumn)
+		)
+	);
 
 	/** @param {string} key */
 	function togglePopupColumn(key) {
@@ -43,7 +61,13 @@
 	// colour-series picker, and not used by the facet (Partition by) picker.
 	let eligibleYColumns = $derived(
 		nonFirstColumns.filter(
-			(col) => col.isNumeric && col.key !== project.colourSeries && col.key !== project.facetColumn
+			(col) =>
+				col.isNumeric &&
+				col.key !== project.colourSeries &&
+				col.key !== project.facetColumn &&
+				(!isScatter || col.key !== project.scatterSizeColumn) &&
+				(!hasLineRange ||
+					(col.key !== project.lineRangeMinColumn && col.key !== project.lineRangeMaxColumn))
 		)
 	);
 	let yColumnLabels = $derived(eligibleYColumns.map((col) => col.label).join(', '));
@@ -65,6 +89,7 @@
 	// Chart types that support multiple Y series
 	let allowMultipleY = $derived(
 		project.chartType === 'line' ||
+			project.chartType === 'scatter' ||
 			project.chartType === 'area' ||
 			project.chartType === 'column-stacked' ||
 			project.chartType === 'column-grouped' ||
@@ -104,7 +129,7 @@
 <SectionHeader label="Type">
 	<div class="flex flex-col gap-2">
 		<ChartTypeSelector />
-		{#if project.chartType !== 'line' && !isMap}
+		{#if project.chartType !== 'line' && !isScatter && !isMap}
 			<ControlInput label="Border" suffix="px">
 				<input
 					type="number"
@@ -413,6 +438,147 @@
 				</ControlInput>
 			{/if}
 
+			{#if isScatter}
+				<ControlInput label="Size by">
+					<select
+						value={project.scatterSizeColumn ?? ''}
+						onchange={(e) => {
+							const value = e.currentTarget.value;
+							project.scatterSizeColumn = value || null;
+						}}
+						class={`${CONTROL_INPUT_CLASS} flex-1`}
+					>
+						<option value="">Fixed</option>
+						{#each scatterSizeColumns as col (col.key)}
+							<option value={col.key}>{col.label}</option>
+						{/each}
+					</select>
+				</ControlInput>
+
+				{#if project.scatterSizeColumn}
+					<ControlInput label="Radius" suffix="px">
+						<input
+							type="number"
+							min="1"
+							max="100"
+							step="1"
+							value={project.scatterMinRadius}
+							oninput={(e) => {
+								const value = Number(e.currentTarget.value);
+								if (Number.isFinite(value) && value >= 1 && value <= 100) {
+									project.scatterMinRadius = value;
+								}
+							}}
+							class={`${CONTROL_INPUT_CLASS} w-16`}
+						/>
+						<span class="text-[10px] text-mid-grey">to</span>
+						<input
+							type="number"
+							min="1"
+							max="100"
+							step="1"
+							value={project.scatterMaxRadius}
+							oninput={(e) => {
+								const value = Number(e.currentTarget.value);
+								if (Number.isFinite(value) && value >= 1 && value <= 100) {
+									project.scatterMaxRadius = value;
+								}
+							}}
+							class={`${CONTROL_INPUT_CLASS} w-16`}
+						/>
+					</ControlInput>
+				{:else}
+					<ControlInput label="Point radius" suffix="px">
+						<input
+							type="number"
+							min="1"
+							max="100"
+							step="1"
+							value={project.scatterPointRadius}
+							oninput={(e) => {
+								const value = Number(e.currentTarget.value);
+								if (Number.isFinite(value) && value >= 1 && value <= 100) {
+									project.scatterPointRadius = value;
+								}
+							}}
+							class={`${CONTROL_INPUT_CLASS} w-20`}
+						/>
+					</ControlInput>
+				{/if}
+
+				<ControlInput label="Point opacity">
+					<input
+						type="number"
+						min="0"
+						max="1"
+						step="0.1"
+						value={project.scatterPointOpacity}
+						oninput={(e) => {
+							const value = Number(e.currentTarget.value);
+							if (Number.isFinite(value) && value >= 0 && value <= 1) {
+								project.scatterPointOpacity = value;
+							}
+						}}
+						class={`${CONTROL_INPUT_CLASS} w-20`}
+					/>
+				</ControlInput>
+			{/if}
+
+			{#if isLine}
+				<ControlInput label="Range minimum">
+					<select
+						value={project.lineRangeMinColumn ?? ''}
+						onchange={(e) => {
+							project.lineRangeMinColumn = e.currentTarget.value || null;
+						}}
+						class={`${CONTROL_INPUT_CLASS} flex-1`}
+					>
+						<option value="">None</option>
+						{#each lineRangeColumns as col (col.key)}
+							{#if col.key !== project.lineRangeMaxColumn}
+								<option value={col.key}>{col.label}</option>
+							{/if}
+						{/each}
+					</select>
+				</ControlInput>
+
+				<ControlInput label="Range maximum">
+					<select
+						value={project.lineRangeMaxColumn ?? ''}
+						onchange={(e) => {
+							project.lineRangeMaxColumn = e.currentTarget.value || null;
+						}}
+						class={`${CONTROL_INPUT_CLASS} flex-1`}
+					>
+						<option value="">None</option>
+						{#each lineRangeColumns as col (col.key)}
+							{#if col.key !== project.lineRangeMinColumn}
+								<option value={col.key}>{col.label}</option>
+							{/if}
+						{/each}
+					</select>
+				</ControlInput>
+
+				{#if project.lineRangeMinColumn && project.lineRangeMaxColumn}
+					<ControlInput label="Range opacity">
+						<input
+							type="number"
+							min="0"
+							max="1"
+							step="0.05"
+							value={project.lineRangeOpacity}
+							oninput={(e) => {
+								const value = Number(e.currentTarget.value);
+								if (Number.isFinite(value) && value >= 0 && value <= 1) {
+									project.lineRangeOpacity = value;
+								}
+							}}
+							class={`${CONTROL_INPUT_CLASS} w-20`}
+						/>
+					</ControlInput>
+				{/if}
+			{/if}
+
 			<!-- Z Colour -->
 			<ControlInput label="Z Colour">
 				<select
@@ -427,7 +593,7 @@
 				>
 					<option value="">None</option>
 					{#each nonFirstColumns as col (col.key)}
-						{#if col.key !== project.facetColumn}
+						{#if col.key !== project.facetColumn && (!hasLineRange || (col.key !== project.lineRangeMinColumn && col.key !== project.lineRangeMaxColumn))}
 							<option value={col.key}>{col.label}</option>
 						{/if}
 					{/each}
@@ -446,7 +612,7 @@
 				>
 					<option value="">None</option>
 					{#each nonFirstColumns as col (col.key)}
-						{#if col.key !== project.colourSeries}
+						{#if col.key !== project.colourSeries && (!hasLineRange || (col.key !== project.lineRangeMinColumn && col.key !== project.lineRangeMaxColumn))}
 							<option value={col.key}>{col.label}</option>
 						{/if}
 					{/each}

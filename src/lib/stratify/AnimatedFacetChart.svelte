@@ -77,14 +77,21 @@
 
 	// Global y-bounds across every facet so the axis doesn't drift mid-frame.
 	const yBounds = $derived.by(() => {
+		let min = Infinity;
 		let max = -Infinity;
 		for (const row of data) {
 			for (const name of seriesNames) {
 				const v = row[name];
-				if (v != null && isFinite(v) && v > max) max = v;
+				if (v != null && isFinite(v)) {
+					if (v < min) min = v;
+					if (v > max) max = v;
+				}
 			}
 		}
-		return { min: 0, max: isFinite(max) ? max : 1 };
+		return {
+			min: isFinite(min) && min < 0 ? min : 0,
+			max: isFinite(max) ? max : 1
+		};
 	});
 
 	const frameData = $derived.by(() => {

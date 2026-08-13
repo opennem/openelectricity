@@ -6,6 +6,8 @@
 	import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
 	import { getPreset, getPlotStyle } from '$lib/stratify/chart-styles.js';
 	import { assignPaletteColours, getPaletteSwatchColours } from '$lib/stratify/colour-palettes.js';
+	import { makeValueFormatter } from '$lib/components/charts/plot/plot-configs.js';
+	import { scaleSqrt } from 'd3-scale';
 	import {
 		HORIZONTAL_TYPES,
 		MAP_TYPES,
@@ -50,6 +52,21 @@
 	// Colour series support
 	const colourSeriesKey = $derived(chart.colourSeries ?? null);
 	const facetColumnKey = $derived(chart.facetColumn ?? null);
+	const scatterSizeColumnKey = $derived(
+		chart.chartType === 'scatter' ? (chart.scatterSizeColumn ?? null) : null
+	);
+	const lineRangeColumnKeys = $derived.by(() => {
+		const min = chart.lineRangeMinColumn ?? null;
+		const max = chart.lineRangeMaxColumn ?? null;
+		if (chart.chartType !== 'line' || !min || !max || min === max) return [];
+		const numericKeys = parsed.allColumns
+			.slice(1)
+			.filter((/** @type {{ isNumeric: boolean }} */ column) => column.isNumeric)
+			.map((/** @type {{ key: string }} */ column) => column.key);
+		return numericKeys.includes(min) && numericKeys.includes(max) ? [min, max] : [];
+	});
+	const lineRangeMinColumnKey = $derived(lineRangeColumnKeys[0] ?? null);
+	const lineRangeMaxColumnKey = $derived(lineRangeColumnKeys[1] ?? null);
 	const hasColourSeries = $derived(
 		colourSeriesKey !== null && parsed.seriesNames.includes(colourSeriesKey)
 	);
@@ -167,7 +184,12 @@
 	// Apply user-defined series order, then filter hidden (excluding colour-series and facet columns)
 	const orderedSeriesNames = $derived.by(() => {
 		const names = parsed.seriesNames.filter(
-			(/** @type {string} */ n) => n !== colourSeriesKey && n !== facetColumnKey
+			(/** @type {string} */ n) =>
+				n !== colourSeriesKey &&
+				n !== facetColumnKey &&
+				n !== scatterSizeColumnKey &&
+				n !== lineRangeMinColumnKey &&
+				n !== lineRangeMaxColumnKey
 		);
 		const order = chart.seriesOrder;
 		if (!order || order.length === 0) return names;
@@ -191,7 +213,14 @@
 			const filtered = {};
 			for (const [key, value] of Object.entries(row)) {
 				// Keep the colour-series and facet columns even if hidden as a series
-				if (!hiddenSet.has(key) || key === colourSeriesKey || key === facetColumnKey)
+				if (
+					!hiddenSet.has(key) ||
+					key === colourSeriesKey ||
+					key === facetColumnKey ||
+					key === scatterSizeColumnKey ||
+					key === lineRangeMinColumnKey ||
+					key === lineRangeMaxColumnKey
+				)
 					filtered[key] = value;
 			}
 			return filtered;
@@ -225,11 +254,16 @@
 
 		/** @type {Record<string, number>} */
 		const sums = {};
-		for (const name of visibleSeriesNames) sums[name] = 0;
+		const transformedColumns = new Set([
+			...visibleSeriesNames,
+			...(lineRangeMinColumnKey ? [lineRangeMinColumnKey] : []),
+			...(lineRangeMaxColumnKey ? [lineRangeMaxColumnKey] : [])
+		]);
+		for (const name of transformedColumns) sums[name] = 0;
 
 		return sortedData.map((/** @type {Record<string, any>} */ row) => {
 			const newRow = { ...row };
-			for (const name of visibleSeriesNames) {
+			for (const name of transformedColumns) {
 				if (newRow[name] != null) {
 					sums[name] += Number(newRow[name]) || 0;
 					newRow[name] = sums[name];
@@ -246,6 +280,11 @@
 	const isAnimating = $derived(
 		!!chart.animateAsOneChart && !!facetColumnKey && animateFacetValues.length > 1
 	);
+	const animatedSeriesNames = $derived([
+		...visibleSeriesNames,
+		...(lineRangeMinColumnKey ? [lineRangeMinColumnKey] : []),
+		...(lineRangeMaxColumnKey ? [lineRangeMaxColumnKey] : [])
+	]);
 
 	// Extract sorted domain for category charts
 	const hasSortedDomain = $derived(
@@ -259,6 +298,38 @@
 	const sortedYDomain = $derived(isHorizontal ? sortedCategoryDomain : undefined);
 
 	const chartHeight = $derived(chart.chartHeight ?? 250);
+
+	const scatterSizeLegend = $derived.by(() => {
+		if (chart.chartType !== 'scatter' || !scatterSizeColumnKey || !(chart.showLegend ?? true)) {
+			return null;
+		}
+		const values = parsed.data
+			.map((/** @type {Record<string, any>} */ row) => row[scatterSizeColumnKey])
+			.filter((value) => value != null && value !== '' && Number.isFinite(Number(value)))
+			.map(Number);
+		if (values.length === 0) return null;
+		const min = Math.min(...values);
+		const max = Math.max(...values);
+		const pointRadius = chart.scatterPointRadius ?? 4;
+		const minRadius = chart.scatterMinRadius ?? 3;
+		const maxRadius = chart.scatterMaxRadius ?? 18;
+		const scale =
+			min === max
+				? () => pointRadius
+				: scaleSqrt().domain([min, max]).range([minRadius, maxRadius]);
+		const legendValues = min === max ? [min] : [min, min + (max - min) / 2, max];
+		const formatValue = makeValueFormatter(chart.valueFormat ?? '1');
+		return {
+			label:
+				parsed.allColumns?.find(
+					(/** @type {{ key: string }} */ column) => column.key === scatterSizeColumnKey
+				)?.label ?? scatterSizeColumnKey,
+			entries: legendValues.map((value) => ({
+				value: formatValue(value),
+				radius: Number(scale(value))
+			}))
+		};
+	});
 </script>
 
 <svelte:element
@@ -325,12 +396,21 @@
 			y2Min={chart.y2Min ?? null}
 			y2Max={chart.y2Max ?? null}
 			tooltipColumns={chart.tooltipColumns ?? []}
+			tooltipDateFormat={chart.tooltipDateFormat ?? 'date'}
 			dateColumnKey={parsed.allColumns?.[0]?.key ?? ''}
 			dateColumnLabel={parsed.allColumns?.[0]?.label ?? ''}
 			xDomain={sortedXDomain}
 			yDomain={sortedYDomain}
 			showXTickLabels={chart.showXTickLabels ?? true}
 			showLegend={chart.showLegend ?? true}
+			lineRangeMinColumn={lineRangeMinColumnKey}
+			lineRangeMaxColumn={lineRangeMaxColumnKey}
+			lineRangeOpacity={chart.lineRangeOpacity ?? 0.2}
+			scatterSizeColumn={scatterSizeColumnKey}
+			scatterPointRadius={chart.scatterPointRadius ?? 4}
+			scatterMinRadius={chart.scatterMinRadius ?? 3}
+			scatterMaxRadius={chart.scatterMaxRadius ?? 18}
+			scatterPointOpacity={chart.scatterPointOpacity ?? 0.7}
 			facetColumn={overrideFacet}
 			facetPanelsPerRow={chart.facetPanelsPerRow ?? 0}
 			xTicks={chart.xTicks ?? 0}
@@ -346,7 +426,7 @@
 		{#if isAnimating}
 			<AnimatedFacetChart
 				data={transformedData}
-				seriesNames={visibleSeriesNames}
+				seriesNames={animatedSeriesNames}
 				facetColumn={facetColumnKey}
 				facetValues={animateFacetValues}
 				frameDurationMs={chart.animationSpeedMs}
@@ -371,6 +451,25 @@
 				chart.y1Max ?? null
 			)}
 		{/if}
+	{/if}
+
+	{#if scatterSizeLegend}
+		<div
+			class="mt-1 flex items-end justify-end gap-3 text-[9px] text-mid-grey"
+			aria-label="Size legend"
+		>
+			<span class="self-center font-medium">{scatterSizeLegend.label}</span>
+			{#each scatterSizeLegend.entries as entry, index (`${entry.value}-${index}`)}
+				<div class="flex flex-col items-center gap-0.5">
+					<span
+						class="block rounded-full border border-mid-grey/70 bg-mid-grey/25"
+						style:width={`${entry.radius * 2}px`}
+						style:height={`${entry.radius * 2}px`}
+					></span>
+					<span>{entry.value}</span>
+				</div>
+			{/each}
+		</div>
 	{/if}
 
 	{#if chart.dataSource || chart.notes}

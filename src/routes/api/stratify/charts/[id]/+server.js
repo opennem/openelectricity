@@ -110,6 +110,7 @@ export async function PATCH({ request, params }) {
 	if (body.y2Min !== undefined) patches.y2Min = body.y2Min;
 	if (body.y2Max !== undefined) patches.y2Max = body.y2Max;
 	if (body.tooltipColumns !== undefined) patches.tooltipColumns = body.tooltipColumns;
+	if (body.tooltipDateFormat !== undefined) patches.tooltipDateFormat = body.tooltipDateFormat;
 	if (body.xColumn !== undefined) patches.xColumn = body.xColumn;
 	if (body.dataTransform !== undefined) patches.dataTransform = body.dataTransform;
 	if (body.categorySort !== undefined) patches.categorySort = body.categorySort;
@@ -123,6 +124,15 @@ export async function PATCH({ request, params }) {
 	if (body.animationAutoPlay !== undefined) patches.animationAutoPlay = body.animationAutoPlay;
 	if (body.animationTween !== undefined) patches.animationTween = body.animationTween;
 	if (body.chartCurve !== undefined) patches.chartCurve = body.chartCurve;
+	if (body.lineRangeMinColumn !== undefined) patches.lineRangeMinColumn = body.lineRangeMinColumn;
+	if (body.lineRangeMaxColumn !== undefined) patches.lineRangeMaxColumn = body.lineRangeMaxColumn;
+	if (body.lineRangeOpacity !== undefined) patches.lineRangeOpacity = body.lineRangeOpacity;
+	if (body.scatterSizeColumn !== undefined) patches.scatterSizeColumn = body.scatterSizeColumn;
+	if (body.scatterPointRadius !== undefined) patches.scatterPointRadius = body.scatterPointRadius;
+	if (body.scatterMinRadius !== undefined) patches.scatterMinRadius = body.scatterMinRadius;
+	if (body.scatterMaxRadius !== undefined) patches.scatterMaxRadius = body.scatterMaxRadius;
+	if (body.scatterPointOpacity !== undefined)
+		patches.scatterPointOpacity = body.scatterPointOpacity;
 	if (body.waterfallMode !== undefined) patches.waterfallMode = body.waterfallMode;
 	if (body.waterfallShowTotal !== undefined) patches.waterfallShowTotal = body.waterfallShowTotal;
 	if (body.waterfallColourMode !== undefined)

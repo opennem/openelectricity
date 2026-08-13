@@ -6,14 +6,18 @@ import {
 	colourScale,
 	createStackedAreaOptions,
 	createLineOptions,
+	createScatterOptions,
 	createStackedBarOptions,
 	createGroupedBarOptions,
+	createHorizontalBarOptions,
+	createGroupedHorizontalBarOptions,
 	createDotOptions,
 	globalTypeToMarkType,
 	createMixedMarkOptions,
 	createColourGroupedBarOptions,
 	buildTooltipChannels,
-	buildFacetGrid
+	buildFacetGrid,
+	buildScatterData
 } from './plot-configs.js';
 import { getLineDasharray } from '$lib/stratify/chart-types.js';
 
@@ -291,6 +295,73 @@ describe('createLineOptions', () => {
 		expect(result.fx).toBeDefined();
 		expect(result.fx.label).toBeNull();
 	});
+
+	it('renders a min/max range band behind the line using the first series colour', () => {
+		const data = [
+			{ linear: 1, mean: 20, minimum: 10, maximum: 30 },
+			{ linear: 2, mean: 25, minimum: 12, maximum: 36 }
+		];
+		const result = createLineOptions(
+			data,
+			['mean'],
+			{ mean: '#123456' },
+			{ mean: 'Mean' },
+			{
+				lineRangeMinColumn: 'minimum',
+				lineRangeMaxColumn: 'maximum',
+				lineRangeOpacity: 0.25,
+				curve: 'monotone-x'
+			}
+		);
+
+		expect(result.marks).toHaveLength(3);
+		expect(result.marks[0]).toMatchObject({
+			data,
+			fill: '#123456',
+			fillOpacity: 0.25
+		});
+		expect(result.marks[0].curve).toBeTypeOf('function');
+	});
+
+	it('routes the range band through the same facet channels as its line', () => {
+		const data = [{ category: 'A', mean: 20, minimum: 10, maximum: 30, region: 'NSW' }];
+		const grid = buildFacetGrid(['NSW'], 1);
+		const result = createLineOptions(
+			data,
+			['mean'],
+			{ mean: '#123456' },
+			{ mean: 'Mean' },
+			{
+				lineRangeMinColumn: 'minimum',
+				lineRangeMaxColumn: 'maximum',
+				facetColumn: 'region',
+				facetGrid: grid
+			}
+		);
+
+		expect(result.marks[0].fx).toBe('_fx');
+		expect(result.marks[0].fy).toBe('_fy');
+		expect(result.marks[0].data[0]).toMatchObject({ _fx: 0, _fy: 0 });
+	});
+});
+
+// ── Horizontal date axes ───────────────────────────────────────
+
+describe('horizontal charts with temporal data', () => {
+	const timeData = [
+		{ date: new Date('2026-07-01T00:00:00Z'), solar: 10, wind: 20 },
+		{ date: new Date('2026-07-02T00:00:00Z'), solar: 30, wind: 40 }
+	];
+
+	it('uses temporal values for stacked bar categories', () => {
+		const result = createHorizontalBarOptions(timeData, SERIES, COLOURS, LABELS);
+		expect(result.marks[0].data[0].x).toEqual(timeData[0].date);
+	});
+
+	it('uses temporal values for grouped bar domains', () => {
+		const result = createGroupedHorizontalBarOptions(timeData, SERIES, COLOURS, LABELS);
+		expect(result.fy.domain).toEqual(timeData.map((row) => row.date));
+	});
 });
 
 // ── createDotOptions ────────────────────────────────────────────
@@ -329,6 +400,131 @@ describe('createDotOptions', () => {
 	});
 });
 
+// ── createScatterOptions ────────────────────────────────────────
+
+describe('createScatterOptions', () => {
+	const linearData = [
+		{ linear: 14, solar: 10, wind: 20, demand: 100 },
+		{ linear: 20, solar: 30, wind: 40, demand: 225 },
+		{ linear: 26, solar: 50, wind: 60, demand: 400 }
+	];
+
+	it('creates fixed-radius points for multiple series on a linear X scale', () => {
+		const points = buildScatterData(linearData, SERIES, 'linear', { pointRadius: 5 });
+		const result = createScatterOptions(linearData, SERIES, COLOURS, LABELS, {
+			scatterPointRadius: 5,
+			scatterPointOpacity: 0.35
+		});
+
+		expect(points).toHaveLength(6);
+		expect(points.every((point) => point.radius === 5)).toBe(true);
+		expect(points.map((point) => point.series)).toEqual([
+			'solar',
+			'wind',
+			'solar',
+			'wind',
+			'solar',
+			'wind'
+		]);
+		expect(result.x.type).toBe('linear');
+		expect(result.r.type).toBe('identity');
+		expect(result.color.domain).toEqual(SERIES);
+		expect(result.marks[0].opacity).toBe(0.35);
+	});
+
+	it('square-root scales finite bubble values into the configured radius range', () => {
+		const points = buildScatterData(linearData, ['solar'], 'linear', {
+			sizeColumn: 'demand',
+			minRadius: 3,
+			maxRadius: 18
+		});
+
+		expect(points.map((point) => point.radius)).toEqual([3, 10.5, 18]);
+		expect(points.map((point) => point.sizeValue)).toEqual([100, 225, 400]);
+	});
+
+	it('uses minimum radius for invalid sizes and fixed radius for a constant size column', () => {
+		const invalid = buildScatterData(
+			[
+				{ category: 'A', solar: 1, size: 10 },
+				{ category: 'B', solar: 2, size: null },
+				{ category: 'C', solar: 3, size: 40 }
+			],
+			['solar'],
+			'category',
+			{ sizeColumn: 'size', pointRadius: 6, minRadius: 2, maxRadius: 12 }
+		);
+		const constant = buildScatterData(
+			[
+				{ category: 'A', solar: 1, size: 10 },
+				{ category: 'B', solar: 2, size: 10 }
+			],
+			['solar'],
+			'category',
+			{ sizeColumn: 'size', pointRadius: 6, minRadius: 2, maxRadius: 12 }
+		);
+
+		expect(invalid.map((point) => point.radius)).toEqual([2, 2, 12]);
+		expect(constant.map((point) => point.radius)).toEqual([6, 6]);
+	});
+
+	it('still gives invalid values the minimum radius beside a constant finite value', () => {
+		const points = buildScatterData(
+			[
+				{ category: 'A', solar: 1, size: 10 },
+				{ category: 'B', solar: 2, size: null }
+			],
+			['solar'],
+			'category',
+			{ sizeColumn: 'size', pointRadius: 6, minRadius: 2, maxRadius: 12 }
+		);
+
+		expect(points.map((point) => point.radius)).toEqual([6, 2]);
+	});
+
+	it('supports ordinal and temporal X modes', () => {
+		const ordinal = createScatterOptions(CATEGORY_DATA, SERIES, COLOURS, LABELS);
+		const temporal = createScatterOptions(
+			[
+				{ date: new Date('2024-01-01'), solar: 1 },
+				{ date: new Date('2024-02-01'), solar: 2 }
+			],
+			['solar'],
+			COLOURS,
+			LABELS
+		);
+
+		expect(ordinal.x.type).toBe('point');
+		expect(temporal.x.type).toBeUndefined();
+	});
+
+	it('carries facet and nearest-point tooltip fields on every long-format point', () => {
+		const data = [
+			{ linear: 1, solar: 10, wind: 20, demand: 100, region: 'NSW' },
+			{ linear: 2, solar: 30, wind: 40, demand: 400, region: 'VIC' }
+		];
+		const grid = buildFacetGrid(['NSW', 'VIC'], 2);
+		const points = buildScatterData(data, SERIES, 'linear', {
+			sizeColumn: 'demand',
+			facetColumn: 'region',
+			facetGrid: grid
+		});
+
+		expect(points[0]).toMatchObject({
+			x: 1,
+			series: 'solar',
+			value: 10,
+			displayValue: 10,
+			sizeValue: 100,
+			facet: 'NSW',
+			_fx: 0,
+			_fy: 0,
+			rowIndex: 0
+		});
+		expect(points[3]).toMatchObject({ facet: 'VIC', _fx: 1, _fy: 0 });
+	});
+});
+
 // ── globalTypeToMarkType ────────────────────────────────────────
 
 describe('globalTypeToMarkType', () => {
@@ -354,6 +550,10 @@ describe('globalTypeToMarkType', () => {
 
 	it('maps dot to dot', () => {
 		expect(globalTypeToMarkType('dot')).toBe('dot');
+	});
+
+	it('maps top-level scatter to dot marks without changing legacy dot overrides', () => {
+		expect(globalTypeToMarkType('scatter')).toBe('dot');
 	});
 
 	it('defaults to line for unknown types', () => {
@@ -812,5 +1012,20 @@ describe('createMixedMarkOptions with seriesLineStyles', () => {
 		});
 		// 1 lineY + ruleY = 2 marks
 		expect(result.marks.length).toBe(2);
+	});
+
+	it('keeps the line range band when a series uses a mixed mark override', () => {
+		const data = [
+			{ date: new Date('2024-01-01'), solar: 10, wind: 20, minimum: 5, maximum: 25 },
+			{ date: new Date('2024-01-02'), solar: 30, wind: 40, minimum: 20, maximum: 50 }
+		];
+		const result = createMixedMarkOptions(data, SERIES, COLOURS, LABELS, { wind: 'dot' }, 'line', {
+			lineRangeMinColumn: 'minimum',
+			lineRangeMaxColumn: 'maximum',
+			lineRangeOpacity: 0.15
+		});
+
+		expect(result.marks).toHaveLength(4);
+		expect(result.marks[0]).toMatchObject({ fill: '#f00', fillOpacity: 0.15 });
 	});
 });

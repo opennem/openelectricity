@@ -23,6 +23,7 @@ import {
 	pointerX,
 	pointerY
 } from '@observablehq/plot';
+import { scaleSqrt } from 'd3-scale';
 import { getLineDasharray, WATERFALL_ROLE_KEYS } from '$lib/stratify/chart-types.js';
 import { formatCompact } from '$lib/stratify/plot-annotations.js';
 
@@ -393,10 +394,18 @@ export function capacityMarks(capacitySums, { isLine, isEnergyMetric }) {
  * @property {[number, number]} [yDomain] - Explicit y-domain (e.g. extended for capacity lines)
  * @property {string | ((d: number) => string)} [yTickFormat] - Custom y-axis tick format (default: 's')
  * @property {Record<string, string>} [seriesLineStyles] - Per-series line style overrides
+ * @property {string | null} [lineRangeMinColumn] - Numeric column used as the lower edge of a line range band
+ * @property {string | null} [lineRangeMaxColumn] - Numeric column used as the upper edge of a line range band
+ * @property {number} [lineRangeOpacity] - Line range band fill opacity
  * @property {string | null} [facetColumn] - Column key to partition data into small-multiple panels (Plot fx)
  * @property {FacetGrid | null} [facetGrid] - Optional 2-D grid layout for wrapped small multiples
  * @property {number} [borderWidth] - Stroke width in px around bar/area marks (0 = none)
  * @property {string} [borderColour] - Stroke colour for bar/area marks (defaults to white)
+ * @property {string | null} [scatterSizeColumn] - Numeric row column used for bubble sizing
+ * @property {number} [scatterPointRadius] - Fixed/constant-value point radius in px
+ * @property {number} [scatterMinRadius] - Minimum bubble radius in px
+ * @property {number} [scatterMaxRadius] - Maximum bubble radius in px
+ * @property {number} [scatterPointOpacity] - Scatter point fill opacity
  */
 
 /**
@@ -551,6 +560,57 @@ function buildLineMarks(
 }
 
 /**
+ * Build an optional min/max envelope behind a line chart.
+ * @param {Array<Record<string, any>>} data
+ * @param {string} xKey
+ * @param {string | null} minColumn
+ * @param {string | null} maxColumn
+ * @param {string} fill
+ * @param {number} opacity
+ * @param {string} [curve]
+ * @param {string | null} [facetColumn]
+ * @param {FacetGrid | null} [facetGrid]
+ * @returns {any | null}
+ */
+function buildLineRangeMark(
+	data,
+	xKey,
+	minColumn,
+	maxColumn,
+	fill,
+	opacity,
+	curve,
+	facetColumn = null,
+	facetGrid = null
+) {
+	if (!minColumn || !maxColumn || minColumn === maxColumn) return null;
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
+	const rangeData = data.map((row) => {
+		const out = { ...row };
+		if (facetColumn) {
+			out[FACET_FIELD] = row[facetColumn];
+			if (facetGrid) {
+				const pos = facetGrid.indexByFacet.get(row[facetColumn]);
+				if (pos) {
+					out[FACET_X_FIELD] = pos.col;
+					out[FACET_Y_FIELD] = pos.row;
+				}
+			}
+		}
+		return out;
+	});
+	return areaY(rangeData, {
+		x: xKey,
+		y1: minColumn,
+		y2: maxColumn,
+		fill,
+		fillOpacity: opacity,
+		...facetMark,
+		...(curve ? { curve } : {})
+	});
+}
+
+/**
  * Multi-series line chart for time-series or category data.
  * @param {Array<Record<string, any>>} data - Parsed rows with `date` or `category` field
  * @param {string[]} seriesNames
@@ -573,6 +633,9 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 		yDomain,
 		yTickFormat,
 		seriesLineStyles = {},
+		lineRangeMinColumn = null,
+		lineRangeMaxColumn = null,
+		lineRangeOpacity = 0.2,
 		facetColumn = null,
 		facetGrid = null
 	} = options;
@@ -587,8 +650,18 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 		facetColumn,
 		facetGrid
 	);
-	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
 	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
+	const rangeMark = buildLineRangeMark(
+		data,
+		xKey,
+		lineRangeMinColumn,
+		lineRangeMaxColumn,
+		colours[seriesNames[0]] ?? '#3b82f6',
+		lineRangeOpacity,
+		curve,
+		facetColumn,
+		facetGrid
+	);
 
 	return {
 		style,
@@ -612,8 +685,177 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 		...getFacetScales(facetColumn, facetGrid),
 		marks: [
 			...(gridlines ? gridlines.gridlineMarks : []),
+			...(rangeMark ? [rangeMark] : []),
 			...extraMarks,
 			...lineMarks,
+			ruleY([0]),
+			...(labelMark ? [labelMark] : [])
+		]
+	};
+}
+
+// ── Scatterplot ─────────────────────────────────────────────────
+
+/**
+ * Pivot scatter data to one row per point and resolve its pixel radius.
+ * Radius is square-root scaled across finite size values. Missing/invalid
+ * values use the minimum radius; a constant-sized column uses the configured
+ * fixed radius so it does not imply a range that is not present.
+ *
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {string} xKey
+ * @param {{
+ *   sizeColumn?: string | null,
+ *   pointRadius?: number,
+ *   minRadius?: number,
+ *   maxRadius?: number,
+ *   facetColumn?: string | null,
+ *   facetGrid?: FacetGrid | null
+ * }} [options]
+ * @returns {Array<Record<string, any>>}
+ */
+export function buildScatterData(data, seriesNames, xKey, options = {}) {
+	const {
+		sizeColumn = null,
+		pointRadius = 4,
+		minRadius = 3,
+		maxRadius = 18,
+		facetColumn = null,
+		facetGrid = null
+	} = options;
+
+	/** @type {number[]} */
+	const finiteSizes = [];
+	if (sizeColumn) {
+		for (const row of data) {
+			const raw = row[sizeColumn];
+			const value = raw == null || raw === '' ? NaN : Number(raw);
+			if (Number.isFinite(value)) finiteSizes.push(value);
+		}
+	}
+
+	const sizeMin = finiteSizes.length > 0 ? Math.min(...finiteSizes) : null;
+	const sizeMax = finiteSizes.length > 0 ? Math.max(...finiteSizes) : null;
+	const variableSize = sizeMin !== null && sizeMax !== null && sizeMin !== sizeMax;
+	const radiusScale = variableSize
+		? scaleSqrt()
+				.domain([/** @type {number} */ (sizeMin), /** @type {number} */ (sizeMax)])
+				.range([minRadius, maxRadius])
+		: null;
+
+	return data.flatMap((row, rowIndex) =>
+		seriesNames
+			.filter((name) => row[name] != null)
+			.map((name) => {
+				const rawSize = sizeColumn ? row[sizeColumn] : null;
+				const numericSize = rawSize == null || rawSize === '' ? NaN : Number(rawSize);
+				const radius = !sizeColumn
+					? pointRadius
+					: !Number.isFinite(numericSize)
+						? minRadius
+						: radiusScale
+							? Number(radiusScale(numericSize))
+							: pointRadius;
+				/** @type {Record<string, any>} */
+				const out = {
+					x: row[xKey],
+					series: name,
+					value: row[name],
+					displayValue: row[name],
+					sizeValue: rawSize,
+					radius,
+					rowIndex
+				};
+				if (facetColumn) {
+					out[FACET_FIELD] = row[facetColumn];
+					if (facetGrid) {
+						const pos = facetGrid.indexByFacet.get(row[facetColumn]);
+						if (pos) {
+							out[FACET_X_FIELD] = pos.col;
+							out[FACET_Y_FIELD] = pos.row;
+						}
+					}
+				}
+				return out;
+			})
+	);
+}
+
+/**
+ * Multi-series scatterplot for temporal, linear or ordinal X values.
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} colours
+ * @param {Record<string, string>} labels
+ * @param {TimeSeriesOptions} [options]
+ * @returns {import('@observablehq/plot').PlotOptions}
+ */
+export function createScatterOptions(data, seriesNames, colours, labels, options = {}) {
+	const {
+		xDomain,
+		style = SHARED_STYLE,
+		marginLeft,
+		marginRight,
+		legend = true,
+		xType,
+		extraMarks = [],
+		gridlines,
+		yDomain,
+		yTickFormat,
+		facetColumn = null,
+		facetGrid = null,
+		scatterSizeColumn = null,
+		scatterPointRadius = 4,
+		scatterMinRadius = 3,
+		scatterMaxRadius = 18,
+		scatterPointOpacity = 0.7
+	} = options;
+	const { xKey, isCategory, isLinear } = detectXMode(data);
+	const points = buildScatterData(data, seriesNames, xKey, {
+		sizeColumn: scatterSizeColumn,
+		pointRadius: scatterPointRadius,
+		minRadius: scatterMinRadius,
+		maxRadius: scatterMaxRadius,
+		facetColumn,
+		facetGrid
+	});
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
+	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
+
+	return {
+		style,
+		...(marginLeft !== undefined ? { marginLeft } : {}),
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: { ...colourScale(seriesNames, colours, labels), legend },
+		r: { type: 'identity' },
+		x: {
+			label: null,
+			...(xDomain ? { domain: xDomain } : {}),
+			...(xType ? { type: /** @type {any} */ (xType) } : {}),
+			...(isCategory ? { tickPadding: 6, type: 'point' } : {}),
+			...(isLinear ? { type: 'linear' } : {}),
+			...(gridlines ? { axis: null } : {})
+		},
+		y: {
+			label: null,
+			grid: !gridlines,
+			...(yTickFormat ? { tickFormat: yTickFormat } : {}),
+			...(yDomain ? { domain: yDomain } : {})
+		},
+		...getFacetScales(facetColumn, facetGrid),
+		marks: [
+			...(gridlines ? gridlines.gridlineMarks : []),
+			...extraMarks,
+			dot(points, {
+				x: 'x',
+				y: 'value',
+				stroke: 'series',
+				fill: 'series',
+				r: 'radius',
+				...facetMark,
+				opacity: scatterPointOpacity
+			}),
 			ruleY([0]),
 			...(labelMark ? [labelMark] : [])
 		]
@@ -819,7 +1061,8 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 		borderColour
 	} = options;
 	const border = borderProps(borderWidth, borderColour);
-	const long = toLong(data, seriesNames, 'category', facetColumn, facetGrid);
+	const { xKey } = detectXMode(data);
+	const long = toLong(data, seriesNames, xKey, facetColumn, facetGrid);
 	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
 	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
 	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
@@ -882,9 +1125,10 @@ export function createGroupedHorizontalBarOptions(
 		borderColour
 	} = options;
 	const border = borderProps(borderWidth, borderColour);
-	const long = toLong(data, seriesNames, 'category', facetColumn);
+	const { xKey } = detectXMode(data);
+	const long = toLong(data, seriesNames, xKey, facetColumn);
 	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
-	const categoryDomain = data.map((/** @type {any} */ d) => d.category);
+	const categoryDomain = data.map((/** @type {any} */ d) => d[xKey]);
 
 	// When facet is on, fx is taken; the inner category grouping stays on fy.
 	// Plot will render fy panels stacked within each fx column — a 2-D grid.
@@ -1459,6 +1703,7 @@ export function globalTypeToMarkType(chartType) {
 		case 'column-grouped':
 			return 'bar';
 		case 'dot':
+		case 'scatter':
 			return 'dot';
 		case 'line':
 		default:
@@ -1504,10 +1749,18 @@ export function createMixedMarkOptions(
 		yDomain,
 		yTickFormat,
 		seriesLineStyles = {},
+		lineRangeMinColumn = null,
+		lineRangeMaxColumn = null,
+		lineRangeOpacity = 0.2,
 		facetColumn = null,
 		facetGrid = null,
 		borderWidth = 0,
-		borderColour
+		borderColour,
+		scatterSizeColumn = null,
+		scatterPointRadius = defaultChartType === 'scatter' ? 4 : 3,
+		scatterMinRadius = 3,
+		scatterMaxRadius = 18,
+		scatterPointOpacity = defaultChartType === 'scatter' ? 0.7 : 0.6
 	} = options;
 	const border = borderProps(borderWidth, borderColour);
 
@@ -1533,6 +1786,20 @@ export function createMixedMarkOptions(
 	const marks = [];
 
 	if (gridlines) marks.push(...gridlines.gridlineMarks);
+	if (defaultChartType === 'line') {
+		const rangeMark = buildLineRangeMark(
+			data,
+			xKey,
+			lineRangeMinColumn,
+			lineRangeMaxColumn,
+			colours[seriesNames[0]] ?? '#3b82f6',
+			lineRangeOpacity,
+			curve,
+			facetColumn,
+			facetGrid
+		);
+		if (rangeMark) marks.push(rangeMark);
+	}
 	marks.push(...extraMarks);
 
 	// Area series (stacked together)
@@ -1625,7 +1892,17 @@ export function createMixedMarkOptions(
 
 	// Dot series (overlaid)
 	if (groups.dot.length > 0) {
-		const long = toLong(data, groups.dot, xKey, facetColumn, facetGrid);
+		const isScatter = defaultChartType === 'scatter';
+		const long = isScatter
+			? buildScatterData(data, groups.dot, xKey, {
+					sizeColumn: scatterSizeColumn,
+					pointRadius: scatterPointRadius,
+					minRadius: scatterMinRadius,
+					maxRadius: scatterMaxRadius,
+					facetColumn,
+					facetGrid
+				})
+			: toLong(data, groups.dot, xKey, facetColumn, facetGrid);
 		marks.push(
 			dot(long, {
 				x: 'x',
@@ -1633,8 +1910,9 @@ export function createMixedMarkOptions(
 				stroke: 'series',
 				fill: 'series',
 				...facetMark,
-				fillOpacity: 0.6,
-				r: 3
+				...(isScatter
+					? { opacity: scatterPointOpacity, r: 'radius' }
+					: { fillOpacity: 0.6, r: scatterPointRadius })
 			})
 		);
 	}
@@ -1647,6 +1925,7 @@ export function createMixedMarkOptions(
 		...(marginLeft !== undefined ? { marginLeft } : {}),
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
+		...(defaultChartType === 'scatter' ? { r: { type: 'identity' } } : {}),
 		x: {
 			label: null,
 			...(xDomain ? { domain: xDomain } : {}),

@@ -73,6 +73,14 @@ import {
  * @property {boolean} [animationAutoPlay]
  * @property {boolean} [animationTween]
  * @property {string} [chartCurve]
+ * @property {string | null} [lineRangeMinColumn]
+ * @property {string | null} [lineRangeMaxColumn]
+ * @property {number} [lineRangeOpacity]
+ * @property {string | null} [scatterSizeColumn]
+ * @property {number} [scatterPointRadius]
+ * @property {number} [scatterMinRadius]
+ * @property {number} [scatterMaxRadius]
+ * @property {number} [scatterPointOpacity]
  * @property {'single' | 'sum' | 'stacked'} [waterfallMode]
  * @property {boolean} [waterfallShowTotal]
  * @property {'semantic' | 'series'} [waterfallColourMode]
@@ -84,6 +92,7 @@ import {
  * @property {Record<string, 'left' | 'right'>} [seriesYAxis]
  * @property {string} [y2Label]
  * @property {string[]} [tooltipColumns]
+ * @property {'date' | 'time' | 'date-time'} [tooltipDateFormat]
  * @property {string} [xColumn]
  * @property {'none' | 'cumulative'} [dataTransform]
  * @property {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} [categorySort]
@@ -210,6 +219,9 @@ export default class StratifyPlotProject {
 	/** @type {string[]} Columns to show in tooltip (empty = show all) */
 	tooltipColumns = $state([]);
 
+	/** @type {'date' | 'time' | 'date-time'} Formatting for temporal X values in chart tooltips */
+	tooltipDateFormat = $state('date');
+
 	// --- Column mapping ---
 	/** @type {string} Column key to use as X axis (empty = first column) */
 	xColumn = $state('');
@@ -240,6 +252,30 @@ export default class StratifyPlotProject {
 
 	/** @type {string} Plot curve type for line/area charts: linear, monotone-x, step, step-before, step-after, basis, natural */
 	chartCurve = $state('linear');
+
+	/** @type {string | null} Numeric CSV column used as the lower edge of a line range band */
+	lineRangeMinColumn = $state(null);
+
+	/** @type {string | null} Numeric CSV column used as the upper edge of a line range band */
+	lineRangeMaxColumn = $state(null);
+
+	/** @type {number} Line range band fill opacity */
+	lineRangeOpacity = $state(0.2);
+
+	/** @type {string | null} Numeric CSV column driving scatter bubble radius (null = fixed) */
+	scatterSizeColumn = $state(null);
+
+	/** @type {number} Fixed scatter point radius in pixels */
+	scatterPointRadius = $state(4);
+
+	/** @type {number} Minimum bubble radius in pixels */
+	scatterMinRadius = $state(3);
+
+	/** @type {number} Maximum bubble radius in pixels */
+	scatterMaxRadius = $state(18);
+
+	/** @type {number} Scatter point fill opacity */
+	scatterPointOpacity = $state(0.7);
 
 	/** @type {'single' | 'sum' | 'stacked'} Waterfall aggregation: 'single' uses the first series, 'sum' totals all series per row, 'stacked' stacks every series within each step */
 	waterfallMode = $state('single');
@@ -510,7 +546,18 @@ export default class StratifyPlotProject {
 	orderedSeriesNames = $derived.by(() => {
 		const colourKey = this.colourSeries;
 		const facetKey = this.facetColumn;
-		const parsed = this.parsedData.seriesNames.filter((n) => n !== colourKey && n !== facetKey);
+		const sizeKey = this.chartType === 'scatter' ? this.scatterSizeColumn : null;
+		const hasLineRange =
+			this.chartType === 'line' &&
+			this.lineRangeMinColumn &&
+			this.lineRangeMaxColumn &&
+			this.lineRangeMinColumn !== this.lineRangeMaxColumn;
+		const rangeMinKey = hasLineRange ? this.lineRangeMinColumn : null;
+		const rangeMaxKey = hasLineRange ? this.lineRangeMaxColumn : null;
+		const parsed = this.parsedData.seriesNames.filter(
+			(n) =>
+				n !== colourKey && n !== facetKey && n !== sizeKey && n !== rangeMinKey && n !== rangeMaxKey
+		);
 		if (this.seriesOrder.length === 0) return parsed;
 
 		const parsedSet = new Set(parsed);
@@ -539,7 +586,14 @@ export default class StratifyPlotProject {
 			/** @type {Record<string, any>} */
 			const filtered = {};
 			for (const [key, value] of Object.entries(row)) {
-				if (!hidden.has(key)) filtered[key] = value;
+				if (
+					!hidden.has(key) ||
+					key === this.scatterSizeColumn ||
+					key === this.lineRangeMinColumn ||
+					key === this.lineRangeMaxColumn
+				) {
+					filtered[key] = value;
+				}
 			}
 			return filtered;
 		});
@@ -569,6 +623,16 @@ export default class StratifyPlotProject {
 			}
 		});
 
+		// Bubble sizing must reference an existing numeric non-X column.
+		$effect(() => {
+			this.validateScatterSizeColumn();
+		});
+
+		// Line range bounds must reference distinct, existing numeric non-X columns.
+		$effect(() => {
+			this.validateLineRangeColumns();
+		});
+
 		// Reset animate toggle when the partition column is cleared, so
 		// reselecting later doesn't resurrect a previous setting silently.
 		$effect(() => {
@@ -585,9 +649,25 @@ export default class StratifyPlotProject {
 		$effect(() => {
 			const facet = this.facetColumn;
 			const colour = this.colourSeries;
+			const size = this.chartType === 'scatter' ? this.scatterSizeColumn : null;
+			const hasLineRange =
+				this.chartType === 'line' &&
+				this.lineRangeMinColumn &&
+				this.lineRangeMaxColumn &&
+				this.lineRangeMinColumn !== this.lineRangeMaxColumn;
+			const rangeMin = hasLineRange ? this.lineRangeMinColumn : null;
+			const rangeMax = hasLineRange ? this.lineRangeMaxColumn : null;
 			const eligible = this.allColumns
 				.slice(1)
-				.filter((c) => c.isNumeric && c.key !== facet && c.key !== colour)
+				.filter(
+					(c) =>
+						c.isNumeric &&
+						c.key !== facet &&
+						c.key !== colour &&
+						c.key !== size &&
+						c.key !== rangeMin &&
+						c.key !== rangeMax
+				)
 				.map((c) => c.key);
 			if (eligible.length === 0) return;
 			const allHidden = eligible.every((k) => this.hiddenSeries.includes(k));
@@ -613,6 +693,30 @@ export default class StratifyPlotProject {
 				if (label) this.labelColumn = label;
 			}
 		});
+	}
+
+	/** Clear a scatter size mapping that no longer resolves to a numeric non-X column. */
+	validateScatterSizeColumn() {
+		if (!this.scatterSizeColumn) return;
+		const column = this.allColumns.slice(1).find((c) => c.key === this.scatterSizeColumn);
+		if (!column?.isNumeric) this.scatterSizeColumn = null;
+	}
+
+	/** Clear line range mappings that no longer resolve to distinct numeric non-X columns. */
+	validateLineRangeColumns() {
+		const numericKeys = this.allColumns
+			.slice(1)
+			.filter((column) => column.isNumeric)
+			.map((column) => column.key);
+		if (this.lineRangeMinColumn && !numericKeys.includes(this.lineRangeMinColumn)) {
+			this.lineRangeMinColumn = null;
+		}
+		if (this.lineRangeMaxColumn && !numericKeys.includes(this.lineRangeMaxColumn)) {
+			this.lineRangeMaxColumn = null;
+		}
+		if (this.lineRangeMinColumn && this.lineRangeMaxColumn === this.lineRangeMinColumn) {
+			this.lineRangeMaxColumn = null;
+		}
 	}
 
 	/** Reset the project to a blank state. */
@@ -648,6 +752,7 @@ export default class StratifyPlotProject {
 		this.y2Min = null;
 		this.y2Max = null;
 		this.tooltipColumns = [];
+		this.tooltipDateFormat = 'date';
 		this.dataTransform = 'none';
 		this.categorySort = 'default';
 		this.xColumn = '';
@@ -660,6 +765,14 @@ export default class StratifyPlotProject {
 		this.animationAutoPlay = false;
 		this.animationTween = true;
 		this.chartCurve = 'linear';
+		this.lineRangeMinColumn = null;
+		this.lineRangeMaxColumn = null;
+		this.lineRangeOpacity = 0.2;
+		this.scatterSizeColumn = null;
+		this.scatterPointRadius = 4;
+		this.scatterMinRadius = 3;
+		this.scatterMaxRadius = 18;
+		this.scatterPointOpacity = 0.7;
 		this.waterfallMode = 'single';
 		this.waterfallShowTotal = true;
 		this.waterfallColourMode = 'semantic';
@@ -690,7 +803,7 @@ export default class StratifyPlotProject {
 
 	/**
 	 * Load an example dataset into the project.
-	 * @param {{ csvData: string, title: string, description: string, dataSource: string, notes: string, chartType?: string }} example
+	 * @param {{ csvData: string, title: string, description: string, dataSource: string, notes: string, chartType?: string, displayMode?: 'auto' | 'time-series' | 'category' | 'linear', xColumn?: string, scatterSizeColumn?: string | null, scatterPointRadius?: number, scatterMinRadius?: number, scatterMaxRadius?: number, scatterPointOpacity?: number }} example
 	 */
 	loadExample(example) {
 		this.reset();
@@ -701,6 +814,19 @@ export default class StratifyPlotProject {
 		this.notes = example.notes;
 		if (example.chartType) {
 			this.chartType = /** @type {ChartType} */ (example.chartType);
+		}
+		if (example.displayMode) this.displayMode = example.displayMode;
+		if (example.xColumn !== undefined) this.xColumn = example.xColumn;
+		if (example.scatterSizeColumn !== undefined) {
+			this.scatterSizeColumn = example.scatterSizeColumn;
+		}
+		if (example.scatterPointRadius !== undefined) {
+			this.scatterPointRadius = example.scatterPointRadius;
+		}
+		if (example.scatterMinRadius !== undefined) this.scatterMinRadius = example.scatterMinRadius;
+		if (example.scatterMaxRadius !== undefined) this.scatterMaxRadius = example.scatterMaxRadius;
+		if (example.scatterPointOpacity !== undefined) {
+			this.scatterPointOpacity = example.scatterPointOpacity;
 		}
 	}
 
@@ -742,6 +868,7 @@ export default class StratifyPlotProject {
 			y2Min: this.y2Min,
 			y2Max: this.y2Max,
 			tooltipColumns: this.tooltipColumns,
+			tooltipDateFormat: this.tooltipDateFormat,
 			dataTransform: this.dataTransform,
 			categorySort: this.categorySort,
 			xColumn: this.xColumn,
@@ -754,6 +881,14 @@ export default class StratifyPlotProject {
 			animationAutoPlay: this.animationAutoPlay,
 			animationTween: this.animationTween,
 			chartCurve: this.chartCurve,
+			lineRangeMinColumn: this.lineRangeMinColumn,
+			lineRangeMaxColumn: this.lineRangeMaxColumn,
+			lineRangeOpacity: this.lineRangeOpacity,
+			scatterSizeColumn: this.scatterSizeColumn,
+			scatterPointRadius: this.scatterPointRadius,
+			scatterMinRadius: this.scatterMinRadius,
+			scatterMaxRadius: this.scatterMaxRadius,
+			scatterPointOpacity: this.scatterPointOpacity,
 			waterfallMode: this.waterfallMode,
 			waterfallShowTotal: this.waterfallShowTotal,
 			waterfallColourMode: this.waterfallColourMode,
@@ -818,6 +953,7 @@ export default class StratifyPlotProject {
 		this.y2Min = snapshot.y2Min ?? null;
 		this.y2Max = snapshot.y2Max ?? null;
 		this.tooltipColumns = snapshot.tooltipColumns ?? [];
+		this.tooltipDateFormat = snapshot.tooltipDateFormat ?? 'date';
 		this.dataTransform = snapshot.dataTransform ?? 'none';
 		this.categorySort = snapshot.categorySort ?? 'default';
 		this.xColumn = snapshot.xColumn ?? '';
@@ -830,6 +966,14 @@ export default class StratifyPlotProject {
 		this.animationAutoPlay = snapshot.animationAutoPlay ?? false;
 		this.animationTween = snapshot.animationTween ?? true;
 		this.chartCurve = snapshot.chartCurve ?? 'linear';
+		this.lineRangeMinColumn = snapshot.lineRangeMinColumn ?? null;
+		this.lineRangeMaxColumn = snapshot.lineRangeMaxColumn ?? null;
+		this.lineRangeOpacity = snapshot.lineRangeOpacity ?? 0.2;
+		this.scatterSizeColumn = snapshot.scatterSizeColumn ?? null;
+		this.scatterPointRadius = snapshot.scatterPointRadius ?? 4;
+		this.scatterMinRadius = snapshot.scatterMinRadius ?? 3;
+		this.scatterMaxRadius = snapshot.scatterMaxRadius ?? 18;
+		this.scatterPointOpacity = snapshot.scatterPointOpacity ?? 0.7;
 		this.waterfallMode = snapshot.waterfallMode ?? 'single';
 		this.waterfallShowTotal = snapshot.waterfallShowTotal ?? true;
 		this.waterfallColourMode = snapshot.waterfallColourMode ?? 'semantic';

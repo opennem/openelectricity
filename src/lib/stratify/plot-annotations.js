@@ -129,7 +129,7 @@ export function processAnnotations(
 	chartType,
 	height = 300
 ) {
-	const isTimeSeries = ['stacked-area', 'area', 'line'].includes(chartType);
+	const isTimeSeries = ['stacked-area', 'area', 'line', 'scatter'].includes(chartType);
 	const xKey = isTimeSeries ? 'date' : 'category';
 
 	/** @type {any[]} */

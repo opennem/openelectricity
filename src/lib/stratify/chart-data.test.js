@@ -61,6 +61,7 @@ describe('normaliseChart', () => {
 		expect(result.y2Ticks).toBe(0);
 		expect(result.y2MinMax).toBe(false);
 		expect(result.tooltipColumns).toEqual([]);
+		expect(result.tooltipDateFormat).toBe('date');
 		expect(result.xColumn).toBe('');
 		expect(result.categorySort).toBe('default');
 		expect(result.showXTickLabels).toBe(true);
@@ -86,6 +87,57 @@ describe('normaliseChart', () => {
 		expect(result.waterfallShowTotal).toBe(true);
 		expect(result.waterfallColourMode).toBe('semantic');
 		expect(result.valueFormat).toBe('1');
+		expect(result.lineRangeMinColumn).toBeNull();
+		expect(result.lineRangeMaxColumn).toBeNull();
+		expect(result.lineRangeOpacity).toBe(0.2);
+		expect(result.scatterSizeColumn).toBeNull();
+		expect(result.scatterPointRadius).toBe(4);
+		expect(result.scatterMinRadius).toBe(3);
+		expect(result.scatterMaxRadius).toBe(18);
+		expect(result.scatterPointOpacity).toBe(0.7);
+	});
+
+	it('preserves the configured tooltip date and time format', () => {
+		expect(
+			normaliseChart({ _id: 'chart-tooltip-time', tooltipDateFormat: 'date-time' })
+				.tooltipDateFormat
+		).toBe('date-time');
+	});
+
+	it('preserves line range mappings and explicit zero opacity', () => {
+		const result = normaliseChart({
+			_id: 'chart-line-range',
+			lineRangeMinColumn: 'minimum',
+			lineRangeMaxColumn: 'maximum',
+			lineRangeOpacity: 0
+		});
+
+		expect(result.lineRangeMinColumn).toBe('minimum');
+		expect(result.lineRangeMaxColumn).toBe('maximum');
+		expect(result.lineRangeOpacity).toBe(0);
+	});
+
+	it('preserves scatter fields including zero-like values', () => {
+		const result = normaliseChart({
+			_id: 'chart-scatter',
+			chartType: 'scatter',
+			scatterSizeColumn: 'demand',
+			scatterPointRadius: 0,
+			scatterMinRadius: 0,
+			scatterMaxRadius: 24,
+			scatterPointOpacity: 0
+		});
+
+		expect(result.chartType).toBe('scatter');
+		expect(result.scatterSizeColumn).toBe('demand');
+		expect(result.scatterPointRadius).toBe(0);
+		expect(result.scatterMinRadius).toBe(0);
+		expect(result.scatterMaxRadius).toBe(24);
+		expect(result.scatterPointOpacity).toBe(0);
+	});
+
+	it('continues to migrate legacy top-level dot charts to line', () => {
+		expect(normaliseChart({ _id: 'legacy-dot', chartType: 'dot' }).chartType).toBe('line');
 	});
 
 	it('preserves map field values for the map chart type', () => {

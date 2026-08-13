@@ -3,7 +3,7 @@
  */
 
 /**
- * @typedef {'bar' | 'bar-stacked' | 'bar-grouped' | 'column' | 'column-stacked' | 'column-grouped' | 'line' | 'area' | 'waterfall' | 'waterfall-horizontal' | 'map'} ChartType
+ * @typedef {'bar' | 'bar-stacked' | 'bar-grouped' | 'column' | 'column-stacked' | 'column-grouped' | 'line' | 'scatter' | 'area' | 'waterfall' | 'waterfall-horizontal' | 'map'} ChartType
  */
 
 /**
@@ -15,6 +15,7 @@
 /** @type {ChartTypeOption[]} */
 export const CHART_TYPES = [
 	{ value: 'line', label: 'Line Chart' },
+	{ value: 'scatter', label: 'Scatterplot' },
 	{ value: 'area', label: 'Area Chart' },
 	{ value: 'column', label: 'Column Chart' },
 	{ value: 'column-stacked', label: 'Stacked Columns' },
@@ -28,7 +29,7 @@ export const CHART_TYPES = [
 ];
 
 /** Chart types that use time-series x-axis by default */
-export const TIME_SERIES_TYPES = new Set(['area', 'line']);
+export const TIME_SERIES_TYPES = new Set(['area', 'line', 'scatter']);
 
 /** Chart types that use horizontal layout (barX) */
 export const HORIZONTAL_TYPES = new Set([

@@ -12,6 +12,12 @@
  * @property {string} dataSource
  * @property {string} notes
  * @property {string} csvData
+ * @property {'auto' | 'time-series' | 'category' | 'linear'} [displayMode]
+ * @property {string | null} [scatterSizeColumn]
+ * @property {number} [scatterPointRadius]
+ * @property {number} [scatterMinRadius]
+ * @property {number} [scatterMaxRadius]
+ * @property {number} [scatterPointOpacity]
  */
 
 /** @type {StratifyExample[]} */
@@ -86,6 +92,33 @@ export const examples = [
 2024-04-01,55,48,62,72
 2024-07-01,75,68,82,95
 2024-10-01,62,55,70,80`
+	},
+	{
+		name: 'Temperature and electricity demand (bubble scatter)',
+		chartType: 'scatter',
+		displayMode: 'linear',
+		scatterSizeColumn: 'nem_demand_mw',
+		scatterPointRadius: 4,
+		scatterMinRadius: 3,
+		scatterMaxRadius: 18,
+		scatterPointOpacity: 0.7,
+		title: 'Illustrative electricity demand by mean temperature',
+		description:
+			'Synthetic example comparing NSW and Victorian demand, with bubble size representing total NEM demand.',
+		dataSource: 'Open Electricity illustrative data',
+		notes: 'Synthetic data for demonstrating bubble scatterplots; values are not observations.',
+		csvData: `Mean temperature (°C),NSW demand (MW),VIC demand (MW),NEM demand (MW)
+14,6900,4700,21100
+16,7100,4900,21800
+18,7350,5100,22600
+20,7600,5350,23400
+22,7900,5600,24300
+24,8350,5900,25500
+26,8900,6300,27000
+28,9600,6900,29100
+30,10400,7600,31600
+32,11300,8400,34400
+34,12100,9200,37100`
 	},
 	{
 		name: 'Battery cycle rates (grouped bar)',
