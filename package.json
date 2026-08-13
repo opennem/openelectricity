@@ -90,6 +90,8 @@
 		"version:major": "pnpm version major",
 		"dev-sync": "git checkout dev && git merge --ff-only main && git push && git checkout main",
 		"test": "vitest",
+		"test:unit": "vitest run",
+		"verify": "pnpm run test:unit && pnpm run lint",
 		"test:e2e": "playwright test",
 		"test:e2e:ui": "playwright test --ui",
 		"test:e2e:debug": "playwright test --headed",

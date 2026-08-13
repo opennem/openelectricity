@@ -15,6 +15,9 @@ For the **Data Tracker** (a.k.a. OpenNEM), see [opennem/opennem-fe](https://gith
 
 ## Getting Started
 
+For contribution guidance, see [CONTRIBUTING.md](CONTRIBUTING.md). Coding agents
+should begin with [AGENTS.md](AGENTS.md), the model-neutral project guide.
+
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 22.12.0

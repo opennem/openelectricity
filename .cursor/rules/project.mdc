@@ -1,0 +1,8 @@
+---
+description: Open Electricity project rules
+alwaysApply: true
+---
+
+Read and follow `AGENTS.md` before making changes. It is the canonical source
+for development commands, Svelte 5 conventions, API design, testing, and git
+safety. Use `docs/agent-workflows/` for task-specific procedures.
