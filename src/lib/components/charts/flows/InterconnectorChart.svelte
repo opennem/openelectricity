@@ -40,11 +40,13 @@
 	 * @property {string} [dateEnd] - Initial viewport end (YYYY-MM-DD)
 	 * @property {string} [title] - Chart header title
 	 * @property {string} [chartHeight] - Height class
+	 * @property {number} [chartHeightPx] - Height in px (overrides chartHeight)
 	 * @property {'strip' | 'compact-strip' | 'floating' | 'none'} [tooltipMode]
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange]
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle]
+	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata]
 	 * @property {((state: { hasData: boolean }) => void)} [onloadcomplete] - Called once the
 	 *   initial fetch settles; `hasData` distinguishes "still loading" from "no data"
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode]
@@ -61,11 +63,13 @@
 		dateEnd = '',
 		title = '',
 		chartHeight = 'h-[240px]',
+		chartHeightPx = 0,
 		tooltipMode = /** @type {'strip' | 'compact-strip' | 'floating' | 'none'} */ ('floating'),
 		hoverTime = undefined,
 		onhoverchange,
 		onviewportchange,
 		onviewportsettle,
+		onvisibledata,
 		onloadcomplete,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false)
@@ -166,6 +170,7 @@
 	 */
 	function applyCommonStyles(chart) {
 		chart.chartStyles.chartHeightClasses = chartHeight;
+		if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.chartStyles.snapTicks = true;
 	}
@@ -212,9 +217,46 @@
 		return chart;
 	});
 
+	$effect(() => {
+		if (chartHeightPx) chartStore.chartStyles.chartHeightPx = chartHeightPx;
+	});
+
 	// Title sync
 	$effect(() => {
 		chartStore.title = title || (isFlowKind ? 'Flow' : 'Price');
+	});
+
+	// Optional visible-range data surface for composite dashboards and CSV
+	// export. Legacy Tracker callers omit it, so their render path is unchanged.
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let visibleDataTimer = null;
+	$effect(() => {
+		const manager = dataManager;
+		const callback = onvisibledata;
+		const start = viewStart;
+		const end = viewEnd;
+		const currentInterval = interval;
+		const currentDisplayInterval = displayInterval;
+		const energy = isEnergyMetric;
+		const names = [...chartStore.seriesNames];
+		const labels = { ...chartStore.seriesLabels };
+		const _cache = manager?.processedCache;
+		if (visibleDataTimer) clearTimeout(visibleDataTimer);
+		if (!callback || !manager?.processedCache || !names.length) return;
+		visibleDataTimer = setTimeout(() => {
+			const data = visibleAggregation(manager.processedCache, {
+				viewStart: start,
+				viewEnd: end,
+				apiInterval: currentInterval,
+				displayInterval: currentDisplayInterval,
+				ianaTimeZone,
+				method: energy ? 'sum' : 'mean'
+			});
+			callback({ data, seriesNames: names, seriesLabels: labels });
+		}, 300);
+		return () => {
+			if (visibleDataTimer) clearTimeout(visibleDataTimer);
+		};
 	});
 
 	// Series metadata — the corridor narrows what renders here, nowhere else:

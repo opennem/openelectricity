@@ -17,6 +17,7 @@
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
+	 *   oncopylink?: () => void | Promise<void>,
 	 *   downloadItems?: Array<{ key: string, label: string }>,
 	 *   ondownloaditem?: (key: string) => void,
 	 *   onsearchfacilities?: () => void,
@@ -32,6 +33,7 @@
 		onfullscreenchange,
 		onshowshortcuts,
 		ondownloadcsv,
+		oncopylink,
 		downloadItems = [],
 		ondownloaditem,
 		onsearchfacilities,
@@ -55,11 +57,14 @@
 		}, 1000);
 	}
 
-	function copyLink() {
+	async function copyLink() {
 		copying = true;
-		// window.location.href, not page.url — the filters sync the URL via
-		// shallow replaceState, which the reactive page.url doesn't reflect.
-		writeToClipboard(window.location.href);
+		if (oncopylink) await oncopylink();
+		else {
+			// window.location.href, not page.url — the filters sync the URL via
+			// shallow replaceState, which the reactive page.url doesn't reflect.
+			writeToClipboard(window.location.href);
+		}
 		setTimeout(() => {
 			copying = false;
 		}, 1000);

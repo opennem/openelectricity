@@ -12,8 +12,8 @@
  * shown), and `ic` (only when a corridor panel is open).
  */
 
-import { DEFAULT_MINI_METRIC, MINI_METRIC_OPTIONS } from './map-minis.js';
-import { DEFAULT_REGION, TRACKER_REGION_OPTIONS } from './tracker-regions.js';
+import { DEFAULT_MINI_METRIC, MINI_METRIC_OPTIONS } from '../map-minis.js';
+import { DEFAULT_REGION, TRACKER_REGION_OPTIONS } from '../tracker-regions.js';
 import { MAP_THEMES } from '$lib/components/map/map-style.js';
 import { icFromSlug } from '$lib/flows/region-geo.js';
 
@@ -43,6 +43,7 @@ export function load({ url }) {
 	);
 
 	return {
+		nowMs: Date.now(),
 		region,
 		view: /** @type {'panel' | 'map'} */ (view),
 		viewExplicit: viewParam !== null,

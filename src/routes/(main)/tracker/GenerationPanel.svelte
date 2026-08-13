@@ -46,7 +46,7 @@
 	import { INTERCONNECTORS, interconnectorsForRegion } from '$lib/flows/region-geo.js';
 	import { NETWORK_METRIC_KEYS } from '$lib/components/charts/network/network-metric-definitions.js';
 	import { regionsNemOnlyOptions } from '$lib/regions.js';
-	import { isWholeNetworkScope, hasSpotPrice } from './tracker-regions.js';
+	import { DEFAULT_REGION, isWholeNetworkScope, hasSpotPrice } from './tracker-regions.js';
 	import NetworkMetrics from './NetworkMetrics.svelte';
 	import PriceChipRow from './PriceChipRow.svelte';
 	import CorridorMetrics from './CorridorMetrics.svelte';
@@ -54,6 +54,7 @@
 	/**
 	 * @type {{
 	 *   region: string,
+	 *   initialNowMs?: number,
 	 *   flows?: Record<string, number>,
 	 *   prices?: Record<string, number>,
 	 *   dispatchDateTimeString?: string,
@@ -61,7 +62,8 @@
 	 * }}
 	 */
 	let {
-		region,
+		region = DEFAULT_REGION,
+		initialNowMs,
 		flows = {},
 		prices = {},
 		dispatchDateTimeString = '',
@@ -80,13 +82,15 @@
 	// Window end anchor — starts at mount (the host keeps this component mounted
 	// across scope switches, so the viewport carries over) and re-anchors on
 	// every new dispatch snapshot (see the live-edge effect).
-	const mountEnd = Date.now();
-	let anchorEnd = $state(mountEnd);
+	const initialAnchor = untrack(() =>
+		Number.isFinite(initialNowMs) ? /** @type {number} */ (initialNowMs) : Date.now()
+	);
+	let anchorEnd = $state(initialAnchor);
 	let anchorStart = $derived(anchorEnd - INITIAL_RANGE_DAYS * DAY_MS);
 	// Initial chart viewport strings only — superseded once the load-complete
 	// range apply lands, so these deliberately stay at the mount anchor.
-	let dateStart = $derived(toNetworkDateString(mountEnd - INITIAL_RANGE_DAYS * DAY_MS, tz));
-	let dateEnd = $derived(toNetworkDateString(mountEnd, tz));
+	let dateStart = $derived(toNetworkDateString(initialAnchor - INITIAL_RANGE_DAYS * DAY_MS, tz));
+	let dateEnd = $derived(toNetworkDateString(initialAnchor, tz));
 
 	// ============================================
 	// Live strip (grid-live snapshot values)
@@ -131,11 +135,11 @@
 	let emissionsVolumeChart = $state(undefined);
 	/** @type {import('$lib/components/charts/network/NetworkChart.svelte').default | undefined} */
 	let emissionsIntensityChart = $state(undefined);
-	/** Inline corridor flow charts, keyed by corridor. Plain object — the range
-	 *  control reads it lazily at push time, and unmounted refs null out via
-	 *  bind:this so the falsy-skips in the controller drop them.
+	/** Inline corridor flow charts, keyed by corridor. The reactive record lets
+	 *  dynamic bind:this assignments and unmount cleanup participate in Svelte's
+	 *  update cycle; the range control reads the current refs lazily.
 	 *  @type {Record<string, import('$lib/components/charts/flows/InterconnectorChart.svelte').default | null>} */
-	const flowCharts = {};
+	let flowCharts = $state({});
 
 	const range = createChartRangeControl({
 		viewport: () => ({ start: viewStart, end: viewEnd }),

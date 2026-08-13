@@ -72,8 +72,10 @@
 		}
 	});
 
-	// Unique ID for clip paths
-	let clipId = $derived(`area-clip-${Math.random().toString(36).slice(2, 9)}`);
+	// Hydration-safe unique ID for clip paths. Random IDs differ between the
+	// server render and the browser's first render, which invalidates hydration.
+	const componentId = $props.id();
+	const clipId = `area-clip-${componentId}`;
 
 	// Y position of zero line
 	let zeroY = $derived($yScale(0));

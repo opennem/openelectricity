@@ -59,7 +59,7 @@
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange]
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once
 	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
-	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata]
+	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>}) => void)} [onvisibledata]
 	 * @property {((info: {hasData: boolean}) => void)} [onloadcomplete] - Fired whenever a settled
 	 *   fetch leaves the manager idle; the first fire is the initial load, where
 	 *   parents apply their default range preset
@@ -491,6 +491,7 @@
 		const currentIana = ianaTimeZone;
 		const sums = sumsForDisplay;
 		const manager = dataManager;
+		const colours = { ...chartStore.seriesColours };
 		const _cache = manager?.processedCache;
 		const callback = onvisibledata;
 
@@ -509,7 +510,12 @@
 				ianaTimeZone: currentIana,
 				method: sums ? 'sum' : 'mean'
 			});
-			callback({ data: rows, seriesNames: meta.seriesNames, seriesLabels: meta.seriesLabels });
+			callback({
+				data: rows,
+				seriesNames: meta.seriesNames,
+				seriesLabels: meta.seriesLabels,
+				seriesColours: colours
+			});
 		}, 300);
 
 		return () => {
