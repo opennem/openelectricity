@@ -12,12 +12,14 @@
 			onclick={() => {
 				project.stylePreset = theme.id;
 			}}
-			class="flex-1 px-2.5 py-2 rounded border text-left transition-colors {project.stylePreset ===
+			class="flex-1 rounded-lg border px-3 py-3 text-left transition-colors {project.stylePreset ===
 			theme.id
-				? 'border-dark-grey bg-white'
+				? 'border-dark-grey bg-light-warm-grey'
 				: 'border-warm-grey hover:border-mid-warm-grey'}"
 		>
-			<span class="text-[11px] text-dark-grey block leading-tight">{theme.name}</span>
+			<span class="block font-sans text-xs font-medium leading-tight text-dark-grey"
+				>{theme.name}</span
+			>
 		</button>
 	{/each}
 </div>

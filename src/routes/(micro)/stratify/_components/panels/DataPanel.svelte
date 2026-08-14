@@ -6,18 +6,20 @@
 	const project = getStratifyContext();
 </script>
 
-<DataInput />
+<div class={project.hasData ? 'pb-8' : ''}>
+	<DataInput />
+</div>
 
 {#if project.hasData}
 	<SectionHeader label="Number format">
-		<label class="flex items-center gap-2">
-			<span class="text-[10px] text-mid-grey shrink-0">Value format</span>
+		<label class="flex items-center gap-3">
+			<span class="shrink-0 text-xs text-mid-grey">Value format</span>
 			<select
 				value={project.valueFormat}
 				onchange={(e) => {
 					project.valueFormat = e.currentTarget.value;
 				}}
-				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] focus:outline-none focus:border-dark-grey"
+				class="flex-1 rounded-lg border border-warm-grey bg-light-warm-grey/50 px-3 py-2 text-xs focus:border-red focus:outline-none focus:ring-1 focus:ring-red"
 			>
 				<option value="auto">Auto</option>
 				<option value="0">0 decimals</option>
@@ -27,7 +29,7 @@
 				<option value="compact">Compact (1.2k)</option>
 			</select>
 		</label>
-		<p class="text-[10px] text-mid-grey mt-1.5">
+		<p class="mt-2 text-xs leading-relaxed text-mid-grey">
 			Applies to tooltip values, annotation labels and the map legend range.
 		</p>
 	</SectionHeader>

@@ -34,6 +34,9 @@ export async function GET({ request, params }) {
 			userSeriesColours: safeParseJSON(chart.userSeriesColours, {}),
 			userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),
 			annotations: safeParseJSON(chart.annotations, []),
+			annotationMappings: safeParseJSON(chart.annotationMappings, {}),
+			annotationStyle: safeParseJSON(chart.annotationStyle, {}),
+			annotationRowOptions: safeParseJSON(chart.annotationRowOptions, {}),
 			seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
 			seriesLineStyles: safeParseJSON(chart.seriesLineStyles, {}),
 			plotOverrides: safeParseJSON(chart.plotOverrides, null),
@@ -78,6 +81,13 @@ export async function PATCH({ request, params }) {
 	if (body.dataSource !== undefined) patches.dataSource = body.dataSource;
 	if (body.notes !== undefined) patches.notes = body.notes;
 	if (body.csvText !== undefined) patches.csvText = body.csvText;
+	if (body.annotationCsvText !== undefined) patches.annotationCsvText = body.annotationCsvText;
+	if (body.annotationMappings !== undefined)
+		patches.annotationMappings = JSON.stringify(body.annotationMappings);
+	if (body.annotationStyle !== undefined)
+		patches.annotationStyle = JSON.stringify(body.annotationStyle);
+	if (body.annotationRowOptions !== undefined)
+		patches.annotationRowOptions = JSON.stringify(body.annotationRowOptions);
 	if (body.chartType !== undefined) patches.chartType = body.chartType;
 	if (body.displayMode !== undefined) patches.displayMode = body.displayMode;
 	if (body.hiddenSeries !== undefined) patches.hiddenSeries = body.hiddenSeries;

@@ -23,34 +23,34 @@
 	{#if hasPrev}
 		<a
 			href={hrefFor(page - 1)}
-			class="inline-flex items-center gap-1 text-[10px] text-dark-grey hover:text-mid-grey"
+			class="inline-flex items-center gap-1 text-xs text-dark-grey hover:text-mid-grey"
 			rel="prev"
 		>
 			<ChevronLeftIcon size={12} />
 			Previous
 		</a>
 	{:else}
-		<span class="inline-flex items-center gap-1 text-[10px] text-mid-grey/50 cursor-not-allowed">
+		<span class="inline-flex cursor-not-allowed items-center gap-1 text-xs text-mid-grey/50">
 			<ChevronLeftIcon size={12} />
 			Previous
 		</span>
 	{/if}
 
-	<span class="text-[10px] text-mid-grey tabular-nums">
+	<span class="text-xs text-mid-grey tabular-nums">
 		Page {page} of {totalPages}
 	</span>
 
 	{#if hasNext}
 		<a
 			href={hrefFor(page + 1)}
-			class="inline-flex items-center gap-1 text-[10px] text-dark-grey hover:text-mid-grey"
+			class="inline-flex items-center gap-1 text-xs text-dark-grey hover:text-mid-grey"
 			rel="next"
 		>
 			Next
 			<ChevronRightIcon size={12} />
 		</a>
 	{:else}
-		<span class="inline-flex items-center gap-1 text-[10px] text-mid-grey/50 cursor-not-allowed">
+		<span class="inline-flex cursor-not-allowed items-center gap-1 text-xs text-mid-grey/50">
 			Next
 			<ChevronRightIcon size={12} />
 		</span>

@@ -1,4 +1,6 @@
 <script>
+	import Button from '$lib/components/form-elements/Button.svelte';
+
 	/**
 	 * @type {{
 	 *   href?: string,
@@ -20,22 +22,17 @@
 		children
 	} = $props();
 
-	const base =
-		'inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] transition-colors disabled:opacity-40 disabled:pointer-events-none';
-	const variants = {
-		default: 'border border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey',
-		primary: 'bg-dark-grey text-white hover:bg-black',
-		accent: 'bg-red text-white hover:bg-dark-red'
-	};
-	let className = $derived(`${base} ${variants[variant]}`);
+	let secondary = $derived(variant === 'default');
 </script>
 
-{#if href}
-	<a {href} class="{className} no-underline" {target} {title}>
-		{@render children()}
-	</a>
-{:else}
-	<button type="button" {onclick} {disabled} class={className} {title}>
-		{@render children()}
-	</button>
-{/if}
+<Button
+	{href}
+	{target}
+	{title}
+	{disabled}
+	{secondary}
+	clickHandler={onclick}
+	class="inline-flex items-center gap-2"
+>
+	{@render children()}
+</Button>

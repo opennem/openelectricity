@@ -21,7 +21,8 @@
 		FACET_X_FIELD,
 		FACET_Y_FIELD
 	} from '$lib/components/charts/plot/plot-configs.js';
-	import { processAnnotations, formatCompact } from './plot-annotations.js';
+	import { processAnnotations, processDataAnnotations, formatCompact } from './plot-annotations.js';
+	import { DEFAULT_ANNOTATION_STYLE } from './annotation-data.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
 	import { uniqueColumnValues } from './chart-data.js';
 	import {
@@ -119,6 +120,8 @@
 	 *   marginLeft?: number,
 	 *   options?: import('$lib/components/charts/plot/plot-configs.js').TimeSeriesOptions,
 	 *   annotations?: import('./plot-annotations.js').Annotation[],
+	 *   dataAnnotations?: import('./annotation-data.js').DataAnnotation[],
+	 *   annotationStyle?: import('./annotation-data.js').AnnotationStyleConfig,
 	 *   class?: string
 	 * }}
 	 */
@@ -179,6 +182,8 @@
 		marginLeft = 0,
 		options = {},
 		annotations = [],
+		dataAnnotations = [],
+		annotationStyle = DEFAULT_ANNOTATION_STYLE,
 		class: className = ''
 	} = $props();
 
@@ -303,20 +308,30 @@
 					height
 				)
 			: { marks: [], marginRight: 0 };
+		const dataAnnotationResult = processDataAnnotations(
+			dataAnnotations,
+			chartData,
+			seriesNames,
+			seriesLabels,
+			annotationStyle,
+			containerWidth || 640,
+			y2Scale ? (value) => /** @type {NonNullable<typeof y2Scale>} */ (y2Scale)(value) : undefined
+		);
 
 		// Merge annotation margin with user options
 		const baseMarginRight = hasRightAxis ? 40 : 0;
-		const mergedOptions =
-			annotationResult.marginRight > 0 || baseMarginRight > 0
+		const mergedOptions = {
+			...options,
+			...(annotationResult.marginRight > 0 || baseMarginRight > 0
 				? {
-						...options,
 						marginRight: Math.max(
 							options.marginRight ?? 0,
 							annotationResult.marginRight,
 							baseMarginRight
 						)
 					}
-				: options;
+				: {})
+		};
 
 		// Include line styles so rendering functions can apply per-series dash patterns.
 		// Inject legend visibility — overrides the per-factory default (true).
@@ -382,6 +397,10 @@
 						seriesLabels,
 						optionsWithLineStyles
 					);
+		}
+
+		if (dataAnnotationResult.marginTop > 0) {
+			opts.marginTop = Math.max(opts.marginTop ?? 0, dataAnnotationResult.marginTop);
 		}
 
 		if (hasRightAxis && y2Scale) {
@@ -595,6 +614,13 @@
 		// Apply plot overrides before tooltips
 		if (plotOverrides) {
 			opts = applyPlotOverrides(opts, plotOverrides);
+		}
+
+		if (dataAnnotationResult.backgroundMarks.length) {
+			opts.marks.unshift(...dataAnnotationResult.backgroundMarks);
+		}
+		if (dataAnnotationResult.foregroundMarks.length) {
+			opts.marks.push(...dataAnnotationResult.foregroundMarks);
 		}
 
 		// Add single tooltip mark with filtered channels

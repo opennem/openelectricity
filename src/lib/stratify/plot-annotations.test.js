@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { endLabels, processAnnotations, pointAnnotation } from './plot-annotations.js';
+import {
+	endLabels,
+	processAnnotations,
+	processDataAnnotations,
+	pointAnnotation
+} from './plot-annotations.js';
+import { DEFAULT_ANNOTATION_STYLE } from './annotation-data.js';
 
 const SERIES = ['solar', 'wind', 'hydro'];
 const COLOURS = { solar: '#f00', wind: '#00f', hydro: '#0f0' };
@@ -178,5 +184,88 @@ describe('pointAnnotation', () => {
 			'date'
 		);
 		expect(result.marks.length).toBeGreaterThan(0);
+	});
+});
+
+describe('processDataAnnotations', () => {
+	const data = [
+		{ date: new Date('2026-07-01T00:00:00Z'), generation: 100 },
+		{ date: new Date('2026-07-01T01:00:00Z'), generation: 120 }
+	];
+
+	it('creates background rules, foreground labels and top collision lanes', () => {
+		const result = processDataAnnotations(
+			[
+				{
+					type: 'rule',
+					x: new Date('2026-07-01T00:00:00Z'),
+					rawX: '2026-07-01T00:00:00Z',
+					text: 'A long first event label',
+					colour: '#f00',
+					y: null,
+					series: null,
+					axis: 'left',
+					rowNumber: 2
+				},
+				{
+					type: 'rule',
+					x: new Date('2026-07-01T00:01:00Z'),
+					rawX: '2026-07-01T00:01:00Z',
+					text: 'A nearby second event label',
+					colour: '#0a0',
+					y: null,
+					series: null,
+					axis: 'left',
+					rowNumber: 3
+				}
+			],
+			data,
+			['generation'],
+			{ generation: 'Generation' },
+			DEFAULT_ANNOTATION_STYLE,
+			600
+		);
+
+		expect(result.backgroundMarks).toHaveLength(2);
+		expect(result.foregroundMarks).toHaveLength(2);
+		expect(result.marginTop).toBeGreaterThan(12 + DEFAULT_ANNOTATION_STYLE.fontSize + 4);
+	});
+
+	it('renders explicit and nearest-series point annotations', () => {
+		const result = processDataAnnotations(
+			[
+				{
+					type: 'point',
+					x: new Date('2026-07-01T00:55:00Z'),
+					rawX: '2026-07-01T00:55:00Z',
+					text: 'Nearest generation',
+					colour: '#f00',
+					y: null,
+					series: 'Generation',
+					axis: 'left',
+					rowNumber: 2
+				},
+				{
+					type: 'point',
+					x: new Date('2026-07-01T00:30:00Z'),
+					rawX: '2026-07-01T00:30:00Z',
+					text: 'Right axis',
+					colour: '#00f',
+					y: 50,
+					series: null,
+					axis: 'right',
+					rowNumber: 3
+				}
+			],
+			data,
+			['generation'],
+			{ generation: 'Generation' },
+			DEFAULT_ANNOTATION_STYLE,
+			600,
+			(value) => value * 2
+		);
+
+		// Each resolved point contributes a dot, connector and text mark.
+		expect(result.foregroundMarks).toHaveLength(6);
 	});
 });

@@ -93,7 +93,7 @@ function asUTC(d) {
  * @param {string} str
  * @returns {Date | null}
  */
-function parseDate(str) {
+export function parseDate(str) {
 	const trimmed = str.trim().replace(/^["']|["']$/g, '');
 	if (!trimmed) return null;
 
@@ -142,7 +142,7 @@ function parseNumber(str) {
  * @param {string} header
  * @returns {string}
  */
-function toKey(header) {
+export function toKey(header) {
 	return header
 		.trim()
 		.toLowerCase()

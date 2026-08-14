@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Meta from '$lib/components/Meta.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import StratifyHeader from './_components/StratifyHeader.svelte';
 	import StratifyButton from './_components/StratifyButton.svelte';
 	import ConfirmModal from './_components/ConfirmModal.svelte';
@@ -169,7 +170,16 @@
 			const full = await api.getChart(chart._id);
 			if (!full) return;
 
-			const { _id, _createdAt, _updatedAt, userId, userEmail, status, publishedAt, ...rest } = full;
+			const {
+				_id,
+				_createdAt,
+				_updatedAt,
+				userId: _userId,
+				userEmail: _userEmail,
+				status: _status,
+				publishedAt: _publishedAt,
+				...rest
+			} = full;
 			const snapshot = {
 				...rest,
 				title: `${full.title || 'Untitled'} (copy)`
@@ -272,79 +282,80 @@
 	</div>
 {/snippet}
 
-<div class="flex flex-col h-dvh overflow-hidden font-mono">
+<div class="flex h-dvh flex-col overflow-hidden bg-white font-sans text-sm text-dark-grey">
 	<StratifyHeader />
 
 	<!-- Toolbar -->
-	<div class="flex items-center gap-3 px-4 py-2.5 border-b border-warm-grey bg-white">
-		<StratifyButton href="/stratify/new" variant="accent">
-			<CirclePlusIcon size={12} />
-			New Chart
+	<div
+		class="flex flex-wrap items-center gap-3 border-b border-warm-grey bg-white px-4 py-3 sm:px-6 lg:px-8"
+	>
+		<StratifyButton href="/stratify/new" variant="primary">
+			<CirclePlusIcon size={15} />
+			New chart
 		</StratifyButton>
 
 		<div
-			class="inline-flex items-center rounded-md border border-warm-grey divide-x divide-warm-grey overflow-hidden ml-1"
+			class="inline-flex items-center gap-1 rounded-full border border-warm-grey bg-light-warm-grey p-1"
 		>
 			{#each filterOptions as option (option)}
 				<button
 					type="button"
 					onclick={() => setStatusFilter(option)}
-					class="px-2.5 py-1 text-[10px] capitalize transition-colors {statusFilter === option
-						? 'bg-dark-grey text-white'
-						: 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
+					class="rounded-full px-3 py-1.5 font-space text-sm font-medium capitalize transition-colors {statusFilter ===
+					option
+						? 'bg-dark-grey text-white shadow-sm'
+						: 'text-mid-grey hover:bg-white hover:text-dark-grey'}"
 				>
 					{option}
 				</button>
 			{/each}
 		</div>
 
-		<div class="relative ml-auto w-80">
+		<div class="relative order-last w-full sm:order-none sm:ml-auto sm:w-80">
 			<SearchIcon
-				size={12}
-				class="absolute left-2.5 top-1/2 -translate-y-1/2 text-mid-grey pointer-events-none"
+				size={15}
+				class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-mid-grey"
 			/>
 			<input
 				type="text"
-				placeholder="Search charts..."
+				placeholder="Search your charts"
 				bind:value={searchInput}
 				oninput={handleSearchInput}
-				class="w-full bg-light-warm-grey border border-warm-grey rounded-md pl-7 pr-2 py-1.5 text-[11px] focus:outline-none focus:border-dark-grey focus:bg-white transition-colors"
+				class="w-full rounded-lg border border-warm-grey bg-white py-2.5 pr-4 pl-9 text-sm transition-colors placeholder:text-mid-grey focus:border-red focus:ring-2 focus:ring-red/10 focus:outline-none"
 			/>
 		</div>
 	</div>
 
 	<!-- Chart list -->
-	<div class="flex-1 overflow-y-auto px-8 py-6 bg-light-warm-grey/50">
+	<div class="flex-1 overflow-y-auto bg-light-warm-grey/50 px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
 		<!-- My Charts -->
 		<section class="mb-10">
-			<h2 class="flex items-center gap-3 mb-4">
-				<span class="text-[10px] font-bold text-dark-grey uppercase tracking-wide">My Charts</span>
+			<h2 class="mb-5 flex items-center gap-3">
+				<span class="font-sans text-xl font-semibold tracking-tight">My charts</span>
 				{#if mySection}
 					<span
-						class="text-[9px] px-1.5 py-0.5 rounded-full bg-warm-grey text-mid-grey tabular-nums"
+						class="rounded-full bg-warm-grey px-2 py-0.5 font-mono text-[10px] text-mid-grey tabular-nums"
 					>
 						{mySection.total}
 					</span>
 				{/if}
-				<span class="flex-1 border-t border-warm-grey"></span>
 			</h2>
 
 			{#if myLoading}
 				{@render skeletonGrid()}
 			{:else if !mySection || mySection.total === 0}
-				<div class="text-center py-8">
-					<p class="text-[11px] text-mid-grey mb-3">
-						{filtersActive ? 'No matching charts' : 'No charts yet'}
-					</p>
-					{#if !filtersActive}
-						<a
-							href="/stratify/new"
-							class="inline-block rounded border border-warm-grey px-4 py-2 text-[11px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
-						>
-							Create your first chart
-						</a>
-					{/if}
-				</div>
+				<Card.Root class="gap-0 border-dashed bg-white py-0 text-center shadow-none">
+					<Card.Content class="px-6 py-14">
+						<p class="mb-4 text-sm text-mid-grey">
+							{filtersActive ? 'No matching charts' : 'No charts yet'}
+						</p>
+						{#if !filtersActive}
+							<StratifyButton href="/stratify/new" variant="primary">
+								Create your first chart
+							</StratifyButton>
+						{/if}
+					</Card.Content>
+				</Card.Root>
 			{:else}
 				<div
 					class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[2560px]:grid-cols-6 gap-4"
@@ -373,24 +384,25 @@
 		<!-- Community Charts -->
 		{#if showCommunitySection}
 			<section>
-				<h2 class="flex items-center gap-3 mb-4">
-					<span class="text-[10px] font-bold text-dark-grey uppercase tracking-wide">
-						Community Charts
-					</span>
+				<h2 class="mb-5 flex items-center gap-3">
+					<span class="font-sans text-xl font-semibold tracking-tight"> Community charts </span>
 					{#if communitySection}
 						<span
-							class="text-[9px] px-1.5 py-0.5 rounded-full bg-warm-grey text-mid-grey tabular-nums"
+							class="rounded-full bg-warm-grey px-2 py-0.5 font-mono text-[10px] text-mid-grey tabular-nums"
 						>
 							{communitySection.total}
 						</span>
 					{/if}
-					<span class="flex-1 border-t border-warm-grey"></span>
 				</h2>
 
 				{#if communityLoading}
 					{@render skeletonGrid()}
 				{:else if !communitySection || communitySection.total === 0}
-					<p class="text-[11px] text-mid-grey text-center py-8">No matching community charts</p>
+					<Card.Root class="gap-0 border-dashed bg-white py-0 text-center shadow-none">
+						<Card.Content class="px-6 py-12 text-sm text-mid-grey">
+							No matching community charts
+						</Card.Content>
+					</Card.Root>
 				{:else}
 					<div
 						class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[2560px]:grid-cols-6 gap-4"

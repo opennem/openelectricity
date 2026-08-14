@@ -22,6 +22,13 @@ import {
 } from '$lib/stratify/chart-types.js';
 import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
 import {
+	compileAnnotationData,
+	DEFAULT_ANNOTATION_MAPPINGS,
+	DEFAULT_ANNOTATION_STYLE,
+	inferAnnotationMappings,
+	parseAnnotationTable
+} from '$lib/stratify/annotation-data.js';
+import {
 	detectLatColumn,
 	detectLngColumn,
 	detectLabelColumn
@@ -35,6 +42,11 @@ import {
  * @typedef {Object} StratifyPlotSnapshot
  * @property {number} version
  * @property {string} csvText
+ * @property {string} [annotationCsvText]
+ * @property {import('$lib/stratify/annotation-data.js').AnnotationMappings} [annotationMappings]
+ * @property {import('$lib/stratify/annotation-data.js').AnnotationStyleConfig} [annotationStyle]
+ * @property {Record<string, import('$lib/stratify/annotation-data.js').AnnotationRowOption>} [annotationRowOptions]
+ * @property {import('$lib/stratify/plot-annotations.js').Annotation[]} [annotations]
  * @property {string} title
  * @property {string} description
  * @property {string} dataSource
@@ -116,6 +128,24 @@ export default class StratifyPlotProject {
 	// --- Data ---
 	/** @type {string} */
 	csvText = $state('');
+
+	/** @type {string} Separate CSV/TSV containing data-driven chart annotations */
+	annotationCsvText = $state('');
+
+	/** @type {import('$lib/stratify/annotation-data.js').AnnotationMappings} */
+	annotationMappings = $state({ ...DEFAULT_ANNOTATION_MAPPINGS });
+
+	/** @type {import('$lib/stratify/annotation-data.js').AnnotationStyleConfig} */
+	annotationStyle = $state({ ...DEFAULT_ANNOTATION_STYLE });
+
+	/** @type {Record<string, import('$lib/stratify/annotation-data.js').AnnotationRowOption>} */
+	annotationRowOptions = $state({});
+
+	/** @type {import('$lib/stratify/plot-annotations.js').Annotation[]} Legacy annotations */
+	annotations = $state([]);
+
+	/** @type {string} Header signature used to avoid overwriting intentional mapping choices */
+	annotationHeaderSignature = $state('');
 
 	// --- Metadata ---
 	/** @type {string} */
@@ -367,6 +397,43 @@ export default class StratifyPlotProject {
 	// --- Derived from CSV ---
 	parsedData = $derived(parseCSV(this.csvText, {}, this.displayMode, this.xColumn || 0));
 
+	annotationTable = $derived(parseAnnotationTable(this.annotationCsvText));
+
+	compiledAnnotationData = $derived(
+		compileAnnotationData(
+			this.annotationTable,
+			this.parsedData.mode,
+			this.annotationMappings,
+			this.annotationStyle,
+			this.annotationRowOptions
+		)
+	);
+
+	dataAnnotations = $derived(this.compiledAnnotationData.annotations);
+
+	annotationErrors = $derived(this.compiledAnnotationData.errors);
+
+	annotationWarnings = $derived.by(() => {
+		const warnings = [...this.compiledAnnotationData.warnings];
+		for (const annotation of this.dataAnnotations) {
+			if (
+				annotation.type === 'point' &&
+				annotation.y == null &&
+				annotation.series &&
+				!this.parsedData.seriesNames.some(
+					(name) =>
+						name.toLowerCase() === annotation.series?.toLowerCase() ||
+						this.parsedData.seriesLabels[name]?.toLowerCase() === annotation.series?.toLowerCase()
+				)
+			) {
+				warnings.push(
+					`Row ${annotation.rowNumber}: could not resolve series "${annotation.series}".`
+				);
+			}
+		}
+		return warnings;
+	});
+
 	hasData = $derived(this.parsedData.data.length > 0);
 
 	isCategory = $derived(this.parsedData.mode === 'category');
@@ -600,6 +667,42 @@ export default class StratifyPlotProject {
 	});
 
 	constructor() {
+		// Infer mappings when an annotation dataset is first pasted or its headers change.
+		// Once mapped, an intentional "None" choice is preserved until the headers change.
+		$effect(() => {
+			const signature = this.annotationTable.columns.map((column) => column.key).join('|');
+			if (!signature || signature === this.annotationHeaderSignature) return;
+			const inferred = inferAnnotationMappings(this.annotationTable.columns);
+			const validKeys = this.annotationTable.columns.map((column) => column.key);
+			const next = { ...this.annotationMappings };
+			for (const mapping of [
+				'typeColumn',
+				'xColumn',
+				'labelColumn',
+				'colourColumn',
+				'yColumn',
+				'seriesColumn',
+				'axisColumn'
+			]) {
+				const key = /** @type {keyof typeof next} */ (mapping);
+				if (!next[key] || !validKeys.includes(/** @type {string} */ (next[key]))) {
+					next[key] = /** @type {never} */ (inferred[key]);
+				}
+			}
+			this.annotationMappings = next;
+			this.annotationHeaderSignature = signature;
+		});
+
+		// Remove options for annotation rows that no longer exist after CSV edits.
+		$effect(() => {
+			const validRows = this.annotationTable.rows.map((row) => String(row.rowNumber));
+			const optionRows = Object.keys(this.annotationRowOptions);
+			if (optionRows.every((row) => validRows.includes(row))) return;
+			this.annotationRowOptions = Object.fromEntries(
+				Object.entries(this.annotationRowOptions).filter(([row]) => validRows.includes(row))
+			);
+		});
+
 		// Auto-switch chart type when data mode changes
 		$effect(() => {
 			if (this.isCategory) {
@@ -722,6 +825,12 @@ export default class StratifyPlotProject {
 	/** Reset the project to a blank state. */
 	reset() {
 		this.csvText = '';
+		this.annotationCsvText = '';
+		this.annotationMappings = { ...DEFAULT_ANNOTATION_MAPPINGS };
+		this.annotationStyle = { ...DEFAULT_ANNOTATION_STYLE };
+		this.annotationRowOptions = {};
+		this.annotations = [];
+		this.annotationHeaderSignature = '';
 		this.title = '';
 		this.description = '';
 		this.dataSource = '';
@@ -803,31 +912,32 @@ export default class StratifyPlotProject {
 
 	/**
 	 * Load an example dataset into the project.
-	 * @param {{ csvData: string, title: string, description: string, dataSource: string, notes: string, chartType?: string, displayMode?: 'auto' | 'time-series' | 'category' | 'linear', xColumn?: string, scatterSizeColumn?: string | null, scatterPointRadius?: number, scatterMinRadius?: number, scatterMaxRadius?: number, scatterPointOpacity?: number }} example
+	 * @param {{ snapshot?: Record<string, any>, csvData?: string, title?: string, description?: string, dataSource?: string, notes?: string, chartType?: string, displayMode?: 'auto' | 'time-series' | 'category' | 'linear', xColumn?: string, scatterSizeColumn?: string | null, scatterPointRadius?: number, scatterMinRadius?: number, scatterMaxRadius?: number, scatterPointOpacity?: number }} example
 	 */
 	loadExample(example) {
-		this.reset();
-		this.csvText = example.csvData;
-		this.title = example.title;
-		this.description = example.description;
-		this.dataSource = example.dataSource;
-		this.notes = example.notes;
-		if (example.chartType) {
-			this.chartType = /** @type {ChartType} */ (example.chartType);
-		}
-		if (example.displayMode) this.displayMode = example.displayMode;
-		if (example.xColumn !== undefined) this.xColumn = example.xColumn;
-		if (example.scatterSizeColumn !== undefined) {
-			this.scatterSizeColumn = example.scatterSizeColumn;
-		}
-		if (example.scatterPointRadius !== undefined) {
-			this.scatterPointRadius = example.scatterPointRadius;
-		}
-		if (example.scatterMinRadius !== undefined) this.scatterMinRadius = example.scatterMinRadius;
-		if (example.scatterMaxRadius !== undefined) this.scatterMaxRadius = example.scatterMaxRadius;
-		if (example.scatterPointOpacity !== undefined) {
-			this.scatterPointOpacity = example.scatterPointOpacity;
-		}
+		const snapshot = example.snapshot ?? {
+			csvText: example.csvData ?? '',
+			title: example.title ?? '',
+			description: example.description ?? '',
+			dataSource: example.dataSource ?? '',
+			notes: example.notes ?? '',
+			chartType: example.chartType,
+			displayMode: example.displayMode,
+			xColumn: example.xColumn,
+			scatterSizeColumn: example.scatterSizeColumn,
+			scatterPointRadius: example.scatterPointRadius,
+			scatterMinRadius: example.scatterMinRadius,
+			scatterMaxRadius: example.scatterMaxRadius,
+			scatterPointOpacity: example.scatterPointOpacity
+		};
+
+		this.loadFromSnapshot(
+			/** @type {any} */ ({
+				...snapshot,
+				status: 'draft'
+			})
+		);
+		this.currentChartId = null;
 	}
 
 	/**
@@ -838,6 +948,11 @@ export default class StratifyPlotProject {
 		return {
 			version: 2,
 			csvText: this.csvText,
+			annotationCsvText: this.annotationCsvText,
+			annotationMappings: this.annotationMappings,
+			annotationStyle: this.annotationStyle,
+			annotationRowOptions: this.annotationRowOptions,
+			annotations: this.annotations,
 			title: this.title,
 			description: this.description,
 			dataSource: this.dataSource,
@@ -922,6 +1037,15 @@ export default class StratifyPlotProject {
 	 */
 	loadFromSnapshot(snapshot) {
 		this.csvText = snapshot.csvText ?? '';
+		this.annotationCsvText = snapshot.annotationCsvText ?? '';
+		this.annotationMappings = {
+			...DEFAULT_ANNOTATION_MAPPINGS,
+			...(snapshot.annotationMappings ?? {})
+		};
+		this.annotationStyle = { ...DEFAULT_ANNOTATION_STYLE, ...(snapshot.annotationStyle ?? {}) };
+		this.annotationRowOptions = snapshot.annotationRowOptions ?? {};
+		this.annotations = Array.isArray(snapshot.annotations) ? snapshot.annotations : [];
+		this.annotationHeaderSignature = '';
 		this.title = snapshot.title ?? '';
 		this.description = snapshot.description ?? '';
 		this.dataSource = snapshot.dataSource ?? '';

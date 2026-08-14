@@ -7,6 +7,6 @@
 	let { children } = $props();
 </script>
 
-<div class="mt-3 pt-3 border-t border-warm-grey flex flex-col gap-6">
+<div class="mt-8 flex flex-col gap-8 border-t border-warm-grey pt-8">
 	{@render children()}
 </div>

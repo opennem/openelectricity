@@ -1,5 +1,6 @@
 <script>
 	import { timeAgo } from '../_utils/format.js';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import ChartThumbnail from './ChartThumbnail.svelte';
 
 	/**
@@ -29,13 +30,12 @@
 	let target = $derived(variant === 'community' ? '_blank' : undefined);
 	let isDraft = $derived(chart.status !== 'published');
 
-	const actionClass = 'text-[11px] text-mid-grey hover:text-dark-grey py-0.5';
-	const dangerActionClass =
-		'text-[11px] text-mid-grey hover:text-dark-red disabled:opacity-40 py-0.5';
+	const actionClass = 'text-xs text-mid-grey hover:text-dark-grey py-0.5';
+	const dangerActionClass = 'text-xs text-mid-grey hover:text-dark-red disabled:opacity-40 py-0.5';
 </script>
 
-<div
-	class="group rounded-xl overflow-hidden transition-all flex flex-col hover:shadow-sm {isDraft
+<Card.Root
+	class="group flex flex-col gap-0 overflow-hidden py-0 shadow-none transition-all hover:shadow-sm {isDraft
 		? 'border border-dashed border-mid-warm-grey bg-light-warm-grey/40 hover:border-mid-grey'
 		: 'border border-warm-grey bg-white hover:border-mid-warm-grey'}"
 >
@@ -59,20 +59,20 @@
 			<a
 				{href}
 				{target}
-				class="font-sans text-[13px] font-medium leading-snug text-dark-grey truncate hover:text-red flex-1 min-w-0"
+				class="min-w-0 flex-1 truncate font-sans text-sm font-medium leading-snug text-dark-grey hover:text-red"
 			>
 				{chart.title || 'Untitled'}
 			</a>
 			{#if isDraft}
 				<span
-					class="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 bg-warm-grey text-mid-grey"
+					class="shrink-0 rounded bg-warm-grey px-1.5 py-0.5 text-xxs uppercase tracking-wide text-mid-grey"
 				>
 					Draft
 				</span>
 			{/if}
 		</div>
 		<div class="flex items-center justify-between min-h-5">
-			<span class="text-[10px] text-mid-grey truncate inline-flex items-center gap-1.5">
+			<span class="inline-flex items-center gap-1.5 truncate text-xs text-mid-grey">
 				{#if variant === 'community'}
 					<span class="truncate">{chart.userEmail || 'Unknown'}</span>
 					&middot;
@@ -118,4 +118,4 @@
 			</div>
 		</div>
 	</div>
-</div>
+</Card.Root>

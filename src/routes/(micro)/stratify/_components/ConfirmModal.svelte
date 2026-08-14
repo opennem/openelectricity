@@ -1,6 +1,8 @@
 <script>
 	import { portal } from '$lib/actions/portal.js';
+	import Button from '$lib/components/form-elements/Button.svelte';
 	import { Backdrop } from '$lib/components/ui/backdrop';
+	import * as Card from '$lib/components/ui/card/index.js';
 
 	/**
 	 * @type {{
@@ -44,43 +46,32 @@
 {#if open}
 	<div
 		use:portal
-		class="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
+		class="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center"
 	>
-		<!-- Modal card -->
-		<div class="bg-white rounded-lg shadow-lg w-80 mx-4 font-mono pointer-events-auto">
-			<div class="px-4 pt-4 pb-3">
-				<h3 class="text-[11px] font-bold text-dark-grey uppercase tracking-wide">{title}</h3>
-				<p class="text-[11px] text-mid-grey mt-2 leading-relaxed">{message}</p>
-			</div>
+		<Card.Root
+			class="pointer-events-auto mx-4 w-full max-w-[440px] gap-0 bg-white"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="stratify-confirm-title"
+		>
+			<Card.Content class="px-6 sm:px-8">
+				<h2 id="stratify-confirm-title" class="mb-3 font-sans text-xl leading-xl font-semibold">
+					{title}
+				</h2>
+				<p class="mb-6 text-sm leading-sm text-mid-grey">{message}</p>
 
-			<div class="flex items-center justify-end gap-2 px-4 pb-4 pt-1">
-				<button
-					type="button"
-					onclick={oncancel}
-					disabled={loading}
-					class="rounded border border-warm-grey px-3 py-1.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors disabled:opacity-50"
-				>
-					Cancel
-				</button>
-				{#if onsecondary && secondaryLabel}
-					<button
-						type="button"
-						onclick={onsecondary}
-						disabled={loading}
-						class="rounded border border-warm-grey px-3 py-1.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors disabled:opacity-50"
-					>
-						{secondaryLabel}
-					</button>
-				{/if}
-				<button
-					type="button"
-					onclick={onconfirm}
-					disabled={loading}
-					class="rounded bg-dark-grey px-3 py-1.5 text-[10px] text-white hover:bg-black transition-colors disabled:opacity-50"
-				>
-					{loading ? loadingConfirmLabel : confirmLabel}
-				</button>
-			</div>
-		</div>
+				<div class="flex flex-wrap items-center justify-end gap-3">
+					<Button secondary clickHandler={oncancel} disabled={loading}>Cancel</Button>
+					{#if onsecondary && secondaryLabel}
+						<Button secondary clickHandler={onsecondary} disabled={loading}>
+							{secondaryLabel}
+						</Button>
+					{/if}
+					<Button clickHandler={onconfirm} disabled={loading}>
+						{loading ? loadingConfirmLabel : confirmLabel}
+					</Button>
+				</div>
+			</Card.Content>
+		</Card.Root>
 	</div>
 {/if}

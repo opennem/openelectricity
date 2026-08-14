@@ -8,9 +8,11 @@
 	let { label, children } = $props();
 </script>
 
-<div class="pt-8 first:pt-2">
-	<p class="text-[10px] text-dark-grey font-bold uppercase tracking-wide mb-2">{label}</p>
-	<div class="pl-3">
+<section class="border-t border-warm-grey py-8 first:border-t-0 first:pt-2">
+	<p class="mb-6 font-space text-xxs font-medium uppercase tracking-wider text-dark-grey">
+		{label}
+	</p>
+	<div>
 		{@render children()}
 	</div>
-</div>
+</section>

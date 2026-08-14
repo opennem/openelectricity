@@ -9,6 +9,12 @@
 	import { makeValueFormatter } from '$lib/components/charts/plot/plot-configs.js';
 	import { scaleSqrt } from 'd3-scale';
 	import {
+		compileAnnotationData,
+		DEFAULT_ANNOTATION_MAPPINGS,
+		DEFAULT_ANNOTATION_STYLE,
+		parseAnnotationTable
+	} from '$lib/stratify/annotation-data.js';
+	import {
 		HORIZONTAL_TYPES,
 		MAP_TYPES,
 		WATERFALL_TYPES,
@@ -31,6 +37,29 @@
 
 	const parsed = $derived(
 		parseCSV(chart.csvText, {}, chart.displayMode ?? 'auto', chart.xColumn || 0)
+	);
+	const annotationStyle = $derived({
+		...DEFAULT_ANNOTATION_STYLE,
+		...(chart.annotationStyle ?? {})
+	});
+	const annotationMappings = $derived({
+		...DEFAULT_ANNOTATION_MAPPINGS,
+		...(chart.annotationMappings ?? {})
+	});
+	const annotationTable = $derived(parseAnnotationTable(chart.annotationCsvText ?? ''));
+	const compiledAnnotations = $derived(
+		compileAnnotationData(
+			annotationTable,
+			parsed.mode,
+			annotationMappings,
+			annotationStyle,
+			chart.annotationRowOptions ?? {}
+		)
+	);
+	const dataAnnotations = $derived(
+		MAP_TYPES.has(chart.chartType) || HORIZONTAL_TYPES.has(chart.chartType)
+			? []
+			: compiledAnnotations.annotations
 	);
 	const preset = $derived(getPreset(chart.stylePreset ?? 'oe'));
 	const plotStyleOptions = $derived({
@@ -385,6 +414,8 @@
 			seriesYAxis={chart.seriesYAxis ?? {}}
 			y2Label={chart.y2Label ?? ''}
 			annotations={chart.annotations}
+			{dataAnnotations}
+			{annotationStyle}
 			options={plotStyleOptions}
 			height={chartHeight}
 			yTicks={chart.yTicks ?? 0}

@@ -5,7 +5,7 @@
 	 * (`flex-1`, `w-20`, etc.).
 	 */
 	export const CONTROL_INPUT_CLASS =
-		'bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey';
+		'bg-light-warm-grey/50 border border-warm-grey rounded-lg px-3 py-2 text-xs text-dark-grey focus:outline-none focus:border-red focus:ring-1 focus:ring-red';
 </script>
 
 <script>
@@ -20,10 +20,10 @@
 	let { label = '', suffix = '', children } = $props();
 </script>
 
-<label class="flex items-center gap-2">
-	<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">{label}</span>
+<label class="flex items-center gap-3">
+	<span class="w-[34%] max-w-[110px] shrink-0 text-xs text-mid-grey">{label}</span>
 	{@render children()}
 	{#if suffix}
-		<span class="text-[10px] text-mid-grey">{suffix}</span>
+		<span class="text-xs text-mid-grey">{suffix}</span>
 	{/if}
 </label>

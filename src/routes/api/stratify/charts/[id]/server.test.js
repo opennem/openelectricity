@@ -80,4 +80,29 @@ describe('PATCH /api/stratify/charts/:id chart-field persistence', () => {
 			tooltipDateFormat: 'time'
 		});
 	});
+
+	it('patches annotation data and preserves explicit zero values', async () => {
+		const request = new Request('http://localhost/api/stratify/charts/chart-1', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				annotationCsvText: '',
+				annotationMappings: { xColumn: null, labelColumn: null },
+				annotationStyle: { lineWidth: 0, pointRadius: 0 },
+				annotationRowOptions: {},
+				annotations: []
+			})
+		});
+
+		const response = await PATCH(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
+
+		expect(response.status).toBe(200);
+		expect(mocks.set).toHaveBeenCalledWith({
+			annotationCsvText: '',
+			annotationMappings: JSON.stringify({ xColumn: null, labelColumn: null }),
+			annotationStyle: JSON.stringify({ lineWidth: 0, pointRadius: 0 }),
+			annotationRowOptions: JSON.stringify({}),
+			annotations: JSON.stringify([])
+		});
+	});
 });

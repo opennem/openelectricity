@@ -127,9 +127,12 @@
 
 <!-- ═══ Section 1: Chart Type ═══ -->
 <SectionHeader label="Type">
-	<div class="flex flex-col gap-2">
-		<ChartTypeSelector />
-		{#if project.chartType !== 'line' && !isScatter && !isMap}
+	<ChartTypeSelector />
+</SectionHeader>
+
+{#if project.chartType !== 'line' && !isScatter && !isMap}
+	<SectionHeader label="Appearance">
+		<div class="flex flex-col gap-2">
 			<ControlInput label="Border" suffix="px">
 				<input
 					type="number"
@@ -156,9 +159,9 @@
 					aria-label="Border colour"
 				/>
 			</ControlInput>
-		{/if}
-	</div>
-</SectionHeader>
+		</div>
+	</SectionHeader>
+{/if}
 
 <!-- ═══ Map: Data ═══ -->
 {#if isMap && project.hasData}

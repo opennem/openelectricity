@@ -9,7 +9,7 @@
 	let activeTab = $state('csv');
 
 	const textareaBase =
-		'bg-warm-grey/50 rounded-lg p-3 text-xs font-mono w-full border border-warm-grey outline-none focus:bg-warm-grey resize-y';
+		'bg-light-warm-grey rounded-lg p-4 text-xs leading-relaxed font-mono w-full border border-warm-grey outline-none focus:bg-white focus:border-red focus:ring-1 focus:ring-red resize-y';
 	let textareaClass = $derived(hasData ? `${textareaBase} rounded-t-none` : textareaBase);
 
 	/**
@@ -44,7 +44,7 @@
 			<div class="flex gap-0.5 mb-0">
 				<button
 					type="button"
-					class="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide cursor-pointer transition-colors rounded-t-lg
+					class="cursor-pointer rounded-t-lg px-4 py-2 font-space text-xxs font-medium uppercase tracking-wider transition-colors
 						{activeTab === 'csv' ? 'text-dark-grey bg-warm-grey/50' : 'text-mid-grey hover:text-dark-grey'}"
 					onclick={() => (activeTab = 'csv')}
 				>
@@ -52,7 +52,7 @@
 				</button>
 				<button
 					type="button"
-					class="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide cursor-pointer transition-colors rounded-t-lg
+					class="cursor-pointer rounded-t-lg px-4 py-2 font-space text-xxs font-medium uppercase tracking-wider transition-colors
 						{activeTab === 'parsed' ? 'text-dark-grey bg-warm-grey/50' : 'text-mid-grey hover:text-dark-grey'}"
 					onclick={() => (activeTab = 'parsed')}
 				>
@@ -121,7 +121,7 @@
 					</tbody>
 				</table>
 			</div>
-			<p class="text-[11px] text-mid-grey mt-1">{project.parsedData.data.length} rows</p>
+			<p class="mt-2 font-mono text-xxs text-mid-grey">{project.parsedData.data.length} rows</p>
 		{/if}
 	</div>
 </div>

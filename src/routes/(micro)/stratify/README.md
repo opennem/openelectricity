@@ -4,7 +4,10 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 
 ## Features
 
-- **Chart types**: Line, Scatterplot, Area, Column, Stacked Columns, Grouped Columns, Bar, Stacked Bars, Grouped Bars, Map (lat/lng point map)
+- **Chart types**: Line, Scatterplot, Area, Column, Stacked Columns, Grouped Columns, Bar, Stacked Bars, Grouped Bars, Waterfall, Horizontal Waterfall, Map (lat/lng point map)
+- **Guided workflow**: Five focused steps take beginners from pasted data to a published or exported chart
+- **Public documentation**: `/stratify/docs` explains every chart type and common configuration task without requiring sign-in
+- **Reusable examples**: Every chart type has a versioned example with working data, a live preview and a signed-in “Use this example” hand-off
 - **Per-series chart type**: Override the chart type for individual series (e.g. one series as a line, another as a bar)
 - **Data input**: Paste CSV or tab-separated data (e.g. from Google Sheets)
 - **Auto-detection**: Automatically detects dates vs categories, delimiter type
@@ -38,6 +41,7 @@ src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/foo
 ├── +layout.svelte                     # Micro layout wrapper
 ├── new/                               # New chart builder (blank)
 ├── [id]/                              # Edit existing chart
+├── docs/                              # Public examples and plain-language guides
 ├── _state/
 │   ├── StratifyPlotProject.svelte.js  # Central state class (runes)
 │   └── context.js                     # setContext/getContext helpers
@@ -115,6 +119,31 @@ src/lib/components/text-components/    # Article content rendering
 └── Image.svelte                       # Image block handler
 ```
 
+## Public documentation and templates
+
+The public learning site lives at `/stratify/docs`. Its catalogue is generated
+from `src/lib/stratify/example-catalogue.js`, which is the single source of
+truth for built-in example data, chart configuration and learning copy. The
+catalogue includes at least one complete example for every supported top-level
+chart type. A small curated list of published `/strata/[id]` charts supplements
+those examples; failed or unpublished community examples are omitted without
+preventing the rest of the docs from loading.
+
+Each example page includes a live preview, guidance on when to use the chart,
+the source CSV and a five-step configuration walkthrough. **Use this example**
+opens `/stratify/new?template=<slug>`. After authentication, the builder loads
+the configuration as a new unsaved draft and never edits or republishes the
+source chart. Built-in templates load locally; community templates are fetched
+through the authenticated chart API.
+
+The editor follows the same five-part structure as the documentation:
+
+1. **Add data** — paste CSV or TSV data and check the parsed table.
+2. **Choose a chart** — select a chart type using visual cards and suitability guidance.
+3. **Make it clear** — configure axes, number formats, colours and series.
+4. **Add context** — add sources, notes and data-driven annotations.
+5. **Share** — save, publish, embed or export the finished chart.
+
 ## Chart Types
 
 | Value                  | Family    | Description                            |
@@ -180,6 +209,33 @@ The nearest-point tooltip reports the series, X, Y and selected size value. A
 compact size legend is shown alongside the series legend when legends are on.
 Legacy saved charts with the old top-level `dot` value still migrate to `line`;
 only the new canonical `scatter` value enables this chart type.
+
+## Data-driven Annotations
+
+The **Annotations** panel accepts a second CSV/TSV dataset for coloured event
+rules and point callouts. The dataset uses X/date and label columns, with an
+optional type and Y value, which are mapped independently of the main chart
+data. Common header names are detected automatically.
+
+```csv
+type,date,label,y
+rule,2026-07-01T21:20:00+10:00,Generation high: 9:20pm 1 Jul,
+rule,2026-07-02T05:20:00+10:00,Availability high: 5:20am 2 Jul,
+point,2026-07-02T00:00:00+10:00,Explicit value,10500
+```
+
+Rule labels are automatically staggered into non-overlapping lanes above the
+plot. Point rows default to the Y value mapped from the annotation CSV. Their
+**Position by** option can instead resolve a selected chart series at the
+nearest temporal/linear X value. The per-row **Annotation options** controls set
+each colour, position mode, series and left/right axis. The colour applies to
+the rule/marker, connector and label.
+
+Appearance controls set the fallback colour, line style and width, label size
+and weight, and point radius. Data annotations support Plot charts with a
+horizontal X axis and replicate across facets and animation frames. Maps and
+horizontal bar/waterfall charts do not render data annotations. The existing
+legacy `annotations` array remains supported for old saved charts.
 
 ## Map Chart Type
 
@@ -607,6 +663,25 @@ The JSON format used for persistence (localStorage, file export, Sanity CMS):
 {
 	"version": 2,
 	"csvText": "Date,Solar,Wind\n2024-01-01,150,200\n...",
+	"annotationCsvText": "type,date,label,y\nrule,2024-01-01,Start,",
+	"annotationMappings": {
+		"typeColumn": "type",
+		"xColumn": "date",
+		"labelColumn": "label",
+		"yColumn": "y",
+		"defaultType": "rule"
+	},
+	"annotationRowOptions": {
+		"2": { "colour": "#5b9f7b", "positionBy": "y", "axis": "left" }
+	},
+	"annotationStyle": {
+		"defaultColour": "#666666",
+		"lineStyle": "dashed",
+		"lineWidth": 1,
+		"fontSize": 11,
+		"fontWeight": "normal",
+		"pointRadius": 4
+	},
 	"title": "AU Electricity Generation",
 	"description": "Monthly generation mix.",
 	"dataSource": "Open Electricity",

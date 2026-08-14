@@ -13,6 +13,95 @@ function createProject() {
 	return new StratifyPlotProject();
 }
 
+describe('StratifyPlotProject — annotation dataset', () => {
+	it('uses defaults and compiles inferred annotation mappings', () => {
+		const project = createProject();
+		project.csvText = 'date,generation\n2026-07-01T00:00:00+10:00,100';
+		project.annotationCsvText = 'type,date,label\nrule,2026-07-01T00:00:00+10:00,Start';
+		project.annotationMappings = {
+			...project.annotationMappings,
+			typeColumn: 'type',
+			xColumn: 'date',
+			labelColumn: 'label'
+		};
+		project.annotationRowOptions = { 2: { colour: '#5b9f7b' } };
+
+		expect(project.annotationStyle).toMatchObject({
+			defaultColour: '#666666',
+			lineStyle: 'dashed',
+			lineWidth: 1,
+			fontSize: 11,
+			pointRadius: 4
+		});
+		expect(project.dataAnnotations[0]).toMatchObject({ text: 'Start', colour: '#5b9f7b' });
+	});
+
+	it('uses a mapped CSV Y value as the default point position', () => {
+		const project = createProject();
+		project.csvText = 'date,generation\n2026-07-01T00:00:00+10:00,100';
+		project.annotationCsvText = 'type,date,label,y\npoint,2026-07-01T00:00:00+10:00,Peak,105';
+		project.annotationMappings = {
+			...project.annotationMappings,
+			typeColumn: 'type',
+			xColumn: 'date',
+			labelColumn: 'label',
+			yColumn: 'y'
+		};
+
+		expect(project.dataAnnotations[0]).toMatchObject({
+			type: 'point',
+			y: 105,
+			series: null,
+			axis: 'left'
+		});
+	});
+
+	it('round-trips annotation data, mappings, styles and legacy annotations', () => {
+		const project = createProject();
+		project.annotationCsvText = 'date,label\n2026-07-01,Start';
+		project.annotationMappings = {
+			...project.annotationMappings,
+			xColumn: 'date',
+			labelColumn: 'label'
+		};
+		project.annotationStyle = {
+			...project.annotationStyle,
+			defaultColour: '#123456',
+			lineWidth: 0
+		};
+		project.annotationRowOptions = {
+			2: { colour: '#abcdef', positionBy: 'y', series: null, axis: 'right' }
+		};
+		project.annotations = [{ type: 'x-rule', x: '2025-01-01', text: 'Legacy' }];
+
+		const restored = createProject();
+		restored.loadFromSnapshot(project.toJSON());
+
+		expect(restored.annotationCsvText).toBe(project.annotationCsvText);
+		expect(restored.annotationMappings.xColumn).toBe('date');
+		expect(restored.annotationStyle).toMatchObject({
+			defaultColour: '#123456',
+			lineWidth: 0
+		});
+		expect(restored.annotationRowOptions).toEqual(project.annotationRowOptions);
+		expect(restored.annotations).toEqual(project.annotations);
+	});
+
+	it('reset clears annotation data and restores appearance defaults', () => {
+		const project = createProject();
+		project.annotationCsvText = 'date,label\n2026-07-01,Start';
+		project.annotationStyle = { ...project.annotationStyle, pointRadius: 10 };
+		project.annotationRowOptions = { 2: { colour: '#abcdef' } };
+		project.reset();
+
+		expect(project.annotationCsvText).toBe('');
+		expect(project.annotationMappings.xColumn).toBeNull();
+		expect(project.annotationStyle.pointRadius).toBe(4);
+		expect(project.annotationRowOptions).toEqual({});
+		expect(project.annotations).toEqual([]);
+	});
+});
+
 describe('StratifyPlotProject — tooltip date format', () => {
 	it('defaults to date and round-trips date plus time', () => {
 		const project = createProject();

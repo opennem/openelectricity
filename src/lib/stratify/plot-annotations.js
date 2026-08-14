@@ -45,7 +45,7 @@
  * @property {number} marginRight - Extra right margin needed (px)
  */
 
-import { text, ruleX, link } from '@observablehq/plot';
+import { text, ruleX, link, dot } from '@observablehq/plot';
 
 /** DM Mono at 10px — approximate character width in px */
 const CHAR_WIDTH = 6;
@@ -63,6 +63,13 @@ const DEFAULT_FONT = 'DM Mono, monospace';
 const DEFAULT_FONT_SIZE = 10;
 
 /**
+ * @typedef {Object} DataAnnotationResult
+ * @property {any[]} backgroundMarks
+ * @property {any[]} foregroundMarks
+ * @property {number} marginTop
+ */
+
+/**
  * Map a lineStyle string to a strokeDasharray value.
  * @param {'solid' | 'dashed' | 'dotted' | undefined} lineStyle
  * @returns {string | undefined}
@@ -71,6 +78,214 @@ function toDasharray(lineStyle) {
 	if (lineStyle === 'dashed') return '4,3';
 	if (lineStyle === 'dotted') return '1,3';
 	return undefined; // solid or unset
+}
+
+/**
+ * Resolve a data annotation's point series by key or displayed label.
+ * @param {string | null} requested
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} seriesLabels
+ */
+function resolveSeriesName(requested, seriesNames, seriesLabels) {
+	if (!requested) return null;
+	if (seriesNames.includes(requested)) return requested;
+	const wanted = requested.trim().toLowerCase();
+	return (
+		seriesNames.find(
+			(name) => name.toLowerCase() === wanted || seriesLabels[name]?.toLowerCase() === wanted
+		) ?? null
+	);
+}
+
+/**
+ * Find the chart row at an annotation's X position. Temporal and linear axes
+ * use the nearest row; ordinal axes require an exact category match.
+ * @param {Array<Record<string, any>>} data
+ * @param {string} xKey
+ * @param {Date | number | string} x
+ */
+function findAnnotationRow(data, xKey, x) {
+	if (xKey === 'category') return data.find((row) => String(row[xKey]) === String(x)) ?? null;
+	const target = x instanceof Date ? x.getTime() : Number(x);
+	if (!Number.isFinite(target)) return null;
+	let closest = null;
+	let distance = Infinity;
+	for (const row of data) {
+		const candidate = row[xKey] instanceof Date ? row[xKey].getTime() : Number(row[xKey]);
+		const nextDistance = Math.abs(candidate - target);
+		if (Number.isFinite(candidate) && nextDistance < distance) {
+			closest = row;
+			distance = nextDistance;
+		}
+	}
+	return closest;
+}
+
+/**
+ * Estimate X pixel positions and assign labels to the first non-overlapping
+ * lane. This keeps event labels compact without requiring a per-row lane.
+ * @param {Array<{x: Date | number | string, text: string}>} annotations
+ * @param {Array<Record<string, any>>} data
+ * @param {string} xKey
+ * @param {number} width
+ * @param {number} fontSize
+ */
+function assignLabelLanes(annotations, data, xKey, width, fontSize) {
+	const plotWidth = Math.max(width - 80, 160);
+	const dataValues = data.map((row) => row[xKey]);
+	const categories = xKey === 'category' ? [...new Set(dataValues.map(String))] : [];
+	const numericValues = dataValues
+		.map((value) => (value instanceof Date ? value.getTime() : Number(value)))
+		.filter(Number.isFinite);
+	const min = numericValues.length ? Math.min(...numericValues) : 0;
+	const max = numericValues.length ? Math.max(...numericValues) : min + 1;
+	const positioned = annotations.map((annotation, index) => {
+		let ratio;
+		if (xKey === 'category') {
+			const categoryIndex = Math.max(0, categories.indexOf(String(annotation.x)));
+			ratio = categories.length <= 1 ? 0.5 : categoryIndex / (categories.length - 1);
+		} else {
+			const value = annotation.x instanceof Date ? annotation.x.getTime() : Number(annotation.x);
+			ratio = max === min ? 0.5 : (value - min) / (max - min);
+		}
+		const pixelX = Math.max(0, Math.min(plotWidth, ratio * plotWidth));
+		const labelWidth = Math.max(fontSize * 2, annotation.text.length * fontSize * 0.58);
+		return { index, pixelX, start: pixelX - labelWidth / 2, end: pixelX + labelWidth / 2 };
+	});
+	positioned.sort((a, b) => a.pixelX - b.pixelX);
+	/** @type {number[]} */
+	const laneEnds = [];
+	const lanes = Array(annotations.length).fill(0);
+	for (const item of positioned) {
+		let lane = laneEnds.findIndex((end) => item.start > end + 6);
+		if (lane === -1) lane = laneEnds.length;
+		laneEnds[lane] = item.end;
+		lanes[item.index] = lane;
+	}
+	return { lanes, laneCount: laneEnds.length };
+}
+
+/**
+ * Convert compiled annotation dataset rows into Plot marks.
+ * @param {import('./annotation-data.js').DataAnnotation[]} annotations
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} seriesLabels
+ * @param {import('./annotation-data.js').AnnotationStyleConfig} style
+ * @param {number} width
+ * @param {(value: number) => number} [rightAxisTransform]
+ * @returns {DataAnnotationResult}
+ */
+export function processDataAnnotations(
+	annotations,
+	data,
+	seriesNames,
+	seriesLabels,
+	style,
+	width,
+	rightAxisTransform
+) {
+	if (!annotations.length || !data.length) {
+		return { backgroundMarks: [], foregroundMarks: [], marginTop: 0 };
+	}
+	const lineWidth = Number.isFinite(style.lineWidth) ? Math.max(0, style.lineWidth) : 1;
+	const fontSize = Number.isFinite(style.fontSize) ? Math.max(6, style.fontSize) : 11;
+	const pointRadius = Number.isFinite(style.pointRadius) ? Math.max(0, style.pointRadius) : 4;
+	const xKey = 'date' in data[0] ? 'date' : 'linear' in data[0] ? 'linear' : 'category';
+	const dasharray = toDasharray(style.lineStyle);
+	const rules = annotations.filter((annotation) => annotation.type === 'rule');
+	const points = annotations.filter((annotation) => annotation.type === 'point');
+	const { lanes: ruleLanes, laneCount } = assignLabelLanes(rules, data, xKey, width, fontSize);
+	const { lanes: pointLanes } = assignLabelLanes(points, data, xKey, width, fontSize);
+	const numericYValues = data.flatMap((row) =>
+		seriesNames.map((name) => Number(row[name])).filter(Number.isFinite)
+	);
+	const yRange = numericYValues.length
+		? Math.max(...numericYValues) - Math.min(...numericYValues) || 1
+		: 1;
+	/** @type {any[]} */
+	const backgroundMarks = [];
+	/** @type {any[]} */
+	const foregroundMarks = [];
+
+	for (let index = 0; index < rules.length; index++) {
+		const annotation = rules[index];
+		backgroundMarks.push(
+			ruleX([annotation.x], {
+				stroke: annotation.colour,
+				strokeWidth: lineWidth,
+				...(dasharray ? { strokeDasharray: dasharray } : {})
+			})
+		);
+		foregroundMarks.push(
+			text([{ x: annotation.x, label: annotation.text }], {
+				x: 'x',
+				text: 'label',
+				frameAnchor: 'top',
+				textAnchor: 'middle',
+				dy: -(8 + ruleLanes[index] * (fontSize + 4)),
+				fill: annotation.colour,
+				fontSize,
+				fontFamily: DEFAULT_FONT,
+				fontWeight: style.fontWeight,
+				clip: false
+			})
+		);
+	}
+
+	for (let index = 0; index < points.length; index++) {
+		const annotation = points[index];
+		const series = resolveSeriesName(annotation.series, seriesNames, seriesLabels);
+		let y = annotation.y;
+		if (y == null && series) {
+			const row = findAnnotationRow(data, xKey, annotation.x);
+			const value = row?.[series];
+			y = value == null ? null : Number(value);
+		}
+		if (y != null && annotation.y != null && annotation.axis === 'right' && rightAxisTransform) {
+			y = rightAxisTransform(y);
+		}
+		if (y == null || !Number.isFinite(y)) continue;
+		const labelY = y + yRange * 0.05 * (pointLanes[index] + 1);
+		const datum = { x: annotation.x, y, labelY, label: annotation.text };
+		foregroundMarks.push(
+			dot([datum], {
+				x: 'x',
+				y: 'y',
+				r: pointRadius,
+				fill: annotation.colour,
+				stroke: '#ffffff',
+				strokeWidth: 1
+			}),
+			link([datum], {
+				x1: 'x',
+				y1: 'y',
+				x2: 'x',
+				y2: 'labelY',
+				stroke: annotation.colour,
+				strokeWidth: lineWidth,
+				...(dasharray ? { strokeDasharray: dasharray } : {})
+			}),
+			text([datum], {
+				x: 'x',
+				y: 'labelY',
+				text: 'label',
+				textAnchor: 'middle',
+				dy: -4,
+				fill: annotation.colour,
+				fontSize,
+				fontFamily: DEFAULT_FONT,
+				fontWeight: style.fontWeight,
+				clip: false
+			})
+		);
+	}
+
+	return {
+		backgroundMarks,
+		foregroundMarks,
+		marginTop: laneCount ? 12 + laneCount * (fontSize + 4) : 0
+	};
 }
 
 /**

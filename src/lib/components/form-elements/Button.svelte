@@ -1,10 +1,13 @@
 <script>
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('svelte/elements').MouseEventHandler<HTMLButtonElement> | null} [clickHandler]
+	 * @property {((event: MouseEvent) => void) | null} [clickHandler]
 	 * @property {boolean} [secondary]
 	 * @property {boolean} [active]
 	 * @property {boolean} [disabled]
+	 * @property {string} [href]
+	 * @property {string} [target]
+	 * @property {string} [title]
 	 * @property {import('svelte').Snippet} [children]
 	 */
 
@@ -14,18 +17,44 @@
 		secondary = false,
 		active = false,
 		disabled = false,
+		href = '',
+		target = '',
+		title = '',
 		children,
 		...rest
 	} = $props();
+
+	const buttonClass =
+		'button rounded-md border-solid border-[0.1rem] border-black p-4 font-space appearance-none text-sm font-medium bg-black text-white';
 </script>
 
-<button
-	onclick={clickHandler}
-	class="button rounded-md border-solid border-[0.1rem] border-black p-4 font-space appearance-none text-sm font-medium bg-black text-white ${rest.class}"
-	class:secondary
-	class:active
-	{disabled}>{@render children?.()}</button
->
+{#if href}
+	<a
+		href={disabled ? undefined : href}
+		{target}
+		{title}
+		onclick={clickHandler}
+		aria-disabled={disabled}
+		tabindex={disabled ? -1 : undefined}
+		class="{buttonClass} {rest.class ??
+			''} inline-flex items-center justify-center no-underline hover:no-underline"
+		class:secondary
+		class:active
+		class:pointer-events-none={disabled}
+		class:opacity-50={disabled}
+	>
+		{@render children?.()}
+	</a>
+{:else}
+	<button
+		onclick={clickHandler}
+		{title}
+		class="{buttonClass} {rest.class ?? ''}"
+		class:secondary
+		class:active
+		{disabled}>{@render children?.()}</button
+	>
+{/if}
 
 <style lang="postcss">
 	.button,
