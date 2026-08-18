@@ -1,5 +1,5 @@
 <script>
-	import Button from '$lib/components/form-elements/Button.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 
 	/**
 	 * @type {{
@@ -22,7 +22,7 @@
 		children
 	} = $props();
 
-	let secondary = $derived(variant === 'default');
+	let buttonVariant = $derived(variant === 'default' ? 'outline' : 'default');
 </script>
 
 <Button
@@ -30,8 +30,8 @@
 	{target}
 	{title}
 	{disabled}
-	{secondary}
-	clickHandler={onclick}
+	{onclick}
+	variant={buttonVariant}
 	class="inline-flex items-center gap-2"
 >
 	{@render children()}

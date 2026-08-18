@@ -1,6 +1,6 @@
 <script>
 	import { page } from '$app/state';
-	import Button from '$lib/components/form-elements/Button.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import StratifyHeader from '../_components/StratifyHeader.svelte';
 
 	/** @type {{ children: import('svelte').Snippet }} */

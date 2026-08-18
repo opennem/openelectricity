@@ -5,8 +5,7 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import Meta from '$lib/components/Meta.svelte';
-	import Button from '$lib/components/form-elements/Button.svelte';
-	import Button2 from '$lib/components/form-elements/Button2.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import StrataChartView from '$lib/stratify/StrataChartView.svelte';
 	import { getChartTypeGuidance } from '$lib/stratify/example-catalogue.js';
 
@@ -182,9 +181,9 @@
 							</p>
 							<h2 id="data-heading" class="mb-0 font-sans font-semibold">CSV to paste</h2>
 						</div>
-						<Button2 onclick={copyData} class="inline-flex items-center gap-2">
+						<Button variant="outline" size="sm" onclick={copyData}>
 							{#if copied}<CheckIcon size={14} /> Copied{:else}<CopyIcon size={14} /> Copy CSV{/if}
-						</Button2>
+						</Button>
 					</div>
 					<div class="overflow-x-auto rounded-lg bg-dark-grey p-5 text-white">
 						<pre class="m-0 font-mono text-xs leading-relaxed">{previewLines.join('\n')}{hasMoreRows

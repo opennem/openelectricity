@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Meta from '$lib/components/Meta.svelte';
-	import Button from '$lib/components/form-elements/Button.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import { DragHandle, createDragHandler } from '$lib/components/ui/panel';
 
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
@@ -426,11 +426,11 @@
 						</div>
 
 						<footer class="flex items-center justify-between border-t border-warm-grey px-5 py-4">
-							<Button secondary clickHandler={previousStep} disabled={activeStepIndex === 0}>
+							<Button variant="outline" onclick={previousStep} disabled={activeStepIndex === 0}>
 								Back
 							</Button>
 							{#if activeStepIndex < steps.length - 1}
-								<Button clickHandler={nextStep}>Next</Button>
+								<Button onclick={nextStep}>Next</Button>
 							{/if}
 						</footer>
 					</div>

@@ -715,7 +715,11 @@
 			<code>ui/</code> (shadcn-svelte, its own neutral scale).
 		</p>
 
-		<h3 class="subhead-primary mb-4">Buttons — house style</h3>
+		<h3 class="subhead-primary mb-2">Buttons — house style (deprecated)</h3>
+		<p class="mb-4 max-w-3xl text-sm text-mid-grey">
+			Kept for compatibility with existing screens. Use the shadcn-layer Button for new work and
+			when updating existing interfaces.
+		</p>
 		<div class="{STAGE} flex flex-wrap items-center gap-6 mb-10">
 			<Button>Primary action</Button>
 			<Button secondary>Secondary</Button>

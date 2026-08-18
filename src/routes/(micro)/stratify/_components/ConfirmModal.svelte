@@ -1,6 +1,6 @@
 <script>
 	import { portal } from '$lib/actions/portal.js';
-	import Button from '$lib/components/form-elements/Button.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import { Backdrop } from '$lib/components/ui/backdrop';
 	import * as Card from '$lib/components/ui/card/index.js';
 
@@ -61,13 +61,13 @@
 				<p class="mb-6 text-sm leading-sm text-mid-grey">{message}</p>
 
 				<div class="flex flex-wrap items-center justify-end gap-3">
-					<Button secondary clickHandler={oncancel} disabled={loading}>Cancel</Button>
+					<Button variant="outline" onclick={oncancel} disabled={loading}>Cancel</Button>
 					{#if onsecondary && secondaryLabel}
-						<Button secondary clickHandler={onsecondary} disabled={loading}>
+						<Button variant="outline" onclick={onsecondary} disabled={loading}>
 							{secondaryLabel}
 						</Button>
 					{/if}
-					<Button clickHandler={onconfirm} disabled={loading}>
+					<Button onclick={onconfirm} disabled={loading}>
 						{loading ? loadingConfirmLabel : confirmLabel}
 					</Button>
 				</div>
