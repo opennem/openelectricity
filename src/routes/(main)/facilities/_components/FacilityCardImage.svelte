@@ -2,7 +2,7 @@
 	/**
 	 * A facility's social card: the build-generated OG JPG
 	 * (`/og/facility/<code>.jpg`) when one is committed, else a live-rendered
-	 * <FacilityOgCard>. Shared by the Cards grid and the map popup so the
+	 * <FacilityOgCard>. Shared by the Tiles view and the map popup so the
 	 * static/live decision and image attributes live in one place. The caller
 	 * controls sizing (this just fills its container at the 1200×630 aspect).
 	 *

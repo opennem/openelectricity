@@ -38,7 +38,7 @@
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
 	 *   osmWayId?: string | number | null,
-	 *   selectedView?: 'timeline' | 'list' | 'grid',
+	 *   selectedView?: 'timeline' | 'list' | 'tiles',
 	 *   cardCodes?: Set<string>,
 	 *   clustering?: boolean,
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',

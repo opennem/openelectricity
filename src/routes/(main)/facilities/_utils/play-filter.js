@@ -108,10 +108,10 @@ export function computePlayCapacityByYear(facilityList, minYear, maxYear) {
  * Filter the full facilities set down to what's connected at the playhead
  * year, preserving the per-view shape of the page's filterFacilities():
  * - timeline: units are filtered individually
- * - list/grid: units stay intact; the facility is kept if any unit is visible
+ * - list/tiles: units stay intact; the facility is kept if any unit is visible
  * @param {any[]} facilityList
  * @param {number} playYear
- * @param {'list' | 'timeline' | 'grid'} view
+ * @param {'list' | 'timeline' | 'tiles'} view
  * @returns {any[]}
  */
 export function filterFacilitiesByPlayYear(facilityList, playYear, view) {

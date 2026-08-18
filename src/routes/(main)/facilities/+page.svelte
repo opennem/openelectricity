@@ -39,7 +39,7 @@
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
 	import List from './List.svelte';
-	import Grid from './Grid.svelte';
+	import Tiles from './Tiles.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 	import YearAnimationOverlay from './_components/YearAnimationOverlay.svelte';
 	import MobileFacilitiesSheet from './_components/MobileFacilitiesSheet.svelte';
@@ -284,19 +284,19 @@
 	// instant switch and afterNavigate reconciles it from window.location.
 	//   undefined → no override, use data.view (the load's value) ·
 	//   string → optimistically selected view
-	/** @type {'list' | 'timeline' | 'grid' | undefined} */
+	/** @type {'list' | 'timeline' | 'tiles' | undefined} */
 	let optimisticView = $state(undefined);
-	/** @type {'list' | 'timeline' | 'grid'} */
+	/** @type {'list' | 'timeline' | 'tiles'} */
 	let selectedView = $derived(
-		/** @type {'list' | 'timeline' | 'grid'} */ (optimisticView ?? data.view)
+		/** @type {'list' | 'timeline' | 'tiles'} */ (optimisticView ?? data.view)
 	);
 	// The switcher, URL and map react to a view change instantly, but mounting
 	// the new view (hundreds of list rows, the full timeline) blocks the main
 	// thread — so the heavy render lags one painted frame behind `selectedView`
 	// (gated by `viewLoading`) and a loader fills the gap, keeping the tap
 	// feedback snappy.
-	/** @type {'list' | 'timeline' | 'grid'} */
-	let displayedView = $state(/** @type {'list' | 'timeline' | 'grid'} */ (data.view));
+	/** @type {'list' | 'timeline' | 'tiles'} */
+	let displayedView = $state(/** @type {'list' | 'timeline' | 'tiles'} */ (data.view));
 	let viewLoading = $derived(displayedView !== selectedView);
 	$effect(() => {
 		const view = selectedView;
@@ -375,7 +375,7 @@
 	// Codes with a committed `static/og/facility/<code>.jpg` — the map card popup
 	// shows the build-generated card for these and a live card for everything else.
 	let cardCodeSet = $derived(new Set(data.cardCodes ?? []));
-	// Facility code → Sanity photo URL, for the card-grid tiles.
+	// Facility code → Sanity photo URL, for the Tiles view.
 	let facilityPhotos = $derived(data.facilityPhotos ?? {});
 
 	// Sync optimistic filter state when server data changes (e.g. browser
@@ -679,7 +679,7 @@
 		optimisticCode = params.get('facility');
 		// Raw param (mirrors optimisticCode); `selectedView` owns the single
 		// `?? data.view` fallback rather than hardcoding the default twice.
-		optimisticView = /** @type {'list' | 'timeline' | 'grid' | undefined} */ (
+		optimisticView = /** @type {'list' | 'timeline' | 'tiles' | undefined} */ (
 			normaliseViewParam(params.get('view')) ?? undefined
 		);
 
@@ -820,7 +820,7 @@
 		);
 	}
 
-	// Calculate capacity bounds based on view (unit capacity for Timeline, facility capacity for List/Grid)
+	// Calculate capacity bounds based on view (unit capacity for Timeline, facility capacity for List/Tiles)
 	let capacityBounds = $derived.by(() => {
 		if (!facilities || facilities.length === 0) return { min: 0, max: 10000 };
 
@@ -829,7 +829,7 @@
 			// Timeline: use individual unit capacities
 			capacities = getAllUnitCapacities(facilities);
 		} else {
-			// List/Grid: use total facility capacities
+			// List/Tiles: use total facility capacities
 			capacities = facilities.map(getFacilityCapacity).filter((c) => c > 0);
 		}
 
@@ -874,13 +874,13 @@
 	}
 
 	/**
-	 * Filter facilities - in Timeline view, filter by unit capacity/year; in List/Grid view, filter by facility capacity/year
+	 * Filter facilities - in Timeline view, filter by unit capacity/year; in List/Tiles view, filter by facility capacity/year
 	 * @param {any[]} facilityList
 	 * @param {string} searchTerm
 	 * @param {[number, number]} capacityRangeFilter
 	 * @param {[number, number]} yearRangeFilter
 	 * @param {{ min: number, max: number }} yearBoundsRef
-	 * @param {'list' | 'timeline' | 'grid'} view
+	 * @param {'list' | 'timeline' | 'tiles'} view
 	 * @returns {any[]}
 	 */
 	function filterFacilities(
@@ -914,7 +914,7 @@
 				}))
 				.filter((facility) => facility.units && facility.units.length > 0);
 		} else {
-			// List/Grid: filter by total facility capacity and year
+			// List/Tiles: filter by total facility capacity and year
 			return facilityList
 				.map((facility) => ({
 					...facility,
@@ -1253,7 +1253,7 @@
 	}
 
 	/**
-	 * @param {'list' | 'timeline' | 'grid'} value
+	 * @param {'list' | 'timeline' | 'tiles'} value
 	 */
 	function handleSelectedViewChange(value) {
 		// Optimistic override for an instant switch (replaceState only mirrors the
@@ -1261,7 +1261,7 @@
 		optimisticView = value;
 
 		// Reset capacity range to match new view's bounds
-		// (timeline uses unit capacities, list/grid uses facility capacities)
+		// (timeline uses unit capacities, list/tiles uses facility capacities)
 		capacityRange = [capacityBounds.min, capacityBounds.max];
 		yearRange = [yearBounds.min, yearBounds.max];
 		capacityTouched = false;
@@ -1517,7 +1517,7 @@
 				bind:clientHeight={containerHeight}
 				class="flex-1 flex flex-col tablet:flex-row min-h-0 relative"
 			>
-				<!-- Left panel: List, Timeline or Grid (desktop only — mobile shows
+				<!-- Left panel: List, Timeline or Tiles (desktop only — mobile shows
 				     these views inside the bottom sheet instead). Width is driven by
 				     a CSS variable + `tablet:` class rather than a JS-gated inline style,
 				     so the desktop list/map split is reserved from the first paint
@@ -1546,9 +1546,9 @@
 								Reset all filters
 							</button>
 						</div>
-					{:else if selectedView === 'grid'}
+					{:else if selectedView === 'tiles'}
 						<div class="flex-1 overflow-y-auto min-h-0">
-							<Grid
+							<Tiles
 								facilities={displayFacilities}
 								selectedFacilityCode={selectedFacility?.code ?? null}
 								{facilityPhotos}

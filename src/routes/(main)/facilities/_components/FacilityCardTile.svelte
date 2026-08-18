@@ -6,7 +6,7 @@
 	import { facilityPhotoSrc } from '$lib/facilities/facility-photo.js';
 
 	/**
-	 * Facilities card-grid tile. The social-card design rendered natively (no
+	 * Facilities tile. The social-card design rendered natively (no
 	 * wordmark): the facility's Sanity photo when one is available, else a
 	 * dominant-fuel-tech colour wash. Laid out at real size, so the fuel-tech
 	 * badges and type are full-size (matching the List) rather than the scaled-

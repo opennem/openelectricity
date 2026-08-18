@@ -17,7 +17,7 @@
  *
  * Filter Parameters (URL search params):
  * --------------------------------------
- * - view: 'timeline' | 'list' | 'grid' (default: 'list'; 'card' and 'map' are legacy aliases for 'grid' and 'list')
+ * - view: 'timeline' | 'list' | 'tiles' (default: 'list'; 'card', 'grid', and 'map' are legacy aliases)
  * - statuses: comma-separated status IDs (default: 'operating,commissioning')
  * - regions: comma-separated region codes (e.g., 'nsw,vic')
  * - fuel_techs: comma-separated fuel tech IDs or categories
@@ -29,6 +29,7 @@
  */
 
 import { OpenElectricityClient } from 'openelectricity';
+import { redirect } from '@sveltejs/kit';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
 import { expandFuelTechs } from './_utils/fuel-tech-map.js';
@@ -41,7 +42,7 @@ import {
 	normaliseViewParam
 } from '$lib/facilities/filters.js';
 import { parseSelection, isDefaultSelection } from '$lib/facilities/filter-options.js';
-// Codes with a committed `static/og/facility/<code>.jpg`; lets the Grid view show
+// Codes with a committed `static/og/facility/<code>.jpg`; lets the Tiles view show
 // the build-generated card and fall back to a live card for the rest.
 import cardCodes from '$lib/server/og/facility-card-codes.json';
 
@@ -62,7 +63,13 @@ function filterFacilitiesByRegions(facilities, regions) {
 
 export async function load({ url }) {
 	const { searchParams } = url;
-	const view = normaliseViewParam(searchParams.get('view')) || 'list';
+	const rawView = searchParams.get('view');
+	const view = normaliseViewParam(rawView) || 'list';
+	if (rawView === 'grid') {
+		const canonicalUrl = new URL(url);
+		canonicalUrl.searchParams.set('view', 'tiles');
+		redirect(302, `${canonicalUrl.pathname}${canonicalUrl.search}`);
+	}
 	// Literal "ticked = shown" selections: an omitted param means the default
 	// (curated statuses, all regions), 'none' means nothing selected — and
 	// nothing shown — and anything else is the ticked subset. parseSelection
@@ -85,11 +92,11 @@ export async function load({ url }) {
 
 	const filterParams = { statuses, regions, fuelTechs };
 
-	// Grid-view photos (facility code → Sanity URL). Fetched on every load — in
+	// Tiles-view photos (facility code → Sanity URL). Fetched on every load — in
 	// parallel with the facilities fetch below, and cached in-process — rather
-	// than gated to grid view: view switches happen client-side without re-running
+	// than gated to tiles view: view switches happen client-side without re-running
 	// this load, so the photos must already be in `data` when the user switches to
-	// the grid. Per-facility editorial data (description, photos, owners) is
+	// tiles. Per-facility editorial data (description, photos, owners) is
 	// still fetched lazily on selection — see the profile endpoint.
 	const photosPromise = fetchFacilityPhotos();
 

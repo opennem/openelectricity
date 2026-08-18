@@ -2,7 +2,7 @@
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import List from '../List.svelte';
-	import Grid from '../Grid.svelte';
+	import Tiles from '../Tiles.svelte';
 	import Timeline from '../Timeline.svelte';
 	import SortDropdown from './SortDropdown.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
@@ -15,7 +15,7 @@
 	 * Mobile facilities browser — a persistent bottom sheet peeking over the
 	 * full-bleed map. Pulling it down minimises it to just the count summary;
 	 * the peek adds the sort control and the first rows; pulling it up to full
-	 * reveals the view toggle. The body renders the same List/Timeline/Grid
+	 * reveals the view toggle. The body renders the same List/Timeline/Tiles
 	 * views the desktop left pane does. (Search lives in the floating nav bar.)
 	 *
 	 * @type {{
@@ -24,14 +24,14 @@
 	 *   facilities: any[],
 	 *   facilitiesWithLocation: any[],
 	 *   facilityPhotos?: Record<string, string>,
-	 *   selectedView: 'list' | 'timeline' | 'grid',
+	 *   selectedView: 'list' | 'timeline' | 'tiles',
 	 *   viewLoading?: boolean,
 	 *   sortBy: 'name' | 'region' | 'storage' | 'capacity',
 	 *   sortOrder: 'asc' | 'desc',
 	 *   totalFacilitiesCount: number,
 	 *   totalUnitsCount: number,
 	 *   totalCapacityMW: number,
-	 *   onviewchange?: (view: 'list' | 'timeline' | 'grid') => void,
+	 *   onviewchange?: (view: 'list' | 'timeline' | 'tiles') => void,
 	 *   onsortchange?: (sortBy: 'name' | 'region' | 'storage' | 'capacity', sortOrder: 'asc' | 'desc') => void,
 	 *   onselect?: (facility: any) => void
 	 * }}
@@ -61,7 +61,7 @@
 	// pulling the sheet all the way down leaves just the totals visible.
 	const MIN_HEIGHT = 84;
 
-	// The List sorts itself; the Grid renders facilities as given, so apply the
+	// The List sorts itself; Tiles renders facilities as given, so apply the
 	// sheet's sort here to make the sort control work for both.
 	let sortedFacilities = $derived(sortFacilities(facilities, sortBy, sortOrder, null));
 
@@ -126,7 +126,7 @@
 					rounded="rounded-lg"
 					darkSelected
 					onchange={(option) =>
-						onviewchange?.(/** @type {'list' | 'timeline' | 'grid'} */ (option.value))}
+						onviewchange?.(/** @type {'list' | 'timeline' | 'tiles'} */ (option.value))}
 				/>
 			{/if}
 		</div>
@@ -136,8 +136,8 @@
 		<div class="flex items-center justify-center py-16">
 			<LogoMarkLoader />
 		</div>
-	{:else if selectedView === 'grid'}
-		<Grid
+	{:else if selectedView === 'tiles'}
+		<Tiles
 			facilities={sortedFacilities}
 			{facilityPhotos}
 			onclick={(/** @type {any} */ f) => onselect?.(f)}

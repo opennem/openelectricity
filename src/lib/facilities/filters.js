@@ -258,18 +258,18 @@ export const regionShortLabels = optionsReducer(regions.filter((r) => r.value));
 export const VIEW_OPTIONS = [
 	{ label: 'Timeline', value: 'timeline' },
 	{ label: 'List', value: 'list' },
-	{ label: 'Grid', value: 'grid' }
+	{ label: 'Tiles', value: 'tiles' }
 ];
 
 /**
- * Normalise the `view` URL param. 'card' is the legacy name for the grid view
- * and 'map' was retired when the map became always visible; both are kept so
- * shared URLs still work.
+ * Normalise the `view` URL param. 'card' and 'grid' are legacy names for the
+ * tiles view, while 'map' was retired when the map became always visible.
+ * These aliases keep shared URLs working.
  * @param {string | null} raw
  * @returns {string | null}
  */
 export function normaliseViewParam(raw) {
-	if (raw === 'card') return 'grid';
+	if (raw === 'card' || raw === 'grid') return 'tiles';
 	if (raw === 'map') return 'list';
 	return raw;
 }

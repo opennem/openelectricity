@@ -191,7 +191,7 @@ const STATE_NETWORKS = {
 
 /**
  * Adapt data-centre records into facility-shaped objects so they flow through
- * the /facilities filter pipeline and list/grid/timeline views unchanged.
+ * the /facilities filter pipeline and list/tiles/timeline views unchanged.
  * Each load carries one synthesised 'data_centre' unit (capacity = best MW)
  * plus the full source record under `dataCentre` for the detail pane.
  * `isLoad: true` marks the branch points that must differ (map layer, detail

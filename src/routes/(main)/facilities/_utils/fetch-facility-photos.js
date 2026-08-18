@@ -1,7 +1,7 @@
 import { client as sanityClient } from '$lib/sanity.js';
 
 /**
- * Map of facility code → first-photo CDN URL, for the card-grid view. Cached
+ * Map of facility code → first-photo CDN URL, for the tiles view. Cached
  * in-process for an hour since facility photos change rarely (mirrors the
  * pattern in `$lib/server/facilities-server-cache.js`).
  *
@@ -12,7 +12,7 @@ const TTL = 60 * 60 * 1000; // 1 hour
 
 /**
  * Fetch a `{ [code]: photoUrl }` map of facility photos from Sanity. Returns an
- * empty map (or the last good value) on failure so the card grid degrades to
+ * empty map (or the last good value) on failure so the Tiles view degrades to
  * the colour-wash tiles rather than erroring.
  *
  * @returns {Promise<Record<string, string>>}

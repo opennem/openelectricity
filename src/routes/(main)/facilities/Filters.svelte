@@ -37,7 +37,7 @@
 	 *   capacityMin?: number,
 	 *   capacityMax?: number,
 	 *   searchTerm?: string,
-	 *   selectedView?: 'list' | 'timeline' | 'grid',
+	 *   selectedView?: 'list' | 'timeline' | 'tiles',
 	 *   isFullscreen?: boolean,
 	 *   facilitySelected?: boolean,
 	 *   darkMap?: boolean,
@@ -57,7 +57,7 @@
 	 *   yearMax?: number,
 	 *   onyearrangechange?: (range: [number, number]) => void,
 	 *   onsearchchange?: (value: string) => void,
-	 *   onviewchange?: (view: 'list' | 'timeline' | 'grid') => void,
+	 *   onviewchange?: (view: 'list' | 'timeline' | 'tiles') => void,
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
@@ -327,7 +327,7 @@
 	 * @param {{ value: string }} option
 	 */
 	function handleViewChange(option) {
-		onviewchange?.(/** @type {'list' | 'timeline' | 'grid'} */ (option.value));
+		onviewchange?.(/** @type {'list' | 'timeline' | 'tiles'} */ (option.value));
 	}
 </script>
 

@@ -42,7 +42,7 @@
 	 * isn't computed a second time per selection. Omitted on the standalone page,
 	 * where they're derived here from `facility`.
 	 *
-	 * `photoUrl` swaps the colour wash for the facility photo (the Grid-tile
+	 * `photoUrl` swaps the colour wash for the facility photo (the Tiles-view
 	 * treatment) — used by the mobile detail sheet and the standalone page on
 	 * mobile; the colour remains the fallback while the photo loads or when
 	 * there is none.
@@ -289,7 +289,7 @@
 {#if facility}
 	<header class="relative shrink-0 overflow-hidden" style="background-color: {dominantColour}">
 		{#if photoSrc}
-			<!-- Facility photo banner (the Grid-tile treatment) with a scrim so the
+			<!-- Facility photo banner (the Tiles-view treatment) with a scrim so the
 			     overlaid content stays legible; the colour shows while it loads. -->
 			<img src={photoSrc} alt="" class="absolute inset-0 h-full w-full object-cover" />
 			<div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/45 to-black/60"></div>
