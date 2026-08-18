@@ -124,13 +124,14 @@ function findAnnotationRow(data, xKey, x) {
 /**
  * Estimate X pixel positions and assign labels to the first non-overlapping
  * lane. This keeps event labels compact without requiring a per-row lane.
- * @param {Array<{x: Date | number | string, text: string}>} annotations
+ * @param {Array<{x: Date | number | string, text: string, style?: import('./annotation-data.js').AnnotationStyleConfig}>} annotations
  * @param {Array<Record<string, any>>} data
  * @param {string} xKey
  * @param {number} width
  * @param {number} fontSize
+ * @param {import('./annotation-data.js').AnnotationStyleConfig} fallbackStyle
  */
-function assignLabelLanes(annotations, data, xKey, width, fontSize) {
+function assignLabelLanes(annotations, data, xKey, width, fontSize, fallbackStyle) {
 	const plotWidth = Math.max(width - 80, 160);
 	const dataValues = data.map((row) => row[xKey]);
 	const categories = xKey === 'category' ? [...new Set(dataValues.map(String))] : [];
@@ -149,7 +150,14 @@ function assignLabelLanes(annotations, data, xKey, width, fontSize) {
 			ratio = max === min ? 0.5 : (value - min) / (max - min);
 		}
 		const pixelX = Math.max(0, Math.min(plotWidth, ratio * plotWidth));
-		const labelWidth = Math.max(fontSize * 2, annotation.text.length * fontSize * 0.58);
+		const appearance = annotation.style ?? fallbackStyle;
+		const maxWidth = Number.isFinite(appearance.labelMaxWidth)
+			? Math.max(1, appearance.labelMaxWidth)
+			: Infinity;
+		const labelWidth = Math.min(
+			maxWidth,
+			Math.max(fontSize * 2, annotation.text.length * fontSize * 0.58)
+		);
 		return { index, pixelX, start: pixelX - labelWidth / 2, end: pixelX + labelWidth / 2 };
 	});
 	positioned.sort((a, b) => a.pixelX - b.pixelX);
@@ -174,6 +182,7 @@ function assignLabelLanes(annotations, data, xKey, width, fontSize) {
  * @param {import('./annotation-data.js').AnnotationStyleConfig} style
  * @param {number} width
  * @param {(value: number) => number} [rightAxisTransform]
+ * @param {string} [fontFamily]
  * @returns {DataAnnotationResult}
  */
 export function processDataAnnotations(
@@ -183,20 +192,51 @@ export function processDataAnnotations(
 	seriesLabels,
 	style,
 	width,
-	rightAxisTransform
+	rightAxisTransform,
+	fontFamily = DEFAULT_FONT
 ) {
 	if (!annotations.length || !data.length) {
 		return { backgroundMarks: [], foregroundMarks: [], marginTop: 0 };
 	}
-	const lineWidth = Number.isFinite(style.lineWidth) ? Math.max(0, style.lineWidth) : 1;
-	const fontSize = Number.isFinite(style.fontSize) ? Math.max(6, style.fontSize) : 11;
-	const pointRadius = Number.isFinite(style.pointRadius) ? Math.max(0, style.pointRadius) : 4;
 	const xKey = 'date' in data[0] ? 'date' : 'linear' in data[0] ? 'linear' : 'category';
-	const dasharray = toDasharray(style.lineStyle);
 	const rules = annotations.filter((annotation) => annotation.type === 'rule');
 	const points = annotations.filter((annotation) => annotation.type === 'point');
-	const { lanes: ruleLanes, laneCount } = assignLabelLanes(rules, data, xKey, width, fontSize);
-	const { lanes: pointLanes } = assignLabelLanes(points, data, xKey, width, fontSize);
+	const maxFontSize = Math.max(
+		6,
+		...annotations.map((annotation) => {
+			const appearance = annotation.style ?? style;
+			return Number.isFinite(appearance.fontSize)
+				? Math.max(6, appearance.fontSize)
+				: Number.isFinite(style.fontSize)
+					? Math.max(6, style.fontSize)
+					: 12;
+		})
+	);
+	const { lanes: ruleLanes, laneCount } = assignLabelLanes(
+		rules,
+		data,
+		xKey,
+		width,
+		maxFontSize,
+		style
+	);
+	const { lanes: pointLanes } = assignLabelLanes(points, data, xKey, width, maxFontSize, style);
+	const maxRuleLabelHeight = Math.max(
+		maxFontSize,
+		...rules.map((annotation) => {
+			const appearance = annotation.style ?? style;
+			const fontSize = Number.isFinite(appearance.fontSize) ? Math.max(6, appearance.fontSize) : 12;
+			const maxWidth = Number.isFinite(appearance.labelMaxWidth)
+				? Math.max(1, appearance.labelMaxWidth)
+				: Infinity;
+			const estimatedWidth = annotation.text.length * fontSize * 0.58;
+			const lines = Number.isFinite(maxWidth)
+				? Math.max(1, Math.ceil(estimatedWidth / maxWidth))
+				: 1;
+			return lines * fontSize * 1.1;
+		})
+	);
+	const ruleLaneStep = maxRuleLabelHeight + 4;
 	const numericYValues = data.flatMap((row) =>
 		seriesNames.map((name) => Number(row[name])).filter(Number.isFinite)
 	);
@@ -210,6 +250,21 @@ export function processDataAnnotations(
 
 	for (let index = 0; index < rules.length; index++) {
 		const annotation = rules[index];
+		const appearance = { ...style, ...(annotation.style ?? {}) };
+		const lineWidth = Number.isFinite(appearance.lineWidth) ? Math.max(0, appearance.lineWidth) : 1;
+		const fontSize = Number.isFinite(appearance.fontSize) ? Math.max(6, appearance.fontSize) : 12;
+		const dasharray = toDasharray(appearance.lineStyle);
+		const labelMaxWidth = Number.isFinite(appearance.labelMaxWidth)
+			? Math.max(fontSize, appearance.labelMaxWidth)
+			: Infinity;
+		const backgroundOpacity = Number.isFinite(appearance.labelBackgroundOpacity)
+			? Math.max(0, Math.min(1, appearance.labelBackgroundOpacity))
+			: 0;
+		const labelPosition = annotation.labelPosition ?? 'top';
+		const isLeft = labelPosition === 'left' || labelPosition.endsWith('-left');
+		const isRight = labelPosition === 'right' || labelPosition.endsWith('-right');
+		const isBottom = labelPosition.startsWith('bottom');
+		const isMiddle = labelPosition === 'left' || labelPosition === 'right';
 		backgroundMarks.push(
 			ruleX([annotation.x], {
 				stroke: annotation.colour,
@@ -221,13 +276,21 @@ export function processDataAnnotations(
 			text([{ x: annotation.x, label: annotation.text }], {
 				x: 'x',
 				text: 'label',
-				frameAnchor: 'top',
-				textAnchor: 'middle',
-				dy: -(8 + ruleLanes[index] * (fontSize + 4)),
-				fill: annotation.colour,
+				frameAnchor: isMiddle ? 'middle' : isBottom ? 'bottom' : 'top',
+				textAnchor: isLeft ? 'end' : isRight ? 'start' : 'middle',
+				dx: isLeft ? -8 : isRight ? 8 : 0,
+				dy: isMiddle ? ruleLanes[index] * ruleLaneStep : -(8 + ruleLanes[index] * ruleLaneStep),
+				fill: annotation.labelColour ?? style.labelColour,
+				stroke: appearance.labelBackgroundColour,
+				strokeOpacity: backgroundOpacity,
+				strokeWidth: backgroundOpacity > 0 ? 6 : 0,
+				strokeLinejoin: 'round',
+				paintOrder: 'stroke',
 				fontSize,
-				fontFamily: DEFAULT_FONT,
-				fontWeight: style.fontWeight,
+				fontFamily,
+				fontWeight: appearance.fontWeight,
+				lineWidth: labelMaxWidth / fontSize,
+				lineAnchor: isMiddle ? 'middle' : 'bottom',
 				clip: false
 			})
 		);
@@ -235,6 +298,23 @@ export function processDataAnnotations(
 
 	for (let index = 0; index < points.length; index++) {
 		const annotation = points[index];
+		const appearance = { ...style, ...(annotation.style ?? {}) };
+		const lineWidth = Number.isFinite(appearance.lineWidth) ? Math.max(0, appearance.lineWidth) : 1;
+		const fontSize = Number.isFinite(appearance.fontSize) ? Math.max(6, appearance.fontSize) : 12;
+		const pointRadius = Number.isFinite(appearance.pointRadius)
+			? Math.max(0, appearance.pointRadius)
+			: 6;
+		const dasharray = toDasharray(appearance.lineStyle);
+		const labelMaxWidth = Number.isFinite(appearance.labelMaxWidth)
+			? Math.max(fontSize, appearance.labelMaxWidth)
+			: Infinity;
+		const backgroundOpacity = Number.isFinite(appearance.labelBackgroundOpacity)
+			? Math.max(0, Math.min(1, appearance.labelBackgroundOpacity))
+			: 0;
+		const labelPosition = annotation.labelPosition ?? 'top';
+		const isLeft = labelPosition === 'left';
+		const isRight = labelPosition === 'right';
+		const isBottom = labelPosition === 'bottom';
 		const series = resolveSeriesName(annotation.series, seriesNames, seriesLabels);
 		let y = annotation.y;
 		if (y == null && series) {
@@ -246,7 +326,8 @@ export function processDataAnnotations(
 			y = rightAxisTransform(y);
 		}
 		if (y == null || !Number.isFinite(y)) continue;
-		const labelY = y + yRange * 0.05 * (pointLanes[index] + 1);
+		const labelOffset = yRange * 0.05 * (pointLanes[index] + 1);
+		const labelY = isLeft || isRight ? y : isBottom ? y - labelOffset : y + labelOffset;
 		const datum = { x: annotation.x, y, labelY, label: annotation.text };
 		foregroundMarks.push(
 			dot([datum], {
@@ -257,25 +338,37 @@ export function processDataAnnotations(
 				stroke: '#ffffff',
 				strokeWidth: 1
 			}),
-			link([datum], {
-				x1: 'x',
-				y1: 'y',
-				x2: 'x',
-				y2: 'labelY',
-				stroke: annotation.colour,
-				strokeWidth: lineWidth,
-				...(dasharray ? { strokeDasharray: dasharray } : {})
-			}),
+			...(!isLeft && !isRight
+				? [
+						link([datum], {
+							x1: 'x',
+							y1: 'y',
+							x2: 'x',
+							y2: 'labelY',
+							stroke: annotation.colour,
+							strokeWidth: lineWidth,
+							...(dasharray ? { strokeDasharray: dasharray } : {})
+						})
+					]
+				: []),
 			text([datum], {
 				x: 'x',
 				y: 'labelY',
 				text: 'label',
-				textAnchor: 'middle',
-				dy: -4,
-				fill: annotation.colour,
+				textAnchor: isLeft ? 'end' : isRight ? 'start' : 'middle',
+				dx: isLeft ? -(pointRadius + 8) : isRight ? pointRadius + 8 : 0,
+				dy: isBottom ? 4 : isLeft || isRight ? 0 : -4,
+				fill: annotation.labelColour ?? style.labelColour,
+				stroke: appearance.labelBackgroundColour,
+				strokeOpacity: backgroundOpacity,
+				strokeWidth: backgroundOpacity > 0 ? 6 : 0,
+				strokeLinejoin: 'round',
+				paintOrder: 'stroke',
 				fontSize,
-				fontFamily: DEFAULT_FONT,
-				fontWeight: style.fontWeight,
+				fontFamily,
+				fontWeight: appearance.fontWeight,
+				lineWidth: labelMaxWidth / fontSize,
+				lineAnchor: isBottom ? 'top' : isLeft || isRight ? 'middle' : 'bottom',
 				clip: false
 			})
 		);
@@ -284,7 +377,9 @@ export function processDataAnnotations(
 	return {
 		backgroundMarks,
 		foregroundMarks,
-		marginTop: laneCount ? 12 + laneCount * (fontSize + 4) : 0
+		marginTop: rules.some((annotation) => (annotation.labelPosition ?? 'top').startsWith('top'))
+			? 12 + laneCount * ruleLaneStep
+			: 0
 	};
 }
 
@@ -333,6 +428,7 @@ function stackedMidpoint(row, targetSeries, seriesNames) {
  * @param {Record<string, string>} seriesLabels
  * @param {string} chartType
  * @param {number} [height] - Chart height in px (used for anti-collision)
+ * @param {AnnotationStyle} [baseStyle] - Theme defaults overridden by each annotation's style
  * @returns {AnnotationResult}
  */
 export function processAnnotations(
@@ -342,7 +438,8 @@ export function processAnnotations(
 	seriesColours,
 	seriesLabels,
 	chartType,
-	height = 300
+	height = 300,
+	baseStyle = {}
 ) {
 	const isTimeSeries = ['stacked-area', 'area', 'line', 'scatter'].includes(chartType);
 	const xKey = isTimeSeries ? 'date' : 'category';
@@ -352,6 +449,7 @@ export function processAnnotations(
 	let marginRight = 0;
 
 	for (const annotation of annotations) {
+		const style = { ...baseStyle, ...(annotation.style ?? {}) };
 		/** @type {AnnotationResult | null} */
 		let result = null;
 
@@ -364,24 +462,19 @@ export function processAnnotations(
 					seriesLabels,
 					xKey,
 					height,
-					/** @type {EndLabelsAnnotation} */ (annotation).style,
+					style,
 					['stacked-area', 'area'].includes(chartType)
 				);
 				break;
 			case 'x-rule':
-				result = xRule(/** @type {XRuleAnnotation} */ (annotation), xKey);
+				result = xRule({ .../** @type {XRuleAnnotation} */ (annotation), style }, xKey);
 				break;
 			case 'bar-labels':
-				result = barLabels(
-					data,
-					seriesNames,
-					xKey,
-					/** @type {BarLabelsAnnotation} */ (annotation).style
-				);
+				result = barLabels(data, seriesNames, xKey, style);
 				break;
 			case 'point':
 				result = pointAnnotation(
-					/** @type {PointAnnotation} */ (annotation),
+					{ .../** @type {PointAnnotation} */ (annotation), style },
 					data,
 					seriesNames,
 					seriesColours,

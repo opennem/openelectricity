@@ -14,39 +14,43 @@ function createProject() {
 }
 
 describe('StratifyPlotProject — annotation dataset', () => {
-	it('uses defaults and compiles inferred annotation mappings', () => {
+	it('adds, updates and compiles a guided annotation', () => {
 		const project = createProject();
 		project.csvText = 'date,generation\n2026-07-01T00:00:00+10:00,100';
-		project.annotationCsvText = 'type,date,label\nrule,2026-07-01T00:00:00+10:00,Start';
-		project.annotationMappings = {
-			...project.annotationMappings,
-			typeColumn: 'type',
-			xColumn: 'date',
-			labelColumn: 'label'
-		};
-		project.annotationRowOptions = { 2: { colour: '#5b9f7b' } };
+		project.addAnnotation();
+		project.updateAnnotation(project.annotationItems[0].id, {
+			type: 'rule',
+			x: '2026-07-01T00:00:00+10:00',
+			label: 'Start',
+			appearance: {
+				...project.annotationStyle,
+				...project.annotationItems[0].appearance,
+				ruleColour: '#5b9f7b'
+			}
+		});
 
-		expect(project.annotationStyle).toMatchObject({
-			defaultColour: '#666666',
+		expect(project.annotationItems[0].appearance).toMatchObject({
+			ruleColour: '#5b9f7b',
+			pointColour: '#666666',
+			labelColour: '#353535',
 			lineStyle: 'dashed',
 			lineWidth: 1,
-			fontSize: 11,
-			pointRadius: 4
+			fontSize: 12,
+			pointRadius: 6
 		});
 		expect(project.dataAnnotations[0]).toMatchObject({ text: 'Start', colour: '#5b9f7b' });
 	});
 
-	it('uses a mapped CSV Y value as the default point position', () => {
+	it('compiles a point positioned by Y value', () => {
 		const project = createProject();
 		project.csvText = 'date,generation\n2026-07-01T00:00:00+10:00,100';
-		project.annotationCsvText = 'type,date,label,y\npoint,2026-07-01T00:00:00+10:00,Peak,105';
-		project.annotationMappings = {
-			...project.annotationMappings,
-			typeColumn: 'type',
-			xColumn: 'date',
-			labelColumn: 'label',
-			yColumn: 'y'
-		};
+		project.addAnnotation();
+		project.updateAnnotation(project.annotationItems[0].id, {
+			type: 'point',
+			x: '2026-07-01T00:00:00+10:00',
+			label: 'Peak',
+			y: '105'
+		});
 
 		expect(project.dataAnnotations[0]).toMatchObject({
 			type: 'point',
@@ -56,49 +60,69 @@ describe('StratifyPlotProject — annotation dataset', () => {
 		});
 	});
 
-	it('round-trips annotation data, mappings, styles and legacy annotations', () => {
+	it('round-trips annotation items, styles and legacy annotations', () => {
 		const project = createProject();
-		project.annotationCsvText = 'date,label\n2026-07-01,Start';
-		project.annotationMappings = {
-			...project.annotationMappings,
-			xColumn: 'date',
-			labelColumn: 'label'
-		};
-		project.annotationStyle = {
-			...project.annotationStyle,
-			defaultColour: '#123456',
-			lineWidth: 0
-		};
-		project.annotationRowOptions = {
-			2: { colour: '#abcdef', positionBy: 'y', series: null, axis: 'right' }
-		};
+		project.addAnnotation();
+		project.updateAnnotation(project.annotationItems[0].id, {
+			type: 'rule',
+			x: '2026-07-01',
+			label: 'Start',
+			appearance: {
+				...project.annotationStyle,
+				...project.annotationItems[0].appearance,
+				labelColour: '#123456',
+				lineWidth: 0
+			}
+		});
 		project.annotations = [{ type: 'x-rule', x: '2025-01-01', text: 'Legacy' }];
 
 		const restored = createProject();
 		restored.loadFromSnapshot(project.toJSON());
 
-		expect(restored.annotationCsvText).toBe(project.annotationCsvText);
-		expect(restored.annotationMappings.xColumn).toBe('date');
-		expect(restored.annotationStyle).toMatchObject({
-			defaultColour: '#123456',
+		expect(restored.annotationItems).toEqual(project.annotationItems);
+		expect(restored.annotationItems[0].appearance).toMatchObject({
+			labelColour: '#123456',
 			lineWidth: 0
 		});
-		expect(restored.annotationRowOptions).toEqual(project.annotationRowOptions);
 		expect(restored.annotations).toEqual(project.annotations);
 	});
 
 	it('reset clears annotation data and restores appearance defaults', () => {
 		const project = createProject();
-		project.annotationCsvText = 'date,label\n2026-07-01,Start';
+		project.addAnnotation();
 		project.annotationStyle = { ...project.annotationStyle, pointRadius: 10 };
-		project.annotationRowOptions = { 2: { colour: '#abcdef' } };
 		project.reset();
 
-		expect(project.annotationCsvText).toBe('');
-		expect(project.annotationMappings.xColumn).toBeNull();
-		expect(project.annotationStyle.pointRadius).toBe(4);
-		expect(project.annotationRowOptions).toEqual({});
+		expect(project.annotationItems).toEqual([]);
+		expect(project.annotationStyle.pointRadius).toBe(6);
 		expect(project.annotations).toEqual([]);
+	});
+
+	it('removes an annotation by id', () => {
+		const project = createProject();
+		project.addAnnotation();
+		project.addAnnotation();
+		project.removeAnnotation(project.annotationItems[0].id);
+		expect(project.annotationItems).toHaveLength(1);
+	});
+
+	it('copies the first annotation appearance into new annotations', () => {
+		const project = createProject();
+		project.addAnnotation();
+		project.updateAnnotation(project.annotationItems[0].id, {
+			appearance: {
+				...project.annotationStyle,
+				...project.annotationItems[0].appearance,
+				pointColour: '#123456',
+				labelColour: '#654321',
+				fontSize: 16
+			}
+		});
+
+		project.addAnnotation();
+
+		expect(project.annotationItems[1].appearance).toEqual(project.annotationItems[0].appearance);
+		expect(project.annotationItems[1].appearance).not.toBe(project.annotationItems[0].appearance);
 	});
 });
 

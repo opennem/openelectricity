@@ -17,7 +17,7 @@
 	<button
 		type="button"
 		class="flex items-center gap-2 w-full px-4 py-2 border-b border-warm-grey bg-warm-grey
-			text-[11px] font-bold text-dark-grey uppercase tracking-wide
+			text-sm font-bold text-dark-grey uppercase tracking-wide
 			hover:bg-mid-warm-grey/50 transition-colors shrink-0 text-left cursor-pointer"
 		onclick={ontoggle}
 	>

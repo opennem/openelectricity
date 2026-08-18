@@ -59,10 +59,13 @@
 <style lang="postcss">
 	.button,
 	.button:active {
-		transition: all 0.5s ease;
+		transition:
+			background-color 0.15s ease,
+			border-color 0.15s ease,
+			color 0.15s ease;
 	}
 	.button:hover,
-	.active {
+	.button.active {
 		background-color: theme(colors.dark-grey);
 		color: #fff;
 	}
@@ -72,6 +75,11 @@
 	.secondary {
 		background-color: #fff;
 		border-color: theme(colors.dark-grey);
+		color: #000;
+	}
+	.secondary:hover,
+	.secondary.active {
+		background-color: theme(colors.light-warm-grey);
 		color: #000;
 	}
 </style>

@@ -1,118 +1,131 @@
 import { describe, expect, it } from 'vitest';
 import {
-	compileAnnotationData,
-	DEFAULT_ANNOTATION_MAPPINGS,
-	DEFAULT_ANNOTATION_STYLE,
-	inferAnnotationMappings,
-	parseAnnotationTable
+	compileAnnotationItems,
+	createAnnotationItem,
+	DEFAULT_ANNOTATION_STYLE
 } from './annotation-data.js';
 
-describe('annotation data', () => {
-	it('parses quoted labels and infers common column mappings', () => {
-		const table = parseAnnotationTable(
-			'type,date,label,colour\nrule,2026-07-01T21:20:00+10:00,"High, then falling",#5b9f7b'
-		);
-		expect(table.rows[0].values.label).toBe('High, then falling');
-		expect(inferAnnotationMappings(table.columns)).toMatchObject({
-			typeColumn: 'type',
-			xColumn: 'date',
-			labelColumn: 'label',
-			colourColumn: 'colour'
+/** @param {Partial<import('./annotation-data.js').AnnotationItem>} patch */
+function item(patch) {
+	return { ...createAnnotationItem(), ...patch };
+}
+
+describe('annotation items', () => {
+	it('creates a blank item for the guided editor', () => {
+		expect(createAnnotationItem()).toMatchObject({
+			type: '',
+			xSource: 'data',
+			x: '',
+			label: '',
+			positionBy: 'y',
+			y: '',
+			series: null,
+			axis: 'left',
+			labelPosition: 'top'
 		});
 	});
 
-	it('compiles coloured rules and series-based points in temporal mode', () => {
-		const table = parseAnnotationTable(
-			'type,date,label,colour,y,series\nrule,2026-07-01T21:20:00+10:00,Generation high,#5b9f7b,,\npoint,2026-07-02T00:00:00+10:00,Overnight generation,#b44b38,,generation'
-		);
-		const mappings = inferAnnotationMappings(table.columns);
-		const result = compileAnnotationData(table, 'time-series', mappings, DEFAULT_ANNOTATION_STYLE);
-
-		expect(result.errors).toEqual([]);
-		expect(result.annotations).toHaveLength(2);
-		expect(result.annotations[0]).toMatchObject({
-			type: 'rule',
-			text: 'Generation high',
-			colour: '#5b9f7b'
-		});
-		expect(result.annotations[0].x).toBeInstanceOf(Date);
-		expect(result.annotations[1]).toMatchObject({ type: 'point', series: 'generation' });
-	});
-
-	it('uses the fallback colour and reports invalid row values', () => {
-		const table = parseAnnotationTable(
-			'type,x,label,colour,y\nrule,1,Start,not-a-colour,\npoint,2,Missing point,#fff,'
-		);
-		const result = compileAnnotationData(
-			table,
-			'linear',
-			inferAnnotationMappings(table.columns),
+	it('compiles rule and series-positioned point annotations', () => {
+		const result = compileAnnotationItems(
+			[
+				item({ type: 'rule', x: '2026-07-01', label: 'Start' }),
+				item({
+					type: 'point',
+					x: '2026-07-02',
+					label: 'Peak',
+					positionBy: 'series',
+					series: 'generation',
+					axis: 'right',
+					labelPosition: 'right'
+				})
+			],
+			'time-series',
 			DEFAULT_ANNOTATION_STYLE
 		);
 
-		expect(result.annotations).toHaveLength(1);
-		expect(result.annotations[0].colour).toBe(DEFAULT_ANNOTATION_STYLE.defaultColour);
-		expect(result.warnings[0]).toContain('invalid colour');
-		expect(result.errors[0]).toContain('need a Y value or Series');
-	});
-
-	it('supports a default point type and explicit right-axis Y value', () => {
-		const table = parseAnnotationTable('x,label,y,axis\nA,Peak,42,right');
-		/** @type {import('./annotation-data.js').AnnotationMappings} */
-		const mappings = {
-			...DEFAULT_ANNOTATION_MAPPINGS,
-			...inferAnnotationMappings(table.columns),
-			defaultType: 'point'
-		};
-		const result = compileAnnotationData(table, 'category', mappings, DEFAULT_ANNOTATION_STYLE);
-
-		expect(result.annotations[0]).toMatchObject({
-			type: 'point',
-			x: 'A',
-			y: 42,
-			axis: 'right'
-		});
-	});
-
-	it('uses per-row options for colour and point positioning', () => {
-		const table = parseAnnotationTable(
-			'type,date,label,y\nrule,2026-07-01,Start,\npoint,2026-07-02,Peak,42'
-		);
-		const result = compileAnnotationData(
-			table,
-			'time-series',
-			inferAnnotationMappings(table.columns),
-			DEFAULT_ANNOTATION_STYLE,
-			{
-				2: { colour: '#123456' },
-				3: { colour: '#654321', positionBy: 'y', axis: 'right' }
-			}
-		);
-
 		expect(result.errors).toEqual([]);
-		expect(result.annotations[0].colour).toBe('#123456');
+		expect(result.annotations[0]).toMatchObject({
+			type: 'rule',
+			text: 'Start',
+			colour: DEFAULT_ANNOTATION_STYLE.ruleColour,
+			labelColour: DEFAULT_ANNOTATION_STYLE.labelColour
+		});
+		expect(result.annotations[0].x).toBeInstanceOf(Date);
 		expect(result.annotations[1]).toMatchObject({
-			colour: '#654321',
-			y: 42,
-			axis: 'right'
+			type: 'point',
+			series: 'generation',
+			axis: 'right',
+			labelPosition: 'right'
 		});
 	});
 
-	it('uses series positioning instead of a CSV Y value when selected', () => {
-		const table = parseAnnotationTable('type,x,label,y\npoint,2,Peak,42');
-		const result = compileAnnotationData(
-			table,
+	it('compiles a numeric point position', () => {
+		const result = compileAnnotationItems(
+			[item({ type: 'point', x: '2', label: 'Peak', y: '42' })],
 			'linear',
-			inferAnnotationMappings(table.columns),
-			DEFAULT_ANNOTATION_STYLE,
-			{ 2: { positionBy: 'series', series: 'generation', axis: 'left' } }
+			DEFAULT_ANNOTATION_STYLE
+		);
+		expect(result.errors).toEqual([]);
+		expect(result.annotations[0]).toMatchObject({ x: 2, y: 42, series: null });
+	});
+
+	it('compiles appearance independently for each annotation', () => {
+		const result = compileAnnotationItems(
+			[
+				item({
+					type: 'rule',
+					x: 'A',
+					label: 'First',
+					appearance: { ...DEFAULT_ANNOTATION_STYLE, ruleColour: '#123456', fontSize: 16 }
+				}),
+				item({ type: 'rule', x: 'B', label: 'Second' })
+			],
+			'category',
+			DEFAULT_ANNOTATION_STYLE
 		);
 
-		expect(result.errors).toEqual([]);
 		expect(result.annotations[0]).toMatchObject({
-			y: null,
-			series: 'generation',
-			axis: 'left'
+			colour: '#123456',
+			style: { fontSize: 16 }
+		});
+		expect(result.annotations[1]).toMatchObject({
+			colour: DEFAULT_ANNOTATION_STYLE.ruleColour,
+			style: { fontSize: DEFAULT_ANNOTATION_STYLE.fontSize }
+		});
+	});
+
+	it('silently skips an item until its type is selected', () => {
+		const result = compileAnnotationItems(
+			[
+				item({}),
+				item({ type: 'point', x: '2', label: 'Peak', positionBy: 'series', series: null })
+			],
+			'linear',
+			DEFAULT_ANNOTATION_STYLE
+		);
+		expect(result.annotations).toEqual([]);
+		expect(result.errors).toEqual(['Annotation 2: choose a series.']);
+	});
+
+	it('leaves required X and Label validation to the inline editor', () => {
+		const result = compileAnnotationItems(
+			[item({ type: 'rule', x: '', label: '' })],
+			'category',
+			DEFAULT_ANNOTATION_STYLE
+		);
+		expect(result.annotations).toEqual([]);
+		expect(result.errors).toEqual([]);
+	});
+
+	it('falls back when appearance colours are invalid', () => {
+		const result = compileAnnotationItems(
+			[item({ type: 'rule', x: 'A', label: 'Start' })],
+			'category',
+			{ ...DEFAULT_ANNOTATION_STYLE, ruleColour: 'not a colour', labelColour: 'also invalid' }
+		);
+		expect(result.annotations[0]).toMatchObject({
+			colour: DEFAULT_ANNOTATION_STYLE.ruleColour,
+			labelColour: DEFAULT_ANNOTATION_STYLE.labelColour
 		});
 	});
 });

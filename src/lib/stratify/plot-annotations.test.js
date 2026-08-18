@@ -202,10 +202,13 @@ describe('processDataAnnotations', () => {
 					rawX: '2026-07-01T00:00:00Z',
 					text: 'A long first event label',
 					colour: '#f00',
+					labelColour: '#353535',
 					y: null,
 					series: null,
 					axis: 'left',
-					rowNumber: 2
+					labelPosition: 'top',
+					rowNumber: 2,
+					style: { ...DEFAULT_ANNOTATION_STYLE, fontSize: 16, lineWidth: 3 }
 				},
 				{
 					type: 'rule',
@@ -213,21 +216,43 @@ describe('processDataAnnotations', () => {
 					rawX: '2026-07-01T00:01:00Z',
 					text: 'A nearby second event label',
 					colour: '#0a0',
+					labelColour: '#353535',
 					y: null,
 					series: null,
 					axis: 'left',
-					rowNumber: 3
+					labelPosition: 'bottom-right',
+					rowNumber: 3,
+					style: { ...DEFAULT_ANNOTATION_STYLE, fontSize: 9, lineWidth: 2 }
 				}
 			],
 			data,
 			['generation'],
 			{ generation: 'Generation' },
 			DEFAULT_ANNOTATION_STYLE,
-			600
+			600,
+			undefined,
+			'"DM Sans", system-ui, sans-serif'
 		);
 
 		expect(result.backgroundMarks).toHaveLength(2);
 		expect(result.foregroundMarks).toHaveLength(2);
+		expect(result.foregroundMarks.map((mark) => mark.fontFamily)).toEqual([
+			'"DM Sans", system-ui, sans-serif',
+			'"DM Sans", system-ui, sans-serif'
+		]);
+		expect(result.backgroundMarks.map((mark) => mark.strokeWidth)).toEqual([3, 2]);
+		expect(result.foregroundMarks.map((mark) => mark.fontSize)).toEqual([16, 9]);
+		expect(result.foregroundMarks.map((mark) => mark.frameAnchor)).toEqual(['top', 'bottom']);
+		expect(result.foregroundMarks[1]).toMatchObject({ textAnchor: 'start', dx: 8 });
+		expect(result.foregroundMarks[0]).toMatchObject({
+			lineWidth: DEFAULT_ANNOTATION_STYLE.labelMaxWidth / 16,
+			stroke: DEFAULT_ANNOTATION_STYLE.labelBackgroundColour,
+			strokeOpacity: DEFAULT_ANNOTATION_STYLE.labelBackgroundOpacity,
+			paintOrder: 'stroke'
+		});
+		expect(
+			result.foregroundMarks[0].splitLines('A deliberately long annotation label')
+		).toHaveLength(2);
 		expect(result.marginTop).toBeGreaterThan(12 + DEFAULT_ANNOTATION_STYLE.fontSize + 4);
 	});
 
@@ -240,6 +265,7 @@ describe('processDataAnnotations', () => {
 					rawX: '2026-07-01T00:55:00Z',
 					text: 'Nearest generation',
 					colour: '#f00',
+					labelColour: '#353535',
 					y: null,
 					series: 'Generation',
 					axis: 'left',
@@ -251,9 +277,11 @@ describe('processDataAnnotations', () => {
 					rawX: '2026-07-01T00:30:00Z',
 					text: 'Right axis',
 					colour: '#00f',
+					labelColour: '#353535',
 					y: 50,
 					series: null,
 					axis: 'right',
+					labelPosition: 'left',
 					rowNumber: 3
 				}
 			],
@@ -265,7 +293,12 @@ describe('processDataAnnotations', () => {
 			(value) => value * 2
 		);
 
-		// Each resolved point contributes a dot, connector and text mark.
-		expect(result.foregroundMarks).toHaveLength(6);
+		// Top/bottom positions include a connector; side positions sit directly beside the dot.
+		expect(result.foregroundMarks).toHaveLength(5);
+		expect(result.foregroundMarks[4]).toMatchObject({
+			textAnchor: 'end',
+			dx: -(DEFAULT_ANNOTATION_STYLE.pointRadius + 8),
+			lineAnchor: 'middle'
+		});
 	});
 });

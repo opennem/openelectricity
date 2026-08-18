@@ -83,22 +83,14 @@ describe('POST /api/stratify/charts chart-field persistence', () => {
 		});
 	});
 
-	it('persists annotation CSV, mappings, styles and legacy annotations', async () => {
+	it('persists structured annotation items, styles and legacy annotations', async () => {
 		const request = new Request('http://localhost/api/stratify/charts', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				csvText: 'date,value\n2026-07-01,10',
-				annotationCsvText: 'date,label,colour\n2026-07-01,Start,#f00',
-				annotationMappings: {
-					xColumn: 'date',
-					labelColumn: 'label',
-					colourColumn: 'colour'
-				},
 				annotationStyle: { lineWidth: 0, pointRadius: 0 },
-				annotationRowOptions: {
-					2: { colour: '#f00', positionBy: 'series', series: 'value' }
-				},
+				annotationItems: [{ id: 'a1', type: 'rule', x: '2026-07-01', label: 'Start' }],
 				annotations: [{ type: 'x-rule', x: '2025-01-01', text: 'Legacy' }]
 			})
 		});
@@ -107,15 +99,11 @@ describe('POST /api/stratify/charts chart-field persistence', () => {
 		const document = mocks.create.mock.calls[0][0];
 
 		expect(response.status).toBe(201);
-		expect(document.annotationCsvText).toContain('Start');
-		expect(JSON.parse(document.annotationMappings)).toMatchObject({
-			xColumn: 'date',
-			labelColumn: 'label',
-			colourColumn: 'colour'
-		});
 		expect(JSON.parse(document.annotationStyle)).toEqual({ lineWidth: 0, pointRadius: 0 });
-		expect(JSON.parse(document.annotationRowOptions)).toEqual({
-			2: { colour: '#f00', positionBy: 'series', series: 'value' }
+		expect(JSON.parse(document.annotationItems)[0]).toMatchObject({
+			id: 'a1',
+			type: 'rule',
+			label: 'Start'
 		});
 		expect(JSON.parse(document.annotations)).toHaveLength(1);
 	});

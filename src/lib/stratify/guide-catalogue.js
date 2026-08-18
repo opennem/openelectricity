@@ -130,21 +130,21 @@ export const stratifyGuides = [
 	{
 		slug: 'annotations',
 		title: 'Add annotations',
-		summary: 'Mark events and exact points with a separate annotation dataset.',
+		summary: 'Mark events and exact points with the guided annotation editor.',
 		introduction:
 			'Annotations should explain why a value changed or identify the moment readers should notice.',
 		sections: [
 			{
-				heading: 'Use a separate table',
-				body: 'Provide type, X/date, label and optional Y columns. Rule rows mark X positions; point rows mark an explicit Y value or a selected chart series.'
+				heading: 'Choose an annotation type',
+				body: 'Add an annotation, then choose Rule to mark an X position or Point to call out an exact value.'
 			},
 			{
 				heading: 'Choose point position',
-				body: 'Y value reads the mapped annotation CSV column. Series resolves the selected chart series at the nearest X value.'
+				body: 'Y value places the point at an explicit value. Series resolves the selected chart series at the nearest X value.'
 			},
 			{
 				heading: 'Use colour sparingly',
-				body: 'Set annotation colours in the row options and reserve strong colour for the most important events.'
+				body: 'Set line or dot and label colours in each annotation’s Appearance section, and reserve strong colour for the most important events.'
 			}
 		],
 		relatedTypes: ['line', 'scatter', 'area']

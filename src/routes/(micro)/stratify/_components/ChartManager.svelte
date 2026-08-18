@@ -98,15 +98,14 @@
 	<div
 		class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-mid-warm-grey/50 shrink-0"
 	>
-		<span class="text-[11px] font-medium text-dark-grey uppercase tracking-wide flex-1">Charts</span
-		>
+		<span class="text-sm font-medium text-dark-grey uppercase tracking-wide flex-1">Charts</span>
 		<a href="/stratify" class="text-[10px] text-mid-grey hover:text-dark-grey underline">
 			Full view
 		</a>
 		<button
 			type="button"
 			onclick={onclose}
-			class="text-[11px] text-mid-grey hover:text-dark-grey"
+			class="text-sm text-mid-grey hover:text-dark-grey"
 			title="Back to builder"
 		>
 			&times;
@@ -119,16 +118,16 @@
 			type="text"
 			placeholder="Search charts..."
 			bind:value={search}
-			class="w-full bg-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] focus:outline-none focus:border-dark-grey"
+			class="w-full bg-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-sm focus:outline-none focus:border-dark-grey"
 		/>
 	</div>
 
 	<!-- Chart list -->
 	<div class="flex-1 overflow-y-auto">
 		{#if loading}
-			<p class="px-3 py-6 text-[11px] text-mid-grey text-center">Loading...</p>
+			<p class="px-3 py-6 text-sm text-mid-grey text-center">Loading...</p>
 		{:else if filteredCharts.length === 0}
-			<p class="px-3 py-6 text-[11px] text-mid-grey text-center">
+			<p class="px-3 py-6 text-sm text-mid-grey text-center">
 				{search.trim() ? 'No matching charts' : 'No charts yet'}
 			</p>
 		{:else}
@@ -144,7 +143,7 @@
 						<button
 							type="button"
 							onclick={() => handleLoad(chart._id)}
-							class="flex-1 text-left text-[11px] font-medium text-dark-grey truncate"
+							class="flex-1 text-left text-sm font-medium text-dark-grey truncate"
 						>
 							{chart.title || 'Untitled'}
 						</button>
@@ -195,7 +194,7 @@
 				project.reset();
 				onclose();
 			}}
-			class="w-full rounded border border-warm-grey px-2 py-1.5 text-[11px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
+			class="w-full rounded border border-warm-grey px-2 py-1.5 text-sm text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
 		>
 			New Chart
 		</button>

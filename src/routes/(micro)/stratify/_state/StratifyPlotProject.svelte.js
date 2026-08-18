@@ -22,11 +22,9 @@ import {
 } from '$lib/stratify/chart-types.js';
 import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
 import {
-	compileAnnotationData,
-	DEFAULT_ANNOTATION_MAPPINGS,
-	DEFAULT_ANNOTATION_STYLE,
-	inferAnnotationMappings,
-	parseAnnotationTable
+	compileAnnotationItems,
+	createAnnotationItem,
+	DEFAULT_ANNOTATION_STYLE
 } from '$lib/stratify/annotation-data.js';
 import {
 	detectLatColumn,
@@ -42,10 +40,8 @@ import {
  * @typedef {Object} StratifyPlotSnapshot
  * @property {number} version
  * @property {string} csvText
- * @property {string} [annotationCsvText]
- * @property {import('$lib/stratify/annotation-data.js').AnnotationMappings} [annotationMappings]
+ * @property {import('$lib/stratify/annotation-data.js').AnnotationItem[]} [annotationItems]
  * @property {import('$lib/stratify/annotation-data.js').AnnotationStyleConfig} [annotationStyle]
- * @property {Record<string, import('$lib/stratify/annotation-data.js').AnnotationRowOption>} [annotationRowOptions]
  * @property {import('$lib/stratify/plot-annotations.js').Annotation[]} [annotations]
  * @property {string} title
  * @property {string} description
@@ -129,23 +125,14 @@ export default class StratifyPlotProject {
 	/** @type {string} */
 	csvText = $state('');
 
-	/** @type {string} Separate CSV/TSV containing data-driven chart annotations */
-	annotationCsvText = $state('');
-
-	/** @type {import('$lib/stratify/annotation-data.js').AnnotationMappings} */
-	annotationMappings = $state({ ...DEFAULT_ANNOTATION_MAPPINGS });
+	/** @type {import('$lib/stratify/annotation-data.js').AnnotationItem[]} */
+	annotationItems = $state([]);
 
 	/** @type {import('$lib/stratify/annotation-data.js').AnnotationStyleConfig} */
 	annotationStyle = $state({ ...DEFAULT_ANNOTATION_STYLE });
 
-	/** @type {Record<string, import('$lib/stratify/annotation-data.js').AnnotationRowOption>} */
-	annotationRowOptions = $state({});
-
 	/** @type {import('$lib/stratify/plot-annotations.js').Annotation[]} Legacy annotations */
 	annotations = $state([]);
-
-	/** @type {string} Header signature used to avoid overwriting intentional mapping choices */
-	annotationHeaderSignature = $state('');
 
 	// --- Metadata ---
 	/** @type {string} */
@@ -397,16 +384,8 @@ export default class StratifyPlotProject {
 	// --- Derived from CSV ---
 	parsedData = $derived(parseCSV(this.csvText, {}, this.displayMode, this.xColumn || 0));
 
-	annotationTable = $derived(parseAnnotationTable(this.annotationCsvText));
-
 	compiledAnnotationData = $derived(
-		compileAnnotationData(
-			this.annotationTable,
-			this.parsedData.mode,
-			this.annotationMappings,
-			this.annotationStyle,
-			this.annotationRowOptions
-		)
+		compileAnnotationItems(this.annotationItems, this.parsedData.mode, this.annotationStyle)
 	);
 
 	dataAnnotations = $derived(this.compiledAnnotationData.annotations);
@@ -667,42 +646,6 @@ export default class StratifyPlotProject {
 	});
 
 	constructor() {
-		// Infer mappings when an annotation dataset is first pasted or its headers change.
-		// Once mapped, an intentional "None" choice is preserved until the headers change.
-		$effect(() => {
-			const signature = this.annotationTable.columns.map((column) => column.key).join('|');
-			if (!signature || signature === this.annotationHeaderSignature) return;
-			const inferred = inferAnnotationMappings(this.annotationTable.columns);
-			const validKeys = this.annotationTable.columns.map((column) => column.key);
-			const next = { ...this.annotationMappings };
-			for (const mapping of [
-				'typeColumn',
-				'xColumn',
-				'labelColumn',
-				'colourColumn',
-				'yColumn',
-				'seriesColumn',
-				'axisColumn'
-			]) {
-				const key = /** @type {keyof typeof next} */ (mapping);
-				if (!next[key] || !validKeys.includes(/** @type {string} */ (next[key]))) {
-					next[key] = /** @type {never} */ (inferred[key]);
-				}
-			}
-			this.annotationMappings = next;
-			this.annotationHeaderSignature = signature;
-		});
-
-		// Remove options for annotation rows that no longer exist after CSV edits.
-		$effect(() => {
-			const validRows = this.annotationTable.rows.map((row) => String(row.rowNumber));
-			const optionRows = Object.keys(this.annotationRowOptions);
-			if (optionRows.every((row) => validRows.includes(row))) return;
-			this.annotationRowOptions = Object.fromEntries(
-				Object.entries(this.annotationRowOptions).filter(([row]) => validRows.includes(row))
-			);
-		});
-
 		// Auto-switch chart type when data mode changes
 		$effect(() => {
 			if (this.isCategory) {
@@ -822,15 +765,33 @@ export default class StratifyPlotProject {
 		}
 	}
 
+	/** Add a blank item for the guided annotation builder. */
+	addAnnotation() {
+		const appearance = this.annotationItems[0]?.appearance ?? this.annotationStyle;
+		this.annotationItems = [...this.annotationItems, createAnnotationItem(appearance)];
+	}
+
+	/**
+	 * @param {string} id
+	 * @param {Partial<import('$lib/stratify/annotation-data.js').AnnotationItem>} patch
+	 */
+	updateAnnotation(id, patch) {
+		this.annotationItems = this.annotationItems.map((item) =>
+			item.id === id ? { ...item, ...patch } : item
+		);
+	}
+
+	/** @param {string} id */
+	removeAnnotation(id) {
+		this.annotationItems = this.annotationItems.filter((item) => item.id !== id);
+	}
+
 	/** Reset the project to a blank state. */
 	reset() {
 		this.csvText = '';
-		this.annotationCsvText = '';
-		this.annotationMappings = { ...DEFAULT_ANNOTATION_MAPPINGS };
+		this.annotationItems = [];
 		this.annotationStyle = { ...DEFAULT_ANNOTATION_STYLE };
-		this.annotationRowOptions = {};
 		this.annotations = [];
-		this.annotationHeaderSignature = '';
 		this.title = '';
 		this.description = '';
 		this.dataSource = '';
@@ -948,10 +909,8 @@ export default class StratifyPlotProject {
 		return {
 			version: 2,
 			csvText: this.csvText,
-			annotationCsvText: this.annotationCsvText,
-			annotationMappings: this.annotationMappings,
+			annotationItems: this.annotationItems,
 			annotationStyle: this.annotationStyle,
-			annotationRowOptions: this.annotationRowOptions,
 			annotations: this.annotations,
 			title: this.title,
 			description: this.description,
@@ -1037,15 +996,9 @@ export default class StratifyPlotProject {
 	 */
 	loadFromSnapshot(snapshot) {
 		this.csvText = snapshot.csvText ?? '';
-		this.annotationCsvText = snapshot.annotationCsvText ?? '';
-		this.annotationMappings = {
-			...DEFAULT_ANNOTATION_MAPPINGS,
-			...(snapshot.annotationMappings ?? {})
-		};
+		this.annotationItems = Array.isArray(snapshot.annotationItems) ? snapshot.annotationItems : [];
 		this.annotationStyle = { ...DEFAULT_ANNOTATION_STYLE, ...(snapshot.annotationStyle ?? {}) };
-		this.annotationRowOptions = snapshot.annotationRowOptions ?? {};
 		this.annotations = Array.isArray(snapshot.annotations) ? snapshot.annotations : [];
-		this.annotationHeaderSignature = '';
 		this.title = snapshot.title ?? '';
 		this.description = snapshot.description ?? '';
 		this.dataSource = snapshot.dataSource ?? '';

@@ -6,10 +6,7 @@
  */
 
 import { migrateChartType } from '$lib/stratify/chart-types.js';
-import {
-	DEFAULT_ANNOTATION_MAPPINGS,
-	DEFAULT_ANNOTATION_STYLE
-} from '$lib/stratify/annotation-data.js';
+import { DEFAULT_ANNOTATION_STYLE } from '$lib/stratify/annotation-data.js';
 
 /**
  * Collect the unique values of a column from a row array, preserving
@@ -61,16 +58,11 @@ export function normaliseChart(chart) {
 		dataSource: chart.dataSource ?? '',
 		notes: chart.notes ?? '',
 		csvText: chart.csvText ?? '',
-		annotationCsvText: chart.annotationCsvText ?? '',
-		annotationMappings: {
-			...DEFAULT_ANNOTATION_MAPPINGS,
-			...safeParseJSON(chart.annotationMappings, {})
-		},
+		annotationItems: safeParseJSON(chart.annotationItems, []),
 		annotationStyle: {
 			...DEFAULT_ANNOTATION_STYLE,
 			...safeParseJSON(chart.annotationStyle, {})
 		},
-		annotationRowOptions: safeParseJSON(chart.annotationRowOptions, {}),
 		chartType: migrateChartType(chart.chartType ?? 'line'),
 		displayMode: chart.displayMode ?? 'auto',
 		hiddenSeries: chart.hiddenSeries ?? [],

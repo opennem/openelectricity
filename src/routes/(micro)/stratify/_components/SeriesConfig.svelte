@@ -163,7 +163,7 @@
 						type="text"
 						value={project.seriesLabels[group] || group}
 						oninput={(e) => updateLabel(group, e.currentTarget.value)}
-						class="bg-transparent border border-transparent rounded px-1.5 py-0.5 text-[11px] flex-1 min-w-0 focus:outline-none focus:border-warm-grey focus:bg-light-warm-grey/50"
+						class="bg-transparent border border-transparent rounded px-1.5 py-0.5 text-sm flex-1 min-w-0 focus:outline-none focus:border-warm-grey focus:bg-light-warm-grey/50"
 					/>
 				</div>
 			{/each}
@@ -210,7 +210,7 @@
 							type="text"
 							value={project.seriesLabels[key] || key}
 							oninput={(e) => updateLabel(key, e.currentTarget.value)}
-							class="bg-transparent border border-transparent rounded px-1.5 py-0.5 text-[11px] flex-1 min-w-0 focus:outline-none focus:border-warm-grey focus:bg-light-warm-grey/50"
+							class="bg-transparent border border-transparent rounded px-1.5 py-0.5 text-sm flex-1 min-w-0 focus:outline-none focus:border-warm-grey focus:bg-light-warm-grey/50"
 						/>
 
 						<!-- Y-axis toggle -->

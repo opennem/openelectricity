@@ -32,15 +32,13 @@ describe('POST /api/stratify/charts/:id/fork annotation persistence', () => {
 			status: 'published',
 			title: 'Annotated wind chart',
 			csvText: 'date,value\n2026-07-01,10',
-			annotationCsvText: 'date,label\n2026-07-01,Start',
-			annotationMappings: JSON.stringify({ xColumn: 'date', labelColumn: 'label' }),
 			annotationStyle: JSON.stringify({ lineWidth: 2 }),
-			annotationRowOptions: JSON.stringify({ 2: { colour: '#f00', positionBy: 'y' } })
+			annotationItems: JSON.stringify([{ id: 'a1', type: 'rule', x: '2026-07-01', label: 'Start' }])
 		});
 		mocks.create.mockReset().mockResolvedValue({ _id: 'forked-chart' });
 	});
 
-	it('copies the annotation dataset and configuration into the fork', async () => {
+	it('copies structured annotations and configuration into the fork', async () => {
 		const response = await POST(
 			/** @type {any} */ ({
 				request: new Request('http://localhost/api/stratify/charts/source-chart/fork', {
@@ -53,10 +51,10 @@ describe('POST /api/stratify/charts/:id/fork annotation persistence', () => {
 
 		expect(response.status).toBe(201);
 		expect(document).toMatchObject({
-			annotationCsvText: 'date,label\n2026-07-01,Start',
-			annotationMappings: JSON.stringify({ xColumn: 'date', labelColumn: 'label' }),
 			annotationStyle: JSON.stringify({ lineWidth: 2 }),
-			annotationRowOptions: JSON.stringify({ 2: { colour: '#f00', positionBy: 'y' } }),
+			annotationItems: JSON.stringify([
+				{ id: 'a1', type: 'rule', x: '2026-07-01', label: 'Start' }
+			]),
 			userId: 'fork-user',
 			status: 'draft',
 			forkedFrom: 'source-chart'

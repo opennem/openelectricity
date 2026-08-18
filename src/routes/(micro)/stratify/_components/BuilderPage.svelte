@@ -1,11 +1,18 @@
 <script>
 	import { onMount } from 'svelte';
-	import { goto, beforeNavigate } from '$app/navigation';
+	import { goto, beforeNavigate, replaceState } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import Meta from '$lib/components/Meta.svelte';
 	import Button from '$lib/components/form-elements/Button.svelte';
 	import { DragHandle, createDragHandler } from '$lib/components/ui/panel';
 
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
+	import FileSpreadsheet from '@lucide/svelte/icons/file-spreadsheet';
+	import ChartNoAxesCombined from '@lucide/svelte/icons/chart-no-axes-combined';
+	import Palette from '@lucide/svelte/icons/palette';
+	import ScanText from '@lucide/svelte/icons/scan-text';
+	import Share2 from '@lucide/svelte/icons/share-2';
 	import StratifyPlotProject from '../_state/StratifyPlotProject.svelte.js';
 	import { setStratifyContext } from '../_state/context.js';
 
@@ -36,45 +43,54 @@
 	const steps = [
 		{
 			id: 'data',
+			icon: FileSpreadsheet,
 			label: 'Add data',
 			shortLabel: 'Data',
 			description: 'Paste CSV or tab-separated data, then check that every column was understood.'
 		},
 		{
 			id: 'chart',
+			icon: ChartNoAxesCombined,
 			label: 'Choose a chart',
 			shortLabel: 'Chart',
 			description: 'Pick the chart that answers your question, then map the columns and axes.'
 		},
 		{
-			id: 'clarity',
-			label: 'Make it clear',
-			shortLabel: 'Clarity',
-			description: 'Write the title and source, then refine colours, series, legends and tooltips.'
+			id: 'theme',
+			icon: Palette,
+			label: 'Choose a theme',
+			shortLabel: 'Theme',
+			description: 'Choose the typography and colour palette for your chart.'
 		},
 		{
-			id: 'context',
-			label: 'Add context',
-			shortLabel: 'Context',
-			description: 'Use rules and point callouts to explain the moments that matter.'
+			id: 'clarity',
+			icon: ScanText,
+			label: 'Make it clear',
+			shortLabel: 'Clarity',
+			description:
+				'Write the title and source, refine series and tooltips, then add rules or point callouts.'
 		},
 		{
 			id: 'share',
+			icon: Share2,
 			label: 'Share',
 			shortLabel: 'Share',
 			description: 'Save a draft, publish a public link, embed the chart or export a file.'
 		}
 	];
 
-	let activeStep = $state('data');
+	const requestedStep = page.url.searchParams.get('step');
+	let activeStep = $state(
+		steps.some((step) => step.id === requestedStep) ? /** @type {string} */ (requestedStep) : 'data'
+	);
 	let activeStepIndex = $derived(steps.findIndex((step) => step.id === activeStep));
 	let currentStep = $derived(steps[activeStepIndex] ?? steps[0]);
 	let completedSteps = $derived(
 		/** @type {Record<string, boolean>} */ ({
 			data: project.hasData,
 			chart: project.hasData,
+			theme: project.hasData,
 			clarity: project.hasData && Boolean(project.title.trim()),
-			context: project.dataAnnotations.length > 0 || project.annotations.length > 0,
 			share: project.status === 'published'
 		})
 	);
@@ -84,6 +100,7 @@
 
 	onMount(async () => {
 		mounted = true;
+		setActiveStep(activeStep);
 		loadingChart = Boolean(initialChartId || templateSlug);
 
 		if (initialChartId) {
@@ -160,7 +177,9 @@
 		const wasNew = !project.currentChartId;
 		const success = await saveProject();
 		if (success && wasNew && project.currentChartId) {
-			goto(`/stratify/${project.currentChartId}`, { replaceState: true });
+			goto(resolve(`/(micro)/stratify/[id]?step=${activeStep}`, { id: project.currentChartId }), {
+				replaceState: true
+			});
 		}
 	}
 
@@ -223,7 +242,9 @@
 				const result = await createChart(project.toJSON());
 				project.currentChartId = result._id;
 				markSaved();
-				goto(`/stratify/${result._id}`, { replaceState: true });
+				goto(resolve(`/(micro)/stratify/[id]?step=${activeStep}`, { id: result._id }), {
+					replaceState: true
+				});
 			}
 			await updateChart(project.currentChartId, {
 				...project.toJSON(),
@@ -272,12 +293,33 @@
 		storageKey: 'stratify-plot-left-width'
 	});
 
+	/** @param {string} stepId */
+	function setActiveStep(stepId) {
+		if (!steps.some((step) => step.id === stepId)) return;
+		activeStep = stepId;
+		if (initialChartId) {
+			replaceState(
+				resolve(`/(micro)/stratify/[id]?step=${stepId}`, { id: initialChartId }),
+				page.state
+			);
+		} else if (templateSlug) {
+			replaceState(
+				resolve(
+					`/(micro)/stratify/new?template=${encodeURIComponent(templateSlug)}&step=${stepId}`
+				),
+				page.state
+			);
+		} else {
+			replaceState(resolve(`/(micro)/stratify/new?step=${stepId}`), page.state);
+		}
+	}
+
 	function previousStep() {
-		if (activeStepIndex > 0) activeStep = steps[activeStepIndex - 1].id;
+		if (activeStepIndex > 0) setActiveStep(steps[activeStepIndex - 1].id);
 	}
 
 	function nextStep() {
-		if (activeStepIndex < steps.length - 1) activeStep = steps[activeStepIndex + 1].id;
+		if (activeStepIndex < steps.length - 1) setActiveStep(steps[activeStepIndex + 1].id);
 	}
 </script>
 
@@ -300,7 +342,7 @@
 
 {#if !mounted || loadingChart}
 	<div class="flex items-center justify-center h-dvh font-mono">
-		<p class="text-[11px] text-mid-grey">Loading chart...</p>
+		<p class="text-sm text-mid-grey">Loading chart...</p>
 	</div>
 {:else}
 	<div class="flex h-dvh flex-col overflow-hidden bg-white font-sans">
@@ -319,23 +361,26 @@
 						aria-label="Chart-building steps"
 					>
 						{#each steps as step, index (step.id)}
+							{@const StepIcon = step.icon}
 							<button
 								type="button"
-								onclick={() => (activeStep = step.id)}
+								onclick={() => setActiveStep(step.id)}
 								aria-current={activeStep === step.id ? 'step' : undefined}
 								class="group relative flex min-w-36 items-center gap-3 border-r border-warm-grey px-4 py-4 text-left text-sm transition-colors md:min-w-0 md:border-b md:border-r-0 md:px-5 md:py-5 {activeStep ===
 								step.id
-									? 'bg-white text-dark-grey'
+									? 'border-dark-grey bg-dark-grey text-white'
 									: 'text-mid-grey hover:bg-white/70 hover:text-dark-grey'}"
 							>
 								<span
-									class="shrink-0 font-mono text-xs tabular-nums {activeStep === step.id
-										? 'font-semibold text-dark-grey'
+									class="flex size-6 shrink-0 items-center justify-center transition-colors {activeStep ===
+									step.id
+										? 'text-white'
 										: completedSteps[step.id]
 											? 'text-red'
 											: 'text-mid-grey'}"
 								>
-									0{index + 1}
+									<StepIcon size={18} strokeWidth={1.75} />
+									<span class="sr-only">Step {index + 1}</span>
 								</span>
 								<span class="min-w-0 whitespace-nowrap text-sm font-medium md:whitespace-normal">
 									{step.shortLabel}
@@ -364,16 +409,16 @@
 								<DataPanel />
 							{:else if activeStep === 'chart'}
 								<ChartPanel />
-							{:else if activeStep === 'clarity'}
-								<ChartConfig />
+							{:else if activeStep === 'theme'}
 								<SectionHeader label="Theme">
 									<StylePresetPicker />
 								</SectionHeader>
 								<SectionHeader label="Colours">
 									<ColourPalettePicker />
 								</SectionHeader>
+							{:else if activeStep === 'clarity'}
+								<ChartConfig />
 								<SeriesPanel />
-							{:else if activeStep === 'context'}
 								<AnnotatePanel />
 							{:else if activeStep === 'share'}
 								<PublishPanel />
@@ -397,14 +442,16 @@
 			</div>
 
 			<!-- Right panel: chart bar + preview -->
-			<div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-light-warm-grey/40">
+			<div
+				class="flex min-h-0 flex-1 flex-col overflow-hidden bg-light-warm-grey/40 md:border-l md:border-warm-grey"
+			>
 				<!-- Chart action bar -->
 				<div class="flex items-center gap-3 border-b border-warm-grey bg-white px-5 py-3">
 					<div class="flex items-center gap-2">
 						{#if project.currentChartId}
 							{#if project.status === 'published'}
 								<a
-									href="/strata/{project.currentChartId}"
+									href={resolve('/(main)/strata/[id]', { id: project.currentChartId })}
 									target="_blank"
 									class="inline-flex items-center gap-1 font-space text-xxs font-medium uppercase tracking-wider text-mid-grey hover:text-red hover:no-underline"
 								>
@@ -468,8 +515,7 @@
 	.builder-controls :global(.text-xs),
 	.builder-controls :global([class~='text-[8px]']),
 	.builder-controls :global([class~='text-[9px]']),
-	.builder-controls :global([class~='text-[10px]']),
-	.builder-controls :global([class~='text-[11px]']) {
+	.builder-controls :global([class~='text-[10px]']) {
 		font-size: 1.4rem;
 		line-height: 1.8rem;
 	}

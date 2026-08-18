@@ -122,6 +122,7 @@
 	 *   annotations?: import('./plot-annotations.js').Annotation[],
 	 *   dataAnnotations?: import('./annotation-data.js').DataAnnotation[],
 	 *   annotationStyle?: import('./annotation-data.js').AnnotationStyleConfig,
+	 *   annotationFontFamily?: string,
 	 *   class?: string
 	 * }}
 	 */
@@ -184,6 +185,7 @@
 		annotations = [],
 		dataAnnotations = [],
 		annotationStyle = DEFAULT_ANNOTATION_STYLE,
+		annotationFontFamily = 'DM Mono, monospace',
 		class: className = ''
 	} = $props();
 
@@ -305,7 +307,8 @@
 					seriesColours,
 					seriesLabels,
 					chartType,
-					height
+					height,
+					{ fontFamily: annotationFontFamily }
 				)
 			: { marks: [], marginRight: 0 };
 		const dataAnnotationResult = processDataAnnotations(
@@ -315,7 +318,8 @@
 			seriesLabels,
 			annotationStyle,
 			containerWidth || 640,
-			y2Scale ? (value) => /** @type {NonNullable<typeof y2Scale>} */ (y2Scale)(value) : undefined
+			y2Scale ? (value) => /** @type {NonNullable<typeof y2Scale>} */ (y2Scale)(value) : undefined,
+			annotationFontFamily
 		);
 
 		// Merge annotation margin with user options

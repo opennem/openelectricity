@@ -9,10 +9,8 @@
 	import { makeValueFormatter } from '$lib/components/charts/plot/plot-configs.js';
 	import { scaleSqrt } from 'd3-scale';
 	import {
-		compileAnnotationData,
-		DEFAULT_ANNOTATION_MAPPINGS,
-		DEFAULT_ANNOTATION_STYLE,
-		parseAnnotationTable
+		compileAnnotationItems,
+		DEFAULT_ANNOTATION_STYLE
 	} from '$lib/stratify/annotation-data.js';
 	import {
 		HORIZONTAL_TYPES,
@@ -28,7 +26,7 @@
 	 *   chart: any,
 	 *   caption?: string,
 	 *   showBranding?: boolean,
-	 *   headingTag?: 'h1' | 'h2' | 'h3'
+	 *   headingTag?: 'h1' | 'h2' | 'h3',
 	 * }}
 	 */
 	let { chart, caption = '', showBranding = false, headingTag = 'h1' } = $props();
@@ -42,19 +40,8 @@
 		...DEFAULT_ANNOTATION_STYLE,
 		...(chart.annotationStyle ?? {})
 	});
-	const annotationMappings = $derived({
-		...DEFAULT_ANNOTATION_MAPPINGS,
-		...(chart.annotationMappings ?? {})
-	});
-	const annotationTable = $derived(parseAnnotationTable(chart.annotationCsvText ?? ''));
 	const compiledAnnotations = $derived(
-		compileAnnotationData(
-			annotationTable,
-			parsed.mode,
-			annotationMappings,
-			annotationStyle,
-			chart.annotationRowOptions ?? {}
-		)
+		compileAnnotationItems(chart.annotationItems ?? [], parsed.mode, annotationStyle)
 	);
 	const dataAnnotations = $derived(
 		MAP_TYPES.has(chart.chartType) || HORIZONTAL_TYPES.has(chart.chartType)
@@ -416,6 +403,7 @@
 			annotations={chart.annotations}
 			{dataAnnotations}
 			{annotationStyle}
+			annotationFontFamily={preset.typography.fontFamily}
 			options={plotStyleOptions}
 			height={chartHeight}
 			yTicks={chart.yTicks ?? 0}

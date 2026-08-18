@@ -1,373 +1,454 @@
 <script>
+	import { Plus, Trash2 } from '@lucide/svelte';
 	import { HORIZONTAL_TYPES, MAP_TYPES } from '$lib/stratify/chart-types.js';
 	import { getStratifyContext } from '../../_state/context.js';
 	import ColourPicker from '../ColourPicker.svelte';
-	import ControlInput from '../ControlInput.svelte';
+	import ControlInput, { CONTROL_INPUT_CLASS } from '../ControlInput.svelte';
 	import SectionHeader from '../SectionHeader.svelte';
+	import StratifyButton from '../StratifyButton.svelte';
 
 	const project = getStratifyContext();
-	const CONTROL_CLASS =
-		'flex-1 min-w-0 bg-light-warm-grey/50 border border-warm-grey rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-red focus:ring-1 focus:ring-red';
-	const NUMBER_CLASS =
-		'w-20 bg-light-warm-grey/50 border border-warm-grey rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-red focus:ring-1 focus:ring-red';
-	const ANNOTATION_PLACEHOLDER =
-		'type,date,label,y\nrule,2026-07-01T21:20:00+10:00,Generation high,\npoint,2026-07-02T00:00:00+10:00,Overnight generation,10500';
+	const CONTROL_CLASS = `min-w-0 flex-1 ${CONTROL_INPUT_CLASS}`;
+	const ERROR_CONTROL_CLASS = '!border-dark-red focus:!border-dark-red focus:!ring-dark-red';
+	const NUMBER_CLASS = `w-20 ${CONTROL_INPUT_CLASS}`;
+	const DEFAULT_LABELS = { rule: 'Rule annotation', point: 'Point annotation' };
+	const POINT_LABEL_POSITIONS = ['top', 'left', 'right', 'bottom'];
 
-	/** @type {'csv' | 'parsed'} */
-	let activeTab = $state('csv');
-	let hasAnnotationData = $derived(project.annotationTable.rows.length > 0);
+	let hasAnnotations = $derived(project.annotationItems.length > 0);
 	let supported = $derived(
 		!MAP_TYPES.has(project.chartType) && !HORIZONTAL_TYPES.has(project.chartType)
 	);
-	/** @type {Array<{ key: Exclude<keyof import('$lib/stratify/annotation-data.js').AnnotationMappings, 'defaultType'>, label: string, optional: boolean }>} */
-	const mappingOptions = [
-		{ key: 'typeColumn', label: 'Type', optional: true },
-		{ key: 'xColumn', label: 'X / date', optional: false },
-		{ key: 'labelColumn', label: 'Label', optional: false },
-		{ key: 'yColumn', label: 'Y value', optional: true }
-	];
+	let xLabel = $derived(
+		project.parsedData.mode === 'time-series'
+			? 'Date / time'
+			: project.parsedData.mode === 'category'
+				? 'Category'
+				: 'X value'
+	);
+	let xPlaceholder = $derived(
+		project.parsedData.mode === 'time-series'
+			? '2026-07-01T21:20:00+10:00'
+			: project.parsedData.mode === 'category'
+				? 'Category name'
+				: '0'
+	);
+	let xOptions = $derived.by(() => {
+		/** @type {Array<{ value: string, label: string }>} */
+		const options = [];
+		/** @type {Record<string, boolean>} */
+		const seen = Object.create(null);
+		for (const row of project.parsedData.data) {
+			const rawValue =
+				project.parsedData.mode === 'time-series'
+					? row._dateStr
+					: project.parsedData.mode === 'category'
+						? row.category
+						: row.linear;
+			const value = rawValue == null ? '' : String(rawValue);
+			if (!value || seen[value]) continue;
+			seen[value] = true;
+			options.push({ value, label: value });
+		}
+		return options;
+	});
 
 	/**
-	 * @param {keyof import('$lib/stratify/annotation-data.js').AnnotationMappings} key
-	 * @param {string | null} value
+	 * @param {import('$lib/stratify/annotation-data.js').AnnotationItem} item
 	 */
-	function setMapping(key, value) {
-		project.annotationMappings = { ...project.annotationMappings, [key]: value };
+	function getAppearance(item) {
+		return { ...project.annotationStyle, ...(item.appearance ?? {}) };
 	}
 
 	/**
+	 * @param {import('$lib/stratify/annotation-data.js').AnnotationItem} item
 	 * @param {keyof import('$lib/stratify/annotation-data.js').AnnotationStyleConfig} key
 	 * @param {string | number} value
 	 */
-	function setStyle(key, value) {
-		project.annotationStyle = { ...project.annotationStyle, [key]: value };
+	function setStyle(item, key, value) {
+		project.updateAnnotation(item.id, {
+			appearance: { ...getAppearance(item), [key]: value }
+		});
 	}
 
 	/**
-	 * @param {'lineWidth' | 'fontSize' | 'pointRadius'} key
+	 * @param {import('$lib/stratify/annotation-data.js').AnnotationItem} item
+	 * @param {'lineWidth' | 'fontSize' | 'pointRadius' | 'labelMaxWidth'} key
 	 * @param {string} raw
 	 * @param {number} min
 	 * @param {number} max
 	 */
-	function setNumericStyle(key, raw, min, max) {
+	function setNumericStyle(item, key, raw, min, max) {
 		const value = Number(raw);
-		if (Number.isFinite(value) && value >= min && value <= max) setStyle(key, value);
-	}
-
-	/** @param {number} rowNumber */
-	function getRowOption(rowNumber) {
-		return project.annotationRowOptions[String(rowNumber)] ?? {};
+		if (Number.isFinite(value) && value >= min && value <= max) setStyle(item, key, value);
 	}
 
 	/**
-	 * @param {number} rowNumber
-	 * @param {import('$lib/stratify/annotation-data.js').AnnotationRowOption} patch
+	 * @param {import('$lib/stratify/annotation-data.js').AnnotationItem} item
+	 * @param {'rule' | 'point'} type
 	 */
-	function setRowOption(rowNumber, patch) {
-		const key = String(rowNumber);
-		project.annotationRowOptions = {
-			...project.annotationRowOptions,
-			[key]: { ...getRowOption(rowNumber), ...patch }
-		};
-	}
-
-	/** @param {{ values: Record<string, string> }} row */
-	function getRowType(row) {
-		const mapped = project.annotationMappings.typeColumn;
-		return mapped
-			? row.values[mapped]?.trim().toLowerCase()
-			: project.annotationMappings.defaultType;
-	}
-
-	/** @param {{ rowNumber: number, values: Record<string, string> }} row */
-	function getRowLabel(row) {
-		const mapped = project.annotationMappings.labelColumn;
-		return (mapped ? row.values[mapped] : '') || `Row ${row.rowNumber}`;
-	}
-
-	/** @param {{ values: Record<string, string> }} row */
-	function getRowY(row) {
-		const mapped = project.annotationMappings.yColumn;
-		return mapped ? row.values[mapped]?.trim() : '';
+	function setAnnotationType(item, type) {
+		const hasCustomLabel =
+			item.label.trim() !== '' && !Object.values(DEFAULT_LABELS).includes(item.label);
+		const defaultX =
+			project.parsedData.mode === 'time-series' && item.xSource === 'data' && !item.x.trim()
+				? (xOptions[0]?.value ?? '')
+				: item.x;
+		const shouldDefaultSeries =
+			type === 'point' && item.type !== 'point' && !item.y.trim() && !item.series;
+		project.updateAnnotation(item.id, {
+			type,
+			label: hasCustomLabel ? item.label : DEFAULT_LABELS[type],
+			x: defaultX,
+			positionBy: shouldDefaultSeries ? 'series' : item.positionBy,
+			series: shouldDefaultSeries ? (project.orderedSeriesNames[0] ?? null) : item.series,
+			labelPosition:
+				type === 'point' && !POINT_LABEL_POSITIONS.includes(item.labelPosition ?? 'top')
+					? 'top'
+					: (item.labelPosition ?? 'top')
+		});
 	}
 </script>
 
 {#if !supported}
 	<div class="mb-8 bg-light-warm-grey/50 px-3 py-3 text-[10px] leading-relaxed text-mid-grey">
-		Data annotations are currently supported on charts with a horizontal X axis, not maps or
-		horizontal bar and waterfall charts.
+		Annotations are currently supported on charts with a horizontal X axis, not maps or horizontal
+		bar and waterfall charts.
 	</div>
 {/if}
 
-<SectionHeader label="Annotation data">
-	<div class="space-y-2">
-		{#if hasAnnotationData}
-			<div class="flex items-end justify-between">
-				<div class="flex gap-0.5">
-					<button
-						type="button"
-						class="px-2 py-1 text-[10px] uppercase tracking-wide rounded-t {activeTab === 'csv'
-							? 'bg-warm-grey/50 text-dark-grey'
-							: 'text-mid-grey hover:text-dark-grey'}"
-						onclick={() => (activeTab = 'csv')}>CSV</button
-					>
-					<button
-						type="button"
-						class="px-2 py-1 text-[10px] uppercase tracking-wide rounded-t {activeTab === 'parsed'
-							? 'bg-warm-grey/50 text-dark-grey'
-							: 'text-mid-grey hover:text-dark-grey'}"
-						onclick={() => (activeTab = 'parsed')}>Parsed</button
-					>
-				</div>
-				<button
-					type="button"
-					class="text-[10px] text-mid-grey hover:text-dark-red"
-					onclick={() => {
-						project.annotationCsvText = '';
-						project.annotationRowOptions = {};
-						project.annotationHeaderSignature = '';
-					}}>Clear</button
-				>
+<SectionHeader label="Annotations">
+	<div class="space-y-3">
+		{#if !hasAnnotations}
+			<div class="rounded-lg border border-dashed border-mid-warm-grey px-4 py-5 text-left">
+				<p class="mb-0 text-xs text-mid-grey">
+					Add a rule or point annotation, then choose where it appears on the chart.
+				</p>
 			</div>
-		{/if}
-
-		{#if !hasAnnotationData || activeTab === 'csv'}
-			<textarea
-				bind:value={project.annotationCsvText}
-				rows="7"
-				class="w-full resize-y rounded-lg border border-warm-grey bg-warm-grey/50 p-2.5 font-mono text-[11px] outline-none focus:bg-warm-grey"
-				placeholder={ANNOTATION_PLACEHOLDER}
-			></textarea>
+			<div class="border-t border-warm-grey pt-3">
+				<StratifyButton onclick={() => project.addAnnotation()}>
+					<Plus size={14} />
+					Add annotation
+				</StratifyButton>
+			</div>
 		{:else}
-			<div class="max-h-64 overflow-auto rounded-lg bg-warm-grey/50">
-				<table class="w-full border-collapse font-mono text-[10px]">
-					<thead class="sticky top-0 bg-mid-warm-grey/30">
-						<tr>
-							{#each project.annotationTable.columns as column (column.key)}
-								<th class="whitespace-nowrap px-2 py-1.5 text-left font-medium">{column.label}</th>
-							{/each}
-						</tr>
-					</thead>
-					<tbody>
-						{#each project.annotationTable.rows as row (row.rowNumber)}
-							<tr>
-								{#each project.annotationTable.columns as column (column.key)}
-									<td class="whitespace-nowrap border-t border-warm-grey px-2 py-1"
-										>{row.values[column.key]}</td
+			{#each project.annotationItems as item, index (item.id)}
+				{@const appearance = getAppearance(item)}
+				{@const hasXError = (item.type === 'rule' || item.type === 'point') && !item.x.trim()}
+				{@const hasLabelError =
+					(item.type === 'rule' || item.type === 'point') && !item.label.trim()}
+				<div
+					class="overflow-hidden rounded-lg border border-warm-grey transition-colors duration-150 focus-within:border-mid-grey"
+				>
+					<div
+						class="flex items-center justify-between gap-3 border-b border-warm-grey bg-light-warm-grey/50 px-3 py-2.5"
+					>
+						<p class="mb-0 text-xs font-medium text-dark-grey">Annotation {index + 1}</p>
+						<button
+							type="button"
+							class="rounded-md p-1.5 text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-red focus:outline-none focus:ring-2 focus:ring-red"
+							onclick={() => project.removeAnnotation(item.id)}
+							aria-label={`Remove annotation ${index + 1}`}
+							title="Remove annotation"
+						>
+							<Trash2 size={14} />
+						</button>
+					</div>
+
+					<div class="space-y-3 p-4">
+						<ControlInput label="Type">
+							<select
+								value={item.type}
+								onchange={(event) =>
+									setAnnotationType(
+										item,
+										/** @type {'rule' | 'point'} */ (event.currentTarget.value)
+									)}
+								class={CONTROL_CLASS}
+							>
+								<option value="" disabled>Choose type</option>
+								<option value="rule">Rule</option>
+								<option value="point">Point</option>
+							</select>
+						</ControlInput>
+
+						{#if item.type === 'rule' || item.type === 'point'}
+							<ControlInput label="X source">
+								<select
+									value={item.xSource}
+									onchange={(event) => {
+										const xSource = /** @type {'data' | 'custom'} */ (event.currentTarget.value);
+										project.updateAnnotation(item.id, {
+											xSource,
+											x: xSource === 'data' ? '' : item.x
+										});
+									}}
+									class={CONTROL_CLASS}
+								>
+									<option value="data" disabled={xOptions.length === 0}>Existing data</option>
+									<option value="custom">Custom value</option>
+								</select>
+							</ControlInput>
+
+							{#if item.xSource === 'data'}
+								<ControlInput label={xLabel} error={hasXError ? 'Choose a point.' : ''}>
+									<select
+										value={item.x}
+										onchange={(event) =>
+											project.updateAnnotation(item.id, { x: event.currentTarget.value })}
+										class={`${CONTROL_CLASS} ${hasXError ? ERROR_CONTROL_CLASS : ''}`}
+										aria-invalid={hasXError}
 									>
-								{/each}
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+										<option value="" disabled>Choose point</option>
+										{#each xOptions as option (option.value)}
+											<option value={option.value}>{option.label}</option>
+										{/each}
+									</select>
+								</ControlInput>
+							{:else}
+								<ControlInput label={xLabel} error={hasXError ? 'Enter a value.' : ''}>
+									<input
+										type={project.parsedData.mode === 'linear' ? 'number' : 'text'}
+										value={item.x}
+										oninput={(event) =>
+											project.updateAnnotation(item.id, { x: event.currentTarget.value })}
+										placeholder={xPlaceholder}
+										class={`${CONTROL_CLASS} ${hasXError ? ERROR_CONTROL_CLASS : ''}`}
+										aria-invalid={hasXError}
+									/>
+								</ControlInput>
+							{/if}
+
+							<ControlInput label="Label" error={hasLabelError ? 'Enter a label.' : ''}>
+								<input
+									type="text"
+									value={item.label}
+									oninput={(event) =>
+										project.updateAnnotation(item.id, { label: event.currentTarget.value })}
+									placeholder="Annotation label"
+									class={`${CONTROL_CLASS} ${hasLabelError ? ERROR_CONTROL_CLASS : ''}`}
+									aria-invalid={hasLabelError}
+								/>
+							</ControlInput>
+
+							<ControlInput label="Label position">
+								<select
+									value={item.labelPosition ?? 'top'}
+									onchange={(event) =>
+										project.updateAnnotation(item.id, {
+											labelPosition:
+												/** @type {import('$lib/stratify/annotation-data.js').AnnotationLabelPosition} */ (
+													event.currentTarget.value
+												)
+										})}
+									class={CONTROL_CLASS}
+								>
+									{#if item.type === 'rule'}
+										<option value="top-left">Top left</option>
+									{/if}
+									<option value="top">Top centre</option>
+									{#if item.type === 'rule'}
+										<option value="top-right">Top right</option>
+									{/if}
+									<option value="left">{item.type === 'rule' ? 'Middle left' : 'Left'}</option>
+									<option value="right">{item.type === 'rule' ? 'Middle right' : 'Right'}</option>
+									{#if item.type === 'rule'}
+										<option value="bottom-left">Bottom left</option>
+									{/if}
+									<option value="bottom">Bottom centre</option>
+									{#if item.type === 'rule'}
+										<option value="bottom-right">Bottom right</option>
+									{/if}
+								</select>
+							</ControlInput>
+
+							{#if item.type === 'point'}
+								<ControlInput label="Position by">
+									<select
+										value={item.positionBy}
+										onchange={(event) => {
+											if (event.currentTarget.value === 'series') {
+												project.updateAnnotation(item.id, {
+													positionBy: 'series',
+													series: project.orderedSeriesNames[0] ?? null
+												});
+											} else {
+												project.updateAnnotation(item.id, { positionBy: 'y', series: null });
+											}
+										}}
+										class={CONTROL_CLASS}
+									>
+										<option value="y">Y value</option>
+										<option value="series">Series</option>
+									</select>
+								</ControlInput>
+
+								{#if item.positionBy === 'series'}
+									<ControlInput label="Series">
+										<select
+											value={item.series ?? ''}
+											onchange={(event) =>
+												project.updateAnnotation(item.id, {
+													series: event.currentTarget.value || null
+												})}
+											class={CONTROL_CLASS}
+										>
+											<option value="">Choose series</option>
+											{#each project.orderedSeriesNames as series (series)}
+												<option value={series}>{project.seriesLabels[series] ?? series}</option>
+											{/each}
+										</select>
+									</ControlInput>
+								{:else}
+									<ControlInput label="Y value">
+										<input
+											type="number"
+											value={item.y}
+											oninput={(event) =>
+												project.updateAnnotation(item.id, { y: event.currentTarget.value })}
+											placeholder="0"
+											class={CONTROL_CLASS}
+										/>
+									</ControlInput>
+								{/if}
+
+								<ControlInput label="Axis">
+									<select
+										value={item.axis}
+										onchange={(event) =>
+											project.updateAnnotation(item.id, {
+												axis: /** @type {'left' | 'right'} */ (event.currentTarget.value)
+											})}
+										class={CONTROL_CLASS}
+									>
+										<option value="left">Left</option>
+										<option value="right">Right</option>
+									</select>
+								</ControlInput>
+							{/if}
+							{#if item.type === 'rule' || item.type === 'point'}
+								<div class="flex items-center gap-3 pt-3">
+									<p
+										class="mb-0 shrink-0 font-space text-xxs font-medium uppercase tracking-wider text-dark-grey"
+									>
+										Appearance
+									</p>
+									<span
+										class="flex-1 border-t border-dashed border-mid-warm-grey"
+										aria-hidden="true"
+									></span>
+								</div>
+
+								<ControlInput
+									label={item.type === 'rule' ? 'Rule line colour' : 'Point dot colour'}
+								>
+									<ColourPicker
+										value={item.type === 'rule' ? appearance.ruleColour : appearance.pointColour}
+										onChange={(colour) =>
+											setStyle(item, item.type === 'rule' ? 'ruleColour' : 'pointColour', colour)}
+									/>
+									<span class="truncate font-mono text-xs text-mid-grey">
+										{item.type === 'rule' ? appearance.ruleColour : appearance.pointColour}
+									</span>
+								</ControlInput>
+								<ControlInput label="Label colour">
+									<ColourPicker
+										value={appearance.labelColour}
+										onChange={(colour) => setStyle(item, 'labelColour', colour)}
+									/>
+									<span class="truncate font-mono text-xs text-mid-grey">
+										{appearance.labelColour}
+									</span>
+								</ControlInput>
+								<ControlInput label="Line style">
+									<select
+										value={appearance.lineStyle}
+										onchange={(event) => setStyle(item, 'lineStyle', event.currentTarget.value)}
+										class={CONTROL_CLASS}
+									>
+										<option value="solid">Solid</option>
+										<option value="dashed">Dashed</option>
+										<option value="dotted">Dotted</option>
+									</select>
+								</ControlInput>
+								<ControlInput label="Line width" suffix="px">
+									<input
+										type="number"
+										min="0"
+										max="10"
+										step="0.5"
+										value={appearance.lineWidth}
+										oninput={(event) =>
+											setNumericStyle(item, 'lineWidth', event.currentTarget.value, 0, 10)}
+										class={NUMBER_CLASS}
+									/>
+								</ControlInput>
+								<ControlInput label="Label size" suffix="px">
+									<input
+										type="number"
+										min="6"
+										max="32"
+										step="1"
+										value={appearance.fontSize}
+										oninput={(event) =>
+											setNumericStyle(item, 'fontSize', event.currentTarget.value, 6, 32)}
+										class={NUMBER_CLASS}
+									/>
+								</ControlInput>
+								<ControlInput label="Label weight">
+									<select
+										value={appearance.fontWeight}
+										onchange={(event) => setStyle(item, 'fontWeight', event.currentTarget.value)}
+										class={CONTROL_CLASS}
+									>
+										<option value="normal">Normal</option>
+										<option value="bold">Bold</option>
+									</select>
+								</ControlInput>
+								<ControlInput label="Label max width" suffix="px">
+									<input
+										type="number"
+										min="60"
+										max="480"
+										step="10"
+										value={appearance.labelMaxWidth}
+										oninput={(event) =>
+											setNumericStyle(item, 'labelMaxWidth', event.currentTarget.value, 60, 480)}
+										class={NUMBER_CLASS}
+									/>
+								</ControlInput>
+								{#if item.type === 'point'}
+									<ControlInput label="Point radius" suffix="px">
+										<input
+											type="number"
+											min="1"
+											max="30"
+											step="1"
+											value={appearance.pointRadius}
+											oninput={(event) =>
+												setNumericStyle(item, 'pointRadius', event.currentTarget.value, 1, 30)}
+											class={NUMBER_CLASS}
+										/>
+									</ControlInput>
+								{/if}
+							{/if}
+						{/if}
+					</div>
+				</div>
+			{/each}
+
+			<div class="border-t border-warm-grey pt-3">
+				<StratifyButton onclick={() => project.addAnnotation()}>
+					<Plus size={14} />
+					Add annotation
+				</StratifyButton>
 			</div>
 		{/if}
 
 		{#each project.annotationErrors as error (error)}
-			<p class="text-[10px] text-dark-red">{error}</p>
+			<p class="mb-0 text-xs text-dark-red">{error}</p>
 		{/each}
 		{#each project.annotationWarnings as warning (warning)}
-			<p class="text-[10px] text-amber-700">{warning}</p>
+			<p class="mb-0 text-xs text-amber-700">{warning}</p>
 		{/each}
-		{#if hasAnnotationData}
-			<p class="text-[10px] text-mid-grey">
-				{project.dataAnnotations.length} of {project.annotationTable.rows.length} rows ready
-			</p>
-		{/if}
 	</div>
 </SectionHeader>
-
-{#if hasAnnotationData}
-	<SectionHeader label="Column mapping">
-		<div class="flex flex-col gap-2">
-			{#each mappingOptions as mapping (mapping.key)}
-				<ControlInput label={mapping.label}>
-					<select
-						value={project.annotationMappings[mapping.key] ?? ''}
-						onchange={(event) => setMapping(mapping.key, event.currentTarget.value || null)}
-						class={CONTROL_CLASS}
-					>
-						{#if mapping.optional}<option value="">None</option>{/if}
-						{#each project.annotationTable.columns as column (column.key)}
-							<option value={column.key}>{column.label}</option>
-						{/each}
-					</select>
-				</ControlInput>
-			{/each}
-
-			{#if !project.annotationMappings.typeColumn}
-				<ControlInput label="Default type">
-					<select
-						value={project.annotationMappings.defaultType}
-						onchange={(event) => setMapping('defaultType', event.currentTarget.value)}
-						class={CONTROL_CLASS}
-					>
-						<option value="rule">Rule</option>
-						<option value="point">Point</option>
-					</select>
-				</ControlInput>
-			{/if}
-		</div>
-	</SectionHeader>
-
-	<SectionHeader label="Annotation options">
-		<div class="flex flex-col gap-2">
-			{#each project.annotationTable.rows as row (row.rowNumber)}
-				{@const option = getRowOption(row.rowNumber)}
-				{@const type = getRowType(row)}
-				<div class="space-y-2 rounded-lg border border-warm-grey p-2.5">
-					<div class="flex min-w-0 items-center justify-between gap-2">
-						<div class="min-w-0">
-							<p class="truncate text-[11px] text-dark-grey">{getRowLabel(row)}</p>
-							<p class="text-[9px] uppercase tracking-wide text-mid-grey">
-								{type || 'Invalid type'}
-							</p>
-						</div>
-						<div class="flex shrink-0 items-center gap-1.5">
-							<ColourPicker
-								value={option.colour ?? project.annotationStyle.defaultColour}
-								onChange={(colour) => setRowOption(row.rowNumber, { colour })}
-							/>
-							<span class="text-[9px] text-mid-grey"
-								>{option.colour ?? project.annotationStyle.defaultColour}</span
-							>
-						</div>
-					</div>
-
-					{#if type === 'point'}
-						<ControlInput label="Position by">
-							<select
-								value={option.positionBy ?? 'y'}
-								onchange={(event) => {
-									if (event.currentTarget.value === 'y') {
-										setRowOption(row.rowNumber, { positionBy: 'y', series: null });
-									} else {
-										setRowOption(row.rowNumber, {
-											positionBy: 'series',
-											series: project.orderedSeriesNames[0] ?? null,
-											axis: option.axis ?? 'left'
-										});
-									}
-								}}
-								class={CONTROL_CLASS}
-							>
-								<option value="y">Y value</option>
-								<option value="series">Series</option>
-							</select>
-						</ControlInput>
-
-						{#if (option.positionBy ?? 'y') === 'y'}
-							<ControlInput label="Y value">
-								<span class="min-w-0 flex-1 truncate text-[11px] text-dark-grey">
-									{#if project.annotationMappings.yColumn}
-										{getRowY(row) || 'Missing in CSV'}
-									{:else}
-										Choose a Y column
-									{/if}
-								</span>
-							</ControlInput>
-						{:else}
-							<ControlInput label="Series">
-								<select
-									value={option.series ?? ''}
-									onchange={(event) =>
-										setRowOption(row.rowNumber, {
-											series: event.currentTarget.value || null
-										})}
-									class={CONTROL_CLASS}
-								>
-									<option value="">Choose series</option>
-									{#each project.orderedSeriesNames as series (series)}
-										<option value={series}>{project.seriesLabels[series] ?? series}</option>
-									{/each}
-								</select>
-							</ControlInput>
-						{/if}
-
-						<ControlInput label="Axis">
-							<select
-								value={option.axis ?? 'left'}
-								onchange={(event) =>
-									setRowOption(row.rowNumber, {
-										axis: /** @type {'left' | 'right'} */ (event.currentTarget.value)
-									})}
-								class={CONTROL_CLASS}
-							>
-								<option value="left">Left</option>
-								<option value="right">Right</option>
-							</select>
-						</ControlInput>
-					{/if}
-				</div>
-			{/each}
-		</div>
-	</SectionHeader>
-
-	<SectionHeader label="Appearance">
-		<div class="flex flex-col gap-2">
-			<ControlInput label="Fallback colour">
-				<ColourPicker
-					value={project.annotationStyle.defaultColour}
-					onChange={(colour) => setStyle('defaultColour', colour)}
-				/>
-				<span class="truncate text-[10px] text-mid-grey"
-					>{project.annotationStyle.defaultColour}</span
-				>
-			</ControlInput>
-			<ControlInput label="Line style">
-				<select
-					value={project.annotationStyle.lineStyle}
-					onchange={(event) => setStyle('lineStyle', event.currentTarget.value)}
-					class={CONTROL_CLASS}
-				>
-					<option value="solid">Solid</option>
-					<option value="dashed">Dashed</option>
-					<option value="dotted">Dotted</option>
-				</select>
-			</ControlInput>
-			<ControlInput label="Line width" suffix="px">
-				<input
-					type="number"
-					min="0"
-					max="10"
-					step="0.5"
-					value={project.annotationStyle.lineWidth}
-					oninput={(event) => setNumericStyle('lineWidth', event.currentTarget.value, 0, 10)}
-					class={NUMBER_CLASS}
-				/>
-			</ControlInput>
-			<ControlInput label="Label size" suffix="px">
-				<input
-					type="number"
-					min="6"
-					max="32"
-					step="1"
-					value={project.annotationStyle.fontSize}
-					oninput={(event) => setNumericStyle('fontSize', event.currentTarget.value, 6, 32)}
-					class={NUMBER_CLASS}
-				/>
-			</ControlInput>
-			<ControlInput label="Label weight">
-				<select
-					value={project.annotationStyle.fontWeight}
-					onchange={(event) => setStyle('fontWeight', event.currentTarget.value)}
-					class={CONTROL_CLASS}
-				>
-					<option value="normal">Normal</option>
-					<option value="bold">Bold</option>
-				</select>
-			</ControlInput>
-			<ControlInput label="Point radius" suffix="px">
-				<input
-					type="number"
-					min="1"
-					max="30"
-					step="1"
-					value={project.annotationStyle.pointRadius}
-					oninput={(event) => setNumericStyle('pointRadius', event.currentTarget.value, 1, 30)}
-					class={NUMBER_CLASS}
-				/>
-			</ControlInput>
-		</div>
-	</SectionHeader>
-{/if}

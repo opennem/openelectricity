@@ -6,12 +6,9 @@
 </script>
 
 <SectionHeader label="Header">
-	<div class="flex flex-col gap-2">
+	<div class="flex flex-col gap-4">
 		<label class="block">
-			<span
-				class="mb-2 block font-space text-xxs font-medium uppercase tracking-wider text-mid-grey"
-				>Title</span
-			>
+			<span class="mb-2 block text-xs text-mid-grey">Title</span>
 			<input
 				type="text"
 				bind:value={project.title}
@@ -21,10 +18,7 @@
 		</label>
 
 		<label class="block">
-			<span
-				class="mb-2 block font-space text-xxs font-medium uppercase tracking-wider text-mid-grey"
-				>Description</span
-			>
+			<span class="mb-2 block text-xs text-mid-grey">Description</span>
 			<textarea
 				bind:value={project.description}
 				rows="2"
@@ -36,12 +30,9 @@
 </SectionHeader>
 
 <SectionHeader label="Footer">
-	<div class="flex flex-col gap-2">
+	<div class="flex flex-col gap-4">
 		<label class="block">
-			<span
-				class="mb-2 block font-space text-xxs font-medium uppercase tracking-wider text-mid-grey"
-				>Source</span
-			>
+			<span class="mb-2 block text-xs text-mid-grey">Source</span>
 			<input
 				type="text"
 				bind:value={project.dataSource}
@@ -51,10 +42,7 @@
 		</label>
 
 		<label class="block">
-			<span
-				class="mb-2 block font-space text-xxs font-medium uppercase tracking-wider text-mid-grey"
-				>Notes</span
-			>
+			<span class="mb-2 block text-xs text-mid-grey">Notes</span>
 			<textarea
 				bind:value={project.notes}
 				rows="2"

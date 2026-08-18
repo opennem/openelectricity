@@ -15,15 +15,30 @@
 	 * layout. Use `suffix` for trailing text (e.g. "ms / frame", or the
 	 * inline label that follows a checkbox when `label` is empty).
 	 *
-	 * @type {{ label?: string, suffix?: string, children: () => any }}
+	 * @type {{ label?: string, suffix?: string, error?: string, children: () => any }}
 	 */
-	let { label = '', suffix = '', children } = $props();
+	let { label = '', suffix = '', error = '', children } = $props();
 </script>
 
-<label class="flex items-center gap-3">
-	<span class="w-[34%] max-w-[110px] shrink-0 text-xs text-mid-grey">{label}</span>
-	{@render children()}
-	{#if suffix}
-		<span class="text-xs text-mid-grey">{suffix}</span>
-	{/if}
-</label>
+{#if error}
+	<label class="flex items-start gap-3">
+		<span class="w-[34%] max-w-[110px] shrink-0 pt-2 text-xs text-mid-grey">{label}</span>
+		<span class="min-w-0 flex-1">
+			<span class="flex items-center gap-3">
+				{@render children()}
+				{#if suffix}
+					<span class="text-xs text-mid-grey">{suffix}</span>
+				{/if}
+			</span>
+			<span class="mt-1 block text-xs text-dark-red">{error}</span>
+		</span>
+	</label>
+{:else}
+	<label class="flex items-center gap-3">
+		<span class="w-[34%] max-w-[110px] shrink-0 text-xs text-mid-grey">{label}</span>
+		{@render children()}
+		{#if suffix}
+			<span class="text-xs text-mid-grey">{suffix}</span>
+		{/if}
+	</label>
+{/if}

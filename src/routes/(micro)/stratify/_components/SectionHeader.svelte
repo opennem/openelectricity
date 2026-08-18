@@ -8,10 +8,15 @@
 	let { label, children } = $props();
 </script>
 
-<section class="border-t border-warm-grey py-8 first:border-t-0 first:pt-2">
-	<p class="mb-6 font-space text-xxs font-medium uppercase tracking-wider text-dark-grey">
-		{label}
-	</p>
+<section class="py-8 first:pt-2">
+	<div class="mb-6 flex items-center gap-3">
+		<p
+			class="mb-0 shrink-0 font-space text-xxs font-medium uppercase tracking-wider text-dark-grey"
+		>
+			{label}
+		</p>
+		<span class="flex-1 border-t border-dashed border-mid-warm-grey" aria-hidden="true"></span>
+	</div>
 	<div>
 		{@render children()}
 	</div>

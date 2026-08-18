@@ -788,11 +788,13 @@
 	</SectionHeader>
 {/if}
 
-<!-- ═══ Section 3: Appearance ═══ -->
+<!-- ═══ Section 3: Layout and axes ═══ -->
 {#if !isMap}
-	<SectionHeader label="Axes & Layout">
-		<label class="flex items-center gap-2 mt-3">
-			<span class="text-[10px] text-mid-grey">Chart height</span>
+	<SectionHeader label="Layout">
+		<ControlInput
+			label="Chart height"
+			suffix={project.facetColumn ? 'px per panel (partitioned)' : 'px'}
+		>
 			<input
 				type="number"
 				min="100"
@@ -805,101 +807,179 @@
 				}}
 				class={`${CONTROL_INPUT_CLASS} w-20`}
 			/>
-			<span class="text-[10px] text-mid-grey">px</span>
-			{#if project.facetColumn}
-				<span class="text-[10px] text-mid-grey italic">per panel (partitioned)</span>
-			{/if}
-		</label>
+		</ControlInput>
+	</SectionHeader>
 
-		<!-- X Axis appearance -->
-		<div class="mt-4">
-			<p class="text-[10px] text-dark-grey font-medium mb-1.5">
-				{isHorizontal ? 'X Axis (values)' : 'X Axis'}
-			</p>
-			<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
-				<ControlInput label="Label">
-					<input
-						type="text"
-						value={project.xLabel}
-						placeholder={xColumnLabel || 'None'}
-						oninput={(e) => {
-							project.xLabel = e.currentTarget.value;
-						}}
-						class={`${CONTROL_INPUT_CLASS} flex-1`}
-					/>
-				</ControlInput>
+	<!-- X Axis appearance -->
+	<SectionHeader label={isHorizontal ? 'X Axis (values)' : 'X Axis'}>
+		<div class="flex flex-col gap-2">
+			<ControlInput label="Label">
+				<input
+					type="text"
+					value={project.xLabel}
+					placeholder={xColumnLabel || 'None'}
+					oninput={(e) => {
+						project.xLabel = e.currentTarget.value;
+					}}
+					class={`${CONTROL_INPUT_CLASS} flex-1`}
+				/>
+			</ControlInput>
 
-				<ControlInput suffix="Show tick labels">
-					<input
-						type="checkbox"
-						checked={project.showXTickLabels}
-						onchange={(e) => {
-							project.showXTickLabels = e.currentTarget.checked;
-						}}
-						class="accent-dark-grey"
-					/>
-				</ControlInput>
+			<ControlInput suffix="Show tick labels">
+				<input
+					type="checkbox"
+					checked={project.showXTickLabels}
+					onchange={(e) => {
+						project.showXTickLabels = e.currentTarget.checked;
+					}}
+					class="accent-dark-grey"
+				/>
+			</ControlInput>
 
-				<ControlInput label="Ticks" suffix="0 = auto">
-					<input
-						type="number"
-						min="0"
-						max="100"
-						step="1"
-						value={project.xTicks}
-						oninput={(e) => {
-							const v = parseInt(e.currentTarget.value, 10);
-							if (v >= 0 && v <= 100) project.xTicks = v;
-						}}
-						class={`${CONTROL_INPUT_CLASS} w-20`}
-					/>
-				</ControlInput>
+			<ControlInput label="Ticks" suffix="0 = auto">
+				<input
+					type="number"
+					min="0"
+					max="100"
+					step="1"
+					value={project.xTicks}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= 0 && v <= 100) project.xTicks = v;
+					}}
+					class={`${CONTROL_INPUT_CLASS} w-20`}
+				/>
+			</ControlInput>
 
-				<ControlInput label="Angle" suffix="degrees">
-					<input
-						type="number"
-						min="-90"
-						max="90"
-						step="5"
-						value={project.xTickRotate}
-						oninput={(e) => {
-							const v = parseInt(e.currentTarget.value, 10);
-							if (v >= -90 && v <= 90) project.xTickRotate = v;
-						}}
-						class={`${CONTROL_INPUT_CLASS} w-20`}
-					/>
-				</ControlInput>
+			<ControlInput label="Angle" suffix="degrees">
+				<input
+					type="number"
+					min="-90"
+					max="90"
+					step="5"
+					value={project.xTickRotate}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= -90 && v <= 90) project.xTickRotate = v;
+					}}
+					class={`${CONTROL_INPUT_CLASS} w-20`}
+				/>
+			</ControlInput>
 
-				<ControlInput label="Height" suffix="0 = auto">
-					<input
-						type="number"
-						min="0"
-						max="300"
-						step="10"
-						value={project.marginBottom}
-						oninput={(e) => {
-							const v = parseInt(e.currentTarget.value, 10);
-							if (v >= 0 && v <= 300) project.marginBottom = v;
-						}}
-						class={`${CONTROL_INPUT_CLASS} w-20`}
-					/>
-				</ControlInput>
-			</div>
+			<ControlInput label="Height" suffix="0 = auto">
+				<input
+					type="number"
+					min="0"
+					max="300"
+					step="10"
+					value={project.marginBottom}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= 0 && v <= 300) project.marginBottom = v;
+					}}
+					class={`${CONTROL_INPUT_CLASS} w-20`}
+				/>
+			</ControlInput>
 		</div>
+	</SectionHeader>
 
-		<!-- Y Axis appearance -->
-		<div class="mt-4">
-			<p class="text-[10px] text-dark-grey font-medium mb-1.5">
-				{isHorizontal ? 'Y Axis (categories)' : 'Y Axis'}
-			</p>
-			<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
+	<!-- Y Axis appearance -->
+	<SectionHeader label={isHorizontal ? 'Y Axis (categories)' : 'Y Axis'}>
+		<div class="flex flex-col gap-2">
+			<ControlInput label="Label">
+				<input
+					type="text"
+					value={project.yLabel}
+					placeholder={yColumnLabels || 'None'}
+					oninput={(e) => {
+						project.yLabel = e.currentTarget.value;
+					}}
+					class={`${CONTROL_INPUT_CLASS} flex-1`}
+				/>
+			</ControlInput>
+
+			<ControlInput label="Ticks" suffix="0 = auto">
+				<input
+					type="number"
+					min="0"
+					max="100"
+					step="1"
+					value={project.yTicks}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= 0 && v <= 100) project.yTicks = v;
+					}}
+					class={`${CONTROL_INPUT_CLASS} w-20`}
+				/>
+			</ControlInput>
+
+			<ControlInput suffix="Min/max ticks only">
+				<input
+					type="checkbox"
+					checked={project.yMinMax}
+					onchange={(e) => {
+						project.yMinMax = e.currentTarget.checked;
+					}}
+					class="accent-dark-grey"
+				/>
+			</ControlInput>
+
+			{#if !isHorizontal}
+				<ControlInput label="Min" suffix="blank = auto">
+					<input
+						type="number"
+						value={project.y1Min ?? ''}
+						placeholder="auto"
+						oninput={(e) => {
+							const v = e.currentTarget.value;
+							project.y1Min = v === '' ? null : Number(v);
+						}}
+						class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
+					/>
+				</ControlInput>
+
+				<ControlInput label="Max" suffix="blank = auto">
+					<input
+						type="number"
+						value={project.y1Max ?? ''}
+						placeholder="auto"
+						oninput={(e) => {
+							const v = e.currentTarget.value;
+							project.y1Max = v === '' ? null : Number(v);
+						}}
+						class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
+					/>
+				</ControlInput>
+			{/if}
+
+			<ControlInput label="Width" suffix="0 = auto">
+				<input
+					type="number"
+					min="0"
+					max="300"
+					step="10"
+					value={project.marginLeft}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= 0 && v <= 300) project.marginLeft = v;
+					}}
+					class={`${CONTROL_INPUT_CLASS} w-20`}
+				/>
+			</ControlInput>
+		</div>
+	</SectionHeader>
+
+	<!-- Y2 Axis appearance (conditional) -->
+	{#if project.hasRightAxis}
+		<SectionHeader label="Y2 Axis">
+			<div class="flex flex-col gap-2">
 				<ControlInput label="Label">
 					<input
 						type="text"
-						value={project.yLabel}
-						placeholder={yColumnLabels || 'None'}
+						value={project.y2Label}
+						placeholder="None"
 						oninput={(e) => {
-							project.yLabel = e.currentTarget.value;
+							project.y2Label = e.currentTarget.value;
 						}}
 						class={`${CONTROL_INPUT_CLASS} flex-1`}
 					/>
@@ -911,10 +991,10 @@
 						min="0"
 						max="100"
 						step="1"
-						value={project.yTicks}
+						value={project.y2Ticks}
 						oninput={(e) => {
 							const v = parseInt(e.currentTarget.value, 10);
-							if (v >= 0 && v <= 100) project.yTicks = v;
+							if (v >= 0 && v <= 100) project.y2Ticks = v;
 						}}
 						class={`${CONTROL_INPUT_CLASS} w-20`}
 					/>
@@ -923,131 +1003,42 @@
 				<ControlInput suffix="Min/max ticks only">
 					<input
 						type="checkbox"
-						checked={project.yMinMax}
+						checked={project.y2MinMax}
 						onchange={(e) => {
-							project.yMinMax = e.currentTarget.checked;
+							project.y2MinMax = e.currentTarget.checked;
 						}}
 						class="accent-dark-grey"
 					/>
 				</ControlInput>
 
-				{#if !isHorizontal}
-					<ControlInput label="Min" suffix="blank = auto">
-						<input
-							type="number"
-							value={project.y1Min ?? ''}
-							placeholder="auto"
-							oninput={(e) => {
-								const v = e.currentTarget.value;
-								project.y1Min = v === '' ? null : Number(v);
-							}}
-							class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
-						/>
-					</ControlInput>
-
-					<ControlInput label="Max" suffix="blank = auto">
-						<input
-							type="number"
-							value={project.y1Max ?? ''}
-							placeholder="auto"
-							oninput={(e) => {
-								const v = e.currentTarget.value;
-								project.y1Max = v === '' ? null : Number(v);
-							}}
-							class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
-						/>
-					</ControlInput>
-				{/if}
-
-				<ControlInput label="Width" suffix="0 = auto">
+				<ControlInput label="Min" suffix="blank = auto">
 					<input
 						type="number"
-						min="0"
-						max="300"
-						step="10"
-						value={project.marginLeft}
+						value={project.y2Min ?? ''}
+						placeholder="auto"
 						oninput={(e) => {
-							const v = parseInt(e.currentTarget.value, 10);
-							if (v >= 0 && v <= 300) project.marginLeft = v;
+							const v = e.currentTarget.value;
+							project.y2Min = v === '' ? null : Number(v);
 						}}
-						class={`${CONTROL_INPUT_CLASS} w-20`}
+						class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
+					/>
+				</ControlInput>
+
+				<ControlInput label="Max" suffix="blank = auto">
+					<input
+						type="number"
+						value={project.y2Max ?? ''}
+						placeholder="auto"
+						oninput={(e) => {
+							const v = e.currentTarget.value;
+							project.y2Max = v === '' ? null : Number(v);
+						}}
+						class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
 					/>
 				</ControlInput>
 			</div>
-		</div>
-
-		<!-- Y2 Axis appearance (conditional) -->
-		{#if project.hasRightAxis}
-			<div class="mt-4">
-				<p class="text-[10px] text-dark-grey font-medium mb-1.5">Y2 Axis</p>
-				<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
-					<ControlInput label="Label">
-						<input
-							type="text"
-							value={project.y2Label}
-							placeholder="None"
-							oninput={(e) => {
-								project.y2Label = e.currentTarget.value;
-							}}
-							class={`${CONTROL_INPUT_CLASS} flex-1`}
-						/>
-					</ControlInput>
-
-					<ControlInput label="Ticks" suffix="0 = auto">
-						<input
-							type="number"
-							min="0"
-							max="100"
-							step="1"
-							value={project.y2Ticks}
-							oninput={(e) => {
-								const v = parseInt(e.currentTarget.value, 10);
-								if (v >= 0 && v <= 100) project.y2Ticks = v;
-							}}
-							class={`${CONTROL_INPUT_CLASS} w-20`}
-						/>
-					</ControlInput>
-
-					<ControlInput suffix="Min/max ticks only">
-						<input
-							type="checkbox"
-							checked={project.y2MinMax}
-							onchange={(e) => {
-								project.y2MinMax = e.currentTarget.checked;
-							}}
-							class="accent-dark-grey"
-						/>
-					</ControlInput>
-
-					<ControlInput label="Min" suffix="blank = auto">
-						<input
-							type="number"
-							value={project.y2Min ?? ''}
-							placeholder="auto"
-							oninput={(e) => {
-								const v = e.currentTarget.value;
-								project.y2Min = v === '' ? null : Number(v);
-							}}
-							class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
-						/>
-					</ControlInput>
-
-					<ControlInput label="Max" suffix="blank = auto">
-						<input
-							type="number"
-							value={project.y2Max ?? ''}
-							placeholder="auto"
-							oninput={(e) => {
-								const v = e.currentTarget.value;
-								project.y2Max = v === '' ? null : Number(v);
-							}}
-							class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
-						/>
-					</ControlInput>
-				</div>
-			</div>
-		{/if}
-	</SectionHeader>
+		</SectionHeader>
+	{/if}
 {/if}
 
 <!-- ═══ Section 4: Advanced ═══ -->

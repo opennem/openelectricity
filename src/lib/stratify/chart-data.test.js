@@ -33,34 +33,25 @@ describe('safeParseJSON', () => {
 describe('normaliseChart', () => {
 	it('normalises annotation dataset defaults and stored JSON', () => {
 		const defaults = normaliseChart({});
-		expect(defaults.annotationCsvText).toBe('');
-		expect(defaults.annotationMappings).toMatchObject({
-			xColumn: null,
-			labelColumn: null,
-			defaultType: 'rule'
-		});
+		expect(defaults.annotationItems).toEqual([]);
 		expect(defaults.annotationStyle).toMatchObject({
-			defaultColour: '#666666',
+			ruleColour: '#666666',
+			pointColour: '#666666',
+			labelColour: '#353535',
 			lineWidth: 1,
-			pointRadius: 4
+			pointRadius: 6
 		});
-		expect(defaults.annotationRowOptions).toEqual({});
 
 		const stored = normaliseChart({
-			annotationCsvText: 'date,label\n2026-07-01,Start',
-			annotationMappings: JSON.stringify({ xColumn: 'date', labelColumn: 'label' }),
 			annotationStyle: JSON.stringify({ lineWidth: 0 }),
-			annotationRowOptions: JSON.stringify({
-				2: { colour: '#abcdef', positionBy: 'series', series: 'wind' }
-			}),
+			annotationItems: JSON.stringify([
+				{ id: 'a1', type: 'rule', x: '2026-07-01', label: 'Start' }
+			]),
 			annotations: JSON.stringify([{ type: 'x-rule', x: '2026-07-01', text: 'Start' }])
 		});
-		expect(stored.annotationMappings.xColumn).toBe('date');
 		expect(stored.annotationStyle.lineWidth).toBe(0);
-		expect(stored.annotationStyle.pointRadius).toBe(4);
-		expect(stored.annotationRowOptions).toEqual({
-			2: { colour: '#abcdef', positionBy: 'series', series: 'wind' }
-		});
+		expect(stored.annotationStyle.pointRadius).toBe(6);
+		expect(stored.annotationItems[0]).toMatchObject({ id: 'a1', type: 'rule', label: 'Start' });
 		expect(stored.annotations).toHaveLength(1);
 	});
 	it('applies defaults for a minimal chart', () => {

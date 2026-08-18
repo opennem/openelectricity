@@ -140,8 +140,8 @@ The editor follows the same five-part structure as the documentation:
 
 1. **Add data** — paste CSV or TSV data and check the parsed table.
 2. **Choose a chart** — select a chart type using visual cards and suitability guidance.
-3. **Make it clear** — configure axes, number formats, colours and series.
-4. **Add context** — add sources, notes and data-driven annotations.
+3. **Choose a theme** — select chart typography and colours.
+4. **Make it clear** — configure axes, series, sources, notes and annotations.
 5. **Share** — save, publish, embed or export the finished chart.
 
 ## Chart Types
@@ -212,27 +212,22 @@ only the new canonical `scatter` value enables this chart type.
 
 ## Data-driven Annotations
 
-The **Annotations** panel accepts a second CSV/TSV dataset for coloured event
-rules and point callouts. The dataset uses X/date and label columns, with an
-optional type and Y value, which are mapped independently of the main chart
-data. Common header names are detected automatically.
-
-```csv
-type,date,label,y
-rule,2026-07-01T21:20:00+10:00,Generation high: 9:20pm 1 Jul,
-rule,2026-07-02T05:20:00+10:00,Availability high: 5:20am 2 Jul,
-point,2026-07-02T00:00:00+10:00,Explicit value,10500
-```
+The **Annotations** panel provides a guided editor for coloured event rules and
+point callouts. Add an annotation, choose its type, then enter its X/date and
+label. Point annotations also choose their data position, axis and whether the
+label sits above, below, left or right of the dot. Rule labels can use eight
+positions around the line. Every annotation has its own **Appearance** controls
+for its line or dot colour and label colour.
 
 Rule labels are automatically staggered into non-overlapping lanes above the
-plot. Point rows default to the Y value mapped from the annotation CSV. Their
-**Position by** option can instead resolve a selected chart series at the
-nearest temporal/linear X value. The per-row **Annotation options** controls set
-each colour, position mode, series and left/right axis. The colour applies to
-the rule/marker, connector and label.
+plot. A point can use an explicit Y value or resolve a selected chart series at
+the nearest temporal/linear X value. Its dot colour also applies to the
+connector.
 
-Appearance controls set the fallback colour, line style and width, label size
-and weight, and point radius. Data annotations support Plot charts with a
+Per-annotation appearance controls set line style and width, label size,
+weight, maximum width, translucent background and point radius. Long labels
+wrap within their maximum width. A new annotation copies the first
+annotation's appearance. Data annotations support Plot charts with a
 horizontal X axis and replicate across facets and animation frames. Maps and
 horizontal bar/waterfall charts do not render data annotations. The existing
 legacy `annotations` array remains supported for old saved charts.
@@ -663,24 +658,42 @@ The JSON format used for persistence (localStorage, file export, Sanity CMS):
 {
 	"version": 2,
 	"csvText": "Date,Solar,Wind\n2024-01-01,150,200\n...",
-	"annotationCsvText": "type,date,label,y\nrule,2024-01-01,Start,",
-	"annotationMappings": {
-		"typeColumn": "type",
-		"xColumn": "date",
-		"labelColumn": "label",
-		"yColumn": "y",
-		"defaultType": "rule"
-	},
-	"annotationRowOptions": {
-		"2": { "colour": "#5b9f7b", "positionBy": "y", "axis": "left" }
-	},
+	"annotationItems": [
+		{
+			"id": "annotation-id",
+			"type": "rule",
+			"xSource": "data",
+			"x": "2024-01-01",
+			"label": "Start",
+			"positionBy": "y",
+			"y": "",
+			"series": null,
+			"axis": "left",
+			"labelPosition": "top",
+			"appearance": {
+				"ruleColour": "#666666",
+				"pointColour": "#666666",
+				"labelColour": "#353535",
+				"lineStyle": "dashed",
+				"lineWidth": 1,
+				"fontSize": 12,
+				"fontWeight": "normal",
+				"pointRadius": 6,
+				"labelMaxWidth": 180,
+				"labelBackgroundColour": "#fff",
+				"labelBackgroundOpacity": 0.85
+			}
+		}
+	],
 	"annotationStyle": {
-		"defaultColour": "#666666",
+		"ruleColour": "#666666",
+		"pointColour": "#666666",
+		"labelColour": "#353535",
 		"lineStyle": "dashed",
 		"lineWidth": 1,
-		"fontSize": 11,
+		"fontSize": 12,
 		"fontWeight": "normal",
-		"pointRadius": 4
+		"pointRadius": 6
 	},
 	"title": "AU Electricity Generation",
 	"description": "Monthly generation mix.",

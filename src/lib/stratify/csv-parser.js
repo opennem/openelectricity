@@ -8,6 +8,7 @@
 
 import { parse as dateParse, isValid } from 'date-fns';
 import { assignColours } from './colour-palette.js';
+import { detectDelimiter } from './delimited-text.js';
 
 /**
  * @typedef {{ key: string, label: string, isNumeric: boolean }} ColumnMeta
@@ -45,26 +46,6 @@ const DATE_FORMATS = [
 	'yyyy/MM',
 	'yyyy'
 ];
-
-/**
- * Detect the delimiter used in CSV text.
- * Checks tab first (for spreadsheet pastes), then comma, then semicolon.
- * @param {string} text
- * @returns {string}
- */
-function detectDelimiter(text) {
-	const firstLine = text.split('\n')[0] || '';
-
-	// Check tab first (spreadsheet pastes)
-	if (firstLine.includes('\t')) return '\t';
-	// Then comma
-	if (firstLine.includes(',')) return ',';
-	// Then semicolon
-	if (firstLine.includes(';')) return ';';
-
-	// Default to comma
-	return ',';
-}
 
 const TZ_MARKER_RE = /[Zz]$|[+-]\d{2}:?\d{2}$/;
 

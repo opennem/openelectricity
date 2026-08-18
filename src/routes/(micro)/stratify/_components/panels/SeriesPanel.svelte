@@ -79,7 +79,7 @@
 						e.currentTarget.value
 					);
 				}}
-				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] focus:outline-none focus:border-dark-grey"
+				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-sm focus:outline-none focus:border-dark-grey"
 			>
 				<option value="semantic">Waterfall (start / up / down / total)</option>
 				<option value="series">Series (colour each row)</option>
@@ -154,7 +154,7 @@
 							}}
 							class="accent-dark-grey"
 						/>
-						<span class="text-[11px] text-dark-grey truncate">{item.label}</span>
+						<span class="text-sm text-dark-grey truncate">{item.label}</span>
 					</label>
 				</div>
 			{/each}

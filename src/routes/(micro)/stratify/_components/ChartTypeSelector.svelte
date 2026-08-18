@@ -1,4 +1,5 @@
 <script>
+	import { Pencil, X } from '@lucide/svelte';
 	import { CHART_TYPES } from '$lib/stratify/chart-types.js';
 	import { CHART_TYPE_GUIDANCE } from '$lib/stratify/example-catalogue.js';
 	import { getStratifyContext } from '../_state/context.js';
@@ -15,7 +16,6 @@
 	/** @param {import('$lib/stratify/chart-types.js').ChartType} chartType */
 	function selectChartType(chartType) {
 		project.chartType = chartType;
-		expanded = false;
 	}
 </script>
 
@@ -24,7 +24,9 @@
 	onclick={() => (expanded = !expanded)}
 	aria-expanded={expanded}
 	aria-controls="chart-type-options"
-	class="flex w-full items-center gap-4 rounded-lg border border-dark-grey bg-light-warm-grey p-3 text-left transition-colors hover:bg-warm-grey focus:ring-2 focus:ring-red focus:ring-offset-2 focus:outline-none"
+	aria-label={expanded ? 'Close chart type options' : 'Change chart type'}
+	title={expanded ? 'Close chart type options' : 'Change chart type'}
+	class="group flex w-full items-center gap-4 rounded-lg border border-dark-grey bg-light-warm-grey p-3 text-left transition-colors hover:bg-warm-grey focus:ring-2 focus:ring-red focus:ring-offset-2 focus:outline-none"
 >
 	<span class="flex h-9 shrink-0 items-center text-red">
 		<ChartTypeGraphic chartType={selectedType.value} />
@@ -37,13 +39,20 @@
 			{selectedGuidance?.purpose ?? ''}
 		</span>
 	</span>
-	<span class="shrink-0 font-space text-xxs font-medium uppercase tracking-wider text-dark-grey">
-		{expanded ? 'Close' : 'Change'}
+	<span
+		class="mr-2 shrink-0 text-mid-grey transition-colors group-hover:text-dark-grey"
+		aria-hidden="true"
+	>
+		{#if expanded}
+			<X size={16} />
+		{:else}
+			<Pencil size={16} />
+		{/if}
 	</span>
 </button>
 
 {#if expanded}
-	<div id="chart-type-options" class="mt-2 grid grid-cols-2 gap-2">
+	<div id="chart-type-options" class="mt-4 grid grid-cols-2 gap-2">
 		{#each CHART_TYPES as type (type.value)}
 			{@const guidance = CHART_TYPE_GUIDANCE[type.value]}
 			<button
