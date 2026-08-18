@@ -51,7 +51,6 @@
 					{
 						fueltech_id: facility.unit.fueltech_id,
 						status_id: facility.unit.status_id,
-						isCommissioning: facility.isCommissioning,
 						capacity: getUnitCapacity(facility.unit),
 						capacity_storage: facility.unit.capacity_storage,
 						max_generation: facility.unit.max_generation,
@@ -148,7 +147,7 @@
 						{/if}
 					</div>
 
-					{#if facility.isCommissioning}
+					{#if facility.unit.status_id === 'commissioning'}
 						<div class="w-1/2 sm:w-1/2">
 							<GenCapViz
 								capacity={getUnitCapacity(facility.unit)}
@@ -160,10 +159,7 @@
 				</div>
 
 				<div class="col-span-1 flex justify-end">
-					<FacilityStatusIcon
-						status={facility.unit.status_id}
-						isCommissioning={facility.isCommissioning}
-					/>
+					<FacilityStatusIcon status={facility.unit.status_id} />
 				</div>
 
 				<UnitGroupPopup units={popupUnits} network_id={facility.network_id} />

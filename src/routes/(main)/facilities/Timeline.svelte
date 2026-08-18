@@ -116,8 +116,7 @@
 							unit[dateField],
 							unit[dateField + '_specificity']
 						),
-						unit,
-						isCommissioning: unit.isCommissioning
+						unit
 					});
 				}
 			});

@@ -5,18 +5,14 @@
  * Play mode animates the complete grid history regardless of the user's
  * active filters, so it needs the unfiltered set — the facilities page load
  * only returns the server-filtered subset. Returns the same processed shape
- * as `data.facilities` (commissioning units marked, units filtered to
- * PLAY_STATUSES) so every page consumer works unchanged.
+ * as `data.facilities`, filtered by the OE API to PLAY_STATUSES, so every page
+ * consumer works unchanged.
  */
 
 import { json } from '@sveltejs/kit';
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
-import {
-	prepareStatusesForApi,
-	processFacilitiesWithStatuses
-} from '$lib/facilities/status-utils.js';
 import { PLAY_STATUSES } from '$lib/facilities/filters.js';
 
 const client = new OpenElectricityClient({
@@ -37,14 +33,14 @@ export async function GET({ setHeaders }) {
 		try {
 			const { response } = await client.getFacilities({
 				fueltech_id: [],
-				status_id: /** @type {any} */ (prepareStatusesForApi(PLAY_STATUSES))
+				status_id: PLAY_STATUSES
 			});
-			facilitiesResponse = response.data;
+			facilitiesResponse = Array.isArray(response.data) ? response.data : [];
 		} catch {
 			// API error - facilitiesResponse remains null
 		}
 
-		facilities = processFacilitiesWithStatuses(facilitiesResponse, PLAY_STATUSES);
+		facilities = facilitiesResponse ?? [];
 
 		// Only cache real results so a transient API failure isn't pinned for the TTL.
 		if (facilities.length > 0) {

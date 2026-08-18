@@ -65,7 +65,7 @@
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits,
 		getFacilityCapacity,
-		withMarkedUnits
+		withBatteryView
 	} from '$lib/facilities/units.js';
 	import { getUnitCapacity, sumUnitCapacities } from '$lib/utils/capacity';
 	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
@@ -360,7 +360,7 @@
 	let detailFacility = $derived.by(() => {
 		if (!selectedFacility) return null;
 		return selectedFacilityFull?.code === selectedFacility.code
-			? withMarkedUnits(selectedFacilityFull)
+			? withBatteryView(selectedFacilityFull)
 			: selectedFacility;
 	});
 

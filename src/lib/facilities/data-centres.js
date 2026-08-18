@@ -222,8 +222,7 @@ export function toLoadFacilities(json) {
 			capacity_maximum: mw ?? 0,
 			capacity_registered: null,
 			capacity_storage: null,
-			max_generation: null,
-			isCommissioning: false
+			max_generation: null
 		};
 		// All loads sit on the timeline by commencement date (getDateField falls
 		// through to commencement_date for the DC-native statuses). Construction

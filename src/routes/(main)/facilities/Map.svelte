@@ -1007,7 +1007,6 @@
 									<UnitGroup
 										fueltech_id={group.fueltech_id}
 										status_id={group.status_id}
-										isCommissioning={group.isCommissioning}
 										capacity={group.totalCapacity}
 										capacity_storage={group.capacity_storage}
 										max_generation={group.max_generation}

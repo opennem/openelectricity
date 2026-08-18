@@ -23,7 +23,7 @@
 	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
 	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
 	import FacilityPanelHeader from '$lib/components/facilities/FacilityPanelHeader.svelte';
-	import { withMarkedUnits, canSplitBatteryUnits } from '$lib/facilities/units.js';
+	import { withBatteryView, canSplitBatteryUnits } from '$lib/facilities/units.js';
 
 	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
 	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
@@ -57,9 +57,9 @@
 	/** @type {{ data: any }} */
 	let { data } = $props();
 
-	// Drop derived battery splits + mark commissioning units (same processing the
-	// /facilities page applies); shared with the /facilities detail panel.
-	let selectedFacility = $derived(withMarkedUnits(data.facility));
+	// Drop derived battery splits for the default net view. Unit statuses come
+	// directly from OE, including commissioning.
+	let selectedFacility = $derived(withBatteryView(data.facility));
 
 	/** Battery view: 'net' shows the bidirectional battery unit, 'split' swaps in
 	 *  the derived charging/discharging units. Charts, units panel and metrics
@@ -70,7 +70,7 @@
 	let batteryMode = $state('net');
 	let canSplitBattery = $derived(canSplitBatteryUnits(data.facility));
 	let splitFacility = $derived(
-		canSplitBattery ? withMarkedUnits(data.facility, { batteryView: 'split' }) : null
+		canSplitBattery ? withBatteryView(data.facility, { batteryView: 'split' }) : null
 	);
 	let activeFacility = $derived.by(() =>
 		batteryMode === 'split' && splitFacility ? splitFacility : selectedFacility

@@ -202,12 +202,7 @@
 			<div class="space-y-3">
 				<div class="flex flex-wrap items-center gap-2">
 					{#each unitGroups as group (group.fueltech_id + '---' + group.status_id)}
-						<FuelTechBadge
-							fuelTech={group.fueltech_id}
-							status={group.status_id}
-							isCommissioning={group.isCommissioning}
-							size="lg"
-						/>
+						<FuelTechBadge fuelTech={group.fueltech_id} status={group.status_id} size="lg" />
 					{/each}
 				</div>
 				<h3 class="text-xl font-bold">{facility.name}</h3>

@@ -30,16 +30,13 @@
 	{#each unitGroups as group (group.fueltech_id + '|||' + group.status_id)}
 		{@const capacity = group.totalCapacity}
 		{@const firstUnit = group.units[0]}
+		{@const commissioning = group.status_id === 'commissioning'}
 
 		<div class="rounded-lg border border-warm-grey bg-white px-3 py-3 relative">
 			<!-- Status dot -->
 			<div class="absolute top-3 right-3">
 				<Tooltip text={group.status_id} class="capitalize cursor-default">
-					<FacilityStatusIcon
-						status={group.status_id}
-						isCommissioning={group.isCommissioning}
-						size="lg"
-					/>
+					<FacilityStatusIcon status={group.status_id} size="lg" />
 				</Tooltip>
 			</div>
 
@@ -61,7 +58,7 @@
 				<!-- Capacity -->
 				<div>
 					<div class="font-mono font-semibold text-lg text-dark-grey leading-tight">
-						{#if group.max_generation && group.isCommissioning}
+						{#if group.max_generation && commissioning}
 							{formatValue(group.max_generation)}<span class="text-mid-grey font-normal">/</span
 							>{/if}{formatValue(capacity)}<span class="text-xs font-normal text-mid-grey ml-0.5"
 							>MW</span
@@ -84,7 +81,7 @@
 			</div>
 
 			<!-- Commissioning progress -->
-			{#if group.isCommissioning}
+			{#if commissioning}
 				<div class="mt-3">
 					<GenCapViz {capacity} maxGeneration={group.max_generation} fill={group.bgColor} />
 					{#if group.max_generation}
@@ -98,7 +95,7 @@
 			<!-- Temporal data (only for single-unit groups) -->
 			{#if group.units.length === 1 && (firstUnit?.max_generation_interval || firstUnit?.data_first_seen || firstUnit?.data_last_seen)}
 				<div class="mt-2 space-y-0.5">
-					{#if firstUnit.max_generation_interval && group.isCommissioning}
+					{#if firstUnit.max_generation_interval && commissioning}
 						<div class="text-xxs text-mid-grey">
 							Max generated at {formatTimestampLabel(
 								getParsedDate(firstUnit.max_generation_interval, offset)
@@ -106,7 +103,7 @@
 						</div>
 					{/if}
 
-					{#if (group.status_id === 'operating' || group.isCommissioning) && firstUnit.data_first_seen}
+					{#if (group.status_id === 'operating' || commissioning) && firstUnit.data_first_seen}
 						<div class="text-xxs text-mid-grey">
 							First generated at {formatTimestampLabel(
 								getParsedDate(firstUnit.data_first_seen, offset)

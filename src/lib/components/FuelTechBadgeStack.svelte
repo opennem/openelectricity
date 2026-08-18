@@ -11,7 +11,7 @@
 	 * `getOrderedFuelTechGroups`) so callers control the ordering in one place.
 	 *
 	 * @type {{
-	 *   groups?: Array<{ fueltech_id: string, status_id?: string, isCommissioning?: boolean }>,
+	 *   groups?: Array<{ fueltech_id: string, status_id?: string }>,
 	 *   size?: 'sm' | 'md' | 'lg',
 	 *   darkMode?: boolean,
 	 *   overlap?: boolean,
@@ -49,7 +49,6 @@
 				<FuelTechBadge
 					fuelTech={group.fueltech_id}
 					status={group.status_id}
-					isCommissioning={group.isCommissioning}
 					{showStatus}
 					{size}
 					{darkMode}

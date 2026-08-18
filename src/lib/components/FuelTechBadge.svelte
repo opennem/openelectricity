@@ -28,7 +28,6 @@
 	 *   iconSize?: number,
 	 *   size?: 'sm' | 'md' | 'lg',
 	 *   status?: string,
-	 *   isCommissioning?: boolean,
 	 *   showStatus?: boolean,
 	 *   darkMode?: boolean,
 	 *   overlap?: boolean,
@@ -41,7 +40,6 @@
 		iconSize = 6,
 		size = 'md',
 		status,
-		isCommissioning = false,
 		showStatus = true,
 		darkMode = false,
 		overlap = false,
@@ -113,9 +111,9 @@
 		{:then SvelteComponent}
 			<SvelteComponent class="size-{sizeClasses.icon}" />
 		{/await}
-		{#if showStatus && status && (status !== 'operating' || isCommissioning)}
+		{#if showStatus && status && status !== 'operating'}
 			<div class="absolute {sizeClasses.statusPosition} z-10">
-				<FacilityStatusIcon {status} {isCommissioning} />
+				<FacilityStatusIcon {status} />
 			</div>
 		{/if}
 	</div>

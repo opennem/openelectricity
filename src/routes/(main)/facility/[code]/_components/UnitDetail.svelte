@@ -535,7 +535,7 @@
 					<div class="flex flex-col gap-0.5">
 						<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">Status</span>
 						<span class="flex items-center gap-1.5">
-							<FacilityStatusIcon {status} isCommissioning={unit?.isCommissioning ?? false} />
+							<FacilityStatusIcon {status} />
 							<span class="text-base font-semibold capitalize text-dark-grey">{status ?? '—'}</span>
 						</span>
 					</div>

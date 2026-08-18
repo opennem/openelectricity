@@ -4,7 +4,7 @@ import {
 	getFacilityCapacity,
 	getOrderedFuelTechGroups,
 	groupUnits,
-	withMarkedUnits
+	withBatteryView
 } from './units.js';
 
 describe('getFacilityCapacity', () => {
@@ -91,8 +91,23 @@ describe('getOrderedFuelTechGroups', () => {
 	});
 });
 
-describe('withMarkedUnits', () => {
-	it('marks an operating unit below 90% of capacity as commissioning', () => {
+describe('withBatteryView', () => {
+	it('preserves a native commissioning status', () => {
+		const facility = {
+			units: [
+				{
+					fueltech_id: 'solar_utility',
+					status_id: 'commissioning',
+					capacity_maximum: 100,
+					max_generation: 40
+				}
+			]
+		};
+		const [unit] = withBatteryView(facility).units;
+		expect(unit.status_id).toBe('commissioning');
+	});
+
+	it('does not infer commissioning from an operating unit with low maximum generation', () => {
 		const facility = {
 			units: [
 				{
@@ -103,24 +118,7 @@ describe('withMarkedUnits', () => {
 				}
 			]
 		};
-		const [unit] = withMarkedUnits(facility).units;
-		expect(unit.isCommissioning).toBe(true);
-		expect(unit.status_id).toBe('commissioning');
-	});
-
-	it('leaves a fully operating unit (>90%) untouched', () => {
-		const facility = {
-			units: [
-				{
-					fueltech_id: 'coal_black',
-					status_id: 'operating',
-					capacity_maximum: 100,
-					max_generation: 95
-				}
-			]
-		};
-		const [unit] = withMarkedUnits(facility).units;
-		expect(unit.isCommissioning).toBeUndefined();
+		const [unit] = withBatteryView(facility).units;
 		expect(unit.status_id).toBe('operating');
 	});
 
@@ -137,7 +135,7 @@ describe('withMarkedUnits', () => {
 				{ fueltech_id: 'battery_discharging', status_id: 'operating', capacity_maximum: 100 }
 			]
 		};
-		expect(withMarkedUnits(facility).units.map((/** @type {any} */ u) => u.fueltech_id)).toEqual([
+		expect(withBatteryView(facility).units.map((/** @type {any} */ u) => u.fueltech_id)).toEqual([
 			'battery'
 		]);
 	});
@@ -156,13 +154,13 @@ describe('withMarkedUnits', () => {
 			]
 		};
 		expect(
-			withMarkedUnits(facility, { batteryView: 'split' }).units.map(
+			withBatteryView(facility, { batteryView: 'split' }).units.map(
 				(/** @type {any} */ u) => u.fueltech_id
 			)
 		).toEqual(['battery_charging', 'battery_discharging']);
 	});
 
-	it('does not mark derived split units as commissioning in split view', () => {
+	it('preserves native statuses in split view', () => {
 		const facility = {
 			units: [
 				{
@@ -173,17 +171,14 @@ describe('withMarkedUnits', () => {
 				},
 				{
 					fueltech_id: 'battery_charging',
-					status_id: 'operating',
+					status_id: 'commissioning',
 					capacity_maximum: 100,
-					// Low max-gen ratio is an artefact of the derived split, not commissioning.
-					max_generation: 10,
-					commencement_date: new Date().toISOString().slice(0, 10)
+					max_generation: 10
 				}
 			]
 		};
-		const [unit] = withMarkedUnits(facility, { batteryView: 'split' }).units;
-		expect(unit.isCommissioning).toBeUndefined();
-		expect(unit.status_id).toBe('operating');
+		const [unit] = withBatteryView(facility, { batteryView: 'split' }).units;
+		expect(unit.status_id).toBe('commissioning');
 	});
 
 	it('ignores split view for facilities without a bidirectional battery', () => {
@@ -194,7 +189,7 @@ describe('withMarkedUnits', () => {
 			]
 		};
 		expect(
-			withMarkedUnits(facility, { batteryView: 'split' }).units.map(
+			withBatteryView(facility, { batteryView: 'split' }).units.map(
 				(/** @type {any} */ u) => u.fueltech_id
 			)
 		).toEqual(['battery_charging', 'battery_discharging']);
@@ -202,10 +197,10 @@ describe('withMarkedUnits', () => {
 
 	it('returns the facility unchanged when it has no units', () => {
 		const facility = { code: 'X' };
-		expect(withMarkedUnits(facility)).toBe(facility);
+		expect(withBatteryView(facility)).toBe(facility);
 	});
 
-	it('does not mutate the input units', () => {
+	it('does not mutate the input facility', () => {
 		const facility = /** @type {any} */ ({
 			units: [
 				{
@@ -216,9 +211,10 @@ describe('withMarkedUnits', () => {
 				}
 			]
 		});
-		withMarkedUnits(facility);
+		const result = withBatteryView(facility);
+		expect(result).not.toBe(facility);
+		expect(result.units[0]).toBe(facility.units[0]);
 		expect(facility.units[0].status_id).toBe('operating');
-		expect(facility.units[0].isCommissioning).toBeUndefined();
 	});
 });
 

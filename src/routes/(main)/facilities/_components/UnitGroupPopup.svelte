@@ -5,7 +5,6 @@
 	 * @typedef {Object} UnitData
 	 * @property {string} fueltech_id
 	 * @property {string} status_id
-	 * @property {boolean} [isCommissioning]
 	 * @property {number} capacity
 	 * @property {number} [capacity_storage]
 	 * @property {number} [max_generation]
@@ -36,7 +35,6 @@
 			<UnitGroup
 				fueltech_id={unit.fueltech_id}
 				status_id={unit.status_id}
-				isCommissioning={unit.isCommissioning ?? false}
 				capacity={unit.capacity}
 				capacity_storage={unit.capacity_storage ?? 0}
 				max_generation={unit.max_generation ?? 0}

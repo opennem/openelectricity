@@ -200,7 +200,7 @@
 						onclick={() => setSelectedCode(unit.code)}
 					>
 						<span class="flex shrink-0 justify-center" title={statusLabel(unit.status_id)}>
-							<FacilityStatusIcon status={unit.status_id} isCommissioning={unit.isCommissioning} />
+							<FacilityStatusIcon status={unit.status_id} />
 							<span class="sr-only">{statusLabel(unit.status_id)}</span>
 						</span>
 

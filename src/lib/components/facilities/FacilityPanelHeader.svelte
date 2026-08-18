@@ -247,7 +247,6 @@
 				cap,
 				storage: g.capacity_storage,
 				status: g.status_id,
-				isCommissioning: g.isCommissioning,
 				isRetired: g.status_id === 'retired',
 				key: `${g.fueltech_id}|||${g.status_id}`,
 				pairPosition: /** @type {'top' | 'bottom' | null} */ (
@@ -497,12 +496,7 @@
 									></span>
 								{/if}
 								<Tooltip text={row.status} class="capitalize cursor-help shrink-0">
-									<FuelTechBadge
-										fuelTech={row.fueltechId}
-										status={row.status}
-										isCommissioning={row.isCommissioning}
-										size="md"
-									/>
+									<FuelTechBadge fuelTech={row.fueltechId} status={row.status} size="md" />
 								</Tooltip>
 								<span class="text-dark-grey truncate">
 									<span class="font-semibold">{split.primary}</span>

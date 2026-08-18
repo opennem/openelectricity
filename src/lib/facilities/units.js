@@ -1,7 +1,6 @@
 import { getFueltechColor } from '$lib/utils/fueltech-display';
 import { sumUnitCapacities } from '$lib/utils/capacity';
 import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
-import isCommissioningCheck from './is-commissioning';
 
 /** Fuel techs of the split units derived from a bidirectional `battery` unit. */
 const DERIVED_BATTERY_FUEL_TECHS = ['battery_charging', 'battery_discharging'];
@@ -74,7 +73,6 @@ export function getFacilityCapacity(facility) {
  * @property {string} fueltech_id
  * @property {string} status_id
  * @property {any[]} units
- * @property {boolean} isCommissioning
  * @property {number} totalCapacity - sum of per-unit capacity (maximum falling back to registered, per unit)
  * @property {string} bgColor
  * @property {number} capacity_storage
@@ -112,7 +110,7 @@ export function groupUnits(facility, options = {}) {
 				units: []
 			});
 		}
-		groups.get(key)?.units.push({ ...unit, isCommissioning: unit.isCommissioning });
+		groups.get(key)?.units.push({ ...unit });
 	}
 
 	return Array.from(groups.values()).map((group) => {
@@ -120,7 +118,6 @@ export function groupUnits(facility, options = {}) {
 			fueltech_id: group.fueltech_id,
 			status_id: group.status_id,
 			units: group.units,
-			isCommissioning: group.units.some((unit) => unit.isCommissioning),
 			totalCapacity: sumUnitCapacities(group.units),
 			bgColor: getFueltechColor(group.fueltech_id),
 			capacity_storage: sumField(group.units, 'capacity_storage'),
@@ -151,12 +148,8 @@ export function getOrderedFuelTechGroups(facility) {
 }
 
 /**
- * Normalise a raw API facility for display: resolve the battery unit set and
- * mark commissioning units (`isCommissioning` + `status_id`). This is the same
- * client-side processing the /facilities list applies server-side via
- * `processFacilitiesWithStatuses`, extracted so the /facility/[code] page and the
- * /facilities detail panel present the canonical full facility identically from
- * the raw `fetchFacilityByCode` shape.
+ * Return a facility with the units for the requested battery view. OE is the
+ * source of truth for unit statuses, including commissioning.
  *
  * `batteryView` picks which battery units survive when a bidirectional `battery`
  * unit exists: `'net'` (default) drops the derived charging/discharging units;
@@ -166,17 +159,12 @@ export function getOrderedFuelTechGroups(facility) {
  * @param {{ batteryView?: 'net' | 'split' }} [options]
  * @returns {any}
  */
-export function withMarkedUnits(facility, { batteryView = 'net' } = {}) {
+export function withBatteryView(facility, { batteryView = 'net' } = {}) {
 	if (!facility?.units) return facility;
 	const hasBidirectional = hasBidirectionalBattery(facility);
-	const filtered =
+	const units =
 		batteryView === 'split' && hasBidirectional
 			? facility.units.filter((/** @type {any} */ unit) => unit.fueltech_id !== 'battery')
 			: filterDerivedBatteryUnits(facility.units, hasBidirectional);
-	const units = filtered.map((/** @type {any} */ unit) =>
-		isCommissioningCheck(unit, { hasBidirectionalBattery: hasBidirectional })
-			? { ...unit, isCommissioning: true, status_id: 'commissioning' }
-			: unit
-	);
 	return { ...facility, units };
 }

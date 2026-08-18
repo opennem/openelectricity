@@ -1,16 +1,14 @@
 <script>
 	import { statusColours } from '$lib/theme/openelectricity';
 
-	// committed, operating, retired
-	let { status, isCommissioning = false, size = 'default' } = $props();
+	// committed, commissioning, operating, retired
+	let { status, size = 'default' } = $props();
 
-	let colour = $derived(
-		isCommissioning ? statusColours.commissioning : statusColours[status] || statusColours.operating
-	);
+	let colour = $derived(statusColours[status] || statusColours.operating);
 
 	let sizeClass = $derived(size === 'lg' ? 'w-5 h-5' : 'w-4 h-4');
 
-	let isOperating = $derived(!isCommissioning && status === 'operating');
+	let isOperating = $derived(status === 'operating');
 </script>
 
 <div class="flex">

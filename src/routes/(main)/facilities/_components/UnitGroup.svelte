@@ -11,7 +11,6 @@
 	 * @type {{
 	 *   fueltech_id: string,
 	 *   status_id: string,
-	 *   isCommissioning: boolean,
 	 *   capacity: number,
 	 *   capacity_storage?: number,
 	 *   max_generation: number,
@@ -25,7 +24,6 @@
 	let {
 		fueltech_id,
 		status_id,
-		isCommissioning,
 		capacity,
 		capacity_storage = 0,
 		max_generation,
@@ -35,6 +33,8 @@
 		data_last_seen,
 		network_id = 'NEM'
 	} = $props();
+
+	let commissioning = $derived(status_id === 'commissioning');
 
 	let offset = $derived(network_id === 'WEM' ? '+08:00' : '+10:00');
 
@@ -68,7 +68,7 @@
 		</div>
 
 		<div class="capitalize flex items-center gap-1 text-white/70">
-			<FacilityStatusIcon status={status_id} {isCommissioning} />
+			<FacilityStatusIcon status={status_id} />
 			{status_id}
 		</div>
 	</div>
@@ -76,7 +76,7 @@
 	<div class="flex items-center justify-end mt-1">
 		<div class="text-xs">
 			<span class="text-xxs text-white/60">Capacity:</span>
-			{#if max_generation && isCommissioning}
+			{#if max_generation && commissioning}
 				<span class="font-mono font-bold ml-1">
 					{formatValue(max_generation)}
 				</span>
@@ -86,7 +86,7 @@
 				{formatValue(capacity)}
 			</span>
 			<span class="text-xxs text-white/60">MW</span>
-			{#if max_generation && isCommissioning}
+			{#if max_generation && commissioning}
 				<span class="text-white/60 ml-1">
 					({getPercentage(max_generation, capacity)}%)
 				</span>
@@ -106,7 +106,7 @@
 		</div>
 	{/if}
 
-	{#if isCommissioning}
+	{#if commissioning}
 		<div class="mt-2">
 			<GenCapViz {capacity} maxGeneration={max_generation} fill={bgColor} />
 		</div>
@@ -114,7 +114,7 @@
 
 	{#if max_generation_interval || data_first_seen || data_last_seen}
 		<div class="mt-2">
-			{#if max_generation_interval && isCommissioning}
+			{#if max_generation_interval && commissioning}
 				{@const maxGenDate = getParsedDate(max_generation_interval)}
 				<div class="text-xxs text-right text-white/60">
 					Max generated at
@@ -137,7 +137,7 @@
 				</div>
 			{/if}
 
-			{#if (status_id === 'operating' || isCommissioning) && data_first_seen}
+			{#if (status_id === 'operating' || commissioning) && data_first_seen}
 				{@const firstGenDate = getParsedDate(data_first_seen)}
 				<div class="text-xxs text-right text-white/60">
 					First generated at

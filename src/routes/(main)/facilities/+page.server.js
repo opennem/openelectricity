@@ -11,7 +11,7 @@
  * 1. Parse filter parameters from URL search params
  * 2. Check server-side cache for matching data (5-minute TTL)
  * 3. If cache miss, fetch from OpenElectricity API
- * 4. Process facilities (mark commissioning units, filter by status)
+ * 4. Filter facilities by region (status and fuel tech are filtered by OE)
  * 5. Store processed data in cache
  * 6. Return facilities data to page component
  *
@@ -32,11 +32,6 @@ import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
 import { expandFuelTechs } from './_utils/fuel-tech-map.js';
-import {
-	prepareStatusesForApi,
-	processFacilitiesWithStatuses,
-	filterFacilitiesByRegions
-} from '$lib/facilities/status-utils.js';
 import { fetchFacilityPhotos } from './_utils/fetch-facility-photos.js';
 import {
 	DEFAULT_STATUSES,
@@ -54,6 +49,16 @@ const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
 	baseUrl: PUBLIC_OE_API_URL
 });
+
+/**
+ * @param {any[] | null} facilities
+ * @param {string[]} regions Lowercase region codes
+ * @returns {any[]}
+ */
+function filterFacilitiesByRegions(facilities, regions) {
+	if (!facilities) return [];
+	return facilities.filter((facility) => regions.includes(facility.network_region.toLowerCase()));
+}
 
 export async function load({ url }) {
 	const { searchParams } = url;
@@ -102,26 +107,19 @@ export async function load({ url }) {
 			isDefaultSelection(fuelTechs, FUEL_TECH_VALUES) ? [] : fuelTechs
 		);
 
-		// Prepare statuses for API (handle commissioning conversion)
-		const apiStatuses = prepareStatusesForApi(statuses);
-
 		let facilitiesResponse = null;
 
 		try {
 			const { response } = await client.getFacilities({
 				fueltech_id: fuelTechIds,
-				status_id: apiStatuses
+				status_id: statuses
 			});
 			facilitiesResponse = response.data;
 		} catch {
 			// API error - facilitiesResponse remains null
 		}
 
-		// Filter by regions
-		const regionFiltered = filterFacilitiesByRegions(facilitiesResponse, regions);
-
-		// Process facilities: mark commissioning units and filter by selected statuses
-		facilities = processFacilitiesWithStatuses(regionFiltered, statuses);
+		facilities = filterFacilitiesByRegions(facilitiesResponse, regions);
 
 		// Store in server cache
 		setCachedFacilities(filterParams, facilities);
