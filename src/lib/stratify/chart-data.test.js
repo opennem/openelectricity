@@ -1,5 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { safeParseJSON, normaliseChart } from './chart-data.js';
+import { getNumericSeriesNames, safeParseJSON, normaliseChart } from './chart-data.js';
+
+describe('getNumericSeriesNames', () => {
+	it('excludes text metadata from numeric chart series', () => {
+		const columns = [
+			{ key: 'temperature_c', isNumeric: true },
+			{ key: 'point_label', isNumeric: false },
+			{ key: 'series', isNumeric: true },
+			{ key: 'demand_gwh_per_h', isNumeric: true }
+		];
+
+		expect(
+			getNumericSeriesNames(columns, ['point_label', 'series', 'demand_gwh_per_h'])
+		).toEqual(['series', 'demand_gwh_per_h']);
+	});
+});
 
 // ── safeParseJSON ───────────────────────────────────────────────
 

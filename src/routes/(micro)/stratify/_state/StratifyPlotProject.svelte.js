@@ -20,7 +20,7 @@ import {
 	WATERFALL_ROLE_LABELS,
 	getWaterfallRoleColours
 } from '$lib/stratify/chart-types.js';
-import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
+import { getNumericSeriesNames, uniqueColumnValues } from '$lib/stratify/chart-data.js';
 import {
 	compileAnnotationItems,
 	createAnnotationItem,
@@ -600,9 +600,13 @@ export default class StratifyPlotProject {
 			this.lineRangeMinColumn !== this.lineRangeMaxColumn;
 		const rangeMinKey = hasLineRange ? this.lineRangeMinColumn : null;
 		const rangeMaxKey = hasLineRange ? this.lineRangeMaxColumn : null;
-		const parsed = this.parsedData.seriesNames.filter(
+		const parsed = getNumericSeriesNames(this.allColumns, this.parsedData.seriesNames).filter(
 			(n) =>
-				n !== colourKey && n !== facetKey && n !== sizeKey && n !== rangeMinKey && n !== rangeMaxKey
+				n !== colourKey &&
+				n !== facetKey &&
+				n !== sizeKey &&
+				n !== rangeMinKey &&
+				n !== rangeMaxKey
 		);
 		if (this.seriesOrder.length === 0) return parsed;
 

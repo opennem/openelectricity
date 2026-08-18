@@ -31,6 +31,18 @@ export function uniqueColumnValues(data, columnKey) {
 }
 
 /**
+ * Return only columns that can be plotted on a numeric value axis.
+ * Text columns remain available for colour, facets and tooltips.
+ * @param {Array<{ key: string, isNumeric: boolean }>} allColumns
+ * @param {string[]} seriesNames
+ * @returns {string[]}
+ */
+export function getNumericSeriesNames(allColumns, seriesNames) {
+	const numericKeys = allColumns.filter((column) => column.isNumeric).map((column) => column.key);
+	return seriesNames.filter((name) => numericKeys.includes(name));
+}
+
+/**
  * Safely parse a JSON string, returning a fallback on failure.
  * @param {any} value
  * @param {any} fallback

@@ -471,6 +471,22 @@ describe('StratifyPlotProject — scatter fields', () => {
 		expect(project.visibleData[0].nem).toBe(21100);
 	});
 
+	it('excludes a text label column from Y series when a numeric column is selected for X', () => {
+		const project = createProject();
+		project.csvText = `point_label\tseries\ttemperature_c\tdemand_gwh_per_h
+Mon 01 Jul 2024, 18:00\t2024\t11.6\t12.256
+Tue 02 Jul 2024, 18:00\t2024\t12\t12.008`;
+		project.chartType = 'scatter';
+		project.xColumn = 'temperature_c';
+		project.displayMode = 'auto';
+		project.colourSeries = 'series';
+
+		expect(project.parsedData.mode).toBe('linear');
+		expect(project.orderedSeriesNames).toEqual(['demand_gwh_per_h']);
+		expect(project.visibleSeriesNames).toEqual(['demand_gwh_per_h']);
+		expect(project.visibleData[0].demand_gwh_per_h).toBe(12.256);
+	});
+
 	it('restores the size column as a Y series outside scatter mode', () => {
 		const project = createProject();
 		project.csvText = 'x,nsw,nem\n14,6900,21100';

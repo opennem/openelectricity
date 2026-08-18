@@ -78,10 +78,10 @@ export function parseDate(str) {
 	const trimmed = str.trim().replace(/^["']|["']$/g, '');
 	if (!trimmed) return null;
 
-	// Reject 1-3 digit integer strings outright. The `yyyy` format below would
-	// happily parse them as years (e.g. "23" → year 23 → 1923-01-01), causing
-	// hour / index / day-of-month columns to be misdetected as time-series.
-	if (/^-?\d{1,3}$/.test(trimmed)) return null;
+	// Reject bare numbers except four-digit years. Native Date parsing is permissive
+	// enough to treat values such as "11.6" as dates, which can make numeric X
+	// columns (for example temperatures) look like time-series data.
+	if (/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(trimmed) && !/^\d{4}$/.test(trimmed)) return null;
 
 	const hasTz = TZ_MARKER_RE.test(trimmed);
 

@@ -406,6 +406,8 @@ export function capacityMarks(capacitySums, { isLine, isEnergyMetric }) {
  * @property {number} [scatterMinRadius] - Minimum bubble radius in px
  * @property {number} [scatterMaxRadius] - Maximum bubble radius in px
  * @property {number} [scatterPointOpacity] - Scatter point fill opacity
+ * @property {string | null} [colourSeries] - Row column used to colour scatter points
+ * @property {string[]} [colourGroupNames] - Ordered values from the scatter colour column
  */
 
 /**
@@ -486,7 +488,7 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 						})
 					]
 				: []),
-			ruleY([0]),
+			ruleY([0], { clip: true }),
 			...(labelMark ? [labelMark] : [])
 		]
 	};
@@ -688,7 +690,7 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 			...(rangeMark ? [rangeMark] : []),
 			...extraMarks,
 			...lineMarks,
-			ruleY([0]),
+			ruleY([0], { clip: true }),
 			...(labelMark ? [labelMark] : [])
 		]
 	};
@@ -710,6 +712,7 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
  *   pointRadius?: number,
  *   minRadius?: number,
  *   maxRadius?: number,
+ *   colourSeries?: string | null,
  *   facetColumn?: string | null,
  *   facetGrid?: FacetGrid | null
  * }} [options]
@@ -721,6 +724,7 @@ export function buildScatterData(data, seriesNames, xKey, options = {}) {
 		pointRadius = 4,
 		minRadius = 3,
 		maxRadius = 18,
+		colourSeries = null,
 		facetColumn = null,
 		facetGrid = null
 	} = options;
@@ -761,6 +765,7 @@ export function buildScatterData(data, seriesNames, xKey, options = {}) {
 				const out = {
 					x: row[xKey],
 					series: name,
+					colourGroup: colourSeries ? String(row[colourSeries] ?? 'Unknown') : name,
 					value: row[name],
 					displayValue: row[name],
 					sizeValue: rawSize,
@@ -809,14 +814,19 @@ export function createScatterOptions(data, seriesNames, colours, labels, options
 		scatterPointRadius = 4,
 		scatterMinRadius = 3,
 		scatterMaxRadius = 18,
-		scatterPointOpacity = 0.7
+		scatterPointOpacity = 0.7,
+		colourSeries = null,
+		colourGroupNames = []
 	} = options;
+	const usesColourGroups = Boolean(colourSeries && colourGroupNames.length > 0);
+	const colourNames = usesColourGroups ? colourGroupNames : seriesNames;
 	const { xKey, isCategory, isLinear } = detectXMode(data);
 	const points = buildScatterData(data, seriesNames, xKey, {
 		sizeColumn: scatterSizeColumn,
 		pointRadius: scatterPointRadius,
 		minRadius: scatterMinRadius,
 		maxRadius: scatterMaxRadius,
+		colourSeries,
 		facetColumn,
 		facetGrid
 	});
@@ -827,7 +837,7 @@ export function createScatterOptions(data, seriesNames, colours, labels, options
 		style,
 		...(marginLeft !== undefined ? { marginLeft } : {}),
 		...(marginRight !== undefined ? { marginRight } : {}),
-		color: { ...colourScale(seriesNames, colours, labels), legend },
+		color: { ...colourScale(colourNames, colours, labels), legend },
 		r: { type: 'identity' },
 		x: {
 			label: null,
@@ -850,13 +860,13 @@ export function createScatterOptions(data, seriesNames, colours, labels, options
 			dot(points, {
 				x: 'x',
 				y: 'value',
-				stroke: 'series',
-				fill: 'series',
+				stroke: usesColourGroups ? 'colourGroup' : 'series',
+				fill: usesColourGroups ? 'colourGroup' : 'series',
 				r: 'radius',
 				...facetMark,
 				opacity: scatterPointOpacity
 			}),
-			ruleY([0]),
+			ruleY([0], { clip: true }),
 			...(labelMark ? [labelMark] : [])
 		]
 	};
@@ -954,7 +964,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		);
 	}
 
-	marks.push(ruleY([0]));
+	marks.push(ruleY([0], { clip: true }));
 	if (labelMark) marks.push(labelMark);
 
 	return {
@@ -1031,7 +1041,7 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 				fill: 'series',
 				...border
 			}),
-			ruleY([0])
+			ruleY([0], { clip: true })
 		]
 	};
 }
@@ -1091,7 +1101,7 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 					)
 				)
 			),
-			ruleX([0]),
+			ruleX([0], { clip: true }),
 			...(labelMark ? [labelMark] : [])
 		]
 	};
@@ -1159,7 +1169,7 @@ export function createGroupedHorizontalBarOptions(
 				fill: 'series',
 				...border
 			}),
-			ruleX([0])
+			ruleX([0], { clip: true })
 		]
 	};
 }
@@ -1253,7 +1263,7 @@ export function createColourGroupedBarOptions(
 			marks: [
 				...extraMarks,
 				barX(long, { y: 'x', x1: 0, x2: 'value', fill: 'colourGroup', ...facetMark, ...border }),
-				ruleX([0]),
+				ruleX([0], { clip: true }),
 				...(labelMark ? [labelMark] : [])
 			]
 		};
@@ -1269,7 +1279,7 @@ export function createColourGroupedBarOptions(
 		marks: [
 			...extraMarks,
 			barY(long, { x: 'x', y1: 0, y2: 'value', fill: 'colourGroup', ...facetMark, ...border }),
-			ruleY([0]),
+			ruleY([0], { clip: true }),
 			...(labelMark ? [labelMark] : [])
 		]
 	};
@@ -1521,7 +1531,7 @@ export function createWaterfallOptions(data, seriesNames, colours, labels, optio
 					? [link(connectors, { y1: 'a', y2: 'b', x1: 'level', x2: 'level', ...connectorStroke })]
 					: []),
 				barX(bars, { y: 'x', x1: 'start', x2: 'end', fill, ...border }),
-				ruleX([0]),
+				ruleX([0], { clip: true }),
 				...(showAnnotations
 					? [
 							text(topBars, {
@@ -1577,7 +1587,7 @@ export function createWaterfallOptions(data, seriesNames, colours, labels, optio
 				? [link(connectors, { x1: 'a', x2: 'b', y1: 'level', y2: 'level', ...connectorStroke })]
 				: []),
 			barY(bars, { x: 'x', y1: 'start', y2: 'end', fill, ...border }),
-			ruleY([0]),
+			ruleY([0], { clip: true }),
 			...(showAnnotations
 				? [
 						text(topBars, {
@@ -1676,7 +1686,7 @@ export function createDotOptions(data, seriesNames, colours, labels, options = {
 				fillOpacity: 0.6,
 				r: 3
 			}),
-			ruleY([0]),
+			ruleY([0], { clip: true }),
 			...(labelMark ? [labelMark] : [])
 		]
 	};
@@ -1917,7 +1927,7 @@ export function createMixedMarkOptions(
 		);
 	}
 
-	marks.push(ruleY([0]));
+	marks.push(ruleY([0], { clip: true }));
 	if (labelMark) marks.push(labelMark);
 
 	return {

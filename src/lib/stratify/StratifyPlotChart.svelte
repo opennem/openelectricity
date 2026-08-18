@@ -363,6 +363,8 @@
 			waterfallRowLabels,
 			waterfallSemanticColours,
 			waterfallSemanticLabels,
+			colourSeries,
+			colourGroupNames,
 			valueFormat
 		};
 

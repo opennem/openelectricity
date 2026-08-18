@@ -241,6 +241,24 @@ B,`;
 		expect(result.data[2].linear).toBe(23);
 	});
 
+	it('does not auto-detect decimal X values as dates', () => {
+		const tsv = `point_label\tseries\ttemperature_c\tdemand_gwh_per_h
+Mon 01 Jul 2024, 18:00\t2024\t11.6\t12.256
+Tue 02 Jul 2024, 18:00\t2024\t12\t12.008
+Wed 03 Jul 2024, 18:00\t2024\t12.1\t11.795`;
+
+		const result = parseCSV(tsv, {}, 'auto', 'temperature_c');
+
+		expect(result.mode).toBe('linear');
+		expect(result.allColumns[0]).toEqual({
+			key: 'temperature_c',
+			label: 'temperature_c',
+			isNumeric: true
+		});
+		expect(result.data[0].linear).toBe(11.6);
+		expect(result.seriesNames).toEqual(['point_label', 'series', 'demand_gwh_per_h']);
+	});
+
 	it('preserves text column in linear mode (regression: was nulled by parseNumber)', () => {
 		// xColumn = 'hour' (numeric) → linear mode; 'month' is a non-numeric label column
 		const csv = `month,hour,value

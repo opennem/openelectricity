@@ -432,6 +432,24 @@ describe('createScatterOptions', () => {
 		expect(result.marks[0].opacity).toBe(0.35);
 	});
 
+	it('colours scatter points by a row grouping column', () => {
+		const data = [
+			{ linear: 11.6, demand: 12.256, series: 2024 },
+			{ linear: 10.3, demand: 13.127, series: 2025 }
+		];
+		const colours = { '2024': '#3347c7', '2025': '#267534' };
+		const labels = { '2024': '2024', '2025': '2025' };
+		const points = buildScatterData(data, ['demand'], 'linear', { colourSeries: 'series' });
+		const result = createScatterOptions(data, ['demand'], colours, labels, {
+			colourSeries: 'series',
+			colourGroupNames: ['2024', '2025']
+		});
+
+		expect(points.map((point) => point.colourGroup)).toEqual(['2024', '2025']);
+		expect(result.color.domain).toEqual(['2024', '2025']);
+		expect(result.color.range).toEqual(['#3347c7', '#267534']);
+	});
+
 	it('square-root scales finite bubble values into the configured radius range', () => {
 		const points = buildScatterData(linearData, ['solar'], 'linear', {
 			sizeColumn: 'demand',

@@ -35,6 +35,43 @@
 	function closeExpanded() {
 		expanded = false;
 	}
+
+	/**
+	 * Return the display value for the parsed table's X column.
+	 * @param {Record<string, any>} row
+	 */
+	function getXValue(row) {
+		if (project.parsedData.mode === 'category') return row.category ?? '';
+		if (project.parsedData.mode === 'linear') return row.linear ?? '';
+		return row._dateStr ?? '';
+	}
+
+	/**
+	 * Keep wheel and trackpad scrolling responsive over the editable cell inputs.
+	 * At a scroll boundary, leave the event alone so the surrounding panel can continue scrolling.
+	 * @param {WheelEvent & { currentTarget: HTMLDivElement }} event
+	 */
+	function handleParsedWheel(event) {
+		const container = event.currentTarget;
+		const horizontal = event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY);
+		const rawDelta = horizontal ? (event.shiftKey ? event.deltaY : event.deltaX) : event.deltaY;
+		const scale =
+			event.deltaMode === WheelEvent.DOM_DELTA_LINE
+				? 16
+				: event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+					? container.clientHeight
+					: 1;
+		const delta = rawDelta * scale;
+		const position = horizontal ? container.scrollLeft : container.scrollTop;
+		const viewport = horizontal ? container.clientWidth : container.clientHeight;
+		const extent = horizontal ? container.scrollWidth : container.scrollHeight;
+		const canScroll = delta < 0 ? position > 0 : position + viewport < extent;
+		if (!canScroll) return;
+
+		event.preventDefault();
+		if (horizontal) container.scrollLeft += delta;
+		else container.scrollTop += delta;
+	}
 </script>
 
 {#snippet csvEditor(/** @type {boolean} */ expandedView)}
@@ -52,12 +89,14 @@
 		class="overflow-y-auto overflow-x-auto rounded-b-lg bg-warm-grey/50 {expandedView
 			? 'min-h-0 flex-1'
 			: 'max-h-[400px]'}"
+		onwheel={handleParsedWheel}
 	>
 		<table class="w-full border-collapse font-mono text-sm">
 			<thead class="sticky top-0 z-10">
-				<tr class="bg-mid-warm-grey/30">
+				<tr class="bg-warm-grey">
 					<th class="text-left py-1.5 px-2.5 font-medium text-dark-grey whitespace-nowrap"
-						>{project.isCategory ? 'Category' : 'Date'}</th
+						>{project.parsedData.allColumns[0]?.label ??
+							(project.isCategory ? 'Category' : 'Date')}</th
 					>
 					{#each project.parsedData.seriesNames as name (name)}
 						<th class="text-right py-1.5 px-2.5 font-medium text-dark-grey whitespace-nowrap"
@@ -72,7 +111,7 @@
 						<td class="p-0">
 							<input
 								type="text"
-								value={project.isCategory ? row.category : (row._dateStr ?? '')}
+								value={getXValue(row)}
 								onchange={(e) => handleCellEdit(row._lineIndex, 0, e.currentTarget.value)}
 								onkeydown={(e) => {
 									if (e.key === 'Enter') e.currentTarget.blur();

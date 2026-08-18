@@ -378,7 +378,7 @@
 {/if}
 
 <!-- ═══ Section 2: Data Encoding ═══ -->
-{#if !isMap && project.hasData}
+{#if rawColumns.length > 1 && (!isMap || !project.hasData)}
 	<SectionHeader label="Data Encoding">
 		<div class="flex flex-col gap-2">
 			<!-- Category axis: column + type -->
@@ -391,6 +391,7 @@
 					onchange={(e) => {
 						const val = e.currentTarget.value;
 						project.xColumn = val === rawColumns[0]?.key ? '' : val;
+						project.displayMode = 'auto';
 					}}
 					class={`${CONTROL_INPUT_CLASS} flex-1`}
 				>
@@ -414,6 +415,23 @@
 				</select>
 			</div>
 
+			{#if !project.hasData}
+				<div class="mt-1 border-t border-warm-grey pt-3">
+					<p class="mb-2 text-xs leading-relaxed text-dark-red">
+						No rows were parsed. Choose another axis type above, or reparse using automatic
+						detection.
+					</p>
+					{#if project.displayMode !== 'auto'}
+						<button
+							type="button"
+							onclick={() => (project.displayMode = 'auto')}
+							class="rounded-md border border-warm-grey bg-white px-3 py-1.5 text-xs text-dark-grey transition-colors hover:bg-light-warm-grey"
+						>
+							Reparse automatically
+						</button>
+					{/if}
+				</div>
+			{:else}
 			<!-- Value axis -->
 			{#if !hideValueAxis}
 				<ControlInput label={isHorizontal ? 'X Axis' : 'Y Axis'}>
@@ -783,6 +801,7 @@
 						<option value="value-desc">Value: high to low</option>
 					</select>
 				</ControlInput>
+			{/if}
 			{/if}
 		</div>
 	</SectionHeader>

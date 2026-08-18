@@ -3,7 +3,7 @@
 	import StratifyMapChart from '$lib/stratify/StratifyMapChart.svelte';
 	import AnimatedFacetChart from '$lib/stratify/AnimatedFacetChart.svelte';
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
-	import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
+	import { getNumericSeriesNames, uniqueColumnValues } from '$lib/stratify/chart-data.js';
 	import { getPreset, getPlotStyle } from '$lib/stratify/chart-styles.js';
 	import { assignPaletteColours, getPaletteSwatchColours } from '$lib/stratify/colour-palettes.js';
 	import { makeValueFormatter } from '$lib/components/charts/plot/plot-configs.js';
@@ -199,7 +199,7 @@
 
 	// Apply user-defined series order, then filter hidden (excluding colour-series and facet columns)
 	const orderedSeriesNames = $derived.by(() => {
-		const names = parsed.seriesNames.filter(
+		const names = getNumericSeriesNames(parsed.allColumns, parsed.seriesNames).filter(
 			(/** @type {string} */ n) =>
 				n !== colourSeriesKey &&
 				n !== facetColumnKey &&
