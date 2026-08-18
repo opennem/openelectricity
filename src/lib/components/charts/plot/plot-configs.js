@@ -248,6 +248,32 @@ export function buildFacetGrid(facetValues, cols) {
 }
 
 /**
+ * Copy wide-format rows with the facet fields used by Observable Plot marks.
+ * Interactive marks must carry the same facet channels as the visible marks;
+ * otherwise a repeated X value can resolve to a row from a different panel.
+ *
+ * @param {Array<Record<string, any>>} data
+ * @param {string | null} [facetColumn]
+ * @param {FacetGrid | null} [facetGrid]
+ * @returns {Array<Record<string, any>>}
+ */
+export function withFacetFields(data, facetColumn = null, facetGrid = null) {
+	if (!facetColumn) return data;
+	return data.map((row) => {
+		/** @type {Record<string, any>} */
+		const out = { ...row, [FACET_FIELD]: row[facetColumn] };
+		if (facetGrid) {
+			const pos = facetGrid.indexByFacet.get(row[facetColumn]);
+			if (pos) {
+				out[FACET_X_FIELD] = pos.col;
+				out[FACET_Y_FIELD] = pos.row;
+			}
+		}
+		return out;
+	});
+}
+
+/**
  * Mark-level facet spec. Single-row faceting uses `fx: 'facet'` (Plot
  * renders one auto-labelled panel per value). Grid faceting uses synthetic
  * `_fx`/`_fy` indexes so panels wrap into a 2-D grid.

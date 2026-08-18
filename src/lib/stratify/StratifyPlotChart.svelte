@@ -18,6 +18,7 @@
 		buildScatterData,
 		toLong,
 		buildFacetGrid,
+		withFacetFields,
 		FACET_X_FIELD,
 		FACET_Y_FIELD
 	} from '$lib/components/charts/plot/plot-configs.js';
@@ -635,6 +636,12 @@
 
 		// Formats displayed series values in every tooltip (waterfall supplies its own).
 		const formatValue = makeValueFormatter(valueFormat);
+		const tooltipData = withFacetFields(data, facetColumn, facetGrid);
+		const tooltipFacet = facetColumn
+			? facetGrid
+				? { fx: FACET_X_FIELD, fy: FACET_Y_FIELD }
+				: { fx: 'facet' }
+			: {};
 
 		// Build series tooltip labels
 		let tooltipLabels =
@@ -733,11 +740,15 @@
 			}
 
 			opts.marks.push(
-				ruleX(data, pointerX({ x: 'date', stroke: '#888', strokeWidth: 0.5 })),
+				ruleX(
+					tooltipData,
+					pointerX({ x: 'date', ...tooltipFacet, stroke: '#888', strokeWidth: 0.5 })
+				),
 				tip(
-					data,
+					tooltipData,
 					pointerX({
 						x: 'date',
+						...tooltipFacet,
 						channels: tipChannels,
 						format: { x: false, ...TIP_HIDE_FACET },
 						lineHeight: 1.3,
@@ -772,11 +783,15 @@
 			}
 
 			opts.marks.push(
-				ruleX(data, pointerX({ x: 'linear', stroke: '#888', strokeWidth: 0.5 })),
+				ruleX(
+					tooltipData,
+					pointerX({ x: 'linear', ...tooltipFacet, stroke: '#888', strokeWidth: 0.5 })
+				),
 				tip(
-					data,
+					tooltipData,
 					pointerX({
 						x: 'linear',
+						...tooltipFacet,
 						channels: tipChannels,
 						format: { x: false, ...TIP_HIDE_FACET },
 						lineHeight: 1.3,
@@ -863,10 +878,11 @@
 				const valueKey = seriesNames[0];
 				opts.marks.push(
 					tip(
-						data,
+						tooltipData,
 						pointerY({
 							y: 'category',
 							x: valueKey,
+							...tooltipFacet,
 							channels: tipChannels,
 							format: { x: false, y: false, ...TIP_HIDE_FACET },
 							preferredAnchor: 'left',
@@ -879,10 +895,11 @@
 				const valueKey = seriesNames[0];
 				opts.marks.push(
 					tip(
-						data,
+						tooltipData,
 						pointerX({
 							x: 'category',
 							y: valueKey,
+							...tooltipFacet,
 							channels: tipChannels,
 							format: { x: false, y: false, ...TIP_HIDE_FACET },
 							preferredAnchor: 'bottom',

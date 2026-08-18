@@ -17,6 +17,7 @@ import {
 	createColourGroupedBarOptions,
 	buildTooltipChannels,
 	buildFacetGrid,
+	withFacetFields,
 	buildScatterData
 } from './plot-configs.js';
 import { getLineDasharray } from '$lib/stratify/chart-types.js';
@@ -99,6 +100,26 @@ describe('buildFacetGrid', () => {
 		const grid = buildFacetGrid(['A', 'B'], 0);
 		expect(grid.cols).toBe(1);
 		expect(grid.rows).toBe(2);
+	});
+});
+
+describe('withFacetFields', () => {
+	it('adds matching facet coordinates to wide-format tooltip rows', () => {
+		const data = [
+			{ hour: 10, Year: 2025, mean: 41.69 },
+			{ hour: 10, Year: 2026, mean: 55.98 }
+		];
+		const grid = buildFacetGrid([2025, 2026], 2);
+
+		expect(withFacetFields(data, 'Year', grid)).toEqual([
+			{ hour: 10, Year: 2025, mean: 41.69, facet: 2025, _fx: 0, _fy: 0 },
+			{ hour: 10, Year: 2026, mean: 55.98, facet: 2026, _fx: 1, _fy: 0 }
+		]);
+	});
+
+	it('returns the original rows when the chart is not partitioned', () => {
+		const data = [{ hour: 10, mean: 55.98 }];
+		expect(withFacetFields(data)).toBe(data);
 	});
 });
 
