@@ -19,7 +19,7 @@ package-lock.json
 static/data/ignore/
 
 # Personal notes
-TODO.md
+personal-notes/
 
 # MCP config
 .mcp.json

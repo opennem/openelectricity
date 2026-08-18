@@ -6,6 +6,9 @@ duplicating it.
 
 ## Start here
 
+- If `personal-notes/` exists, begin with `personal-notes/PLAN.md` and
+  `personal-notes/TODO.md` for the maintainer's current priorities and local
+  working context. The directory is intentionally gitignored and may be absent.
 - Read `README.md` for setup and `docs/architecture.md` before unfamiliar work.
 - Preserve unrelated working-tree changes. Do not reset, reformat, or stage them.
 - Prefer small, focused changes. Read the nearby code and tests before changing a
