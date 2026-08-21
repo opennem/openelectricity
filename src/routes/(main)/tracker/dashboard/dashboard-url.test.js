@@ -10,16 +10,14 @@ describe('Tracker dashboard URLs', () => {
 		const state = {
 			region: '_all',
 			group: 'simple',
-			range: { kind: 'preset', days: 7, intervalId: '30m' },
-			viewId: 'local-1'
+			range: { kind: 'preset', days: 7, intervalId: '30m' }
 		};
 		const url = applyDashboardUrl(new URL('https://example.test/tracker/dashboard'), state);
 		const parsed = parseDashboardUrl(url.searchParams, { nowMs: Date.now(), validRegions });
 		expect(parsed).toMatchObject({
 			region: '_all',
 			group: 'simple',
-			range: state.range,
-			viewId: 'local-1'
+			range: state.range
 		});
 		expect(url.searchParams.has('layout')).toBe(false);
 		expect(parsed.panels.map((panel) => panel.type)).toEqual(
@@ -43,14 +41,13 @@ describe('Tracker dashboard URLs', () => {
 		expect(parsed.range).toEqual(state.range);
 	});
 
-	it('removes legacy layouts and local view IDs from copied links', () => {
+	it('removes legacy layouts and local view IDs from materialised links', () => {
 		const url = copiedDashboardUrl(
 			new URL('https://example.test/tracker/dashboard?view=old&layout=1.payload'),
 			{
 				region: '_all',
 				group: 'detailed',
-				range: { kind: 'preset', days: 7, intervalId: '30m' },
-				viewId: 'local-1'
+				range: { kind: 'preset', days: 7, intervalId: '30m' }
 			}
 		);
 		expect(url.searchParams.has('view')).toBe(false);

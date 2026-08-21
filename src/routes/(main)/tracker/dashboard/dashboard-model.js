@@ -3,7 +3,6 @@
  * with the page and canvas; this module only validates and transforms values.
  */
 
-export const DASHBOARD_VERSION = 1;
 export const MAX_PANELS = 12;
 
 export const PANEL_TYPES = [
@@ -96,8 +95,8 @@ function isRecord(value) {
 /** @param {unknown} value */
 function cleanSettings(value) {
 	if (!isRecord(value)) return {};
-	// Settings are deliberately JSON-only because they are persisted. A round
-	// trip also strips prototypes and unsupported values.
+	// Settings are deliberately JSON-only. A round trip also strips prototypes
+	// and unsupported values.
 	try {
 		const parsed = JSON.parse(JSON.stringify(value));
 		return isRecord(parsed) ? parsed : {};
@@ -228,27 +227,6 @@ export function updatePanelSettings(panels, instanceId, settings) {
 }
 
 /**
- * @param {{ id: string, name: string, region: string, group: string, range: any, panels: any[], createdAt?: string, now?: string }} input
- */
-export function createSavedDashboard(input) {
-	const now = input.now ?? new Date().toISOString();
-	return {
-		version: DASHBOARD_VERSION,
-		id: input.id,
-		name:
-			String(input.name || 'Untitled view')
-				.trim()
-				.slice(0, 80) || 'Untitled view',
-		region: input.region,
-		group: input.group === 'simple' ? 'simple' : 'detailed',
-		range: normaliseRange(input.range),
-		panels: validatePanels(input.panels),
-		createdAt: input.createdAt ?? now,
-		updatedAt: now
-	};
-}
-
-/**
  * @param {unknown} value
  * @returns {{kind:'preset', days:number, intervalId:string} | {kind:'custom', startMs:number, endMs:number, intervalId:string}}
  */
@@ -268,30 +246,4 @@ export function normaliseRange(value) {
 		};
 	}
 	return { kind: 'preset', days: 7, intervalId: '30m' };
-}
-
-/** @param {unknown} value */
-export function validateSavedDashboard(value) {
-	if (!isRecord(value) || value.version !== DASHBOARD_VERSION) return null;
-	if (typeof value.id !== 'string' || !value.id || typeof value.name !== 'string') return null;
-	return createSavedDashboard({
-		id: value.id,
-		name: value.name,
-		region: typeof value.region === 'string' ? value.region : '_all',
-		group: value.group,
-		range: value.range,
-		panels: value.panels,
-		createdAt: typeof value.createdAt === 'string' ? value.createdAt : undefined,
-		now: typeof value.updatedAt === 'string' ? value.updatedAt : undefined
-	});
-}
-
-/** Stable comparison payload for dirty-state checks. @param {Record<string, any>} input */
-export function dashboardSignature({ region, group, range, panels }) {
-	return JSON.stringify({
-		region,
-		group: group === 'simple' ? 'simple' : 'detailed',
-		range: normaliseRange(range),
-		panels: validatePanels(panels)
-	});
 }

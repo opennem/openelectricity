@@ -26,6 +26,9 @@ const ENERGY_ID = 'energy_mwh';
  * @property {number} intervalHours - Native bucket length in hours (converts a
  *   power basis to MWh; ignored when the basis is already energy)
  * @property {string} [networkTimezone] - Offset string (default: '+10:00')
+ * @property {Record<string, string[]>} [groupMap] - Optional group id → member
+ *   fuel-tech codes. When supplied, only technologies in the grouping count.
+ * @property {string[]} [excludedGroups] - Group ids hidden by the caller.
  */
 
 /**
@@ -36,7 +39,15 @@ const ENERGY_ID = 'energy_mwh';
 export function processEmissionsIntensity(response, config) {
 	if (!response?.data) return null;
 
-	const { intervalHours, networkTimezone = '+10:00' } = config;
+	const { intervalHours, networkTimezone = '+10:00', groupMap, excludedGroups = [] } = config;
+	const excludedGroupSet = new Set(excludedGroups);
+	/** @type {Record<string, string>} */
+	const fuelTechToGroup = {};
+	if (groupMap) {
+		for (const [groupId, fuelTechs] of Object.entries(groupMap)) {
+			for (const fuelTech of fuelTechs) fuelTechToGroup[fuelTech] = groupId;
+		}
+	}
 
 	/**
 	 * Network-wide sum of one metric's fueltech series per timestamp. The
@@ -53,7 +64,10 @@ export function processEmissionsIntensity(response, config) {
 			shouldInvert: () => false,
 			classifySeries: (series) => {
 				const fuelTech = series.columns?.fueltech || series.name;
-				return fuelTech === 'battery' ? null : { id: metricFilter };
+				if (fuelTech === 'battery') return null;
+				if (!groupMap) return { id: metricFilter };
+				const groupId = fuelTechToGroup[fuelTech];
+				return groupId && !excludedGroupSet.has(groupId) ? { id: metricFilter } : null;
 			}
 		});
 

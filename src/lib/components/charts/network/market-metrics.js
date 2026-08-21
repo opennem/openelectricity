@@ -28,6 +28,38 @@ const ghost = (colour) => chroma.mix(colour, '#ffffff', 0.45).hex();
 const METRIC_PRESENTATION = {
 	demand: { id: 'demand', label: 'Demand', colour: '#353535' },
 	demand_energy: { id: 'demand', label: 'Demand', colour: '#353535' },
+	demand_gross: { id: 'demand_gross', label: 'Gross demand', colour: '#6A6A6A' },
+	demand_gross_energy: { id: 'demand_gross', label: 'Gross demand', colour: '#6A6A6A' },
+	generation_renewable: {
+		id: 'renewable_generation',
+		label: 'Renewable generation',
+		colour: fuelTechColourMap.renewables
+	},
+	generation_renewable_energy: {
+		id: 'renewable_generation',
+		label: 'Renewable generation',
+		colour: fuelTechColourMap.renewables
+	},
+	generation_renewable_with_storage: {
+		id: 'renewable_generation_storage',
+		label: 'Renewables with storage',
+		colour: fuelTechColourMap.battery_discharging
+	},
+	generation_renewable_with_storage_energy: {
+		id: 'renewable_generation_storage',
+		label: 'Renewables with storage',
+		colour: fuelTechColourMap.battery_discharging
+	},
+	renewable_proportion: {
+		id: 'renewable_share',
+		label: 'Renewable share',
+		colour: fuelTechColourMap.renewables
+	},
+	renewable_with_storage_proportion: {
+		id: 'renewable_share_storage',
+		label: 'Renewables with storage',
+		colour: fuelTechColourMap.battery_discharging
+	},
 	curtailment_solar_utility: {
 		id: 'curtailment_solar',
 		label: 'Solar curtailment',
@@ -87,14 +119,17 @@ const seriesDefsFor = (publicMetric) =>
  * power key end up declaring Wh — a mismatch nothing else would catch.
  *
  * @param {string} publicMetric
- * @param {{ chartKind?: 'stacked' | 'line', diverging?: boolean }} [options]
+ * @param {{ chartKind?: 'stacked' | 'line', diverging?: boolean, baseUnit?: string, prefix?: string }} [options]
  * @returns {MarketMetricConfig}
  */
-function marketMetricConfig(publicMetric, { chartKind = 'stacked', diverging } = {}) {
+function marketMetricConfig(
+	publicMetric,
+	{ chartKind = 'stacked', diverging, baseUnit, prefix } = {}
+) {
 	return {
 		chartKind,
-		baseUnit: publicMetric.endsWith('_energy') ? 'Wh' : 'W',
-		prefix: 'M',
+		baseUnit: baseUnit ?? (publicMetric.endsWith('_energy') ? 'Wh' : 'W'),
+		prefix: prefix ?? 'M',
 		...(diverging ? { diverging: true } : {}),
 		seriesDefs: seriesDefsFor(publicMetric)
 	};
@@ -108,6 +143,8 @@ function marketMetricConfig(publicMetric, { chartKind = 'stacked', diverging } =
 export const MARKET_METRIC_CONFIG = {
 	demand: marketMetricConfig('demand', { chartKind: 'line' }),
 	demand_energy: marketMetricConfig('demand_energy', { chartKind: 'line' }),
+	demand_gross: marketMetricConfig('demand_gross', { chartKind: 'line' }),
+	demand_gross_energy: marketMetricConfig('demand_gross_energy', { chartKind: 'line' }),
 	curtailment: marketMetricConfig('curtailment'),
 	curtailment_energy: marketMetricConfig('curtailment_energy'),
 	curtailment_wind: marketMetricConfig('curtailment_wind'),
@@ -115,7 +152,31 @@ export const MARKET_METRIC_CONFIG = {
 	curtailment_solar: marketMetricConfig('curtailment_solar'),
 	curtailment_solar_energy: marketMetricConfig('curtailment_solar_energy'),
 	flows: marketMetricConfig('flows', { diverging: true }),
-	flows_energy: marketMetricConfig('flows_energy', { diverging: true })
+	flows_energy: marketMetricConfig('flows_energy', { diverging: true }),
+	renewable_generation: marketMetricConfig('renewable_generation', { chartKind: 'line' }),
+	renewable_generation_energy: marketMetricConfig('renewable_generation_energy', {
+		chartKind: 'line'
+	}),
+	renewable_generation_storage: marketMetricConfig('renewable_generation_storage', {
+		chartKind: 'line'
+	}),
+	renewable_generation_storage_energy: marketMetricConfig('renewable_generation_storage_energy', {
+		chartKind: 'line'
+	}),
+	renewable_share: marketMetricConfig('renewable_share', {
+		chartKind: 'line',
+		baseUnit: '%',
+		prefix: ''
+	}),
+	renewable_share_storage: marketMetricConfig('renewable_share_storage', {
+		chartKind: 'line',
+		baseUnit: '%',
+		prefix: ''
+	}),
+	// Headless metric-card inputs. The pair is rendered off-screen and reduced
+	// as Σ renewable generation ÷ Σ gross demand, matching the homepage method.
+	renewables: marketMetricConfig('renewables', { chartKind: 'line' }),
+	renewables_energy: marketMetricConfig('renewables_energy', { chartKind: 'line' })
 };
 
 /**

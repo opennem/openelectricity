@@ -11,6 +11,11 @@ The v2 chart system consists of:
 - **Chart Components** - Svelte components for rendering charts
 - **Utilities** - Helpers for intervals, synchronization, and more
 
+Data-backed charts create independent `ChartDataManager` instances but coordinate equivalent HTTP
+requests through a shared module-level request broker. See
+[`REQUEST_DEDUPLICATION.md`](./REQUEST_DEDUPLICATION.md) for request identity, caching, cancellation
+and diagnostics.
+
 ## Quick Start
 
 ```javascript

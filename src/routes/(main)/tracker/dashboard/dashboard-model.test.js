@@ -5,8 +5,6 @@ import {
 	addPanel,
 	builtinLayout,
 	createPanel,
-	createSavedDashboard,
-	dashboardSignature,
 	duplicatePanel,
 	movePanel,
 	resizePanel,
@@ -58,20 +56,5 @@ describe('Tracker dashboard model', () => {
 				height: 'tall'
 			}
 		);
-	});
-
-	it('builds stable saved snapshots and dirty signatures', () => {
-		const input = {
-			id: 'view-1',
-			name: ' My view ',
-			region: '_all',
-			group: 'detailed',
-			range: { kind: 'preset', days: 7, intervalId: '30m' },
-			panels: builtinLayout().panels,
-			now: '2026-08-13T00:00:00.000Z'
-		};
-		const saved = createSavedDashboard(input);
-		expect(saved).toMatchObject({ name: 'My view', createdAt: input.now, updatedAt: input.now });
-		expect(dashboardSignature(saved)).toBe(dashboardSignature({ ...saved, name: 'Renamed' }));
 	});
 });

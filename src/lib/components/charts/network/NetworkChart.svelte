@@ -13,7 +13,10 @@
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
+	import {
+		formatIntervalQuantityUnit,
+		getIntervalSpec
+	} from '$lib/components/charts/facility/range-interval-config.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { createChartHost } from '$lib/components/charts/v2/chart-host.svelte.js';
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
@@ -39,7 +42,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} region - Explorer region value ('_all', 'nsw1'…, 'wem')
-	 * @property {'power' | 'energy' | 'emissions' | 'emissions_intensity' | 'price' | 'demand' | 'demand_energy' | 'curtailment' | 'curtailment_energy' | 'curtailment_wind' | 'curtailment_wind_energy' | 'curtailment_solar' | 'curtailment_solar_energy' | 'flows' | 'flows_energy'} [metric] - API metric
+	 * @property {'power' | 'energy' | 'market_value' | 'emissions' | 'emissions_intensity' | 'price' | 'demand' | 'demand_energy' | 'demand_gross' | 'demand_gross_energy' | 'curtailment' | 'curtailment_energy' | 'curtailment_wind' | 'curtailment_wind_energy' | 'curtailment_solar' | 'curtailment_solar_energy' | 'flows' | 'flows_energy' | 'renewable_generation' | 'renewable_generation_energy' | 'renewable_generation_storage' | 'renewable_generation_storage_energy' | 'renewable_share' | 'renewable_share_storage' | 'renewables' | 'renewables_energy'} [metric] - API metric
 	 * @property {string} [interval] - Native OE interval (5m, 1h, 1d, 1M…)
 	 * @property {string} [displayInterval] - Display interval for aggregation
 	 * @property {string} [group] - Fuel-tech grouping value (Generation only)
@@ -66,6 +69,8 @@
 	 * @property {string[]} [hiddenSeriesNames] - Series ids to hide, e.g. a market
 	 *   split whose source is toggled off elsewhere on the page. Applied on top of
 	 *   the chart's own legend toggles, so it wins until the caller clears it.
+	 * @property {string[]} [excludedFuelTechGroups] - Fuel-tech groups omitted
+	 *   before an emissions-intensity ratio is calculated.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode]
 	 * @property {boolean} [panZoomEngaged]
 	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
@@ -98,6 +103,7 @@
 		onvisibledata,
 		onloadcomplete,
 		hiddenSeriesNames = /** @type {string[]} */ ([]),
+		excludedFuelTechGroups = /** @type {string[]} */ ([]),
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
 		minDateMs = EARLIEST_DATA_MS,
@@ -105,9 +111,11 @@
 	} = $props();
 
 	const dollarFormatter = getNumberFormat(0);
+	const loadFuelTechCodes = new Set(/** @type {string[]} */ (loadFuelTechs));
 
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let isPriceKind = $derived(chartKind === 'line');
+	let isMarketValueMetric = $derived(metric === 'market_value');
 	let marketConfig = $derived(getMarketMetricConfig(metric));
 	let isEmissionsMetric = $derived(metric === 'emissions');
 	let isIntensityMetric = $derived(metric === 'emissions_intensity');
@@ -122,11 +130,13 @@
 			? /** @type {const} */ ('intensity')
 			: isEmissionsMetric
 				? /** @type {const} */ ('emissions')
-				: marketConfig
-					? /** @type {const} */ ('market')
-					: isPriceKind
-						? /** @type {const} */ ('price')
-						: /** @type {const} */ ('generation')
+				: isMarketValueMetric
+					? /** @type {const} */ ('market-value')
+					: marketConfig
+						? /** @type {const} */ ('market')
+						: isPriceKind
+							? /** @type {const} */ ('price')
+							: /** @type {const} */ ('generation')
 	);
 
 	/** Default header title per panel kind — the constructors and the title
@@ -135,6 +145,7 @@
 		{
 			intensity: 'Emissions Intensity',
 			emissions: 'Emissions',
+			'market-value': 'Market Value',
 			market: 'Market',
 			price: 'Price',
 			generation: 'Generation'
@@ -143,7 +154,9 @@
 
 	/** Per-bucket quantities (MWh, tonnes, intensity components) aggregate by
 	 *  sum; instantaneous ones (MW, $/MWh) by mean. */
-	let sumsForDisplay = $derived(isEnergyMetric || isEmissionsMetric || isIntensityMetric);
+	let sumsForDisplay = $derived(
+		isEnergyMetric || isMarketValueMetric || isEmissionsMetric || isIntensityMetric
+	);
 
 	/** Fine grain (sub-daily) drives the power-style viewport limits. */
 	let fineGrain = $derived(interval === '5m' || interval === '1h');
@@ -153,6 +166,15 @@
 	// ============================================
 
 	let groupConfig = $derived(getGroup(group));
+	let loadGroupsToInvert = $derived(
+		Object.entries(groupConfig.fuelTechs)
+			.filter(
+				([, fuelTechs]) =>
+					fuelTechs.length > 0 && fuelTechs.every((fuelTech) => loadFuelTechCodes.has(fuelTech))
+			)
+			.map(([groupId]) => groupId)
+	);
+	let intensityFilterKey = $derived([...excludedFuelTechGroups].sort().join(','));
 
 	/**
 	 * Process function for the active panel — fuel-tech-grouped generation, a
@@ -168,7 +190,12 @@
 		if (panelKind === 'intensity') {
 			const hours = intervalHours;
 			return (/** @type {any} */ resp) =>
-				processEmissionsIntensity(resp, { intervalHours: hours, networkTimezone: tz });
+				processEmissionsIntensity(resp, {
+					intervalHours: hours,
+					networkTimezone: tz,
+					groupMap: groupConfig.fuelTechs,
+					excludedGroups: excludedFuelTechGroups
+				});
 		}
 		if (panelKind === 'market') {
 			const cfg = /** @type {NonNullable<typeof marketConfig>} */ (marketConfig);
@@ -185,7 +212,7 @@
 			groupLabels: groupConfig.labels,
 			// Emissions are only ever produced — the charging/pumping fuel techs
 			// carry zero-or-positive tonnes, so nothing inverts.
-			loadsToInvert: panelKind === 'emissions' ? [] : loadFuelTechs,
+			loadsToInvert: panelKind === 'emissions' ? [] : loadGroupsToInvert,
 			getColour: getFuelTechColour,
 			metricFilter: metric,
 			networkTimezone: tz
@@ -211,11 +238,16 @@
 	// Chart host — shared manager lifecycle, viewport + pan/zoom recipe
 	// ============================================
 
-	// The processed series set is group-dependent for generation panels only —
-	// price and market metrics carry a fixed series set. `processResponseFn`
-	// already depends on `group` (via groupConfig), so a group change swaps the
-	// manager with a fresh processor.
-	let seriesKey = $derived(panelKind === 'generation' || panelKind === 'emissions' ? group : '');
+	// Fuel-tech panels are group-dependent, and intensity additionally depends
+	// on the table filters. Changing either swaps in a processor with the exact
+	// same identity as the visible series set.
+	let seriesKey = $derived(
+		panelKind === 'intensity'
+			? `${group}:${intensityFilterKey}`
+			: panelKind === 'generation' || panelKind === 'market-value' || panelKind === 'emissions'
+				? group
+				: ''
+	);
 
 	const host = createChartHost({
 		cacheKey: () => `${region}:${chartKind}`,
@@ -344,16 +376,22 @@
 			return chart;
 		}
 
+		const marketValue = panelKind === 'market-value';
 		const chart = new ChartStore({
-			key: Symbol('network-generation'),
+			key: Symbol(marketValue ? 'network-market-value' : 'network-generation'),
 			title: title || defaultTitle,
-			prefix: 'M',
-			displayPrefix: 'M',
-			baseUnit: 'W',
+			prefix: marketValue ? '' : 'M',
+			displayPrefix: marketValue ? 'k' : 'M',
+			baseUnit: marketValue ? '$' : 'W',
 			timeZone
 		});
 		applyCommonStyles(chart);
 		chart.useDivergingStack = useDivergingStack;
+		if (marketValue) {
+			chart.useFormatY = true;
+			chart.formatY = (/** @type {number} */ d) =>
+				'$' + chart.convertAndFormatValue(d) + chart.chartOptions.displayPrefix;
+		}
 		applyTimeTickFormat(chart);
 		return chart;
 	});
@@ -395,6 +433,7 @@
 	// Metric-dependent options (unit + curve)
 	$effect(() => {
 		if (!chartStore) return;
+		const intervalCurve = getIntervalSpec(displayInterval)?.curveType ?? 'straight';
 		if (panelKind === 'market' && marketConfig) {
 			chartStore.chartOptions.baseUnit = marketConfig.baseUnit;
 			chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
@@ -407,18 +446,22 @@
 			return;
 		}
 		if (panelKind === 'price' || panelKind === 'intensity') {
-			chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
-				getIntervalSpec(displayInterval)?.curveType ?? 'straight'
-			);
+			chartStore.chartOptions.selectedCurveType = /** @type {any} */ (intervalCurve);
 			return;
 		}
-		chartStore.chartOptions.baseUnit = isEnergyMetric
-			? 'Wh'
-			: panelKind === 'emissions'
-				? 't'
-				: 'W';
+		if (panelKind === 'market-value') {
+			chartStore.chartOptions.baseUnit = '$';
+			chartStore.chartOptions.selectedCurveType = 'step';
+			return;
+		}
+		chartStore.chartOptions.baseUnit =
+			panelKind === 'emissions'
+				? formatIntervalQuantityUnit('tCO₂e', displayInterval)
+				: isEnergyMetric
+					? 'Wh'
+					: 'W';
 		chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
-			isEnergyMetric || panelKind === 'emissions' ? 'step' : 'straight'
+			panelKind === 'emissions' ? intervalCurve : isEnergyMetric ? 'step' : 'straight'
 		);
 	});
 
@@ -473,8 +516,12 @@
 				viewEnd: end,
 				ianaTimeZone,
 				timeZone,
+				// Summed quantities such as 30-minute emissions still use the
+				// sub-daily axis. Axis mode follows the rendered curve, not the
+				// aggregation method; market value is deliberately always stepped.
 				isEnergy:
-					(sums && !isIntensityMetric) || getIntervalSpec(displayInterval)?.curveType === 'step',
+					panelKind === 'market-value' ||
+					getIntervalSpec(currentDisplayInterval)?.curveType === 'step',
 				displayInterval: currentDisplayInterval
 			});
 		});

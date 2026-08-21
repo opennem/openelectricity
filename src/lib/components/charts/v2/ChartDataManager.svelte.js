@@ -9,17 +9,14 @@
 import { bisectTime, bisectTimeRight, mergeSortedByTime } from './binary-search.js';
 import { offsetMsFromOffset } from './network-time.js';
 import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
+import { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
+
+export { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
 
 /**
- * OE API per-interval range caps (days) — the API rejects wider requests with
- * "Date range too large for {interval} interval. Maximum range is N days."
- * Sub-daily grains only; daily-or-coarser intervals are uncapped.
- * @type {Record<string, number>}
- */
-export const OE_API_MAX_RANGE_DAYS = { '5m': 30, '1h': 365 };
-
-/**
- * Concurrent identical API requests share a single in-flight fetch, keyed by URL.
+ * Concurrent equivalent API requests share a single in-flight fetch, keyed by a
+ * canonical request signature rather than the URL string as assembled by each
+ * chart.
  * The price and emissions providers each run a market_value/emissions manager
  * plus a basis (energy) manager, and all of them resolve to the *same* combined
  * `metric=energy,market_value,emissions` URL — without this they'd each fire
@@ -32,6 +29,112 @@ export const OE_API_MAX_RANGE_DAYS = { '5m': 30, '1h': 365 };
  * @type {Map<string, { promise: Promise<any>, controller: AbortController, refCount: number }>}
  */
 const inFlightFetches = new Map();
+
+/**
+ * Request-coordinator counters. These are intentionally module-level, matching
+ * the lifetime and scope of the shared request maps.
+ */
+const sharedFetchStats = {
+	network: 0,
+	inFlightReuse: 0,
+	responseCacheReuse: 0
+};
+
+/** Fine-grained live intervals whose timestamps can drift between chart mounts. */
+/** @type {Record<string, number>} */
+const REQUEST_BUCKET_MINUTES = { '5m': 5, '1h': 60 };
+
+/**
+ * Floor a timezone-naive OE datetime to its data bucket. This is used for the
+ * request signature only; the first consumer's original URL is still sent to
+ * the API. Values within one bucket therefore describe the same available set
+ * of interval rows and can safely share the raw response.
+ *
+ * @param {string} value
+ * @param {number} bucketMinutes
+ * @returns {string}
+ */
+function floorRequestDate(value, bucketMinutes) {
+	if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(value)) return value;
+	const minute = Number(value.slice(14, 16));
+	const bucketMinute = Math.floor(minute / bucketMinutes) * bucketMinutes;
+	return `${value.slice(0, 14)}${String(bucketMinute).padStart(2, '0')}:00`;
+}
+
+/**
+ * Build the identity used by the module-level request coordinator.
+ *
+ * Query pairs are sorted so construction order is irrelevant. Repeated values
+ * (notably `facility_code`) are sorted as a set-like query input. The moving
+ * edges of 5-minute and hourly requests are floored to their interval bucket so
+ * otherwise-identical live charts mounted seconds apart still converge.
+ *
+ * @param {string} url
+ * @returns {string}
+ */
+export function canonicalChartRequestKey(url) {
+	const baseOrigin = 'http://chart-request.local';
+	// Pure request-key construction; this value never participates in Svelte state.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	const parsed = new URL(url, baseOrigin);
+	const interval = parsed.searchParams.get('interval') || '';
+	const bucketMinutes = REQUEST_BUCKET_MINUTES[interval];
+	const pairs = [...parsed.searchParams.entries()]
+		.map(([name, value]) => [
+			name,
+			bucketMinutes && (name === 'date_start' || name === 'date_end')
+				? floorRequestDate(value, bucketMinutes)
+				: value
+		])
+		.sort(([nameA, valueA], [nameB, valueB]) =>
+			nameA === nameB ? valueA.localeCompare(valueB) : nameA.localeCompare(nameB)
+		);
+	// Pure serialisation of the sorted pairs; no reactive mutation is involved.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	const query = new URLSearchParams(pairs).toString();
+	const resource =
+		parsed.origin === baseOrigin ? parsed.pathname : `${parsed.origin}${parsed.pathname}`;
+	return query ? `${resource}?${query}` : resource;
+}
+
+/**
+ * Snapshot request-coordinator activity for tests and development diagnostics.
+ *
+ * @returns {{network:number,inFlightReuse:number,responseCacheReuse:number,inFlight:number,cachedResponses:number}}
+ */
+export function getSharedFetchStats() {
+	return {
+		...sharedFetchStats,
+		inFlight: inFlightFetches.size,
+		cachedResponses: completedResponses.size
+	};
+}
+
+/** Reset request-coordinator counters without changing either cache. */
+export function resetSharedFetchStats() {
+	sharedFetchStats.network = 0;
+	sharedFetchStats.inFlightReuse = 0;
+	sharedFetchStats.responseCacheReuse = 0;
+}
+
+/**
+ * Record and optionally log one coordinator decision. Logging is deliberately
+ * opt-in so normal chart use stays quiet; enable it with
+ * `localStorage.setItem('oe:debug-chart-fetch', '1')` and reload.
+ *
+ * @param {'network'|'inFlightReuse'|'responseCacheReuse'} outcome
+ * @param {string} requestKey
+ */
+function recordSharedFetch(outcome, requestKey) {
+	sharedFetchStats[outcome]++;
+	try {
+		if (globalThis.localStorage?.getItem('oe:debug-chart-fetch') === '1') {
+			console.debug(`[ChartDataManager] ${outcome}`, requestKey);
+		}
+	} catch {
+		// Storage can be unavailable in restricted browser contexts.
+	}
+}
 
 /**
  * @param {unknown} err
@@ -48,8 +151,9 @@ const RESPONSE_CACHE_MAX = 30;
 const RESPONSE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
- * Completed responses by URL, LRU by Map insertion order. `sharedFetch` only
- * dedupes *concurrent* requests; this lets sequential repeats of the same URL
+ * Completed responses by canonical request signature, LRU by Map insertion
+ * order. The in-flight map only covers concurrent requests; this lets
+ * sequential repeats of the same request
  * (a group toggle re-fetching history, manager rebuilds) skip both the network
  * round-trip and the JSON re-parse. Right-edge batches embed a now-clamped
  * `date_end`, so only historical batches — the bulk of a wide window — hit.
@@ -121,12 +225,17 @@ export function clearInFlightFetches() {
  * @returns {Promise<any>}
  */
 function sharedFetch(url, signal) {
-	const cached = getCachedResponse(url);
-	if (cached !== undefined) return Promise.resolve(cached);
+	const requestKey = canonicalChartRequestKey(url);
+	const cached = getCachedResponse(requestKey);
+	if (cached !== undefined) {
+		recordSharedFetch('responseCacheReuse', requestKey);
+		return Promise.resolve(cached);
+	}
 	if (signal?.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'));
 
-	let entry = inFlightFetches.get(url);
+	let entry = inFlightFetches.get(requestKey);
 	if (!entry) {
+		recordSharedFetch('network', requestKey);
 		const controller = new AbortController();
 		const created =
 			/** @type {{ promise: Promise<any>, controller: AbortController, refCount: number }} */ ({
@@ -140,16 +249,18 @@ function sharedFetch(url, signal) {
 					return null;
 				}
 				const json = await res.json();
-				storeCachedResponse(url, json.response);
+				storeCachedResponse(requestKey, json.response);
 				return json.response;
 			})
 			.finally(() => {
 				// A fully-aborted entry is deleted eagerly (see onAbort below) and may
 				// already have been replaced by a fresh request for the same URL.
-				if (inFlightFetches.get(url) === created) inFlightFetches.delete(url);
+				if (inFlightFetches.get(requestKey) === created) inFlightFetches.delete(requestKey);
 			});
 		entry = created;
-		inFlightFetches.set(url, entry);
+		inFlightFetches.set(requestKey, entry);
+	} else {
+		recordSharedFetch('inFlightReuse', requestKey);
 	}
 	entry.refCount++;
 
@@ -164,7 +275,7 @@ function sharedFetch(url, signal) {
 				// Delete eagerly so a new request for this URL starts a fresh fetch
 				// instead of attaching to the doomed entry — the rejection's
 				// `.finally` above only runs a microtask later.
-				if (inFlightFetches.get(url) === held) inFlightFetches.delete(url);
+				if (inFlightFetches.get(requestKey) === held) inFlightFetches.delete(requestKey);
 			}
 			reject(new DOMException('Aborted', 'AbortError'));
 		};

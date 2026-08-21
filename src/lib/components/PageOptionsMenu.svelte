@@ -18,6 +18,7 @@
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
 	 *   oncopylink?: () => void | Promise<void>,
+	 *   downloadLabel?: string,
 	 *   downloadItems?: Array<{ key: string, label: string }>,
 	 *   ondownloaditem?: (key: string) => void,
 	 *   onsearchfacilities?: () => void,
@@ -34,6 +35,7 @@
 		onshowshortcuts,
 		ondownloadcsv,
 		oncopylink,
+		downloadLabel = 'Facilities',
 		downloadItems = [],
 		ondownloaditem,
 		onsearchfacilities,
@@ -84,7 +86,7 @@
 			<OptionsMenuHeading icon={downloading ? Check : Download}>Download as CSV</OptionsMenuHeading>
 			{#if ondownloadcsv}
 				<OptionsMenuItem onclick={() => handleDownloadCsv(close)}>
-					{downloading ? 'Downloaded!' : 'Facilities'}
+					{downloading ? 'Downloaded!' : downloadLabel}
 				</OptionsMenuItem>
 			{/if}
 			{#each downloadItems as item (item.key)}

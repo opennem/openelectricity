@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openelectricity.org.au/schemas/tracker-view-v1.schema.json",
+  "title": "OpenElectricity Tracker view",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "kind", "version", "name", "description", "layout", "items"],
+  "properties": {
+    "$schema": { "const": "https://openelectricity.org.au/schemas/tracker-view-v1.schema.json" },
+    "kind": { "const": "tracker-view" },
+    "version": { "const": 1 },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "maxLength": 280 },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "shared"],
+      "properties": {
+        "mode": { "enum": ["shared", "individual"] },
+        "shared": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scope", "range", "group", "hiddenFuelTechGroups"],
+          "properties": {
+            "scope": { "type": "string", "minLength": 1 },
+            "range": { "$ref": "#/$defs/sharedRange" },
+            "group": { "type": "string", "minLength": 1 },
+            "hiddenFuelTechGroups": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columns"],
+      "properties": { "columns": { "enum": [1, 2, 3] } }
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/item" }
+    }
+  },
+  "$defs": {
+    "sharedRange": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "days", "intervalId"],
+          "properties": {
+            "kind": { "const": "preset" },
+            "days": { "enum": [1, 3, 7, 30, 365, -1] },
+            "intervalId": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "start", "end", "intervalId"],
+          "properties": {
+            "kind": { "const": "custom" },
+            "start": { "type": "string", "format": "date-time" },
+            "end": { "type": "string", "format": "date-time" },
+            "intervalId": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["days", "intervalId"],
+      "properties": {
+        "days": { "enum": [1, 3, 7, 30, 365, -1] },
+        "intervalId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columnSpan", "heightPx"],
+      "properties": {
+        "columnSpan": { "enum": [1, 2, 3] },
+        "heightPx": { "type": "integer", "minimum": 240, "maximum": 720 }
+      }
+    },
+    "commonQuery": {
+      "type": "object",
+      "required": ["scope", "range", "group"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1 },
+        "range": { "$ref": "#/$defs/range" },
+        "group": { "type": "string", "minLength": 1 }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "recipeId", "presentation", "query", "layout"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "recipeId": {
+          "enum": [
+            "generation",
+            "demand",
+            "price",
+            "emissions",
+            "market-value",
+            "renewables",
+            "curtailment",
+            "flows",
+            "facility",
+            "facility-comparison"
+          ]
+        },
+        "presentation": { "enum": ["chart", "metric"] },
+        "layout": { "$ref": "#/$defs/layout" },
+        "query": {
+          "allOf": [
+            { "$ref": "#/$defs/commonQuery" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "scope": true,
+                "range": true,
+                "group": true,
+                "demand": { "enum": ["operational", "gross"] },
+                "emissionsMode": { "enum": ["volume", "intensity"] },
+                "renewableMeasure": { "enum": ["generation", "share"] },
+                "includeStorage": { "type": "boolean" },
+                "curtailmentSource": { "enum": ["total", "wind", "solar"] },
+                "networkId": { "enum": ["NEM", "WEM"] },
+                "facilityCodes": {
+                  "type": "array",
+                  "maxItems": 6,
+                  "uniqueItems": true,
+                  "items": { "type": "string" }
+                },
+                "unitCodes": {
+                  "type": "array",
+                  "maxItems": 30,
+                  "uniqueItems": true,
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

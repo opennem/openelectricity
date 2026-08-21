@@ -14,13 +14,16 @@
 	 * @type {{
 	 *   selected: string,
 	 *   compact?: boolean,
+	 *   options?: typeof TRACKER_REGION_OPTIONS,
 	 *   onchange?: (value: string) => void
 	 * }}
 	 */
-	let { selected, compact = false, onchange } = $props();
+	let { selected, compact = false, options = TRACKER_REGION_OPTIONS, onchange } = $props();
 
 	let selectedOption = $derived(
-		TRACKER_REGION_OPTIONS.find((o) => o.value === selected) ?? TRACKER_REGION_OPTIONS[0]
+		options.find((o) => o.value === selected) ??
+			TRACKER_REGION_OPTIONS.find((o) => o.value === selected) ??
+			options[0]
 	);
 
 	/**
@@ -36,7 +39,7 @@
 <FilterPanel label={selectedOption.label} active={selected !== DEFAULT_REGION} {compact}>
 	{#snippet children(close)}
 		<ul class="flex flex-col text-sm px-2 py-2" role="listbox" aria-label="Region">
-			{#each TRACKER_REGION_OPTIONS as option (option.value)}
+			{#each options as option (option.value)}
 				{@const isSelected = option.value === selected}
 				<li class="whitespace-nowrap">
 					<button

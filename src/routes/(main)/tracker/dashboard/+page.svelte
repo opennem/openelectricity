@@ -1,9 +1,10 @@
 <script>
 	import { building } from '$app/environment';
 	import { pushState, replaceState } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
-	import { Check, PanelRightOpen, Save, Trash2, X } from '@lucide/svelte';
+	import { PanelRightOpen, X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
@@ -14,11 +15,6 @@
 		FullscreenLayout,
 		FullscreenNavDropdown
 	} from '$lib/components/fullscreen';
-	import {
-		OptionsMenu,
-		OptionsMenuHeading,
-		OptionsMenuItem
-	} from '$lib/components/ui/options-menu';
 	import { createGridLive } from '$lib/flows/grid-live.svelte.js';
 	import { isFullscreenUrl, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
 	import { TRACKER_REGION_OPTIONS } from '../tracker-regions.js';
@@ -31,8 +27,6 @@
 		builtinLayout,
 		builtinLayouts,
 		createPanel,
-		createSavedDashboard,
-		dashboardSignature,
 		duplicatePanel,
 		movePanel,
 		removePanel,
@@ -41,12 +35,6 @@
 		updatePanelSettings
 	} from './dashboard-model.js';
 	import { applyDashboardUrl, parseDashboardUrl, copiedDashboardUrl } from './dashboard-url.js';
-	import {
-		deleteSavedView,
-		loadSavedViews,
-		persistSavedViews,
-		upsertSavedView
-	} from './dashboard-storage.js';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -58,21 +46,13 @@
 	let group = $state(initialData.group);
 	let panels = $state(initialData.panels);
 	let rangeSnapshot = $state(initialData.range);
-	let viewId = $state(initialData.viewId);
-	let viewName = $state(initialData.viewId ? 'Saved view' : 'Analysis');
-	let activeViewKey = $state(
-		initialData.viewId ? `saved:${initialData.viewId}` : 'builtin:analysis'
-	);
-	/** @type {any[]} */
-	let savedViews = $state([]);
-	let storageAvailable = $state(true);
+	let layoutName = $state('Analysis');
+	let activeLayoutKey = $state('builtin:analysis');
 	let notice = $state('');
 	let editing = $state(false);
-	/** @type {any[]} */
-	let editSnapshot = $state([]);
+	/** @type {{ panels: any[], layoutName: string, activeLayoutKey: string }} */
+	let editSnapshot = { panels: [], layoutName: 'Analysis', activeLayoutKey: 'builtin:analysis' };
 	let panelLibraryOpen = $state(false);
-	let pendingViewKey = $state('');
-	let baselineSignature = $state('');
 	/** @type {import('./DashboardCanvas.svelte').default | undefined} */
 	let dashboardCanvas = $state(undefined);
 	let suppressUrl = false;
@@ -84,76 +64,56 @@
 	});
 
 	let isFullscreen = $derived(building ? true : isFullscreenUrl(page.url));
-	let currentSignature = $derived(
-		dashboardSignature({ region: selectedRegion, group, range: rangeSnapshot, panels })
-	);
-	let dirty = $derived(Boolean(baselineSignature && currentSignature !== baselineSignature));
 	let activeTypes = $derived(new Set(panels.map((/** @type {any} */ panel) => panel.type)));
-	let viewOptions = $derived.by(() => {
+	let layoutOptions = $derived.by(() => {
 		/** @type {{label:string,value:string|null,isGroupHeader?:boolean}[]} */
 		const options = [];
-		if (activeViewKey === 'draft') options.push({ label: viewName, value: 'draft' });
-		options.push({ label: 'Built-in views', value: null, isGroupHeader: true });
+		if (activeLayoutKey === 'custom') options.push({ label: 'Custom', value: 'custom' });
+		options.push({ label: 'Layout presets', value: null, isGroupHeader: true });
 		options.push(
 			...builtinLayouts().map((layout) => ({ label: layout.name, value: `builtin:${layout.id}` }))
 		);
-		if (savedViews.length) {
-			options.push({ label: 'My views', value: null, isGroupHeader: true });
-			options.push(
-				...savedViews.map((saved) => ({ label: saved.name, value: `saved:${saved.id}` }))
-			);
-		}
 		return options;
 	});
 
 	function currentUrlState() {
-		return { region: selectedRegion, group, range: rangeSnapshot, viewId };
+		return { region: selectedRegion, group, range: rangeSnapshot };
 	}
 
-	function syncUrl(mode = 'replace', includeViewId = true) {
+	function syncUrl(mode = 'replace') {
 		if (suppressUrl || typeof window === 'undefined') return;
-		const url = applyDashboardUrl(new URL(window.location.href), currentUrlState(), {
-			includeViewId
-		});
-		const href = `${url.pathname}${url.search}`;
-		if (mode === 'push') pushState(href, {});
-		else replaceState(href, {});
+		const url = applyDashboardUrl(new URL(window.location.href), currentUrlState());
+		if (mode === 'push') pushState(`${resolve('/(main)/tracker/dashboard')}${url.search}`, {});
+		else replaceState(`${resolve('/(main)/tracker/dashboard')}${url.search}`, {});
 	}
 
-	function markUnsaved(name = viewName) {
-		viewId = null;
-		activeViewKey = 'draft';
-		viewName = name.endsWith(' draft') ? name : `${name} draft`;
+	function markCustomLayout() {
+		activeLayoutKey = 'custom';
+		layoutName = 'Custom';
 	}
 
 	/** @param {string} value @param {boolean} [update] */
 	function handleRegionChange(value, update = true) {
 		selectedRegion = value;
-		if (update) {
-			if (activeViewKey.startsWith('builtin:')) markUnsaved(viewName);
-			syncUrl('push');
-		}
+		if (update) syncUrl('push');
 	}
 
 	/** @param {string} value @param {boolean} [update] */
 	function handleGroupChange(value, update = true) {
 		group = value === 'simple' ? 'simple' : 'detailed';
-		if (update) {
-			if (activeViewKey.startsWith('builtin:')) markUnsaved(viewName);
-			syncUrl('push');
-		}
+		if (update) syncUrl('push');
 	}
 
 	/** @param {any} value */
 	function handleRangeChange(value) {
 		rangeSnapshot = value;
-		if (activeViewKey.startsWith('builtin:')) markUnsaved(viewName);
 		syncUrl('replace');
 	}
 
 	/** @param {any[]} next */
 	function setPanels(next) {
 		panels = next;
+		markCustomLayout();
 	}
 
 	/** @param {string} type */
@@ -183,14 +143,19 @@
 		// `$state` arrays are deep proxies and cannot be passed to
 		// `structuredClone`. Validation already returns a detached, JSON-safe
 		// panel list, which is exactly what the edit-cancellation snapshot needs.
-		editSnapshot = validatePanels(panels);
+		editSnapshot = {
+			panels: validatePanels(panels),
+			layoutName,
+			activeLayoutKey
+		};
 		editing = true;
 		panelLibraryOpen = true;
-		if (activeViewKey.startsWith('builtin:')) markUnsaved(viewName);
 	}
 
 	function cancelEditing() {
-		panels = editSnapshot;
+		panels = editSnapshot.panels;
+		layoutName = editSnapshot.layoutName;
+		activeLayoutKey = editSnapshot.activeLayoutKey;
 		editing = false;
 		panelLibraryOpen = false;
 	}
@@ -200,120 +165,13 @@
 		panelLibraryOpen = false;
 	}
 
-	function persistViews() {
-		storageAvailable = persistSavedViews(window.localStorage, savedViews);
-		if (!storageAvailable)
-			notice = 'Browser storage is unavailable. This view will remain in memory for this session.';
-	}
-
-	function saveCurrent({ asNew = false } = {}) {
-		let existing = !asNew && viewId ? savedViews.find((view) => view.id === viewId) : null;
-		const requestedName =
-			existing?.name ?? window.prompt('Name this dashboard', viewName.replace(/ draft$/, ''));
-		if (!requestedName?.trim()) return false;
-		const id = existing?.id ?? makeId('view');
-		const saved = createSavedDashboard({
-			id,
-			name: requestedName,
-			region: selectedRegion,
-			group,
-			range: rangeSnapshot,
-			panels,
-			createdAt: existing?.createdAt
-		});
-		savedViews = upsertSavedView(savedViews, saved);
-		persistViews();
-		viewId = saved.id;
-		viewName = saved.name;
-		activeViewKey = `saved:${saved.id}`;
-		baselineSignature = dashboardSignature(saved);
-		syncUrl('replace');
-		notice = storageAvailable ? 'Dashboard saved.' : notice;
-		return true;
-	}
-
-	function renameCurrent() {
-		const existing = savedViews.find((view) => view.id === viewId);
-		if (!existing) return;
-		const name = window.prompt('Rename dashboard', existing.name);
-		if (!name?.trim()) return;
-		const renamed = { ...existing, name: name.trim(), updatedAt: new Date().toISOString() };
-		savedViews = upsertSavedView(savedViews, renamed);
-		viewName = renamed.name;
-		persistViews();
-	}
-
-	function duplicateCurrentView() {
-		const name = window.prompt('Name the duplicate', `${viewName.replace(/ draft$/, '')} copy`);
-		if (!name?.trim()) return;
-		const duplicate = createSavedDashboard({
-			id: makeId('view'),
-			name,
-			region: selectedRegion,
-			group,
-			range: rangeSnapshot,
-			panels
-		});
-		savedViews = upsertSavedView(savedViews, duplicate);
-		persistViews();
-		applyDashboard(duplicate, `saved:${duplicate.id}`);
-	}
-
-	function deleteCurrentView() {
-		if (!viewId || !window.confirm(`Delete “${viewName}”?`)) return;
-		savedViews = deleteSavedView(savedViews, viewId);
-		persistViews();
-		applySelection('builtin:analysis');
-	}
-
-	/** @param {any} snapshot @param {string} key */
-	async function applyDashboard(snapshot, key) {
-		suppressUrl = true;
-		handleRegionChange(snapshot.region, false);
-		handleGroupChange(snapshot.group, false);
-		panels = validatePanels(snapshot.panels);
-		rangeSnapshot = snapshot.range;
-		viewId = key.startsWith('saved:') ? snapshot.id : null;
-		viewName = snapshot.name;
-		activeViewKey = key;
-		await dashboardCanvas?.applyRangeSnapshot(snapshot.range);
-		baselineSignature = dashboardSignature(snapshot);
-		suppressUrl = false;
-		syncUrl('push');
-	}
-
 	/** @param {string} key */
-	function applySelection(key) {
-		if (key.startsWith('builtin:')) {
-			const layout = builtinLayout(key.slice(8));
-			applyDashboard(
-				{
-					...layout,
-					region: '_all',
-					group: 'detailed',
-					range: { kind: 'preset', days: 7, intervalId: '30m' }
-				},
-				key
-			);
-			return;
-		}
-		const saved = savedViews.find((view) => `saved:${view.id}` === key);
-		if (saved) applyDashboard(saved, key);
-	}
-
-	/** @param {string} key */
-	function requestViewChange(key) {
-		if (!key || key === activeViewKey) return;
-		if (dirty) pendingViewKey = key;
-		else applySelection(key);
-	}
-
-	/** @param {'save'|'discard'|'cancel'} action */
-	function resolvePending(action) {
-		const target = pendingViewKey;
-		if (action === 'save' && !saveCurrent()) return;
-		pendingViewKey = '';
-		if (action !== 'cancel') applySelection(target);
+	function applyLayoutPreset(key) {
+		if (!key.startsWith('builtin:') || key === activeLayoutKey) return;
+		const layout = builtinLayout(key.slice(8));
+		panels = validatePanels(layout.panels);
+		layoutName = layout.name;
+		activeLayoutKey = key;
 	}
 
 	async function copyLink() {
@@ -327,7 +185,7 @@
 	}
 
 	function downloadData() {
-		const count = dashboardCanvas?.exportCsv(viewName) ?? 0;
+		const count = dashboardCanvas?.exportCsv(layoutName) ?? 0;
 		notice = count
 			? `Downloaded data for ${count} loaded panel${count === 1 ? '' : 's'}.`
 			: 'No panel data is loaded yet.';
@@ -342,36 +200,14 @@
 		selectedRegion = parsed.region;
 		group = parsed.group;
 		rangeSnapshot = parsed.range;
-		viewId = parsed.viewId;
-		const saved = savedViews.find((view) => view.id === viewId);
-		if (saved) panels = validatePanels(saved.panels);
-		viewName = saved?.name ?? 'Analysis draft';
-		activeViewKey = saved ? `saved:${saved.id}` : 'draft';
 		await dashboardCanvas?.applyRangeSnapshot(parsed.range);
-		baselineSignature = saved
-			? dashboardSignature(saved)
-			: dashboardSignature({
-					region: selectedRegion,
-					group,
-					range: rangeSnapshot,
-					panels
-				});
 		suppressUrl = false;
 	}
 
 	onMount(() => {
-		const loaded = loadSavedViews(window.localStorage);
-		savedViews = loaded.views;
-		storageAvailable = loaded.available;
-		const saved = savedViews.find((view) => view.id === viewId);
-		if (saved) {
-			panels = validatePanels(saved.panels);
-			viewName = saved.name;
-			activeViewKey = `saved:${saved.id}`;
-		}
-		baselineSignature = saved ? dashboardSignature(saved) : currentSignature;
-		// Remove layout payloads produced by the earlier dashboard prototype.
-		if (new URL(window.location.href).searchParams.has('layout')) syncUrl('replace');
+		// Remove layout payloads and saved-view IDs produced by earlier dashboard prototypes.
+		const params = new URL(window.location.href).searchParams;
+		if (params.has('layout') || params.has('view')) syncUrl('replace');
 		window.addEventListener('popstate', restoreFromUrl);
 		return () => window.removeEventListener('popstate', restoreFromUrl);
 	});
@@ -398,7 +234,7 @@
 					{#if isFullscreen}
 						<FullscreenNavDropdown />
 						<a
-							href="/tracker/dashboard"
+							href={resolve('/(main)/tracker/dashboard')}
 							class="rounded-lg px-2 py-1 text-sm font-semibold text-dark-grey no-underline hover:bg-warm-grey hover:no-underline lg:text-base"
 						>
 							Dashboard tracker
@@ -410,23 +246,13 @@
 					{#if isFullscreen}<div class="h-8 shrink-0 border-l border-warm-grey"></div>{/if}
 					<div class="flex min-w-0 items-center gap-3 {isFullscreen ? 'pl-3' : ''}">
 						<FormSelect
-							selected={activeViewKey}
-							options={viewOptions}
-							onchange={(option) => requestViewChange(String(option.value ?? ''))}
-							formLabel="Dashboard view"
+							selected={activeLayoutKey}
+							options={layoutOptions}
+							onchange={(option) => applyLayoutPreset(String(option.value ?? ''))}
+							formLabel="Layout preset"
 							compact
 							widthClass="w-auto"
 						/>
-						{#if dirty}
-							<span class="hidden shrink-0 font-space text-xs font-medium text-red tablet:inline"
-								>Unsaved changes</span
-							>
-						{:else if viewId}
-							<span
-								class="hidden shrink-0 items-center gap-1 font-space text-xs text-mid-grey tablet:flex"
-								><Check class="size-3.5" />Saved</span
-							>
-						{/if}
 						{#if editing}
 							<button
 								type="button"
@@ -443,16 +269,6 @@
 						{:else}
 							<button
 								type="button"
-								onclick={() => saveCurrent()}
-								class="flex size-9 items-center justify-center rounded-lg text-dark-grey transition-colors hover:bg-warm-grey tablet:w-auto tablet:gap-1.5 tablet:px-3"
-								aria-label="Save dashboard"
-							>
-								<Save class="size-4" /><span
-									class="hidden font-space text-sm font-medium tablet:inline">Save</span
-								>
-							</button>
-							<button
-								type="button"
 								onclick={startEditing}
 								class="flex size-9 items-center justify-center rounded-md border border-mid-warm-grey bg-white text-dark-grey transition-colors hover:bg-warm-grey tablet:w-auto tablet:gap-1.5 tablet:px-3"
 								aria-label="Customise dashboard"
@@ -462,39 +278,6 @@
 								>
 							</button>
 						{/if}
-
-						<OptionsMenu showDocumentation={false}>
-							{#snippet sections({ close })}
-								<OptionsMenuHeading icon={Save}>Dashboard</OptionsMenuHeading>
-								<OptionsMenuItem
-									onclick={() => {
-										saveCurrent({ asNew: true });
-										close();
-									}}>Save as new</OptionsMenuItem
-								>
-								<OptionsMenuItem
-									onclick={() => {
-										renameCurrent();
-										close();
-									}}>Rename</OptionsMenuItem
-								>
-								<OptionsMenuItem
-									onclick={() => {
-										duplicateCurrentView();
-										close();
-									}}>Duplicate view</OptionsMenuItem
-								>
-								{#if viewId}
-									<OptionsMenuItem
-										icon={Trash2}
-										onclick={() => {
-											deleteCurrentView();
-											close();
-										}}>Delete view</OptionsMenuItem
-									>
-								{/if}
-							{/snippet}
-						</OptionsMenu>
 					</div>
 				{/snippet}
 
@@ -503,6 +286,7 @@
 						{isFullscreen}
 						onfullscreenchange={() => toggleFullscreenMode(isFullscreen)}
 						ondownloadcsv={downloadData}
+						downloadLabel="Dashboard data"
 						oncopylink={copyLink}
 						showCopyLink
 					/>
@@ -614,43 +398,4 @@
 		class="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-dark-grey px-4 py-3 text-sm font-medium text-white shadow-lg"
 		><PanelRightOpen class="size-4" /> <span class="font-space">Add panel</span></button
 	>
-{/if}
-
-{#if pendingViewKey}
-	<div
-		class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="unsaved-title"
-	>
-		<div class="w-full max-w-md rounded-lg border border-mid-warm-grey bg-white p-6 shadow-xl">
-			<p class="m-0 font-space text-xxs font-medium uppercase tracking-wider text-red">Dashboard</p>
-			<h2 id="unsaved-title" class="m-0 mt-2 text-lg font-semibold text-dark-grey">
-				Save changes?
-			</h2>
-			<p class="mt-2 text-sm leading-6 text-mid-grey">
-				This dashboard has unsaved filter or layout changes.
-			</p>
-			<div class="mt-6 flex justify-end gap-2 font-space">
-				<button
-					type="button"
-					onclick={() => resolvePending('cancel')}
-					class="rounded-md px-4 py-2 text-sm font-medium text-mid-grey hover:bg-warm-grey hover:text-dark-grey"
-					>Cancel</button
-				>
-				<button
-					type="button"
-					onclick={() => resolvePending('discard')}
-					class="rounded-md px-4 py-2 text-sm font-medium text-dark-grey hover:bg-warm-grey"
-					>Discard</button
-				>
-				<button
-					type="button"
-					onclick={() => resolvePending('save')}
-					class="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-dark-grey"
-					>Save</button
-				>
-			</div>
-		</div>
-	</div>
 {/if}

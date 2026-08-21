@@ -1,8 +1,10 @@
 <script>
-	import { ArrowUpRight, ChartNoAxesCombined, Map } from '@lucide/svelte';
+	import { resolve } from '$app/paths';
+	import { ArrowUpRight, ChartNoAxesCombined, Compass, Map } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 
+	/** @type {Array<{href:'/tracker/map'|'/tracker/dashboard'|'/tracker/explore',name:string,label:string,description:string,icon:any}>} */
 	const reviews = [
 		{
 			href: '/tracker/map',
@@ -19,6 +21,14 @@
 			description:
 				'Compare system metrics and charts in a configurable workspace with saved views and shareable layouts.',
 			icon: ChartNoAxesCombined
+		},
+		{
+			href: '/tracker/explore',
+			name: 'Explore',
+			label: 'Explore-first',
+			description:
+				'Build a session-based canvas of charts and range-aware metrics from curated electricity queries.',
+			icon: Compass
 		}
 	];
 </script>
@@ -41,18 +51,18 @@
 	{/snippet}
 	{#snippet subheading()}
 		<p class="mx-auto mb-0 max-w-[720px] text-center text-sm text-mid-grey">
-			Two approaches to exploring Australia’s electricity system. Open either concept below to
-			review its information architecture, controls and responsive behaviour.
+			Three approaches to exploring Australia’s electricity system. Open a concept below to review
+			its information architecture, controls and responsive behaviour.
 		</p>
 	{/snippet}
 </PageHeaderSimple>
 
 <main class="container py-12 md:py-20">
-	<div class="mx-auto grid max-w-[1100px] grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
+	<div class="mx-auto grid max-w-[1400px] grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
 		{#each reviews as review (review.href)}
 			{@const Icon = review.icon}
 			<a
-				href={review.href}
+				href={resolve(review.href)}
 				class="group flex min-h-[260px] flex-col rounded-xl border border-mid-warm-grey bg-white p-8 text-dark-grey no-underline transition-colors hover:border-dark-grey hover:no-underline md:p-10"
 			>
 				<div class="flex items-start justify-between gap-6">

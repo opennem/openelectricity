@@ -2,12 +2,24 @@ import { OpenElectricityClient, NoDataFound } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 import { MARKET_METRIC_NAMES } from '$lib/components/charts/network/market-metric-names.js';
+import { apiRangeLimitError } from '$lib/oe-api/data-limits.js';
 import { auUpstreamRanges, mergeAuResponses } from '$lib/server/network-data-au.js';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
 	baseUrl: PUBLIC_OE_API_URL
 });
+
+const VALID_REGIONS = new Set(['au', '_all', 'wem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']);
+const VALID_INTERVALS = new Set(['5m', '1h', '1d', '7d', '1M', '3M', '1y']);
+const VALID_DATA_METRICS = new Set([
+	'power',
+	'energy',
+	'market_value',
+	'emissions',
+	'emissions_intensity'
+]);
+const LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2})?$/;
 
 /**
  * Network-level time-series for the Explorer dashboard.
@@ -26,7 +38,7 @@ const client = new OpenElectricityClient({
  *   region           — Explorer region value ('_all', 'nsw1'…, 'wem'), or 'au'
  *                      for NEM+WEM merged server-side (network-data-au.js;
  *                      metric=price stays NEM-only — no national spot price)
- *   metric           — 'power' | 'energy' | 'emissions' | 'emissions_intensity'
+ *   metric           — 'power' | 'energy' | 'market_value' | 'emissions' | 'emissions_intensity'
  *                      | one of the MARKET_METRIC_NAMES keys
  *   interval         — native OE interval ('5m', '1h', '1d', '1M', '3M', '1y')
  *   date_start       — timezone-naive local start (YYYY-MM-DDTHH:mm:ss)
@@ -116,6 +128,35 @@ export async function GET({ url, setHeaders }) {
 	const dateStart = searchParams.get('date_start') || undefined;
 	const dateEnd = searchParams.get('date_end') || undefined;
 	const primaryGrouping = searchParams.get('primary_grouping') || undefined;
+	const marketMetric = Object.hasOwn(MARKET_METRIC_NAMES, metric);
+
+	if (!VALID_REGIONS.has(region)) {
+		return Response.json({ error: `Invalid region: ${region}` }, { status: 400 });
+	}
+	if (!VALID_INTERVALS.has(interval)) {
+		return Response.json({ error: `Invalid interval: ${interval}` }, { status: 400 });
+	}
+	if (!VALID_DATA_METRICS.has(metric) && !marketMetric) {
+		return Response.json({ error: `Invalid metric: ${metric}` }, { status: 400 });
+	}
+	if (primaryGrouping && primaryGrouping !== 'network_region') {
+		return Response.json(
+			{ error: `Invalid primary grouping: ${primaryGrouping}` },
+			{ status: 400 }
+		);
+	}
+	if (
+		(dateStart && !LOCAL_DATE_TIME.test(dateStart)) ||
+		(dateEnd && !LOCAL_DATE_TIME.test(dateEnd)) ||
+		(dateStart && dateEnd && dateStart >= dateEnd)
+	) {
+		return Response.json({ error: 'Invalid date range.' }, { status: 400 });
+	}
+	if (region === 'au' && metric === 'price') {
+		return Response.json({ error: 'A national spot price is not available.' }, { status: 400 });
+	}
+	const rangeError = apiRangeLimitError(interval, dateStart, dateEnd);
+	if (rangeError) return Response.json({ error: rangeError }, { status: 400 });
 
 	const { networkId, networkRegion } = regionToNetwork(region);
 
@@ -161,13 +202,24 @@ export async function GET({ url, setHeaders }) {
 		if (err instanceof NoDataFound) {
 			return Response.json({ region, network_id: networkId, response: { data: [] } });
 		}
-		console.error('Error fetching network data:', err);
+		const status = [400, 403, 429].includes(Number(/** @type {any} */ (err).statusCode))
+			? Number(/** @type {any} */ (err).statusCode)
+			: 500;
+		console.error(
+			JSON.stringify({
+				message: 'Error fetching network data',
+				region,
+				metric,
+				interval,
+				error: /** @type {any} */ (err).message
+			})
+		);
 		return Response.json(
 			{
 				error: /** @type {any} */ (err).message,
 				details: /** @type {any} */ (err).details
 			},
-			{ status: 500 }
+			{ status }
 		);
 	}
 }

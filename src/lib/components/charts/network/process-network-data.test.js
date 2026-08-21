@@ -94,6 +94,20 @@ describe('processNetworkData', () => {
 		const res = makeResponse([{ fueltech: 'unobtanium', data: [['2024-01-01T00:00:00', 5]] }]);
 		expect(processNetworkData(res, configFor(detailed))).toBeNull();
 	});
+
+	it('rolls up and inverts the aggregate Sources & Loads grouping', () => {
+		const sourcesLoads = getGroup('sources_loads');
+		const config = configFor(sourcesLoads);
+		config.loadsToInvert = ['total_loads'];
+		const res = makeResponse([
+			{ fueltech: 'pumps', data: [['2024-01-01T00:00:00', 30]] },
+			{ fueltech: 'solar_utility', data: [['2024-01-01T00:00:00', 50]] }
+		]);
+
+		const out = processNetworkData(res, config);
+		expect(out?.data[0].total_loads).toBe(-30);
+		expect(out?.data[0].total_sources).toBe(50);
+	});
 });
 
 describe('battery aggregate vs splits (prefer-splits)', () => {

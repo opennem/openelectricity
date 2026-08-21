@@ -10,6 +10,8 @@ export const MARKET_METRIC_NAMES = {
 	price: ['price'],
 	demand: ['demand'],
 	demand_energy: ['demand_energy'],
+	demand_gross: ['demand_gross'],
+	demand_gross_energy: ['demand_gross_energy'],
 	curtailment: ['curtailment_solar_utility', 'curtailment_wind'],
 	curtailment_energy: ['curtailment_solar_utility_energy', 'curtailment_wind_energy'],
 	// Single-fuel-tech curtailment — the facility page shows only the split
@@ -22,6 +24,12 @@ export const MARKET_METRIC_NAMES = {
 	curtailment_solar_energy: ['curtailment_solar_utility_energy'],
 	flows: ['flow_imports', 'flow_exports'],
 	flows_energy: ['flow_imports_energy', 'flow_exports_energy'],
+	renewable_generation: ['generation_renewable'],
+	renewable_generation_energy: ['generation_renewable_energy'],
+	renewable_generation_storage: ['generation_renewable_with_storage'],
+	renewable_generation_storage_energy: ['generation_renewable_with_storage_energy'],
+	renewable_share: ['renewable_proportion'],
+	renewable_share_storage: ['renewable_with_storage_proportion'],
 	// Renewables-share inputs (homepage methodology: renewables ÷ gross demand).
 	// Fetched headlessly for the tracker's metrics grid — never charted directly.
 	renewables: ['generation_renewable', 'demand_gross'],

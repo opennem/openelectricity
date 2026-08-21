@@ -1,8 +1,14 @@
 <script>
 	import { formatSI } from '$lib/utils/si-units.js';
 
-	/** @type {{ dataset?: {data: any[], seriesNames: string[], seriesLabels: Record<string,string>, seriesColours?: Record<string,string>} | null, hiddenSeries?: string[], metric?: string, ontoggle?: (series: string) => void }} */
-	let { dataset = null, hiddenSeries = [], metric = 'power', ontoggle } = $props();
+	/** @type {{ dataset?: {data: any[], seriesNames: string[], seriesLabels: Record<string,string>, seriesColours?: Record<string,string>} | null, hiddenSeries?: string[], metric?: string, ontoggle?: (series: string) => void, standalone?: boolean }} */
+	let {
+		dataset = null,
+		hiddenSeries = [],
+		metric = 'power',
+		ontoggle,
+		standalone = false
+	} = $props();
 
 	let rows = $derived.by(() => {
 		if (!dataset) return [];
@@ -77,14 +83,21 @@
 			</td>
 			<td class="px-2 py-1.5">
 				<div class="mr-3 text-right font-mono tabular-nums text-dark-grey">
-					{formatSI(row.value, { baseUnit: unit, maximumFractionDigits: 1 })}
+					{formatSI(row.value, {
+						baseUnit: metric === 'energy' ? unit : '',
+						maximumFractionDigits: 1
+					})}
 				</div>
 			</td>
 		</tr>
 	{/each}
 {/snippet}
 
-<div class="h-full overflow-auto border-t border-mid-warm-grey/40 md:border-t-0 md:border-l">
+<div
+	class="h-full overflow-auto {standalone
+		? ''
+		: 'border-t border-mid-warm-grey/40 md:border-t-0 md:border-l'}"
+>
 	{#if rows.length}
 		<table class="w-full table-fixed">
 			<thead class="border-b border-warm-grey bg-light-warm-grey">

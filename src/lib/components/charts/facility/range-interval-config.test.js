@@ -6,6 +6,7 @@ import {
 	getIntervalSpec,
 	getIntervalsForRange,
 	getDefaultIntervalForRange,
+	formatIntervalQuantityUnit,
 	getIntervalOptionsForDays,
 	getPresetByDays,
 	viewportDurationLimits
@@ -69,6 +70,15 @@ describe('helpers', () => {
 		expect(hourly?.aggregate).toBeNull();
 		// Anything coarser than 30m is energy, not power.
 		expect(hourly?.metric).toBe('energy');
+	});
+
+	it('describes quantity buckets and their curve consistently', () => {
+		expect(formatIntervalQuantityUnit('tCO₂e', '30m')).toBe('tCO₂e/30 min');
+		expect(formatIntervalQuantityUnit('tCO₂e', '1h')).toBe('tCO₂e/hour');
+		expect(formatIntervalQuantityUnit('tCO₂e', '1d')).toBe('tCO₂e/day');
+		expect(formatIntervalQuantityUnit('tCO₂e', 'unknown')).toBe('tCO₂e');
+		expect(getIntervalSpec('30m')?.curveType).toBe('straight');
+		expect(getIntervalSpec('1h')?.curveType).toBe('step');
 	});
 
 	it('viewportDurationLimits: tight window for fine grains, full history for energy', () => {

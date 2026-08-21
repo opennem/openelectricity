@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ChartDataManager, {
+	canonicalChartRequestKey,
 	clearCompletedResponses,
-	clearInFlightFetches
+	clearInFlightFetches,
+	getSharedFetchStats,
+	resetSharedFetchStats
 } from './ChartDataManager.svelte.js';
 import { processFacilityPower } from '../facility/process-facility-power.js';
 
@@ -110,6 +113,7 @@ describe('ChartDataManager', () => {
 		// Module-level LRU / in-flight map would otherwise leak across tests.
 		clearCompletedResponses();
 		clearInFlightFetches();
+		resetSharedFetchStats();
 	});
 
 	afterEach(() => {
@@ -779,6 +783,7 @@ describe('ChartDataManager', () => {
 
 			// Both requests are in flight before any resolves → single fetch.
 			expect(spy).toHaveBeenCalledTimes(1);
+			expect(getSharedFetchStats()).toMatchObject({ network: 1, inFlightReuse: 1 });
 
 			resolveFetch(undefined);
 			await vi.advanceTimersByTimeAsync(200);
@@ -812,6 +817,55 @@ describe('ChartDataManager', () => {
 			await vi.advanceTimersByTimeAsync(200);
 
 			expect(fetchSpy).toHaveBeenCalledTimes(1);
+			expect(getSharedFetchStats()).toMatchObject({ network: 1, responseCacheReuse: 1 });
+		});
+
+		it('canonicalises query order and repeated facility codes', () => {
+			const first =
+				'/api/facilities/compare?metric=power&facility_code=B&interval=5m&facility_code=A&network_id=NEM';
+			const second =
+				'/api/facilities/compare?network_id=NEM&facility_code=A&facility_code=B&interval=5m&metric=power';
+
+			expect(canonicalChartRequestKey(first)).toBe(canonicalChartRequestKey(second));
+		});
+
+		it('collapses equivalent live requests created seconds apart in one interval bucket', async () => {
+			const { spy, resolveFetch } = deferredFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const start = new Date('2026-08-20T12:00:00+10:00').getTime();
+			const firstEnd = new Date('2026-08-20T12:02:10+10:00').getTime();
+			const secondEnd = new Date('2026-08-20T12:02:50+10:00').getTime();
+			const m1 = createManager({ interval: '5m', metric: 'power' });
+			const m2 = createManager({ interval: '5m', metric: 'power' });
+
+			m1.requestRange(start, firstEnd, { immediate: true });
+			m2.requestRange(start, secondEnd, { immediate: true });
+
+			expect(spy).toHaveBeenCalledTimes(1);
+			expect(getSharedFetchStats()).toMatchObject({ network: 1, inFlightReuse: 1 });
+
+			resolveFetch(undefined);
+			await vi.advanceTimersByTimeAsync(0);
+		});
+
+		it('keeps materially different requests separate', async () => {
+			const { spy, resolveFetch } = deferredFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const start = new Date('2026-08-20T12:00:00+10:00').getTime();
+			const end = new Date('2026-08-20T12:02:10+10:00').getTime();
+			const nem = createManager({ interval: '5m', metric: 'power', networkId: 'NEM' });
+			const wem = createManager({ interval: '5m', metric: 'power', networkId: 'WEM' });
+
+			nem.requestRange(start, end, { immediate: true });
+			wem.requestRange(start, end, { immediate: true });
+
+			expect(spy).toHaveBeenCalledTimes(2);
+			expect(getSharedFetchStats()).toMatchObject({ network: 2, inFlightReuse: 0 });
+
+			resolveFetch(undefined);
+			await vi.advanceTimersByTimeAsync(0);
 		});
 
 		it('re-fetches an identical URL once the response cache TTL has expired', async () => {

@@ -7,16 +7,17 @@ excluded from sitemaps and marked with `noindex` metadata. The Map tracker at
 
 ## State architecture
 
-- The page owns region, grouping, panel composition, edit state and saved-view
-  identity with local Svelte runes.
+- The page owns region, grouping, panel composition and edit state with local
+  Svelte runes.
 - `DashboardCanvas.svelte` owns one `createChartRangeControl`, its viewport,
   shared hover state, visible datasets and a record of dynamically mounted chart
   references. Adding or removing a panel therefore joins or leaves the existing
   synchronisation protocol without a dashboard or global store.
-- Named views use the versioned `oe.tracker.dashboard.views.v1` local-storage
-  key. The former v2 keys are read for migration.
-- URLs carry compact scope and range state. Panel composition stays in built-in
-  or locally saved views and is never serialised into the query string.
+- Built-in layouts are temporary composition presets. Custom layouts remain in
+  memory for the current page session; saved views are deferred until after the
+  core dashboard experience is settled.
+- URLs carry compact scope and range state. Panel composition is never
+  serialised into the query string.
 - Current flow and price labels on the map come from `createGridLive`; analytical
   charts use the selected dashboard range and interval.
 
@@ -34,7 +35,7 @@ Source reference: `opennem/opennem-fe` (linked from the repository root README).
 - Metrics and fuel-technology breakdown
 - Shared hover, pan/zoom, live-edge advancement and fetch reconciliation
 - Optional live map panel
-- Local named views, compact analysis links and CSV export
+- In-memory layout customisation, compact analysis links and CSV export
 
 ### Deferred parity
 

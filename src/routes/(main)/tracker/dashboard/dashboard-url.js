@@ -27,23 +27,22 @@ export function parseDashboardUrl(params, context) {
 		region,
 		group,
 		range,
-		// Layout composition belongs to built-in or locally saved dashboard
-		// state. It is deliberately not read from the URL.
+		// Layout composition belongs to a built-in preset or the current in-memory
+		// custom layout. It is deliberately not read from the URL.
 		panels: builtinLayout('analysis').panels,
-		viewId: params.get('view') || null,
 		fullscreen: params.get('fullscreen') !== 'false'
 	};
 }
 
 /**
  * Materialise compact navigation state into a URL. Panel composition is
- * intentionally excluded: it belongs to built-in or locally saved views, not
- * browser history. Delete the former parameter when old links are revisited.
+ * intentionally excluded: it belongs to a built-in preset or the current
+ * in-memory custom layout, not browser history. Delete former prototype
+ * parameters when old links are revisited.
  * @param {URL} url
- * @param {{ region: string, group: string, range: any, viewId?: string | null }} state
- * @param {{ includeViewId?: boolean }} [options]
+ * @param {{ region: string, group: string, range: any }} state
  */
-export function applyDashboardUrl(url, state, { includeViewId = true } = {}) {
+export function applyDashboardUrl(url, state) {
 	url.searchParams.set('region', state.region);
 	if (state.group === 'simple') url.searchParams.set('group', 'simple');
 	else url.searchParams.delete('group');
@@ -66,12 +65,11 @@ export function applyDashboardUrl(url, state, { includeViewId = true } = {}) {
 		});
 	}
 	url.searchParams.delete('layout');
-	if (includeViewId && state.viewId) url.searchParams.set('view', state.viewId);
-	else url.searchParams.delete('view');
+	url.searchParams.delete('view');
 	return url;
 }
 
 /** @param {URL} url @param {Parameters<typeof applyDashboardUrl>[1]} state */
 export function copiedDashboardUrl(url, state) {
-	return applyDashboardUrl(new URL(url.href), state, { includeViewId: false });
+	return applyDashboardUrl(new URL(url.href), state);
 }

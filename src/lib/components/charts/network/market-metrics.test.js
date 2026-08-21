@@ -18,10 +18,8 @@ import {
 describe('market metric config', () => {
 	const publicMetrics = Object.keys(MARKET_METRIC_NAMES);
 
-	// price renders through NetworkChart's dedicated price arm; the renewables
-	// pair is fetched headlessly for the tracker's metrics grid
-	// (network-market-data.svelte.js) and is never charted.
-	const UNCHARTED_METRICS = ['price', 'renewables', 'renewables_energy'];
+	// Price renders through NetworkChart's dedicated price arm.
+	const UNCHARTED_METRICS = ['price'];
 
 	it('covers every charted public metric', () => {
 		const missing = publicMetrics.filter(

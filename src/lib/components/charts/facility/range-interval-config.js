@@ -17,6 +17,7 @@ import { POWER_THRESHOLD } from '$lib/utils/metric-interval';
  * @property {string | null} aggregate - render-layer aggregation kind, or null when the fetch grain already matches
  * @property {'straight' | 'step'} curveType
  * @property {string} label
+ * @property {string} unitDenominator - Singular bucket label used in quantity units
  */
 
 /** @type {Record<string, IntervalSpec>} */
@@ -26,54 +27,89 @@ export const INTERVAL_SPEC = {
 		apiInterval: '5m',
 		aggregate: null,
 		curveType: 'straight',
-		label: '5 min'
+		label: '5 min',
+		unitDenominator: '5 min'
 	},
 	'30m': {
 		metric: 'power',
 		apiInterval: '5m',
 		aggregate: '30m',
 		curveType: 'straight',
-		label: '30 min'
+		label: '30 min',
+		unitDenominator: '30 min'
 	},
 	'1h': {
 		metric: 'energy',
 		apiInterval: '1h',
 		aggregate: null,
 		curveType: 'step',
-		label: 'Hourly'
+		label: 'Hourly',
+		unitDenominator: 'hour'
 	},
-	'1d': { metric: 'energy', apiInterval: '1d', aggregate: null, curveType: 'step', label: 'Daily' },
-	'7d': { metric: 'energy', apiInterval: '7d', aggregate: null, curveType: 'step', label: 'Week' },
-	'1M': { metric: 'energy', apiInterval: '1M', aggregate: null, curveType: 'step', label: 'Month' },
+	'1d': {
+		metric: 'energy',
+		apiInterval: '1d',
+		aggregate: null,
+		curveType: 'step',
+		label: 'Daily',
+		unitDenominator: 'day'
+	},
+	'7d': {
+		metric: 'energy',
+		apiInterval: '7d',
+		aggregate: null,
+		curveType: 'step',
+		label: 'Week',
+		unitDenominator: 'week'
+	},
+	'1M': {
+		metric: 'energy',
+		apiInterval: '1M',
+		aggregate: null,
+		curveType: 'step',
+		label: 'Month',
+		unitDenominator: 'month'
+	},
 	season: {
 		metric: 'energy',
 		apiInterval: '1M',
 		aggregate: 'season',
 		curveType: 'step',
-		label: 'Season'
+		label: 'Season',
+		unitDenominator: 'season'
 	},
 	quarter: {
 		metric: 'energy',
 		apiInterval: '3M',
 		aggregate: null,
 		curveType: 'step',
-		label: 'Quarter'
+		label: 'Quarter',
+		unitDenominator: 'quarter'
 	},
 	half: {
 		metric: 'energy',
 		apiInterval: '1M',
 		aggregate: 'half',
 		curveType: 'step',
-		label: 'Half-Year'
+		label: 'Half-Year',
+		unitDenominator: 'half-year'
 	},
 	fy: {
 		metric: 'energy',
 		apiInterval: '1M',
 		aggregate: 'fy',
 		curveType: 'step',
-		label: 'Fin-Year'
+		label: 'Fin-Year',
+		unitDenominator: 'financial year'
 	},
-	'1y': { metric: 'energy', apiInterval: '1y', aggregate: null, curveType: 'step', label: 'Year' }
+	'1y': {
+		metric: 'energy',
+		apiInterval: '1y',
+		aggregate: null,
+		curveType: 'step',
+		label: 'Year',
+		unitDenominator: 'year'
+	}
 };
 
 /** @type {Array<{ id: string, label: string, days: number }>} */
@@ -125,6 +161,17 @@ export function viewportDurationLimits(fine) {
  */
 export function getIntervalSpec(id) {
 	return INTERVAL_SPEC[id];
+}
+
+/**
+ * Label a per-bucket quantity with the selected display interval.
+ * @param {string} baseUnit
+ * @param {string} intervalId
+ * @returns {string}
+ */
+export function formatIntervalQuantityUnit(baseUnit, intervalId) {
+	const denominator = getIntervalSpec(intervalId)?.unitDenominator;
+	return denominator ? `${baseUnit}/${denominator}` : baseUnit;
 }
 
 /**

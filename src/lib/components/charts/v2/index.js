@@ -55,7 +55,11 @@ export { toolbarTrayClass } from './toolbar-tray.js';
 export { sectionCardClass } from './section-card.js';
 
 // Data management
-export { default as ChartDataManager } from './ChartDataManager.svelte.js';
+export {
+	default as ChartDataManager,
+	canonicalChartRequestKey,
+	getSharedFetchStats
+} from './ChartDataManager.svelte.js';
 
 // Interval configuration
 export { INTERVAL_CONFIG, getIntervalForDuration } from './intervalConfig.js';

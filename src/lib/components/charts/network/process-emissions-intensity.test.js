@@ -106,6 +106,33 @@ describe('processEmissionsIntensity', () => {
 		expect(result?.data[0].energy_mwh).toBe(1200);
 	});
 
+	it('applies grouping membership and hidden groups to both ratio components', () => {
+		const response = {
+			data: [
+				metricEntry('emissions', [
+					{ fueltech: 'coal_black', values: [[T0, 100]] },
+					{ fueltech: 'wind', values: [[T0, 0]] },
+					{ fueltech: 'unmapped_source', values: [[T0, 999]] }
+				]),
+				metricEntry('power', [
+					{ fueltech: 'coal_black', values: [[T0, 100]] },
+					{ fueltech: 'wind', values: [[T0, 200]] },
+					{ fueltech: 'unmapped_source', values: [[T0, 999]] }
+				])
+			]
+		};
+
+		const result = processEmissionsIntensity(response, {
+			intervalHours: 1,
+			groupMap: { coal: ['coal_black'], wind: ['wind'] },
+			excludedGroups: ['coal']
+		});
+
+		expect(result?.data[0].emissions).toBe(0);
+		expect(result?.data[0].energy_mwh).toBe(200);
+		expect(deriveIntensityDisplayRows(result?.data ?? [])[0].intensity).toBe(0);
+	});
+
 	it('returns null when either component is missing', () => {
 		const emissionsOnly = {
 			data: [metricEntry('emissions', [{ fueltech: 'coal_black', values: [[T0, 1]] }])]
