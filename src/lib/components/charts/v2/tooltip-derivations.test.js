@@ -229,6 +229,16 @@ describe('buildSeriesRows', () => {
 		expect(rows[0].value).toBe(12.345);
 	});
 
+	it('prefers the formatTooltipY override — axis formatters that blank some values must not leak into tooltips', () => {
+		const chart = makeChart({
+			visibleSeriesNames: ['price'],
+			convertAndFormatValue: () => 'nope',
+			formatTooltipY: (/** @type {number} */ v) => `$${v.toFixed(2)}`
+		});
+		const rows = buildSeriesRows(chart, { price: 16500 });
+		expect(rows[0].formattedValue).toBe('$16500.00');
+	});
+
 	it('still renders a row for missing/non-numeric series, with undefined value', () => {
 		const chart = makeChart({
 			visibleSeriesNames: ['coal', 'gas', 'wind']

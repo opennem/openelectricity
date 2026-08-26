@@ -342,7 +342,7 @@ function nextBucketStart(interval, bucketStart) {
  * @property {string} [seriesKey] - Identity of the series set baked into `processResponse`
  *   (unit set, fuel-tech grouping…). Owners compare it to detect a series-only change
  *   that needs a new manager even though cacheKey/interval/metric are unchanged.
- * @property {(response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null} processResponse - Maps a raw API response to chart-ready rows
+ * @property {(response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string>, groupFuelTechs?: Record<string, string[]> } | null} processResponse - Maps a raw API response to chart-ready rows
  * @property {(params: URLSearchParams) => string} buildFetchUrl - Builds the request URL from the standard params (interval, metric, date_start, date_end)
  */
 
@@ -353,7 +353,7 @@ export default class ChartDataManager {
 	/** @type {string} */ interval;
 	/** @type {string} */ metric;
 	/** @type {string} */ seriesKey;
-	/** @type {(response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null} */
+	/** @type {(response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string>, groupFuelTechs?: Record<string, string[]> } | null} */
 	processResponse;
 	/** @type {(params: URLSearchParams) => string} */
 	buildFetchUrl;
@@ -369,7 +369,7 @@ export default class ChartDataManager {
 	/**
 	 * Series metadata (names, colours, labels) from the initial processing.
 	 * These don't change between fetches for the same facility.
-	 * @type {{seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string>} | null}
+	 * @type {{seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string>, groupFuelTechs?: Record<string, string[]>} | null}
 	 */
 	#seriesMeta = $state.raw(null);
 
@@ -487,7 +487,8 @@ export default class ChartDataManager {
 		this.#seriesMeta = {
 			seriesNames: result.seriesNames,
 			seriesColours: result.seriesColours,
-			seriesLabels: result.seriesLabels
+			seriesLabels: result.seriesLabels,
+			groupFuelTechs: result.groupFuelTechs
 		};
 
 		this.#updateCacheRange();
@@ -938,7 +939,8 @@ export default class ChartDataManager {
 			this.#seriesMeta = {
 				seriesNames: result.seriesNames,
 				seriesColours: result.seriesColours,
-				seriesLabels: result.seriesLabels
+				seriesLabels: result.seriesLabels,
+				groupFuelTechs: result.groupFuelTechs
 			};
 		}
 

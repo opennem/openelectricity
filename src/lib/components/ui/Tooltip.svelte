@@ -3,7 +3,8 @@
 
 	/**
 	 * @type {{
-	 *   text: string,
+	 *   text?: string,
+	 *   lines?: string[],
 	 *   children: import('svelte').Snippet,
 	 *   side?: 'top' | 'bottom' | 'left' | 'right',
 	 *   sideOffset?: number,
@@ -13,7 +14,8 @@
 	 * }}
 	 */
 	let {
-		text,
+		text = '',
+		lines = /** @type {string[]} */ ([]),
 		children,
 		side = 'top',
 		sideOffset = 4,
@@ -37,7 +39,13 @@
 				<div
 					class="bg-dark-grey rounded-lg py-3 px-4 shadow text-white text-xs font-space max-w-sm leading-relaxed"
 				>
-					{text}
+					{#if lines.length}
+						{#each lines as line (line)}
+							<div>{line}</div>
+						{/each}
+					{:else}
+						{text}
+					{/if}
 					{#if learnMoreHref}
 						<a
 							href={learnMoreHref}

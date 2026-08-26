@@ -17,7 +17,7 @@
 	import { untrack } from 'svelte';
 	import { LineChart } from '@lucide/svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
+	import { formatRangeLabel, ChartRangeBar } from '$lib/components/charts/v2';
 	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
 	import { MIN_DATE } from '$lib/utils/date-range';
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
@@ -69,9 +69,7 @@
 	let dateRangeLabel = $derived.by(() => {
 		const start = viewStart || anchorStart;
 		const end = viewEnd || anchorEnd;
-		return formatDateRange(new Date(start), new Date(end), ianaTimeZone, {
-			yearIfNotCurrent: true
-		});
+		return formatRangeLabel(start, end, range.displayInterval, ianaTimeZone);
 	});
 
 	/** @type {import('$lib/components/charts/flows/InterconnectorChart.svelte').default | undefined} */

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import sourcesLoadsGroup from '$lib/fuel-tech-groups/sources-loads';
 import { processNetworkData } from './process-network-data.js';
 import { getGroup } from './groups.js';
 
@@ -84,6 +85,18 @@ describe('processNetworkData', () => {
 		expect(out.seriesNames).not.toContain('coal_black');
 	});
 
+	it('reports the fuel techs actually present per group', () => {
+		const res = makeResponse([
+			{ fueltech: 'coal_black', data: [['2024-01-01T00:00:00', 100]] },
+			{ fueltech: 'coal_brown', data: [['2024-01-01T00:00:00', 40]] },
+			{ fueltech: 'solar_utility', data: [['2024-01-01T00:00:00', 50]] }
+		]);
+		const out = processNetworkData(res, configFor(simple));
+		// Only present members — the config's full solar list isn't echoed back.
+		expect(out?.groupFuelTechs.coal?.sort()).toEqual(['coal_black', 'coal_brown']);
+		expect(out?.groupFuelTechs.solar).toEqual(['solar_utility']);
+	});
+
 	it('inverts load series', () => {
 		const res = makeResponse([{ fueltech: 'pumps', data: [['2024-01-01T00:00:00', 30]] }]);
 		const out = processNetworkData(res, configFor(detailed));
@@ -96,8 +109,10 @@ describe('processNetworkData', () => {
 	});
 
 	it('rolls up and inverts the aggregate Sources & Loads grouping', () => {
-		const sourcesLoads = getGroup('sources_loads');
-		const config = configFor(sourcesLoads);
+		// No longer offered in the network grouping menu, but the config remains
+		// in use by the scenarios pages — exercise the processor against it
+		// directly.
+		const config = configFor(sourcesLoadsGroup);
 		config.loadsToInvert = ['total_loads'];
 		const res = makeResponse([
 			{ fueltech: 'pumps', data: [['2024-01-01T00:00:00', 30]] },

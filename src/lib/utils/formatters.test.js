@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { formatFyTickX, formatCapacity } from './formatters.js';
+import { formatFyTickX, formatCapacity, formatPrice } from './formatters.js';
+
+describe('formatPrice', () => {
+	it('always shows cents', () => {
+		expect(formatPrice(85.3)).toBe('$85.30');
+		expect(formatPrice(100)).toBe('$100.00');
+		expect(formatPrice(16500)).toBe('$16,500.00');
+	});
+
+	it('keeps the sign on negative prices', () => {
+		expect(formatPrice(-60.254)).toBe('$-60.25');
+	});
+});
 
 describe('formatCapacity', () => {
 	it('returns a dash for null/undefined', () => {

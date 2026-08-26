@@ -1,11 +1,19 @@
 <script>
 	import { resolve } from '$app/paths';
-	import { ArrowUpRight, ChartNoAxesCombined, Compass, Map } from '@lucide/svelte';
+	import { ArrowUpRight, ChartNoAxesCombined, Compass, LayoutDashboard, Map } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 
-	/** @type {Array<{href:'/tracker/map'|'/tracker/dashboard'|'/tracker/explore',name:string,label:string,description:string,icon:any}>} */
+	/** @type {Array<{href:'/tracker/next'|'/tracker/map'|'/tracker/dashboard'|'/tracker/explore',name:string,label:string,description:string,icon:any}>} */
 	const reviews = [
+		{
+			href: '/tracker/next',
+			name: 'Tracker',
+			label: 'Canonical concept',
+			description:
+				'Synced generation, price and emissions charts with a fuel-tech breakdown panel and scope controls in the navigation bar.',
+			icon: LayoutDashboard
+		},
 		{
 			href: '/tracker/map',
 			name: 'Map tracker',
@@ -58,7 +66,7 @@
 </PageHeaderSimple>
 
 <main class="container py-12 md:py-20">
-	<div class="mx-auto grid max-w-[1400px] grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
+	<div class="mx-auto grid max-w-[1400px] grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 xl:grid-cols-4">
 		{#each reviews as review (review.href)}
 			{@const Icon = review.icon}
 			<a

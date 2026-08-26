@@ -1,14 +1,13 @@
 <script>
 	/**
 	 * ChartResizeHandle — vertical resize handle that sits below a chart and
-	 * drives `chart.chartStyles.chartHeightPx`.
-	 *
-	 * On devices with a fine pointer (mouse), the handle grip is hidden until
-	 * hover/drag. On coarse pointers (touch), the grip is always visible so it
-	 * can be targeted without hover.
+	 * drives `chart.chartStyles.chartHeightPx`. Renders the shared five-dot
+	 * DragHandle strip so chart resizing matches the app's panel dividers.
 	 *
 	 * Persists height via localStorage when `storageKey` is provided.
 	 */
+
+	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -94,61 +93,12 @@
 	}
 </script>
 
-<div
-	bind:this={handleEl}
-	class="chart-resize-handle"
-	class:chart-resize-handle--dragging={isDragging}
-	onpointerdown={start}
+<DragHandle
+	bind:el={handleEl}
+	axis="y"
+	onstart={start}
+	active={isDragging}
 	role="separator"
 	aria-orientation="horizontal"
 	aria-label="Resize chart height"
->
-	<span class="chart-resize-handle__grip"></span>
-</div>
-
-<style>
-	.chart-resize-handle {
-		position: relative;
-		height: 12px;
-		cursor: ns-resize;
-		touch-action: none;
-		user-select: none;
-	}
-
-	.chart-resize-handle__grip {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		transform: translate(-50%, -50%);
-		width: 32px;
-		height: 4px;
-		border-radius: 999px;
-		background-color: var(--color-mid-warm-grey, #b8ad9b);
-		opacity: 0;
-		transition:
-			opacity 120ms ease,
-			background-color 120ms ease;
-		pointer-events: none;
-	}
-
-	/* Fine pointer (mouse): grip fades in on hover / during drag */
-	@media (hover: hover) and (pointer: fine) {
-		.chart-resize-handle:hover .chart-resize-handle__grip {
-			opacity: 1;
-			background-color: var(--color-mid-grey, #6b6b6b);
-		}
-	}
-
-	/* Coarse pointer (touch): always show grip */
-	@media (hover: none), (pointer: coarse) {
-		.chart-resize-handle__grip {
-			opacity: 0.7;
-		}
-	}
-
-	/* While actively dragging, always show */
-	.chart-resize-handle--dragging .chart-resize-handle__grip {
-		opacity: 1;
-		background-color: var(--color-mid-grey, #6b6b6b);
-	}
-</style>
+/>

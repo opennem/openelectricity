@@ -15,12 +15,13 @@
 	 * controller and load-tracking state reset when the subject changes.
 	 */
 
+	import { untrack } from 'svelte';
 	import { LineChart } from '@lucide/svelte';
 	import FacilityChart from './FacilityChart.svelte';
 	import FacilityPriceChart from './FacilityPriceChart.svelte';
 	import FacilityFinancialDataProvider from './FacilityFinancialDataProvider.svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
+	import { formatRangeLabel, ChartRangeBar } from '$lib/components/charts/v2';
 	import { createChartRangeControl } from './chart-range-control.svelte.js';
 	import { dataEndMs } from './data-end.js';
 	import { capYTicks } from './helpers.js';
@@ -73,9 +74,7 @@
 	let dateRangeLabel = $derived.by(() => {
 		const start = viewStart || defaultStart;
 		const end = viewEnd || defaultEnd;
-		return formatDateRange(new Date(start), new Date(end), ianaTimeZone, {
-			yearIfNotCurrent: true
-		});
+		return formatRangeLabel(start, end, range.displayInterval, ianaTimeZone);
 	});
 
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
@@ -112,8 +111,7 @@
 		earliestDate: () => earliestDate,
 		// Initial value by design — the controller is created once per mount
 		// (the host {#key}s this component on its facility/unit code).
-		// svelte-ignore state_referenced_locally
-		initialRangeDays: rangeDays
+		initialRangeDays: untrack(() => rangeDays)
 	});
 
 	/** @param {string} key */
@@ -186,7 +184,6 @@
 				endDate={range.pickerEndDate}
 				minDate={MIN_DATE}
 				maxDate={range.maxDate}
-				{earliestDate}
 				showIntervalDropdown={true}
 				compact
 				pending={range.rangeSwitchPending}

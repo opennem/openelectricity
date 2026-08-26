@@ -1,14 +1,22 @@
 <script>
 	import { cn } from '$lib/utils';
 
-	/** @type {{ axis: 'x' | 'y', onstart: (e: PointerEvent) => void, active?: boolean, class?: string }} */
-	let { axis, onstart, active = false, class: className = '', ...restProps } = $props();
+	/** @type {{ axis: 'x' | 'y', onstart: (e: PointerEvent) => void, active?: boolean, class?: string, el?: HTMLElement | undefined } & import('svelte/elements').HTMLAttributes<HTMLDivElement>} */
+	let {
+		axis,
+		onstart,
+		active = false,
+		class: className = '',
+		el = $bindable(undefined),
+		...restProps
+	} = $props();
 
 	let isVertical = $derived(axis === 'x');
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
+	bind:this={el}
 	data-slot="drag-handle"
 	class={cn(
 		'shrink-0 flex items-center justify-center group bg-light-warm-grey md:bg-transparent hover:bg-warm-grey active:bg-mid-warm-grey transition-colors',

@@ -82,6 +82,7 @@ export { computeEnergyGridlines } from './energy-gridlines.js';
 // time-format-policy.js directly; only the long-standing helpers are
 // re-exported here.
 export { formatXAxis, formatDateRange, getStartOfDay, getDayStartDates } from './formatters.js';
+export { formatRangeLabel } from './time-format-policy.js';
 
 // Data processing utilities
 export {

@@ -12,6 +12,21 @@ export const getNumberFormat = (maximumFractionDigits = 0, useGrouping = true) =
 const capacityFmt0 = getNumberFormat(0);
 const capacityFmt1 = getNumberFormat(1);
 
+const priceFmt = new Intl.NumberFormat('en-AU', {
+	minimumFractionDigits: 2,
+	maximumFractionDigits: 2
+});
+
+/**
+ * Format a $/MWh price with cents always shown ("$85.30", "$-60.25") —
+ * the shared display convention for spot and volume-weighted prices.
+ * @param {number} v
+ * @returns {string}
+ */
+export function formatPrice(v) {
+	return '$' + priceFmt.format(v);
+}
+
 /**
  * Format a capacity value (MW / MWh): one decimal below 10, whole numbers at or
  * above. Shared by the facility unit list, table and detail views.

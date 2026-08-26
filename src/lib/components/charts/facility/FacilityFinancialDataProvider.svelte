@@ -17,7 +17,7 @@
 
 	import { ChartStore } from '$lib/components/charts/v2';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { getNumberFormat } from '$lib/utils/formatters';
+	import { formatPrice } from '$lib/utils/formatters';
 	import { setFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 	import { toEnergySeriesRows } from './energy-basis.js';
 	import { derivePriceRows, genPriceLabel, loadPriceLabel } from './price-lines.js';
@@ -94,8 +94,6 @@
 		children
 	} = $props();
 
-	const dollarFormatter = getNumberFormat(0);
-
 	/**
 	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 * @param {number} value
@@ -106,7 +104,7 @@
 
 	/** @param {number} value */
 	function formatPriceValue(value) {
-		return '$' + dollarFormatter.format(value);
+		return formatPrice(value);
 	}
 
 	/** @type {import('./derived-rate-recipe.js').DerivedRateRecipe} */

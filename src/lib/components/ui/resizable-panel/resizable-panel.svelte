@@ -28,14 +28,21 @@
 		/** Inline style for the drag-handle wrapper — lets callers set a dynamic
 		 *  background (e.g. a per-facility colour) the class system can't express. */
 		dragHandleStyle = '',
-		/** Colour classes for the grip pill, so it can stay legible when the strip
-		 *  is given a non-default background via `dragHandleStyle`. */
-		gripClass = 'bg-mid-warm-grey group-hover:bg-mid-grey',
+		/** Colour classes for the grip dots, so they can stay legible when the
+		 *  strip is given a non-default background via `dragHandleStyle`. */
+		gripClass = 'bg-mid-grey group-hover:bg-dark-grey',
 		/** Reports the panel's live size (percent of `containerSize`) whenever it
 		 *  changes — open reset, programmatic resize, or each drag frame — so
 		 *  callers can keep dependent layout (e.g. map framing insets) truthful
 		 *  to the real panel width rather than assuming the default. */
 		onresize = undefined,
+		/** Render the built-in drag handle. Callers that place their own handle
+		 *  outside the panel (e.g. in the gap beside it) pass false and drive the
+		 *  size through `defaultSize`. */
+		showDragHandle = true,
+		/** True while an external handle is dragging `defaultSize` per frame —
+		 *  suppresses the size transition exactly like an internal drag. */
+		externalResizing = false,
 		header = undefined,
 		footer = undefined,
 		children
@@ -96,9 +103,10 @@
 		// size (programmatic resize) and the transform (the open/close slide). This
 		// inline `transition` is why it must include transform — it overrides any
 		// `transition-*` utility class on the element.
-		const transition = isResizing
-			? ''
-			: `; transition: ${prop} 0.15s ease-out, transform 0.25s ease-out`;
+		const transition =
+			isResizing || externalResizing
+				? ''
+				: `; transition: ${prop} 0.15s ease-out, transform 0.25s ease-out`;
 		return `${prop}: ${currentSize}%${transition}`;
 	});
 
@@ -172,9 +180,11 @@
 </script>
 
 {#snippet dragHandle()}
+	<!-- Five-dot grip matching the facility page's panel divider
+	     (ui/panel/drag-handle.svelte) — hidden until hover on desktop. -->
 	{#if isVertical}
 		<div
-			class="shrink-0 flex items-center justify-center cursor-ns-resize select-none touch-none py-1.5 group"
+			class="shrink-0 flex items-center justify-center cursor-ns-resize select-none touch-none py-1.5 group hover:bg-warm-grey active:bg-mid-warm-grey transition-colors"
 			style={dragHandleStyle}
 			onpointerdown={onResizePointerDown}
 			role="separator"
@@ -182,11 +192,19 @@
 			aria-label="Resize panel"
 			tabindex="-1"
 		>
-			<div class="w-8 h-1 rounded-full transition-colors {gripClass}"></div>
+			<div
+				class="flex gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100 {isResizing
+					? 'md:opacity-100'
+					: ''}"
+			>
+				{#each { length: 5 } as _, i (i)}
+					<span class="block w-1 h-1 rounded-full transition-colors {gripClass}"></span>
+				{/each}
+			</div>
 		</div>
 	{:else}
 		<div
-			class="shrink-0 flex items-center justify-center cursor-ew-resize select-none touch-none px-1.5 group"
+			class="shrink-0 flex items-center justify-center cursor-ew-resize select-none touch-none px-1.5 group hover:bg-warm-grey active:bg-mid-warm-grey transition-colors"
 			style={dragHandleStyle}
 			onpointerdown={onResizePointerDown}
 			role="separator"
@@ -194,7 +212,15 @@
 			aria-label="Resize panel"
 			tabindex="-1"
 		>
-			<div class="h-8 w-1 rounded-full transition-colors {gripClass}"></div>
+			<div
+				class="flex flex-col gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100 {isResizing
+					? 'md:opacity-100'
+					: ''}"
+			>
+				{#each { length: 5 } as _, i (i)}
+					<span class="block w-1 h-1 rounded-full transition-colors {gripClass}"></span>
+				{/each}
+			</div>
 		</div>
 	{/if}
 {/snippet}
@@ -214,7 +240,7 @@
 
 {#if isVertical}
 	<div class="flex-col overflow-hidden {className}" style={combinedStyle}>
-		{#if direction === 'top'}
+		{#if direction === 'top' && showDragHandle}
 			{@render dragHandle()}
 		{/if}
 
@@ -234,13 +260,13 @@
 			{@render footer()}
 		{/if}
 
-		{#if direction === 'bottom'}
+		{#if direction === 'bottom' && showDragHandle}
 			{@render dragHandle()}
 		{/if}
 	</div>
 {:else}
 	<div class="flex-row overflow-hidden {className}" style={combinedStyle}>
-		{#if direction === 'left'}
+		{#if direction === 'left' && showDragHandle}
 			{@render dragHandle()}
 		{/if}
 
@@ -262,7 +288,7 @@
 			{/if}
 		</div>
 
-		{#if direction === 'right'}
+		{#if direction === 'right' && showDragHandle}
 			{@render dragHandle()}
 		{/if}
 	</div>

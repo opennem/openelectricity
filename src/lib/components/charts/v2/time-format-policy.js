@@ -10,6 +10,7 @@
  */
 
 import {
+	RANGE_SEPARATOR,
 	formatBucketLabel,
 	formatDateRange,
 	formatDayMonthYear,
@@ -17,6 +18,7 @@ import {
 	formatMonthYear,
 	formatYear
 } from './date-labels.js';
+import { tzAbbreviationFromIana } from './network-time.js';
 
 /**
  * Calendar buckets labelled by name or year rather than a date. Each gets an
@@ -81,4 +83,52 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
 
 	// Daily (1d) and anything unknown: full date, no time.
 	return { formatTooltip: (d) => formatDayMonthYear(d, ianaTimeZone), bucketTick: null };
+}
+
+/**
+ * Interval-aware label for a `[start, end]` viewport — the standalone
+ * toolbar/nav range readout. Endpoints render at the display grain's
+ * resolution:
+ *
+ * - Coarse calendar buckets by name, collapsing when both ends fall in the
+ *   same bucket: "FY2024 — FY2026", "Q1 2025 — Q3 2026", "Winter 2025", "2024".
+ * - Months: "Aug 2025 — Aug 2026", collapsing likewise.
+ * - Sub-daily with clock times and the (DST-free) zone the times are in:
+ *   "19 Aug 2026, 10:00 am — 26 Aug 2026, 10:00 am AEST".
+ * - Daily/weekly: a plain date range, with the year when it isn't the
+ *   current one ("19 — 26 Aug 2025") since the label stands alone.
+ *
+ * @param {Date | number} start
+ * @param {Date | number} end
+ * @param {string} displayInterval
+ * @param {string} ianaTimeZone
+ * @returns {string}
+ */
+export function formatRangeLabel(start, end, displayInterval, ianaTimeZone) {
+	if (
+		COARSE_BUCKET_INTERVALS.has(displayInterval) ||
+		displayInterval === '1M' ||
+		displayInterval === '3M'
+	) {
+		const label = getTimeFormatPolicy(displayInterval, ianaTimeZone).formatTooltip;
+		const startLabel = label(start);
+		const endLabel = label(end);
+		return startLabel === endLabel ? startLabel : `${startLabel} ${RANGE_SEPARATOR} ${endLabel}`;
+	}
+
+	if (displayInterval === '5m' || displayInterval === '30m' || displayInterval === '1h') {
+		const startLabel = formatDayMonthYearTime(start, ianaTimeZone);
+		const endLabel = formatDayMonthYearTime(end, ianaTimeZone);
+		return `${startLabel} ${RANGE_SEPARATOR} ${endLabel} ${tzAbbreviationFromIana(ianaTimeZone)}`;
+	}
+
+	// Daily/weekly grains — the viewport resolves to dates, not times. (The 7d
+	// tooltip's week-bucket range doesn't apply: this labels the viewport's own
+	// endpoints, not one bucket.)
+	return formatDateRange(
+		start instanceof Date ? start : new Date(start),
+		end instanceof Date ? end : new Date(end),
+		ianaTimeZone,
+		{ yearIfNotCurrent: true }
+	);
 }

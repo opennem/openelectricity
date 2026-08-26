@@ -25,7 +25,7 @@
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import {
-		formatDateRange,
+		formatRangeLabel,
 		ChartRangeBar,
 		sectionCardClass,
 		toolbarTrayClass
@@ -122,9 +122,7 @@
 	let dateRangeLabel = $derived.by(() => {
 		const start = viewStart || anchorStart;
 		const end = viewEnd || anchorEnd;
-		return formatDateRange(new Date(start), new Date(end), ianaTimeZone, {
-			yearIfNotCurrent: true
-		});
+		return formatRangeLabel(start, end, range.displayInterval, ianaTimeZone);
 	});
 
 	/** @type {import('$lib/components/charts/network/NetworkChart.svelte').default | undefined} */
@@ -369,7 +367,6 @@
 				minDate={MIN_DATE}
 				maxDate={range.maxDate}
 				showIntervalDropdown={true}
-				raised
 				compact
 				pending={range.rangeSwitchPending}
 				onrangeselect={range.handleRangeSelect}

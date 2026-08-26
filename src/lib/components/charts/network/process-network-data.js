@@ -71,7 +71,7 @@ function hasBatterySplits(response, metricFilter) {
 /**
  * @param {any} response - Raw OE API response ({ data: [{ metric, results }] })
  * @param {ProcessNetworkDataConfig} config
- * @returns {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string> } | null}
+ * @returns {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>, groupFuelTechs: Record<string, string[]> } | null}
  */
 export function processNetworkData(response, config) {
 	if (!response?.data) return null;
@@ -96,6 +96,12 @@ export function processNetworkData(response, config) {
 	// Prefer the charging/discharging splits over the aggregate net series.
 	const skipAggregateBattery = hasBatterySplits(response, metricFilter);
 
+	// Fuel techs actually present in the response, per group — so consumers
+	// (e.g. the tracker table's row tooltips) can list a group's real members
+	// rather than every code the grouping config could match.
+	/** @type {Record<string, Set<string>>} */
+	const presentByGroup = {};
+
 	const { seriesMaps, timestamps } = collectSeriesByTimestamp(response, {
 		metricFilter,
 		networkTimezone,
@@ -105,7 +111,9 @@ export function processNetworkData(response, config) {
 			const fuelTech = series.columns?.fueltech || series.name;
 			if (skipAggregateBattery && fuelTech === 'battery') return null;
 			const groupId = fuelTechToGroup[fuelTech];
-			return groupId ? { id: groupId } : null;
+			if (!groupId) return null;
+			(presentByGroup[groupId] ??= new Set()).add(fuelTech);
+			return { id: groupId };
 		}
 	});
 
@@ -122,10 +130,17 @@ export function processNetworkData(response, config) {
 		seriesColours[groupId] = getColour(groupId);
 	}
 
+	/** @type {Record<string, string[]>} */
+	const groupFuelTechs = {};
+	for (const groupId of seriesNames) {
+		groupFuelTechs[groupId] = [...(presentByGroup[groupId] ?? [])];
+	}
+
 	return {
 		data: rowsFromSeriesMaps(seriesMaps, timestamps, seriesNames),
 		seriesNames,
 		seriesLabels,
-		seriesColours
+		seriesColours,
+		groupFuelTechs
 	};
 }

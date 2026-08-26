@@ -192,6 +192,18 @@ export default class ChartStore {
 	/** @type {[number, number] | undefined} - For line charts: the y-value band within which the line is drawn solid; outside it the line is dotted (e.g. the price chart's linear band, so the log tails read as dotted). */
 	solidLineRange = $state();
 
+	/** Overlay lines drawn above the stack from independent row sets — each
+	 *  `{ id, data, valueKey, colour, scale }`; `scale: 'percent'` renders
+	 *  against a fixed 0–100% right-hand scale.
+	 *  @type {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number }>} */
+	overlayLines = $state.raw([]);
+
+	/** Hatched area bands stacked on top of the rendered stack from an
+	 *  independent row set (e.g. curtailment) — `{ id, data, series }` where
+	 *  `series` orders the bands bottom-up.
+	 *  @type {Array<{ id: string, data: any[], series: Array<{ id: string, colour: string }> }>} */
+	overlayAreas = $state.raw([]);
+
 	// Formatters
 	/** @type {number} */
 	maximumFractionDigits = $state(0);
@@ -220,6 +232,12 @@ export default class ChartStore {
 
 	/** @type {(value: number) => string} */
 	formatY = $state((/** @type {number} */ d) => String(d));
+
+	/** Optional tooltip-value override for when the axis formatter isn't
+	 *  suitable for standalone values — e.g. the hybrid price axis labels only
+	 *  its linear band, but tooltips must show every value exactly.
+	 *  @type {((value: number) => string) | null} */
+	formatTooltipY = $state(null);
 
 	// Value conversion
 	convertValue = $derived((/** @type {number} */ value) => {

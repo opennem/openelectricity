@@ -2,7 +2,7 @@
 	import { onMount, tick, untrack } from 'svelte';
 	import { Maximize2 } from '@lucide/svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { ChartRangeBar, formatDateRange, toolbarTrayClass } from '$lib/components/charts/v2';
+	import { ChartRangeBar, formatRangeLabel, toolbarTrayClass } from '$lib/components/charts/v2';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
@@ -120,13 +120,11 @@
 				})
 	);
 	let rangeLabel = $derived(
-		formatDateRange(
-			new Date(viewStart || anchorStart),
-			new Date(viewEnd || anchorEnd),
-			ianaTimeZone,
-			{
-				yearIfNotCurrent: true
-			}
+		formatRangeLabel(
+			viewStart || anchorStart,
+			viewEnd || anchorEnd,
+			range.displayInterval,
+			ianaTimeZone
 		)
 	);
 	/** @param {'compact'|'standard'|'tall'} height */
@@ -314,7 +312,6 @@
 						maxDate={range.maxDate}
 						showIntervalDropdown
 						compact
-						raised
 						pending={range.rangeSwitchPending}
 						onrangeselect={range.handleRangeSelect}
 						ondaterangechange={range.handleDateRangeChange}

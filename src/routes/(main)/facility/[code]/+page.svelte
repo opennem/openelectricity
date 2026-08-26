@@ -20,7 +20,7 @@
 		FacilityMetrics
 	} from '$lib/components/charts/facility';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
+	import { formatRangeLabel, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
 	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
 	import FacilityPanelHeader from '$lib/components/facilities/FacilityPanelHeader.svelte';
 	import { withBatteryView, canSplitBatteryUnits } from '$lib/facilities/units.js';
@@ -172,9 +172,7 @@
 	let dateRangeLabel = $derived.by(() => {
 		const start = viewStart || defaultStart;
 		const end = viewEnd || defaultEnd;
-		return formatDateRange(new Date(start), new Date(end), ianaTimeZone, {
-			yearIfNotCurrent: true
-		});
+		return formatRangeLabel(start, end, range.displayInterval, ianaTimeZone);
 	});
 
 	/** Shared hover time — syncs crosshair/tooltip across all three charts. */
@@ -534,9 +532,7 @@
 									endDate={range.pickerEndDate}
 									minDate={MIN_DATE}
 									maxDate={range.maxDate}
-									{earliestDate}
 									showIntervalDropdown={true}
-									raised
 									pending={range.rangeSwitchPending}
 									onrangeselect={range.handleRangeSelect}
 									ondaterangechange={range.handleDateRangeChange}

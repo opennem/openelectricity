@@ -29,6 +29,17 @@ export function offsetHoursFromIana(ianaTimeZone) {
 }
 
 /**
+ * Timezone abbreviation for an IANA network timezone name — static because
+ * neither network zone observes DST.
+ *
+ * @param {string | undefined | null} ianaTimeZone - e.g. 'Australia/Perth'
+ * @returns {string}
+ */
+export function tzAbbreviationFromIana(ianaTimeZone) {
+	return ianaTimeZone === 'Australia/Perth' ? 'AWST' : 'AEST';
+}
+
+/**
  * Whole-hour UTC offset for a network offset string.
  *
  * @param {string | undefined | null} offset - e.g. '+08:00'

@@ -51,6 +51,9 @@ export type FuelTechCode =
 	| 'oil'
 	| 'vre' // Variable Renewable Energy
 	| 'residual' // Residual;
+	| 'variable' // Flexibility grouping
+	| 'fast_flexible'
+	| 'slow_flexible'
 	| 'demand';
 
 export type FuelTech = {

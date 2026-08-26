@@ -258,12 +258,14 @@
 		   morph (the "zoom"). */
 		::view-transition-old(filter-bar-rest-list),
 		::view-transition-old(filter-bar-rest-detail),
-		::view-transition-old(filter-bar-rest-tracker) {
+		::view-transition-old(filter-bar-rest-tracker),
+		::view-transition-old(filter-bar-rest-tracker-next) {
 			animation: facilities-filter-bar-slide-out 240ms ease both;
 		}
 		::view-transition-new(filter-bar-rest-list),
 		::view-transition-new(filter-bar-rest-detail),
-		::view-transition-new(filter-bar-rest-tracker) {
+		::view-transition-new(filter-bar-rest-tracker),
+		::view-transition-new(filter-bar-rest-tracker-next) {
 			animation: facilities-filter-bar-slide-in 240ms ease both;
 		}
 		@keyframes facilities-filter-bar-slide-out {

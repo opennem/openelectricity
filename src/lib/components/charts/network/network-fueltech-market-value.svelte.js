@@ -1,11 +1,12 @@
 /**
- * Headless market-series provider for the tracker's network metrics.
+ * Headless fuel-tech market-value provider for the tracker's fuel-tech table.
  *
- * Fetches the renewables-share input pair — `generation_renewable` +
- * `demand_gross` (or their `_energy` variants) — through a `ChartDataManager`
- * so it shares the charts' gap-aware caching, request dedupe and settle
- * reconciliation, but renders nothing. Both basis variants are mapped onto the
- * same series ids so downstream metric computes are basis-agnostic.
+ * Fetches `market_value` grouped by fuel tech through a `ChartDataManager` —
+ * exactly the processing arm of NetworkChart's market-value panel — so the
+ * table's volume-weighted prices share the charts' gap-aware caching, request
+ * dedupe and settle reconciliation, but render nothing. When the price chart
+ * is showing market value it issues the identical request URL, so the shared
+ * broker collapses the pair into one network fetch.
  *
  * Implements the range-control chart surface (`setViewport` /
  * `reconcileFetches`), so listing it in `createChartRangeControl`'s `charts()`
@@ -15,81 +16,54 @@
  */
 
 import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
-import { processMarketData } from './process-market-data.js';
-
-/** Stable series ids shared with the metrics calc. */
-export const RENEWABLES_SERIES_ID = 'renewables';
-export const DEMAND_GROSS_SERIES_ID = 'demand_gross';
-
-/**
- * One def per OE metric in the response — the energy basis is the same pair
- * with `_energy`-suffixed metric names. Colours are unused (nothing charts
- * these series) but the processor requires them.
- * @type {import('./process-market-data.js').MarketSeriesDef[]}
- */
-const BASE_SERIES_DEFS = [
-	{
-		metric: 'generation_renewable',
-		id: RENEWABLES_SERIES_ID,
-		label: 'Renewables',
-		colour: '#2D9B14'
-	},
-	{
-		metric: 'demand_gross',
-		id: DEMAND_GROSS_SERIES_ID,
-		label: 'Gross demand',
-		colour: '#6A6A6A'
-	}
-];
-
-/** @param {'power' | 'energy'} basis */
-const seriesDefsFor = (basis) =>
-	BASE_SERIES_DEFS.map((def) =>
-		basis === 'energy' ? { ...def, metric: `${def.metric}_energy` } : def
-	);
+import { getFuelTechColour } from '$lib/components/charts/colours.js';
+import { getGroup, loadGroupsFor } from './groups.js';
+import { processNetworkData } from './process-network-data.js';
 
 /**
  * @param {{
  *   region: () => string,
- *   basis: () => 'power' | 'energy',
+ *   group: () => string,
  *   interval: () => string,
  *   timeZone: () => string
  * }} opts - Getters so the provider reads live component state
- * @returns {{
- *   setViewport: (startMs: number, endMs: number) => void,
- *   reconcileFetches: () => void,
- *   getVisibleRows: (startMs: number, endMs: number) => any[],
- *   readonly isPending: boolean
- * }}
  */
-export function createNetworkMarketData(opts) {
+export function createNetworkFuelTechMarketValue(opts) {
 	/** @type {ChartDataManager | null} */
 	let manager = $state.raw(null);
 
 	// Last window pushed by the range control — replayed after a manager swap so
-	// a grain/region switch refetches the pair without waiting for a gesture.
+	// a grain/region/grouping switch refetches without waiting for a gesture.
 	// Plain fields: they only matter at call time, never drive reactivity.
 	let lastStart = 0;
 	let lastEnd = 0;
 
 	// Swap the manager whenever the data-source identity changes. Mirrors the
-	// chart host's swap effect, minus the stash — the completed-response LRU in
-	// ChartDataManager already absorbs quick region flips for these tiny series.
+	// market-pair provider — no stash; the completed-response LRU in
+	// ChartDataManager absorbs quick flips.
 	$effect(() => {
 		const region = opts.region();
-		const basis = opts.basis();
+		const group = opts.group();
 		const interval = opts.interval();
 		const tz = opts.timeZone();
-		const metricKey = basis === 'energy' ? 'renewables_energy' : 'renewables';
+		const groupConfig = getGroup(group);
 
 		const next = new ChartDataManager({
-			cacheKey: `${region}:metrics`,
+			cacheKey: `${region}:mv-table`,
 			networkTimezone: tz,
 			interval,
-			metric: metricKey,
-			seriesKey: 'renewables-pair',
+			metric: 'market_value',
+			seriesKey: group,
 			processResponse: (resp) =>
-				processMarketData(resp, { seriesDefs: seriesDefsFor(basis), networkTimezone: tz }),
+				processNetworkData(resp, {
+					groupMap: groupConfig.fuelTechs,
+					groupOrder: groupConfig.order,
+					groupLabels: groupConfig.labels,
+					loadsToInvert: loadGroupsFor(groupConfig),
+					getColour: getFuelTechColour,
+					metricFilter: 'market_value',
+					networkTimezone: tz
+				}),
 			buildFetchUrl: (params) => {
 				params.set('region', region);
 				return `/api/network/data?${params.toString()}`;
@@ -131,7 +105,7 @@ export function createNetworkMarketData(opts) {
 			return manager?.getDataForRange(startMs, endMs) ?? [];
 		},
 
-		/** Fetching, or not yet loaded — drives dependent overlay/pending states. */
+		/** Fetching, or not yet loaded — drives the table's overlay veil. */
 		get isPending() {
 			return !manager || manager.isLoading || !manager.initialLoadComplete;
 		}

@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { LayoutGrid, Layers3, ListFilter, Plus, Settings2, X } from '@lucide/svelte';
 	import { MediaQuery } from 'svelte/reactivity';
-	import { ChartRangeBar, formatDateRange } from '$lib/components/charts/v2';
+	import { ChartRangeBar, formatRangeLabel } from '$lib/components/charts/v2';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
 	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
@@ -125,9 +125,7 @@
 	let boundedViewStart = $derived(viewStart || initialAnchorStart);
 	let boundedViewEnd = $derived(viewEnd || initialAnchorEnd);
 	let sharedRangeLabel = $derived(
-		formatDateRange(new Date(boundedViewStart), new Date(boundedViewEnd), sharedIanaTimeZone, {
-			yearIfNotCurrent: true
-		})
+		formatRangeLabel(boundedViewStart, boundedViewEnd, range.displayInterval, sharedIanaTimeZone)
 	);
 	let sharedRuntimeControls = $derived(
 		sharedMode
@@ -950,7 +948,6 @@
 							maxDate={range.maxDate}
 							showIntervalDropdown
 							compact
-							raised
 							pending={range.rangeSwitchPending}
 							onrangeselect={range.handleRangeSelect}
 							ondaterangechange={range.handleDateRangeChange}

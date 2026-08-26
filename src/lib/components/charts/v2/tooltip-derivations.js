@@ -121,6 +121,7 @@ export function getFormattedY(chart, value) {
 	if (value === undefined || value === null) return '';
 	const n = Number(value);
 	if (Number.isNaN(n)) return '';
+	if (chart.formatTooltipY) return chart.formatTooltipY(n);
 	return chart.useFormatY ? chart.formatY(n) : chart.convertAndFormatValue(n);
 }
 
@@ -171,7 +172,9 @@ export function buildSeriesRows(chart, activeData) {
 			label: chart.seriesLabels[key] ?? key,
 			colour: chart.seriesColours[key],
 			value: hasValue ? numeric : undefined,
-			formattedValue: hasValue ? chart.convertAndFormatValue(numeric) : '',
+			formattedValue: hasValue
+				? (chart.formatTooltipY?.(numeric) ?? chart.convertAndFormatValue(numeric))
+				: '',
 			isHovered: key === hoverKey
 		});
 	}

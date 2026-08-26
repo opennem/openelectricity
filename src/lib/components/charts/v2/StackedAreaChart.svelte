@@ -25,6 +25,8 @@
 		Annotations
 	} from './elements';
 	import NetTotalLine from './elements/NetTotalLine.svelte';
+	import OverlayLine from './elements/OverlayLine.svelte';
+	import OverlayArea from './elements/OverlayArea.svelte';
 	import HatchOverlay from './elements/HatchOverlay.svelte';
 	import { indexOfTime } from './binary-search.js';
 	import { perfSpan } from './perf.js';
@@ -237,6 +239,30 @@
 				{#if netTotalKey && isStepMode}
 					<NetTotalLine dataset={renderSeriesData} valueKey={netTotalKey} stroke={netTotalColor} />
 				{/if}
+
+				{#each chart.overlayAreas ?? [] as overlay (overlay.id)}
+					<OverlayArea
+						dataset={overlay.data}
+						series={overlay.series}
+						baseRows={renderSeriesData}
+						baseKeys={chart.visibleSeriesNames}
+						divergingBase={chart.useDivergingStack}
+						curveType={chart.chartOptions.curveFunction}
+						patternPrefix="{id}-overlay-hatch-{overlay.id}"
+					/>
+				{/each}
+
+				{#each chart.overlayLines ?? [] as overlay (overlay.id)}
+					<OverlayLine
+						dataset={overlay.data}
+						valueKey={overlay.valueKey}
+						colour={overlay.colour}
+						strokeWidth={overlay.strokeWidth ?? 1.5}
+						scale={overlay.scale ?? 'y'}
+						showAxis={overlay.scale === 'percent'}
+						curveType={chart.chartOptions.curveFunction}
+					/>
+				{/each}
 
 				{#if chart.fgShadingData?.length > 0}
 					<Shading dataset={chart.fgShadingData} fill={chart.fgShadingFill} {clipPathId} />

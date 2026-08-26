@@ -28,13 +28,19 @@
 		INTENSITY_SERIES_ID
 	} from './process-emissions-intensity.js';
 	import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
+	import {
+		createPriceYScale,
+		formatPriceTick,
+		PRICE_Y_DOMAIN,
+		PRICE_Y_TICKS,
+		PRICE_LINEAR_RANGE
+	} from '$lib/components/charts/facility/price-y-scale.js';
 	import { processMarketData } from './process-market-data.js';
 	import { LINE_COLOUR } from '$lib/components/charts/facility/colours.js';
 	import { getMarketMetricConfig } from './market-metrics.js';
-	import { getGroup } from './groups.js';
+	import { getGroup, loadGroupsFor } from './groups.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { loadFuelTechs } from '$lib/fuel_techs';
-	import { getNumberFormat } from '$lib/utils/formatters';
+	import { formatPrice } from '$lib/utils/formatters';
 	import { ianaFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
 	import nighttimes from '$lib/utils/nighttimes';
@@ -62,7 +68,7 @@
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange]
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once
 	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
-	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>}) => void)} [onvisibledata]
+	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>, groupFuelTechs?: Record<string, string[]>}) => void)} [onvisibledata]
 	 * @property {((info: {hasData: boolean}) => void)} [onloadcomplete] - Fired whenever a settled
 	 *   fetch leaves the manager idle; the first fire is the initial load, where
 	 *   parents apply their default range preset
@@ -76,6 +82,16 @@
 	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
 	 * @property {boolean} [nightShading] - Shade nighttime bands like the homepage
 	 *   7-day chart; only renders at sub-daily grain, coarser grains clear it
+	 * @property {boolean} [resizable] - Show the drag-to-resize handle below the
+	 *   chart. Resizable charts should rely on `chartHeight`/the persisted height
+	 *   rather than `chartHeightPx`, which would clobber a restored height.
+	 * @property {string} [heightStorageKey] - localStorage key persisting the
+	 *   resized height; share one key across a split pair so toggling keeps it
+	 * @property {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number }>} [overlayLines]
+	 *   - Lines drawn above the stack from independent row sets (e.g. demand,
+	 *   renewable share); `scale: 'percent'` adds a right-hand 0–100% axis
+	 * @property {Array<{ id: string, data: any[], series: Array<{ id: string, colour: string }> }>} [overlayAreas]
+	 *   - Hatched bands stacked on top of the rendered stack (e.g. curtailment)
 	 */
 
 	/** @type {Props} */
@@ -107,11 +123,12 @@
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
 		minDateMs = EARLIEST_DATA_MS,
-		nightShading = false
+		nightShading = false,
+		resizable = false,
+		heightStorageKey = undefined,
+		overlayLines = /** @type {any[]} */ ([]),
+		overlayAreas = /** @type {any[]} */ ([])
 	} = $props();
-
-	const dollarFormatter = getNumberFormat(0);
-	const loadFuelTechCodes = new Set(/** @type {string[]} */ (loadFuelTechs));
 
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let isPriceKind = $derived(chartKind === 'line');
@@ -166,14 +183,7 @@
 	// ============================================
 
 	let groupConfig = $derived(getGroup(group));
-	let loadGroupsToInvert = $derived(
-		Object.entries(groupConfig.fuelTechs)
-			.filter(
-				([, fuelTechs]) =>
-					fuelTechs.length > 0 && fuelTechs.every((fuelTech) => loadFuelTechCodes.has(fuelTech))
-			)
-			.map(([groupId]) => groupId)
-	);
+	let loadGroupsToInvert = $derived(loadGroupsFor(groupConfig));
 	let intensityFilterKey = $derived([...excludedFuelTechGroups].sort().join(','));
 
 	/**
@@ -371,8 +381,19 @@
 			chart.hideDataOptions = true;
 			chart.hideChartTypeOptions = true;
 			chart.chartTooltips.showTotal = false;
+			// Hybrid axis: linear $0–$300, log above $300 and below $0, on a fixed
+			// domain — the same structure as the facility price chart, so spot
+			// prices read identically across the app and spikes/negatives stay
+			// visible without flattening the everyday band.
+			chart.yScale = createPriceYScale();
+			chart.setYDomain([...PRICE_Y_DOMAIN]);
+			chart.yTicks = PRICE_Y_TICKS;
+			chart.solidLineRange = PRICE_LINEAR_RANGE;
 			chart.useFormatY = true;
-			chart.formatY = (/** @type {number} */ d) => '$' + dollarFormatter.format(d);
+			chart.formatY = formatPriceTick;
+			// The axis formatter blanks values outside the linear band, so
+			// tooltips format independently — exact prices, cents always shown.
+			chart.formatTooltipY = formatPrice;
 			return chart;
 		}
 
@@ -430,6 +451,17 @@
 		if (chartStore) chartStore.hiddenSeriesNames = hiddenSeriesNames;
 	});
 
+	// Caller-driven overlay lines (demand / renewable share) — independent row
+	// sets drawn above the stack.
+	$effect(() => {
+		if (chartStore) chartStore.overlayLines = overlayLines;
+	});
+
+	// Caller-driven hatched overlay bands (curtailment) stacked on the top.
+	$effect(() => {
+		if (chartStore) chartStore.overlayAreas = overlayAreas;
+	});
+
 	// Metric-dependent options (unit + curve)
 	$effect(() => {
 		if (!chartStore) return;
@@ -445,7 +477,13 @@
 			);
 			return;
 		}
-		if (panelKind === 'price' || panelKind === 'intensity') {
+		if (panelKind === 'price') {
+			// The spot price is a step function by nature — held constant within
+			// each dispatch interval — so it renders stepped at every grain.
+			chartStore.chartOptions.selectedCurveType = 'step';
+			return;
+		}
+		if (panelKind === 'intensity') {
 			chartStore.chartOptions.selectedCurveType = /** @type {any} */ (intervalCurve);
 			return;
 		}
@@ -508,7 +546,9 @@
 
 			chartStore.seriesData = renderData;
 			chartStore.setXDomain(start, end);
-			chartStore.setYDomain(undefined);
+			// The price panel keeps its fixed hybrid domain; every other panel
+			// re-derives the y-domain from the visible data.
+			if (panelKind !== 'price') chartStore.setYDomain(undefined);
 
 			applyFacilityTimeAxis(chartStore, {
 				data: renderData,
@@ -516,12 +556,11 @@
 				viewEnd: end,
 				ianaTimeZone,
 				timeZone,
-				// Summed quantities such as 30-minute emissions still use the
-				// sub-daily axis. Axis mode follows the rendered curve, not the
-				// aggregation method; market value is deliberately always stepped.
-				isEnergy:
-					panelKind === 'market-value' ||
-					getIntervalSpec(currentDisplayInterval)?.curveType === 'step',
+				// Summed quantities such as 30-minute emissions (and market value)
+				// still use the sub-daily power axis at fine grains, so their date
+				// gridlines match the synced generation/price charts; the energy
+				// bucket lattice takes over at the step-curve display intervals.
+				isEnergy: getIntervalSpec(currentDisplayInterval)?.curveType === 'step',
 				displayInterval: currentDisplayInterval
 			});
 		});
@@ -561,7 +600,8 @@
 				data: rows,
 				seriesNames: meta.seriesNames,
 				seriesLabels: meta.seriesLabels,
-				seriesColours: colours
+				seriesColours: colours,
+				groupFuelTechs: meta.groupFuelTechs
 			});
 		}, 300);
 
@@ -671,6 +711,8 @@
 			bind:engaged={panZoomEngaged}
 			viewDomain={null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
+			{resizable}
+			{heightStorageKey}
 		/>
 
 		{#if showLoadingOverlay}

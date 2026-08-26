@@ -21,10 +21,8 @@
 	 * @property {string | null} [endDate] - YYYY-MM-DD for DateRangePicker
 	 * @property {string | null} [minDate] - Earliest selectable date
 	 * @property {string | null} [maxDate] - Latest selectable date
-	 * @property {string | null} [earliestDate] - Earliest data date (for "All" range)
 	 * @property {boolean} [showIntervalDropdown] - When false, the interval renders as a static badge instead of a Select dropdown. Default `true`.
 	 * @property {boolean} [compact] - Always render the range picker as a dropdown (plus the calendar popover) regardless of viewport width — for narrow containers like the unit slide-out where the preset pills don't fit. Default `false` (responsive: pills at `md:` and up, dropdowns below).
-	 * @property {boolean} [raised] - Rest-state controls render as raised white chips instead of grey ones — for placement on the recessed light-grey toolbar tray. Default `false`.
 	 * @property {boolean} [pending] - While true, the active range control pulses to show the switched range is still loading. The bar stays interactive.
 	 * @property {(days: number) => void} [onrangeselect]
 	 * @property {(range: {start: string, end: string}) => void} [ondaterangechange]
@@ -40,10 +38,8 @@
 		endDate = null,
 		minDate = null,
 		maxDate = null,
-		earliestDate = null,
 		showIntervalDropdown = true,
 		compact = false,
-		raised = false,
 		pending = false,
 		onrangeselect,
 		ondaterangechange,
@@ -52,17 +48,14 @@
 
 	const rangePresets = RANGE_PRESETS;
 
-	// Rest-state chip fill: grey on plain surfaces, raised white (with a whisper
-	// of lift) when the bar sits on the recessed toolbar tray.
-	let chipRestClass = $derived(
-		raised ? 'border-warm-grey bg-white shadow-xs' : 'border-mid-warm-grey bg-light-warm-grey'
-	);
+	// Rest-state chip: the app-wide filter-pill design (FilterPill.svelte) so
+	// range, calendar and interval triggers match the Region and grouping
+	// dropdowns everywhere.
+	const chipRestClass = 'border-mid-warm-grey bg-white';
 
-	// Shared pill styling for the range/interval dropdown triggers so they match
-	// the SwitchWithIcons switcher: light track at rest, dark thumb when open.
-	let selectTriggerClass = $derived(
-		`inline-flex items-center gap-1 rounded-lg border ${chipRestClass} px-3 py-2.5 text-xs font-medium text-mid-grey transition-colors hover:text-black data-[state=open]:border-dark-grey data-[state=open]:bg-dark-grey data-[state=open]:text-white cursor-pointer`
-	);
+	// Shared pill styling for the range/interval dropdown triggers — filter-pill
+	// rest state, dark (active) when open.
+	const selectTriggerClass = `inline-flex items-center gap-1.5 rounded-lg border ${chipRestClass} pl-4 pr-3 py-1.5 text-xs font-medium text-dark-grey transition-colors hover:border-dark-grey data-[state=open]:border-dark-grey data-[state=open]:bg-dark-grey data-[state=open]:text-white cursor-pointer`;
 
 	// Interval options follow the selected range (or the custom span's tier).
 	let intervalOptions = $derived.by(() => {
@@ -93,7 +86,7 @@
 
 {#snippet intervalBadge()}
 	<span
-		class="inline-flex items-center rounded-lg border {chipRestClass} px-3 py-2.5 text-xs font-medium text-mid-grey"
+		class="inline-flex items-center rounded-lg border {chipRestClass} px-4 py-1.5 text-xs font-medium text-dark-grey"
 	>
 		{currentIntervalLabel}
 	</span>
@@ -114,7 +107,7 @@
 			aria-busy={pending}
 		>
 			{currentRangeLabel}
-			<ChevronDown size={12} />
+			<ChevronDown size={14} />
 		</Select.Trigger>
 		<Select.Content
 			sideOffset={4}
@@ -136,9 +129,9 @@
 {#snippet calendarPopover()}
 	<Popover.Root bind:open={popoverOpen}>
 		<Popover.Trigger
-			class="inline-flex items-center rounded-lg border px-3 py-2.5 text-xs font-medium transition-colors {popoverOpen
-				? 'border-dark-grey bg-dark-grey text-white shadow-sm'
-				: `${chipRestClass} text-mid-grey hover:text-black`}"
+			class="inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors {popoverOpen
+				? 'border-dark-grey bg-dark-grey text-white'
+				: `${chipRestClass} text-dark-grey hover:border-dark-grey`}"
 		>
 			<Calendar size={14} />
 		</Popover.Trigger>
@@ -175,7 +168,7 @@
 		>
 			<Select.Trigger class={selectTriggerClass}>
 				{currentIntervalLabel}
-				<ChevronDown size={12} />
+				<ChevronDown size={14} />
 			</Select.Trigger>
 			<Select.Content
 				sideOffset={4}

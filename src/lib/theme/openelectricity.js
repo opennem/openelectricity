@@ -62,6 +62,12 @@ const fuelTechColourMap = {
 
 	vre: '#069FAF',
 	residual: '#545353',
+
+	// Flexibility grouping (legacy explore palette)
+	variable: '#069FAF',
+	fast_flexible: '#F480EE',
+	slow_flexible: '#545353',
+
 	demand: '#6A6A6A'
 };
 

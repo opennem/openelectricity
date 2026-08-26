@@ -396,7 +396,6 @@
 				endDate={pickerEndDate}
 				minDate={MIN_DATE}
 				{maxDate}
-				earliestDate={MIN_DATE}
 				showIntervalDropdown={true}
 				onrangeselect={handleRangeSelect}
 				ondaterangechange={handleDateRangeChange}

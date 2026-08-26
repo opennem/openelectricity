@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { getTimeFormatPolicy, COARSE_BUCKET_INTERVALS } from './time-format-policy.js';
+import {
+	getTimeFormatPolicy,
+	formatRangeLabel,
+	COARSE_BUCKET_INTERVALS
+} from './time-format-policy.js';
 
 const NEM = 'Australia/Brisbane'; // +10, no DST
 const WEM = 'Australia/Perth'; // +08, no DST
@@ -120,5 +124,57 @@ describe('getTimeFormatPolicy — bucket ticks', () => {
 		for (const di of ['5m', '30m', '1h', '1d', '7d', '1M', '3M']) {
 			expect(getTimeFormatPolicy(di, NEM).bucketTick).toBeNull();
 		}
+	});
+});
+
+describe('formatRangeLabel — interval-aware viewport labels', () => {
+	it('names coarse bucket endpoints, collapsing a same-bucket range', () => {
+		// Aug 2023 → Mar 2026 spans FY2024 – FY2026.
+		expect(
+			formatRangeLabel(localMidnight(10, 2023, 7), localMidnight(10, 2026, 2), 'fy', NEM)
+		).toBe('FY2024 — FY2026');
+		// Both ends inside FY2026 (Jul 2025 – Mar 2026) collapse to one name.
+		expect(
+			formatRangeLabel(localMidnight(10, 2025, 6), localMidnight(10, 2026, 2), 'fy', NEM)
+		).toBe('FY2026');
+		expect(
+			formatRangeLabel(localMidnight(10, 2025, 0), localMidnight(10, 2026, 7), 'quarter', NEM)
+		).toBe('Q1 2025 — Q3 2026');
+		expect(
+			formatRangeLabel(localMidnight(10, 2025, 5), localMidnight(10, 2026, 3), 'season', NEM)
+		).toBe('Winter 2025 — Autumn 2026');
+		expect(
+			formatRangeLabel(localMidnight(10, 2024, 1), localMidnight(10, 2026, 9), 'half', NEM)
+		).toBe('H1 2024 — H2 2026');
+		expect(
+			formatRangeLabel(localMidnight(10, 2024, 3), localMidnight(10, 2026, 5), '1y', NEM)
+		).toBe('2024 — 2026');
+	});
+
+	it('labels monthly viewports by month, collapsing a single month', () => {
+		expect(
+			formatRangeLabel(localMidnight(10, 2025, 7), localMidnight(10, 2026, 7), '1M', NEM)
+		).toBe('Aug 2025 — Aug 2026');
+		expect(
+			formatRangeLabel(localMidnight(10, 2026, 7, 1), localMidnight(10, 2026, 7, 28), '1M', NEM)
+		).toBe('Aug 2026');
+	});
+
+	it('shows clock times and the network zone at sub-daily grains', () => {
+		// 19 Aug 2026 00:00 UTC = 10:00 am Brisbane.
+		const start = Date.UTC(2026, 7, 19);
+		const end = Date.UTC(2026, 7, 26);
+		expect(clean(formatRangeLabel(start, end, '30m', NEM))).toBe(
+			'19 Aug 2026, 10:00 am — 26 Aug 2026, 10:00 am AEST'
+		);
+		expect(clean(formatRangeLabel(start, end, '5m', WEM))).toBe(
+			'19 Aug 2026, 8:00 am — 26 Aug 2026, 8:00 am AWST'
+		);
+	});
+
+	it('falls back to a plain date range at daily grains', () => {
+		expect(
+			formatRangeLabel(localMidnight(10, 2025, 7, 19), localMidnight(10, 2025, 7, 26), '1d', NEM)
+		).toBe('19 — 26 Aug 2025');
 	});
 });
