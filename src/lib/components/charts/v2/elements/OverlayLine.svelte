@@ -11,6 +11,7 @@
 	import { getContext } from 'svelte';
 	import { line as d3Line, curveLinear } from 'd3-shape';
 	import { scaleLinear } from 'd3-scale';
+	import { perfSpan } from '../perf.js';
 
 	const { xScale, yScale, width } = getContext('LayerCake');
 
@@ -54,14 +55,20 @@
 	);
 	let y = $derived(scale === 'percent' ? percentScale : $yScale);
 
+	// Reuse one generator and reset its accessors for each path.
+	const lineGen = d3Line();
+
 	let path = $derived.by(() => {
 		if (!dataset.length || !$xScale || !y) return '';
-		const gen = d3Line()
-			.defined((/** @type {any} */ d) => Number.isFinite(d[valueKey]))
-			.x((/** @type {any} */ d) => $xScale(d.time))
-			.y((/** @type {any} */ d) => y(d[valueKey]))
-			.curve(curveType ?? curveLinear);
-		return gen(/** @type {any} */ (dataset)) || '';
+		return perfSpan('chart:overlay-line', () => {
+			const yScale = y;
+			lineGen
+				.defined((/** @type {any} */ d) => Number.isFinite(d[valueKey]))
+				.x((/** @type {any} */ d) => $xScale(d.time))
+				.y((/** @type {any} */ d) => yScale(d[valueKey]))
+				.curve(curveType ?? curveLinear);
+			return lineGen(/** @type {any} */ (dataset)) || '';
+		});
 	});
 
 	/** 20% steps up to (but excluding) the bound, so the top label never

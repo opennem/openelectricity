@@ -66,29 +66,20 @@ function finaliseBucket(bucket, out, seriesNames, method) {
 }
 
 /**
- * Aggregate time series data to a larger interval
+ * Group sorted rows into display buckets and return each bucket's source count.
+ * All aggregators use this path to calculate values and handle nulls consistently.
  *
- * @param {any[]} data - Time series data
- * @param {string} targetInterval - Target interval (e.g., '30m', '1h')
- * @param {string[]} seriesNames - Names of series to aggregate
- * @param {'sum' | 'mean'} [method='mean'] - Aggregation method
- * @param {{ trimPartialEdges?: boolean }} [options] - `trimPartialEdges` drops
- *   incomplete first/last buckets (a display policy — see below); off by default
- *   so plain aggregation never silently discards data.
- * @returns {any[]}
+ * @param {any[]} data - Time-sorted rows
+ * @param {string[]} seriesNames
+ * @param {'sum' | 'mean'} method
+ * @param {(timeMs: number) => number} bucketTimeOf - Bucket start for a sample
+ * @returns {{ rows: any[], counts: number[] }}
  */
-export function aggregateToInterval(
-	data,
-	targetInterval,
-	seriesNames,
-	method = 'mean',
-	{ trimPartialEdges = false } = {}
-) {
-	const intervalMs = parseIntervalMs(targetInterval);
+export function bucketAggregate(data, seriesNames, method, bucketTimeOf) {
 	const buckets = new Map();
 
 	for (const point of data) {
-		const bucketTime = Math.floor(point.time / intervalMs) * intervalMs;
+		const bucketTime = bucketTimeOf(point.time);
 
 		let bucket = buckets.get(bucketTime);
 		if (!bucket) {
@@ -107,19 +98,68 @@ export function aggregateToInterval(
 		accumulateIntoBucket(bucket, point, seriesNames);
 	}
 
+	const sorted = [...buckets.values()].sort((a, b) => a.time - b.time);
 	/** @type {any[]} */
-	const result = [];
-	for (const bucket of buckets.values()) {
+	const rows = [];
+	/** @type {number[]} */
+	const counts = [];
+	for (const bucket of sorted) {
 		/** @type {any} */
-		const point = {
-			date: bucket.date,
-			time: bucket.time
-		};
+		const point = { date: bucket.date, time: bucket.time };
 		finaliseBucket(bucket, point, seriesNames, method);
-		result.push(point);
+		rows.push(point);
+		counts.push(bucket._count);
 	}
+	return { rows, counts };
+}
 
-	result.sort((a, b) => a.time - b.time);
+/**
+ * Fold native rows `[lo, hi)` into one display bucket.
+ *
+ * @param {any[]} data - Time-sorted rows
+ * @param {number} lo - Inclusive start index
+ * @param {number} hi - Exclusive end index
+ * @param {string[]} seriesNames
+ * @param {'sum' | 'mean'} method
+ * @param {number} bucketTime - Bucket start (ms)
+ * @returns {{ row: any, count: number }}
+ */
+export function foldBucketRange(data, lo, hi, seriesNames, method, bucketTime) {
+	const { sums, counts } = newBucketSums(seriesNames);
+	const bucket = { _sums: sums, _counts: counts };
+	for (let i = lo; i < hi; i++) {
+		accumulateIntoBucket(bucket, data[i], seriesNames);
+	}
+	/** @type {any} */
+	const row = { date: new Date(bucketTime), time: bucketTime };
+	finaliseBucket(bucket, row, seriesNames, method);
+	return { row, count: hi - lo };
+}
+
+/**
+ * Aggregate time series data to a larger interval
+ *
+ * @param {any[]} data - Time series data
+ * @param {string} targetInterval - Target interval (e.g., '30m', '1h')
+ * @param {string[]} seriesNames - Names of series to aggregate
+ * @param {'sum' | 'mean'} [method='mean'] - Aggregation method
+ * @param {{ trimPartialEdges?: boolean }} [options] - Drop incomplete edge buckets
+ * @returns {any[]}
+ */
+export function aggregateToInterval(
+	data,
+	targetInterval,
+	seriesNames,
+	method = 'mean',
+	{ trimPartialEdges = false } = {}
+) {
+	const intervalMs = parseIntervalMs(targetInterval);
+	const { rows: result, counts } = bucketAggregate(
+		data,
+		seriesNames,
+		method,
+		(t) => Math.floor(t / intervalMs) * intervalMs
+	);
 
 	// Drop incomplete edge buckets when the caller opts in. The first and last
 	// visible buckets usually straddle the viewport bounds (the range slice is
@@ -130,22 +170,28 @@ export function aggregateToInterval(
 	// problem. "Full" is the richest bucket's sample count, so genuinely complete
 	// edge buckets, or data with no real aggregation (one sample per bucket), are
 	// left untouched; we never empty the result.
-	if (trimPartialEdges && result.length > 1) {
-		let fullCount = 0;
-		for (const bucket of buckets.values()) {
-			if (bucket._count > fullCount) fullCount = bucket._count;
-		}
-		if (fullCount > 1) {
-			const isPartial = (/** @type {any} */ row) =>
-				(buckets.get(row.time)?._count ?? 0) < fullCount;
-			// The enclosing guard already ensures length > 1 here; re-check only after
-			// a pop, so a two-bucket, both-partial view keeps its (leading) bucket.
-			if (isPartial(result[result.length - 1])) result.pop();
-			if (result.length > 1 && isPartial(result[0])) result.shift();
-		}
+	if (trimPartialEdges) {
+		trimPartialEdgeRows(result, counts);
 	}
 
 	return result;
+}
+
+/**
+ * Remove incomplete edge buckets without emptying the result.
+ *
+ * @param {any[]} rows - Sorted display rows (mutated)
+ * @param {number[]} counts - Source-row count per row, aligned with `rows`
+ */
+export function trimPartialEdgeRows(rows, counts) {
+	if (rows.length <= 1) return;
+	let fullCount = 0;
+	for (const count of counts) {
+		if (count > fullCount) fullCount = count;
+	}
+	if (fullCount <= 1) return;
+	if (counts[counts.length - 1] < fullCount) rows.pop();
+	if (rows.length > 1 && counts[0] < fullCount) rows.shift();
 }
 
 /**
@@ -182,44 +228,21 @@ function parseIntervalMs(interval) {
  * @returns {any[]}
  */
 export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum') {
-	const buckets = new Map();
+	return bucketAggregate(data, seriesNames, method, monthBucketTimeOf(ianaTimeZone)).rows;
+}
 
+/**
+ * Resolve the local month's start as UTC milliseconds (DST-free zones only).
+ * @param {string} ianaTimeZone
+ * @returns {(timeMs: number) => number}
+ */
+function monthBucketTimeOf(ianaTimeZone) {
 	// Derive UTC offset from the IANA zone name (DST-free zones only)
 	const offsetHours = offsetHoursFromIana(ianaTimeZone);
-
-	for (const point of data) {
-		const { year, month0 } = localYearMonth(new Date(point.time), ianaTimeZone);
-		const key = year * 12 + month0;
-
-		let bucket = buckets.get(key);
-		if (!bucket) {
-			// Start of month in local tz, expressed as UTC ms
-			const monthStart = new Date(Date.UTC(year, month0, 1, -offsetHours));
-			const { sums, counts } = newBucketSums(seriesNames);
-			bucket = {
-				time: monthStart.getTime(),
-				date: monthStart,
-				_sums: sums,
-				_counts: counts,
-				_count: 0
-			};
-			buckets.set(key, bucket);
-		}
-
-		bucket._count++;
-		accumulateIntoBucket(bucket, point, seriesNames);
-	}
-
-	/** @type {any[]} */
-	const result = [];
-	for (const bucket of buckets.values()) {
-		/** @type {any} */
-		const point = { date: bucket.date, time: bucket.time };
-		finaliseBucket(bucket, point, seriesNames, method);
-		result.push(point);
-	}
-
-	return result.sort((a, b) => a.time - b.time);
+	return (timeMs) => {
+		const { year, month0 } = localYearMonth(new Date(timeMs), ianaTimeZone);
+		return Date.UTC(year, month0, 1, -offsetHours);
+	};
 }
 
 /**
@@ -235,31 +258,18 @@ export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum'
  * @returns {any[]}
  */
 export function aggregateByBoundary(data, seriesNames, kind, ianaTimeZone, method = 'sum') {
+	return bucketAggregate(data, seriesNames, method, boundaryBucketTimeOf(kind, ianaTimeZone)).rows;
+}
+
+/**
+ * Resolve calendar bucket starts for quarter, season, half-year and financial year.
+ * @param {string} kind
+ * @param {string} ianaTimeZone
+ * @returns {(timeMs: number) => number}
+ */
+function boundaryBucketTimeOf(kind, ianaTimeZone) {
 	const offsetHours = offsetHoursFromIana(ianaTimeZone);
-	/** @type {Map<number, any>} */
-	const buckets = new Map();
-
-	for (const point of data) {
-		const start = bucketStartMs(kind, point.time, offsetHours);
-		let bucket = buckets.get(start);
-		if (!bucket) {
-			const { sums, counts } = newBucketSums(seriesNames);
-			bucket = { time: start, date: new Date(start), _sums: sums, _counts: counts };
-			buckets.set(start, bucket);
-		}
-		accumulateIntoBucket(bucket, point, seriesNames);
-	}
-
-	/** @type {any[]} */
-	const result = [];
-	for (const bucket of buckets.values()) {
-		/** @type {any} */
-		const out = { date: bucket.date, time: bucket.time };
-		finaliseBucket(bucket, out, seriesNames, method);
-		result.push(out);
-	}
-
-	return result.sort((a, b) => a.time - b.time);
+	return (timeMs) => bucketStartMs(kind, timeMs, offsetHours);
 }
 
 /**
@@ -320,6 +330,44 @@ export function aggregateForDisplay(
 				return data;
 		}
 	});
+}
+
+/**
+ * Resolve display bucket starts, or return null when aggregation is unnecessary.
+ *
+ * @param {{ apiInterval: string, displayInterval: string, ianaTimeZone: string }} opts
+ * @returns {((timeMs: number) => number) | null}
+ */
+export function displayBucketTimeOf({ apiInterval, displayInterval, ianaTimeZone }) {
+	switch (displayInterval) {
+		case '30m': {
+			const intervalMs = parseIntervalMs('30m');
+			return (t) => Math.floor(t / intervalMs) * intervalMs;
+		}
+		case '1M':
+			return apiInterval === '1d' ? monthBucketTimeOf(ianaTimeZone) : null;
+		case 'season':
+			return apiInterval === '1M' ? boundaryBucketTimeOf('season', ianaTimeZone) : null;
+		case 'half':
+			return boundaryBucketTimeOf('half', ianaTimeZone);
+		case 'fy':
+			return apiInterval === '1M' ? boundaryBucketTimeOf('fy', ianaTimeZone) : null;
+		case 'quarter':
+			return apiInterval === '3M' ? null : boundaryBucketTimeOf('quarter', ianaTimeZone);
+		default:
+			return null;
+	}
+}
+
+/**
+ * Whether display aggregation removes incomplete edge buckets.
+ *
+ * @param {string} displayInterval
+ * @param {'sum' | 'mean'} method
+ * @returns {boolean}
+ */
+export function displayTrimsPartialEdges(displayInterval, method) {
+	return displayInterval === '30m' && method === 'sum';
 }
 
 // Legacy pipeline — moved to legacy-transform.js; re-exported so `v2/index.js`

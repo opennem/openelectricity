@@ -1,11 +1,4 @@
-/**
- * Date-range utilities for facility-style time-series charts.
- *
- * Constants and helpers for computing default date ranges from facility
- * units and range presets. Lives in `$lib/utils/` so any chart route can
- * consume the same logic; callers today: `/facility/[code]` and the
- * facility chart components.
- */
+/** Shared date-range utilities for chart viewports and API caching. */
 
 /** Earliest selectable date across the data set. */
 export const MIN_DATE = '1998-12-01';
@@ -15,6 +8,22 @@ export const MIN_DATE = '1998-12-01';
  * data fetches; no OE data exists before it.
  */
 export const EARLIEST_DATA_MS = new Date(MIN_DATE + 'T00:00:00Z').getTime();
+
+const HISTORICAL_WINDOW_MARGIN_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Whether a network-local window ended more than one day ago.
+ *
+ * @param {string | undefined} dateEnd
+ * @param {number} [nowMs]
+ * @returns {boolean}
+ */
+export function isHistoricalWindow(dateEnd, nowMs = Date.now()) {
+	if (!dateEnd) return false;
+	const localDateEnd = dateEnd.includes('T') ? dateEnd : `${dateEnd}T00:00:00`;
+	const endMs = new Date(`${localDateEnd}+08:00`).getTime();
+	return Number.isFinite(endMs) && nowMs - endMs > HISTORICAL_WINDOW_MARGIN_MS;
+}
 
 /**
  * Find the earliest `data_first_seen` date across a facility's units.

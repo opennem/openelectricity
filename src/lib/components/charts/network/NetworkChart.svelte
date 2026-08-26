@@ -41,7 +41,8 @@
 	import { getGroup, loadGroupsFor } from './groups.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { formatPrice } from '$lib/utils/formatters';
-	import { ianaFromOffset } from '../v2/network-time.js';
+	import { fetchBufferMultiplierForInterval } from '../v2/fetch-window.js';
+	import { ianaFromOffset, offsetMsFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
 	import nighttimes from '$lib/utils/nighttimes';
 
@@ -68,7 +69,9 @@
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange]
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once
 	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
-	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>, groupFuelTechs?: Record<string, string[]>}) => void)} [onvisibledata]
+	 * @property {boolean} [gestureActive] - Whether a peer chart is being manipulated
+	 * @property {((active: boolean) => void)} [ongesturechange] - Reports this chart's gesture state
+	 * @property {((tableData: {data: any[], start: number, end: number, seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>, groupFuelTechs?: Record<string, string[]>}) => void)} [onvisibledata]
 	 * @property {((info: {hasData: boolean}) => void)} [onloadcomplete] - Fired whenever a settled
 	 *   fetch leaves the manager idle; the first fire is the initial load, where
 	 *   parents apply their default range preset
@@ -87,6 +90,10 @@
 	 *   rather than `chartHeightPx`, which would clobber a restored height.
 	 * @property {string} [heightStorageKey] - localStorage key persisting the
 	 *   resized height; share one key across a split pair so toggling keeps it
+	 * @property {string} [loadingLabel] - Target window shown in the loading veil
+	 * @property {boolean} [holdFrame] - Keep the rendered frame until all synced charts are ready
+	 * @property {{ widenMultiplier?: number, grains?: Array<{ interval: string, metric: string, seriesKey?: string, windowMs: number }> } | null} [prefetchPlan]
+	 *   - Idle plan for widening the current cache and warming likely next intervals
 	 * @property {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number }>} [overlayLines]
 	 *   - Lines drawn above the stack from independent row sets (e.g. demand,
 	 *   renewable share); `scale: 'percent'` adds a right-hand 0–100% axis
@@ -116,6 +123,8 @@
 		onhoverchange,
 		onviewportchange,
 		onviewportsettle,
+		gestureActive = false,
+		ongesturechange,
 		onvisibledata,
 		onloadcomplete,
 		hiddenSeriesNames = /** @type {string[]} */ ([]),
@@ -126,6 +135,9 @@
 		nightShading = false,
 		resizable = false,
 		heightStorageKey = undefined,
+		loadingLabel = '',
+		holdFrame = false,
+		prefetchPlan = null,
 		overlayLines = /** @type {any[]} */ ([]),
 		overlayAreas = /** @type {any[]} */ ([])
 	} = $props();
@@ -284,10 +296,40 @@
 				end: Math.min(new Date(dateEnd + 'T23:59:59' + tz).getTime(), Date.now())
 			};
 		},
-		fetchBufferMultiplier: () => (fineGrain ? 1 : 3),
+		fetchBufferMultiplier: () => fetchBufferMultiplierForInterval(interval),
+		// Retain prefetched managers across common chart switches.
+		stashMax: 6,
+		idlePrefetch: () => prefetchPlan,
+		createManagerFor: (spec) => {
+			const tz = timeZone || '+10:00';
+			let processResponse = processResponseFn;
+			if (panelKind === 'generation' || panelKind === 'market-value' || panelKind === 'emissions') {
+				// Prefetched intervals need a processor configured for their own metric.
+				const cfg = {
+					groupMap: groupConfig.fuelTechs,
+					groupOrder: groupConfig.order,
+					groupLabels: groupConfig.labels,
+					loadsToInvert: panelKind === 'emissions' ? [] : loadGroupsToInvert,
+					getColour: getFuelTechColour,
+					metricFilter: spec.metric,
+					networkTimezone: tz
+				};
+				processResponse = (resp) => processNetworkData(resp, cfg);
+			}
+			return new ChartDataManager({
+				cacheKey: `${region}:${chartKind}`,
+				networkTimezone: tz,
+				interval: spec.interval,
+				metric: spec.metric,
+				seriesKey: spec.seriesKey ?? seriesKey,
+				processResponse,
+				buildFetchUrl
+			});
+		},
 		minDateMs: () => minDateMs,
 		fineViewportLimits: () => fineGrain,
 		onGestureStart: () => chartStore?.clearHover(),
+		onGestureActiveChange: (active) => ongesturechange?.(active),
 		onviewportchange: (range) => onviewportchange?.(range),
 		onviewportsettle: (range) => onviewportsettle?.(range)
 	});
@@ -296,6 +338,9 @@
 	let viewStart = $derived(host.viewStart);
 	let viewEnd = $derived(host.viewEnd);
 	let isPanning = $derived(host.isPanning);
+
+	// True while this chart or a synced peer is being manipulated.
+	let inGesture = $derived(host.isGesturing || gestureActive);
 
 	// ============================================
 	// Chart store
@@ -431,7 +476,7 @@
 	// manager's component series (emissions + energy), so its store meta is
 	// fixed rather than copied from the processed cache.
 	$effect(() => {
-		if (!chartStore) return;
+		if (!chartStore || holdFrame) return;
 		if (panelKind === 'intensity') {
 			chartStore.seriesNames = [INTENSITY_SERIES_ID];
 			chartStore.seriesColours = { [INTENSITY_SERIES_ID]: LINE_COLOUR };
@@ -448,23 +493,23 @@
 	// Caller-driven series hiding, kept separate from the metadata effect so a
 	// refetch doesn't clear it and a toggle doesn't re-run series setup.
 	$effect(() => {
-		if (chartStore) chartStore.hiddenSeriesNames = hiddenSeriesNames;
+		if (chartStore && !holdFrame) chartStore.hiddenSeriesNames = hiddenSeriesNames;
 	});
 
 	// Caller-driven overlay lines (demand / renewable share) — independent row
 	// sets drawn above the stack.
 	$effect(() => {
-		if (chartStore) chartStore.overlayLines = overlayLines;
+		if (chartStore && !holdFrame) chartStore.overlayLines = overlayLines;
 	});
 
 	// Caller-driven hatched overlay bands (curtailment) stacked on the top.
 	$effect(() => {
-		if (chartStore) chartStore.overlayAreas = overlayAreas;
+		if (chartStore && !holdFrame) chartStore.overlayAreas = overlayAreas;
 	});
 
 	// Metric-dependent options (unit + curve)
 	$effect(() => {
-		if (!chartStore) return;
+		if (!chartStore || holdFrame) return;
 		const intervalCurve = getIntervalSpec(displayInterval)?.curveType ?? 'straight';
 		if (panelKind === 'market' && marketConfig) {
 			chartStore.chartOptions.baseUnit = marketConfig.baseUnit;
@@ -508,6 +553,9 @@
 	// assignment below is a signal no-op on a hit).
 	const visibleAggregation = createVisibleAggregation();
 
+	// Reuse one marker so gesture-mode memoisation stays stable.
+	const GESTURE_SLICE = {};
+
 	// Intensity derivation memo, keyed on the aggregation result's identity so
 	// aggregation memo hits stay signal no-ops for the store too.
 	/** @type {any[] | null} */ let lastIntensitySource = null;
@@ -517,21 +565,33 @@
 	$effect(() => {
 		const manager = dataManager;
 		if (!chartStore || !manager?.processedCache) return;
+		// Keep the old frame until a coordinated switch releases every chart.
+		if (holdFrame) return;
 
 		perfSpan('chart:viewport-effect', () => {
 			const start = viewStart;
 			const end = viewEnd;
 			const currentDisplayInterval = displayInterval;
 			const sums = sumsForDisplay;
+			const gesturing = inGesture;
 
-			const visibleData = visibleAggregation(manager.processedCache, {
-				viewStart: start,
-				viewEnd: end,
-				apiInterval: interval,
-				displayInterval: currentDisplayInterval,
-				ianaTimeZone,
-				method: sums ? 'sum' : 'mean'
-			});
+			// Keep the vertical scale stable until the gesture settles.
+			if (gesturing) chartStore.freezeYDomain();
+			else chartStore.unfreezeYDomain();
+
+			const visibleData = visibleAggregation(
+				manager.processedCache,
+				{
+					viewStart: start,
+					viewEnd: end,
+					apiInterval: interval,
+					displayInterval: currentDisplayInterval,
+					ianaTimeZone,
+					method: sums ? 'sum' : 'mean'
+				},
+				// Padded slices reuse rows during gestures; settling restores the exact slice.
+				gesturing ? GESTURE_SLICE : undefined
+			);
 
 			// The intensity line renders a ratio of the aggregated component
 			// series — derived per display bucket, matching the facility charts.
@@ -577,17 +637,17 @@
 		const currentIana = ianaTimeZone;
 		const sums = sumsForDisplay;
 		const manager = dataManager;
-		const colours = { ...chartStore.seriesColours };
 		const _cache = manager?.processedCache;
 		const callback = onvisibledata;
 
 		if (tableDebounceTimer) clearTimeout(tableDebounceTimer);
+		// Build the table snapshot once, after the gesture settles.
+		if (inGesture) return;
 		if (!callback || !manager?.processedCache || !manager.seriesMeta) return;
 
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
-			// Usually a memo hit — the viewport effect computed the same slice with
-			// the same options 300ms ago.
+			// Usually a memo hit. Read colours here to avoid cloning them on each effect run.
 			const rows = visibleAggregation(manager.processedCache, {
 				viewStart: start,
 				viewEnd: end,
@@ -598,9 +658,11 @@
 			});
 			callback({
 				data: rows,
+				start,
+				end,
 				seriesNames: meta.seriesNames,
 				seriesLabels: meta.seriesLabels,
-				seriesColours: colours,
+				seriesColours: { ...chartStore.seriesColours },
 				groupFuelTechs: meta.groupFuelTechs
 			});
 		}, 300);
@@ -610,24 +672,42 @@
 		};
 	});
 
-	// Homepage-style nighttime shading, regenerated for the visible window. Only
-	// meaningful against sub-daily power curves — daily-and-coarser grains clear
-	// it rather than painting bands narrower than a data bucket.
+	// Cache nighttime bands by network-local day; the plot clips them to the viewport.
+	const EMPTY_SHADING = /** @type {Date[][]} */ ([]);
+	let lastNightKey = '';
+	let lastNightBands = EMPTY_SHADING;
 	$effect(() => {
 		if (!chartStore) return;
+		if (holdFrame) return; // Keep bands aligned with the held x-scale.
 		if (!nightShading || !fineGrain) {
-			chartStore.bgShadingData = [];
+			chartStore.bgShadingData = EMPTY_SHADING;
 			return;
 		}
-		chartStore.bgShadingData = nighttimes(
-			new Date(viewStart),
-			new Date(viewEnd),
-			timeZone || '+10:00'
-		);
+		const tz = timeZone || '+10:00';
+		const bands = perfSpan('chart:night-shading', () => {
+			const DAY_MS = 24 * 60 * 60 * 1000;
+			const offsetMs = offsetMsFromOffset(tz);
+			const dayLo = Math.floor((viewStart + offsetMs) / DAY_MS);
+			const dayHi = Math.ceil((viewEnd + offsetMs) / DAY_MS);
+			const nightKey = `${dayLo}|${dayHi}|${tz}`;
+			if (nightKey !== lastNightKey) {
+				lastNightKey = nightKey;
+				lastNightBands = nighttimes(
+					new Date(dayLo * DAY_MS - offsetMs),
+					new Date(dayHi * DAY_MS - offsetMs),
+					tz
+				);
+			}
+			return lastNightBands;
+		});
+		chartStore.bgShadingData = bands;
 		chartStore.bgShadingFill = '#33333311';
 	});
 
-	let showLoadingOverlay = $derived(computeShowLoadingOverlay(dataManager, chartStore));
+	// Keep held frames veiled until every synced chart is ready.
+	let showLoadingOverlay = $derived(
+		computeShowLoadingOverlay(dataManager, chartStore) || holdFrame
+	);
 
 	// Report load completion once the in-flight fetch settles — `cacheStart` is a
 	// stable "data was found" signal that survives panning.
@@ -686,6 +766,21 @@
 	export function reconcileFetches() {
 		host.reconcileFetches();
 	}
+
+	/** Whether the current grain is loaded and idle, including cache-only switches. */
+	export function isSettled() {
+		const manager = dataManager;
+		if (!manager) return false;
+		if (
+			manager.cacheKey !== `${region}:${chartKind}` ||
+			manager.interval !== interval ||
+			manager.metric !== metric ||
+			manager.seriesKey !== seriesKey
+		) {
+			return false;
+		}
+		return manager.initialLoadComplete && !manager.hasPendingFetch && !manager.isLoading;
+	}
 </script>
 
 {#if chartStore}
@@ -717,7 +812,7 @@
 
 		{#if showLoadingOverlay}
 			<div class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
-				<span class="text-sm text-mid-warm-grey">Loading data…</span>
+				<span class="text-sm text-mid-warm-grey">Loading {loadingLabel || 'data'}…</span>
 			</div>
 		{/if}
 	</div>

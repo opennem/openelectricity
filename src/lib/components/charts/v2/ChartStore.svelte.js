@@ -67,22 +67,22 @@ export default class ChartStore {
 	seriesData = $state.raw([]);
 
 	/** @type {string[]} */
-	seriesNames = $state([]);
+	seriesNames = $state.raw([]);
 
 	/** @type {string[]} */
-	hiddenSeriesNames = $state([]);
+	hiddenSeriesNames = $state.raw([]);
 
 	visibleSeriesNames = $derived(
 		this.seriesNames.filter((name) => !this.hiddenSeriesNames.includes(name))
 	);
 
 	/** @type {Record<string, string>} */
-	seriesColours = $state({});
+	seriesColours = $state.raw({});
 
 	visibleSeriesColours = $derived(this.visibleSeriesNames.map((name) => this.seriesColours[name]));
 
 	/** @type {Record<string, string>} */
-	seriesLabels = $state({});
+	seriesLabels = $state.raw({});
 
 	// Accessor keys
 	/** @type {string} */
@@ -152,8 +152,12 @@ export default class ChartStore {
 	/** @type {[number, number] | undefined} */
 	#customYDomain = $state();
 
+	/** @type {[number, number] | undefined} */
+	#frozenYDomain = $state.raw(undefined);
+
 	yDomain = $derived.by(() => {
 		if (this.#customYDomain) return this.#customYDomain;
+		if (this.#frozenYDomain) return this.#frozenYDomain;
 
 		if (this.chartOptions?.isDataTransformTypeProportion && !this.chartOptions?.isChartTypeLine) {
 			return /** @type {[number, number]} */ ([0, 100]);
@@ -170,18 +174,29 @@ export default class ChartStore {
 		this.#customYDomain = domain;
 	}
 
+	/** Freeze the automatic y-domain for a gesture. Custom domains take precedence. */
+	freezeYDomain() {
+		if (untrack(() => this.#frozenYDomain)) return;
+		this.#frozenYDomain = untrack(() => this.yDomain);
+	}
+
+	/** Release the gesture snapshot and recompute from visible data. */
+	unfreezeYDomain() {
+		if (untrack(() => this.#frozenYDomain)) this.#frozenYDomain = undefined;
+	}
+
 	// Ticks
 	/** @type {Date[] | number[] | number | undefined} */
-	xTicks = $state();
+	xTicks = $state.raw();
 
 	/** @type {Date[] | undefined} */
-	xGridlineTicks = $state();
+	xGridlineTicks = $state.raw();
 
 	/** @type {any[]} */
-	xHighlightTicks = $state([]);
+	xHighlightTicks = $state.raw([]);
 
 	/** @type {any[]} Tick values whose labels are hidden on mobile (gridlines kept) */
-	xMobileHiddenTicks = $state([]);
+	xMobileHiddenTicks = $state.raw([]);
 
 	/** @type {number | any[] | ((ticks: any[]) => any[]) | undefined} - A tick count, explicit values, or a function thinning the scale's default ticks (forwarded to AxisY). */
 	yTicks = $state();
@@ -260,11 +275,14 @@ export default class ChartStore {
 		if (!this.seriesData?.length || !this.chartOptions) return [];
 
 		const isChangeSince = this.chartOptions.selectedDataTransformType === 'changeSince';
-		const xDomain = this.xDomain;
-		const filteredData =
-			isChangeSince && xDomain?.[0] !== undefined && xDomain?.[1] !== undefined
-				? this.seriesData.filter((d) => d.time >= xDomain[0] && d.time <= xDomain[1])
-				: this.seriesData;
+		// Only changeSince depends on xDomain; other modes should not rerun on every pan.
+		let filteredData = this.seriesData;
+		if (isChangeSince) {
+			const xDomain = this.xDomain;
+			if (xDomain?.[0] !== undefined && xDomain?.[1] !== undefined) {
+				filteredData = this.seriesData.filter((d) => d.time >= xDomain[0] && d.time <= xDomain[1]);
+			}
+		}
 
 		return this.seriesData.map((d) =>
 			this.chartOptions.dataTransformFunction({
@@ -283,14 +301,15 @@ export default class ChartStore {
 	});
 
 	seriesScaledDataWithMinMax = $derived.by(() => {
-		// Read the signal-backed getter once, not per value in the hot loop.
+		// Read signal-backed values once before the hot loop.
 		const isStacked = this.chartOptions?.isAnyStackedType;
+		const visibleNames = this.visibleSeriesNames;
 		return perfSpan('chart:minmax', () =>
 			this.seriesScaledData.map((d) => {
 				const result = { ...d, _max: 0, _min: 0 };
 				let hasValue = false;
 
-				for (const name of this.visibleSeriesNames) {
+				for (const name of visibleNames) {
 					const raw = d[name];
 					const value = raw != null ? Number(raw) : null;
 
@@ -404,14 +423,14 @@ export default class ChartStore {
 
 	// Background shading (behind stacked area)
 	/** @type {Date[][]} */
-	bgShadingData = $state([]);
+	bgShadingData = $state.raw([]);
 
 	/** @type {string} */
 	bgShadingFill = $state('#33333311');
 
 	// Foreground shading (in front of stacked area)
 	/** @type {Date[][]} */
-	fgShadingData = $state([]);
+	fgShadingData = $state.raw([]);
 
 	/** @type {string} */
 	fgShadingFill = $state('rgba(255, 255, 255, 0.24)');

@@ -228,3 +228,59 @@ describe('ChartStore stacked min/max derivations', () => {
 		expect(max).toBe(0);
 	});
 });
+
+describe('ChartStore frozen y-domain (gesture freeze)', () => {
+	/** @param {Array<any>} data */
+	function createStackedChart(data) {
+		const chart = new ChartStore({ key: Symbol('test') });
+		chart.seriesNames = ['a', 'b'];
+		chart.seriesData = data;
+		return chart;
+	}
+
+	const rows = [{ time: 0, date: new Date(0), a: 100, b: 50 }];
+	const tallerRows = [{ time: 0, date: new Date(0), a: 900, b: 300 }];
+
+	it('holds the snapshot across data reassignment and recomputes on unfreeze', () => {
+		const chart = createStackedChart(rows);
+		const before = chart.yDomain;
+
+		chart.freezeYDomain();
+		chart.seriesData = tallerRows;
+		expect(chart.yDomain).toEqual(before);
+
+		chart.unfreezeYDomain();
+		expect(chart.yDomain[1]).toBeGreaterThan(before[1]);
+	});
+
+	it('is idempotent — repeated freezes keep the first snapshot', () => {
+		const chart = createStackedChart(rows);
+		chart.freezeYDomain();
+		const frozen = chart.yDomain;
+
+		chart.seriesData = tallerRows;
+		chart.freezeYDomain();
+		expect(chart.yDomain).toEqual(frozen);
+	});
+
+	it('never overrides a custom domain', () => {
+		const chart = createStackedChart(rows);
+		chart.setYDomain([0, 42]);
+		chart.freezeYDomain();
+		chart.seriesData = tallerRows;
+		expect(chart.yDomain).toEqual([0, 42]);
+
+		// Clearing the custom domain falls back to its frozen snapshot.
+		chart.setYDomain(undefined);
+		expect(chart.yDomain).toEqual([0, 42]);
+		chart.unfreezeYDomain();
+		expect(chart.yDomain[1]).toBeGreaterThan(42);
+	});
+
+	it('unfreeze without a freeze is a no-op', () => {
+		const chart = createStackedChart(rows);
+		const before = chart.yDomain;
+		chart.unfreezeYDomain();
+		expect(chart.yDomain).toEqual(before);
+	});
+});

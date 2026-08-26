@@ -96,3 +96,198 @@ describe('createVisibleAggregation', () => {
 		expect(memo({ data: [], seriesNames: [] }, opts())).toEqual([]);
 	});
 });
+
+describe('sliced memo parity with slice-then-aggregate', () => {
+	const DAY = 24 * 60 * 60 * 1000;
+
+	/** Deterministic PRNG. @param {number} seed */
+	function mulberry32(seed) {
+		return () => {
+			seed |= 0;
+			seed = (seed + 0x6d2b79f5) | 0;
+			let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+			t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+			return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+		};
+	}
+
+	/**
+	 * Two-series cache with nulls and missing rows, starting at Brisbane midnight.
+	 * @param {number} n
+	 * @param {number} intervalMs
+	 */
+	function makeMessyCache(n, intervalMs) {
+		const startMs = Date.UTC(2026, 0, 1, -10);
+		const data = [];
+		for (let i = 0; i < n; i++) {
+			if (i % 23 === 11) continue;
+			const time = startMs + i * intervalMs;
+			data.push({
+				date: new Date(time),
+				time,
+				a: Math.sin(i / 5) * 100 + i,
+				b: i % 7 === 3 ? null : Math.cos(i / 9) * 50
+			});
+		}
+		return { data, seriesNames: ['a', 'b'] };
+	}
+
+	/** Monthly rows (real calendar months, Brisbane-local starts). @param {number} n */
+	function makeMonthlyCache(n) {
+		const data = [];
+		for (let i = 0; i < n; i++) {
+			const time = Date.UTC(2024, i, 1, -10);
+			data.push({ date: new Date(time), time, a: 10 + i, b: i % 5 === 2 ? null : 3 * i });
+		}
+		return { data, seriesNames: ['a', 'b'] };
+	}
+
+	/**
+	 * @param {{ data: any[], seriesNames: string[] }} cache
+	 * @param {any} o
+	 */
+	function reference(cache, o) {
+		return aggregateForDisplay(
+			cache.data.slice(bisectTime(cache.data, o.viewStart), bisectTimeRight(cache.data, o.viewEnd)),
+			cache.seriesNames,
+			o
+		);
+	}
+
+	const cases = [
+		{
+			name: '30m sum from 5m (partial-edge trim)',
+			cache: () => makeMessyCache(600, MIN_5),
+			displayInterval: '30m',
+			apiInterval: '5m',
+			method: /** @type {const} */ ('sum')
+		},
+		{
+			name: '30m mean from 5m (partial edges kept)',
+			cache: () => makeMessyCache(600, MIN_5),
+			displayInterval: '30m',
+			apiInterval: '5m',
+			method: /** @type {const} */ ('mean')
+		},
+		{
+			name: '1M sum from 1d',
+			cache: () => makeMessyCache(240, DAY),
+			displayInterval: '1M',
+			apiInterval: '1d',
+			method: /** @type {const} */ ('sum')
+		},
+		{
+			name: 'quarter mean from 1M',
+			cache: () => makeMonthlyCache(30),
+			displayInterval: 'quarter',
+			apiInterval: '1M',
+			method: /** @type {const} */ ('mean')
+		},
+		{
+			name: 'native passthrough (5m display over 5m fetch)',
+			cache: () => makeMessyCache(300, MIN_5),
+			displayInterval: '5m',
+			apiInterval: '5m',
+			method: /** @type {const} */ ('sum')
+		}
+	];
+
+	for (const c of cases) {
+		it(`matches the reference for random viewports — ${c.name}`, () => {
+			const cache = c.cache();
+			const memo = createVisibleAggregation();
+			const rand = mulberry32(42);
+			const first = cache.data[0].time;
+			const last = cache.data[cache.data.length - 1].time;
+			const span = last - first;
+
+			for (let i = 0; i < 40; i++) {
+				// Include out-of-range edges and tiny or empty spans.
+				const a = first + (rand() - 0.2) * span;
+				const b = a + rand() * rand() * span;
+				const o = {
+					viewStart: Math.round(a),
+					viewEnd: Math.round(b),
+					apiInterval: c.apiInterval,
+					displayInterval: c.displayInterval,
+					ianaTimeZone: TZ,
+					method: c.method
+				};
+				expect(memo(cache, o), `viewport #${i}: ${o.viewStart}→${o.viewEnd}`).toEqual(
+					reference(cache, o)
+				);
+			}
+		});
+	}
+
+	it('padded mode keeps the array identity until the pan travels a full pad', () => {
+		const cache = makeMessyCache(600, MIN_5);
+		const memo = createVisibleAggregation();
+		const base = {
+			viewStart: cache.data[100].time,
+			viewEnd: cache.data[300].time,
+			apiInterval: '5m',
+			displayInterval: '30m',
+			ianaTimeZone: TZ,
+			method: /** @type {const} */ ('mean')
+		};
+
+		const pad = 24;
+		const v1 = memo(cache, base, { pad });
+		// A short pan remains within the same quantised slice.
+		const v2 = memo(
+			cache,
+			{ ...base, viewStart: base.viewStart + 3 * MIN_5, viewEnd: base.viewEnd + 3 * MIN_5 },
+			{ pad }
+		);
+		expect(v2).toBe(v1);
+		// Crossing the pad recomputes the slice.
+		const v3 = memo(
+			cache,
+			{ ...base, viewStart: base.viewStart + 30 * MIN_5, viewEnd: base.viewEnd + 30 * MIN_5 },
+			{ pad }
+		);
+		expect(v3).not.toBe(v1);
+	});
+
+	it('padded rows are whole display buckets covering the viewport', () => {
+		const cache = makeMessyCache(600, MIN_5);
+		const memo = createVisibleAggregation();
+		const o = {
+			viewStart: cache.data[97].time,
+			viewEnd: cache.data[301].time,
+			apiInterval: '5m',
+			displayInterval: '30m',
+			ianaTimeZone: TZ,
+			method: /** @type {const} */ ('mean')
+		};
+
+		const padded = memo(cache, o, { pad: 24 });
+		// Padded rows reuse whole buckets from the full aggregation.
+		const full = aggregateForDisplay(cache.data, cache.seriesNames, o);
+		const byTime = new Map(full.map((row) => [row.time, row]));
+		for (const row of padded) {
+			expect(row).toEqual(byTime.get(row.time));
+		}
+		// The padded span must cover the viewport.
+		expect(padded[0].time).toBeLessThanOrEqual(o.viewStart);
+		expect(padded[padded.length - 1].time + 30 * 60 * 1000).toBeGreaterThanOrEqual(o.viewEnd);
+	});
+
+	it('returns to exact parity after a padded gesture (settle path)', () => {
+		const cache = makeMessyCache(600, MIN_5);
+		const memo = createVisibleAggregation();
+		const o = {
+			viewStart: cache.data[100].time + 7 * 60 * 1000,
+			viewEnd: cache.data[300].time,
+			apiInterval: '5m',
+			displayInterval: '30m',
+			ianaTimeZone: TZ,
+			method: /** @type {const} */ ('sum')
+		};
+
+		expect(memo(cache, o)).toEqual(reference(cache, o));
+		memo(cache, o, { pad: 24 });
+		expect(memo(cache, o)).toEqual(reference(cache, o));
+	});
+});

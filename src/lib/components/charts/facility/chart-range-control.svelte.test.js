@@ -118,3 +118,63 @@ describe('advanceLiveEdge', () => {
 		expect(state.viewEnd - state.viewStart).toBe(DAY_MS);
 	});
 });
+
+describe('interval pinning across gesture settles', () => {
+	it('the All preset keeps its monthly grain when a gesture settles on the same span', () => {
+		const anchorEnd = Date.now();
+		const { state, range } = createHarness({
+			anchorEnd,
+			viewStart: anchorEnd - DAY_MS,
+			viewEnd: anchorEnd
+		});
+
+		range.handleRangeSelect(-1);
+		expect(range.displayInterval).toBe('1M');
+		expect(range.activeInterval).toBe('1M');
+
+		// Exercise both the live update and settle paths used by a real gesture.
+		const settled = { start: state.viewStart + DAY_MS, end: state.viewEnd + DAY_MS };
+		range.handleDerivedViewportChange(settled);
+		expect(range.displayInterval).toBe('1M');
+		range.handleViewportSettle(settled);
+		expect(range.displayInterval).toBe('1M');
+		expect(range.activeInterval).toBe('1M');
+		expect(range.activeMetric).toBe('energy');
+	});
+
+	it('a dropdown pick survives settles while its tier still offers it', () => {
+		const anchorEnd = Date.now();
+		const { range } = createHarness({
+			anchorEnd,
+			viewStart: anchorEnd - 3 * DAY_MS,
+			viewEnd: anchorEnd
+		});
+
+		range.handleRangeSelect(3);
+		range.handleIntervalChange('5m');
+		expect(range.displayInterval).toBe('5m');
+
+		// Four days still supports five-minute data.
+		range.handleViewportSettle({ start: anchorEnd - 4 * DAY_MS, end: anchorEnd });
+		expect(range.displayInterval).toBe('5m');
+		expect(range.activeInterval).toBe('5m');
+	});
+
+	it('a pinned interval yields to the ladder once the span leaves its tier', () => {
+		const anchorEnd = Date.now();
+		const { range } = createHarness({
+			anchorEnd,
+			viewStart: anchorEnd - 3 * DAY_MS,
+			viewEnd: anchorEnd
+		});
+
+		range.handleRangeSelect(3);
+		expect(range.displayInterval).toBe('30m');
+
+		// Forty days no longer supports 30-minute data, so use daily energy.
+		range.handleViewportSettle({ start: anchorEnd - 40 * DAY_MS, end: anchorEnd });
+		expect(range.activeMetric).toBe('energy');
+		expect(range.activeInterval).toBe('1d');
+		expect(range.displayInterval).toBe('1d');
+	});
+});

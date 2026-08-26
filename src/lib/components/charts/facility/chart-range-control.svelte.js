@@ -97,6 +97,17 @@ export function createChartRangeControl(config) {
 	 *  calendar selection) re-derives it. */
 	let stickyDisplay = false;
 
+	/** Preserve an explicit interval while its range tier supports it. */
+	let pinnedInterval = false;
+
+	/** @param {number} durationDays */
+	function shouldKeepPinnedInterval(durationDays) {
+		if (!pinnedInterval) return false;
+		if (getIntervalOptionsForDays(durationDays).options.includes(displayInterval)) return true;
+		pinnedInterval = false;
+		return false;
+	}
+
 	/** Bumped when a gesture settles so the derived-chart providers cancel their
 	 *  stale in-flight fetches too — shared-URL requests only abort once every
 	 *  manager holding a reference has cancelled (sharedFetch refcounts). */
@@ -137,6 +148,7 @@ export function createChartRangeControl(config) {
 	function updateLiveDisplayInterval(range) {
 		if (stickyDisplay) return;
 		const durationDays = (range.end - range.start) / DAY_MS;
+		if (shouldKeepPinnedInterval(durationDays)) return;
 		displayInterval = getDisplayIntervalForDays(activeMetric, activeInterval, durationDays);
 	}
 
@@ -149,6 +161,7 @@ export function createChartRangeControl(config) {
 	/** @param {{ start: number, end: number }} range */
 	function applyMetricSwitch(range) {
 		const durationDays = (range.end - range.start) / DAY_MS;
+		if (shouldKeepPinnedInterval(durationDays)) return;
 		const next = getHysteresisTarget(activeMetric, activeInterval, durationDays);
 		if (!next) return;
 		stickyDisplay = false;
@@ -171,6 +184,7 @@ export function createChartRangeControl(config) {
 		if (!spec) return;
 		rangeSwitchPending = true;
 		stickyDisplay = sticky;
+		pinnedInterval = true;
 		activeMetric = spec.metric;
 		activeInterval = spec.apiInterval;
 		displayInterval = intervalId;
@@ -300,6 +314,7 @@ export function createChartRangeControl(config) {
 		displayInterval = initialDisplayInterval();
 		rangeSwitchPending = false;
 		stickyDisplay = false;
+		pinnedInterval = false;
 	}
 
 	return {

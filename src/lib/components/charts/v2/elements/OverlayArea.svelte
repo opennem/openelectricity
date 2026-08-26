@@ -16,6 +16,7 @@
 	import { getContext } from 'svelte';
 	import { area as d3Area, curveLinear } from 'd3-shape';
 	import { nearestIndexOfTime } from '../binary-search.js';
+	import { perfSpan } from '../perf.js';
 
 	const { xScale, yScale } = getContext('LayerCake');
 
@@ -79,30 +80,35 @@
 		};
 	});
 
+	// Reuse one generator and reset its accessors for each band.
+	const bandGen = d3Area();
+
 	let bands = $derived.by(() => {
 		if (!dataset.length || !series.length || !$xScale || !$yScale) return [];
-		/** @type {Array<{ id: string, colour: string, path: string }>} */
-		const out = [];
-		// Running lower edge per row index, starting at the stack top.
-		const lower = dataset.map((row) => baseAt(row.time));
-		for (const { id, colour } of series) {
-			const upper = dataset.map((row, i) => {
-				const val = row[id];
-				return lower[i] + (typeof val === 'number' && val > 0 ? val : 0);
-			});
-			const gen = d3Area()
-				.defined((/** @type {any} */ row, /** @type {number} */ i) =>
-					Number.isFinite(lower[i] + upper[i])
-				)
-				.x((/** @type {any} */ row) => $xScale(row.time))
-				.y0((/** @type {any} */ row, /** @type {number} */ i) => $yScale(lower[i]))
-				.y1((/** @type {any} */ row, /** @type {number} */ i) => $yScale(upper[i]))
-				.curve(curveType ?? curveLinear);
-			const path = gen(/** @type {any} */ (dataset)) || '';
-			if (path) out.push({ id, colour, path });
-			for (let i = 0; i < lower.length; i++) lower[i] = upper[i];
-		}
-		return out;
+		return perfSpan('chart:overlay-area', () => {
+			/** @type {Array<{ id: string, colour: string, path: string }>} */
+			const out = [];
+			// Running lower edge per row index, starting at the stack top.
+			const lower = dataset.map((row) => baseAt(row.time));
+			for (const { id, colour } of series) {
+				const upper = dataset.map((row, i) => {
+					const val = row[id];
+					return lower[i] + (typeof val === 'number' && val > 0 ? val : 0);
+				});
+				bandGen
+					.defined((/** @type {any} */ row, /** @type {number} */ i) =>
+						Number.isFinite(lower[i] + upper[i])
+					)
+					.x((/** @type {any} */ row) => $xScale(row.time))
+					.y0((/** @type {any} */ row, /** @type {number} */ i) => $yScale(lower[i]))
+					.y1((/** @type {any} */ row, /** @type {number} */ i) => $yScale(upper[i]))
+					.curve(curveType ?? curveLinear);
+				const path = bandGen(/** @type {any} */ (dataset)) || '';
+				if (path) out.push({ id, colour, path });
+				for (let i = 0; i < lower.length; i++) lower[i] = upper[i];
+			}
+			return out;
+		});
 	});
 </script>
 

@@ -60,12 +60,118 @@ describe('network data endpoint', () => {
 			network_region: 'NSW1'
 		});
 		expect(mocks.getNetworkData).not.toHaveBeenCalled();
-		expect(setHeaders).toHaveBeenCalledWith({ 'Cache-Control': 'public, max-age=300' });
+		// The historical fixture starts with a cold cache.
+		expect(setHeaders).toHaveBeenCalledWith({
+			'Cache-Control': 'public, max-age=3600, stale-while-revalidate=3600',
+			'x-oe-cache': 'miss'
+		});
 	});
 
 	it('does not invent a national spot price', async () => {
 		const response = await request('region=au&metric=price&interval=1h');
 		expect(response.status).toBe(400);
 		expect(await response.json()).toEqual({ error: 'A national spot price is not available.' });
+	});
+});
+
+describe('edge SWR cache (fake platform)', () => {
+	// Reset mocks because the sibling suite's hook does not apply here.
+	beforeEach(() => {
+		mocks.getMarket.mockReset().mockResolvedValue({ response: { data: [] } });
+		mocks.getNetworkData.mockReset().mockResolvedValue({ response: { data: [] } });
+	});
+
+	/** Fake Cloudflare cache and waitUntil collector. */
+	function fakePlatform() {
+		/** @type {Map<string, Response>} */
+		const store = new Map();
+		/** @type {Promise<unknown>[]} */
+		const waited = [];
+		return {
+			store,
+			waited,
+			platform: /** @type {App.Platform} */ ({
+				caches: {
+					default: {
+						match: async (/** @type {string} */ key) => {
+							const hit = store.get(key);
+							return hit ? hit.clone() : undefined;
+						},
+						put: async (/** @type {string} */ key, /** @type {Response} */ res) => {
+							store.set(key, res);
+						}
+					}
+				},
+				context: { waitUntil: (/** @type {Promise<unknown>} */ p) => waited.push(p) }
+			})
+		};
+	}
+
+	/** @param {string} search @param {any} platform @param {ReturnType<typeof vi.fn>} [setHeaders] */
+	function platformRequest(search, platform, setHeaders = vi.fn()) {
+		return GET(
+			/** @type {any} */ ({
+				url: new URL(`https://example.test/api/network/data?${search}`),
+				setHeaders,
+				platform
+			})
+		);
+	}
+
+	it('serves a repeat request from the edge without touching upstream', async () => {
+		const { platform, waited } = fakePlatform();
+		mocks.getNetworkData.mockResolvedValue({ response: { data: [{ payload: true }] } });
+		const search =
+			'region=vic1&metric=energy&interval=1d&date_start=2026-01-01&date_end=2026-02-01';
+
+		const first = await platformRequest(search, platform);
+		expect(first.status).toBe(200);
+		await Promise.all(waited.splice(0));
+		expect(mocks.getNetworkData).toHaveBeenCalledTimes(1);
+
+		const setHeaders = vi.fn();
+		const second = await platformRequest(search, platform, setHeaders);
+		expect(second.status).toBe(200);
+		expect(mocks.getNetworkData).toHaveBeenCalledTimes(1); // The edge hit skips upstream.
+		expect(setHeaders).toHaveBeenCalledWith(expect.objectContaining({ 'x-oe-cache': 'hit' }));
+		expect(await second.json()).toEqual(await first.json());
+	});
+
+	it('query-pair order does not fragment the cache key', async () => {
+		const { platform, waited } = fakePlatform();
+		mocks.getNetworkData.mockResolvedValue({ response: { data: [{ payload: true }] } });
+
+		await platformRequest(
+			'region=sa1&metric=energy&interval=1d&date_start=2026-01-01&date_end=2026-02-01',
+			platform
+		);
+		await Promise.all(waited.splice(0));
+		const setHeaders = vi.fn();
+		await platformRequest(
+			'date_end=2026-02-01&date_start=2026-01-01&interval=1d&metric=energy&region=sa1',
+			platform,
+			setHeaders
+		);
+
+		expect(mocks.getNetworkData).toHaveBeenCalledTimes(1);
+		expect(setHeaders).toHaveBeenCalledWith(expect.objectContaining({ 'x-oe-cache': 'hit' }));
+	});
+
+	it('normalises defaults and ignores unused query parameters', async () => {
+		const { platform, waited } = fakePlatform();
+		mocks.getNetworkData.mockResolvedValue({ response: { data: [{ payload: true }] } });
+
+		await platformRequest('date_start=2026-02-01&date_end=2026-02-02', platform);
+		await Promise.all(waited.splice(0));
+
+		const setHeaders = vi.fn();
+		await platformRequest(
+			'metric=power&ignored=value&date_end=2026-02-02&region=_all&interval=5m&date_start=2026-02-01',
+			platform,
+			setHeaders
+		);
+
+		expect(mocks.getNetworkData).toHaveBeenCalledTimes(1);
+		expect(setHeaders).toHaveBeenCalledWith(expect.objectContaining({ 'x-oe-cache': 'hit' }));
 	});
 });

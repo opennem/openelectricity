@@ -52,6 +52,32 @@ describe('collectSeriesByTimestamp', () => {
 		expect([...seriesMaps.keys()]).toEqual(['keep']);
 	});
 
+	it('resolves timestamp strings shared across series identically, including cached failures', () => {
+		// The shared invalid timestamp must be skipped for every series.
+		const shared = [
+			['2026-01-21T01:00:00', 1],
+			['not-a-date', 9],
+			['2026-01-21T02:00:00', 2]
+		];
+		const { seriesMaps, timestamps } = collectSeriesByTimestamp(
+			response([
+				{ name: 'a', data: shared },
+				{ name: 'b', data: shared.map(([t, v]) => [t, /** @type {number} */ (v) * 10]) }
+			]),
+			{ metricFilter: 'power', networkTimezone: '+10:00', classifySeries: byName }
+		);
+
+		const t1 = new Date('2026-01-21T01:00:00+10:00').getTime();
+		const t2 = new Date('2026-01-21T02:00:00+10:00').getTime();
+		expect([...timestamps].sort((x, y) => x - y)).toEqual([t1, t2]);
+		expect(seriesMaps.get('a')?.get(t1)).toBe(1);
+		expect(seriesMaps.get('a')?.get(t2)).toBe(2);
+		expect(seriesMaps.get('b')?.get(t1)).toBe(10);
+		expect(seriesMaps.get('b')?.get(t2)).toBe(20);
+		expect(seriesMaps.get('a')?.size).toBe(2);
+		expect(seriesMaps.get('b')?.size).toBe(2);
+	});
+
 	describe("mode: 'set'", () => {
 		it('stores null samples and their timestamps, and drops series with no parsed pairs', () => {
 			const { seriesMaps, timestamps } = collectSeriesByTimestamp(

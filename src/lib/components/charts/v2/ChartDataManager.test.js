@@ -1594,3 +1594,134 @@ describe('ChartDataManager', () => {
 		});
 	});
 });
+
+describe('response cache TTL policy', () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		clearCompletedResponses();
+		clearInFlightFetches();
+		resetSharedFetchStats();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	});
+
+	const okFetch = () =>
+		vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({
+				response: buildPowerResponse({
+					networkId: 'NEM',
+					unitCodes: ['UNIT1'],
+					startISO: '2026-02-01T00:00:00+10:00',
+					pointCount: 12
+				})
+			})
+		});
+
+	it('keeps fully-historical responses beyond the live TTL (30 min historical tier)', async () => {
+		const fetchSpy = okFetch();
+		vi.stubGlobal('fetch', fetchSpy);
+		vi.setSystemTime(new Date('2026-08-26T12:00:00Z'));
+
+		// Use a window well behind the live edge.
+		const start = new Date('2026-02-01T00:00:00+10:00').getTime();
+		const end = start + 3 * 60 * 60 * 1000;
+
+		createManager().requestRange(start, end, { immediate: true });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+		// The historical entry remains fresh after 10 minutes.
+		vi.setSystemTime(new Date('2026-08-26T12:10:00Z'));
+		createManager().requestRange(start, end, { immediate: true });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+		// The historical entry expires after 30 minutes.
+		vi.setSystemTime(new Date('2026-08-26T12:35:00Z'));
+		createManager().requestRange(start, end, { immediate: true });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(fetchSpy).toHaveBeenCalledTimes(2);
+	});
+
+	it('expires right-edge (live) responses at the 5-minute TTL', async () => {
+		const fetchSpy = okFetch();
+		vi.stubGlobal('fetch', fetchSpy);
+		const base = new Date('2026-08-26T12:00:00Z');
+		vi.setSystemTime(base);
+
+		// End the window at the live edge.
+		const end = base.getTime();
+		const start = end - 3 * 60 * 60 * 1000;
+
+		createManager().requestRange(start, end, { immediate: true });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+		// The live entry is fresh after two minutes.
+		vi.setSystemTime(new Date(base.getTime() + 2 * 60 * 1000));
+		createManager().requestRange(start, end, { immediate: true });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+		// The live entry expires after five minutes.
+		vi.setSystemTime(new Date(base.getTime() + 6 * 60 * 1000));
+		createManager().requestRange(start, end, { immediate: true });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(fetchSpy).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe('fetch priority hint', () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		clearCompletedResponses();
+		clearInFlightFetches();
+		resetSharedFetchStats();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	});
+
+	const start = new Date('2026-02-01T00:00:00+10:00').getTime();
+	const end = start + 3 * 60 * 60 * 1000;
+
+	it("passes priority 'low' through to fetch for background prefetches", async () => {
+		const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ response: {} }) });
+		vi.stubGlobal('fetch', fetchSpy);
+
+		createManager().requestRange(start, end, { immediate: true, priority: 'low' });
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+		expect(fetchSpy.mock.calls[0][1]?.priority).toBe('low');
+	});
+
+	it('upgrades a merged pending fetch when a normal request joins a low-priority one', async () => {
+		const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ response: {} }) });
+		vi.stubGlobal('fetch', fetchSpy);
+
+		const manager = createManager();
+		manager.requestRange(start, end, { priority: 'low' });
+		manager.requestRange(start - 60 * 60 * 1000, end);
+		await vi.advanceTimersByTimeAsync(200);
+
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+		expect(fetchSpy.mock.calls[0][1]?.priority).toBeUndefined();
+	});
+
+	it('defaults to no priority hint for normal requests', async () => {
+		const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ response: {} }) });
+		vi.stubGlobal('fetch', fetchSpy);
+
+		createManager().requestRange(start, end, { immediate: true });
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(fetchSpy.mock.calls[0][1]?.priority).toBeUndefined();
+	});
+});

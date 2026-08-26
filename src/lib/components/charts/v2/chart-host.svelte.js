@@ -39,6 +39,7 @@
  *   props. Return null to leave the viewport unset.
  * @property {() => number} fetchBufferMultiplier - Viewport-duration multiple
  *   fetched around the visible window
+ * @property {number} [stashMax] - Warm-manager stash capacity (default 4)
  * @property {() => number} minDateMs - Viewport left-edge floor
  * @property {() => boolean} fineViewportLimits - Sub-daily viewport
  *   duration limits (true) vs energy-scale limits (false)
@@ -46,9 +47,14 @@
  *   manager's viewport request skips the debounce
  * @property {boolean} [seedRequestImmediate=true] - Whether the initial
  *   seeded-viewport request skips the debounce
+ * @property {() => ({ widenMultiplier?: number, grains?: Array<{ interval: string, metric: string, seriesKey?: string, windowMs: number }> } | null)} [idlePrefetch] -
+ *   Reactive plan for widening the current cache and warming other intervals
+ * @property {(spec: { interval: string, metric: string, seriesKey?: string }) => ChartDataManager} [createManagerFor] -
+ *   Build a manager for an interval prefetch
  * @property {() => void} [onScopeChange] - Fired when stashScope changes on a
  *   live host (e.g. FacilityChart re-arms its empty-window retry)
  * @property {() => void} [onGestureStart] - Gesture began (clear hover here)
+ * @property {(active: boolean) => void} [onGestureActiveChange] - Reports gesture state
  * @property {(range: { start: number, end: number }) => void} [onviewportchange]
  * @property {(range: { start: number, end: number }) => void} [onviewportsettle] -
  *   Fired before the host reconciles, so a parent can flip metric/interval
@@ -58,7 +64,13 @@
 import { untrack } from 'svelte';
 import { createManagerStash, managerKey } from './manager-stash.js';
 import { createViewportGestures, isViewportPinned } from './viewport-gestures.js';
+import { bufferedFetchWindow, viewportRequestAllowed } from './fetch-window.js';
+import { createIdlePrefetcher } from './idle-prefetch.js';
+import { createFrameProbe } from './perf.js';
 import { viewportDurationLimits } from '../facility/range-interval-config.js';
+import { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * @param {ChartHostConfig} config
@@ -73,12 +85,16 @@ export function createChartHost(config) {
 		createManager,
 		initialViewport,
 		fetchBufferMultiplier,
+		stashMax = 4,
 		minDateMs,
 		fineViewportLimits,
 		reviveRequestImmediate = true,
 		seedRequestImmediate = true,
+		idlePrefetch,
+		createManagerFor,
 		onScopeChange,
 		onGestureStart,
+		onGestureActiveChange,
 		onviewportchange,
 		onviewportsettle
 	} = config;
@@ -92,6 +108,21 @@ export function createChartHost(config) {
 	/** @type {number} */
 	let viewEnd = $state(0);
 	let isPanning = $state(false);
+
+	// Covers pointer, wheel-pan and zoom gestures until they settle.
+	let isGesturing = $state(false);
+
+	// Optional frame-rate logging for development.
+	const frameProbe = createFrameProbe();
+
+	/** @param {boolean} active */
+	function setGesturing(active) {
+		if (isGesturing === active) return;
+		isGesturing = active;
+		if (active) frameProbe.start();
+		else frameProbe.stop();
+		onGestureActiveChange?.(active);
+	}
 
 	let MIN_VIEWPORT_MS = $derived(viewportDurationLimits(fineViewportLimits()).minMs);
 	let MAX_VIEWPORT_MS = $derived(viewportDurationLimits(fineViewportLimits()).maxMs);
@@ -108,7 +139,7 @@ export function createChartHost(config) {
 	 * switches back — a grouping toggle, a hysteresis metric flip — revive
 	 * cached data instantly instead of refetching.
 	 */
-	const managerStash = createManagerStash();
+	const managerStash = createManagerStash({ max: stashMax });
 
 	/** Scope the stash belongs to — a change invalidates every entry. */
 	/** @type {string | undefined} */
@@ -138,8 +169,8 @@ export function createChartHost(config) {
 	 * @param {boolean} immediate
 	 */
 	function requestWindow(manager, start, end, immediate) {
-		const buffer = (end - start) * fetchBufferMultiplier();
-		manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate });
+		const window = bufferedFetchWindow(start, end, fetchBufferMultiplier());
+		manager.requestRange(window.start, window.end, { immediate });
 	}
 
 	// Swap the manager whenever the data-source identity changes; unrelated
@@ -214,12 +245,91 @@ export function createChartHost(config) {
 		dataManager = manager;
 	});
 
+	// ============================================
+	// Background idle prefetch
+	// ============================================
+
+	// Run one low-priority job per idle slice, pausing during gestures and fetches.
+	const prefetcher = idlePrefetch
+		? createIdlePrefetcher({
+				paused: () => untrack(() => isGesturing) || !!untrack(() => dataManager)?.hasPendingFetch
+			})
+		: null;
+	/** @type {ChartDataManager | null} */
+	let prefetchManager = null;
+
+	$effect(() => {
+		if (!prefetcher) return;
+		const manager = dataManager;
+		if (manager !== prefetchManager) {
+			prefetcher.reset();
+			prefetchManager = manager;
+		}
+		const plan = idlePrefetch?.();
+		if (!manager || !plan) {
+			prefetcher.setPlan([]);
+			return;
+		}
+		// Re-plan after the current manager settles or the plan changes.
+		if (!manager.initialLoadComplete || manager.hasPendingFetch) return;
+		const vs = untrack(() => viewStart);
+		const ve = untrack(() => viewEnd);
+		if (!vs || !ve) return;
+
+		/** @type {import('./idle-prefetch.js').IdleJob[]} */
+		const jobs = [];
+		const span = ve - vs;
+
+		const widen = plan.widenMultiplier ?? 0;
+		if (widen > 0) {
+			// Cap each side at the grain's API range limit.
+			const capMs = (OE_API_MAX_RANGE_DAYS[manager.interval] ?? 11000) * DAY_MS;
+			const per = Math.min(widen * span, capMs);
+			const start = vs - per;
+			const end = Math.min(ve + per, Date.now());
+			jobs.push({
+				// Re-widen only after a meaningful viewport move.
+				key: `widen:${manager.interval}|${manager.metric}|${manager.seriesKey}|${Math.round(vs / span)}`,
+				run: () => manager.requestRange(start, end, { priority: 'low' })
+			});
+		}
+
+		for (const grain of plan.grains ?? []) {
+			if (!createManagerFor) break;
+			if (grain.interval === manager.interval && grain.metric === manager.metric) continue;
+			const grainKey = managerKey(
+				grain.interval,
+				grain.metric,
+				grain.seriesKey ?? manager.seriesKey
+			);
+			if (managerStash.has(grainKey)) continue;
+			jobs.push({
+				key: `warm:${grainKey}`,
+				run: () => {
+					if (managerStash.has(grainKey)) return;
+					// Keep the warming manager alive until the stash evicts it.
+					const background = createManagerFor(grain);
+					const end = Date.now();
+					background.requestRange(end - grain.windowMs, end, {
+						immediate: true,
+						priority: 'low'
+					});
+					managerStash.stash(grainKey, background);
+				}
+			});
+		}
+
+		prefetcher.setPlan(jobs);
+		prefetcher.kick();
+	});
+
 	// Retire everything on unmount so in-flight fetches settle as no-ops.
 	$effect(() => {
 		return () => {
 			untrack(() => dataManager)?.dispose();
 			managerStash.clear();
 			disposeGestures();
+			prefetcher?.stop();
 		};
 	});
 
@@ -246,14 +356,18 @@ export function createChartHost(config) {
 		minDateMs: () => minDateMs(),
 		onGestureStart: () => {
 			isPanning = true;
+			setGesturing(true);
 			onGestureStart?.();
 		},
 		onGestureEnd: () => {
 			isPanning = false;
+			// A click without movement has no settle event, so clear it here.
+			setGesturing(false);
 		},
 		onMove: (start, end) => {
-			const buffer = (end - start) * fetchBufferMultiplier();
-			dataManager?.requestRange(start - buffer, end + buffer);
+			setGesturing(true);
+			const window = bufferedFetchWindow(start, end, fetchBufferMultiplier());
+			dataManager?.requestRange(window.start, window.end);
 		},
 		// Prefetch ahead in the pan direction
 		onPanEnd: (direction, start, end) => {
@@ -265,6 +379,8 @@ export function createChartHost(config) {
 			}
 		},
 		onSettle: (start, end) => {
+			// Clear first so the parent observes the settled state.
+			setGesturing(false);
 			// Parent first — it may flip metric/interval synchronously (grain
 			// switch); reconcileFetches skips the old grain when that happens.
 			onviewportsettle?.({ start, end });
@@ -297,11 +413,11 @@ export function createChartHost(config) {
 		viewEnd = Math.min(endMs, now);
 		// A grain switch is pending (props flipped, manager not yet swapped) —
 		// don't fetch the old grain; the swap effect fetches the new one.
-		if (dataManager && (dataManager.interval !== interval() || dataManager.metric !== metric())) {
+		if (dataManager && !viewportRequestAllowed(dataManager, interval(), metric())) {
 			return;
 		}
-		const buffer = (viewEnd - viewStart) * fetchBufferMultiplier();
-		dataManager?.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, now));
+		const window = bufferedFetchWindow(viewStart, viewEnd, fetchBufferMultiplier(), now);
+		dataManager?.requestRange(window.start, window.end);
 	}
 
 	/**
@@ -311,10 +427,10 @@ export function createChartHost(config) {
 	 * during the gesture.
 	 */
 	function reconcileFetches() {
-		if (!viewStart || !viewEnd || !dataManager) return;
-		if (dataManager.interval !== interval() || dataManager.metric !== metric()) return;
-		const buffer = (viewEnd - viewStart) * fetchBufferMultiplier();
-		dataManager.reconcileWindow(viewStart - buffer, Math.min(viewEnd + buffer, Date.now()));
+		if (!viewStart || !viewEnd) return;
+		if (!viewportRequestAllowed(dataManager, interval(), metric())) return;
+		const window = bufferedFetchWindow(viewStart, viewEnd, fetchBufferMultiplier());
+		/** @type {ChartDataManager} */ (dataManager).reconcileWindow(window.start, window.end);
 	}
 
 	return {
@@ -335,6 +451,9 @@ export function createChartHost(config) {
 		},
 		get isPanning() {
 			return isPanning;
+		},
+		get isGesturing() {
+			return isGesturing;
 		},
 		get isAtMinZoom() {
 			return isAtMinZoom;

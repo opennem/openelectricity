@@ -17,6 +17,10 @@
 
 import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
+import {
+	reconcileBufferedRange,
+	requestBufferedRange
+} from '$lib/components/charts/v2/fetch-window.js';
 import { getMarketMetricConfig } from './market-metrics.js';
 import { processMarketData } from './process-market-data.js';
 
@@ -25,8 +29,10 @@ import { processMarketData } from './process-market-data.js';
  *   region: () => string,
  *   metricKey: () => string,
  *   interval: () => string,
- *   timeZone: () => string
- * }} opts - Getters so the provider reads live component state
+ *   timeZone: () => string,
+ *   enabled?: () => boolean
+ * }} opts - Reactive getters. A disabled provider fetches nothing and replays
+ *   its last viewport when enabled.
  */
 export function createMarketSeriesProvider(opts) {
 	/** @type {ChartDataManager | null} */
@@ -41,6 +47,11 @@ export function createMarketSeriesProvider(opts) {
 	const visibleAggregation = createVisibleAggregation();
 
 	$effect(() => {
+		// Track enabled so toggling disposes or rebuilds the manager.
+		if (opts.enabled && !opts.enabled()) {
+			manager = null;
+			return;
+		}
 		const region = opts.region();
 		const metricKey = opts.metricKey();
 		const interval = opts.interval();
@@ -66,7 +77,9 @@ export function createMarketSeriesProvider(opts) {
 		});
 
 		manager = next;
-		if (lastStart && lastEnd) next.requestRange(lastStart, lastEnd, { immediate: true });
+		if (lastStart && lastEnd) {
+			requestBufferedRange(next, lastStart, lastEnd, interval, metricKey, { immediate: true });
+		}
 
 		// Cleanup runs before every re-run and on destroy, so the outgoing
 		// manager is always retired exactly once.
@@ -74,17 +87,22 @@ export function createMarketSeriesProvider(opts) {
 	});
 
 	return {
-		/** @param {number} startMs @param {number} endMs */
+		/**
+		 * Request the chart's buffered window so matching requests deduplicate.
+		 * @param {number} startMs @param {number} endMs
+		 */
 		setViewport(startMs, endMs) {
 			lastStart = startMs;
 			lastEnd = endMs;
-			manager?.requestRange(startMs, endMs);
+			const interval = opts.interval();
+			requestBufferedRange(manager, startMs, endMs, interval, opts.metricKey());
 		},
 
 		/** Settle: abort out-of-window work and fetch the remaining gaps now. */
 		reconcileFetches() {
 			if (!manager || !lastStart || !lastEnd) return;
-			manager.reconcileWindow(lastStart, lastEnd);
+			const interval = opts.interval();
+			reconcileBufferedRange(manager, lastStart, lastEnd, interval, opts.metricKey());
 		},
 
 		/**
@@ -114,8 +132,9 @@ export function createMarketSeriesProvider(opts) {
 			});
 		},
 
-		/** Fetching, or not yet loaded — drives dependent overlay/pending states. */
+		/** Loading state; disabled providers are never pending. */
 		get isPending() {
+			if (opts.enabled && !opts.enabled()) return false;
 			return !manager || manager.isLoading || !manager.initialLoadComplete;
 		}
 	};

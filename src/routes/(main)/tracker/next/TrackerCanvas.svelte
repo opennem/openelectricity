@@ -31,6 +31,7 @@
 	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 	import { formatRangeLabel } from '$lib/components/charts/v2/time-format-policy.js';
+	import { perfSpan } from '$lib/components/charts/v2/perf.js';
 	import { hasSpotPrice } from '../tracker-regions.js';
 	import ChartCard from './ChartCard.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
@@ -97,6 +98,21 @@
 	/** @type {number | undefined} */
 	let hoverTime = $state(undefined);
 	let panZoomEngaged = $state(false);
+
+	/** Whether any synced chart is in a gesture. */
+	let gestureActive = $state(false);
+
+	/** Last settled viewport, shared by the table, overlays, URL and range label. */
+	let settledWindow = $state.raw({ start: 0, end: 0 });
+	$effect(() => {
+		if (gestureActive) return;
+		const start = viewStart;
+		const end = viewEnd;
+		if (!start || !end) return;
+		const previous = untrack(() => settledWindow);
+		if (previous.start === start && previous.end === end) return;
+		settledWindow = { start, end };
+	});
 	/** Fuel-tech groups toggled off via the table — hides chart series and
 	 *  excludes them from the intensity ratio, never from table denominators.
 	 *  Keyed to the grouping that produced the ids: a grouping change renames
@@ -168,17 +184,20 @@
 	});
 
 	// Headless providers — same cache/dedup/reconcile path as the charts.
+	// Providers fetch only while the table or their overlay is visible.
 	const marketData = createNetworkMarketData({
 		region: () => region,
 		basis: () => range.activeMetric,
 		interval: () => range.activeInterval,
-		timeZone: () => timeZone
+		timeZone: () => timeZone,
+		enabled: () => tablePanelOpen
 	});
 	const mvData = createNetworkFuelTechMarketValue({
 		region: () => region,
 		group: () => group,
 		interval: () => range.activeInterval,
-		timeZone: () => timeZone
+		timeZone: () => timeZone,
+		enabled: () => tablePanelOpen
 	});
 	// Legacy-parity extras, all official OE series (not derived): operational
 	// demand, the solar/wind curtailment pair, and the renewable share.
@@ -186,20 +205,34 @@
 		region: () => region,
 		metricKey: () => (range.activeMetric === 'energy' ? 'demand_energy' : 'demand'),
 		interval: () => range.activeInterval,
-		timeZone: () => timeZone
+		timeZone: () => timeZone,
+		enabled: () => tablePanelOpen || showDemandLine
 	});
 	const curtailmentData = createMarketSeriesProvider({
 		region: () => region,
 		metricKey: () => (range.activeMetric === 'energy' ? 'curtailment_energy' : 'curtailment'),
 		interval: () => range.activeInterval,
-		timeZone: () => timeZone
+		timeZone: () => timeZone,
+		enabled: () => tablePanelOpen || shownCurtailment.length > 0
 	});
 	const shareData = createMarketSeriesProvider({
 		region: () => region,
 		metricKey: () => 'renewable_share',
 		interval: () => range.activeInterval,
-		timeZone: () => timeZone
+		timeZone: () => timeZone,
+		enabled: () => tablePanelOpen || showRenewablesLine
 	});
+
+	/** Prefetch daily and monthly generation. Price and emissions only widen
+	 *  their current cache because full-history requests are expensive. */
+	const GENERATION_PREFETCH_PLAN = {
+		widenMultiplier: 3,
+		grains: [
+			{ interval: '1d', metric: 'energy', windowMs: 30 * DAY_MS },
+			{ interval: '1M', metric: 'energy', windowMs: 11_000 * DAY_MS }
+		]
+	};
+	const WIDEN_ONLY_PREFETCH_PLAN = { widenMultiplier: 3 };
 
 	let energyMetric = $derived(range.activeMetric === 'energy');
 	let intervalBadge = $derived(
@@ -211,8 +244,8 @@
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let rangeLabel = $derived(
 		formatRangeLabel(
-			viewStart || anchorStart,
-			viewEnd || anchorEnd,
+			settledWindow.start || anchorStart,
+			settledWindow.end || anchorEnd,
 			range.displayInterval,
 			ianaTimeZone
 		)
@@ -226,13 +259,13 @@
 
 	let loadSeriesIds = $derived(loadGroupsFor(getGroup(group)));
 
-	// One snapshot of navigation state for the URL, debounced below.
+	// Debounced URL state uses the settled window, not gesture frames.
 	let activeRange = $derived(
 		range.selectedRange == null
 			? normaliseRange({
 					kind: 'custom',
-					startMs: viewStart,
-					endMs: viewEnd,
+					startMs: settledWindow.start,
+					endMs: settledWindow.end,
 					intervalId: range.displayInterval
 				})
 			: normaliseRange({
@@ -242,7 +275,7 @@
 				})
 	);
 	$effect(() => {
-		if (!viewStart || !viewEnd) return;
+		if (!settledWindow.start || !settledWindow.end) return;
 		const snapshot = activeRange;
 		const timer = setTimeout(() => onrangechange?.(snapshot), 300);
 		return () => clearTimeout(timer);
@@ -252,25 +285,38 @@
 	// Fuel-tech table feed
 	// ============================================
 
-	/** Table rows recompute when chart data lands or providers cache new rows —
-	 *  never on hover, and only per settled snapshot during pans. */
-	let tableRows = $derived.by(() => {
-		if (!generationDataset) return null;
-		const start = viewStart || anchorStart;
-		const end = viewEnd || anchorEnd;
-		return buildFuelTechTableRows({
-			generationData: generationDataset,
-			mvRows: mvData.getVisibleRows(start, end),
-			demandRows: marketData.getVisibleRows(start, end),
-			basis: range.activeMetric,
-			demandBasis: range.activeMetric,
-			mode: contributionMode,
-			hiddenSeries,
-			loadSeriesIds
-		});
+	/** Use the generation snapshot's bounds so table rows and window stay aligned. */
+	let tableWindow = $derived({
+		start: generationDataset?.start ?? (settledWindow.start || anchorStart),
+		end: generationDataset?.end ?? (settledWindow.end || anchorEnd)
 	});
 
-	let tablePending = $derived(mvData.isPending || marketData.isPending || range.rangeSwitchPending);
+	/** Recompute table rows when chart or provider data changes. */
+	let tableRows = $derived.by(() => {
+		if (!generationDataset) return null;
+		const { start, end } = tableWindow;
+		return perfSpan('canvas:table-rows', () =>
+			buildFuelTechTableRows({
+				generationData: generationDataset,
+				mvRows: mvData.getVisibleRows(start, end),
+				demandRows: marketData.getVisibleRows(start, end),
+				basis: range.activeMetric,
+				demandBasis: range.activeMetric,
+				mode: contributionMode,
+				hiddenSeries,
+				loadSeriesIds
+			})
+		);
+	});
+
+	/** Veil region and grouping changes; dim values for all other refreshes. */
+	let settledStructureKey = $state('');
+	let tableStructurePending = $derived(
+		settledStructureKey !== '' && settledStructureKey !== `${region}|${group}`
+	);
+	let tableValuesPending = $derived(
+		mvData.isPending || marketData.isPending || range.rangeSwitchPending
+	);
 
 	// Chart overlays — session-only toggles driven from the table's summary rows.
 	let showDemandLine = $state(false);
@@ -308,9 +354,13 @@
 		method: /** @type {'sum' | 'mean'} */ ('mean')
 	});
 
+	/** Stable empty value avoids redundant overlay updates. */
+	const EMPTY_OVERLAYS = /** @type {any[]} */ ([]);
+
 	let overlayLines = $derived.by(() => {
-		const start = viewStart || anchorStart;
-		const end = viewEnd || anchorEnd;
+		if (!showDemandLine && !showRenewablesLine) return EMPTY_OVERLAYS;
+		const start = settledWindow.start || anchorStart;
+		const end = settledWindow.end || anchorEnd;
 		/** @type {any[]} */
 		const lines = [];
 		if (showDemandLine) {
@@ -336,9 +386,9 @@
 
 	/** Hatched curtailment bands riding the generation stack's top. */
 	let overlayAreas = $derived.by(() => {
-		if (!shownCurtailment.length) return [];
-		const start = viewStart || anchorStart;
-		const end = viewEnd || anchorEnd;
+		if (!shownCurtailment.length) return EMPTY_OVERLAYS;
+		const start = settledWindow.start || anchorStart;
+		const end = settledWindow.end || anchorEnd;
 		return [
 			{
 				id: 'curtailment',
@@ -355,8 +405,7 @@
 	 *  contribution denominator. */
 	let curtailmentRows = $derived.by(() => {
 		if (!generationDataset) return [];
-		const start = viewStart || anchorStart;
-		const end = viewEnd || anchorEnd;
+		const { start, end } = tableWindow;
 		return computeCurtailmentRows({
 			rows: curtailmentData.getDisplayRows(start, end, displayRowOpts),
 			series: [
@@ -377,8 +426,8 @@
 	});
 
 	let overlaySummary = $derived.by(() => {
-		const start = viewStart || anchorStart;
-		const end = viewEnd || anchorEnd;
+		const start = settledWindow.start || anchorStart;
+		const end = settledWindow.end || anchorEnd;
 		return computeOverlaySummary({
 			demandRows: demandData.getDisplayRows(start, end, displayRowOpts),
 			marketRows: marketData.getVisibleRows(start, end),
@@ -387,10 +436,59 @@
 		});
 	});
 
+	// Hold all three charts during range, interval and region changes, then
+	// release them together. Polling also detects switches served from cache.
+	let chartsSwitchPending = $state(false);
+	/** Include the range control's synchronous pending state to prevent early swaps. */
+	let chartsHoldFrame = $derived(chartsSwitchPending || range.rangeSwitchPending);
+	// Imperative only; no reactive proxy is needed.
+	let chartsLoaded = { gen: false, price: false, emissions: false };
+
+	function armCoordinatedSwitch() {
+		chartsLoaded = { gen: false, price: false, emissions: false };
+		chartsSwitchPending = true;
+	}
+
+	$effect(() => {
+		if (range.rangeSwitchPending) armCoordinatedSwitch();
+	});
+
+	// Region changes also replace every chart manager.
+	let lastChartRegion = untrack(() => region);
+	$effect(() => {
+		const current = region;
+		if (current === lastChartRegion) return;
+		lastChartRegion = current;
+		armCoordinatedSwitch();
+	});
+
+	/** @param {'gen' | 'price' | 'emissions'} key */
+	function markChartLoaded(key) {
+		if (chartsLoaded[key]) return;
+		chartsLoaded[key] = true;
+		if (chartsLoaded.gen && chartsLoaded.price && chartsLoaded.emissions) {
+			range.settle();
+			chartsSwitchPending = false;
+		}
+	}
+
+	$effect(() => {
+		if (!chartsSwitchPending) return;
+		// Delay the first poll until switch effects have replaced old managers.
+		const sweep = setInterval(() => {
+			if (generationChart?.isSettled?.()) markChartLoaded('gen');
+			if (priceChart?.isSettled?.()) markChartLoaded('price');
+			if (emissionsChart?.isSettled?.()) markChartLoaded('emissions');
+		}, 200);
+		return () => clearInterval(sweep);
+	});
+
 	/** @param {any} payload */
 	function handleGenerationData(payload) {
 		generationDataset = payload;
-		range.settle();
+		// The debounced snapshot belongs to the current region and grouping.
+		settledStructureKey = untrack(() => `${region}|${group}`);
+		markChartLoaded('gen');
 	}
 
 	/** @param {string} series */
@@ -417,6 +515,8 @@
 
 	/** @param {any} snapshot */
 	export async function applyRangeSnapshot(snapshot) {
+		// Programmatic range changes end any active gesture.
+		gestureActive = false;
 		const next = normaliseRange(snapshot);
 		if (next.kind === 'preset') range.handleRangeSelect(next.days);
 		else {
@@ -481,9 +581,14 @@
 					onviewportchange={(next) => range.handleDerivedViewportChange(next, generationChart)}
 					onviewportsettle={range.handleViewportSettle}
 					onvisibledata={handleGenerationData}
-					onloadcomplete={() => range.settle()}
+					onloadcomplete={() => markChartLoaded('gen')}
 					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
+					{gestureActive}
+					ongesturechange={(active) => (gestureActive = active)}
+					loadingLabel={rangeLabel}
+					holdFrame={chartsHoldFrame}
+					prefetchPlan={GENERATION_PREFETCH_PLAN}
 				/>
 			{/snippet}
 		</ChartCard>
@@ -529,9 +634,14 @@
 					onhoverchange={handleHoverChange}
 					onviewportchange={(next) => range.handleDerivedViewportChange(next, priceChart)}
 					onviewportsettle={range.handleViewportSettle}
-					onloadcomplete={() => range.settle()}
+					onloadcomplete={() => markChartLoaded('price')}
 					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
+					{gestureActive}
+					ongesturechange={(active) => (gestureActive = active)}
+					loadingLabel={rangeLabel}
+					holdFrame={chartsHoldFrame}
+					prefetchPlan={WIDEN_ONLY_PREFETCH_PLAN}
 				/>
 			{/snippet}
 		</ChartCard>
@@ -574,9 +684,14 @@
 					onhoverchange={handleHoverChange}
 					onviewportchange={(next) => range.handleDerivedViewportChange(next, emissionsChart)}
 					onviewportsettle={range.handleViewportSettle}
-					onloadcomplete={() => range.settle()}
+					onloadcomplete={() => markChartLoaded('emissions')}
 					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
+					{gestureActive}
+					ongesturechange={(active) => (gestureActive = active)}
+					loadingLabel={rangeLabel}
+					holdFrame={chartsHoldFrame}
+					prefetchPlan={WIDEN_ONLY_PREFETCH_PLAN}
 				/>
 			{/snippet}
 		</ChartCard>
@@ -609,7 +724,9 @@
 			{#snippet header()}<span class="hidden"></span>{/snippet}
 			<FuelTechPanel
 				rows={tableRows}
-				pending={tablePending}
+				valuesPending={tableValuesPending}
+				structurePending={tableStructurePending}
+				structureKey={settledStructureKey}
 				basis={range.activeMetric}
 				{group}
 				{contributionMode}

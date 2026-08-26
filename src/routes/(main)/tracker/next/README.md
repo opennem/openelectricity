@@ -49,8 +49,9 @@ plus a re-slug of `routeKey`/`stableName` and the keyframe selectors in
   grouping, shared against the same contribution denominator), and Demand /
   Renewables summary rows — official OE series (`demand`,
   `generation_renewable`, `renewable_proportion`), whose row toggles draw an
-  OE-red demand line and a renewables-green share line (fixed 0–100% right
-  axis) over the generation chart via `ChartStore.overlayLines`.
+  OE-red demand line and a renewables-green share line (right-hand % axis
+  that extends past 100% in 20-point steps for exporting regions) over the
+  generation chart via `ChartStore.overlayLines`.
 
 ## URL schema
 
@@ -65,9 +66,36 @@ are deliberately not serialised.
 
 - Everything fetches through `/api/network/data`; the providers share the
   charts' request broker, LRU and gap-aware fetching.
-- The visible charts fetch a buffered window while the providers fetch the
-  exact viewport, so their URLs only coincide (and dedupe) once windows align;
-  the initial load in market-value mode issues one extra subset request.
+- Providers request the same buffered windows as the charts
+  (`fetch-window.js`), so overlapping URLs collapse in the broker — in
+  market-value mode the table's provider and the price chart share one
+  fetch. Each provider is `enabled`-gated on the surface that consumes it:
+  with the table panel closed and the overlays off, only the three chart
+  metrics fetch at all.
+- Background idle prefetch (`idle-prefetch.js` via the chart host): every
+  chart widens its cached window to 3× the viewport each side after settling,
+  and the generation chart warms daily energy (30 days) plus the full monthly
+  history into the manager stash — a later 30D/1Y/All pick revives warm. All
+  prefetch traffic runs at fetch priority 'low' during idle slices.
+- The route carries a keyed edge SWR cache (`keyed-swr-cache.js`, Cloudflare
+  Cache API): any cached window serves instantly and refreshes in the
+  background — live windows on a 5-minute horizon, fully-historical ones
+  6-hourly — so the slow upstream fuel-tech scans (a cold full-history
+  request takes tens of seconds) are paid once per colo, not per visitor.
+  `x-oe-cache: hit|stale|miss` reports the tier; dev is uncached.
+- An explicit range/interval pick is pinned: pans and zooms keep it until the
+  span leaves the tier that offers it (`pinnedInterval` in the range
+  control), so the first pan after "All" no longer flips 1M→1y and refires
+  every surface.
+- The nav's pending pulse clears when ALL three charts have loaded (slowest
+  wins), not the fastest; each chart's veil names its target window while the
+  stale frame holds.
+- During pan/zoom gestures the charts freeze their y-domains and render
+  padded whole-bucket slices with stable identity (`display-aggregation.js`),
+  so per-frame work is path regeneration only; the table, overlays, URL and
+  label track the settled window and update once per gesture. Debug flags:
+  `localStorage['oe:debug-chart-fetch']` (request counts) and
+  `localStorage['oe:debug-chart-fps']` (per-gesture frame stats).
 - Demand-mode contribution shares needn't sum to 100% (losses, imports,
   basis differences) — this matches the homepage renewables methodology.
 

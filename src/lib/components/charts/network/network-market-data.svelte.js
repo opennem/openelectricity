@@ -15,6 +15,10 @@
  */
 
 import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
+import {
+	reconcileBufferedRange,
+	requestBufferedRange
+} from '$lib/components/charts/v2/fetch-window.js';
 import { processMarketData } from './process-market-data.js';
 
 /** Stable series ids shared with the metrics calc. */
@@ -48,13 +52,18 @@ const seriesDefsFor = (basis) =>
 		basis === 'energy' ? { ...def, metric: `${def.metric}_energy` } : def
 	);
 
+/** @param {'power' | 'energy'} basis */
+const metricKeyFor = (basis) => (basis === 'energy' ? 'renewables_energy' : 'renewables');
+
 /**
  * @param {{
  *   region: () => string,
  *   basis: () => 'power' | 'energy',
  *   interval: () => string,
- *   timeZone: () => string
- * }} opts - Getters so the provider reads live component state
+ *   timeZone: () => string,
+ *   enabled?: () => boolean
+ * }} opts - Reactive getters. A disabled provider fetches nothing and replays
+ *   its last viewport when enabled.
  * @returns {{
  *   setViewport: (startMs: number, endMs: number) => void,
  *   reconcileFetches: () => void,
@@ -76,11 +85,16 @@ export function createNetworkMarketData(opts) {
 	// chart host's swap effect, minus the stash — the completed-response LRU in
 	// ChartDataManager already absorbs quick region flips for these tiny series.
 	$effect(() => {
+		// Track enabled so toggling disposes or rebuilds the manager.
+		if (opts.enabled && !opts.enabled()) {
+			manager = null;
+			return;
+		}
 		const region = opts.region();
 		const basis = opts.basis();
 		const interval = opts.interval();
 		const tz = opts.timeZone();
-		const metricKey = basis === 'energy' ? 'renewables_energy' : 'renewables';
+		const metricKey = metricKeyFor(basis);
 
 		const next = new ChartDataManager({
 			cacheKey: `${region}:metrics`,
@@ -97,7 +111,9 @@ export function createNetworkMarketData(opts) {
 		});
 
 		manager = next;
-		if (lastStart && lastEnd) next.requestRange(lastStart, lastEnd, { immediate: true });
+		if (lastStart && lastEnd) {
+			requestBufferedRange(next, lastStart, lastEnd, interval, metricKey, { immediate: true });
+		}
 
 		// Cleanup runs before every re-run and on destroy, so the outgoing
 		// manager is always retired exactly once.
@@ -106,20 +122,21 @@ export function createNetworkMarketData(opts) {
 
 	return {
 		/**
-		 * Range-control push — same surface as a chart ref. Debounced internally
-		 * by the manager, so per-frame gesture pushes coalesce.
+		 * Request the chart's buffered window so matching requests deduplicate.
 		 * @param {number} startMs @param {number} endMs
 		 */
 		setViewport(startMs, endMs) {
 			lastStart = startMs;
 			lastEnd = endMs;
-			manager?.requestRange(startMs, endMs);
+			const interval = opts.interval();
+			requestBufferedRange(manager, startMs, endMs, interval, metricKeyFor(opts.basis()));
 		},
 
 		/** Settle: abort out-of-window work and fetch the remaining gaps now. */
 		reconcileFetches() {
 			if (!manager || !lastStart || !lastEnd) return;
-			manager.reconcileWindow(lastStart, lastEnd);
+			const interval = opts.interval();
+			reconcileBufferedRange(manager, lastStart, lastEnd, interval, metricKeyFor(opts.basis()));
 		},
 
 		/**
@@ -131,8 +148,9 @@ export function createNetworkMarketData(opts) {
 			return manager?.getDataForRange(startMs, endMs) ?? [];
 		},
 
-		/** Fetching, or not yet loaded — drives dependent overlay/pending states. */
+		/** Loading state; disabled providers are never pending. */
 		get isPending() {
+			if (opts.enabled && !opts.enabled()) return false;
 			return !manager || manager.isLoading || !manager.initialLoadComplete;
 		}
 	};

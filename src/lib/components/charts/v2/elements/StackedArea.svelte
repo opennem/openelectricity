@@ -10,6 +10,7 @@
 	import { area, line, curveLinear } from 'd3-shape';
 	import { closestTo } from 'date-fns';
 	import chroma from 'chroma-js';
+	import { perfSpan } from '../perf.js';
 
 	const { data, xGet, xScale, yScale, yGet, z, width, height } = getContext('LayerCake');
 
@@ -92,22 +93,25 @@
 	// Extract unique dates for event lookups
 	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
 
-	// Area generator factory — creates a generator that checks the original row
-	// for null values so gaps render as breaks instead of drawing to 0.
+	// Reuse one generator per render; `defined` preserves gaps from null source values.
+	const areaGen = area()
+		.x((d) => $xGet(d))
+		.y0((d) => $yScale(d[0]))
+		.y1((d) => $yScale(d[1]));
+
 	/**
+	 * Build one series' area path.
+	 * @param {any} d - The series' stacked rows (D3 stack convention)
 	 * @param {string} key - Series key to check in original data
 	 */
-	function makeAreaGen(key) {
-		return area()
-			.x((d) => $xGet(d))
-			.y0((d) => $yScale(d[0]))
-			.y1((d) => $yScale(d[1]))
-			.curve(curveType)
-			.defined((d) => {
-				if (isNaN(d[0]) || isNaN(d[1])) return false;
-				// @ts-ignore — d.data is the original row (D3 stack convention)
-				return d.data?.[key] != null;
-			});
+	function seriesPath(d, key) {
+		return perfSpan('chart:path-gen', () =>
+			areaGen.curve(curveType).defined((p) => {
+				if (isNaN(p[0]) || isNaN(p[1])) return false;
+				// @ts-ignore — D3 stores the source row in p.data.
+				return p.data?.[key] != null;
+			})(d)
+		);
 	}
 
 	// Line generator for line charts
@@ -313,6 +317,7 @@
 		{#each $data as d, i (i)}
 			{@const seriesKey = d.key || d.group}
 			{@const baseColor = seriesColours[$z(d)]}
+			{@const pathD = seriesPath(d, seriesKey)}
 
 			{#if lighterNegative}
 				<!-- Positive region (normal color) -->
@@ -320,7 +325,7 @@
 					class="path-area"
 					class:path-animate={canTransition}
 					role="presentation"
-					d={makeAreaGen(seriesKey)(d)}
+					d={pathD}
 					fill={baseColor}
 					stroke="none"
 					opacity={getOpacity(d, 1, 0.65)}
@@ -336,7 +341,7 @@
 					class="path-area"
 					class:path-animate={canTransition}
 					role="presentation"
-					d={makeAreaGen(seriesKey)(d)}
+					d={pathD}
 					fill={getLighterColor(baseColor)}
 					stroke="none"
 					opacity={getOpacity(d, 1, 0.65)}
@@ -352,7 +357,7 @@
 					class="path-area"
 					class:path-animate={canTransition}
 					role="presentation"
-					d={makeAreaGen(seriesKey)(d)}
+					d={pathD}
 					fill={baseColor}
 					stroke="none"
 					opacity={getOpacity(d, 1, 0.65)}

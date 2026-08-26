@@ -49,6 +49,10 @@ export function collectSeriesByTimestamp(response, config) {
 	/** @type {Set<number>} */
 	const timestamps = new Set();
 
+	// Parse each shared timestamp once per response, including invalid values.
+	/** @type {Map<string, number>} */
+	const parsedMs = new Map();
+
 	for (const metric of response?.data || []) {
 		if (metric.metric !== metricFilter) continue;
 
@@ -75,7 +79,11 @@ export function collectSeriesByTimestamp(response, config) {
 			for (const [timestamp, value] of series.data || []) {
 				if (mode === 'sum' && value == null) continue;
 
-				const ms = new Date(stripDateTimezone(timestamp) + networkTimezone).getTime();
+				let ms = parsedMs.get(timestamp);
+				if (ms === undefined) {
+					ms = new Date(stripDateTimezone(timestamp) + networkTimezone).getTime();
+					parsedMs.set(timestamp, ms);
+				}
 				if (isNaN(ms)) continue;
 
 				if (mode === 'sum') {

@@ -18,6 +18,7 @@
 	 *
 	 * @type {{
 	 *   rows: import('./types.js').FuelTechTableRow[],
+	 *   valuesPending?: boolean,
 	 *   basis?: 'power' | 'energy',
 	 *   group?: string,
 	 *   contributionMode?: import('./types.js').ContributionMode,
@@ -39,6 +40,7 @@
 	 */
 	let {
 		rows,
+		valuesPending = false,
 		basis = 'power',
 		group = DEFAULT_GROUP,
 		contributionMode = 'generation',
@@ -71,6 +73,13 @@
 
 	let sourceRows = $derived(rows.filter((row) => !row.isLoad));
 	let loadRows = $derived(rows.filter((row) => row.isLoad));
+
+	/** Dim stale values until the next complete snapshot is ready. */
+	let valueCell = $derived(
+		`text-right font-mono tabular-nums transition-opacity duration-300 ${
+			valuesPending ? 'opacity-40' : ''
+		}`
+	);
 
 	/**
 	 * Underlying fuel techs folded into a group — one label per tooltip line,
@@ -152,13 +161,13 @@
 					</div>
 				{/if}
 			</td>
-			<td class="px-2 py-1.5 text-right font-mono tabular-nums text-dark-grey">
+			<td class="px-2 py-1.5 text-dark-grey {valueCell}">
 				{formatSI(row.avPowerMW ?? NaN, { maximumFractionDigits: 1 })}
 			</td>
-			<td class="px-2 py-1.5 text-right font-mono tabular-nums text-dark-grey">
+			<td class="px-2 py-1.5 text-dark-grey {valueCell}">
 				{formatPct(row.contributionPct)}
 			</td>
-			<td class="pr-3 pl-2 py-1.5 text-right font-mono tabular-nums text-dark-grey">
+			<td class="pr-3 pl-2 py-1.5 text-dark-grey {valueCell}">
 				{formatPriceCell(row.vwPrice)}
 			</td>
 		</tr>
@@ -195,9 +204,9 @@
 				<span class="text-dark-grey">{label}</span>
 			</div>
 		</td>
-		<td class="px-2 py-2 text-right font-mono tabular-nums text-dark-grey">{value}</td>
-		<td class="px-2 py-2 text-right font-mono tabular-nums text-dark-grey">{pct}</td>
-		<td class="py-2 pr-3 pl-2 text-right font-mono tabular-nums text-mid-grey">—</td>
+		<td class="px-2 py-2 text-dark-grey {valueCell}">{value}</td>
+		<td class="px-2 py-2 text-dark-grey {valueCell}">{pct}</td>
+		<td class="py-2 pr-3 pl-2 text-mid-grey {valueCell}">—</td>
 	</tr>
 {/snippet}
 
@@ -302,13 +311,13 @@
 							</span>
 						</div>
 					</td>
-					<td class="px-2 py-1.5 text-right font-mono tabular-nums text-dark-grey">
+					<td class="px-2 py-1.5 text-dark-grey {valueCell}">
 						{formatSI(row.avPowerMW, { maximumFractionDigits: 1 })}
 					</td>
-					<td class="px-2 py-1.5 text-right font-mono tabular-nums text-dark-grey">
+					<td class="px-2 py-1.5 text-dark-grey {valueCell}">
 						{formatPct(row.contributionPct)}
 					</td>
-					<td class="py-1.5 pr-3 pl-2 text-right font-mono tabular-nums text-mid-grey">—</td>
+					<td class="py-1.5 pr-3 pl-2 text-mid-grey {valueCell}">—</td>
 				</tr>
 			{/each}
 		</tbody>

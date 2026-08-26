@@ -8,7 +8,7 @@
 
 import { bisectTime, bisectTimeRight, mergeSortedByTime } from './binary-search.js';
 import { offsetMsFromOffset } from './network-time.js';
-import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
+import { EARLIEST_DATA_MS, isHistoricalWindow } from '$lib/utils/date-range.js';
 import { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
 
 export { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
@@ -145,10 +145,26 @@ function isAbortError(err) {
 }
 
 /** Max completed responses kept for reuse. */
-const RESPONSE_CACHE_MAX = 30;
+const RESPONSE_CACHE_MAX = 50;
 
-/** Matches the chart API routes' `Cache-Control: max-age=300`. */
+/** Live (right-edge) windows match the chart API routes' `Cache-Control: max-age=300`. */
 const RESPONSE_CACHE_TTL_MS = 5 * 60 * 1000;
+
+/** Historical responses use a longer TTL because they rarely change. */
+const HISTORICAL_RESPONSE_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * Return the response TTL for the request's `date_end`.
+ * @param {string} requestKey - Canonical request key (sorted, encoded pairs)
+ * @returns {number}
+ */
+function responseTtlMs(requestKey) {
+	const match = /[?&]date_end=([^&]+)/.exec(requestKey);
+	if (!match) return RESPONSE_CACHE_TTL_MS;
+	return isHistoricalWindow(decodeURIComponent(match[1]))
+		? HISTORICAL_RESPONSE_TTL_MS
+		: RESPONSE_CACHE_TTL_MS;
+}
 
 /**
  * Completed responses by canonical request signature, LRU by Map insertion
@@ -157,7 +173,7 @@ const RESPONSE_CACHE_TTL_MS = 5 * 60 * 1000;
  * (a group toggle re-fetching history, manager rebuilds) skip both the network
  * round-trip and the JSON re-parse. Right-edge batches embed a now-clamped
  * `date_end`, so only historical batches — the bulk of a wide window — hit.
- * @type {Map<string, { response: any, ts: number }>}
+ * @type {Map<string, { response: any, ts: number, ttlMs: number }>}
  */
 const completedResponses = new Map();
 
@@ -168,7 +184,7 @@ const completedResponses = new Map();
 function getCachedResponse(url) {
 	const entry = completedResponses.get(url);
 	if (!entry) return undefined;
-	if (Date.now() - entry.ts > RESPONSE_CACHE_TTL_MS) {
+	if (Date.now() - entry.ts > entry.ttlMs) {
 		completedResponses.delete(url);
 		return undefined;
 	}
@@ -186,7 +202,7 @@ function storeCachedResponse(url, response) {
 	// Never cache failures — a later retry should hit the network.
 	if (response == null) return;
 	completedResponses.delete(url);
-	completedResponses.set(url, { response, ts: Date.now() });
+	completedResponses.set(url, { response, ts: Date.now(), ttlMs: responseTtlMs(url) });
 	while (completedResponses.size > RESPONSE_CACHE_MAX) {
 		const oldest = /** @type {string} */ (completedResponses.keys().next().value);
 		completedResponses.delete(oldest);
@@ -222,9 +238,10 @@ export function clearInFlightFetches() {
  *
  * @param {string} url
  * @param {AbortSignal} [signal]
+ * @param {'low'} [priority] - Low priority for background prefetches
  * @returns {Promise<any>}
  */
-function sharedFetch(url, signal) {
+function sharedFetch(url, signal, priority) {
 	const requestKey = canonicalChartRequestKey(url);
 	const cached = getCachedResponse(requestKey);
 	if (cached !== undefined) {
@@ -242,7 +259,7 @@ function sharedFetch(url, signal) {
 				controller,
 				refCount: 0
 			});
-		created.promise = fetch(url, { signal: controller.signal })
+		created.promise = fetch(url, { signal: controller.signal, priority })
 			.then(async (res) => {
 				if (!res.ok) {
 					console.error('ChartDataManager: API returned', res.status);
@@ -386,7 +403,7 @@ export default class ChartDataManager {
 
 	// Debounce timer
 	/** @type {ReturnType<typeof setTimeout> | null} */ #fetchTimer = null;
-	/** @type {{start: number, end: number} | null} */ #pendingFetch = null;
+	/** @type {{start: number, end: number, priority?: 'low'} | null} */ #pendingFetch = null;
 
 	// In-flight batches by `${start}-${end}` key — dedups duplicate requests and
 	// lets cancelStaleFetches()/dispose() abort batches that are no longer needed.
@@ -517,9 +534,10 @@ export default class ChartDataManager {
 	 *
 	 * @param {number} start - Start timestamp (ms)
 	 * @param {number} end - End timestamp (ms)
-	 * @param {{ immediate?: boolean }} [options] - Set immediate to skip debounce
+	 * @param {{ immediate?: boolean, priority?: 'low' }} [options] - Skip the
+	 *   debounce or mark a background prefetch
 	 */
-	requestRange(start, end, { immediate = false } = {}) {
+	requestRange(start, end, { immediate = false, priority } = {}) {
 		// If fully cached, skip
 		if (
 			this.#cacheStart !== null &&
@@ -530,12 +548,13 @@ export default class ChartDataManager {
 			return;
 		}
 
-		// Merge with pending fetch to cover the widest gap
+		// Merge pending ranges; a normal request upgrades a low-priority fetch.
 		if (this.#pendingFetch) {
 			this.#pendingFetch.start = Math.min(this.#pendingFetch.start, start);
 			this.#pendingFetch.end = Math.max(this.#pendingFetch.end, end);
+			if (priority !== 'low') this.#pendingFetch.priority = undefined;
 		} else {
-			this.#pendingFetch = { start, end };
+			this.#pendingFetch = { start, end, priority };
 		}
 		this.hasPendingFetch = true;
 
@@ -601,6 +620,7 @@ export default class ChartDataManager {
 		const pending = this.#pendingFetch;
 		if (!pending) return;
 		this.#pendingFetch = null;
+		const priority = pending.priority;
 
 		// Clamp the requested window to where data can exist BEFORE computing
 		// gaps/batches. Callers add wide prefetch buffers (3× the viewport for
@@ -645,7 +665,7 @@ export default class ChartDataManager {
 			this.loadingRanges = [...this.loadingRanges, batch];
 
 			try {
-				const data = await this.#fetchFromApi(batch.start, batch.end, controller.signal);
+				const data = await this.#fetchFromApi(batch.start, batch.end, controller.signal, priority);
 				// dispose()/clearCache() while awaiting retired this generation —
 				// drop the result instead of merging into dead/reset state.
 				if (gen !== this.#generation) return;
@@ -807,9 +827,10 @@ export default class ChartDataManager {
 	 * @param {number} startMs
 	 * @param {number} endMs
 	 * @param {AbortSignal} [signal]
+	 * @param {'low'} [priority] - Background-prefetch priority
 	 * @returns {Promise<any|null>}
 	 */
-	async #fetchFromApi(startMs, endMs, signal) {
+	async #fetchFromApi(startMs, endMs, signal, priority) {
 		// Validate metric/interval compatibility — 5m only supports power and market_value
 		if (this.interval === '5m' && this.metric === 'energy') {
 			console.warn(
@@ -856,7 +877,7 @@ export default class ChartDataManager {
 			date_end: dateEnd
 		});
 
-		return sharedFetch(this.buildFetchUrl(params), signal);
+		return sharedFetch(this.buildFetchUrl(params), signal, priority);
 	}
 
 	/**

@@ -3,12 +3,50 @@ import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 import { MARKET_METRIC_NAMES } from '$lib/components/charts/network/market-metric-names.js';
 import { apiRangeLimitError } from '$lib/oe-api/data-limits.js';
+import { createKeyedSwrCache } from '$lib/server/keyed-swr-cache.js';
 import { auUpstreamRanges, mergeAuResponses } from '$lib/server/network-data-au.js';
+import { isHistoricalWindow } from '$lib/utils/date-range.js';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
 	baseUrl: PUBLIC_OE_API_URL
 });
+
+/** Cache successful responses by canonical query and refresh stale values in
+ *  the background. Vite development bypasses this cache. */
+const networkDataCache = createKeyedSwrCache({
+	keyPrefix: 'https://edge-cache.openelectricity.org.au/network-data-v1'
+});
+
+/** Refresh live windows every five minutes. */
+const LIVE_FRESH_MS = 5 * 60 * 1000;
+/** Refresh historical windows every six hours. */
+const HISTORICAL_FRESH_MS = 6 * 60 * 60 * 1000;
+/**
+ * Return the freshness period for a network-local `date_end`.
+ * @param {string | undefined} dateEnd
+ * @returns {number}
+ */
+function freshnessFor(dateEnd) {
+	return isHistoricalWindow(dateEnd) ? HISTORICAL_FRESH_MS : LIVE_FRESH_MS;
+}
+
+/**
+ * @param {object} params
+ * @param {string} params.region
+ * @param {string} params.metric
+ * @param {string} params.interval
+ * @param {string} [params.dateStart]
+ * @param {string} [params.dateEnd]
+ * @param {string} [params.primaryGrouping]
+ */
+function cacheKeyFor({ region, metric, interval, dateStart, dateEnd, primaryGrouping }) {
+	const params = new URLSearchParams({ region, metric, interval });
+	if (dateStart) params.set('date_start', dateStart);
+	if (dateEnd) params.set('date_end', dateEnd);
+	if (primaryGrouping) params.set('primary_grouping', primaryGrouping);
+	return params.toString();
+}
 
 const VALID_REGIONS = new Set(['au', '_all', 'wem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']);
 const VALID_INTERVALS = new Set(['5m', '1h', '1d', '7d', '1M', '3M', '1y']);
@@ -120,7 +158,7 @@ async function fetchNetworkResponse({
 	return response;
 }
 
-export async function GET({ url, setHeaders }) {
+export async function GET({ url, setHeaders, platform }) {
 	const { searchParams } = url;
 	const region = searchParams.get('region') || '_all';
 	const metric = searchParams.get('metric') || 'power';
@@ -160,7 +198,8 @@ export async function GET({ url, setHeaders }) {
 
 	const { networkId, networkRegion } = regionToNetwork(region);
 
-	try {
+	/** Fetch a complete response; failures are not cached. */
+	const fetchUpstream = async () => {
 		let response;
 
 		if (region === 'au' && metric !== 'price') {
@@ -195,9 +234,34 @@ export async function GET({ url, setHeaders }) {
 			});
 		}
 
-		setHeaders({ 'Cache-Control': 'public, max-age=300' });
+		return { region, network_id: networkId, response };
+	};
 
-		return Response.json({ region, network_id: networkId, response });
+	try {
+		const cacheKey = cacheKeyFor({
+			region,
+			metric,
+			interval,
+			dateStart,
+			dateEnd,
+			primaryGrouping
+		});
+		const freshMs = freshnessFor(dateEnd);
+
+		const { value, status } = await networkDataCache.get(platform, cacheKey, fetchUpstream, {
+			freshMs
+		});
+
+		setHeaders({
+			// This header controls browsers; the Cache API handles edge storage.
+			'Cache-Control':
+				freshMs === HISTORICAL_FRESH_MS
+					? 'public, max-age=3600, stale-while-revalidate=3600'
+					: 'public, max-age=300',
+			'x-oe-cache': status
+		});
+
+		return Response.json(value);
 	} catch (err) {
 		if (err instanceof NoDataFound) {
 			return Response.json({ region, network_id: networkId, response: { data: [] } });

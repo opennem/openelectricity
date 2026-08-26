@@ -341,3 +341,79 @@ describe('createViewportGestures', () => {
 		});
 	});
 });
+
+describe('settle invariant — every applied step is followed by exactly one settle', () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(NOW);
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it('pointer drag: settles once on pan end', () => {
+		const onSettle = vi.fn();
+		const { gestures } = harness({ onSettle });
+		gestures.handlePanStart();
+		gestures.handlePan(HOUR);
+		gestures.handlePan(HOUR);
+		expect(onSettle).not.toHaveBeenCalled();
+		gestures.handlePanEnd();
+		expect(onSettle).toHaveBeenCalledOnce();
+		// The cancelled timer must not settle again.
+		vi.advanceTimersByTime(1000);
+		expect(onSettle).toHaveBeenCalledOnce();
+	});
+
+	it('pointer gesture that never moved settles nothing', () => {
+		const onSettle = vi.fn();
+		const { gestures } = harness({ onSettle });
+		gestures.handlePanStart();
+		gestures.handlePanEnd();
+		expect(onSettle).not.toHaveBeenCalled();
+	});
+
+	it('wheel pan (no panstart): settles once on the lull timer', () => {
+		const onSettle = vi.fn();
+		const { state, gestures } = harness({ onSettle });
+		gestures.handlePan(HOUR);
+		gestures.handlePan(HOUR);
+		expect(onSettle).not.toHaveBeenCalled();
+		vi.advanceTimersByTime(1000);
+		expect(onSettle).toHaveBeenCalledOnce();
+		expect(onSettle).toHaveBeenCalledWith(state.start, state.end);
+	});
+
+	it('wheel zoom (no end event at all): settles once on the lull timer', () => {
+		const onSettle = vi.fn();
+		const { gestures } = harness({ onSettle });
+		gestures.handleZoom(1.2, NOW - 36 * HOUR);
+		gestures.handleZoom(1.2, NOW - 36 * HOUR);
+		vi.advanceTimersByTime(1000);
+		expect(onSettle).toHaveBeenCalledOnce();
+	});
+
+	it('zoom buttons: settle immediately, once per click', () => {
+		const onSettle = vi.fn();
+		const { gestures } = harness({ onSettle });
+		gestures.zoomIn();
+		expect(onSettle).toHaveBeenCalledOnce();
+		gestures.zoomOut();
+		expect(onSettle).toHaveBeenCalledTimes(2);
+		vi.advanceTimersByTime(1000);
+		expect(onSettle).toHaveBeenCalledTimes(2);
+	});
+
+	it('a wheel step followed by a pointer gesture settles once, on the pointer end', () => {
+		const onSettle = vi.fn();
+		const { gestures } = harness({ onSettle });
+		gestures.handlePan(HOUR); // Arms the wheel-settle timer.
+		gestures.handlePanStart(); // Pointer input cancels the timer.
+		gestures.handlePan(HOUR);
+		gestures.handlePanEnd();
+		expect(onSettle).toHaveBeenCalledOnce();
+		vi.advanceTimersByTime(1000);
+		expect(onSettle).toHaveBeenCalledOnce();
+	});
+});
