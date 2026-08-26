@@ -74,8 +74,9 @@ are deliberately not serialised.
   metrics fetch at all.
 - Background idle prefetch (`idle-prefetch.js` via the chart host): every
   chart widens its cached window to 3× the viewport each side after settling,
-  and the generation chart warms daily energy (30 days) plus the full monthly
-  history into the manager stash — a later 30D/1Y/All pick revives warm. All
+  then warms 30 days of daily data and the full monthly history for its active
+  metric. Later 30D/1Y/All selections can revive those managers immediately.
+  Price and emissions history also use the edge cache below. All
   prefetch traffic runs at fetch priority 'low' during idle slices.
 - The route carries a keyed edge SWR cache (`keyed-swr-cache.js`, Cloudflare
   Cache API): any cached window serves instantly and refreshes in the

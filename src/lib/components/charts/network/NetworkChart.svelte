@@ -17,6 +17,7 @@
 		formatIntervalQuantityUnit,
 		getIntervalSpec
 	} from '$lib/components/charts/facility/range-interval-config.js';
+	import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { createChartHost } from '$lib/components/charts/v2/chart-host.svelte.js';
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
@@ -199,28 +200,26 @@
 	let intensityFilterKey = $derived([...excludedFuelTechGroups].sort().join(','));
 
 	/**
-	 * Process function for the active panel — fuel-tech-grouped generation, a
-	 * single price line, or configured market series. Captured into the data
-	 * manager so it runs on every fetch.
+	 * Build a processor for the requested metric and native interval.
+	 * Prefetched managers may use a different interval from the visible chart.
+	 * @param {string} targetMetric
+	 * @param {string} targetInterval
 	 */
-	/** Native bucket length for the intensity MWh conversion — only read at the
-	 *  sub-daily grains where the route fetches a power basis. */
-	let intervalHours = $derived(interval === '5m' ? 5 / 60 : interval === '1h' ? 1 : 24);
-
-	let processResponseFn = $derived.by(() => {
+	function createResponseProcessor(targetMetric, targetInterval) {
 		const tz = timeZone || '+10:00';
 		if (panelKind === 'intensity') {
-			const hours = intervalHours;
 			return (/** @type {any} */ resp) =>
 				processEmissionsIntensity(resp, {
-					intervalHours: hours,
+					intervalHours: getIntervalHours(targetInterval),
 					networkTimezone: tz,
 					groupMap: groupConfig.fuelTechs,
 					excludedGroups: excludedFuelTechGroups
 				});
 		}
 		if (panelKind === 'market') {
-			const cfg = /** @type {NonNullable<typeof marketConfig>} */ (marketConfig);
+			const cfg = /** @type {NonNullable<typeof marketConfig>} */ (
+				getMarketMetricConfig(targetMetric)
+			);
 			return (/** @type {any} */ resp) =>
 				processMarketData(resp, { seriesDefs: cfg.seriesDefs, networkTimezone: tz });
 		}
@@ -236,11 +235,13 @@
 			// carry zero-or-positive tonnes, so nothing inverts.
 			loadsToInvert: panelKind === 'emissions' ? [] : loadGroupsToInvert,
 			getColour: getFuelTechColour,
-			metricFilter: metric,
+			metricFilter: targetMetric,
 			networkTimezone: tz
 		};
 		return (/** @type {any} */ resp) => processNetworkData(resp, cfg);
-	});
+	}
+
+	let processResponseFn = $derived.by(() => createResponseProcessor(metric, interval));
 
 	/**
 	 * Build the network fetch URL — ChartDataManager passes its standard params
@@ -302,27 +303,13 @@
 		idlePrefetch: () => prefetchPlan,
 		createManagerFor: (spec) => {
 			const tz = timeZone || '+10:00';
-			let processResponse = processResponseFn;
-			if (panelKind === 'generation' || panelKind === 'market-value' || panelKind === 'emissions') {
-				// Prefetched intervals need a processor configured for their own metric.
-				const cfg = {
-					groupMap: groupConfig.fuelTechs,
-					groupOrder: groupConfig.order,
-					groupLabels: groupConfig.labels,
-					loadsToInvert: panelKind === 'emissions' ? [] : loadGroupsToInvert,
-					getColour: getFuelTechColour,
-					metricFilter: spec.metric,
-					networkTimezone: tz
-				};
-				processResponse = (resp) => processNetworkData(resp, cfg);
-			}
 			return new ChartDataManager({
 				cacheKey: `${region}:${chartKind}`,
 				networkTimezone: tz,
 				interval: spec.interval,
 				metric: spec.metric,
 				seriesKey: spec.seriesKey ?? seriesKey,
-				processResponse,
+				processResponse: createResponseProcessor(spec.metric, spec.interval),
 				buildFetchUrl
 			});
 		},

@@ -35,6 +35,7 @@
 	import { hasSpotPrice } from '../tracker-regions.js';
 	import ChartCard from './ChartCard.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
+	import { createTrackerPrefetchPlan } from './tracker-prefetch.js';
 	import { normaliseRange, resolvePriceMode } from './tracker-model.js';
 	import {
 		buildFuelTechTableRows,
@@ -223,17 +224,6 @@
 		enabled: () => tablePanelOpen || showRenewablesLine
 	});
 
-	/** Prefetch daily and monthly generation. Price and emissions only widen
-	 *  their current cache because full-history requests are expensive. */
-	const GENERATION_PREFETCH_PLAN = {
-		widenMultiplier: 3,
-		grains: [
-			{ interval: '1d', metric: 'energy', windowMs: 30 * DAY_MS },
-			{ interval: '1M', metric: 'energy', windowMs: 11_000 * DAY_MS }
-		]
-	};
-	const WIDEN_ONLY_PREFETCH_PLAN = { widenMultiplier: 3 };
-
 	let energyMetric = $derived(range.activeMetric === 'energy');
 	let intervalBadge = $derived(
 		getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval
@@ -256,6 +246,15 @@
 	let effectivePriceMode = $derived(resolvePriceMode(region, priceMode));
 	let priceIsMarketValue = $derived(effectivePriceMode === 'market_value');
 	let emissionsIsIntensity = $derived(emissionsMode === 'intensity');
+	/** @type {'market_value' | 'price'} */
+	let priceMetric = $derived(priceIsMarketValue ? 'market_value' : 'price');
+	/** @type {'emissions_intensity' | 'emissions'} */
+	let emissionsMetric = $derived(emissionsIsIntensity ? 'emissions_intensity' : 'emissions');
+
+	// Warm the range presets most likely to follow the live view.
+	const GENERATION_PREFETCH_PLAN = createTrackerPrefetchPlan('energy');
+	let pricePrefetchPlan = $derived(createTrackerPrefetchPlan(priceMetric));
+	let emissionsPrefetchPlan = $derived(createTrackerPrefetchPlan(emissionsMetric));
 
 	let loadSeriesIds = $derived(loadGroupsFor(getGroup(group)));
 
@@ -617,7 +616,7 @@
 				<NetworkChart
 					bind:this={priceChart}
 					{region}
-					metric={priceIsMarketValue ? 'market_value' : 'price'}
+					metric={priceMetric}
 					interval={range.activeInterval}
 					displayInterval={range.displayInterval}
 					{group}
@@ -641,7 +640,7 @@
 					ongesturechange={(active) => (gestureActive = active)}
 					loadingLabel={rangeLabel}
 					holdFrame={chartsHoldFrame}
-					prefetchPlan={WIDEN_ONLY_PREFETCH_PLAN}
+					prefetchPlan={pricePrefetchPlan}
 				/>
 			{/snippet}
 		</ChartCard>
@@ -666,7 +665,7 @@
 				<NetworkChart
 					bind:this={emissionsChart}
 					{region}
-					metric={emissionsIsIntensity ? 'emissions_intensity' : 'emissions'}
+					metric={emissionsMetric}
 					interval={range.activeInterval}
 					displayInterval={range.displayInterval}
 					{group}
@@ -691,7 +690,7 @@
 					ongesturechange={(active) => (gestureActive = active)}
 					loadingLabel={rangeLabel}
 					holdFrame={chartsHoldFrame}
-					prefetchPlan={WIDEN_ONLY_PREFETCH_PLAN}
+					prefetchPlan={emissionsPrefetchPlan}
 				/>
 			{/snippet}
 		</ChartCard>
