@@ -8,7 +8,9 @@ export default defineConfig({
 	workers: process.env.CI ? 1 : undefined,
 	reporter: 'html',
 	use: {
-		baseURL: 'http://localhost:5173',
+		// The dev server is pinned to openelectricity.localhost:7602 (see
+		// vite.config.js) — plain localhost:5173 can never serve this app.
+		baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://openelectricity.localhost:7602',
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure'
 	},
@@ -20,7 +22,7 @@ export default defineConfig({
 	],
 	webServer: {
 		command: 'pnpm run dev',
-		url: 'http://localhost:5173',
+		url: process.env.PLAYWRIGHT_BASE_URL || 'http://openelectricity.localhost:7602',
 		reuseExistingServer: !process.env.CI,
 		timeout: 120000
 	}
