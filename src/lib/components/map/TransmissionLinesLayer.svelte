@@ -45,6 +45,7 @@
 <script>
 	import { GeoJSONSource, LineLayer } from 'svelte-maplibre-gl';
 	import { BAND_MIN, bandColours } from '$lib/facilities/transmission-bands.js';
+	import { isLightMapTheme } from './map-style.js';
 
 	/**
 	 * Transmission-lines overlay — the single source + line layer every map
@@ -65,7 +66,7 @@
 	 * band colours stay on top. Defaults keep every other map unchanged.
 	 *
 	 * @type {{
-	 *   mapTheme?: 'light' | 'dark' | 'satellite',
+	 *   mapTheme?: 'voyager' | 'light' | 'dark' | 'satellite',
 	 *   visible?: boolean,
 	 *   filter?: any,
 	 *   lineWidth?: any,
@@ -107,7 +108,7 @@
 	let casingFilter = $derived(['in', ['get', 'objectid'], ['literal', casingIds]]);
 	/** @type {any} */
 	let selectedTest = $derived(['in', ['get', 'objectid'], ['literal', selectedObjectIds]]);
-	let casingColour = $derived(mapTheme === 'light' ? '#33475c' : '#c9d9ec');
+	let casingColour = $derived(isLightMapTheme(mapTheme) ? '#33475c' : '#c9d9ec');
 	/** @type {any} */
 	let casingPaint = $derived({
 		'line-color': casingColour,

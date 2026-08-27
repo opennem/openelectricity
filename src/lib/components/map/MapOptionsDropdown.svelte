@@ -10,7 +10,8 @@
 	 * same circular Layers icon so the control is recognisable across maps;
 	 * per-map rows are opted out via the `show*Option` props.
 	 * @type {{
-	 *   mapTheme?: 'light' | 'dark' | 'satellite',
+	 *   mapTheme?: 'voyager' | 'light' | 'dark' | 'satellite',
+	 *   showVoyagerTheme?: boolean,
 	 *   showTransmissionLines?: boolean,
 	 *   showFlows?: boolean,
 	 *   showFlowsOption?: boolean,
@@ -19,18 +20,25 @@
 	 *   showMagicIndicator?: boolean,
 	 *   clustering?: boolean,
 	 *   showClusteringOption?: boolean,
+	 *   showDaylight?: boolean,
+	 *   showDaylightOption?: boolean,
+	 *   showCloudCover?: boolean,
+	 *   showCloudCoverOption?: boolean,
 	 *   showLegend?: boolean,
 	 *   showLegendOption?: boolean,
-	 *   onmapthemechange?: (value: 'light' | 'dark' | 'satellite') => void,
+	 *   onmapthemechange?: (value: 'voyager' | 'light' | 'dark' | 'satellite') => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
 	 *   onflowschange?: (value: boolean) => void,
 	 *   ongolfcourseschange?: (value: boolean) => void,
 	 *   onclusteringchange?: (value: boolean) => void,
+	 *   ondaylightchange?: (value: boolean) => void,
+	 *   oncloudcoverchange?: (value: boolean) => void,
 	 *   onshowlegendchange?: (value: boolean) => void
 	 * }}
 	 */
 	let {
 		mapTheme = 'light',
+		showVoyagerTheme = false,
 		showTransmissionLines = true,
 		showFlows = true,
 		/** Show the interconnector-flows row (the tracker map only). */
@@ -44,11 +52,17 @@
 		showLegendOption = true,
 		/** Hide the clustering row for maps with a single point (e.g. one facility). */
 		showClusteringOption = true,
+		showDaylight = false,
+		showDaylightOption = false,
+		showCloudCover = false,
+		showCloudCoverOption = false,
 		onmapthemechange,
 		ontransmissionlineschange,
 		onflowschange,
 		ongolfcourseschange,
 		onclusteringchange,
+		ondaylightchange,
+		oncloudcoverchange,
 		onshowlegendchange
 	} = $props();
 
@@ -63,6 +77,12 @@
 		{ value: 'dark', label: 'Dark' },
 		{ value: 'satellite', label: 'Satellite' }
 	]);
+
+	let themes = $derived(
+		showVoyagerTheme
+			? [{ value: /** @type {const} */ ('voyager'), label: 'Voyager' }, ...THEMES]
+			: THEMES
+	);
 </script>
 
 {#snippet tick()}
@@ -135,10 +155,11 @@
 					Map theme
 				</div>
 				<div class="inline-flex w-full rounded-md border border-warm-grey overflow-hidden">
-					{#each THEMES as { value, label } (value)}
+					{#each themes as { value, label } (value)}
 						<button
 							type="button"
 							onclick={() => onmapthemechange?.(value)}
+							aria-pressed={mapTheme === value}
 							class="flex-1 px-2 py-1 text-xs transition-colors cursor-pointer"
 							class:bg-dark-grey={mapTheme === value}
 							class:text-white={mapTheme === value}
@@ -166,6 +187,17 @@
 			<!-- Clustering toggle -->
 			{#if showClusteringOption}
 				{@render checkboxRow('Clustering', clustering, onclusteringchange)}
+			{/if}
+
+			{#if showDaylightOption}
+				{@render checkboxRow('Day/night', showDaylight, ondaylightchange)}
+			{/if}
+
+			{#if showCloudCoverOption}
+				{@render checkboxRow('Cloud cover', showCloudCover, oncloudcoverchange)}
+				<p class="pl-11 pr-3 pb-1 -mt-1 text-[10px] text-mid-grey">
+					Asia-Pacific imagery: NASA GIBS · JMA Himawari
+				</p>
 			{/if}
 
 			{#if showGolfOption}

@@ -8,6 +8,7 @@
 
 import { fuelTechColourMap } from '$lib/theme/openelectricity';
 import { formatCapacity } from '$lib/utils/formatters';
+import { isLightMapTheme } from '$lib/components/map/map-style.js';
 
 /** @typedef {'operating' | 'construction' | 'announced' | 'retired'} DataCentreStatusBucket */
 
@@ -44,11 +45,11 @@ export const DC_MARKER = {
  * transmission-bands.js: takes the theme rather than a boolean, so the layer
  * and the legend can't answer "is this basemap dark?" differently.
  *
- * @param {'light' | 'dark' | 'satellite'} mapTheme
+ * @param {'voyager' | 'light' | 'dark' | 'satellite'} mapTheme
  * @returns {string}
  */
 export function dcFill(mapTheme) {
-	return mapTheme === 'light' ? DC_MARKER.fill : DC_MARKER.brightFill;
+	return isLightMapTheme(mapTheme) ? DC_MARKER.fill : DC_MARKER.brightFill;
 }
 
 /**

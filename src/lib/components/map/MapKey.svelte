@@ -35,7 +35,7 @@
 	 * @type {{
 	 *   capacityStops?: { value: number, radius: number }[],
 	 *   showTransmission?: boolean,
-	 *   mapTheme?: 'light' | 'dark' | 'satellite',
+	 *   mapTheme?: 'voyager' | 'light' | 'dark' | 'satellite',
 	 *   visibility?: Visibility,
 	 *   onvisibilitychange?: (visibility: Visibility) => void
 	 * }}

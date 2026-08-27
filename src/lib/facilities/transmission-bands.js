@@ -24,6 +24,8 @@
  * }} TransmissionBand
  */
 
+import { isLightMapTheme } from '$lib/components/map/map-style.js';
+
 /** @type {readonly TransmissionBand[]} */
 export const TRANSMISSION_BANDS = Object.freeze([
 	{
@@ -76,18 +78,18 @@ export const BAND_MIN = TRANSMISSION_BANDS.map((band) => band.min);
  * for lines the dark map was drawing in the deep tones.
  *
  * @param {TransmissionBand} band
- * @param {'light' | 'dark' | 'satellite'} mapTheme
+ * @param {'voyager' | 'light' | 'dark' | 'satellite'} mapTheme
  * @returns {string}
  */
 export function bandColour(band, mapTheme) {
-	return mapTheme === 'light' ? band.colour : band.brightColour;
+	return isLightMapTheme(mapTheme) ? band.colour : band.brightColour;
 }
 
 /**
  * Every band's colour for the given basemap, in band order — the shape the
  * layers' `case` expressions index into.
  *
- * @param {'light' | 'dark' | 'satellite'} mapTheme
+ * @param {'voyager' | 'light' | 'dark' | 'satellite'} mapTheme
  * @returns {string[]}
  */
 export function bandColours(mapTheme) {
@@ -145,7 +147,11 @@ export function transmissionBandFilter(visibility) {
 		return ['==', ['get', 'operationalstatus'], '__never_match__'];
 	}
 
-	return ['all', ['==', ['get', 'operationalstatus'], 'Operational'], ['any', ...voltageConditions]];
+	return [
+		'all',
+		['==', ['get', 'operationalstatus'], 'Operational'],
+		['any', ...voltageConditions]
+	];
 }
 
 /** Source of the transmission-lines dataset, credited in the map key. */

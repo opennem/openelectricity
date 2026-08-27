@@ -8,7 +8,7 @@
 	 * Renders as a plain card; the page places it, the same way it places MapKey.
 	 *
 	 * @type {{
-	 *   mapTheme?: 'light' | 'dark' | 'satellite'
+	 *   mapTheme?: 'voyager' | 'light' | 'dark' | 'satellite'
 	 * }}
 	 */
 	let { mapTheme = 'light' } = $props();

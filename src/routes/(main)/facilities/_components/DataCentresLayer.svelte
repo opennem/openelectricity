@@ -20,7 +20,7 @@
 	 * @type {{
 	 *   visible?: boolean,
 	 *   loads?: any[],
-	 *   mapTheme?: 'light' | 'dark' | 'satellite',
+	 *   mapTheme?: 'voyager' | 'light' | 'dark' | 'satellite',
 	 *   map?: any,
 	 *   selectedId?: string | null,
 	 *   onselect?: (properties: any) => void

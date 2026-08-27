@@ -15,7 +15,13 @@
 	import { fetchOsmPolygon } from '$lib/utils/osm.js';
 	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
 	import TransmissionLinesLayer from '$lib/components/map/TransmissionLinesLayer.svelte';
-	import { mapStyleForTheme, AUSTRALIA_VIEW } from '$lib/components/map/map-style.js';
+	import DaylightLayer from '$lib/components/map/DaylightLayer.svelte';
+	import CloudCoverLayer from '$lib/components/map/CloudCoverLayer.svelte';
+	import {
+		mapStyleForTheme,
+		isLightMapTheme,
+		AUSTRALIA_VIEW
+	} from '$lib/components/map/map-style.js';
 	import DataCentresLayer from './_components/DataCentresLayer.svelte';
 	import UnitGroup from './_components/UnitGroup.svelte';
 	import { groupUnits } from '$lib/facilities/units.js';
@@ -41,10 +47,12 @@
 	 *   selectedView?: 'timeline' | 'list' | 'tiles',
 	 *   cardCodes?: Set<string>,
 	 *   clustering?: boolean,
-	 *   mapTheme?: 'light' | 'dark' | 'satellite',
+	 *   mapTheme?: 'voyager' | 'light' | 'dark' | 'satellite',
 	 *   showTransmissionLines?: boolean,
 	 *   transmissionLineVisibility?: TransmissionLineVisibility,
 	 *   showGolfCourses?: boolean,
+	 *   showDaylight?: boolean,
+	 *   showCloudCover?: boolean,
 	 *   showDataCentres?: boolean,
 	 *   dataCentres?: any[],
 	 *   selectedDataCentreId?: string | null,
@@ -79,6 +87,8 @@
 		showTransmissionLines = true,
 		transmissionLineVisibility = allBandsVisible(),
 		showGolfCourses = false,
+		showDaylight = false,
+		showCloudCover = false,
 		showDataCentres = false,
 		dataCentres = [],
 		selectedDataCentreId = null,
@@ -883,6 +893,10 @@
 			/>
 		</GeoJSONSource>
 
+		<!-- Keep environmental overlays beneath the map data. -->
+		<CloudCoverLayer visible={showCloudCover} {mapTheme} />
+		<DaylightLayer visible={showDaylight} {mapTheme} />
+
 		<TransmissionLinesLayer
 			{mapTheme}
 			visible={showTransmissionLines}
@@ -905,7 +919,7 @@
 			feature={osmPolygon}
 			color={selectedFacilityColor}
 			id="facility-osm-polygon"
-			emphasise={mapTheme !== 'light'}
+			emphasise={!isLightMapTheme(mapTheme)}
 		/>
 
 		{#if clustering}

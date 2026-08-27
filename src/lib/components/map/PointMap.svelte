@@ -9,6 +9,7 @@
 	} from 'svelte-maplibre-gl';
 	import MapLegend from './MapLegend.svelte';
 	import { collapseMapAttribution } from './collapse-attribution.js';
+	import { mapStyleForTheme } from './map-style.js';
 
 	/**
 	 * @typedef {import('./types.js').MapPoint} MapPoint
@@ -50,13 +51,7 @@
 	/** @type {string | number | null} */
 	let openPointId = $state(null);
 
-	let mapStyle = $derived(
-		mapTheme === 'satellite'
-			? '/map-styles/satellite.json'
-			: mapTheme === 'dark'
-				? '/map-styles/dark-matter.json'
-				: '/map-styles/positron.json'
-	);
+	let mapStyle = $derived(mapStyleForTheme(mapTheme));
 
 	let geojson = $derived({
 		type: /** @type {'FeatureCollection'} */ ('FeatureCollection'),

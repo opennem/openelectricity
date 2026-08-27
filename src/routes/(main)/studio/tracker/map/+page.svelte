@@ -442,7 +442,8 @@
 						showClusteringOption={false}
 						{showLegend}
 						onmapthemechange={(v) => {
-							mapTheme = v;
+							// Voyager is not offered by this control.
+							mapTheme = /** @type {'light' | 'dark' | 'satellite'} */ (v);
 							updateUrl();
 						}}
 						ontransmissionlineschange={(v) => {

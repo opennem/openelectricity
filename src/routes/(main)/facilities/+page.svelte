@@ -6,7 +6,11 @@
 	import { building } from '$app/environment';
 	import { Flag, RotateCcw, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
-	import { MAP_FAB_CLASS, MAP_THEMES } from '$lib/components/map/map-style.js';
+	import {
+		MAP_FAB_CLASS,
+		FACILITIES_MAP_THEMES,
+		isLightMapTheme
+	} from '$lib/components/map/map-style.js';
 	import MapKey from '$lib/components/map/MapKey.svelte';
 	import { allBandsVisible } from '$lib/facilities/transmission-bands.js';
 	import DataCentresLegend from './_components/DataCentresLegend.svelte';
@@ -509,18 +513,18 @@
 	/** @type {string[]} */
 	let timelineOrderedCodes = $state([]);
 
-	// Map options - read initial values from URL params
-	// satellite: default false, transmission: default true, clustering: default false, golf: default false
-	const initialTheme = page.url.searchParams.get('theme') ?? 'light';
+	const initialTheme = page.url.searchParams.get('theme') ?? 'voyager';
 
 	let mapTheme = $state(
-		/** @type {'light' | 'dark' | 'satellite'} */ (
-			MAP_THEMES.includes(initialTheme) ? initialTheme : 'light'
+		/** @type {'voyager' | 'light' | 'dark' | 'satellite'} */ (
+			FACILITIES_MAP_THEMES.includes(initialTheme) ? initialTheme : 'voyager'
 		)
 	);
 	let mapShowTransmissionLines = $state(page.url.searchParams.get('transmission') !== 'false');
 	let mapClustering = $state(page.url.searchParams.get('clustering') === 'true');
 	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
+	let mapShowDaylight = $state(page.url.searchParams.get('daylight') === 'true');
+	let mapShowCloudCover = $state(page.url.searchParams.get('clouds') === 'true');
 	// Map chrome rather than a layer — shows the key and the data-centre legend.
 	// Off by default: the map reads cleaner without it, and the encodings are
 	// there to be looked up rather than kept on screen.
@@ -727,8 +731,8 @@
 		if (!routerReady) return;
 		const params = new URLSearchParams(page.url.searchParams);
 
-		// theme: only include if non-default (default is light)
-		if (mapTheme !== 'light') {
+		// Theme: omit Voyager, the default.
+		if (mapTheme !== 'voyager') {
 			params.set('theme', mapTheme);
 		} else {
 			params.delete('theme');
@@ -767,6 +771,21 @@
 		} else {
 			params.delete('golf');
 		}
+
+		if (mapShowDaylight) {
+			params.set('daylight', 'true');
+		} else {
+			params.delete('daylight');
+		}
+
+		if (mapShowCloudCover) {
+			params.set('clouds', 'true');
+		} else {
+			params.delete('clouds');
+		}
+
+		// Remove the retired style override; cloud styling follows the map theme.
+		params.delete('cloud_style');
 
 		// Drop the legacy generators=… param (superseded by fuel_techs=none).
 		params.delete('generators');
@@ -1061,8 +1080,8 @@
 		if (f) {
 			url += `&facility=${f}`;
 		}
-		// Preserve map layer options
-		if (mapTheme !== 'light') {
+		// Preserve non-default map options.
+		if (mapTheme !== 'voyager') {
 			url += `&theme=${mapTheme}`;
 		}
 		if (!mapShowTransmissionLines) {
@@ -1073,6 +1092,12 @@
 		}
 		if (mapShowGolfCourses) {
 			url += '&golf=true';
+		}
+		if (mapShowDaylight) {
+			url += '&daylight=true';
+		}
+		if (mapShowCloudCover) {
+			url += '&clouds=true';
 		}
 		if (mapShowLegend) {
 			url += '&legend=true';
@@ -1486,7 +1511,7 @@
 				{isFullscreen}
 				{loadsFeature}
 				facilitySelected={!!selectedFacility}
-				darkMap={mapTheme !== 'light'}
+				darkMap={!isLightMapTheme(mapTheme)}
 				showShortcuts={showShortcutsToast}
 				selectedStatuses={statuses}
 				selectedLoadStatuses={loadStatuses}
@@ -1667,6 +1692,8 @@
 								showTransmissionLines={mapShowTransmissionLines}
 								{transmissionLineVisibility}
 								showGolfCourses={mapShowGolfCourses}
+								showDaylight={mapShowDaylight}
+								showCloudCover={mapShowCloudCover}
 								showDataCentres={showLoads}
 								dataCentres={loadFacilities}
 								{playYear}
@@ -1686,11 +1713,16 @@
 						{#snippet mapOptionsDropdown()}
 							<MapOptionsDropdown
 								{mapTheme}
+								showVoyagerTheme
 								showTransmissionLines={mapShowTransmissionLines}
 								showGolfCourses={mapShowGolfCourses}
 								showGolfOption={showGolf}
 								showMagicIndicator={showGolf}
 								clustering={mapClustering}
+								showDaylight={mapShowDaylight}
+								showDaylightOption
+								showCloudCover={mapShowCloudCover}
+								showCloudCoverOption
 								showLegend={mapShowLegend}
 								onmapthemechange={(v) => {
 									mapTheme = v;
@@ -1706,6 +1738,14 @@
 								}}
 								onclusteringchange={(v) => {
 									mapClustering = v;
+									updateMapOptionsUrl();
+								}}
+								ondaylightchange={(v) => {
+									mapShowDaylight = v;
+									updateMapOptionsUrl();
+								}}
+								oncloudcoverchange={(v) => {
+									mapShowCloudCover = v;
 									updateMapOptionsUrl();
 								}}
 								onshowlegendchange={(v) => {

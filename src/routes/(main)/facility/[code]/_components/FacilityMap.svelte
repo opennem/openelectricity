@@ -106,7 +106,7 @@
 			showGolfOption={false}
 			showClusteringOption={false}
 			showLegendOption={false}
-			onmapthemechange={(v) => (mapTheme = v)}
+			onmapthemechange={(v) => (mapTheme = /** @type {'light' | 'dark' | 'satellite'} */ (v))}
 			ontransmissionlineschange={(v) => (showTransmissionLines = v)}
 		/>
 	</div>

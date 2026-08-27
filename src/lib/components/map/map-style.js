@@ -15,12 +15,23 @@ export const MAP_FAB_CLASS =
 export const MAP_CHIP_CLASS = 'rounded-lg border border-black/10 bg-white/95 shadow-sm';
 
 /**
- * The base-map theme vocabulary — the single list the URL validators
- * (/facilities, /tracker `?theme=`) agree on. UI labels stay with the
- * controls (MapOptionsDropdown).
+ * Base-map themes shared by every map surface and accepted by the Tracker's
+ * `?theme=` validator.
  * @type {readonly string[]}
  */
 export const MAP_THEMES = ['light', 'dark', 'satellite'];
+
+/** Facilities-specific themes, with Voyager as the default. */
+export const FACILITIES_MAP_THEMES = ['voyager', ...MAP_THEMES];
+
+/**
+ * Whether a theme uses light-map overlay colours.
+ * @param {string} theme
+ * @returns {boolean}
+ */
+export function isLightMapTheme(theme) {
+	return theme === 'light' || theme === 'voyager';
+}
 
 /**
  * Default overview framing for the continent-level /facilities map. The
@@ -39,10 +50,11 @@ export const AUSTRALIA_VIEW = Object.freeze({
  * CARTO's hosted fonts CDN 404s on `DM_Mono`, which broke labels when we
  * pointed straight at the upstream JSON.
  *
- * @param {'light' | 'dark' | 'satellite'} theme
+ * @param {'voyager' | 'light' | 'dark' | 'satellite'} theme
  * @returns {string}
  */
 export function mapStyleForTheme(theme) {
+	if (theme === 'voyager') return '/map-styles/voyager.json';
 	if (theme === 'satellite') return '/map-styles/satellite.json';
 	if (theme === 'dark') return '/map-styles/dark-matter.json';
 	return '/map-styles/positron.json';
