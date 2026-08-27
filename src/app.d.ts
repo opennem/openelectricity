@@ -9,13 +9,26 @@ declare global {
 		};
 	}
 
+	// Minimal structural view of a D1 binding — only what the network-cache
+	// registry uses, hand-rolled to avoid @cloudflare/workers-types.
+	interface D1PreparedStatement {
+		bind(...values: unknown[]): D1PreparedStatement;
+		first<T = Record<string, unknown>>(): Promise<T | null>;
+		all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
+		run(): Promise<unknown>;
+	}
+	interface D1Database {
+		prepare(query: string): D1PreparedStatement;
+	}
+
 	namespace App {
 		// interface Error {}
 		// interface Locals {}
 		// interface PageData {}
 		// Minimal structural view of the Cloudflare adapter's platform object —
-		// enough for cache/waitUntil usage without depending on
-		// @cloudflare/workers-types. Everything optional: absent in `vite dev`.
+		// enough for cache/waitUntil/binding usage without depending on
+		// @cloudflare/workers-types. Everything optional: absent in `vite dev`,
+		// and bindings absent until configured in the Cloudflare dashboard.
 		interface Platform {
 			context?: { waitUntil(promise: Promise<unknown>): void };
 			caches?: {
@@ -23,6 +36,9 @@ declare global {
 					match(key: string | Request): Promise<Response | undefined>;
 					put(key: string | Request, response: Response): Promise<void>;
 				};
+			};
+			env?: {
+				CACHE_REGISTRY?: D1Database;
 			};
 		}
 	}

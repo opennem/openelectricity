@@ -175,3 +175,121 @@ describe('edge SWR cache (fake platform)', () => {
 		expect(setHeaders).toHaveBeenCalledWith(expect.objectContaining({ 'x-oe-cache': 'hit' }));
 	});
 });
+
+describe('cache registry hooks (fake platform + D1)', () => {
+	beforeEach(() => {
+		mocks.getMarket.mockReset().mockResolvedValue({ response: { data: [] } });
+		mocks.getNetworkData.mockReset().mockResolvedValue({ response: { data: [] } });
+	});
+
+	/**
+	 * Fake Cloudflare cache, waitUntil collector and a D1 binding that records
+	 * (or refuses) every statement.
+	 * @param {{ throwing?: boolean }} [opts]
+	 */
+	function fakePlatform({ throwing = false } = {}) {
+		/** @type {Map<string, Response>} */
+		const store = new Map();
+		/** @type {Promise<unknown>[]} */
+		const waited = [];
+		/** @type {{ sql: string, params: unknown[] }[]} */
+		const executed = [];
+		/**
+		 * @param {string} sql
+		 * @param {unknown[]} params
+		 * @returns {any}
+		 */
+		function statement(sql, params) {
+			const record = () => {
+				if (throwing) throw new Error('d1 down');
+				executed.push({ sql, params });
+			};
+			return {
+				bind: (/** @type {unknown[]} */ ...values) => statement(sql, values),
+				run: async () => {
+					record();
+				},
+				first: async () => {
+					record();
+					return null;
+				},
+				all: async () => {
+					record();
+					return { results: [] };
+				}
+			};
+		}
+		return {
+			store,
+			waited,
+			executed,
+			platform: /** @type {App.Platform} */ ({
+				caches: {
+					default: {
+						match: async (/** @type {string} */ key) => {
+							const hit = store.get(key);
+							return hit ? hit.clone() : undefined;
+						},
+						put: async (/** @type {string} */ key, /** @type {Response} */ res) => {
+							store.set(key, res);
+						}
+					}
+				},
+				context: { waitUntil: (/** @type {Promise<unknown>} */ p) => waited.push(p) },
+				env: {
+					CACHE_REGISTRY: /** @type {any} */ ({
+						prepare: (/** @type {string} */ sql) => statement(sql, [])
+					})
+				}
+			})
+		};
+	}
+
+	/** @param {string} search @param {any} platform @param {ReturnType<typeof vi.fn>} [setHeaders] */
+	function platformRequest(search, platform, setHeaders = vi.fn()) {
+		return GET(
+			/** @type {any} */ ({
+				url: new URL(`https://example.test/api/network/data?${search}`),
+				setHeaders,
+				platform
+			})
+		);
+	}
+
+	it('registers successful cache writes in the D1 registry', async () => {
+		const { waited, executed, platform } = fakePlatform();
+		mocks.getNetworkData.mockResolvedValue({ response: { data: [{ payload: true }] } });
+		const search =
+			'region=qld1&metric=energy&interval=1d&date_start=2026-01-01&date_end=2026-02-01';
+
+		const response = await platformRequest(search, platform);
+		expect(response.status).toBe(200);
+		await Promise.all(waited.splice(0));
+
+		const upsert = executed.find((s) => s.sql.includes('INSERT INTO network_cache_entries'));
+		expect(upsert?.params[1]).toBe(
+			'region=qld1&metric=energy&interval=1d&date_start=2026-01-01&date_end=2026-02-01'
+		);
+		expect(executed.some((s) => s.sql.includes('DELETE FROM network_cache_entries'))).toBe(true);
+	});
+
+	it('a failing registry never affects the public response', async () => {
+		const { waited, platform } = fakePlatform({ throwing: true });
+		mocks.getNetworkData.mockResolvedValue({ response: { data: [{ payload: true }] } });
+		const setHeaders = vi.fn();
+		const search =
+			'region=tas1&metric=energy&interval=1d&date_start=2026-01-01&date_end=2026-02-01';
+
+		const response = await platformRequest(search, platform, setHeaders);
+		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({ region: 'tas1', network_id: 'NEM' });
+		// Draining rejects if the registry failure leaked into background work.
+		await Promise.all(waited.splice(0));
+
+		// The edge cache still works: a repeat request is a hit, not a refetch.
+		const repeat = vi.fn();
+		await platformRequest(search, platform, repeat);
+		expect(mocks.getNetworkData).toHaveBeenCalledTimes(1);
+		expect(repeat).toHaveBeenCalledWith(expect.objectContaining({ 'x-oe-cache': 'hit' }));
+	});
+});

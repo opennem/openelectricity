@@ -34,6 +34,12 @@
 			link: '/studio/facility-social-cards'
 		},
 		{
+			title: 'Network Cache',
+			description:
+				'Inspect the tracker’s edge-cached network data — see what visitors receive, spot stale entries, and refresh corrected upstream data in place.',
+			link: '/studio/cache/network-data'
+		},
+		{
 			title: "Lens on Australia's electricity system and market",
 			description: 'Visualises energy, pricing and emissions data from Australia.',
 			link: '/studio/lens-on-au-grid'

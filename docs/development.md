@@ -30,6 +30,14 @@ and private keys out of source code and commit only the example file.
 Maintainers may load the same variables through Doppler. Contributor commands
 must continue to work with a local `.env`.
 
+## Cloudflare bindings
+
+The project has no wrangler configuration; Cloudflare settings live in the
+dashboard. The `CACHE_REGISTRY` D1 binding backs the network-cache registry and
+Studio dashboard; setup steps and endpoint documentation live in
+`src/routes/api/admin/network-cache/README.md`. It is optional at runtime, so
+local development continues to work without Cloudflare bindings.
+
 ## MCP configuration
 
 `.mcp.json` is intentionally local and ignored because it can contain
