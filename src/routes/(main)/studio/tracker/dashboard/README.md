@@ -1,9 +1,9 @@
 # Dashboard tracker
 
 The Dashboard tracker is an analysis-first concept available at
-`/tracker/dashboard`. It is linked from the `/tracker` design-review index,
+`/studio/tracker/dashboard`. It is linked from the `/studio/tracker` design-review index,
 excluded from sitemaps and marked with `noindex` metadata. The Map tracker at
-`/tracker/map` remains its architectural and visual reference.
+`/studio/tracker/map` remains its architectural and visual reference.
 
 ## State architecture
 

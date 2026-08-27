@@ -1,4 +1,4 @@
-# /tracker/map — map-first grid tracker
+# /studio/tracker/map — map-first grid tracker
 
 A fullscreen MapLibre shell (reusing the `/facilities` fullscreen system) with a
 panel that carries explore-style generation charts, a metrics grid and live

@@ -9,7 +9,7 @@ describe('dashboard page load', () => {
 
 		const data = load(
 			/** @type {Parameters<typeof load>[0]} */ ({
-				url: new URL('https://example.test/tracker/dashboard')
+				url: new URL('https://example.test/studio/tracker/dashboard')
 			})
 		);
 

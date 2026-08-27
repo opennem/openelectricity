@@ -253,19 +253,20 @@
 		}
 		/* The middle (page-specific) region uses its OWN view-transition-name
 		   per route (-list on /facilities, -detail on /facility/[code],
-		   -tracker on /tracker). The names don't pair, so each side keeps
+		   -tracker on /tracker, -tracker-map on /studio/tracker/map). The
+		   names don't pair, so each side keeps
 		   its natural width and slides/fades without the default group-size
 		   morph (the "zoom"). */
 		::view-transition-old(filter-bar-rest-list),
 		::view-transition-old(filter-bar-rest-detail),
 		::view-transition-old(filter-bar-rest-tracker),
-		::view-transition-old(filter-bar-rest-tracker-next) {
+		::view-transition-old(filter-bar-rest-tracker-map) {
 			animation: facilities-filter-bar-slide-out 240ms ease both;
 		}
 		::view-transition-new(filter-bar-rest-list),
 		::view-transition-new(filter-bar-rest-detail),
 		::view-transition-new(filter-bar-rest-tracker),
-		::view-transition-new(filter-bar-rest-tracker-next) {
+		::view-transition-new(filter-bar-rest-tracker-map) {
 			animation: facilities-filter-bar-slide-in 240ms ease both;
 		}
 		@keyframes facilities-filter-bar-slide-out {

@@ -7,7 +7,7 @@ describe('map tracker page load', () => {
 	it('serialises the chart anchor used by the hydrating client', () => {
 		vi.spyOn(Date, 'now').mockReturnValue(1_765_432_100_000);
 
-		const data = load({ url: new URL('https://example.test/tracker/map') });
+		const data = load({ url: new URL('https://example.test/studio/tracker/map') });
 
 		expect(data.nowMs).toBe(1_765_432_100_000);
 		expect(data.region).toBe('au');

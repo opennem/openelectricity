@@ -20,7 +20,7 @@ import {
 	parseRangeParams
 } from '$lib/components/charts/facility/range-params.js';
 import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
-import { hasSpotPrice } from '../tracker-regions.js';
+import { hasSpotPrice } from './tracker-regions.js';
 import {
 	DEFAULT_GROUP,
 	DEFAULT_RANGE_DAYS,

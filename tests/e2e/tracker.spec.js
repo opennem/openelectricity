@@ -13,12 +13,12 @@ async function waitForHydration(page) {
 	await expect(page.locator('[aria-busy="false"]').first()).toBeAttached({ timeout: 15000 });
 }
 
-test.describe('Tracker (next) smoke tests', () => {
-	test('/tracker/next loads without errors', async ({ page }) => {
+test.describe('Tracker smoke tests', () => {
+	test('/tracker loads without errors', async ({ page }) => {
 		const errors = [];
 		page.on('pageerror', (error) => errors.push(error.message));
 
-		await page.goto('/tracker/next');
+		await page.goto('/tracker');
 
 		await expect(page.locator('body')).not.toBeEmpty();
 		await expect(page.getByRole('heading', { name: 'Generation' })).toBeVisible();
@@ -35,7 +35,7 @@ test.describe('Tracker (next) smoke tests', () => {
 		page.on('pageerror', (error) => errors.push(error.message));
 
 		// A single-price region so the Price⇄Market value toggle is present.
-		await page.goto('/tracker/next?region=nsw1');
+		await page.goto('/tracker?region=nsw1');
 		await expect(page.getByRole('heading', { name: 'Market', exact: true })).toBeVisible();
 		await waitForHydration(page);
 
@@ -52,7 +52,7 @@ test.describe('Tracker (next) smoke tests', () => {
 		const errors = [];
 		page.on('pageerror', (error) => errors.push(error.message));
 
-		await page.goto('/tracker/next');
+		await page.goto('/tracker');
 		await waitForHydration(page);
 		const toggle = page.getByRole('button', { name: 'Hide fuel tech table' });
 		await toggle.click();

@@ -32,7 +32,7 @@
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 	import { formatRangeLabel } from '$lib/components/charts/v2/time-format-policy.js';
 	import { perfSpan } from '$lib/components/charts/v2/perf.js';
-	import { hasSpotPrice } from '../tracker-regions.js';
+	import { hasSpotPrice } from './tracker-regions.js';
 	import ChartCard from './ChartCard.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
 	import { createTrackerPrefetchPlan } from './tracker-prefetch.js';

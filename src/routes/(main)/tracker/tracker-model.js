@@ -9,7 +9,7 @@ import {
 	getIntervalOptionsForDays,
 	getPresetByDays
 } from '$lib/components/charts/facility/range-interval-config.js';
-import { hasSpotPrice } from '../tracker-regions.js';
+import { hasSpotPrice } from './tracker-regions.js';
 
 /** @typedef {import('./types.js').EmissionsMode} EmissionsMode */
 /** @typedef {import('./types.js').PriceMode} PriceMode */

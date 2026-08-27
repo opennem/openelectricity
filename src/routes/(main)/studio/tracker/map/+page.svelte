@@ -113,8 +113,8 @@
 	afterNavigate(({ to }) => {
 		// The shared main layout can keep this page alive briefly during a view
 		// transition. Do not hydrate its local state from the destination page's
-		// data when leaving for the /tracker review index (or another route).
-		if (to?.url.pathname !== '/tracker/map') return;
+		// data when leaving for the /studio/tracker review index (or another route).
+		if (to?.url.pathname !== '/studio/tracker/map') return;
 		if (!TRACKER_REGION_OPTIONS.some((option) => option.value === data.region)) return;
 		selectedRegion = data.region;
 		mapTheme = data.mapTheme;
@@ -331,8 +331,8 @@
 		<div class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}">
 			<FullscreenFilterBar
 				{isFullscreen}
-				routeKey="tracker"
-				stableName="filter-bar-stable-tracker"
+				routeKey="tracker-map"
+				stableName="filter-bar-stable-tracker-map"
 				paddingX="px-8"
 				bgClass="bg-light-warm-grey/75"
 			>
@@ -340,7 +340,7 @@
 					{#if isFullscreen}
 						<FullscreenNavDropdown />
 						<a
-							href="/tracker/map"
+							href="/studio/tracker/map"
 							class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
 						>
 							Map tracker

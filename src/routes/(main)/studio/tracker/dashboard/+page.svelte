@@ -83,8 +83,9 @@
 	function syncUrl(mode = 'replace') {
 		if (suppressUrl || typeof window === 'undefined') return;
 		const url = applyDashboardUrl(new URL(window.location.href), currentUrlState());
-		if (mode === 'push') pushState(`${resolve('/(main)/tracker/dashboard')}${url.search}`, {});
-		else replaceState(`${resolve('/(main)/tracker/dashboard')}${url.search}`, {});
+		if (mode === 'push')
+			pushState(`${resolve('/(main)/studio/tracker/dashboard')}${url.search}`, {});
+		else replaceState(`${resolve('/(main)/studio/tracker/dashboard')}${url.search}`, {});
 	}
 
 	function markCustomLayout() {
@@ -234,7 +235,7 @@
 					{#if isFullscreen}
 						<FullscreenNavDropdown />
 						<a
-							href={resolve('/(main)/tracker/dashboard')}
+							href={resolve('/(main)/studio/tracker/dashboard')}
 							class="rounded-lg px-2 py-1 text-sm font-semibold text-dark-grey no-underline hover:bg-warm-grey hover:no-underline lg:text-base"
 						>
 							Dashboard tracker

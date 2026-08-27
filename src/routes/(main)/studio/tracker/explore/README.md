@@ -1,6 +1,6 @@
 # Tracker Explore
 
-`/tracker/explore` is a locally savable canvas backed by curated OpenElectricity API queries. Its
+`/studio/tracker/explore` is a locally savable canvas backed by curated OpenElectricity API queries. Its
 progressive builder has **Cards**, **Layout** and **View** sections. Adding a card uses a focused
 **Data → Options** flow with **Add** as the footer action; editing opens directly on Options and does
 not fetch until the user selects **Apply**. Unsupported presentations are omitted.

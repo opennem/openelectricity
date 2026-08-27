@@ -16,6 +16,12 @@
 			link: '/studio/explorer'
 		},
 		{
+			title: 'Tracker Concepts',
+			description:
+				'The map-first, dashboard and explore-canvas design reviews that informed the Tracker.',
+			link: '/studio/tracker'
+		},
+		{
 			title: 'CMS Facilities',
 			description:
 				'Inspect and manage facility metadata from the CMS with AI-assisted exploration.',

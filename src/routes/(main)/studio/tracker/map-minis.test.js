@@ -214,7 +214,9 @@ describe('latestStackedTotal', () => {
 		expect(latestStackedTotal(null)).toBeNull();
 		expect(latestStackedTotal(/** @type {any} */ ({ data: [], seriesNames: [] }))).toBeNull();
 		expect(
-			latestStackedTotal(/** @type {any} */ ({ data: [{ time: 0, coal: 0 }], seriesNames: ['coal'] }))
+			latestStackedTotal(
+				/** @type {any} */ ({ data: [{ time: 0, coal: 0 }], seriesNames: ['coal'] })
+			)
 		).toBeNull();
 	});
 });

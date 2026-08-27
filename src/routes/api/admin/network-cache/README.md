@@ -9,6 +9,127 @@ historical data visitors may receive, inspect complete cached responses,
 identify stale entries and refresh corrected upstream data — without purging
 the whole Cloudflare zone.
 
+## End-to-end architecture
+
+The browser, Worker cache and registry have different responsibilities. The
+browser predicts which ranges the visitor may request next; the Worker serves
+and stores the final chart response; D1 makes those otherwise invisible writes
+searchable by administrators.
+
+```mermaid
+flowchart TB
+    subgraph Browser["Visitor's browser"]
+        Tracker["TrackerCanvas<br/>Generation · Price · Emissions"]
+        Plan["Idle prefetch plan<br/>Widen · 30-day daily · full monthly history"]
+        Chart["NetworkChart and ChartDataManager"]
+        Dashboard["Admin cache dashboard"]
+    end
+
+    subgraph Colo["Cloudflare Worker — serving data centre"]
+        Public["GET /api/network/data"]
+        Validate["Validate parameters<br/>Build canonical key"]
+        SWR["Keyed SWR manager"]
+        Cache[("Cache API<br/>Complete JSON payload")]
+        Admin["Admin list · inspect · refresh endpoints"]
+    end
+
+    API[("OpenElectricity API")]
+    D1[("D1 CACHE_REGISTRY<br/>Metadata only")]
+    Other[("Cache API in other<br/>Cloudflare data centres")]
+
+    Tracker --> Plan
+    Tracker --> Chart
+    Plan -->|"low-priority requests"| Public
+    Chart -->|"visible requests"| Public
+    Public --> Validate --> SWR
+    SWR <-->|"match / put"| Cache
+    SWR -->|"miss or refresh"| API
+    SWR -->|"successful-write metadata"| D1
+    SWR --> Chart
+
+    Dashboard --> Admin
+    Admin -->|"list"| D1
+    Admin -->|"inspect; never populate"| Cache
+    Admin -->|"refresh registered key"| API
+    Admin -->|"replace local payload"| Cache
+    Other -. "independent copy" .- Cache
+```
+
+The OpenElectricity API may have its own cache. That protects its database and
+upstream processing; this Worker cache still avoids the API round trip, keeps
+the final browser-ready response near visitors and can serve stale data during
+an API slowdown. If API cache performance makes full-history responses cheap,
+measure the direct API and `/api/network/data` cold/warm timings before reducing
+the prewarming plan; the two layers are complementary rather than automatically
+interchangeable.
+
+## Public request lifecycle
+
+`/api/network/data` validates every query and converts it to one canonical key
+shared by the public endpoint, Cache API, D1 registry and admin endpoints. This
+prevents reordered or equivalent parameters from creating different cache
+identities.
+
+| Local Cache API state | Visitor response                                | Background work                                         |
+| --------------------- | ----------------------------------------------- | ------------------------------------------------------- |
+| Fresh                 | Return immediately with `x-oe-cache: hit`       | None                                                    |
+| Stale but retained    | Return immediately with `x-oe-cache: stale`     | Fetch upstream, replace the local payload and update D1 |
+| Missing or evicted    | Wait for upstream and return `x-oe-cache: miss` | Store the successful payload and update D1              |
+
+Concurrent identical requests handled by the same Worker isolate share one
+upstream fetch. Fetch or processing failures never replace a valid cached
+payload. Live windows are fresh for five minutes, fully historical windows for
+six hours, and Cache API responses advertise up to seven days of retention.
+Cloudflare may evict them earlier.
+
+## Tracker prewarming
+
+Prewarming is initiated by the browser, not by a cron job, D1 or the dashboard.
+`TrackerCanvas.svelte` passes an active-metric plan to each of its three
+`NetworkChart` instances. A chart becomes eligible only after its initially
+visible range has loaded, no visible fetch is pending, a viewport exists and
+the user is not panning or zooming.
+
+The chart host then queues one job per browser idle slice. It uses
+`requestIdleCallback` with a two-second timeout, falling back to a 200 ms timer
+where that API is unavailable. This is why production warms commonly appear
+about three seconds after page load: the delay is initial loading plus idle
+scheduling, not a hard-coded three-second timer. Each resulting browser fetch
+uses `priority: 'low'` and otherwise calls the normal `/api/network/data`
+endpoint.
+
+Jobs run in this order for every chart:
+
+1. **Widen the current grain.** Request up to three current viewport spans on
+   either side, bounded by that interval's API range limit and by the current
+   time. For an initial three-day view ending now, the future side is clipped,
+   so this normally covers the visible three days plus about nine earlier days.
+2. **Warm daily data.** Request the last 30 days at `1d` for the planned metric.
+3. **Warm full history.** Request the last 11,000 days at `1M`, reaching roughly
+   back to December 1998.
+
+The plans are:
+
+| Chart      | Daily/monthly metric                                              |
+| ---------- | ----------------------------------------------------------------- |
+| Generation | `energy`                                                          |
+| Price      | `price` or `market_value`, following the active toggle            |
+| Emissions  | `emissions_intensity` or `emissions`, following the active toggle |
+
+Completed job keys, the browser's shared in-flight broker and response LRU,
+warm-manager stashes, same-isolate Worker de-duplication and Cache API hits all
+avoid repeated work. A matching daily or monthly manager stays in a six-entry
+per-chart stash, so a later 30D, 1Y or All selection can revive processed data
+without another browser request when it still covers the viewport. After a
+reload, the in-memory manager is gone but the serving data centre may still
+return the warmed edge response.
+
+Changing Price/Market value or Emissions Intensity/Volume re-plans for the new
+metric. Changing region clears the old region's warm managers and begins again
+after the new visible load settles. Gestures pause queued scheduling; unmounting
+the chart cancels it. Prefetching warms only the Cloudflare data centre serving
+that visitor. Other data centres build or refresh their own copies.
+
 ## How the registry works
 
 A Cloudflare D1 database (bound as `CACHE_REGISTRY`) stores metadata about
@@ -73,6 +194,23 @@ describes the preserved local entry, if one exists. Historical refreshes
 re-fetch the complete range and can take tens of seconds — the dashboard
 requires confirmation before triggering one.
 
+## Cache bypass and refresh semantics
+
+The public tracker deliberately has no `bypass_cache` query parameter. Such a
+flag would let any visitor repeatedly trigger expensive full-history scans.
+Disabling the browser cache in developer tools also does not bypass the
+Worker's explicit Cache API lookup.
+
+The dashboard's **Refresh this data centre** action is the supported bypass:
+it skips the existing payload for that fetch, requests fresh upstream data and
+replaces the serving data centre's entry. It is admin-only and does not purge or
+refresh other data centres. There is currently no "fetch fresh without storing"
+operation.
+
+`vite dev` is different: without a Cloudflare platform it bypasses Cache API
+automatically, so every request reaches the upstream fetch path. It does not
+provide a realistic end-to-end cache test.
+
 ## Manual Cloudflare setup
 
 The project has no wrangler configuration — Cloudflare settings live in the
@@ -103,6 +241,25 @@ dashboard, so the D1 databases and binding are configured there once:
 No environment variables are involved (`.env.example` is unchanged); local
 development keeps working without any of this and the dashboard shows a
 "registry unavailable" state.
+
+## Production verification
+
+1. Open `/tracker` in the deployed environment and wait for its visible
+   charts to settle. In browser developer tools, filter Network requests for
+   `/api/network/data`; the idle requests should follow at low priority.
+2. Wait for the daily and monthly requests to finish, then open
+   `/studio/cache/network-data` as a Clerk administrator.
+3. Confirm registry rows appear and use the filters to find the expected
+   region, metric and interval. D1 shows projected state only.
+4. Select a row. The detail request checks the serving data centre without
+   populating a miss; compare this local state with the registry projection.
+5. Inspect, search, copy or download the complete JSON payload.
+6. Use **Refresh this data centre** on a live entry. For a historical entry,
+   accept the confirmation and expect the complete range to take tens of
+   seconds on a cold upstream path.
+7. Reload the tracker or select All. A matching warm browser manager should be
+   immediate in the same page session; after reload, inspect `x-oe-cache` to
+   distinguish an edge hit, stale response or miss.
 
 ## Tests
 

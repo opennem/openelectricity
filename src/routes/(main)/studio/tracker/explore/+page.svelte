@@ -52,7 +52,7 @@
 					{#if isFullscreen}
 						<FullscreenNavDropdown />
 						<a
-							href={resolve('/(main)/tracker/explore')}
+							href={resolve('/(main)/studio/tracker/explore')}
 							class="rounded-lg px-2 py-1 text-sm font-semibold text-dark-grey no-underline hover:bg-warm-grey hover:no-underline lg:text-base"
 						>
 							Explore

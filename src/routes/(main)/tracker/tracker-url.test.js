@@ -7,7 +7,7 @@ const context = { nowMs: 2_000_000_000_000, validRegions };
 
 /** Apply state to a fresh URL, then parse it back. */
 function roundTrip(state) {
-	const url = applyTrackerUrl(new URL('https://example.test/tracker/next'), state);
+	const url = applyTrackerUrl(new URL('https://example.test/tracker'), state);
 	return { url, parsed: parseTrackerUrl(url.searchParams, context) };
 }
 
@@ -89,7 +89,7 @@ describe('tracker URLs', () => {
 	});
 
 	it('materialises copied links without mutating the source URL', () => {
-		const source = new URL('https://example.test/tracker/next?region=nsw1');
+		const source = new URL('https://example.test/tracker?region=nsw1');
 		const copied = copiedTrackerUrl(source, {
 			region: 'wem',
 			group: 'detailed',
