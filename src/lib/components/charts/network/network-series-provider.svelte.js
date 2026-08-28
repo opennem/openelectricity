@@ -118,9 +118,9 @@ export function createMarketSeriesProvider(opts) {
 		 * render, so overlays and table values track the central Interval
 		 * control rather than the native fetch grain.
 		 * @param {number} startMs @param {number} endMs
-		 * @param {{ displayInterval: string, ianaTimeZone: string, method: 'sum' | 'mean' }} opts
+		 * @param {{ displayInterval: string, ianaTimeZone: string, method: 'sum' | 'mean', bucketFilter?: string | null }} opts
 		 */
-		getDisplayRows(startMs, endMs, { displayInterval, ianaTimeZone, method }) {
+		getDisplayRows(startMs, endMs, { displayInterval, ianaTimeZone, method, bucketFilter }) {
 			if (!manager?.processedCache) return [];
 			return visibleAggregation(manager.processedCache, {
 				viewStart: startMs,
@@ -128,7 +128,8 @@ export function createMarketSeriesProvider(opts) {
 				apiInterval: manager.interval,
 				displayInterval,
 				ianaTimeZone,
-				method
+				method,
+				bucketFilter
 			});
 		},
 

@@ -18,6 +18,7 @@ import {
 	formatMonthYear,
 	formatYear
 } from './date-labels.js';
+import { baseIntervalFor } from '$lib/components/charts/facility/range-interval-config.js';
 import { tzAbbreviationFromIana } from './network-time.js';
 
 /**
@@ -27,6 +28,19 @@ import { tzAbbreviationFromIana } from './network-time.js';
  * short viewports can render a year bucket as "Jan '25".
  */
 export const COARSE_BUCKET_INTERVALS = new Set(['quarter', 'season', 'half', 'fy', '1y']);
+
+/**
+ * Label the base bucket a rolling point is sampled at ("Aug 2026", "Q3 2026").
+ * @param {string} baseKind
+ * @param {string} ianaTimeZone
+ * @returns {(d: Date | number) => string}
+ */
+function rollingBaseLabel(baseKind, ianaTimeZone) {
+	return baseKind === '1M'
+		? (d) => formatMonthYear(d, ianaTimeZone)
+		: (d) =>
+				formatBucketLabel(d, ianaTimeZone, /** @type {'quarter' | 'season' | 'half'} */ (baseKind));
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -44,6 +58,16 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * @returns {TimeFormatPolicy}
  */
 export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
+	const rollingBase = baseIntervalFor(displayInterval);
+	if (rollingBase) {
+		// Distinguish a rolling point from a single base-grain bucket.
+		const label = rollingBaseLabel(rollingBase, ianaTimeZone);
+		return {
+			formatTooltip: (d) => `12 months to ${label(d)}`,
+			bucketTick: rollingBase === '1M' ? null : label
+		};
+	}
+
 	if (COARSE_BUCKET_INTERVALS.has(displayInterval)) {
 		// Yearly buckets are labelled by their bare year; the rest by name.
 		const label =
@@ -105,12 +129,17 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
  * @returns {string}
  */
 export function formatRangeLabel(start, end, displayInterval, ianaTimeZone) {
+	const rollingBase = baseIntervalFor(displayInterval);
 	if (
 		COARSE_BUCKET_INTERVALS.has(displayInterval) ||
 		displayInterval === '1M' ||
-		displayInterval === '3M'
+		displayInterval === '3M' ||
+		rollingBase
 	) {
-		const label = getTimeFormatPolicy(displayInterval, ianaTimeZone).formatTooltip;
+		// The toolbar labels viewport endpoints, not the rolling window at each point.
+		const label = rollingBase
+			? rollingBaseLabel(rollingBase, ianaTimeZone)
+			: getTimeFormatPolicy(displayInterval, ianaTimeZone).formatTooltip;
 		const startLabel = label(start);
 		const endLabel = label(end);
 		return startLabel === endLabel ? startLabel : `${startLabel} ${RANGE_SEPARATOR} ${endLabel}`;

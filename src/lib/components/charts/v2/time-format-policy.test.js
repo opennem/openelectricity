@@ -178,3 +178,29 @@ describe('formatRangeLabel — interval-aware viewport labels', () => {
 		).toBe('19 — 26 Aug 2025');
 	});
 });
+
+describe('12-month rolling labels', () => {
+	it('labels each point as the 12 months ending at its month', () => {
+		const policy = getTimeFormatPolicy('12mr', NEM);
+		expect(clean(policy.formatTooltip(localMidnight(10, 2026, 7)))).toBe('12 months to Aug 2026');
+		// Monthly row spacing — the ordinary monthly gridline inference owns the axis.
+		expect(policy.bucketTick).toBeNull();
+	});
+
+	it('labels coarser-sampled rolling points by their base bucket', () => {
+		const quarterly = getTimeFormatPolicy('12mr-quarter', NEM);
+		expect(clean(quarterly.formatTooltip(localMidnight(10, 2024, 9)))).toBe('12 months to Q4 2024');
+		expect(quarterly.bucketTick).not.toBeNull();
+		const half = getTimeFormatPolicy('12mr-half', NEM);
+		expect(clean(half.formatTooltip(localMidnight(10, 2026, 0)))).toBe('12 months to H1 2026');
+	});
+
+	it('labels the viewport endpoints at the base grain resolution', () => {
+		expect(
+			formatRangeLabel(localMidnight(10, 2025, 7), localMidnight(10, 2026, 7), '12mr', NEM)
+		).toBe('Aug 2025 — Aug 2026');
+		expect(
+			formatRangeLabel(localMidnight(10, 2025, 0), localMidnight(10, 2026, 6), '12mr-quarter', NEM)
+		).toBe('Q1 2025 — Q3 2026');
+	});
+});

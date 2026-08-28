@@ -9,7 +9,10 @@ import {
 	formatIntervalQuantityUnit,
 	getIntervalOptionsForDays,
 	getPresetByDays,
-	viewportDurationLimits
+	viewportDurationLimits,
+	isRollingInterval,
+	rollingIntervalFor,
+	baseIntervalFor
 } from './range-interval-config.js';
 
 // Mirror of VALID_INTERVALS in src/routes/api/facilities/[code]/power/+server.js —
@@ -102,5 +105,63 @@ describe('helpers', () => {
 		expect(getIntervalOptionsForDays(45)).toBe(RANGE_INTERVALS['30D']);
 		expect(getIntervalOptionsForDays(200)).toBe(RANGE_INTERVALS['1Y']);
 		expect(getIntervalOptionsForDays(5000)).toBe(RANGE_INTERVALS['ALL']);
+	});
+});
+
+describe('12-month rolling opt-in', () => {
+	it('is absent from every tier by default', () => {
+		for (const preset of RANGE_PRESETS) {
+			expect(getIntervalsForRange(preset.id).options).not.toContain('12mr');
+		}
+		expect(getIntervalOptionsForDays(5000).options).not.toContain('12mr');
+	});
+
+	it('appears in the 1Y and All tiers with includeRolling', () => {
+		expect(getIntervalsForRange('1Y', { includeRolling: true }).options).toEqual([
+			'1d',
+			'7d',
+			'1M',
+			'12mr'
+		]);
+		expect(getIntervalsForRange('ALL', { includeRolling: true }).options).toEqual([
+			'1M',
+			'12mr',
+			'season',
+			'12mr-season',
+			'quarter',
+			'12mr-quarter',
+			'half',
+			'12mr-half',
+			'fy',
+			'1y'
+		]);
+		expect(getIntervalsForRange('3D', { includeRolling: true }).options).not.toContain('12mr');
+		expect(getIntervalOptionsForDays(200, { includeRolling: true }).options).toContain('12mr');
+		expect(getIntervalOptionsForDays(45, { includeRolling: true }).options).not.toContain('12mr');
+	});
+
+	it('keeps defaults rolling-free and maps every rolling id to a monthly energy fetch', () => {
+		expect(getDefaultIntervalForRange('ALL')).toBe('1M');
+		expect(getDefaultIntervalForRange('1Y')).toBe('1M');
+		for (const id of ['12mr', '12mr-season', '12mr-quarter', '12mr-half']) {
+			expect(getIntervalSpec(id)).toMatchObject({
+				metric: 'energy',
+				apiInterval: '1M',
+				curveType: 'step'
+			});
+			expect(formatIntervalQuantityUnit('tCO₂e', id)).toBe('tCO₂e/12 months');
+		}
+	});
+
+	it('maps base grains to their rolling counterparts and back', () => {
+		expect(rollingIntervalFor('1M')).toBe('12mr');
+		expect(rollingIntervalFor('season')).toBe('12mr-season');
+		expect(rollingIntervalFor('quarter')).toBe('12mr-quarter');
+		expect(rollingIntervalFor('half')).toBe('12mr-half');
+		expect(rollingIntervalFor('fy')).toBeNull();
+		expect(baseIntervalFor('12mr-season')).toBe('season');
+		expect(baseIntervalFor('season')).toBeNull();
+		expect(isRollingInterval('12mr-half')).toBe(true);
+		expect(isRollingInterval('half')).toBe(false);
 	});
 });

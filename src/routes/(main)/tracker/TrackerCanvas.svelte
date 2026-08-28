@@ -17,13 +17,28 @@
 
 	import { onMount, tick, untrack } from 'svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
+	import PanelRightOpen from '@lucide/svelte/icons/panel-right-open';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
 	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
 	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
-	import { createNetworkMarketData } from '$lib/components/charts/network/network-market-data.svelte.js';
+	import {
+		getIntervalSpec,
+		isRollingInterval
+	} from '$lib/components/charts/facility/range-interval-config.js';
+	import {
+		createNetworkMarketData,
+		RENEWABLES_SERIES_ID,
+		DEMAND_GROSS_SERIES_ID
+	} from '$lib/components/charts/network/network-market-data.svelte.js';
+	import { displayFullTransform } from '$lib/components/charts/v2/dataProcessing.js';
+	import {
+		applyBucketFilter,
+		applyBucketFilterToDisplayRows,
+		bucketFilterKindFor,
+		bucketFilterPredicate
+	} from '$lib/components/charts/v2/bucket-filter.js';
 	import { createNetworkFuelTechMarketValue } from '$lib/components/charts/network/network-fueltech-market-value.svelte.js';
 	import { createMarketSeriesProvider } from '$lib/components/charts/network/network-series-provider.svelte.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
@@ -50,6 +65,7 @@
 	 *   priceMode: import('./types.js').PriceMode,
 	 *   emissionsMode: import('./types.js').EmissionsMode,
 	 *   tablePanelOpen: boolean,
+	 *   bucketFilter?: string | null,
 	 *   initialRange: any,
 	 *   initialNowMs?: number,
 	 *   oncontrolschange?: (controls: { range: any, getRangeLabel: () => string }) => void,
@@ -65,6 +81,7 @@
 		priceMode,
 		emissionsMode,
 		tablePanelOpen,
+		bucketFilter = null,
 		initialRange,
 		initialNowMs,
 		oncontrolschange,
@@ -181,7 +198,8 @@
 			shareData
 		],
 		timeZone: () => timeZone,
-		initialRangeDays: INITIAL_RANGE_DAYS
+		initialRangeDays: INITIAL_RANGE_DAYS,
+		includeRolling: true
 	});
 
 	// Headless providers — same cache/dedup/reconcile path as the charts.
@@ -191,7 +209,7 @@
 		basis: () => range.activeMetric,
 		interval: () => range.activeInterval,
 		timeZone: () => timeZone,
-		enabled: () => tablePanelOpen
+		enabled: () => tablePanelOpen || (showRenewablesLine && isRollingDisplay)
 	});
 	const mvData = createNetworkFuelTechMarketValue({
 		region: () => region,
@@ -221,7 +239,7 @@
 		metricKey: () => 'renewable_share',
 		interval: () => range.activeInterval,
 		timeZone: () => timeZone,
-		enabled: () => tablePanelOpen || showRenewablesLine
+		enabled: () => tablePanelOpen || (showRenewablesLine && !isRollingDisplay)
 	});
 
 	let energyMetric = $derived(range.activeMetric === 'energy');
@@ -246,8 +264,26 @@
 	let effectivePriceMode = $derived(resolvePriceMode(region, priceMode));
 	let priceIsMarketValue = $derived(effectivePriceMode === 'market_value');
 	let emissionsIsIntensity = $derived(emissionsMode === 'intensity');
-	/** @type {'market_value' | 'price'} */
-	let priceMetric = $derived(priceIsMarketValue ? 'market_value' : 'price');
+
+	let isRollingDisplay = $derived(isRollingInterval(range.displayInterval));
+
+	/** Rolling windows keep all source months; filters select only output samples. */
+	let nativeFilterPredicate = $derived.by(() => {
+		if (!bucketFilter || isRollingDisplay) return null;
+		return bucketFilterPredicate(
+			bucketFilterKindFor(range.displayInterval),
+			bucketFilter,
+			ianaTimeZone
+		);
+	});
+
+	/**
+	 * Rolling prices divide 12-month market-value and energy sums.
+	 * @type {'market_value' | 'price' | 'price_vw'}
+	 */
+	let priceMetric = $derived(
+		priceIsMarketValue ? 'market_value' : isRollingDisplay ? 'price_vw' : 'price'
+	);
 	/** @type {'emissions_intensity' | 'emissions'} */
 	let emissionsMetric = $derived(emissionsIsIntensity ? 'emissions_intensity' : 'emissions');
 
@@ -290,15 +326,23 @@
 		end: generationDataset?.end ?? (settledWindow.end || anchorEnd)
 	});
 
+	/** Use native rows when display rows overlap or contain a synthetic band close. */
+	let tableGenerationDataset = $derived(
+		(isRollingDisplay || bucketFilter) && generationDataset?.nativeData
+			? { ...generationDataset, data: generationDataset.nativeData }
+			: generationDataset
+	);
+
 	/** Recompute table rows when chart or provider data changes. */
 	let tableRows = $derived.by(() => {
-		if (!generationDataset) return null;
+		if (!tableGenerationDataset) return null;
 		const { start, end } = tableWindow;
 		return perfSpan('canvas:table-rows', () =>
 			buildFuelTechTableRows({
-				generationData: generationDataset,
-				mvRows: mvData.getVisibleRows(start, end),
-				demandRows: marketData.getVisibleRows(start, end),
+				generationData: tableGenerationDataset,
+				// Apply the same native-row filter to every side of the table ratios.
+				mvRows: applyBucketFilter(mvData.getVisibleRows(start, end), nativeFilterPredicate),
+				demandRows: applyBucketFilter(marketData.getVisibleRows(start, end), nativeFilterPredicate),
 				basis: range.activeMetric,
 				demandBasis: range.activeMetric,
 				mode: contributionMode,
@@ -345,16 +389,59 @@
 	let displayRowOpts = $derived({
 		displayInterval: range.displayInterval,
 		ianaTimeZone,
-		method: /** @type {'sum' | 'mean'} */ (range.activeMetric === 'energy' ? 'sum' : 'mean')
+		method: /** @type {'sum' | 'mean'} */ (range.activeMetric === 'energy' ? 'sum' : 'mean'),
+		bucketFilter
 	});
 	let shareRowOpts = $derived({
 		displayInterval: range.displayInterval,
 		ianaTimeZone,
-		method: /** @type {'sum' | 'mean'} */ ('mean')
+		method: /** @type {'sum' | 'mean'} */ ('mean'),
+		bucketFilter
 	});
 
 	/** Stable empty value avoids redundant overlay updates. */
 	const EMPTY_OVERLAYS = /** @type {any[]} */ ([]);
+
+	/** One year of lead-in plus room for half-year bucket alignment. */
+	const ROLLING_LEAD_MS = 580 * 24 * 60 * 60 * 1000;
+
+	/**
+	 * Derive rolling renewable share from renewable and demand window sums.
+	 * @param {number} startMs
+	 * @param {number} endMs
+	 */
+	function rollingShareRows(startMs, endMs) {
+		const transform = displayFullTransform({
+			apiInterval: '1M',
+			displayInterval: range.displayInterval,
+			method: 'sum',
+			ianaTimeZone
+		});
+		if (!transform) return [];
+		const rows = marketData.getVisibleRows(startMs - ROLLING_LEAD_MS, endMs);
+		const rolled = transform(rows, [RENEWABLES_SERIES_ID, DEMAND_GROSS_SERIES_ID]);
+		const samplePredicate = bucketFilterPredicate(
+			bucketFilterKindFor(range.displayInterval),
+			bucketFilter,
+			ianaTimeZone
+		);
+		/** @type {any[]} */
+		const out = [];
+		for (const row of rolled) {
+			if (row.time < startMs || row.time > endMs) continue;
+			const renewables = row[RENEWABLES_SERIES_ID];
+			const demand = row[DEMAND_GROSS_SERIES_ID];
+			out.push({
+				date: row.date,
+				time: row.time,
+				renewable_share:
+					typeof renewables === 'number' && typeof demand === 'number' && demand > 0
+						? (renewables / demand) * 100
+						: null
+			});
+		}
+		return applyBucketFilterToDisplayRows(out, samplePredicate, ianaTimeZone);
+	}
 
 	let overlayLines = $derived.by(() => {
 		if (!showDemandLine && !showRenewablesLine) return EMPTY_OVERLAYS;
@@ -374,7 +461,9 @@
 		if (showRenewablesLine) {
 			lines.push({
 				id: 'renewable-share',
-				data: shareData.getDisplayRows(start, end, shareRowOpts),
+				data: isRollingDisplay
+					? rollingShareRows(start, end)
+					: shareData.getDisplayRows(start, end, shareRowOpts),
 				valueKey: 'renewable_share',
 				colour: RENEWABLES_LINE_COLOUR,
 				scale: 'percent'
@@ -403,21 +492,24 @@
 	/** Curtailment sits outside the fuel-tech grouping but shares the table's
 	 *  contribution denominator. */
 	let curtailmentRows = $derived.by(() => {
-		if (!generationDataset) return [];
+		if (!tableGenerationDataset) return [];
 		const { start, end } = tableWindow;
 		return computeCurtailmentRows({
-			rows: curtailmentData.getDisplayRows(start, end, displayRowOpts),
+			rows:
+				isRollingDisplay || bucketFilter
+					? applyBucketFilter(curtailmentData.getVisibleRows(start, end), nativeFilterPredicate)
+					: curtailmentData.getDisplayRows(start, end, displayRowOpts),
 			series: [
 				{ id: 'curtailment_solar', label: 'Curtailment (Solar)' },
 				{ id: 'curtailment_wind', label: 'Curtailment (Wind)' }
 			],
 			basis: range.activeMetric,
 			denominatorMWh: contributionDenominatorMWh({
-				generationRows: generationDataset.data,
-				seriesNames: generationDataset.seriesNames,
+				generationRows: tableGenerationDataset.data,
+				seriesNames: tableGenerationDataset.seriesNames,
 				basis: range.activeMetric,
 				mode: contributionMode,
-				demandRows: marketData.getVisibleRows(start, end),
+				demandRows: applyBucketFilter(marketData.getVisibleRows(start, end), nativeFilterPredicate),
 				demandBasis: range.activeMetric,
 				loadSeriesIds
 			})
@@ -427,10 +519,15 @@
 	let overlaySummary = $derived.by(() => {
 		const start = settledWindow.start || anchorStart;
 		const end = settledWindow.end || anchorEnd;
+		const useNativeRows = isRollingDisplay || !!bucketFilter;
 		return computeOverlaySummary({
-			demandRows: demandData.getDisplayRows(start, end, displayRowOpts),
-			marketRows: marketData.getVisibleRows(start, end),
-			shareRows: shareData.getDisplayRows(start, end, shareRowOpts),
+			demandRows: useNativeRows
+				? applyBucketFilter(demandData.getVisibleRows(start, end), nativeFilterPredicate)
+				: demandData.getDisplayRows(start, end, displayRowOpts),
+			marketRows: applyBucketFilter(marketData.getVisibleRows(start, end), nativeFilterPredicate),
+			shareRows: useNativeRows
+				? applyBucketFilter(shareData.getVisibleRows(start, end), nativeFilterPredicate)
+				: shareData.getDisplayRows(start, end, shareRowOpts),
 			basis: range.activeMetric
 		});
 	});
@@ -559,6 +656,7 @@
 				<NetworkChart
 					bind:this={generationChart}
 					{region}
+					{bucketFilter}
 					metric={range.activeMetric}
 					interval={range.activeInterval}
 					displayInterval={range.displayInterval}
@@ -616,6 +714,7 @@
 				<NetworkChart
 					bind:this={priceChart}
 					{region}
+					{bucketFilter}
 					metric={priceMetric}
 					interval={range.activeInterval}
 					displayInterval={range.displayInterval}
@@ -624,7 +723,11 @@
 					{timeZone}
 					{dateStart}
 					{dateEnd}
-					title={priceIsMarketValue ? 'Market value' : 'Spot price'}
+					title={priceIsMarketValue
+						? 'Market value'
+						: isRollingDisplay
+							? 'Volume-weighted price'
+							: 'Spot price'}
 					chartHeightPx={heightPx}
 					showContainer={false}
 					tooltipMode="strip"
@@ -665,6 +768,7 @@
 				<NetworkChart
 					bind:this={emissionsChart}
 					{region}
+					{bucketFilter}
 					metric={emissionsMetric}
 					interval={range.activeInterval}
 					displayInterval={range.displayInterval}
@@ -746,7 +850,18 @@
 				oncontributionmodechange={(mode) => (contributionMode = mode)}
 				ontoggle={toggleSeries}
 				onshowall={showAllSeries}
+				onclose={() => onpaneltoggle?.(false)}
 			/>
 		</ResizablePanel>
+	{:else}
+		<!-- Keep the reopen action at the panel edge. -->
+		<button
+			type="button"
+			onclick={() => onpaneltoggle?.(true)}
+			aria-label="Show fuel tech table"
+			class="z-20 flex w-10 shrink-0 cursor-pointer items-start justify-center border-l border-warm-grey bg-white pt-3 text-dark-grey transition-colors hover:bg-warm-grey"
+		>
+			<PanelRightOpen class="size-5" />
+		</button>
 	{/if}
 </div>

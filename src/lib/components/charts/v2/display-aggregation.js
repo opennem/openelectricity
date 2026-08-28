@@ -10,8 +10,14 @@
 
 import { bisectTime, bisectTimeRight } from './binary-search.js';
 import {
+	applyBucketFilterToDisplayRows,
+	bucketFilterKindFor,
+	bucketFilterPredicate
+} from './bucket-filter.js';
+import {
 	bucketAggregate,
 	displayBucketTimeOf,
+	displayFullTransform,
 	displayTrimsPartialEdges,
 	foldBucketRange,
 	trimPartialEdgeRows
@@ -26,10 +32,36 @@ import { perfSpan } from './perf.js';
  * @property {string} displayInterval - User-facing interval to render
  * @property {string} ianaTimeZone
  * @property {'sum' | 'mean'} method
+ * @property {string | null} [bucketFilter] - Recurring calendar period to display
  */
 
 /** @type {WeakMap<object, Map<string, { rows: any[], counts: number[] }>>} */
 const fullAggregations = new WeakMap();
+
+/** @type {WeakMap<object, Map<string, any[]>>} */
+const fullTransforms = new WeakMap();
+
+/**
+ * @param {{ data: any[], seriesNames: string[] }} processedCache
+ * @param {string} optsKey
+ * @param {(data: any[], seriesNames: string[]) => any[]} transform
+ * @returns {any[]}
+ */
+function getFullTransformRows(processedCache, optsKey, transform) {
+	let byOpts = fullTransforms.get(processedCache);
+	if (!byOpts) {
+		byOpts = new Map();
+		fullTransforms.set(processedCache, byOpts);
+	}
+	let full = byOpts.get(optsKey);
+	if (!full) {
+		full = perfSpan('chart:transform-full', () =>
+			transform(processedCache.data, processedCache.seriesNames)
+		);
+		byOpts.set(optsKey, full);
+	}
+	return full;
+}
 
 /**
  * @param {{ data: any[], seriesNames: string[] }} processedCache
@@ -111,7 +143,7 @@ export function createVisibleAggregation() {
 		}
 
 		const mode = pad > 0 ? 'p' : 'x';
-		const k = `${mode}${lo}|${hi}|${opts.apiInterval}|${opts.displayInterval}|${opts.method}|${opts.ianaTimeZone}`;
+		const k = `${mode}${lo}|${hi}|${opts.apiInterval}|${opts.displayInterval}|${opts.method}|${opts.ianaTimeZone}|${opts.bucketFilter ?? ''}`;
 
 		if (k === key && dataRef === rows && namesRef === names) return value;
 
@@ -134,8 +166,48 @@ export function createVisibleAggregation() {
  * @returns {any[]}
  */
 function computeVisibleSlice(processedCache, lo, hi, opts, padded) {
+	return withBucketFilter(computeVisibleSliceRows(processedCache, lo, hi, opts, padded), opts);
+}
+
+/**
+ * Apply the calendar filter after slicing so the full-series memo stays reusable.
+ *
+ * @param {any[]} rows
+ * @param {VisibleAggregationOptions} opts
+ * @returns {any[]}
+ */
+function withBucketFilter(rows, opts) {
+	if (!opts.bucketFilter) return rows;
+	const predicate = bucketFilterPredicate(
+		bucketFilterKindFor(opts.displayInterval),
+		opts.bucketFilter,
+		opts.ianaTimeZone
+	);
+	return applyBucketFilterToDisplayRows(rows, predicate, opts.ianaTimeZone);
+}
+
+/**
+ * @param {{ data: any[], seriesNames: string[] }} processedCache
+ * @param {number} lo
+ * @param {number} hi
+ * @param {VisibleAggregationOptions} opts
+ * @param {boolean} padded
+ * @returns {any[]}
+ */
+function computeVisibleSliceRows(processedCache, lo, hi, opts, padded) {
 	const rows = processedCache.data;
 	if (hi <= lo) return [];
+
+	const transform = displayFullTransform(opts);
+	if (transform) {
+		// Rolling windows need cache rows before the viewport, then a time-based
+		// slice because the transform changes row indices.
+		const optsKey = `${opts.apiInterval}|${opts.displayInterval}|${opts.method}|${opts.ianaTimeZone}`;
+		const full = getFullTransformRows(processedCache, optsKey, transform);
+		const from = bisectTime(full, rows[lo].time);
+		const to = bisectTimeRight(full, rows[hi - 1].time);
+		return full.slice(from, to);
+	}
 
 	const bucketTimeOf = displayBucketTimeOf(opts);
 	if (!bucketTimeOf) {

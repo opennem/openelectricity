@@ -517,7 +517,7 @@ The underlying `ChartZoomControls` component (used internally by floating mode) 
 
 ### ChartRangeBar
 
-A unified toolbar combining range presets, a calendar popover, and an interval dropdown. Designed for the Facility Explorer but reusable with any chart.
+A unified toolbar combining range presets, an integrated date-range picker, and an interval dropdown. Designed for the Facility Explorer but reusable with any chart.
 
 ```svelte
 <script>
@@ -532,7 +532,7 @@ A unified toolbar combining range presets, a calendar popover, and an interval d
 	endDate="2026-02-18"
 	minDate="1998-12-01"
 	maxDate="2026-02-18"
-	earliestDate="2005-06-01"
+	variant="expanded"
 	onrangeselect={(days) => handleRangeSelect(days)}
 	ondaterangechange={(range) => handleDateRangeChange(range)}
 	onintervalchange={(interval) => handleIntervalChange(interval)}
@@ -541,23 +541,25 @@ A unified toolbar combining range presets, a calendar popover, and an interval d
 
 #### Props
 
-| Prop                   | Type                     | Description                                                                                                                                                            |
-| ---------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `selectedRange`        | `number \| null`         | Active preset in days (`null` = custom, `-1` = All)                                                                                                                    |
-| `customDays`           | `number \| null`         | Span (days) of the current custom view — derives the interval options when no preset is active                                                                         |
-| `displayInterval`      | `string`                 | Current interval id (`'5m'`, `'30m'`, `'1h'`, `'1d'`, `'7d'`, `'1M'`, `'season'`, `'quarter'`, `'half'`, `'fy'`, `'1y'`)                                               |
-| `startDate`            | `string \| null`         | Start date (YYYY-MM-DD) for the DateRangePicker                                                                                                                        |
-| `endDate`              | `string \| null`         | End date (YYYY-MM-DD) for the DateRangePicker                                                                                                                          |
-| `minDate`              | `string \| null`         | Earliest selectable date                                                                                                                                               |
-| `maxDate`              | `string \| null`         | Latest selectable date                                                                                                                                                 |
-| `earliestDate`         | `string \| null`         | Earliest data date (used by "All" preset)                                                                                                                              |
-| `showIntervalDropdown` | `boolean`                | When `false`, renders the interval as a static badge instead of a Select. Default `true`.                                                                              |
-| `compact`              | `boolean`                | Always renders the range picker as a dropdown (plus the calendar popover) regardless of viewport — for narrow containers like the unit slide-out. Default `false`.     |
-| `raised`               | `boolean`                | Rest-state controls render as raised white chips instead of grey ones — for placement on the recessed light-grey toolbar tray. Default `false`.                        |
-| `pending`              | `boolean`                | While `true`, the active range control pulses (`animate-pulse` + `aria-busy`) to show the switched range is still loading. The bar stays interactive. Default `false`. |
-| `onrangeselect`        | `(days) => void`         | Called when a range preset is clicked                                                                                                                                  |
-| `ondaterangechange`    | `({start, end}) => void` | Called when dates change via the calendar                                                                                                                              |
-| `onintervalchange`     | `(interval) => void`     | Called when the interval dropdown changes                                                                                                                              |
+| Prop                     | Type                     | Description                                                                                                                                                                                                                                      |
+| ------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `selectedRange`          | `number \| null`         | Active preset in days (`null` = custom, `-1` = All)                                                                                                                                                                                              |
+| `customDays`             | `number \| null`         | Span (days) of the current custom view — derives the interval options when no preset is active                                                                                                                                                   |
+| `displayInterval`        | `string`                 | Current interval id, including the optional `12mr*` rolling variants                                                                                                                                                                             |
+| `startDate`              | `string \| null`         | Start date (YYYY-MM-DD) for the DateRangePicker                                                                                                                                                                                                  |
+| `endDate`                | `string \| null`         | End date (YYYY-MM-DD) for the DateRangePicker                                                                                                                                                                                                    |
+| `minDate`                | `string \| null`         | Earliest selectable date                                                                                                                                                                                                                         |
+| `maxDate`                | `string \| null`         | Latest selectable date                                                                                                                                                                                                                           |
+| `showIntervalDropdown`   | `boolean`                | When `false`, renders the interval as a static badge instead of a Select. Default `true`.                                                                                                                                                        |
+| `includeRollingInterval` | `boolean`                | Offers the 12-month rolling modifier where the range supports it. Default `false`.                                                                                                                                                               |
+| `showBucketFilter`       | `boolean`                | Offers recurring calendar-period filtering in the All tier. Default `false`.                                                                                                                                                                     |
+| `bucketFilter`           | `string \| null`         | Active calendar-period filter.                                                                                                                                                                                                                   |
+| `variant`                | `'expanded' \| 'small'`  | `expanded` renders the preset switcher (with the integrated calendar segment) at `md:` and up, falling back to the dropdown below; `small` renders the dropdown at every width — for narrow containers like the unit slide-out. Default `small`. |
+| `pending`                | `boolean`                | While `true`, the active range control pulses (`animate-pulse` + `aria-busy`) to show the switched range is still loading. The bar stays interactive. Default `false`.                                                                           |
+| `onrangeselect`          | `(days) => void`         | Called when a range preset is clicked                                                                                                                                                                                                            |
+| `ondaterangechange`      | `({start, end}) => void` | Called when dates change via the calendar                                                                                                                                                                                                        |
+| `onintervalchange`       | `(interval) => void`     | Called when the interval dropdown changes                                                                                                                                                                                                        |
+| `onbucketfilterchange`   | `(filter) => void`       | Called when the recurring calendar period changes                                                                                                                                                                                                |
 
 #### Range presets
 
@@ -582,10 +584,29 @@ The dropdown's options follow the selected range (or the custom span's tier via
 - **1Y**: Daily, Week, Month
 - **All**: Month, Season, Quarter, Half-Year, Fin-Year, Year
 
-#### Responsive behavior
+With `includeRollingInterval`, the menu offers a **12-mth rolling sum** modifier
+for Month, Season, Quarter and Half-Year (`12mr`, `12mr-season`,
+`12mr-quarter`, `12mr-half`). These are trailing windows sampled at the base
+grain. Ratio series are calculated after their component sums. The whole-cache
+transform lives in `dataProcessing.js` and is applied by
+`display-aggregation.js`; other surfaces remain rolling-free because their
+summaries assume non-overlapping rows.
 
-- **Desktop** (`sm:` and up): Range buttons as a switcher, calendar icon popover, interval dropdown
-- **Mobile** (below `sm:`): Range as dropdown, interval as dropdown, no calendar
+#### The date picker
+
+The DateRangePicker is part of the range control rather than a separate chip:
+
+- **Expanded** (`md:` 1024px and up): the trailing calendar segment of the preset
+  switcher opens the picker as a popover anchored to that button; the sliding
+  thumb lands on the segment whenever a custom range is active (an explicit
+  calendar pick, or the window left behind by a pan/zoom).
+- **Small** (the dropdown — `variant="small"`, or expanded below `md:`): a
+  "Custom…" row at the bottom of the range dropdown opens the picker — as a
+  popover anchored to the pill at `tablet:` (768px) and up, or a portalled
+  BottomSheet below that.
+
+The menus use the app-wide radio single-select row (label left, radio at the
+end), matching `FilterSelect` and `form-elements/Select`.
 
 ---
 
@@ -844,7 +865,7 @@ Two optional SVG elements for specialized visualizations:
 | `hoverTime` / `hoverData` | Current hover state (time value / full data row)                                                                                                                                                                                                                      |
 | `focusTime` / `focusData` | Current focus (click-lock) state                                                                                                                                                                                                                                      |
 | `hoverKey`                | Series key being hovered (for highlight)                                                                                                                                                                                                                              |
-| `yReferenceLines`         | Horizontal annotations `[{ value, label, colour, labelPosition?, labelClass? }]` — labels sit above the line, right-aligned unless `labelPosition: 'left'`; `labelClass` overrides the label's font classes (default `text-[10px]`)                                    |
+| `yReferenceLines`         | Horizontal annotations `[{ value, label, colour, labelPosition?, labelClass? }]` — labels sit above the line, right-aligned unless `labelPosition: 'left'`; `labelClass` overrides the label's font classes (default `text-[10px]`)                                   |
 | `formatTickX`             | Custom x-axis tick formatter `(d) => string`                                                                                                                                                                                                                          |
 | `formatTooltipX`          | Optional dedicated tooltip x-formatter, preferred over `formatTickX` for the tooltip header. `formatTickX` is keyed to gridline midpoints and returns `''` for arbitrary hovered points; `formatTooltipX` formats the exact point. `null` falls back to `formatTickX` |
 | `useDivergingStack`       | Use d3 diverging offset for independent pos/neg stacking                                                                                                                                                                                                              |

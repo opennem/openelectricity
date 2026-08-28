@@ -73,7 +73,7 @@ function finaliseBucket(bucket, out, seriesNames, method) {
  * @param {string[]} seriesNames
  * @param {'sum' | 'mean'} method
  * @param {(timeMs: number) => number} bucketTimeOf - Bucket start for a sample
- * @returns {{ rows: any[], counts: number[] }}
+ * @returns {{ rows: any[], counts: number[], valueCounts: Array<Record<string, number>> }}
  */
 export function bucketAggregate(data, seriesNames, method, bucketTimeOf) {
 	const buckets = new Map();
@@ -103,14 +103,17 @@ export function bucketAggregate(data, seriesNames, method, bucketTimeOf) {
 	const rows = [];
 	/** @type {number[]} */
 	const counts = [];
+	/** @type {Array<Record<string, number>>} */
+	const valueCounts = [];
 	for (const bucket of sorted) {
 		/** @type {any} */
 		const point = { date: bucket.date, time: bucket.time };
 		finaliseBucket(bucket, point, seriesNames, method);
 		rows.push(point);
 		counts.push(bucket._count);
+		valueCounts.push(bucket._counts);
 	}
-	return { rows, counts };
+	return { rows, counts, valueCounts };
 }
 
 /**
@@ -272,6 +275,114 @@ function boundaryBucketTimeOf(kind, ianaTimeZone) {
 	return (timeMs) => bucketStartMs(kind, timeMs, offsetHours);
 }
 
+/** A wider step means at least one monthly row is missing. */
+const MAX_MONTH_STEP_MS = 32 * 24 * 60 * 60 * 1000;
+
+/**
+ * Trailing sum over regularly spaced rows. Incomplete or gapped windows are
+ * dropped; a missing series value nulls that series for the window.
+ *
+ * @param {any[]} data - Time-sorted rows with `time`/`date`
+ * @param {string[]} seriesNames
+ * @param {number} windowCount - Rows per window
+ * @param {number} maxStepMs - Widest spacing that still counts as consecutive
+ * @returns {any[]}
+ */
+function rollingSumRows(data, seriesNames, windowCount, maxStepMs) {
+	/** @type {any[]} */
+	const out = [];
+	for (let i = windowCount - 1; i < data.length; i++) {
+		let contiguous = true;
+		for (let j = i - windowCount + 1; j < i; j++) {
+			if (data[j + 1].time - data[j].time > maxStepMs) {
+				contiguous = false;
+				break;
+			}
+		}
+		if (!contiguous) continue;
+
+		/** @type {any} */
+		const row = { date: data[i].date, time: data[i].time };
+		for (const name of seriesNames) {
+			let sum = 0;
+			let hasNull = false;
+			for (let j = i - windowCount + 1; j <= i; j++) {
+				const value = data[j][name];
+				if (value === null || value === undefined) {
+					hasNull = true;
+					break;
+				}
+				sum += value;
+			}
+			row[name] = hasNull ? null : sum;
+		}
+		out.push(row);
+	}
+	return out;
+}
+
+/**
+ * Trailing 12-month sum over monthly rows.
+ *
+ * @param {any[]} data - Time-sorted monthly rows with `time`/`date`
+ * @param {string[]} seriesNames
+ * @returns {any[]}
+ */
+export function rollingSum12MonthRows(data, seriesNames) {
+	return rollingSumRows(data, seriesNames, 12, MAX_MONTH_STEP_MS);
+}
+
+/**
+ * Rolling intervals sample a 12-month window monthly or at a coarser calendar
+ * grain. Coarser variants aggregate the monthly cache before rolling.
+ */
+const ROLLING_DISPLAY = {
+	'12mr': { bucket: /** @type {string | null} */ (null), monthsPerBucket: 1, windowCount: 12 },
+	'12mr-season': { bucket: 'season', monthsPerBucket: 3, windowCount: 4 },
+	'12mr-quarter': { bucket: 'quarter', monthsPerBucket: 3, windowCount: 4 },
+	'12mr-half': { bucket: 'half', monthsPerBucket: 6, windowCount: 2 }
+};
+
+/**
+ * Return a whole-cache transform for rolling intervals. Rate series are not
+ * transformed because a sum of averages has no useful meaning.
+ *
+ * @param {{ apiInterval: string, displayInterval: string, method?: 'sum' | 'mean', ianaTimeZone?: string }} opts
+ * @returns {((data: any[], seriesNames: string[]) => any[]) | null}
+ */
+export function displayFullTransform({
+	apiInterval,
+	displayInterval,
+	method = 'sum',
+	ianaTimeZone = 'Australia/Brisbane'
+}) {
+	const cfg = ROLLING_DISPLAY[/** @type {keyof typeof ROLLING_DISPLAY} */ (displayInterval)];
+	if (!cfg || apiInterval !== '1M' || method !== 'sum') return null;
+	if (!cfg.bucket) return rollingSum12MonthRows;
+	const bucketKind = cfg.bucket;
+	return (data, seriesNames) => {
+		const { rows, counts, valueCounts } = bucketAggregate(
+			data,
+			seriesNames,
+			'sum',
+			boundaryBucketTimeOf(bucketKind, ianaTimeZone)
+		);
+		const complete = rows.filter((row, i) => {
+			if (counts[i] !== cfg.monthsPerBucket) return false;
+			for (const name of seriesNames) {
+				if (valueCounts[i][name] !== cfg.monthsPerBucket) row[name] = null;
+			}
+			return true;
+		});
+		return rollingSumRows(
+			complete,
+			seriesNames,
+			cfg.windowCount,
+			cfg.monthsPerBucket * MAX_MONTH_STEP_MS
+		);
+	};
+}
+
 /**
  * Single dispatch for render-layer aggregation: maps a `displayInterval` (and
  * the native `apiInterval` it was fetched at) to the right aggregation, or
@@ -325,9 +436,17 @@ export function aggregateForDisplay(
 				return apiInterval === '3M'
 					? data
 					: aggregateByBoundary(data, seriesNames, 'quarter', ianaTimeZone, method);
-			default:
+			default: {
+				const transform = displayFullTransform({
+					apiInterval,
+					displayInterval,
+					method,
+					ianaTimeZone
+				});
+				if (transform) return transform(data, seriesNames);
 				// Native grains: 5m, 1d, 7d, 1M(native), 3M, 1y.
 				return data;
+			}
 		}
 	});
 }

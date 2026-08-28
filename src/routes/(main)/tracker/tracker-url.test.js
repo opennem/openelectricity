@@ -101,4 +101,47 @@ describe('tracker URLs', () => {
 		expect(copied.searchParams.get('region')).toBe('wem');
 		expect(source.searchParams.get('region')).toBe('nsw1');
 	});
+
+	it('round trips the calendar-period filter in the All range', () => {
+		const { url, parsed } = roundTrip({
+			region: '_all',
+			group: 'simple',
+			range: { kind: 'preset', days: -1, intervalId: '1M' },
+			bucketFilter: 'jan',
+			priceMode: 'price',
+			emissionsMode: 'intensity',
+			tablePanelOpen: true
+		});
+		expect(url.searchParams.get('filter')).toBe('jan');
+		expect(parsed.bucketFilter).toBe('jan');
+	});
+
+	it('drops the filter outside the All tier or for mismatched grains', () => {
+		// 7D preset — the filter is never offered there.
+		const shortRange = roundTrip({
+			region: '_all',
+			group: 'simple',
+			range: { kind: 'preset', days: 7, intervalId: '30m' },
+			bucketFilter: 'jan',
+			priceMode: 'price',
+			emissionsMode: 'intensity',
+			tablePanelOpen: true
+		});
+		expect(shortRange.url.searchParams.get('filter')).toBeNull();
+		expect(shortRange.parsed.bucketFilter).toBeNull();
+
+		// All range but a season filter over a monthly grain.
+		const mismatched = parseTrackerUrl(
+			new URLSearchParams('range=all&interval=1M&filter=summer'),
+			context
+		);
+		expect(mismatched.bucketFilter).toBeNull();
+
+		// Matched: season grain + season period, rolling variant included.
+		const seasonal = parseTrackerUrl(
+			new URLSearchParams('range=all&interval=12mr-season&filter=winter'),
+			context
+		);
+		expect(seasonal.bucketFilter).toBe('winter');
+	});
 });

@@ -31,6 +31,7 @@
  * @property {string} region
  * @property {string} group - Fuel-tech grouping value
  * @property {TrackerRange} range
+ * @property {string | null} bucketFilter - Recurring calendar period (All range only)
  * @property {PriceMode} priceMode
  * @property {EmissionsMode} emissionsMode
  * @property {boolean} tablePanelOpen

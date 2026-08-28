@@ -516,11 +516,7 @@
 					<div class="space-y-4">
 						<RetiredFacilityNotice units={activeFacility?.units ?? []} />
 
-						<!-- Metrics card, headed by the range / date picker tray: the light
-						     well carries the date-range label, the controls float on it as
-						     raised white chips (`raised`). The metrics grid below stays
-						     flush; the card supplies the outer border. Fed by the providers
-						     + generation chart below. -->
+						<!-- The card owns the outer border; its toolbar is the recessed header. -->
 						<div class={sectionCardClass}>
 							<div class="{toolbarTrayClass} rounded-t-lg py-2 pr-2 pl-6">
 								<span class="text-base font-medium text-dark-grey">{dateRangeLabel}</span>
@@ -533,6 +529,7 @@
 									minDate={MIN_DATE}
 									maxDate={range.maxDate}
 									showIntervalDropdown={true}
+									variant="expanded"
 									pending={range.rangeSwitchPending}
 									onrangeselect={range.handleRangeSelect}
 									ondaterangechange={range.handleDateRangeChange}

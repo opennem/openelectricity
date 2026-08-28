@@ -6,7 +6,9 @@
  */
 
 import { computeEnergyGridlines } from './energy-gridlines.js';
-import { cachedFormatter, formatDayMonth } from './date-labels.js';
+import { baseIntervalFor } from '$lib/components/charts/facility/range-interval-config.js';
+import { bucketFilterKindFor, bucketFilterPredicate } from './bucket-filter.js';
+import { cachedFormatter, formatDayMonth, formatMonthYear } from './date-labels.js';
 import { getTimeFormatPolicy } from './time-format-policy.js';
 import { bucketStartsInRange, isCalendarBucketKind } from './bucket-boundaries.js';
 import { ianaFromOffset, offsetHoursFromOffset, offsetMsFromOffset } from './network-time.js';
@@ -134,11 +136,12 @@ const FIXED_BUCKET_MS = /** @type {Record<string, number>} */ ({
  * @returns {{ time: number }[]}
  */
 function viewportBucketStarts(data, viewStart, viewEnd, displayInterval, ianaTimeZone, timeZone) {
-	const fixedMs = FIXED_BUCKET_MS[displayInterval];
+	const baseInterval = baseIntervalFor(displayInterval) ?? displayInterval;
+	const fixedMs = FIXED_BUCKET_MS[baseInterval];
 	if (fixedMs === undefined) {
-		if (isCalendarBucketKind(displayInterval)) {
+		if (isCalendarBucketKind(baseInterval)) {
 			return bucketStartsInRange(
-				displayInterval,
+				baseInterval,
 				viewStart,
 				viewEnd,
 				offsetHoursFromOffset(timeZone)
@@ -180,11 +183,12 @@ function viewportBucketStarts(data, viewStart, viewEnd, displayInterval, ianaTim
  * @param {string} opts.ianaTimeZone - e.g. 'Australia/Brisbane'
  * @param {string} opts.timeZone - offset string, e.g. '+10:00'
  * @param {boolean} opts.isEnergy - Whether the chart is in energy (stepped) mode
- * @param {string} opts.displayInterval - '5m' | '30m' | '1h' | '1d' | '7d' | '1M' | '3M' | 'quarter' | 'season' | 'half' | 'fy' | '1y'
+ * @param {string} opts.displayInterval - Display interval, including rolling variants
+ * @param {string | null} [opts.bucketFilter] - Recurring calendar period to label
  */
 export function applyFacilityTimeAxis(
 	store,
-	{ data, viewStart, viewEnd, ianaTimeZone, timeZone, isEnergy, displayInterval }
+	{ data, viewStart, viewEnd, ianaTimeZone, timeZone, isEnergy, displayInterval, bucketFilter }
 ) {
 	perfSpan('chart:time-axis', () => {
 		let memo = timeAxisMemos.get(store);
@@ -212,13 +216,13 @@ export function applyFacilityTimeAxis(
 			// the 1d/7d phase anchor — so a fetch merging new rows at the right
 			// edge doesn't rebuild identical ticks.
 			const anchor = data.length ? data[0].time : null;
-			const energyKey = `${viewStart}|${viewEnd}|${policyKey}|${anchor}`;
+			const energyKey = `${viewStart}|${viewEnd}|${policyKey}|${anchor}|${bucketFilter ?? ''}`;
 			if (memo.tickSource === 'energy' && memo.energyKey === energyKey) return;
 			memo.tickSource = 'energy';
 			memo.energyKey = energyKey;
 			memo.powerFormatKey = undefined;
 
-			const starts = viewportBucketStarts(
+			let starts = viewportBucketStarts(
 				data,
 				viewStart,
 				viewEnd,
@@ -229,7 +233,15 @@ export function applyFacilityTimeAxis(
 			// Coarse calendar buckets (season/quarter/half/fy/1y) don't align to the
 			// Jan/month gridlines the inference assumes — the policy supplies an
 			// explicit bucket labeller for them.
-			const g = computeEnergyGridlines(starts, viewStart, viewEnd, ianaTimeZone, policy.bucketTick);
+			let coarseLabel = policy.bucketTick;
+			const filterPredicate = bucketFilter
+				? bucketFilterPredicate(bucketFilterKindFor(displayInterval), bucketFilter, ianaTimeZone)
+				: null;
+			if (filterPredicate) {
+				starts = starts.filter((/** @type {any} */ s) => filterPredicate(s.time));
+				coarseLabel = coarseLabel ?? ((/** @type {any} */ d) => formatMonthYear(d, ianaTimeZone));
+			}
+			const g = computeEnergyGridlines(starts, viewStart, viewEnd, ianaTimeZone, coarseLabel);
 			store.xGridlineTicks = g.gridlineTicks;
 			store.xTicks = g.ticks;
 			store.formatTickX = g.formatTick;

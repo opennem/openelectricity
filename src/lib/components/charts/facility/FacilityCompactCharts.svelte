@@ -170,9 +170,7 @@
 </script>
 
 <div class="space-y-4">
-	<!-- Flat toolbar row (no tray treatment in the compact hosts — the sheet /
-	     pane surface is plain white, so the controls use the default grey
-	     chips rather than the tray's raised ones). -->
+	<!-- Compact hosts use their existing white surface instead of a toolbar tray. -->
 	<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 {toolbarInset}">
 		<span class="text-base font-medium text-dark-grey">{dateRangeLabel}</span>
 		<div class="flex items-center gap-1.5">
@@ -185,7 +183,7 @@
 				minDate={MIN_DATE}
 				maxDate={range.maxDate}
 				showIntervalDropdown={true}
-				compact
+				variant="small"
 				pending={range.rangeSwitchPending}
 				onrangeselect={range.handleRangeSelect}
 				ondaterangechange={range.handleDateRangeChange}

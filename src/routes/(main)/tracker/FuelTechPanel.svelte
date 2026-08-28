@@ -1,13 +1,11 @@
 <script>
 	import { untrack } from 'svelte';
+	import PanelRightClose from '@lucide/svelte/icons/panel-right-close';
 	import { DEFAULT_GROUP } from './tracker-model.js';
 	import FuelTechTable from './FuelTechTable.svelte';
 
 	/**
-	 * FuelTechPanel — chrome around the fuel-tech table in the tracker's right
-	 * panel: the Show-all affordance and the two loading treatments. The
-	 * grouping and contribution dropdowns live inside the table's column
-	 * headers.
+	 * FuelTechPanel — table chrome, loading treatments and panel actions.
 	 *
 	 * Value refreshes dim the previous snapshot. Region and grouping changes
 	 * replace the row structure under an "Updating…" veil.
@@ -36,7 +34,8 @@
 	 *   ongroupchange?: (group: string) => void,
 	 *   oncontributionmodechange?: (mode: import('./types.js').ContributionMode) => void,
 	 *   ontoggle?: (series: string) => void,
-	 *   onshowall?: () => void
+	 *   onshowall?: () => void,
+	 *   onclose?: () => void
 	 * }}
 	 */
 	let {
@@ -63,7 +62,8 @@
 		ongroupchange,
 		oncontributionmodechange,
 		ontoggle,
-		onshowall
+		onshowall,
+		onclose
 	} = $props();
 
 	/** Keep one complete table snapshot during value refreshes. Replace it
@@ -81,20 +81,32 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col">
-	{#if rangeLabel}
-		<!-- Network-local window; the dot shows that values are catching up. -->
-		<div
-			class="flex shrink-0 items-center justify-end gap-2 border-b border-warm-grey px-4 py-2 text-right font-space text-xs text-mid-grey"
+	<!-- The pulse distinguishes a value refresh from a structural reload. -->
+	<div
+		class="flex shrink-0 items-center justify-between gap-2 border-b border-warm-grey px-2 py-1.5"
+	>
+		<button
+			type="button"
+			onclick={() => onclose?.()}
+			aria-label="Hide fuel tech table"
+			class="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-dark-grey transition-colors hover:bg-warm-grey"
 		>
-			{#if valuesPending && !structurePending}
-				<span
-					class="size-1.5 shrink-0 animate-pulse rounded-full bg-mid-warm-grey"
-					aria-hidden="true"
-				></span>
-			{/if}
-			{rangeLabel}
-		</div>
-	{/if}
+			<PanelRightClose class="size-5" />
+		</button>
+		{#if rangeLabel}
+			<div
+				class="flex min-w-0 items-center justify-end gap-2 pr-2 text-right font-space text-xs text-mid-grey"
+			>
+				{#if valuesPending && !structurePending}
+					<span
+						class="size-1.5 shrink-0 animate-pulse rounded-full bg-mid-warm-grey"
+						aria-hidden="true"
+					></span>
+				{/if}
+				<span class="truncate">{rangeLabel}</span>
+			</div>
+		{/if}
+	</div>
 	{#if hiddenCount > 0}
 		<header class="flex shrink-0 justify-end border-b border-warm-grey px-4 py-2">
 			<button

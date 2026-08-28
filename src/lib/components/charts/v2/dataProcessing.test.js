@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { aggregateByBoundary, aggregateForDisplay, aggregateToInterval } from './dataProcessing.js';
+import {
+	aggregateByBoundary,
+	aggregateForDisplay,
+	aggregateToInterval,
+	displayFullTransform,
+	rollingSum12MonthRows
+} from './dataProcessing.js';
 
 const HOUR = 60 * 60 * 1000;
 const MIN = 60 * 1000;
@@ -215,5 +221,155 @@ describe('aggregateForDisplay — 30m partial-edge policy', () => {
 		expect(out).toHaveLength(2);
 		expect(out[0].a).toBe(100);
 		expect(out[1].a).toBe(100);
+	});
+});
+
+/**
+ * `n` monthly rows on series `a` valued 1..n (calendar-month starts, network
+ * time), starting January 2024.
+ * @param {number} n
+ * @param {(i: number) => number | null} [valueAt]
+ */
+function monthlyRows(n, valueAt = (i) => i + 1) {
+	return Array.from({ length: n }, (_, i) => {
+		const time = Date.UTC(2024, i, 1, -NEM);
+		return { time, date: new Date(time), a: valueAt(i) };
+	});
+}
+
+describe('rollingSum12MonthRows', () => {
+	it('sums each trailing 12-month window and drops the incomplete lead-in', () => {
+		const out = rollingSum12MonthRows(monthlyRows(24), ['a']);
+		expect(out).toHaveLength(13);
+		// First complete window ends at month 12: 1+…+12.
+		expect(out[0].time).toBe(Date.UTC(2024, 11, 1, -NEM));
+		expect(out[0].a).toBe(78);
+		// Last window: 13+…+24.
+		expect(out[12].a).toBe(222);
+	});
+
+	it('keeps the source rows untouched and the output timestamps monthly', () => {
+		const rows = monthlyRows(24);
+		const out = rollingSum12MonthRows(rows, ['a']);
+		expect(rows[11].a).toBe(12);
+		expect(out.map((r) => r.time)).toEqual(rows.slice(11).map((r) => r.time));
+	});
+
+	it('nulls a window containing a null month', () => {
+		const out = rollingSum12MonthRows(
+			monthlyRows(24, (i) => (i === 13 ? null : i + 1)),
+			['a']
+		);
+		// Windows ending at months 14..25 include the null month (index 13).
+		expect(out[0].a).toBe(78);
+		for (let i = 2; i < 13; i++) expect(out[i].a).toBeNull();
+	});
+
+	it('drops windows spanning a gap in the cache', () => {
+		const rows = [...monthlyRows(6), ...monthlyRows(18).slice(7)];
+		const out = rollingSum12MonthRows(rows, ['a']);
+		// Month 7 (index 6) is missing — no window ending before month 18
+		// (11 contiguous months after the gap) is complete.
+		expect(out).toHaveLength(0);
+	});
+});
+
+describe('displayFullTransform', () => {
+	it('returns the rolling transform only for rolling ids over summed monthly data', () => {
+		expect(
+			displayFullTransform({ apiInterval: '1M', displayInterval: '12mr', method: 'sum' })
+		).toBe(rollingSum12MonthRows);
+		for (const id of ['12mr-season', '12mr-quarter', '12mr-half']) {
+			expect(
+				displayFullTransform({
+					apiInterval: '1M',
+					displayInterval: id,
+					method: 'sum',
+					ianaTimeZone: NEM_TZ
+				})
+			).toBeTypeOf('function');
+		}
+		expect(
+			displayFullTransform({ apiInterval: '1M', displayInterval: '12mr', method: 'mean' })
+		).toBeNull();
+		expect(
+			displayFullTransform({ apiInterval: '1d', displayInterval: '12mr', method: 'sum' })
+		).toBeNull();
+		expect(
+			displayFullTransform({ apiInterval: '1M', displayInterval: 'fy', method: 'sum' })
+		).toBeNull();
+	});
+
+	it('routes aggregateForDisplay 12mr through the rolling sum', () => {
+		const rows = monthlyRows(24);
+		const out = aggregateForDisplay(rows, ['a'], {
+			apiInterval: '1M',
+			displayInterval: '12mr',
+			ianaTimeZone: NEM_TZ,
+			method: 'sum'
+		});
+		expect(out).toEqual(rollingSum12MonthRows(rows, ['a']));
+	});
+
+	it('samples quarterly: trailing 4 complete quarters per point', () => {
+		const transform = /** @type {NonNullable<ReturnType<typeof displayFullTransform>>} */ (
+			displayFullTransform({
+				apiInterval: '1M',
+				displayInterval: '12mr-quarter',
+				method: 'sum',
+				ianaTimeZone: NEM_TZ
+			})
+		);
+		const out = transform(monthlyRows(24), ['a']);
+		// 8 complete calendar quarters → windows end at quarters 4..8.
+		expect(out).toHaveLength(5);
+		expect(out[0].time).toBe(Date.UTC(2024, 9, 1, -NEM));
+		expect(out.map((r) => r.a)).toEqual([78, 114, 150, 186, 222]);
+	});
+
+	it('drops an incomplete trailing bucket before rolling', () => {
+		const transform = /** @type {NonNullable<ReturnType<typeof displayFullTransform>>} */ (
+			displayFullTransform({
+				apiInterval: '1M',
+				displayInterval: '12mr-quarter',
+				method: 'sum',
+				ianaTimeZone: NEM_TZ
+			})
+		);
+		// One extra month (Jan 2026) — a 1-month quarter bucket must not
+		// produce an understated trailing window.
+		expect(transform(monthlyRows(25), ['a'])).toEqual(transform(monthlyRows(24), ['a']));
+	});
+
+	it('propagates a missing month through coarser rolling windows', () => {
+		const transform = /** @type {NonNullable<ReturnType<typeof displayFullTransform>>} */ (
+			displayFullTransform({
+				apiInterval: '1M',
+				displayInterval: '12mr-quarter',
+				method: 'sum',
+				ianaTimeZone: NEM_TZ
+			})
+		);
+		const out = transform(
+			monthlyRows(24, (i) => (i === 1 ? null : i + 1)),
+			['a']
+		);
+		expect(out[0].a).toBeNull();
+		expect(out[1].a).toBe(114);
+	});
+
+	it('samples half-yearly: trailing 2 half-years per point', () => {
+		const transform = /** @type {NonNullable<ReturnType<typeof displayFullTransform>>} */ (
+			displayFullTransform({
+				apiInterval: '1M',
+				displayInterval: '12mr-half',
+				method: 'sum',
+				ianaTimeZone: NEM_TZ
+			})
+		);
+		const out = transform(monthlyRows(24), ['a']);
+		// 4 complete halves → windows end at halves 2..4.
+		expect(out).toHaveLength(3);
+		expect(out.map((r) => r.a)).toEqual([78, 150, 222]);
 	});
 });

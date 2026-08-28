@@ -90,7 +90,8 @@ const VALID_DATA_METRICS = new Set([
 	'energy',
 	'market_value',
 	'emissions',
-	'emissions_intensity'
+	'emissions_intensity',
+	'price_vw'
 ]);
 const LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2})?$/;
 
@@ -221,6 +222,11 @@ function dataMetricsFor(metric, interval) {
 	if (metric === 'emissions_intensity') {
 		const fine = interval === '5m' || interval === '1h';
 		return ['emissions', fine ? 'power' : 'energy'];
+	}
+	if (metric === 'price_vw') {
+		// The client derives the ratio after aggregating both components.
+		const fine = interval === '5m' || interval === '1h';
+		return ['market_value', fine ? 'power' : 'energy'];
 	}
 	return [/** @type {import('openelectricity').DataMetric} */ (metric)];
 }

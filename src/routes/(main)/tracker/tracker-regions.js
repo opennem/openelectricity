@@ -22,6 +22,22 @@ export const TRACKER_REGION_OPTIONS = [
 	...regionOptions
 ];
 
+const NEM_STATE_VALUES = ['nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+
+/** Nested display options; validation and label lookups use the flat list above. */
+export const TRACKER_REGION_TREE = TRACKER_REGION_OPTIONS.filter(
+	(option) => !NEM_STATE_VALUES.includes(option.value)
+).map((option) => {
+	if (option.value === 'au') return { ...option, divider: true };
+	if (option.value === '_all') {
+		return {
+			...option,
+			children: TRACKER_REGION_OPTIONS.filter((o) => NEM_STATE_VALUES.includes(o.value))
+		};
+	}
+	return option;
+});
+
 /**
  * Whole-of-network scopes — 'au' (NEM+WEM) and '_all' (whole NEM). These
  * aggregate every region, so per-region treatments (map highlight, single

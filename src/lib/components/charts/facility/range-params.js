@@ -50,10 +50,11 @@ function validInterval(value, options) {
  * callers fall back to the default preset.
  *
  * @param {URLSearchParams} searchParams
- * @param {{ nowMs: number }} context - clamp ceiling for custom viewports
+ * @param {{ nowMs: number, includeRolling?: boolean }} context - Custom-range
+ *   clamp and optional rolling-interval validation
  * @returns {ParsedRangeParams}
  */
-export function parseRangeParams(searchParams, { nowMs }) {
+export function parseRangeParams(searchParams, { nowMs, includeRolling = false }) {
 	const rangeParam = searchParams.get('range');
 	if (rangeParam) {
 		const preset = RANGE_PRESETS.find((p) => p.id.toLowerCase() === rangeParam.toLowerCase());
@@ -63,7 +64,7 @@ export function parseRangeParams(searchParams, { nowMs }) {
 				days: preset.days,
 				intervalId: validInterval(
 					searchParams.get('interval'),
-					getIntervalsForRange(preset.id).options
+					getIntervalsForRange(preset.id, { includeRolling }).options
 				)
 			};
 		}
@@ -88,7 +89,7 @@ export function parseRangeParams(searchParams, { nowMs }) {
 		endMs,
 		intervalId: validInterval(
 			searchParams.get('interval'),
-			getIntervalOptionsForDays(spanDays).options
+			getIntervalOptionsForDays(spanDays, { includeRolling }).options
 		)
 	};
 }

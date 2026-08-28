@@ -291,3 +291,79 @@ describe('sliced memo parity with slice-then-aggregate', () => {
 		expect(memo(cache, o)).toEqual(reference(cache, o));
 	});
 });
+
+describe('12-month rolling display interval', () => {
+	/** `n` monthly rows on series `a` valued 1..n from January 2020.
+	 *  @param {number} n */
+	function makeMonthlyCache(n) {
+		const data = Array.from({ length: n }, (_, i) => {
+			const time = Date.UTC(2020, i, 1);
+			return { time, date: new Date(time), a: i + 1 };
+		});
+		return { data, seriesNames: ['a'] };
+	}
+
+	const rollingOpts = {
+		viewStart: Date.UTC(2022, 0, 1),
+		viewEnd: Date.UTC(2022, 11, 31),
+		apiInterval: '1M',
+		displayInterval: '12mr',
+		ianaTimeZone: TZ,
+		method: /** @type {const} */ ('sum')
+	};
+
+	it('computes trailing windows over the whole cache, sliced by time', () => {
+		const memo = createVisibleAggregation();
+		const rows = memo(makeMonthlyCache(36), rollingOpts);
+		// Every month of 2022 has a complete window — the lead-in lives in the
+		// cache outside the viewport slice.
+		expect(rows).toHaveLength(12);
+		expect(rows[0].time).toBe(Date.UTC(2022, 0, 1));
+		// Jan 2022 window = Feb 2021 … Jan 2022 = values 14…25.
+		expect(rows[0].a).toBe(234);
+		// Dec 2022 window = Jan 2022 … Dec 2022 = values 25…36.
+		expect(rows[11].a).toBe(366);
+	});
+
+	it('keeps the array identity across repeated calls and gestures', () => {
+		const cache = makeMonthlyCache(36);
+		const memo = createVisibleAggregation();
+		const first = memo(cache, rollingOpts);
+		expect(memo(cache, rollingOpts)).toBe(first);
+		// A padded (gesture) call still slices the same memoised full transform.
+		const padded = memo(cache, rollingOpts, { pad: 8 });
+		const full = new Map(first.map((row) => [row.time, row]));
+		for (const row of padded) {
+			if (full.has(row.time)) expect(row).toBe(full.get(row.time));
+		}
+	});
+
+	it('matches aggregateForDisplay over the same slice semantics', () => {
+		const cache = makeMonthlyCache(36);
+		const memo = createVisibleAggregation();
+		const direct = aggregateForDisplay(cache.data, cache.seriesNames, rollingOpts).filter(
+			(row) => row.time >= rollingOpts.viewStart && row.time <= rollingOpts.viewEnd
+		);
+		expect(memo(cache, rollingOpts)).toEqual(direct);
+	});
+
+	it('drops buckets outside a calendar-period filter so the area connects', () => {
+		const cache = makeMonthlyCache(36);
+		const memo = createVisibleAggregation();
+		const opts = {
+			...rollingOpts,
+			viewStart: Date.UTC(2020, 0, 1),
+			viewEnd: Date.UTC(2022, 11, 31),
+			displayInterval: '1M',
+			bucketFilter: 'mar'
+		};
+		const rows = memo(cache, opts);
+		// Three Marches (values 3, 15, 27) plus the final band's closing row.
+		expect(rows).toHaveLength(4);
+		expect(rows.map((row) => row.a)).toEqual([3, 15, 27, 27]);
+		expect(rows[3]._bandClose).toBe(true);
+		// A different filter is a distinct memo entry, not a stale hit.
+		const unfiltered = memo(cache, { ...opts, bucketFilter: null });
+		expect(unfiltered).toHaveLength(36);
+	});
+});

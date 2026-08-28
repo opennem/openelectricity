@@ -56,7 +56,8 @@ const LIVE_EDGE_TOLERANCE_MS = 10 * 60 * 1000;
  *   charts: () => Array<RangeControlChart | undefined | null>,
  *   timeZone: () => string,
  *   earliestDate?: () => string | null,
- *   initialRangeDays?: number
+ *   initialRangeDays?: number,
+ *   includeRolling?: boolean
  * }} config
  *   - `viewport` — the live chart viewport (zeros before the chart first reports)
  *   - `defaultViewport` — fallback bounds while the live viewport is unset
@@ -65,10 +66,12 @@ const LIVE_EDGE_TOLERANCE_MS = 10 * 60 * 1000;
  *     are echo-suppressed, and they're reconciled together when a gesture settles
  *   - `timeZone` — network offset (e.g. '+10:00') for picker date strings
  *   - `earliestDate` — earliest data date, the floor for the "All" preset
+ *   - `includeRolling` — preserve rolling picks while pan/zoom changes the range tier
  */
 export function createChartRangeControl(config) {
 	const { viewport, defaultViewport, setViewport, charts, timeZone, earliestDate } = config;
 	const initialRangeDays = config.initialRangeDays ?? 3;
+	const includeRolling = config.includeRolling ?? false;
 
 	function initialDisplayInterval() {
 		const preset = getPresetByDays(initialRangeDays);
@@ -103,7 +106,11 @@ export function createChartRangeControl(config) {
 	/** @param {number} durationDays */
 	function shouldKeepPinnedInterval(durationDays) {
 		if (!pinnedInterval) return false;
-		if (getIntervalOptionsForDays(durationDays).options.includes(displayInterval)) return true;
+		if (
+			getIntervalOptionsForDays(durationDays, { includeRolling }).options.includes(displayInterval)
+		) {
+			return true;
+		}
 		pinnedInterval = false;
 		return false;
 	}

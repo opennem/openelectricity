@@ -42,6 +42,14 @@ describe('parseNetworkDataParams', () => {
 		});
 	});
 
+	it('accepts the synthetic volume-weighted price metric', () => {
+		const result = parse('metric=price_vw&interval=1M');
+		expect('params' in result && result.params).toMatchObject({
+			metric: 'price_vw',
+			interval: '1M'
+		});
+	});
+
 	it('rejects each invalid parameter with the endpoint message', () => {
 		expect(parse('region=unknown')).toEqual({ error: 'Invalid region: unknown' });
 		expect(parse('interval=2h')).toEqual({ error: 'Invalid interval: 2h' });

@@ -289,3 +289,78 @@ describe('getDayStartDates', () => {
 		expect(getDayStartDates(data, 'Australia/Perth', '+08:00')).not.toBe(first);
 	});
 });
+
+describe('applyFacilityTimeAxis with a calendar-period filter', () => {
+	/**
+	 * Minimal ChartStore stand-in — the function only assigns these fields.
+	 * @returns {{ xTicks: Date[] | undefined, xGridlineTicks: Date[] | undefined, formatTickX: ((d: any) => string) | undefined }}
+	 */
+	function makeStore() {
+		return { xTicks: undefined, xGridlineTicks: undefined, formatTickX: undefined };
+	}
+
+	it('ticks only the filtered occurrences, labelled by period', () => {
+		const store = makeStore();
+		// Four calendar years in network time.
+		const viewStart = Date.UTC(2020, 0, 1) - 10 * HOUR;
+		const viewEnd = Date.UTC(2024, 0, 1) - 10 * HOUR;
+		applyFacilityTimeAxis(store, {
+			data: [],
+			viewStart,
+			viewEnd,
+			ianaTimeZone: TZ,
+			timeZone: OFFSET,
+			isEnergy: true,
+			displayInterval: '1M',
+			bucketFilter: 'jul'
+		});
+		const gridlines = /** @type {Date[]} */ (store.xGridlineTicks);
+		expect(gridlines).toHaveLength(4);
+		for (const g of gridlines) {
+			expect(g.getTime()).toBe(Date.UTC(g.getUTCFullYear(), 6, 1) - 10 * HOUR);
+		}
+		// Labels carry the period and year, keyed to band midpoints.
+		const format = /** @type {(d: any) => string} */ (store.formatTickX);
+		const ticks = /** @type {Date[]} */ (store.xTicks);
+		expect(format(ticks[0])).toBe('July 2020');
+	});
+
+	it('keeps the coarse bucket labeller for filtered seasons', () => {
+		const store = makeStore();
+		const viewStart = Date.UTC(2020, 0, 1) - 10 * HOUR;
+		const viewEnd = Date.UTC(2024, 0, 1) - 10 * HOUR;
+		applyFacilityTimeAxis(store, {
+			data: [],
+			viewStart,
+			viewEnd,
+			ianaTimeZone: TZ,
+			timeZone: OFFSET,
+			isEnergy: true,
+			displayInterval: 'season',
+			bucketFilter: 'winter'
+		});
+		const gridlines = /** @type {Date[]} */ (store.xGridlineTicks);
+		// One winter (June start) per year.
+		expect(gridlines).toHaveLength(4);
+		const format = /** @type {(d: any) => string} */ (store.formatTickX);
+		const ticks = /** @type {Date[]} */ (store.xTicks);
+		expect(format(ticks[0])).toBe('Winter 2020');
+	});
+
+	it('builds a calendar lattice for rolling intervals before data arrives', () => {
+		const store = makeStore();
+		const viewStart = Date.UTC(2020, 0, 1) - 10 * HOUR;
+		const viewEnd = Date.UTC(2021, 0, 1) - 10 * HOUR;
+		applyFacilityTimeAxis(store, {
+			data: [],
+			viewStart,
+			viewEnd,
+			ianaTimeZone: TZ,
+			timeZone: OFFSET,
+			isEnergy: true,
+			displayInterval: '12mr-quarter',
+			bucketFilter: null
+		});
+		expect(store.xGridlineTicks).toHaveLength(5);
+	});
+});

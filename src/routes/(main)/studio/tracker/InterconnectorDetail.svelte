@@ -176,7 +176,7 @@
 			minDate={MIN_DATE}
 			maxDate={range.maxDate}
 			showIntervalDropdown={true}
-			compact
+			variant="small"
 			pending={range.rangeSwitchPending}
 			onrangeselect={range.handleRangeSelect}
 			ondaterangechange={range.handleDateRangeChange}

@@ -15,8 +15,14 @@
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import {
 		formatIntervalQuantityUnit,
-		getIntervalSpec
+		getIntervalSpec,
+		isRollingInterval
 	} from '$lib/components/charts/facility/range-interval-config.js';
+	import {
+		applyBucketFilter,
+		bucketFilterKindFor,
+		bucketFilterPredicate
+	} from '$lib/components/charts/v2/bucket-filter.js';
 	import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { createChartHost } from '$lib/components/charts/v2/chart-host.svelte.js';
@@ -37,6 +43,11 @@
 		PRICE_LINEAR_RANGE
 	} from '$lib/components/charts/facility/price-y-scale.js';
 	import { processMarketData } from './process-market-data.js';
+	import {
+		processPriceVw,
+		deriveVwPriceDisplayRows,
+		VW_PRICE_SERIES_ID
+	} from './process-price-vw.js';
 	import { LINE_COLOUR } from '$lib/components/charts/facility/colours.js';
 	import { getMarketMetricConfig } from './market-metrics.js';
 	import { getGroup, loadGroupsFor } from './groups.js';
@@ -50,9 +61,10 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} region - Explorer region value ('_all', 'nsw1'…, 'wem')
-	 * @property {'power' | 'energy' | 'market_value' | 'emissions' | 'emissions_intensity' | 'price' | 'demand' | 'demand_energy' | 'demand_gross' | 'demand_gross_energy' | 'curtailment' | 'curtailment_energy' | 'curtailment_wind' | 'curtailment_wind_energy' | 'curtailment_solar' | 'curtailment_solar_energy' | 'flows' | 'flows_energy' | 'renewable_generation' | 'renewable_generation_energy' | 'renewable_generation_storage' | 'renewable_generation_storage_energy' | 'renewable_share' | 'renewable_share_storage' | 'renewables' | 'renewables_energy'} [metric] - API metric
+	 * @property {'power' | 'energy' | 'market_value' | 'emissions' | 'emissions_intensity' | 'price' | 'price_vw' | 'demand' | 'demand_energy' | 'demand_gross' | 'demand_gross_energy' | 'curtailment' | 'curtailment_energy' | 'curtailment_wind' | 'curtailment_wind_energy' | 'curtailment_solar' | 'curtailment_solar_energy' | 'flows' | 'flows_energy' | 'renewable_generation' | 'renewable_generation_energy' | 'renewable_generation_storage' | 'renewable_generation_storage_energy' | 'renewable_share' | 'renewable_share_storage' | 'renewables' | 'renewables_energy'} [metric] - API metric
 	 * @property {string} [interval] - Native OE interval (5m, 1h, 1d, 1M…)
 	 * @property {string} [displayInterval] - Display interval for aggregation
+	 * @property {string | null} [bucketFilter] - Recurring calendar-period filter id
 	 * @property {string} [group] - Fuel-tech grouping value (Generation only)
 	 * @property {'stacked' | 'line'} [chartKind] - Stacked area (generation) or line (price)
 	 * @property {string} [timeZone] - Network offset string ('+10:00' / '+08:00')
@@ -72,7 +84,7 @@
 	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
 	 * @property {boolean} [gestureActive] - Whether a peer chart is being manipulated
 	 * @property {((active: boolean) => void)} [ongesturechange] - Reports this chart's gesture state
-	 * @property {((tableData: {data: any[], start: number, end: number, seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>, groupFuelTechs?: Record<string, string[]>}) => void)} [onvisibledata]
+	 * @property {((tableData: {data: any[], nativeData: any[], start: number, end: number, seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>, groupFuelTechs?: Record<string, string[]>}) => void)} [onvisibledata] - `data` is chart-ready; `nativeData` keeps the native cadence for window summaries.
 	 * @property {((info: {hasData: boolean}) => void)} [onloadcomplete] - Fired whenever a settled
 	 *   fetch leaves the manager idle; the first fire is the initial load, where
 	 *   parents apply their default range preset
@@ -108,6 +120,7 @@
 		metric = 'power',
 		interval = '5m',
 		displayInterval = '30m',
+		bucketFilter = null,
 		group = 'detailed',
 		chartKind = 'stacked',
 		timeZone = '+10:00',
@@ -149,12 +162,10 @@
 	let marketConfig = $derived(getMarketMetricConfig(metric));
 	let isEmissionsMetric = $derived(metric === 'emissions');
 	let isIntensityMetric = $derived(metric === 'emissions_intensity');
+	let isVwPriceMetric = $derived(metric === 'price_vw');
 	let isEnergyMetric = $derived(metric === 'energy' || metric.endsWith('_energy'));
 
-	/** The five panel kinds in priority order. The order is load-bearing —
-	 *  intensity and line-kind market metrics also pass chartKind="line", so
-	 *  every branch site must consult THIS discriminator, never the raw flags,
-	 *  or those kinds fall through to the price arm. */
+	/** Resolve specialised line metrics before the generic price branch. */
 	let panelKind = $derived(
 		isIntensityMetric
 			? /** @type {const} */ ('intensity')
@@ -162,11 +173,13 @@
 				? /** @type {const} */ ('emissions')
 				: isMarketValueMetric
 					? /** @type {const} */ ('market-value')
-					: marketConfig
-						? /** @type {const} */ ('market')
-						: isPriceKind
-							? /** @type {const} */ ('price')
-							: /** @type {const} */ ('generation')
+					: isVwPriceMetric
+						? /** @type {const} */ ('price-vw')
+						: marketConfig
+							? /** @type {const} */ ('market')
+							: isPriceKind
+								? /** @type {const} */ ('price')
+								: /** @type {const} */ ('generation')
 	);
 
 	/** Default header title per panel kind — the constructors and the title
@@ -176,16 +189,20 @@
 			intensity: 'Emissions Intensity',
 			emissions: 'Emissions',
 			'market-value': 'Market Value',
+			'price-vw': 'Price',
 			market: 'Market',
 			price: 'Price',
 			generation: 'Generation'
 		}[panelKind]
 	);
 
-	/** Per-bucket quantities (MWh, tonnes, intensity components) aggregate by
-	 *  sum; instantaneous ones (MW, $/MWh) by mean. */
+	/** Ratios are derived after their component quantities have been summed. */
 	let sumsForDisplay = $derived(
-		isEnergyMetric || isMarketValueMetric || isEmissionsMetric || isIntensityMetric
+		isEnergyMetric ||
+			isMarketValueMetric ||
+			isEmissionsMetric ||
+			isIntensityMetric ||
+			isVwPriceMetric
 	);
 
 	/** Fine grain (sub-daily) drives the power-style viewport limits. */
@@ -222,6 +239,13 @@
 			);
 			return (/** @type {any} */ resp) =>
 				processMarketData(resp, { seriesDefs: cfg.seriesDefs, networkTimezone: tz });
+		}
+		if (panelKind === 'price-vw') {
+			return (/** @type {any} */ resp) =>
+				processPriceVw(resp, {
+					intervalHours: getIntervalHours(targetInterval),
+					networkTimezone: tz
+				});
 		}
 		if (panelKind === 'price') {
 			return (/** @type {any} */ resp) =>
@@ -399,6 +423,26 @@
 			return chart;
 		}
 
+		if (panelKind === 'price-vw') {
+			// Unlike spot prices, the rolling ratio uses the standard linear domain.
+			const chart = new ChartStore({
+				key: Symbol('network-price-vw'),
+				title: title || defaultTitle,
+				prefix: '',
+				displayPrefix: '',
+				baseUnit: '$/MWh',
+				chartType: 'line',
+				timeZone
+			});
+			applyCommonStyles(chart);
+			chart.hideDataOptions = true;
+			chart.hideChartTypeOptions = true;
+			chart.chartTooltips.showTotal = false;
+			chart.formatTooltipY = formatPrice;
+			applyTimeTickFormat(chart);
+			return chart;
+		}
+
 		if (panelKind === 'price') {
 			const chart = new ChartStore({
 				key: Symbol('network-price'),
@@ -470,6 +514,12 @@
 			chartStore.seriesLabels = { [INTENSITY_SERIES_ID]: 'Emissions Intensity (kgCO₂e/MWh)' };
 			return;
 		}
+		if (panelKind === 'price-vw') {
+			chartStore.seriesNames = [VW_PRICE_SERIES_ID];
+			chartStore.seriesColours = { [VW_PRICE_SERIES_ID]: LINE_COLOUR };
+			chartStore.seriesLabels = { [VW_PRICE_SERIES_ID]: 'Volume-Weighted Price ($/MWh)' };
+			return;
+		}
 		if (!dataManager?.processedCache) return;
 		const processed = dataManager.processedCache;
 		chartStore.seriesNames = processed.seriesNames;
@@ -515,7 +565,7 @@
 			chartStore.chartOptions.selectedCurveType = 'step';
 			return;
 		}
-		if (panelKind === 'intensity') {
+		if (panelKind === 'intensity' || panelKind === 'price-vw') {
 			chartStore.chartOptions.selectedCurveType = /** @type {any} */ (intervalCurve);
 			return;
 		}
@@ -540,13 +590,17 @@
 	// assignment below is a signal no-op on a hit).
 	const visibleAggregation = createVisibleAggregation();
 
+	// Native table rows need a separate memo from filtered or rolling chart rows.
+	const nativeVisibleAggregation = createVisibleAggregation();
+
 	// Reuse one marker so gesture-mode memoisation stays stable.
 	const GESTURE_SLICE = {};
 
-	// Intensity derivation memo, keyed on the aggregation result's identity so
-	// aggregation memo hits stay signal no-ops for the store too.
+	// Keep derived ratio rows stable when the aggregated source is unchanged.
 	/** @type {any[] | null} */ let lastIntensitySource = null;
 	/** @type {any[]} */ let lastIntensityRows = [];
+	/** @type {any[] | null} */ let lastVwPriceSource = null;
+	/** @type {any[]} */ let lastVwPriceRows = [];
 
 	// Visible data + axis
 	$effect(() => {
@@ -574,14 +628,14 @@
 					apiInterval: interval,
 					displayInterval: currentDisplayInterval,
 					ianaTimeZone,
-					method: sums ? 'sum' : 'mean'
+					method: sums ? 'sum' : 'mean',
+					bucketFilter
 				},
 				// Padded slices reuse rows during gestures; settling restores the exact slice.
 				gesturing ? GESTURE_SLICE : undefined
 			);
 
-			// The intensity line renders a ratio of the aggregated component
-			// series — derived per display bucket, matching the facility charts.
+			// Derive ratios only after the component series reach the display grain.
 			let renderData = visibleData;
 			if (panelKind === 'intensity') {
 				if (lastIntensitySource !== visibleData) {
@@ -589,6 +643,12 @@
 					lastIntensityRows = deriveIntensityDisplayRows(visibleData);
 				}
 				renderData = lastIntensityRows;
+			} else if (panelKind === 'price-vw') {
+				if (lastVwPriceSource !== visibleData) {
+					lastVwPriceSource = visibleData;
+					lastVwPriceRows = deriveVwPriceDisplayRows(visibleData);
+				}
+				renderData = lastVwPriceRows;
 			}
 
 			chartStore.seriesData = renderData;
@@ -603,6 +663,7 @@
 				viewEnd: end,
 				ianaTimeZone,
 				timeZone,
+				bucketFilter,
 				// Summed quantities such as 30-minute emissions (and market value)
 				// still use the sub-daily power axis at fine grains, so their date
 				// gridlines match the synced generation/price charts; the energy
@@ -622,6 +683,7 @@
 		const currentDisplayInterval = displayInterval;
 		const currentInterval = interval;
 		const currentIana = ianaTimeZone;
+		const currentBucketFilter = bucketFilter;
 		const sums = sumsForDisplay;
 		const manager = dataManager;
 		const _cache = manager?.processedCache;
@@ -641,10 +703,34 @@
 				apiInterval: currentInterval,
 				displayInterval: currentDisplayInterval,
 				ianaTimeZone: currentIana,
-				method: sums ? 'sum' : 'mean'
+				method: sums ? 'sum' : 'mean',
+				bucketFilter: currentBucketFilter
 			});
+			// Table rows must neither overlap (rolling intervals) nor include the
+			// synthetic row that closes a filtered chart band.
+			const nativeRows =
+				currentDisplayInterval === currentInterval && !currentBucketFilter
+					? rows
+					: applyBucketFilter(
+							nativeVisibleAggregation(manager.processedCache, {
+								viewStart: start,
+								viewEnd: end,
+								apiInterval: currentInterval,
+								displayInterval: currentInterval,
+								ianaTimeZone: currentIana,
+								method: sums ? 'sum' : 'mean'
+							}),
+							isRollingInterval(currentDisplayInterval)
+								? null
+								: bucketFilterPredicate(
+										bucketFilterKindFor(currentDisplayInterval),
+										currentBucketFilter,
+										currentIana
+									)
+						);
 			callback({
 				data: rows,
+				nativeData: nativeRows,
 				start,
 				end,
 				seriesNames: meta.seriesNames,

@@ -70,6 +70,40 @@ export const INTERVAL_SPEC = {
 		label: 'Month',
 		unitDenominator: 'month'
 	},
+	// All rolling variants use monthly source data; the display transform chooses
+	// how often the trailing window is sampled.
+	'12mr': {
+		metric: 'energy',
+		apiInterval: '1M',
+		aggregate: '12mr',
+		curveType: 'step',
+		label: '12-Mth Rolling (Month)',
+		unitDenominator: '12 months'
+	},
+	'12mr-season': {
+		metric: 'energy',
+		apiInterval: '1M',
+		aggregate: '12mr-season',
+		curveType: 'step',
+		label: '12-Mth Rolling (Season)',
+		unitDenominator: '12 months'
+	},
+	'12mr-quarter': {
+		metric: 'energy',
+		apiInterval: '1M',
+		aggregate: '12mr-quarter',
+		curveType: 'step',
+		label: '12-Mth Rolling (Quarter)',
+		unitDenominator: '12 months'
+	},
+	'12mr-half': {
+		metric: 'energy',
+		apiInterval: '1M',
+		aggregate: '12mr-half',
+		curveType: 'step',
+		label: '12-Mth Rolling (Half-Year)',
+		unitDenominator: '12 months'
+	},
 	season: {
 		metric: 'energy',
 		apiInterval: '1M',
@@ -136,6 +170,71 @@ export const RANGE_INTERVALS = {
 	ALL: { options: ['1M', 'season', 'quarter', 'half', 'fy', '1y'], default: '1M' }
 };
 
+/** Rolling is opt-in because other chart summaries assume non-overlapping rows. */
+/** @type {Record<string, { options: string[], default: string }>} */
+const RANGE_INTERVALS_ROLLING = {
+	...RANGE_INTERVALS,
+	'1Y': { options: ['1d', '7d', '1M', '12mr'], default: '1M' },
+	ALL: {
+		options: [
+			'1M',
+			'12mr',
+			'season',
+			'12mr-season',
+			'quarter',
+			'12mr-quarter',
+			'half',
+			'12mr-half',
+			'fy',
+			'1y'
+		],
+		default: '1M'
+	}
+};
+
+/**
+ * @param {boolean} includeRolling
+ * @returns {Record<string, { options: string[], default: string }>}
+ */
+function tierTable(includeRolling) {
+	return includeRolling ? RANGE_INTERVALS_ROLLING : RANGE_INTERVALS;
+}
+
+/** Base display grain → rolling counterpart. */
+const ROLLING_BY_BASE = {
+	'1M': '12mr',
+	season: '12mr-season',
+	quarter: '12mr-quarter',
+	half: '12mr-half'
+};
+const BASE_BY_ROLLING = Object.fromEntries(
+	Object.entries(ROLLING_BY_BASE).map(([base, rolling]) => [rolling, base])
+);
+
+/**
+ * @param {string} id
+ * @returns {boolean} Whether the id is a 12-month rolling display interval.
+ */
+export function isRollingInterval(id) {
+	return Object.hasOwn(BASE_BY_ROLLING, id);
+}
+
+/**
+ * @param {string} baseId
+ * @returns {string | null} The rolling counterpart of a base grain, if any.
+ */
+export function rollingIntervalFor(baseId) {
+	return ROLLING_BY_BASE[/** @type {keyof typeof ROLLING_BY_BASE} */ (baseId)] ?? null;
+}
+
+/**
+ * @param {string} id
+ * @returns {string | null} The base grain of a rolling id, or null for non-rolling ids.
+ */
+export function baseIntervalFor(id) {
+	return BASE_BY_ROLLING[id] ?? null;
+}
+
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
@@ -176,10 +275,12 @@ export function formatIntervalQuantityUnit(baseUnit, intervalId) {
 
 /**
  * @param {string} presetId
+ * @param {{ includeRolling?: boolean }} [options]
  * @returns {{ options: string[], default: string }}
  */
-export function getIntervalsForRange(presetId) {
-	return RANGE_INTERVALS[presetId] ?? RANGE_INTERVALS['1Y'];
+export function getIntervalsForRange(presetId, { includeRolling = false } = {}) {
+	const table = tierTable(includeRolling);
+	return table[presetId] ?? table['1Y'];
 }
 
 /**
@@ -206,13 +307,15 @@ export function getPresetByDays(days) {
  * offered below POWER_THRESHOLD — wider spans would immediately flip back to
  * energy/1d on the first pan/zoom hysteresis tick, discarding the 5m fetch.
  * @param {number} days
+ * @param {{ includeRolling?: boolean }} [options]
  * @returns {{ options: string[], default: string }}
  */
-export function getIntervalOptionsForDays(days) {
-	if (days <= 1.5) return RANGE_INTERVALS['1D'];
-	if (days <= 5) return RANGE_INTERVALS['3D'];
-	if (days < POWER_THRESHOLD) return RANGE_INTERVALS['7D'];
-	if (days <= 60) return RANGE_INTERVALS['30D'];
-	if (days <= 550) return RANGE_INTERVALS['1Y'];
-	return RANGE_INTERVALS['ALL'];
+export function getIntervalOptionsForDays(days, { includeRolling = false } = {}) {
+	const table = tierTable(includeRolling);
+	if (days <= 1.5) return table['1D'];
+	if (days <= 5) return table['3D'];
+	if (days < POWER_THRESHOLD) return table['7D'];
+	if (days <= 60) return table['30D'];
+	if (days <= 550) return table['1Y'];
+	return table['ALL'];
 }

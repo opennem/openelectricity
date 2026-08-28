@@ -397,6 +397,7 @@
 				minDate={MIN_DATE}
 				{maxDate}
 				showIntervalDropdown={true}
+				variant="expanded"
 				onrangeselect={handleRangeSelect}
 				ondaterangechange={handleDateRangeChange}
 				onintervalchange={handleIntervalChange}

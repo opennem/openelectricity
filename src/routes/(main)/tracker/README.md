@@ -12,9 +12,12 @@ The canonical tracker page — the planned replacement for the legacy
   (region, grouping, range snapshot, price/emissions modes, table panel) and
   is the sole URL writer (shallow `pushState`/`replaceState`, `popstate`
   restore). Renders the fullscreen filter bar: Tracker label, `RegionDropdown`,
-  `ChartRangeBar` (presets + date pickers + interval), the interval-aware
+  `ChartRangeBar` (`variant="expanded"` — the preset switcher with its
+  integrated date-picker segment at `md:` and up, the dropdown with a
+  "Custom…" row below, plus the interval dropdown), the interval-aware
   range readout (`formatRangeLabel` — bucket names at FY/quarter/season
-  grains, clock times + zone at sub-daily ones) and the table-panel toggle.
+  grains, clock times + zone at sub-daily ones). The table panel opens and
+  closes from its own edge.
 - **`TrackerCanvas.svelte`** — chart machinery. One `createChartRangeControl`
   (3-day initial window) drives three always-mounted `NetworkChart`s plus the
   two headless providers; shared `hoverTime` and tap-to-engage `panZoomEngaged`
@@ -54,9 +57,19 @@ The canonical tracker page — the planned replacement for the legacy
 ## URL schema
 
 `region` (`_all`, the NEM) · `range`/`start`+`end`/`interval` via the shared
-`range-params.js` (default 3-day preset) · `group` (simple) · `price=mv` ·
-`emissions=volume` (intensity is the default) · `table=0` · `fullscreen=false`.
+`range-params.js` (default 3-day preset; the tracker opts into the
+12-month rolling variants on the 1Y/All tiers via `includeRolling`) ·
+`group` (simple) · `price=mv` · `emissions=volume` (intensity is the default) ·
+`table=0` · `fullscreen=false` · `filter` — a calendar-period id (`jan`…`dec`,
+`summer`…, `q1`…`q4`, `h1`/`h2`) shown beside the interval control in the All
+range. Charts connect matching occurrences across years. For non-rolling
+intervals, table summaries retain the native row cadence but ignore values
+outside the selected period.
 Defaults are omitted.
+At the rolling grain every summed surface shows trailing 12-month windows,
+intensity and the price card derive ratios of 12-month sums (the price card
+swaps its spot series for `price_vw`, volume-weighted), and the table computes
+from native monthly rows so overlapping windows do not double-count.
 Hover, pan/zoom engagement, panel width, hidden series and contribution mode
 are deliberately not serialised.
 

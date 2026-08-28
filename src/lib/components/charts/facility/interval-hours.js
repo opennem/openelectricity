@@ -44,6 +44,12 @@ export function getIntervalHours(displayInterval, timestampMs, ianaTimeZone) {
 			return 24;
 		case '7d':
 			return 7 * 24;
+		case '12mr':
+		case '12mr-season':
+		case '12mr-quarter':
+		case '12mr-half':
+			// Each row represents a trailing 12-month quantity.
+			return 365.25 * 24;
 		case '1M':
 		case '3M':
 		case 'quarter':

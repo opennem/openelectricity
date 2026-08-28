@@ -178,3 +178,26 @@ describe('rangeSlugFor', () => {
 		).toBe('2026-06-01-to-2026-06-14');
 	});
 });
+
+describe('parseRangeParams — rolling interval opt-in', () => {
+	it('accepts interval=12mr only where the surface opts in', () => {
+		const params = new URLSearchParams('range=all&interval=12mr');
+		expect(parseRangeParams(params, { nowMs: NOW })?.intervalId).toBeNull();
+		expect(parseRangeParams(params, { nowMs: NOW, includeRolling: true })?.intervalId).toBe('12mr');
+	});
+
+	it('honours 12mr on custom viewports only in rolling tiers', () => {
+		const yearSpan = `start=${NOW - 365 * DAY_MS}&end=${NOW}&interval=12mr`;
+		expect(parseRangeParams(new URLSearchParams(yearSpan), { nowMs: NOW })?.intervalId).toBeNull();
+		expect(
+			parseRangeParams(new URLSearchParams(yearSpan), { nowMs: NOW, includeRolling: true })
+				?.intervalId
+		).toBe('12mr');
+		// A 30-day span sits in a tier that never offers the rolling interval.
+		const monthSpan = `start=${NOW - 30 * DAY_MS}&end=${NOW}&interval=12mr`;
+		expect(
+			parseRangeParams(new URLSearchParams(monthSpan), { nowMs: NOW, includeRolling: true })
+				?.intervalId
+		).toBeNull();
+	});
+});

@@ -14,7 +14,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
-	import { PanelRightClose, PanelRightOpen, X } from '@lucide/svelte';
+	import { X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import {
@@ -37,7 +37,12 @@
 	import RegionDropdown from './RegionDropdown.svelte';
 	import TrackerCanvas from './TrackerCanvas.svelte';
 	import { DEFAULT_REGION } from './tracker-model.js';
-	import { applyTrackerUrl, copiedTrackerUrl, parseTrackerUrl } from './tracker-url.js';
+	import {
+		applyTrackerUrl,
+		copiedTrackerUrl,
+		parseTrackerUrl,
+		validBucketFilterFor
+	} from './tracker-url.js';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -51,6 +56,8 @@
 	let emissionsMode = $state(initialData.emissionsMode);
 	let tablePanelOpen = $state(initialData.tablePanelOpen);
 	let rangeSnapshot = $state(initialData.range);
+	/** Recurring calendar period in the All range; null shows every period. */
+	let bucketFilter = $state(initialData.bucketFilter ?? null);
 	let notice = $state('');
 	/** @type {TrackerCanvas | undefined} */
 	let canvas = $state(undefined);
@@ -106,6 +113,7 @@
 			region: selectedRegion,
 			group: selectedGroup,
 			range: rangeSnapshot,
+			bucketFilter,
 			priceMode,
 			emissionsMode,
 			tablePanelOpen
@@ -135,7 +143,15 @@
 	/** @param {any} value */
 	function handleRangeChange(value) {
 		rangeSnapshot = value;
+		// Clear filters that the new range or interval cannot represent.
+		bucketFilter = validBucketFilterFor(bucketFilter, value);
 		syncUrl('replace');
+	}
+
+	/** @param {string | null} value */
+	function handleBucketFilterChange(value) {
+		bucketFilter = value;
+		syncUrl('push');
 	}
 
 	/** @param {import('./types.js').PriceMode} value */
@@ -178,6 +194,7 @@
 		emissionsMode = parsed.emissionsMode;
 		tablePanelOpen = parsed.tablePanelOpen;
 		rangeSnapshot = parsed.range;
+		bucketFilter = parsed.bucketFilter;
 		await canvas?.applyRangeSnapshot(parsed.range);
 		suppressUrl = false;
 	}
@@ -249,7 +266,11 @@
 							minDate={MIN_DATE}
 							maxDate={navRange.maxDate}
 							showIntervalDropdown
-							compact
+							includeRollingInterval
+							showBucketFilter
+							{bucketFilter}
+							onbucketfilterchange={handleBucketFilterChange}
+							variant="expanded"
 							pending={navRange.pending}
 							onrangeselect={(days) => rangeControl?.handleRangeSelect(days)}
 							ondaterangechange={(range) => rangeControl?.handleDateRangeChange(range)}
@@ -263,22 +284,6 @@
 								{getRangeLabel()}
 							</span>
 						{/if}
-
-						<button
-							type="button"
-							onclick={() => handlePanelToggle(!tablePanelOpen)}
-							aria-pressed={tablePanelOpen}
-							aria-label={tablePanelOpen ? 'Hide fuel tech table' : 'Show fuel tech table'}
-							class="ml-auto flex size-9 shrink-0 items-center justify-center rounded-md border transition-colors {tablePanelOpen
-								? 'border-dark-grey bg-dark-grey text-white hover:bg-black'
-								: 'border-mid-warm-grey bg-white text-dark-grey hover:bg-warm-grey'}"
-						>
-							{#if tablePanelOpen}
-								<PanelRightClose class="size-4" />
-							{:else}
-								<PanelRightOpen class="size-4" />
-							{/if}
-						</button>
 					</div>
 				{/snippet}
 
@@ -319,6 +324,7 @@
 						{priceMode}
 						{emissionsMode}
 						{tablePanelOpen}
+						{bucketFilter}
 						initialRange={rangeSnapshot}
 						initialNowMs={initialData.nowMs}
 						oncontrolschange={(controls) => {

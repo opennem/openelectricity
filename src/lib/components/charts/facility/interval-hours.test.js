@@ -30,6 +30,12 @@ describe('getIntervalHours', () => {
 		expect(getIntervalHours('1y')).toBe(365.25 * 24);
 	});
 
+	it('uses the trailing window length for rolling intervals', () => {
+		for (const interval of ['12mr', '12mr-season', '12mr-quarter', '12mr-half']) {
+			expect(getIntervalHours(interval)).toBe(365.25 * 24);
+		}
+	});
+
 	it('falls back to 24 for unknown intervals', () => {
 		expect(getIntervalHours('nope')).toBe(24);
 		expect(getIntervalHours('')).toBe(24);
