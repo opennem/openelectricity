@@ -4864,6 +4864,20 @@
 			"name": "Moorabool"
 		}
 	},
+	"MOORBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 300,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Moorabool"
+		}
+	},
 	"MORANBAH": {
 		"v": 1,
 		"photo": "https://cdn.sanity.io/images/bjedimft/production/82ff3c899125e5f96a559388d94e217f28fa5049-536x715.webp",
