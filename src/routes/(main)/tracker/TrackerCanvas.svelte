@@ -388,8 +388,18 @@
 		CURTAILMENT_ORDER.filter((id) => overlays.includes(CURTAILMENT_OVERLAY_BY_SERIES[id]))
 	);
 
-	/** @param {import('./types.js').TrackerOverlay} overlay */
-	function toggleOverlay(overlay) {
+	/** Hide every fuel-tech series in the current grouping. */
+	function hideAllFuelTechSeries() {
+		hiddenState = { group, ids: (tableRows ?? []).map((row) => row.id) };
+	}
+
+	/** @param {import('./types.js').TrackerOverlay} overlay @param {boolean} [exclusive] */
+	function toggleOverlay(overlay, exclusive = false) {
+		if (exclusive) {
+			hideAllFuelTechSeries();
+			onoverlayschange?.([overlay]);
+			return;
+		}
 		onoverlayschange?.(
 			overlays.includes(overlay)
 				? overlays.filter((item) => item !== overlay)
@@ -397,10 +407,10 @@
 		);
 	}
 
-	/** @param {string} id */
-	function toggleCurtailment(id) {
+	/** @param {string} id @param {boolean} [exclusive] */
+	function toggleCurtailment(id, exclusive = false) {
 		const overlay = CURTAILMENT_OVERLAY_BY_SERIES[id];
-		if (overlay) toggleOverlay(overlay);
+		if (overlay) toggleOverlay(overlay, exclusive);
 	}
 	const DEMAND_LINE_COLOUR = '#C74523';
 	const RENEWABLES_LINE_COLOUR = getFuelTechColour('renewables');
@@ -615,9 +625,24 @@
 		markChartLoaded('gen');
 	}
 
-	/** @param {string} series */
-	function toggleSeries(series) {
+	/** @param {string} series @param {boolean} [exclusive] */
+	function toggleSeries(series, exclusive = false) {
+		if (exclusive) {
+			hiddenState = {
+				group,
+				ids: (tableRows ?? []).map((row) => row.id).filter((id) => id !== series)
+			};
+			onoverlayschange?.([]);
+			return;
+		}
 		const ids = hiddenSeries;
+		const allIds = (tableRows ?? []).map((row) => row.id);
+		const visibleCount = allIds.filter((id) => !ids.includes(id)).length;
+		if (!ids.includes(series) && visibleCount === 1) {
+			hiddenState = { group, ids: [] };
+			onoverlayschange?.([]);
+			return;
+		}
 		hiddenState = {
 			group,
 			ids: ids.includes(series) ? ids.filter((item) => item !== series) : [...ids, series]
@@ -874,8 +899,8 @@
 				{showRenewablesLine}
 				demandLineColour={DEMAND_LINE_COLOUR}
 				renewablesLineColour={RENEWABLES_LINE_COLOUR}
-				ondemandlinetoggle={() => toggleOverlay('demand')}
-				onrenewableslinetoggle={() => toggleOverlay('renewables')}
+				ondemandlinetoggle={(exclusive) => toggleOverlay('demand', exclusive)}
+				onrenewableslinetoggle={(exclusive) => toggleOverlay('renewables', exclusive)}
 				{ongroupchange}
 				oncontributionmodechange={(mode) => (contributionMode = mode)}
 				ontoggle={toggleSeries}

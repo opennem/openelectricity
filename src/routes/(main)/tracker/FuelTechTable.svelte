@@ -26,17 +26,17 @@
 	 *   curtailmentRows?: Array<{ id: string, label: string, avPowerMW: number, contributionPct: number | null }>,
 	 *   shownCurtailment?: string[],
 	 *   curtailmentColours?: Record<string, string>,
-	 *   oncurtailmenttoggle?: (id: string) => void,
+	 *   oncurtailmenttoggle?: (id: string, exclusive?: boolean) => void,
 	 *   overlaySummary?: { demandAvMW: number | null, renewablesAvMW: number | null, renewablesSharePct: number | null } | null,
 	 *   showDemandLine?: boolean,
 	 *   showRenewablesLine?: boolean,
 	 *   demandLineColour?: string,
 	 *   renewablesLineColour?: string,
-	 *   ondemandlinetoggle?: () => void,
-	 *   onrenewableslinetoggle?: () => void,
+	 *   ondemandlinetoggle?: (exclusive?: boolean) => void,
+	 *   onrenewableslinetoggle?: (exclusive?: boolean) => void,
 	 *   ongroupchange?: (group: string) => void,
 	 *   oncontributionmodechange?: (mode: import('./types.js').ContributionMode) => void,
-	 *   ontoggle?: (series: string) => void
+	 *   ontoggle?: (series: string, exclusive?: boolean) => void
 	 * }}
 	 */
 	let {
@@ -137,7 +137,7 @@
 	function handleRowKeydown(event, series) {
 		if (event.key !== 'Enter' && event.key !== ' ') return;
 		event.preventDefault();
-		ontoggle?.(series);
+		ontoggle?.(series, event.metaKey || event.ctrlKey);
 	}
 </script>
 
@@ -159,7 +159,8 @@
 	{#each items as row (row.id)}
 		{@const breakdown = underlyingFuelTechs(row)}
 		<tr
-			onclick={() => ontoggle?.(row.id)}
+			data-testid="fuel-tech-row"
+			onclick={(event) => ontoggle?.(row.id, event.metaKey || event.ctrlKey)}
 			onkeydown={(event) => handleRowKeydown(event, row.id)}
 			role="button"
 			tabindex="0"
@@ -194,16 +195,16 @@
 	/** @type {string} */ label,
 	/** @type {boolean} */ active,
 	/** @type {string} */ colour,
-	/** @type {(() => void) | undefined} */ ontogglerow,
+	/** @type {((exclusive?: boolean) => void) | undefined} */ ontogglerow,
 	/** @type {string} */ value,
 	/** @type {string} */ pct
 )}
 	<tr
-		onclick={() => ontogglerow?.()}
+		onclick={(event) => ontogglerow?.(event.metaKey || event.ctrlKey)}
 		onkeydown={(event) => {
 			if (event.key !== 'Enter' && event.key !== ' ') return;
 			event.preventDefault();
-			ontogglerow?.();
+			ontogglerow?.(event.metaKey || event.ctrlKey);
 		}}
 		role="button"
 		tabindex="0"
@@ -300,11 +301,11 @@
 			{#each curtailmentRows as row (row.id)}
 				{@const shown = shownCurtailment.includes(row.id)}
 				<tr
-					onclick={() => oncurtailmenttoggle?.(row.id)}
+					onclick={(event) => oncurtailmenttoggle?.(row.id, event.metaKey || event.ctrlKey)}
 					onkeydown={(event) => {
 						if (event.key !== 'Enter' && event.key !== ' ') return;
 						event.preventDefault();
-						oncurtailmenttoggle?.(row.id);
+						oncurtailmenttoggle?.(row.id, event.metaKey || event.ctrlKey);
 					}}
 					role="button"
 					tabindex="0"

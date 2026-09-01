@@ -227,6 +227,74 @@ describe('ChartStore stacked min/max derivations', () => {
 		expect(min).toBeLessThan(0);
 		expect(max).toBe(0);
 	});
+
+	it('uses a primary-axis overlay line when every fuel-tech series is hidden', () => {
+		const chart = createStackedChart([
+			{ time: 0, date: new Date(0), a: 100, b: 50 },
+			{ time: 1000, date: new Date(1000), a: 120, b: 40 }
+		]);
+		chart.hiddenSeriesNames = ['a', 'b'];
+		chart.overlayLines = [
+			{
+				id: 'demand',
+				data: [
+					{ time: 0, demand: 40 },
+					{ time: 1000, demand: 60 }
+				],
+				valueKey: 'demand',
+				colour: '#000',
+				scale: 'y'
+			}
+		];
+
+		expect(chart.yDomain).toEqual([0, 66]);
+	});
+
+	it('uses stacked overlay-area height when every fuel-tech series is hidden', () => {
+		const chart = createStackedChart([{ time: 0, date: new Date(0), a: 100, b: 50 }]);
+		chart.hiddenSeriesNames = ['a', 'b'];
+		chart.overlayAreas = [
+			{
+				id: 'curtailment',
+				data: [{ time: 0, wind: 10, solar: 5 }],
+				series: [
+					{ id: 'wind', colour: '#111' },
+					{ id: 'solar', colour: '#222' }
+				]
+			}
+		];
+
+		expect(chart.yDomain).toEqual([0, 17]);
+	});
+
+	it('adds overlay-area height above the visible stack', () => {
+		const chart = createStackedChart([{ time: 0, date: new Date(0), a: 100, b: -40 }]);
+		chart.overlayAreas = [
+			{
+				id: 'curtailment',
+				data: [{ time: 0, wind: 20 }],
+				series: [{ id: 'wind', colour: '#111' }]
+			}
+		];
+
+		expect(chart.yDomain).toEqual([-44, 132]);
+	});
+
+	it('does not include percentage overlay lines in the primary y-domain', () => {
+		const chart = createStackedChart([{ time: 0, date: new Date(0), a: 100, b: 50 }]);
+		chart.hiddenSeriesNames = ['a', 'b'];
+		chart.overlayLines = [
+			{
+				id: 'renewables',
+				data: [{ time: 0, renewable_share: 80 }],
+				valueKey: 'renewable_share',
+				colour: '#000',
+				scale: 'percent'
+			}
+		];
+
+		expect(chart.yDomain).toEqual([0, 0]);
+	});
 });
 
 describe('ChartStore frozen y-domain (gesture freeze)', () => {

@@ -82,6 +82,73 @@ test.describe('Tracker smoke tests', () => {
 		await expect(page.getByRole('button', { name: /^Exports\b/ })).toBeVisible({ timeout: 30000 });
 	});
 
+	test('modifier-click solos table rows and the last fuel tech restores all fuel techs', async ({
+		page
+	}) => {
+		await page.goto('/tracker?table=1');
+		await waitForHydration(page);
+
+		const rows = page.getByTestId('fuel-tech-row');
+		const generationCard = page
+			.getByRole('heading', { name: 'Generation', exact: true })
+			.locator('xpath=ancestor::section[1]');
+		const demandRow = page.getByRole('button', { name: /^Demand\b/ });
+		const renewablesRow = page.getByRole('button', { name: /^Renewables\b/ });
+		await expect(rows.nth(1)).toBeVisible({ timeout: 30000 });
+		const fuelTechRowCount = await rows.count();
+		await rows.nth(1).click({ modifiers: ['Meta'] });
+
+		await expect(rows.nth(1)).toHaveAttribute('aria-pressed', 'true');
+		await expect
+			.poll(() =>
+				rows.evaluateAll(
+					(items) => items.filter((item) => item.getAttribute('aria-pressed') === 'true').length
+				)
+			)
+			.toBe(1);
+
+		await rows.nth(1).click();
+		await expect
+			.poll(() =>
+				rows.evaluateAll(
+					(items) => items.filter((item) => item.getAttribute('aria-pressed') === 'true').length
+				)
+			)
+			.toBe(fuelTechRowCount);
+		await expect(demandRow).toHaveAttribute('aria-pressed', 'false');
+		await expect(renewablesRow).toHaveAttribute('aria-pressed', 'false');
+
+		await demandRow.click({ modifiers: ['Meta'] });
+		await expect(demandRow).toHaveAttribute('aria-pressed', 'true');
+		await expect(renewablesRow).toHaveAttribute('aria-pressed', 'false');
+		await expect
+			.poll(() =>
+				rows.evaluateAll(
+					(items) => items.filter((item) => item.getAttribute('aria-pressed') === 'true').length
+				)
+			)
+			.toBe(0);
+		const demandLine = generationCard.locator('path.overlay-line');
+		await expect(demandLine).toBeVisible({ timeout: 30000 });
+		await expect.poll(async () => (await demandLine.boundingBox())?.height ?? 0).toBeGreaterThan(1);
+
+		await renewablesRow.click({ modifiers: ['Meta'] });
+		await expect(demandRow).toHaveAttribute('aria-pressed', 'false');
+		await expect(renewablesRow).toHaveAttribute('aria-pressed', 'true');
+
+		const solarCurtailmentRow = page.getByRole('button', { name: /Curtailment.*Solar/ });
+		await solarCurtailmentRow.click({ modifiers: ['Meta'] });
+		await expect(renewablesRow).toHaveAttribute('aria-pressed', 'false');
+		await expect(solarCurtailmentRow).toHaveAttribute('aria-pressed', 'true');
+		const solarCurtailmentArea = generationCard.locator(
+			'path.overlay-area[data-series-id="curtailment_solar"]'
+		);
+		await expect(solarCurtailmentArea).toBeVisible({ timeout: 30000 });
+		await expect
+			.poll(async () => (await solarCurtailmentArea.boundingBox())?.height ?? 0)
+			.toBeGreaterThan(1);
+	});
+
 	test('enabled generation overlays appear in the floating tooltip', async ({ page }) => {
 		await page.goto(
 			'/tracker?region=nsw1&table=0&overlay=demand,renewables,curtailment-solar,curtailment-wind'

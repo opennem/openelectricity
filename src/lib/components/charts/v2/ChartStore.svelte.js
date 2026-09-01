@@ -155,6 +155,71 @@ export default class ChartStore {
 	/** @type {[number, number] | undefined} */
 	#frozenYDomain = $state.raw(undefined);
 
+	/** Automatic-domain rows extended with primary-axis overlay bounds. Lines
+	 *  are absolute values; area overlays accumulate above the visible stack.
+	 *  Percentage lines keep their independent right-hand scale. */
+	automaticYDomainData = $derived.by(() => {
+		const baseRows = this.seriesScaledDataWithMinMax;
+		const primaryLines = this.overlayLines.filter((overlay) => overlay.scale !== 'percent');
+		const areas = this.overlayAreas;
+		if (!primaryLines.length && !areas.length) return baseRows;
+
+		/** @type {Map<number, {_min: number, _max: number}>} */
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- transient lookup for one derivation
+		const boundsByTime = new Map();
+		/** @type {Map<number, number>} */
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- transient lookup for one derivation
+		const baseMaxByTime = new Map();
+		let globalBaseMax = 0;
+
+		for (const row of baseRows) {
+			const time = Number(row.time);
+			const min = Number.isFinite(row._min) ? row._min : 0;
+			const max = Number.isFinite(row._max) ? row._max : 0;
+			boundsByTime.set(time, { _min: min, _max: max });
+			baseMaxByTime.set(time, max);
+			globalBaseMax = Math.max(globalBaseMax, max);
+		}
+
+		/** @param {number} time */
+		function boundsAt(time) {
+			let bounds = boundsByTime.get(time);
+			if (!bounds) {
+				bounds = { _min: 0, _max: 0 };
+				boundsByTime.set(time, bounds);
+			}
+			return bounds;
+		}
+
+		for (const overlay of primaryLines) {
+			for (const row of overlay.data ?? []) {
+				const raw = row?.[overlay.valueKey];
+				const value = raw == null ? NaN : Number(raw);
+				if (!Number.isFinite(value)) continue;
+				const bounds = boundsAt(Number(row.time));
+				bounds._min = Math.min(bounds._min, value);
+				bounds._max = Math.max(bounds._max, value);
+			}
+		}
+
+		for (const overlay of areas) {
+			for (const row of overlay.data ?? []) {
+				let overlayTotal = 0;
+				for (const series of overlay.series ?? []) {
+					const value = Number(row?.[series.id]);
+					if (Number.isFinite(value) && value > 0) overlayTotal += value;
+				}
+				if (overlayTotal <= 0) continue;
+				const time = Number(row.time);
+				const bounds = boundsAt(time);
+				const baseMax = baseMaxByTime.get(time) ?? globalBaseMax;
+				bounds._max = Math.max(bounds._max, baseMax + overlayTotal);
+			}
+		}
+
+		return [...boundsByTime.values()];
+	});
+
 	yDomain = $derived.by(() => {
 		if (this.#customYDomain) return this.#customYDomain;
 		if (this.#frozenYDomain) return this.#frozenYDomain;
@@ -163,7 +228,7 @@ export default class ChartStore {
 			return /** @type {[number, number]} */ ([0, 100]);
 		}
 
-		return /** @type {[number, number]} */ (computeYDomain(this.seriesScaledDataWithMinMax));
+		return /** @type {[number, number]} */ (computeYDomain(this.automaticYDomainData));
 	});
 
 	/**

@@ -78,7 +78,14 @@
 </script>
 
 {#if path}
-	<path d={path} fill="none" stroke={colour} stroke-width={strokeWidth} pointer-events="none" />
+	<path
+		d={path}
+		class="overlay-line"
+		fill="none"
+		stroke={colour}
+		stroke-width={strokeWidth}
+		pointer-events="none"
+	/>
 {/if}
 
 {#if scale === 'percent' && showAxis}

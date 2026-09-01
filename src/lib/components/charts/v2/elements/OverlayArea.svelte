@@ -130,6 +130,8 @@
 {#each bands as band (band.id)}
 	<path
 		d={band.path}
+		class="overlay-area"
+		data-series-id={band.id}
 		fill="url(#{patternPrefix}-{band.id})"
 		stroke={band.colour}
 		stroke-width="0.5"
