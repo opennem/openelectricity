@@ -17,6 +17,17 @@ describe('tracker page load', () => {
 		expect(data.range).toEqual({ kind: 'preset', days: 3, intervalId: '30m' });
 		expect(data.region).toBe('_all');
 		expect(data.group).toBe('simple');
+		expect(data.overlays).toEqual([]);
 		expect(data.tablePanelOpen).toBe(true);
+	});
+
+	it('parses chart overlays into the initial page state', () => {
+		const data = load(
+			/** @type {Parameters<typeof load>[0]} */ ({
+				url: new URL('https://example.test/tracker?overlay=curtailment-wind,demand,renewables')
+			})
+		);
+
+		expect(data.overlays).toEqual(['demand', 'renewables', 'curtailment-wind']);
 	});
 });

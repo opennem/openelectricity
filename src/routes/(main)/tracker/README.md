@@ -9,7 +9,8 @@ The canonical tracker page — the planned replacement for the legacy
 ## Composition
 
 - **`+page.svelte`** — chrome layer. Owns the URL-parsed navigation state
-  (region, grouping, range snapshot, price/emissions modes, table panel) and
+  (region, grouping, range snapshot, price/emissions modes, chart overlays,
+  table panel) and
   is the sole URL writer (shallow `pushState`/`replaceState`, `popstate`
   restore). Renders the fullscreen filter bar: Tracker label, `RegionDropdown`,
   `ChartRangeBar` (`variant="expanded"` — the preset switcher with its
@@ -31,6 +32,12 @@ The canonical tracker page — the planned replacement for the legacy
 - **Chart heights are drag-adjustable** (StratumChart's resize handle) and
   persist to localStorage per card; each split pair shares one key so
   toggling modes keeps the chosen height.
+- **Generation units are selectable in the chart options**: power offers
+  MW/GW and starts in MW; energy offers MWh/GWh/TWh. Energy automatically
+  promotes its default from MWh to TWh when the largest visible positive
+  stack reaches six digits in MWh, while an explicit unit choice remains
+  pinned until the power/energy basis changes. The selected prefix drives the
+  chart header, y-axis and floating tooltip values together.
 - **Grouping menu** mirrors the legacy explore tool: Detailed, Simplified,
   Coal/Gas/Renewables, Flexibility, Renewables/Fossils, VRE/Residual
   (`groups.js` registry). Grouping is applied client-side in
@@ -52,7 +59,11 @@ The canonical tracker page — the planned replacement for the legacy
   `generation_renewable`, `renewable_proportion`), whose row toggles draw an
   OE-red demand line and a renewables-green share line (right-hand % axis
   that extends past 100% in 20-point steps for exporting regions) over the
-  generation chart via `ChartStore.overlayLines`.
+  generation chart via `ChartStore.overlayLines`. These four overlay toggles
+  are URL-owned so direct and copied links reproduce them. When enabled, each
+  also appears in the generation chart's floating tooltip: demand and
+  curtailment follow the selected generation unit, while renewable share uses
+  percent.
 
 ## URL schema
 
@@ -60,7 +71,9 @@ The canonical tracker page — the planned replacement for the legacy
 `range-params.js` (default 3-day preset; the tracker opts into the
 12-month rolling variants on the 1Y/All tiers via `includeRolling`) ·
 `group` (simple) · `price=mv` · `emissions=volume` (intensity is the default) ·
-`table=0` · `fullscreen=false` · `filter` — a calendar-period id (`jan`…`dec`,
+`overlay` — a canonical comma-separated selection of `demand`, `renewables`,
+`curtailment-solar`, and `curtailment-wind` · `table=0` · `fullscreen=false` ·
+`filter` — a calendar-period id (`jan`…`dec`,
 `summer`…, `q1`…`q4`, `h1`/`h2`) shown beside the interval control in the All
 range. Charts connect matching occurrences across years. For non-rolling
 intervals, table summaries retain the native row cadence but ignore values
@@ -70,13 +83,18 @@ At the rolling grain every summed surface shows trailing 12-month windows,
 intensity and the price card derive ratios of 12-month sums (the price card
 swaps its spot series for `price_vw`, volume-weighted), and the table computes
 from native monthly rows so overlapping windows do not double-count.
-Hover, pan/zoom engagement, panel width, hidden series and contribution mode
-are deliberately not serialised.
+Hover, pan/zoom engagement, panel width, hidden fuel-tech series and
+contribution mode are deliberately not serialised.
 
 ## Data notes
 
 - Everything fetches through `/api/network/data`; the providers share the
   charts' request broker, LRU and gap-aware fetching.
+- Individual NEM region generation responses merge the official import/export
+  flow metrics into the fuel-tech series. Imports render as a positive source;
+  exports render below zero as a load. They therefore appear consistently in
+  the generation stack, grouping menu, table and floating tooltip. Whole NEM,
+  All Regions and WA do not add regional flows.
 - Providers request the same buffered windows as the charts
   (`fetch-window.js`), so overlapping URLs collapse in the broker — in
   market-value mode the table's provider and the price chart share one

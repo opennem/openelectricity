@@ -10,7 +10,7 @@
 
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
-	import { cachedFormatter } from '$lib/components/charts/v2/date-labels.js';
+	import { appendHistoricalYear, cachedFormatter } from '$lib/components/charts/v2/date-labels.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs.js';
 
@@ -62,7 +62,9 @@
 	/** @param {(d: Date) => string} format */
 	const safeFormat = (format) => (/** @type {any} */ d) => (d?.getTime?.() ? format(d) : '');
 	chart.xTicks = 6;
-	chart.formatTickX = safeFormat((d) => hourFormat.format(d));
+	chart.formatTickX = safeFormat((d) =>
+		appendHistoricalYear(d, hourFormat.format(d), 'Australia/Sydney')
+	);
 	chart.formatTooltipX = safeFormat((d) => policy.formatTooltip(d));
 	chart.seriesData = rows;
 	chart.seriesNames = seriesNames;

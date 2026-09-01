@@ -5,7 +5,12 @@
  * from a set of visible energy data points. All pure — no reactive deps.
  */
 
-import { cachedFormatter, formatDayMonth, formatDateRange } from './date-labels.js';
+import {
+	cachedFormatter,
+	formatDayMonth,
+	formatDateRange,
+	isCurrentLocalYear
+} from './date-labels.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -26,6 +31,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * @param {((d: Date) => string) | null} [coarseLabel] - When set, the data is in
  *        coarse calendar buckets (season/quarter/half/fy); label one tick per
  *        bucket with this fn and skip the Jan/month-aligned gridline inference.
+ * @param {{ referenceDate?: Date | number }} [opts] - Current-year reference
  * @returns {EnergyGridlines}
  */
 export function computeEnergyGridlines(
@@ -33,7 +39,8 @@ export function computeEnergyGridlines(
 	viewStart,
 	viewEnd,
 	ianaTimeZone,
-	coarseLabel = null
+	coarseLabel = null,
+	{ referenceDate = new Date() } = {}
 ) {
 	/** @type {Date[]} */
 	const dataStarts = visibleData.map((/** @type {any} */ d) => new Date(d.time));
@@ -183,35 +190,36 @@ export function computeEnergyGridlines(
 				? myfmt.formatToParts(rangeEnd).find((p) => p.type === 'year')?.value
 				: sYear;
 			if (!rangeEnd || (sMonthNum === eMonthNumVal && sYear === eYearVal)) {
-				return sMonthNum === 1 ? `${sMonth} '${sYear}` : sMonth;
+				return sMonthNum === 1 || !isCurrentLocalYear(rangeStart, ianaTimeZone, referenceDate)
+					? `${sMonth} '${sYear}`
+					: sMonth;
 			}
 
 			const eParts = myfmt.formatToParts(rangeEnd);
 			const eMonth = eParts.find((p) => p.type === 'month')?.value || '';
 			const eYear = eParts.find((p) => p.type === 'year')?.value || '';
-			const eMonthNum = parseInt(monthNumFmt.format(rangeEnd));
 
-			const hasJan = sMonthNum === 1 || eMonthNum < sMonthNum;
-
-			if (!hasJan) {
-				return `${sMonth} \u2014 ${eMonth}`;
-			}
 			if (sYear !== eYear) {
-				return `${sMonth} \u2014 ${eMonth} '${eYear}`;
+				return `${sMonth} '${sYear} \u2014 ${eMonth} '${eYear}`;
 			}
-			return `${sMonth} \u2014 ${eMonth} '${eYear}`;
+			return !isCurrentLocalYear(rangeEnd, ianaTimeZone, referenceDate)
+				? `${sMonth} \u2014 ${eMonth} '${eYear}`
+				: `${sMonth} \u2014 ${eMonth}`;
 		};
 	} else {
 		formatTick = (/** @type {any} */ d) => {
 			const date = d instanceof Date ? d : new Date(d);
 			const rangeStart = midToStart.get(date.getTime());
 			const rangeEnd = midToEnd.get(date.getTime());
-			if (!rangeStart || !rangeEnd) return formatDayMonth(date, ianaTimeZone);
+			if (!rangeStart || !rangeEnd) return formatDayMonth(date, ianaTimeZone, referenceDate);
 
 			if (rangeStart.getTime() === rangeEnd.getTime()) {
-				return formatDayMonth(rangeStart, ianaTimeZone);
+				return formatDayMonth(rangeStart, ianaTimeZone, referenceDate);
 			}
-			return formatDateRange(rangeStart, rangeEnd, ianaTimeZone);
+			return formatDateRange(rangeStart, rangeEnd, ianaTimeZone, {
+				yearIfNotCurrent: true,
+				referenceDate
+			});
 		};
 	}
 

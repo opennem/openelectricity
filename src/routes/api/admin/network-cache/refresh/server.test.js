@@ -104,7 +104,7 @@ function request(body, platform) {
 describe('admin network-cache refresh endpoint', () => {
 	beforeEach(() => {
 		mocks.verifyAdmin.mockReset().mockResolvedValue(ADMIN);
-		mocks.getMarket.mockReset();
+		mocks.getMarket.mockReset().mockResolvedValue({ response: { data: [] } });
 		mocks.getNetworkData.mockReset().mockResolvedValue({ response: { data: [{ fresh: true }] } });
 	});
 

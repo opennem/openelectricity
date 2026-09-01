@@ -209,14 +209,16 @@ export default class ChartStore {
 
 	/** Overlay lines drawn above the stack from independent row sets — each
 	 *  `{ id, data, valueKey, colour, scale }`; `scale: 'percent'` renders
-	 *  against a fixed 0–100% right-hand scale.
-	 *  @type {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number }>} */
+	 *  against a fixed 0–100% right-hand scale. Tooltip metadata is optional;
+	 *  when present, floating tooltips join the independent row by timestamp.
+	 *  @type {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }>} */
 	overlayLines = $state.raw([]);
 
 	/** Hatched area bands stacked on top of the rendered stack from an
 	 *  independent row set (e.g. curtailment) — `{ id, data, series }` where
-	 *  `series` orders the bands bottom-up.
-	 *  @type {Array<{ id: string, data: any[], series: Array<{ id: string, colour: string }> }>} */
+	 *  `series` orders the bands bottom-up. Per-series tooltip metadata is
+	 *  optional and uses the same timestamp join as overlay lines.
+	 *  @type {Array<{ id: string, data: any[], series: Array<{ id: string, colour: string, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }> }>} */
 	overlayAreas = $state.raw([]);
 
 	// Formatters

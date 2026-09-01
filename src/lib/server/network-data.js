@@ -231,6 +231,76 @@ function dataMetricsFor(metric, interval) {
 	return [/** @type {import('openelectricity').DataMetric} */ (metric)];
 }
 
+const REGION_FLOW_SERIES = {
+	power: [
+		{ metric: 'flow_imports', fueltech: 'imports' },
+		{ metric: 'flow_exports', fueltech: 'exports' }
+	],
+	energy: [
+		{ metric: 'flow_imports_energy', fueltech: 'imports' },
+		{ metric: 'flow_exports_energy', fueltech: 'exports' }
+	]
+};
+
+/**
+ * Add official regional import/export results to a fuel-tech generation
+ * response. Each interconnector result is classified under the synthetic
+ * `imports` or `exports` fuel tech; the normal network processor then sums
+ * corridors and inverts exports exactly like its other load series.
+ *
+ * Existing import/export fuel-tech results win, preventing double counting if
+ * the upstream generation endpoint starts returning them itself.
+ *
+ * @param {any} generationResponse
+ * @param {any} flowResponse
+ * @param {'power' | 'energy'} generationMetric
+ */
+export function mergeRegionalFlowsIntoGeneration(
+	generationResponse,
+	flowResponse,
+	generationMetric
+) {
+	const definitions = REGION_FLOW_SERIES[generationMetric];
+	if (!definitions || !generationResponse?.data || !flowResponse?.data) {
+		return generationResponse;
+	}
+
+	const existingFuelTechs = new Set();
+	for (const entry of generationResponse.data) {
+		if (entry.metric !== generationMetric) continue;
+		for (const result of entry.results ?? []) {
+			const fueltech = result.columns?.fueltech;
+			if (fueltech) existingFuelTechs.add(fueltech);
+		}
+	}
+
+	const supplementalResults = [];
+	for (const definition of definitions) {
+		if (existingFuelTechs.has(definition.fueltech)) continue;
+		for (const entry of flowResponse.data) {
+			if (entry.metric !== definition.metric) continue;
+			for (const result of entry.results ?? []) {
+				supplementalResults.push({
+					...result,
+					columns: { ...(result.columns ?? {}), fueltech: definition.fueltech }
+				});
+			}
+		}
+	}
+
+	if (supplementalResults.length === 0) return generationResponse;
+
+	let merged = false;
+	const data = generationResponse.data.map((entry) => {
+		if (merged || entry.metric !== generationMetric) return entry;
+		merged = true;
+		return { ...entry, results: [...(entry.results ?? []), ...supplementalResults] };
+	});
+	if (!merged) data.push({ metric: generationMetric, results: supplementalResults });
+
+	return { ...generationResponse, data };
+}
+
 /**
  * One upstream OE call for a single network — the shared leg of both the
  * single-network path and the 'au' NEM+WEM merge.
@@ -277,12 +347,36 @@ async function fetchNetworkResponse({
 		secondaryGrouping: ['fueltech']
 	};
 	if (primaryGrouping === 'network_region') options.primaryGrouping = 'network_region';
-	const { response } = await client.getNetworkData(
-		networkId,
-		dataMetricsFor(metric, interval),
-		options
-	);
-	return response;
+	const generationRequest = client
+		.getNetworkData(networkId, dataMetricsFor(metric, interval), options)
+		.then((result) => result.response);
+
+	const generationMetric = metric === 'power' || metric === 'energy' ? metric : null;
+	const includeRegionalFlows = networkId === 'NEM' && Boolean(networkRegion) && generationMetric;
+	if (!includeRegionalFlows || !generationMetric) return generationRequest;
+
+	const flowMetric = generationMetric === 'energy' ? 'flows_energy' : 'flows';
+	/** @type {import('openelectricity').IMarketTimeSeriesParams} */
+	const flowOptions = {
+		interval: /** @type {any} */ (interval),
+		dateStart,
+		dateEnd,
+		network_region: networkRegion
+	};
+	if (primaryGrouping === 'network_region') flowOptions.primaryGrouping = 'network_region';
+
+	// Flow availability must not make the core generation chart unavailable.
+	// A missing or failed flow leg degrades to the generation-only response.
+	const flowRequest = client
+		.getMarket('NEM', MARKET_METRIC_NAMES[flowMetric], flowOptions)
+		.then((result) => result?.response ?? null)
+		.catch((err) => {
+			if (!(err instanceof NoDataFound)) console.error('Regional flow fetch failed:', err);
+			return null;
+		});
+
+	const [generationResponse, flowResponse] = await Promise.all([generationRequest, flowRequest]);
+	return mergeRegionalFlowsIntoGeneration(generationResponse, flowResponse, generationMetric);
 }
 
 /**

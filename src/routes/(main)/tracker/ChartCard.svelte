@@ -87,8 +87,7 @@
 	<!-- Subtle border at rest, dark when pan/zoom is engaged; the chart and its
 	     options bar sit flush against the container edges. overflow-hidden at
 	     every width — the flush chart would otherwise paint over the bottom
-	     corner radius (these charts use strip tooltips, so nothing needs to
-	     escape the card). -->
+	     corner radius. Floating tooltips stay within the chart area. -->
 	<section
 		class="overflow-hidden rounded-lg border bg-white transition-colors {engaged
 			? 'border-dark-grey'

@@ -10,6 +10,7 @@
  */
 
 import { formatDayMonthYearTime } from './date-labels.js';
+import { indexOfTime } from './binary-search.js';
 
 /**
  * The currently active data row — prefers a live hover, falls back to a
@@ -178,5 +179,96 @@ export function buildSeriesRows(chart, activeData) {
 			isHovered: key === hoverKey
 		});
 	}
+	return rows;
+}
+
+/**
+ * @typedef {TooltipSeriesRow & { unit: string, kind: 'line' | 'area' }} TooltipOverlayRow
+ */
+
+/**
+ * Resolve one independent overlay dataset at the base chart's active time.
+ * Display aggregation keeps these arrays sorted and on the same bucket
+ * lattice, so an exact O(log n) join avoids showing a neighbouring bucket's
+ * value across a real data gap.
+ *
+ * @param {any[]} data
+ * @param {number} time
+ * @returns {any | undefined}
+ */
+function overlayRowAtTime(data, time) {
+	if (!Array.isArray(data) || !data.length || !Number.isFinite(time)) return undefined;
+	const index = indexOfTime(data, time);
+	return index < 0 ? undefined : data[index];
+}
+
+/**
+ * Build floating-tooltip rows for every currently enabled line and area
+ * overlay. Overlay definitions themselves are toggle-dependent, so absent
+ * overlays naturally produce no tooltip rows. A definition remains visible
+ * with an empty value when its series has a gap at the hovered timestamp.
+ *
+ * @param {ChartStoreLike} chart
+ * @param {any} activeData
+ * @returns {TooltipOverlayRow[]}
+ */
+export function buildOverlayRows(chart, activeData) {
+	const time = Number(activeData?.time);
+	if (!activeData || !Number.isFinite(time)) return [];
+
+	const defaultUnit = chart.chartOptions?.displayUnit ?? '';
+	/** @type {TooltipOverlayRow[]} */
+	const rows = [];
+
+	/**
+	 * @param {{ key: string, label: string, colour?: string, raw: any, unit: string, kind: 'line' | 'area', formatter?: (value: number) => string }} definition
+	 */
+	function addRow({ key, label, colour, raw, unit, kind, formatter }) {
+		const numeric = Number(raw);
+		const hasValue = raw !== null && raw !== undefined && Number.isFinite(numeric);
+		rows.push({
+			key,
+			label,
+			colour,
+			value: hasValue ? numeric : undefined,
+			formattedValue: hasValue
+				? formatter
+					? formatter(numeric)
+					: chart.convertAndFormatValue(numeric)
+				: '',
+			isHovered: false,
+			unit,
+			kind
+		});
+	}
+
+	for (const overlay of chart.overlayAreas ?? []) {
+		const row = overlayRowAtTime(overlay.data, time);
+		for (const series of overlay.series ?? []) {
+			addRow({
+				key: `overlay-area:${overlay.id}:${series.id}`,
+				label: series.label ?? series.id,
+				colour: series.colour,
+				raw: row?.[series.id],
+				unit: series.tooltipUnit ?? defaultUnit,
+				kind: 'area',
+				formatter: series.formatTooltipValue
+			});
+		}
+	}
+
+	for (const overlay of chart.overlayLines ?? []) {
+		const row = overlayRowAtTime(overlay.data, time);
+		addRow({
+			key: `overlay-line:${overlay.id}`,
+			label: overlay.label ?? overlay.id,
+			colour: overlay.colour,
+			raw: row?.[overlay.valueKey],
+			unit: overlay.tooltipUnit ?? (overlay.scale === 'percent' ? '%' : defaultUnit),
+			kind: 'line',
+			formatter: overlay.formatTooltipValue
+		});
+	}
+
 	return rows;
 }

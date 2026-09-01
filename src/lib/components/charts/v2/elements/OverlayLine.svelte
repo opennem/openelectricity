@@ -3,8 +3,8 @@
 	 * OverlayLine — a line drawn above the stack from an independently-fetched
 	 * row set (e.g. operational demand over the generation stack, or the
 	 * official renewable share). `scale: 'y'` plots against the chart's value
-	 * scale; `scale: 'percent'` plots against a fixed 0–100% scale spanning the
-	 * same pixel range, with optional right-edge percentage tick labels.
+	 * scale; `scale: 'percent'` plots against an independent percentage scale
+	 * spanning the same pixel range, with optional right-edge tick labels.
 	 *
 	 * Must be rendered inside a LayerCake context.
 	 */
@@ -12,6 +12,7 @@
 	import { line as d3Line, curveLinear } from 'd3-shape';
 	import { scaleLinear } from 'd3-scale';
 	import { perfSpan } from '../perf.js';
+	import { percentAxisTicks } from './percent-axis.js';
 
 	const { xScale, yScale, width } = getContext('LayerCake');
 
@@ -71,11 +72,9 @@
 		});
 	});
 
-	/** 20% steps up to (but excluding) the bound, so the top label never
-	 *  crowds the chart's upper edge. */
-	let percentTicks = $derived(
-		Array.from({ length: Math.max(1, Math.floor(percentMax / 20)) }, (_, i) => i * 20)
-	);
+	/** 20% steps for ordinary ranges; adaptive, bounded ticks for extreme
+	 *  domains. The top label stays omitted so it never crowds the chart edge. */
+	let percentTicks = $derived(percentAxisTicks(percentMax));
 </script>
 
 {#if path}

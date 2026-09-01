@@ -27,6 +27,8 @@ describe('formatTooltipDate', () => {
 });
 
 describe('createAustralianDateAxisFormatter', () => {
+	const referenceDate = new Date('2026-09-01T00:00:00Z');
+
 	it('uses en-AU 24-hour time and preserves the CSV timezone on short axes', () => {
 		const data = [
 			{
@@ -38,7 +40,7 @@ describe('createAustralianDateAxisFormatter', () => {
 				_dateStr: '2026-07-01T23:00:00+10:00'
 			}
 		];
-		const format = createAustralianDateAxisFormatter(data);
+		const format = createAustralianDateAxisFormatter(data, referenceDate);
 
 		expect(format(data[0].date)).toBe('00:00');
 		expect(format(data[1].date)).toBe('23:00');
@@ -49,7 +51,7 @@ describe('createAustralianDateAxisFormatter', () => {
 			{ date: new Date('2026-07-01T00:00:00Z'), _dateStr: '2026-07-01T00:00:00Z' },
 			{ date: new Date('2026-08-01T00:00:00Z'), _dateStr: '2026-08-01T00:00:00Z' }
 		];
-		const format = createAustralianDateAxisFormatter(data);
+		const format = createAustralianDateAxisFormatter(data, referenceDate);
 
 		expect(format(data[0].date)).toBe('1 July');
 	});
@@ -59,9 +61,27 @@ describe('createAustralianDateAxisFormatter', () => {
 			{ date: new Date('2026-07-01T00:00:00Z'), _dateStr: '2026-07-01T00:00:00Z' },
 			{ date: new Date('2026-07-08T00:00:00Z'), _dateStr: '2026-07-08T00:00:00Z' }
 		];
-		const format = createAustralianDateAxisFormatter(data);
+		const format = createAustralianDateAxisFormatter(data, referenceDate);
 
 		expect(format(new Date('2026-07-02T18:00:00Z'))).toBe('2 July, 18:00');
+	});
+
+	it('adds the year to historical time-only and day/month formats', () => {
+		const shortData = [
+			{ date: new Date('2025-07-01T00:00:00Z'), _dateStr: '2025-07-01T00:00:00Z' },
+			{ date: new Date('2025-07-01T12:00:00Z'), _dateStr: '2025-07-01T12:00:00Z' }
+		];
+		const dateData = [
+			{ date: new Date('2025-07-01T00:00:00Z'), _dateStr: '2025-07-01T00:00:00Z' },
+			{ date: new Date('2025-08-01T00:00:00Z'), _dateStr: '2025-08-01T00:00:00Z' }
+		];
+
+		expect(createAustralianDateAxisFormatter(shortData, referenceDate)(shortData[0].date)).toBe(
+			'00:00 2025'
+		);
+		expect(createAustralianDateAxisFormatter(dateData, referenceDate)(dateData[0].date)).toBe(
+			'1 July 2025'
+		);
 	});
 });
 
@@ -72,7 +92,7 @@ describe('createAustralianDateAxisTicks', () => {
 			return { date: new Date(source), _dateStr: source };
 		});
 		const ticks = createAustralianDateAxisTicks(data);
-		const format = createAustralianDateAxisFormatter(data);
+		const format = createAustralianDateAxisFormatter(data, new Date('2026-09-01T00:00:00Z'));
 
 		expect(ticks.map(format)).toEqual([
 			'00:00',

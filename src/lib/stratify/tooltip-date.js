@@ -2,6 +2,8 @@
  * @typedef {'date' | 'time' | 'date-time'} TooltipDateFormat
  */
 
+import { appendHistoricalYear } from '$lib/components/charts/v2/date-labels.js';
+
 const DATE_OPTIONS = /** @type {const} */ ({
 	day: 'numeric',
 	month: 'short',
@@ -65,9 +67,10 @@ function sourceWallClockOffset(row) {
  * enough context to keep labels unambiguous.
  *
  * @param {Array<Record<string, any>>} data
+ * @param {Date | number} [referenceDate] - Current-year reference (test override)
  * @returns {(value: Date | number | string) => string}
  */
-export function createAustralianDateAxisFormatter(data) {
+export function createAustralianDateAxisFormatter(data, referenceDate = new Date()) {
 	const dates = data
 		.map((row) => (row.date instanceof Date ? row.date.getTime() : NaN))
 		.filter(Number.isFinite);
@@ -89,6 +92,7 @@ export function createAustralianDateAxisFormatter(data) {
 	} else {
 		options = { year: 'numeric' };
 	}
+	const alreadyIncludesYear = options.year !== undefined;
 	const formatter = new Intl.DateTimeFormat('en-AU', { ...options, timeZone: 'UTC' });
 
 	return (value) => {
@@ -103,7 +107,11 @@ export function createAustralianDateAxisFormatter(data) {
 				offset = entry.offset;
 			}
 		}
-		return formatter.format(new Date(date.getTime() + offset));
+		const wallClockDate = new Date(date.getTime() + offset);
+		const label = formatter.format(wallClockDate);
+		return alreadyIncludesYear
+			? label
+			: appendHistoricalYear(wallClockDate, label, 'UTC', referenceDate);
 	};
 }
 

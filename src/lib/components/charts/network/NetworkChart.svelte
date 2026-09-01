@@ -57,6 +57,10 @@
 	import { ianaFromOffset, offsetMsFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
 	import nighttimes from '$lib/utils/nighttimes';
+	import {
+		automaticGenerationEnergyPrefix,
+		generationUnitMaximumFractionDigits
+	} from './generation-units.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -76,6 +80,9 @@
 	 * @property {boolean} [showContainer] - Wrap in bordered/padded container
 	 * @property {boolean} [showHeader] - Show the chart header bar
 	 * @property {'strip' | 'floating' | 'none'} [tooltipMode]
+	 * @property {boolean} [generationUnitOptions] - Expose MW/GW for generation
+	 *   power and MWh/GWh/TWh for generation energy. Energy defaults to TWh once
+	 *   the largest visible positive stack reaches six MWh digits.
 	 * @property {boolean} [useDivergingStack] - Stack positive/negative independently
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
@@ -107,10 +114,10 @@
 	 * @property {boolean} [holdFrame] - Keep the rendered frame until all synced charts are ready
 	 * @property {{ widenMultiplier?: number, grains?: Array<{ interval: string, metric: string, seriesKey?: string, windowMs: number }> } | null} [prefetchPlan]
 	 *   - Idle plan for widening the current cache and warming likely next intervals
-	 * @property {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number }>} [overlayLines]
+	 * @property {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }>} [overlayLines]
 	 *   - Lines drawn above the stack from independent row sets (e.g. demand,
 	 *   renewable share); `scale: 'percent'` adds a right-hand 0–100% axis
-	 * @property {Array<{ id: string, data: any[], series: Array<{ id: string, colour: string }> }>} [overlayAreas]
+	 * @property {Array<{ id: string, data: any[], series: Array<{ id: string, colour: string, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }> }>} [overlayAreas]
 	 *   - Hatched bands stacked on top of the rendered stack (e.g. curtailment)
 	 */
 
@@ -132,6 +139,7 @@
 		showContainer = true,
 		showHeader = true,
 		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('floating'),
+		generationUnitOptions = false,
 		useDivergingStack = false,
 		hoverTime = undefined,
 		onhoverchange,
@@ -545,6 +553,7 @@
 	});
 
 	// Metric-dependent options (unit + curve)
+	let lastGenerationUnitBasis = '';
 	$effect(() => {
 		if (!chartStore || holdFrame) return;
 		const intervalCurve = getIntervalSpec(displayInterval)?.curveType ?? 'straight';
@@ -582,6 +591,37 @@
 					: 'W';
 		chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
 			panelKind === 'emissions' ? intervalCurve : isEnergyMetric ? 'step' : 'straight'
+		);
+
+		if (panelKind === 'generation' && generationUnitOptions) {
+			const basis = isEnergyMetric ? 'energy' : 'power';
+			chartStore.chartOptions.allowedPrefixes = isEnergyMetric ? ['M', 'G', 'T'] : ['M', 'G'];
+			if (basis !== lastGenerationUnitBasis) {
+				lastGenerationUnitBasis = basis;
+				chartStore.chartOptions.resetDisplayPrefix('M');
+			}
+		} else {
+			lastGenerationUnitBasis = '';
+			chartStore.chartOptions.allowedPrefixes = [];
+		}
+	});
+
+	// Keep the automatic energy unit readable until the user makes an explicit
+	// selection in the chart header/options. Power always starts in MW.
+	$effect(() => {
+		if (!chartStore || panelKind !== 'generation' || !generationUnitOptions || !isEnergyMetric)
+			return;
+		chartStore.chartOptions.setAutomaticDisplayPrefix(
+			automaticGenerationEnergyPrefix(chartStore.seriesData, chartStore.visibleSeriesNames)
+		);
+	});
+
+	// Converted GW/GWh/TWh values need decimals on both the y-axis and tooltip;
+	// raw MW/MWh remains a whole-number display.
+	$effect(() => {
+		if (!chartStore || panelKind !== 'generation' || !generationUnitOptions) return;
+		chartStore.maximumFractionDigits = generationUnitMaximumFractionDigits(
+			chartStore.chartOptions.displayPrefix
 		);
 	});
 

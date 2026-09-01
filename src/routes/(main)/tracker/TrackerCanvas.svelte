@@ -64,6 +64,7 @@
 	 *   group: string,
 	 *   priceMode: import('./types.js').PriceMode,
 	 *   emissionsMode: import('./types.js').EmissionsMode,
+	 *   overlays: import('./types.js').TrackerOverlay[],
 	 *   tablePanelOpen: boolean,
 	 *   bucketFilter?: string | null,
 	 *   initialRange: any,
@@ -73,6 +74,7 @@
 	 *   ongroupchange?: (group: string) => void,
 	 *   onpricemodechange?: (mode: import('./types.js').PriceMode) => void,
 	 *   onemissionsmodechange?: (mode: import('./types.js').EmissionsMode) => void,
+	 *   onoverlayschange?: (overlays: import('./types.js').TrackerOverlay[]) => void,
 	 *   onpaneltoggle?: (open: boolean) => void
 	 * }} */
 	let {
@@ -80,6 +82,7 @@
 		group,
 		priceMode,
 		emissionsMode,
+		overlays,
 		tablePanelOpen,
 		bucketFilter = null,
 		initialRange,
@@ -89,6 +92,7 @@
 		ongroupchange,
 		onpricemodechange,
 		onemissionsmodechange,
+		onoverlayschange,
 		onpaneltoggle
 	} = $props();
 
@@ -361,11 +365,9 @@
 		mvData.isPending || marketData.isPending || range.rangeSwitchPending
 	);
 
-	// Chart overlays — session-only toggles driven from the table's summary rows.
-	let showDemandLine = $state(false);
-	let showRenewablesLine = $state(false);
-	/** Curtailment series toggled onto the generation chart as hatched bands. */
-	let shownCurtailment = $state(/** @type {string[]} */ ([]));
+	// Chart overlays — URL-owned toggles driven from the table's summary rows.
+	let showDemandLine = $derived(overlays.includes('demand'));
+	let showRenewablesLine = $derived(overlays.includes('renewables'));
 	const CURTAILMENT_COLOURS = /** @type {Record<string, string>} */ ({
 		curtailment_solar: getFuelTechColour('solar_utility'),
 		curtailment_wind: getFuelTechColour('wind')
@@ -373,12 +375,29 @@
 	/** Fixed band order bottom-up: wind rides directly above the solar area,
 	 *  solar curtailment stacks above wind — regardless of toggle order. */
 	const CURTAILMENT_ORDER = ['curtailment_wind', 'curtailment_solar'];
+	const CURTAILMENT_OVERLAY_BY_SERIES =
+		/** @type {Record<string, import('./types.js').TrackerOverlay>} */ ({
+			curtailment_solar: 'curtailment-solar',
+			curtailment_wind: 'curtailment-wind'
+		});
+	/** Curtailment series toggled onto the generation chart as hatched bands. */
+	let shownCurtailment = $derived(
+		CURTAILMENT_ORDER.filter((id) => overlays.includes(CURTAILMENT_OVERLAY_BY_SERIES[id]))
+	);
+
+	/** @param {import('./types.js').TrackerOverlay} overlay */
+	function toggleOverlay(overlay) {
+		onoverlayschange?.(
+			overlays.includes(overlay)
+				? overlays.filter((item) => item !== overlay)
+				: [...overlays, overlay]
+		);
+	}
 
 	/** @param {string} id */
 	function toggleCurtailment(id) {
-		shownCurtailment = shownCurtailment.includes(id)
-			? shownCurtailment.filter((item) => item !== id)
-			: [...shownCurtailment, id];
+		const overlay = CURTAILMENT_OVERLAY_BY_SERIES[id];
+		if (overlay) toggleOverlay(overlay);
 	}
 	const DEMAND_LINE_COLOUR = '#C74523';
 	const RENEWABLES_LINE_COLOUR = getFuelTechColour('renewables');
@@ -452,6 +471,7 @@
 		if (showDemandLine) {
 			lines.push({
 				id: 'demand',
+				label: 'Demand',
 				data: demandData.getDisplayRows(start, end, displayRowOpts),
 				valueKey: 'demand',
 				colour: DEMAND_LINE_COLOUR,
@@ -461,12 +481,16 @@
 		if (showRenewablesLine) {
 			lines.push({
 				id: 'renewable-share',
+				label: 'Renewables',
 				data: isRollingDisplay
 					? rollingShareRows(start, end)
 					: shareData.getDisplayRows(start, end, shareRowOpts),
 				valueKey: 'renewable_share',
 				colour: RENEWABLES_LINE_COLOUR,
-				scale: 'percent'
+				scale: 'percent',
+				tooltipUnit: '%',
+				formatTooltipValue: (/** @type {number} */ value) =>
+					value.toLocaleString('en-AU', { maximumFractionDigits: 1 })
 			});
 		}
 		return lines;
@@ -483,7 +507,8 @@
 				data: curtailmentData.getDisplayRows(start, end, displayRowOpts),
 				series: CURTAILMENT_ORDER.filter((id) => shownCurtailment.includes(id)).map((id) => ({
 					id,
-					colour: CURTAILMENT_COLOURS[id] ?? '#888'
+					colour: CURTAILMENT_COLOURS[id] ?? '#888',
+					label: id === 'curtailment_solar' ? 'Curtailment (Solar)' : 'Curtailment (Wind)'
 				}))
 			}
 		];
@@ -668,10 +693,11 @@
 					{dateEnd}
 					title={energyMetric ? 'Energy' : 'Power'}
 					chartHeightPx={heightPx}
+					generationUnitOptions
 					{overlayLines}
 					{overlayAreas}
 					showContainer={false}
-					tooltipMode="strip"
+					tooltipMode="floating"
 					hiddenSeriesNames={hiddenSeries}
 					{hoverTime}
 					onhoverchange={handleHoverChange}
@@ -730,7 +756,7 @@
 							: 'Spot price'}
 					chartHeightPx={heightPx}
 					showContainer={false}
-					tooltipMode="strip"
+					tooltipMode="floating"
 					hiddenSeriesNames={priceIsMarketValue ? hiddenSeries : []}
 					{hoverTime}
 					onhoverchange={handleHoverChange}
@@ -780,7 +806,7 @@
 					title={emissionsIsIntensity ? 'Intensity' : 'Volume'}
 					chartHeightPx={heightPx}
 					showContainer={false}
-					tooltipMode="strip"
+					tooltipMode="floating"
 					hiddenSeriesNames={emissionsIsIntensity ? [] : hiddenSeries}
 					excludedFuelTechGroups={emissionsIsIntensity ? hiddenSeries : []}
 					{hoverTime}
@@ -844,8 +870,8 @@
 				{showRenewablesLine}
 				demandLineColour={DEMAND_LINE_COLOUR}
 				renewablesLineColour={RENEWABLES_LINE_COLOUR}
-				ondemandlinetoggle={() => (showDemandLine = !showDemandLine)}
-				onrenewableslinetoggle={() => (showRenewablesLine = !showRenewablesLine)}
+				ondemandlinetoggle={() => toggleOverlay('demand')}
+				onrenewableslinetoggle={() => toggleOverlay('renewables')}
 				{ongroupchange}
 				oncontributionmodechange={(mode) => (contributionMode = mode)}
 				ontoggle={toggleSeries}

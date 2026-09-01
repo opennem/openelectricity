@@ -16,7 +16,8 @@
 		getActiveData,
 		getTotalForRow,
 		getFormattedX,
-		buildSeriesRows
+		buildSeriesRows,
+		buildOverlayRows
 	} from './tooltip-derivations.js';
 	import { computeStepBand } from './elements/step-band.js';
 	import { indexOfTime } from './binary-search.js';
@@ -87,6 +88,7 @@
 	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
 	let formattedDate = $derived(getFormattedX(chart, activeData));
 	let rows = $derived(activeData ? buildSeriesRows(chart, activeData) : []);
+	let overlayRows = $derived(activeData ? buildOverlayRows(chart, activeData) : []);
 	let total = $derived(getTotalForRow(chart, activeData));
 	let formattedTotal = $derived(chart.convertAndFormatValue(total));
 	let displayUnit = $derived(chart.chartOptions.displayUnit ?? '');
@@ -185,6 +187,7 @@
 		<div
 			bind:clientWidth={tooltipWidth}
 			bind:clientHeight={tooltipHeight}
+			data-testid="chart-floating-tooltip"
 			class="absolute min-w-[180px] flex flex-col bg-white/70 backdrop-blur-md backdrop-saturate-150 rounded-md shadow-sm border border-warm-grey text-xs whitespace-nowrap transition-[top,left] duration-150 px-3 py-2"
 			style:left="{tooltipLeft}px"
 			style:top="{tooltipTop}px"
@@ -225,6 +228,30 @@
 					</div>
 				{/each}
 			</div>
+
+			<!-- Enabled overlays use independent datasets, joined to this timestamp. -->
+			{#if overlayRows.length}
+				<div class="flex flex-col gap-1 pt-1.5 mt-1.5 border-t border-warm-grey/60">
+					{#each overlayRows as row (row.key)}
+						<div class="flex items-center gap-3 justify-between rounded-sm">
+							<span class="flex items-center gap-1.5 min-w-0">
+								<span
+									class="w-2 h-2 shrink-0 {row.kind === 'area' ? 'rounded-sm' : 'rounded-full'}"
+									style:background-color={row.colour}
+								></span>
+								<span class="truncate text-dark-grey">{row.label}</span>
+							</span>
+							<span class="font-mono tabular-nums font-medium text-dark-grey">
+								{#if row.formattedValue}
+									{row.formattedValue}{#if row.unit}&nbsp;{row.unit}{/if}
+								{:else}
+									—
+								{/if}
+							</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
 
 			<!-- Optional total footer -->
 			{#if chart.chartTooltips.showTotal}

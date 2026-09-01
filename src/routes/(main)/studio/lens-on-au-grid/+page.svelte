@@ -17,6 +17,11 @@
 		processForChart,
 		aggregateData
 	} from '$lib/components/charts/v2';
+	import {
+		appendHistoricalYear,
+		cachedFormatter,
+		formatDayMonth
+	} from '$lib/components/charts/v2/date-labels.js';
 	import { colourReducer } from '$lib/stores/theme';
 	import { fuelTechMap, orderMap, DEFAULT_GROUP } from './helpers/groups';
 	import { loadFuelTechs, fuelTechNameMap } from '$lib/fuel_techs';
@@ -227,13 +232,14 @@
 	 */
 	function formatXAxis(d) {
 		if (!(d instanceof Date)) return String(d);
-		return d.toLocaleDateString('en-AU', {
+		const label = cachedFormatter('lens-au-grid-axis', 'Australia/Sydney', {
 			day: 'numeric',
 			month: 'short',
 			hour: '2-digit',
 			minute: '2-digit',
 			hour12: false
-		});
+		}).format(d);
+		return appendHistoricalYear(d, label, 'Australia/Sydney');
 	}
 
 	/**
@@ -243,9 +249,7 @@
 	 */
 	function formatBrushTick(d) {
 		if (!(d instanceof Date)) return String(d);
-		const day = d.getDate();
-		const month = d.toLocaleDateString('en-AU', { month: 'short' });
-		return `${day} ${month}`;
+		return formatDayMonth(d, 'Australia/Sydney');
 	}
 
 	// ============================================

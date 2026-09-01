@@ -16,8 +16,10 @@ import {
  * demand, curtailment, flows — see `MARKET_METRIC_NAMES`) from `getMarket`.
  * Curtailment fans out to the solar/wind splits so charts can stack by source;
  * flows returns both directions (imports/exports) for the selected region, and
- * the `_energy` variants let panels ladder power↔energy with the interval. The
- * response is returned under `{ response }` so the client-side
+ * the `_energy` variants let panels ladder power↔energy with the interval.
+ * Regional NEM generation requests also merge those official flows into the
+ * fuel-tech response as Imports and Exports; whole-network scopes and WEM do
+ * not. The response is returned under `{ response }` so the client-side
  * `ChartDataManager` (which reads `json.response`) can drive it through the same
  * pan/zoom/cache pipeline as the facility charts.
  *

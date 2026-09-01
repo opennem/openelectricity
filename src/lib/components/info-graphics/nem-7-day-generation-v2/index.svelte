@@ -8,6 +8,7 @@
 	import { fade } from 'svelte/transition';
 	import { format } from 'date-fns';
 	import { ChartStore, StratumChart, ChartTooltip } from '$lib/components/charts/v2';
+	import { formatDayMonth } from '$lib/components/charts/v2/date-labels.js';
 	import { fuelTechColour } from '$lib/stores/theme';
 	import { fuelTechName } from '$lib/fuel_techs.js';
 	import { dataTrackerLink } from '$lib/stores/app';
@@ -52,7 +53,7 @@
 	// Format x-axis labels as "28 Jan"
 	chart.formatTickX = (/** @type {Date} */ d) => {
 		if (!d || !d.getTime || d.getTime() === 0) return '';
-		return format(d, 'd MMM');
+		return formatDayMonth(d, 'Australia/Sydney');
 	};
 
 	// Tooltip shows the exact hovered point's date + time of day. The axis tick

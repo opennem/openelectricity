@@ -13,6 +13,8 @@
  * - `price`     — `mv` when the price card shows market value; never written
  *                 for the 'au' scope, where market value is forced, not chosen
  * - `emissions` — `volume` when the emissions card shows volume (intensity is the default)
+ * - `overlay`   — comma-separated generation-chart overlays (demand,
+ *                 renewables, curtailment-solar, curtailment-wind)
  * - `table`     — `0` when the fuel-tech panel is closed
  * - `fullscreen`— `false` opts out of the fullscreen chrome
  */
@@ -39,7 +41,24 @@ import {
 /** @typedef {import('./types.js').TrackerUrlState} TrackerUrlState */
 
 const GROUP_VALUES = GROUP_OPTIONS.map((option) => option.value);
+const OVERLAY_VALUES = /** @type {const} */ ([
+	'demand',
+	'renewables',
+	'curtailment-solar',
+	'curtailment-wind'
+]);
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Keep supported overlays unique and in a stable URL order.
+ * @param {unknown} value
+ * @returns {import('./types.js').TrackerOverlay[]}
+ */
+export function normaliseTrackerOverlays(value) {
+	if (!Array.isArray(value)) return [];
+	const requested = new Set(value.filter((item) => typeof item === 'string'));
+	return OVERLAY_VALUES.filter((overlay) => requested.has(overlay));
+}
 
 /**
  * Validate a calendar filter against the current All-range interval.
@@ -77,6 +96,7 @@ export function parseTrackerUrl(params, context) {
 		bucketFilter: validBucketFilterFor(params.get('filter'), range),
 		priceMode: normalisePriceMode(params.get('price') === 'mv' ? 'market_value' : 'price'),
 		emissionsMode: normaliseEmissionsMode(params.get('emissions')),
+		overlays: normaliseTrackerOverlays((params.get('overlay') ?? '').split(',')),
 		tablePanelOpen: params.get('table') !== '0',
 		fullscreen: params.get('fullscreen') !== 'false'
 	};
@@ -85,7 +105,7 @@ export function parseTrackerUrl(params, context) {
 /**
  * Materialise navigation state into a URL (mutated and returned).
  * @param {URL} url
- * @param {Pick<TrackerUrlState, 'region' | 'group' | 'range' | 'bucketFilter' | 'priceMode' | 'emissionsMode' | 'tablePanelOpen'>} state
+ * @param {Pick<TrackerUrlState, 'region' | 'group' | 'range' | 'bucketFilter' | 'priceMode' | 'emissionsMode' | 'overlays' | 'tablePanelOpen'>} state
  */
 export function applyTrackerUrl(url, state) {
 	const params = url.searchParams;
@@ -124,6 +144,10 @@ export function applyTrackerUrl(url, state) {
 
 	if (state.emissionsMode === 'volume') params.set('emissions', 'volume');
 	else params.delete('emissions');
+
+	const overlays = normaliseTrackerOverlays(state.overlays);
+	if (overlays.length) params.set('overlay', overlays.join(','));
+	else params.delete('overlay');
 
 	if (state.tablePanelOpen) params.delete('table');
 	else params.set('table', '0');

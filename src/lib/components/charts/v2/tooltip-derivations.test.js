@@ -4,7 +4,8 @@ import {
 	getValueKey,
 	getTotalForRow,
 	formatTooltipDate,
-	buildSeriesRows
+	buildSeriesRows,
+	buildOverlayRows
 } from './tooltip-derivations.js';
 
 /**
@@ -266,5 +267,77 @@ describe('buildSeriesRows', () => {
 	it('returns an empty array when activeData is undefined', () => {
 		const chart = makeChart({ visibleSeriesNames: ['coal'] });
 		expect(buildSeriesRows(chart, undefined)).toEqual([]);
+	});
+});
+
+describe('buildOverlayRows', () => {
+	it('joins enabled area and line overlays at the active timestamp', () => {
+		const chart = makeChart({
+			overlayAreas: [
+				{
+					id: 'curtailment',
+					data: [
+						{ time: 100, curtailment_wind: 12, curtailment_solar: 8 },
+						{ time: 200, curtailment_wind: 15, curtailment_solar: 10 }
+					],
+					series: [
+						{ id: 'curtailment_wind', label: 'Curtailment (Wind)', colour: '#111' },
+						{ id: 'curtailment_solar', label: 'Curtailment (Solar)', colour: '#222' }
+					]
+				}
+			],
+			overlayLines: [
+				{
+					id: 'demand',
+					label: 'Demand',
+					data: [{ time: 100, demand: 250 }],
+					valueKey: 'demand',
+					colour: '#333',
+					scale: 'y'
+				},
+				{
+					id: 'renewable-share',
+					label: 'Renewables',
+					data: [{ time: 100, renewable_share: 67.89 }],
+					valueKey: 'renewable_share',
+					colour: '#444',
+					scale: 'percent',
+					formatTooltipValue: (/** @type {number} */ value) => value.toFixed(1)
+				}
+			]
+		});
+
+		const rows = buildOverlayRows(chart, { time: 100 });
+		expect(rows.map((row) => row.label)).toEqual([
+			'Curtailment (Wind)',
+			'Curtailment (Solar)',
+			'Demand',
+			'Renewables'
+		]);
+		expect(rows.map((row) => row.formattedValue)).toEqual(['12.0', '8.0', '250.0', '67.9']);
+		expect(rows.map((row) => row.unit)).toEqual(['MW', 'MW', 'MW', '%']);
+		expect(rows.map((row) => row.kind)).toEqual(['area', 'area', 'line', 'line']);
+	});
+
+	it('keeps enabled overlay rows stable when the active bucket has no value', () => {
+		const chart = makeChart({
+			overlayLines: [
+				{
+					id: 'demand',
+					data: [{ time: 200, demand: 250 }],
+					valueKey: 'demand',
+					colour: '#333'
+				}
+			]
+		});
+
+		expect(buildOverlayRows(chart, { time: 100 })).toMatchObject([
+			{ label: 'demand', value: undefined, formattedValue: '', unit: 'MW' }
+		]);
+	});
+
+	it('returns no rows when no overlays are enabled', () => {
+		expect(buildOverlayRows(makeChart(), { time: 100 })).toEqual([]);
+		expect(buildOverlayRows(makeChart({ overlayLines: [] }), undefined)).toEqual([]);
 	});
 });

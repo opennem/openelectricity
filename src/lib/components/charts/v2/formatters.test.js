@@ -85,10 +85,12 @@ describe('formatBucketLabel', () => {
 });
 
 describe('getPowerAxisTicks', () => {
+	const referenceDate = new Date('2026-09-01T00:00:00+10:00');
+
 	it('generates day-start ticks across the whole viewport for spans wider than 2 days', () => {
 		const start = Date.UTC(2026, 0, 21, 0, 0); // 10:00 local, 21 Jan
 		const end = start + 5 * 24 * HOUR;
-		const { ticks, formatTick } = getPowerAxisTicks(start, end, TZ, OFFSET);
+		const { ticks, formatTick } = getPowerAxisTicks(start, end, TZ, OFFSET, referenceDate);
 		// One local day start per day, viewport-derived (no data involved): the
 		// day start containing viewStart (21 Jan local) through 26 Jan local.
 		expect(ticks.length).toBe(6);
@@ -103,7 +105,7 @@ describe('getPowerAxisTicks', () => {
 		// Brisbane 10:00–16:00 on 21 Jan (6h span).
 		const start = Date.UTC(2026, 0, 21, 0, 0); // +10 → 10:00 local
 		const end = start + 6 * HOUR;
-		const { ticks, formatTick } = getPowerAxisTicks(start, end, TZ, OFFSET);
+		const { ticks, formatTick } = getPowerAxisTicks(start, end, TZ, OFFSET, referenceDate);
 		expect(ticks.length).toBeGreaterThanOrEqual(5);
 		// Every tick in this window is a time-of-day label.
 		expect(formatTick(ticks[1]).toLowerCase()).toMatch(/am|pm/);
@@ -113,11 +115,25 @@ describe('getPowerAxisTicks', () => {
 		// Brisbane 22:00 21 Jan → 04:00 22 Jan (crosses midnight).
 		const start = Date.UTC(2026, 0, 21, 12, 0); // +10 → 22:00 local
 		const end = start + 6 * HOUR;
-		const { ticks, formatTick } = getPowerAxisTicks(start, end, TZ, OFFSET);
+		const { ticks, formatTick } = getPowerAxisTicks(start, end, TZ, OFFSET, referenceDate);
 		const labels = ticks.map((t) => formatTick(t));
 		// Exactly one tick falls on local midnight and renders as a date.
 		expect(labels.some((l) => /Jan/.test(l))).toBe(true);
 		expect(labels.some((l) => /am|pm/i.test(l))).toBe(true);
+	});
+
+	it('adds the year to historical day-start ticks', () => {
+		const start = Date.UTC(2025, 0, 21, 0, 0);
+		const end = start + 5 * 24 * HOUR;
+		const { ticks, formatTick } = getPowerAxisTicks(start, end, TZ, OFFSET, referenceDate);
+		expect(formatTick(ticks[0])).toBe('21 Jan 2025');
+	});
+
+	it('adds the year to historical intra-day time ticks', () => {
+		const start = Date.UTC(2025, 0, 21, 0, 0);
+		const end = start + 6 * HOUR;
+		const { ticks, formatTick } = getPowerAxisTicks(start, end, TZ, OFFSET, referenceDate);
+		expect(formatTick(ticks[1])).toMatch(/am.*2025/i);
 	});
 });
 

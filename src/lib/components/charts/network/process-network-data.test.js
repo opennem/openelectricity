@@ -103,6 +103,16 @@ describe('processNetworkData', () => {
 		expect(out?.data[0].pumps).toBe(-30);
 	});
 
+	it('keeps regional imports positive and renders exports below zero', () => {
+		const res = makeResponse([
+			{ fueltech: 'imports', data: [['2024-01-01T00:00:00', 300]] },
+			{ fueltech: 'exports', data: [['2024-01-01T00:00:00', 180]] }
+		]);
+		const out = processNetworkData(res, configFor(detailed));
+		expect(out?.data[0].imports).toBe(300);
+		expect(out?.data[0].exports).toBe(-180);
+	});
+
 	it('returns null when no series match the grouping', () => {
 		const res = makeResponse([{ fueltech: 'unobtanium', data: [['2024-01-01T00:00:00', 5]] }]);
 		expect(processNetworkData(res, configFor(detailed))).toBeNull();

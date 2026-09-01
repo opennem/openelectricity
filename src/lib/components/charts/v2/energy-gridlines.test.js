@@ -4,6 +4,7 @@ import { computeEnergyGridlines } from './energy-gridlines.js';
 const TZ = 'Australia/Brisbane'; // AEST +10, no DST
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
+const CURRENT_2025 = new Date('2025-09-01T00:00:00+10:00');
 
 const localMidnight = (
 	/** @type {number} */ y,
@@ -19,10 +20,23 @@ const rows = (times) => times.map((time) => ({ time }));
 /** @param {ReturnType<typeof computeEnergyGridlines>} g */
 const labels = (g) => g.ticks.map((t) => g.formatTick(t));
 
+/**
+ * Existing layout tests describe a current-year viewport and use a fixed
+ * reference so their labels remain stable as wall-clock years change.
+ * @param {any[]} visibleData
+ * @param {number} viewStart
+ * @param {number} viewEnd
+ * @param {((d: Date) => string) | null} [coarseLabel]
+ */
+const computeCurrent = (visibleData, viewStart, viewEnd, coarseLabel = null) =>
+	computeEnergyGridlines(visibleData, viewStart, viewEnd, TZ, coarseLabel, {
+		referenceDate: CURRENT_2025
+	});
+
 describe('computeEnergyGridlines — daily data', () => {
 	it('labels each day when there are few points', () => {
 		const times = Array.from({ length: 7 }, (_, i) => localMidnight(2025, 5, 16) + i * DAY);
-		const g = computeEnergyGridlines(rows(times), times[0], times[6] + DAY, TZ);
+		const g = computeCurrent(rows(times), times[0], times[6] + DAY);
 
 		expect(g.gridlineTicks.length).toBe(7);
 		expect(g.ticks.length).toBe(7);
@@ -39,7 +53,7 @@ describe('computeEnergyGridlines — daily data', () => {
 
 	it('groups into week bands with inclusive day ranges at ~1 month', () => {
 		const times = Array.from({ length: 30 }, (_, i) => localMidnight(2025, 5, 1) + i * DAY);
-		const g = computeEnergyGridlines(rows(times), times[0], times[29] + DAY, TZ);
+		const g = computeCurrent(rows(times), times[0], times[29] + DAY);
 
 		expect(labels(g)).toEqual([
 			'1 — 7 June',
@@ -52,16 +66,50 @@ describe('computeEnergyGridlines — daily data', () => {
 
 	it('labels arbitrary (non-midpoint) dates with a day-start fallback', () => {
 		const times = Array.from({ length: 30 }, (_, i) => localMidnight(2025, 5, 1) + i * DAY);
-		const g = computeEnergyGridlines(rows(times), times[0], times[29] + DAY, TZ);
+		const g = computeCurrent(rows(times), times[0], times[29] + DAY);
 
 		expect(g.formatTick(new Date(localMidnight(2025, 5, 4)))).toBe('4 June');
+	});
+});
+
+describe('computeEnergyGridlines — conditional axis years', () => {
+	const referenceDate = new Date('2026-09-01T00:00:00+10:00');
+
+	it('adds the year to each historical daily or weekly range label', () => {
+		const times = Array.from({ length: 30 }, (_, i) => localMidnight(2025, 5, 1) + i * DAY);
+		const g = computeEnergyGridlines(rows(times), times[0], times[29] + DAY, TZ, null, {
+			referenceDate
+		});
+		expect(labels(g)).toEqual([
+			'1 — 7 June 2025',
+			'8 — 14 June 2025',
+			'15 — 21 June 2025',
+			'22 — 28 June 2025',
+			'29 June — 5 July 2025'
+		]);
+	});
+
+	it('adds the year to each historical month label', () => {
+		const times = Array.from({ length: 3 }, (_, i) => localMonthStart(2025, i + 1));
+		const g = computeEnergyGridlines(rows(times), times[0], localMonthStart(2025, 4), TZ, null, {
+			referenceDate
+		});
+		expect(labels(g)).toEqual(["Feb '25", "Mar '25", "Apr '25"]);
+	});
+
+	it('keeps current-year month labels compact except for January', () => {
+		const times = Array.from({ length: 3 }, (_, i) => localMonthStart(2026, i));
+		const g = computeEnergyGridlines(rows(times), times[0], localMonthStart(2026, 3), TZ, null, {
+			referenceDate
+		});
+		expect(labels(g)).toEqual(["Jan '26", 'Feb', 'Mar']);
 	});
 });
 
 describe('computeEnergyGridlines — yearly gridlines (3y+ viewports)', () => {
 	it('snaps to January starts and labels the year', () => {
 		const times = Array.from({ length: 36 }, (_, i) => localMonthStart(2022, i));
-		const g = computeEnergyGridlines(rows(times), times[0], localMonthStart(2025, 0), TZ);
+		const g = computeCurrent(rows(times), times[0], localMonthStart(2025, 0));
 
 		expect(g.gridlineTicks.length).toBe(3);
 		expect(labels(g)).toEqual(['2022', '2023', '2024']);
@@ -71,7 +119,7 @@ describe('computeEnergyGridlines — yearly gridlines (3y+ viewports)', () => {
 describe('computeEnergyGridlines — monthly data', () => {
 	it('labels each month once, with the year on January', () => {
 		const times = Array.from({ length: 12 }, (_, i) => localMonthStart(2025, i));
-		const g = computeEnergyGridlines(rows(times), times[0], localMonthStart(2026, 0), TZ);
+		const g = computeCurrent(rows(times), times[0], localMonthStart(2026, 0));
 
 		// A 31-day band-width estimate must not push single-month bands into
 		// the prior month ("Feb — Jan '25").
@@ -95,7 +143,7 @@ describe('computeEnergyGridlines — monthly data', () => {
 describe('computeEnergyGridlines — weekly data', () => {
 	it('labels single-week bands as inclusive week ranges', () => {
 		const times = Array.from({ length: 6 }, (_, i) => localMidnight(2025, 5, 16) + i * 7 * DAY);
-		const g = computeEnergyGridlines(rows(times), times[0], times[5] + 7 * DAY, TZ);
+		const g = computeCurrent(rows(times), times[0], times[5] + 7 * DAY);
 
 		expect(g.gridlineTicks.length).toBe(6);
 		expect(labels(g)).toEqual([
@@ -110,10 +158,10 @@ describe('computeEnergyGridlines — weekly data', () => {
 
 	it('thins a year of weeks into 4-week bands ending on the true last day', () => {
 		const times = Array.from({ length: 52 }, (_, i) => localMidnight(2024, 6, 1) + i * 7 * DAY);
-		const g = computeEnergyGridlines(rows(times), times[0], times[51] + 7 * DAY, TZ);
+		const g = computeCurrent(rows(times), times[0], times[51] + 7 * DAY);
 
 		expect(g.ticks.length).toBe(13);
-		expect(g.formatTick(g.ticks[0])).toBe('1 — 28 July');
+		expect(g.formatTick(g.ticks[0])).toBe('1 — 28 July 2024');
 		expect(g.formatTick(g.ticks[6])).toBe("16 Dec '24 — 12 Jan '25");
 	});
 });
@@ -123,13 +171,7 @@ describe('computeEnergyGridlines — coarse calendar buckets', () => {
 
 	it('keeps gridlines at bucket starts but positions labels at band midpoints', () => {
 		const times = Array.from({ length: 8 }, (_, i) => localMonthStart(2023, i * 3));
-		const g = computeEnergyGridlines(
-			rows(times),
-			times[0],
-			localMonthStart(2025, 0),
-			TZ,
-			coarseLabel
-		);
+		const g = computeCurrent(rows(times), times[0], localMonthStart(2025, 0), coarseLabel);
 
 		expect(g.gridlineTicks.map((t) => t.getTime())).toEqual(times);
 		// Each label tick sits centred between consecutive bucket starts.
@@ -142,26 +184,14 @@ describe('computeEnergyGridlines — coarse calendar buckets', () => {
 
 	it('returns an empty label for non-midpoint dates', () => {
 		const times = Array.from({ length: 8 }, (_, i) => localMonthStart(2023, i * 3));
-		const g = computeEnergyGridlines(
-			rows(times),
-			times[0],
-			localMonthStart(2025, 0),
-			TZ,
-			coarseLabel
-		);
+		const g = computeCurrent(rows(times), times[0], localMonthStart(2025, 0), coarseLabel);
 
 		expect(g.formatTick(new Date(times[1]))).toBe('');
 	});
 
 	it('thins to at most ~12 labelled buckets', () => {
 		const times = Array.from({ length: 20 }, (_, i) => localMonthStart(2020, i * 3));
-		const g = computeEnergyGridlines(
-			rows(times),
-			times[0],
-			localMonthStart(2025, 0),
-			TZ,
-			coarseLabel
-		);
+		const g = computeCurrent(rows(times), times[0], localMonthStart(2025, 0), coarseLabel);
 
 		expect(g.gridlineTicks.length).toBe(10);
 		expect(g.ticks.length).toBe(10);

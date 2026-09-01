@@ -19,6 +19,7 @@ describe('tracker URLs', () => {
 			range: { kind: 'preset', days: 3, intervalId: '30m' },
 			priceMode: 'price',
 			emissionsMode: 'intensity',
+			overlays: [],
 			tablePanelOpen: true
 		});
 		expect(url.search).toBe('');
@@ -28,6 +29,7 @@ describe('tracker URLs', () => {
 			range: { kind: 'preset', days: 3, intervalId: '30m' },
 			priceMode: 'price',
 			emissionsMode: 'intensity',
+			overlays: [],
 			tablePanelOpen: true,
 			fullscreen: true
 		});
@@ -40,6 +42,7 @@ describe('tracker URLs', () => {
 			range: { kind: 'preset', days: 7, intervalId: '5m' },
 			priceMode: 'market_value',
 			emissionsMode: 'volume',
+			overlays: ['demand', 'renewables'],
 			tablePanelOpen: false
 		};
 		const { parsed } = roundTrip(state);
@@ -58,6 +61,7 @@ describe('tracker URLs', () => {
 			},
 			priceMode: 'price',
 			emissionsMode: 'volume',
+			overlays: [],
 			tablePanelOpen: true
 		};
 		const { parsed } = roundTrip(state);
@@ -71,6 +75,7 @@ describe('tracker URLs', () => {
 			range: { kind: 'preset', days: 3, intervalId: '30m' },
 			priceMode: 'market_value',
 			emissionsMode: 'volume',
+			overlays: [],
 			tablePanelOpen: true
 		});
 		expect(url.searchParams.get('region')).toBe('au');
@@ -96,10 +101,55 @@ describe('tracker URLs', () => {
 			range: { kind: 'preset', days: 3, intervalId: '30m' },
 			priceMode: 'price',
 			emissionsMode: 'volume',
+			overlays: ['demand'],
 			tablePanelOpen: true
 		});
 		expect(copied.searchParams.get('region')).toBe('wem');
+		expect(copied.searchParams.get('overlay')).toBe('demand');
 		expect(source.searchParams.get('region')).toBe('nsw1');
+		expect(source.searchParams.has('overlay')).toBe(false);
+	});
+
+	it('normalises supported overlays into a canonical single parameter', () => {
+		const parsed = parseTrackerUrl(
+			new URLSearchParams(
+				'overlay=curtailment-wind,demand,unknown,renewables,demand,curtailment-solar'
+			),
+			context
+		);
+		expect(parsed.overlays).toEqual([
+			'demand',
+			'renewables',
+			'curtailment-solar',
+			'curtailment-wind'
+		]);
+
+		const { url, parsed: reparsed } = roundTrip({
+			region: '_all',
+			group: 'simple',
+			range: { kind: 'preset', days: 3, intervalId: '30m' },
+			priceMode: 'price',
+			emissionsMode: 'intensity',
+			overlays: parsed.overlays,
+			tablePanelOpen: true
+		});
+		expect(url.searchParams.get('overlay')).toBe(
+			'demand,renewables,curtailment-solar,curtailment-wind'
+		);
+		expect(reparsed.overlays).toEqual(parsed.overlays);
+	});
+
+	it('removes the overlay parameter when the final overlay is disabled', () => {
+		const url = applyTrackerUrl(new URL('https://example.test/tracker?overlay=demand'), {
+			region: '_all',
+			group: 'simple',
+			range: { kind: 'preset', days: 3, intervalId: '30m' },
+			priceMode: 'price',
+			emissionsMode: 'intensity',
+			overlays: [],
+			tablePanelOpen: true
+		});
+		expect(url.searchParams.has('overlay')).toBe(false);
 	});
 
 	it('round trips the calendar-period filter in the All range', () => {
@@ -110,6 +160,7 @@ describe('tracker URLs', () => {
 			bucketFilter: 'jan',
 			priceMode: 'price',
 			emissionsMode: 'intensity',
+			overlays: [],
 			tablePanelOpen: true
 		});
 		expect(url.searchParams.get('filter')).toBe('jan');
@@ -125,6 +176,7 @@ describe('tracker URLs', () => {
 			bucketFilter: 'jan',
 			priceMode: 'price',
 			emissionsMode: 'intensity',
+			overlays: [],
 			tablePanelOpen: true
 		});
 		expect(shortRange.url.searchParams.get('filter')).toBeNull();

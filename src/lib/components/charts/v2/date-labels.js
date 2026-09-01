@@ -47,16 +47,55 @@ function toDate(d) {
 }
 
 /**
- * "21 Jan" — day-start axis tick label.
+ * Whether a date belongs to the same network-local calendar year as the
+ * reference date (normally now). Comparing formatted years keeps New Year
+ * boundaries correct for the chart's own timezone rather than the browser's.
  *
  * @param {Date | number | any} d
  * @param {string} ianaTimeZone
+ * @param {Date | number} [referenceDate]
+ * @returns {boolean}
+ */
+export function isCurrentLocalYear(d, ianaTimeZone, referenceDate = new Date()) {
+	const date = toDate(d);
+	const reference = toDate(referenceDate);
+	if (!date || !reference) return false;
+	return formatYear(date, ianaTimeZone) === formatYear(reference, ianaTimeZone);
+}
+
+/**
+ * Append the full network-local year to a preformatted axis label when the
+ * tick is outside the current year. Use this for custom time/date axis labels
+ * that don't flow through `formatDayMonth`.
+ *
+ * @param {Date | number | any} d
+ * @param {string} label
+ * @param {string} ianaTimeZone
+ * @param {Date | number} [referenceDate]
  * @returns {string}
  */
-export function formatDayMonth(d, ianaTimeZone) {
+export function appendHistoricalYear(d, label, ianaTimeZone, referenceDate = new Date()) {
+	const date = toDate(d);
+	if (!date || !label || isCurrentLocalYear(date, ianaTimeZone, referenceDate)) return label;
+	return `${label} ${formatYear(date, ianaTimeZone)}`;
+}
+
+/**
+ * "21 Jan" in the current year; "21 Jan 2025" otherwise — day-start axis
+ * tick label.
+ *
+ * @param {Date | number | any} d
+ * @param {string} ianaTimeZone
+ * @param {Date | number} [referenceDate]
+ * @returns {string}
+ */
+export function formatDayMonth(d, ianaTimeZone, referenceDate = new Date()) {
 	const date = toDate(d);
 	if (!date) return String(d);
-	return cachedFormatter('dm', ianaTimeZone, { day: 'numeric', month: 'short' }).format(date);
+	const label = cachedFormatter('dm', ianaTimeZone, { day: 'numeric', month: 'short' }).format(
+		date
+	);
+	return appendHistoricalYear(date, label, ianaTimeZone, referenceDate);
 }
 
 /**
@@ -181,21 +220,20 @@ export function formatBucketLabel(d, ianaTimeZone, kind) {
  * that must stand alone, e.g. weekly buckets.
  *
  * With `yearIfNotCurrent`, the year is appended only when the range doesn't
- * end in the current year — used for standalone toolbar labels where a bare
- * "1 — 3 Jul" would read as this year; axis ticks keep the year-less default
- * (their chart supplies the context, and a year on every tick would crowd).
+ * end in the reference year. Axis formatters enable this so historical
+ * day/month labels can never be mistaken for the current year.
  *
  * @param {Date} start
  * @param {Date} end
  * @param {string} ianaTimeZone
- * @param {{ alwaysYear?: boolean, yearIfNotCurrent?: boolean }} [opts]
+ * @param {{ alwaysYear?: boolean, yearIfNotCurrent?: boolean, referenceDate?: Date | number }} [opts]
  * @returns {string}
  */
 export function formatDateRange(
 	start,
 	end,
 	ianaTimeZone,
-	{ alwaysYear = false, yearIfNotCurrent = false } = {}
+	{ alwaysYear = false, yearIfNotCurrent = false, referenceDate = new Date() } = {}
 ) {
 	const partsFmt = cachedFormatter('dmy2', ianaTimeZone, {
 		day: 'numeric',
@@ -217,8 +255,7 @@ export function formatDateRange(
 		return `${sDay} ${sMonth} '${sYear} ${RANGE_SEPARATOR} ${eDay} ${eMonth} '${eYear}`;
 	}
 	const showYear =
-		alwaysYear ||
-		(yearIfNotCurrent && formatYear(end, ianaTimeZone) !== formatYear(new Date(), ianaTimeZone));
+		alwaysYear || (yearIfNotCurrent && !isCurrentLocalYear(end, ianaTimeZone, referenceDate));
 	const yearSuffix = showYear ? ` ${formatYear(end, ianaTimeZone)}` : '';
 	if (sMonth !== eMonth) {
 		return `${sDay} ${sMonth} ${RANGE_SEPARATOR} ${eDay} ${eMonth}${yearSuffix}`;

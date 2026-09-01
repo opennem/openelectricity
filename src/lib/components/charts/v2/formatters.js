@@ -8,7 +8,13 @@
 import { computeEnergyGridlines } from './energy-gridlines.js';
 import { baseIntervalFor } from '$lib/components/charts/facility/range-interval-config.js';
 import { bucketFilterKindFor, bucketFilterPredicate } from './bucket-filter.js';
-import { cachedFormatter, formatDayMonth, formatMonthYear } from './date-labels.js';
+import {
+	appendHistoricalYear,
+	cachedFormatter,
+	formatDayMonth,
+	formatMonthYear,
+	formatYear
+} from './date-labels.js';
 import { getTimeFormatPolicy } from './time-format-policy.js';
 import { bucketStartsInRange, isCalendarBucketKind } from './bucket-boundaries.js';
 import { ianaFromOffset, offsetHoursFromOffset, offsetMsFromOffset } from './network-time.js';
@@ -54,12 +60,19 @@ export function formatTooltipDateTime(d, ianaTimeZone, displayInterval) {
  * @param {number} viewEnd - Viewport end (ms)
  * @param {string} ianaTimeZone - e.g. 'Australia/Brisbane'
  * @param {string} timeZone - offset string, e.g. '+10:00'
+ * @param {Date | number} [referenceDate] - Current-year reference (test override)
  * @returns {{ ticks: Date[], formatTick: (d: any) => string, formatKey: string }}
  *   `formatKey` identifies the formatter (branch + zones) so callers can skip
  *   reassigning an equivalent `formatTick` — the branch rule lives here, not
  *   in the callers.
  */
-export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone) {
+export function getPowerAxisTicks(
+	viewStart,
+	viewEnd,
+	ianaTimeZone,
+	timeZone,
+	referenceDate = new Date()
+) {
 	const HOUR_MS = 60 * 60 * 1000;
 	const DAY_MS = 24 * HOUR_MS;
 	const spanHours = (viewEnd - viewStart) / HOUR_MS;
@@ -74,8 +87,8 @@ export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone) {
 		for (let t = first; t <= viewEnd; t += DAY_MS) dayStarts.push(new Date(t));
 		return {
 			ticks: dayStarts,
-			formatTick: (/** @type {any} */ d) => formatDayMonth(d, ianaTimeZone),
-			formatKey: `day|${ianaTimeZone}`
+			formatTick: (/** @type {any} */ d) => formatDayMonth(d, ianaTimeZone, referenceDate),
+			formatKey: `day|${ianaTimeZone}|${formatYear(referenceDate, ianaTimeZone)}`
 		};
 	}
 
@@ -104,11 +117,16 @@ export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone) {
 		const date = d instanceof Date ? d : new Date(d);
 		const localMs = date.getTime() + offsetMs;
 		// At local midnight, label the date instead of "12:00 am".
-		if (((localMs % DAY_MS) + DAY_MS) % DAY_MS === 0) return formatDayMonth(date, ianaTimeZone);
-		return timeFmt.format(date);
+		if (((localMs % DAY_MS) + DAY_MS) % DAY_MS === 0)
+			return formatDayMonth(date, ianaTimeZone, referenceDate);
+		return appendHistoricalYear(date, timeFmt.format(date), ianaTimeZone, referenceDate);
 	};
 
-	return { ticks, formatTick, formatKey: `time|${ianaTimeZone}|${timeZone}` };
+	return {
+		ticks,
+		formatTick,
+		formatKey: `time|${ianaTimeZone}|${timeZone}|${formatYear(referenceDate, ianaTimeZone)}`
+	};
 }
 
 /** Bucket widths of the fixed-width (non-calendar) energy display grains. */
@@ -216,7 +234,9 @@ export function applyFacilityTimeAxis(
 			// the 1d/7d phase anchor — so a fetch merging new rows at the right
 			// edge doesn't rebuild identical ticks.
 			const anchor = data.length ? data[0].time : null;
-			const energyKey = `${viewStart}|${viewEnd}|${policyKey}|${anchor}|${bucketFilter ?? ''}`;
+			const axisReferenceDate = new Date();
+			const axisReferenceYear = formatYear(axisReferenceDate, ianaTimeZone);
+			const energyKey = `${viewStart}|${viewEnd}|${policyKey}|${anchor}|${bucketFilter ?? ''}|${axisReferenceYear}`;
 			if (memo.tickSource === 'energy' && memo.energyKey === energyKey) return;
 			memo.tickSource = 'energy';
 			memo.energyKey = energyKey;
@@ -241,7 +261,9 @@ export function applyFacilityTimeAxis(
 				starts = starts.filter((/** @type {any} */ s) => filterPredicate(s.time));
 				coarseLabel = coarseLabel ?? ((/** @type {any} */ d) => formatMonthYear(d, ianaTimeZone));
 			}
-			const g = computeEnergyGridlines(starts, viewStart, viewEnd, ianaTimeZone, coarseLabel);
+			const g = computeEnergyGridlines(starts, viewStart, viewEnd, ianaTimeZone, coarseLabel, {
+				referenceDate: axisReferenceDate
+			});
 			store.xGridlineTicks = g.gridlineTicks;
 			store.xTicks = g.ticks;
 			store.formatTickX = g.formatTick;

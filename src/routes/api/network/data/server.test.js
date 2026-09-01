@@ -67,6 +67,110 @@ describe('network data endpoint', () => {
 		});
 	});
 
+	it('merges imports and exports into regional NEM generation', async () => {
+		mocks.getNetworkData.mockResolvedValue({
+			response: {
+				data: [
+					{
+						metric: 'power',
+						results: [
+							{
+								columns: { fueltech: 'coal_black' },
+								data: [['2026-01-01T00:00:00', 1_000]]
+							}
+						]
+					}
+				]
+			}
+		});
+		mocks.getMarket.mockResolvedValue({
+			response: {
+				data: [
+					{
+						metric: 'flow_imports',
+						results: [{ columns: { interconnector: 'VNI' }, data: [['2026-01-01T00:00:00', 300]] }]
+					},
+					{
+						metric: 'flow_exports',
+						results: [{ columns: { interconnector: 'QNI' }, data: [['2026-01-01T00:00:00', 180]] }]
+					}
+				]
+			}
+		});
+
+		const response = await request(
+			'region=nsw1&metric=power&interval=1h&date_start=2026-01-01&date_end=2026-01-02'
+		);
+		const body = await response.json();
+		const results = body.response.data.find((entry) => entry.metric === 'power').results;
+
+		expect(mocks.getMarket).toHaveBeenCalledWith('NEM', ['flow_imports', 'flow_exports'], {
+			interval: '1h',
+			dateStart: '2026-01-01',
+			dateEnd: '2026-01-02',
+			network_region: 'NSW1'
+		});
+		expect(results).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ columns: expect.objectContaining({ fueltech: 'imports' }) }),
+				expect.objectContaining({ columns: expect.objectContaining({ fueltech: 'exports' }) })
+			])
+		);
+	});
+
+	it('uses energy flow metrics for regional energy and keeps existing flow fuel techs', async () => {
+		mocks.getNetworkData.mockResolvedValue({
+			response: {
+				data: [
+					{
+						metric: 'energy',
+						results: [{ columns: { fueltech: 'imports' }, data: [['2026-01-01T00:00:00', 250]] }]
+					}
+				]
+			}
+		});
+		mocks.getMarket.mockResolvedValue({
+			response: {
+				data: [
+					{
+						metric: 'flow_imports_energy',
+						results: [{ columns: { interconnector: 'VNI' }, data: [['2026-01-01T00:00:00', 300]] }]
+					},
+					{
+						metric: 'flow_exports_energy',
+						results: [{ columns: { interconnector: 'QNI' }, data: [['2026-01-01T00:00:00', 180]] }]
+					}
+				]
+			}
+		});
+
+		const response = await request(
+			'region=vic1&metric=energy&interval=1d&date_start=2026-01-01&date_end=2026-01-02'
+		);
+		const body = await response.json();
+		const results = body.response.data.find((entry) => entry.metric === 'energy').results;
+
+		expect(mocks.getMarket).toHaveBeenCalledWith(
+			'NEM',
+			['flow_imports_energy', 'flow_exports_energy'],
+			{
+				interval: '1d',
+				dateStart: '2026-01-01',
+				dateEnd: '2026-01-02',
+				network_region: 'VIC1'
+			}
+		);
+		expect(results.filter((result) => result.columns.fueltech === 'imports')).toHaveLength(1);
+		expect(results.filter((result) => result.columns.fueltech === 'exports')).toHaveLength(1);
+	});
+
+	it('does not request regional flows for whole networks or WA', async () => {
+		await request('region=_all&metric=power&interval=1h');
+		await request('region=wem&metric=power&interval=1h');
+		expect(mocks.getNetworkData).toHaveBeenCalledTimes(2);
+		expect(mocks.getMarket).not.toHaveBeenCalled();
+	});
+
 	it('does not invent a national spot price', async () => {
 		const response = await request('region=au&metric=price&interval=1h');
 		expect(response.status).toBe(400);

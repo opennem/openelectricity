@@ -1,4 +1,5 @@
 /** @typedef {(d: Date, timeZone?: string) => string} dateFormatter */
+import { formatDayMonth } from '$lib/components/charts/v2/date-labels.js';
 
 /**
  * @param {Date} d
@@ -48,8 +49,7 @@ let xTickValueFormatters = {
 	interval: {
 		ticks: 3,
 		format: (d, timeZone) => getInterval(d, timeZone),
-		formatTick: (d, timeZone) =>
-			new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short', timeZone }).format(d)
+		formatTick: (d, timeZone = '+10:00') => formatDayMonth(d, timeZone)
 	},
 	day: {
 		ticks: 3,

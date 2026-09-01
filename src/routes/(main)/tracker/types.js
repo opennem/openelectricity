@@ -20,6 +20,11 @@
  */
 
 /**
+ * Optional series drawn over the generation chart and persisted in the URL.
+ * @typedef {'demand' | 'renewables' | 'curtailment-solar' | 'curtailment-wind'} TrackerOverlay
+ */
+
+/**
  * Selected range: a rolling preset (days, -1 = All) or exact custom bounds.
  * @typedef {{ kind: 'preset', days: number, intervalId: string }
  *         | { kind: 'custom', startMs: number, endMs: number, intervalId: string }} TrackerRange
@@ -34,6 +39,7 @@
  * @property {string | null} bucketFilter - Recurring calendar period (All range only)
  * @property {PriceMode} priceMode
  * @property {EmissionsMode} emissionsMode
+ * @property {TrackerOverlay[]} overlays
  * @property {boolean} tablePanelOpen
  * @property {boolean} fullscreen
  */

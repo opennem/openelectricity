@@ -40,6 +40,7 @@
 	import {
 		applyTrackerUrl,
 		copiedTrackerUrl,
+		normaliseTrackerOverlays,
 		parseTrackerUrl,
 		validBucketFilterFor
 	} from './tracker-url.js';
@@ -54,6 +55,7 @@
 	let selectedGroup = $state(initialData.group);
 	let priceMode = $state(initialData.priceMode);
 	let emissionsMode = $state(initialData.emissionsMode);
+	let overlays = $state(initialData.overlays);
 	let tablePanelOpen = $state(initialData.tablePanelOpen);
 	let rangeSnapshot = $state(initialData.range);
 	/** Recurring calendar period in the All range; null shows every period. */
@@ -116,6 +118,7 @@
 			bucketFilter,
 			priceMode,
 			emissionsMode,
+			overlays,
 			tablePanelOpen
 		};
 	}
@@ -166,6 +169,12 @@
 		syncUrl('push');
 	}
 
+	/** @param {import('./types.js').TrackerOverlay[]} value */
+	function handleOverlaysChange(value) {
+		overlays = normaliseTrackerOverlays(value);
+		syncUrl('replace');
+	}
+
 	/** @param {boolean} open */
 	function handlePanelToggle(open) {
 		tablePanelOpen = open;
@@ -192,6 +201,7 @@
 		selectedGroup = parsed.group;
 		priceMode = parsed.priceMode;
 		emissionsMode = parsed.emissionsMode;
+		overlays = parsed.overlays;
 		tablePanelOpen = parsed.tablePanelOpen;
 		rangeSnapshot = parsed.range;
 		bucketFilter = parsed.bucketFilter;
@@ -323,6 +333,7 @@
 						group={selectedGroup}
 						{priceMode}
 						{emissionsMode}
+						{overlays}
 						{tablePanelOpen}
 						{bucketFilter}
 						initialRange={rangeSnapshot}
@@ -335,6 +346,7 @@
 						ongroupchange={handleGroupChange}
 						onpricemodechange={handlePriceModeChange}
 						onemissionsmodechange={handleEmissionsModeChange}
+						onoverlayschange={handleOverlaysChange}
 						onpaneltoggle={handlePanelToggle}
 					/>
 				</main>

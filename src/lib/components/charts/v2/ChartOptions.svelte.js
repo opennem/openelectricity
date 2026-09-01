@@ -118,6 +118,9 @@ export default class ChartOptions {
 	/** @type {SiPrefix} */
 	displayPrefix = $state('');
 
+	/** Whether the current display prefix came from an explicit user choice. */
+	hasManualDisplayPrefix = $state(false);
+
 	displayUnit = $derived((this.displayPrefix || '') + this.baseUnit);
 
 	/**
@@ -158,6 +161,18 @@ export default class ChartOptions {
 
 	setDisplayPrefix(/** @type {SiPrefix} */ prefix) {
 		this.displayPrefix = prefix;
+		this.hasManualDisplayPrefix = true;
+	}
+
+	/** Apply a data-driven default until the user chooses a unit explicitly. */
+	setAutomaticDisplayPrefix(/** @type {SiPrefix} */ prefix) {
+		if (!this.hasManualDisplayPrefix) this.displayPrefix = prefix;
+	}
+
+	/** Start a new unit family (for example power → energy) at its default. */
+	resetDisplayPrefix(/** @type {SiPrefix} */ prefix) {
+		this.hasManualDisplayPrefix = false;
+		this.displayPrefix = prefix;
 	}
 
 	/**
@@ -169,7 +184,7 @@ export default class ChartOptions {
 
 		const currentIndex = this.allowedPrefixes.indexOf(this.displayPrefix);
 		const nextIndex = (currentIndex + 1) % this.allowedPrefixes.length;
-		this.displayPrefix = this.allowedPrefixes[nextIndex];
+		this.setDisplayPrefix(this.allowedPrefixes[nextIndex]);
 		return this.displayPrefix;
 	}
 }

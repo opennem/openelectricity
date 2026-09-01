@@ -1,6 +1,7 @@
 import { eachYearOfInterval } from 'date-fns';
 import { getFormattedDate } from '$lib/utils/formatters';
 import popEveryXItem from '$lib/utils/pop-every-x-item';
+import { formatDayMonth } from '$lib/components/charts/v2/date-labels.js';
 
 /**
  * @param {Date} d
@@ -31,13 +32,7 @@ export function getFormattedDateTimeWithTimezone(d, timeZone = '+10:00') {
  * @returns {string}
  */
 export function getFormattedDayDateWithTimezone(d, timeZone = '+10:00') {
-	let date = new Intl.DateTimeFormat('en-AU', {
-		day: 'numeric',
-		month: 'short',
-		timeZone
-	}).format(d);
-
-	return `${date}`;
+	return formatDayMonth(d, timeZone);
 }
 
 /** for each range, the ticks, format, and formatTick are defined.

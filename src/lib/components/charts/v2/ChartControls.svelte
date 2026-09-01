@@ -73,7 +73,7 @@
 	 * @param {string} prefix
 	 */
 	function handleUnitChange(prefix) {
-		chart.chartOptions.displayPrefix = /** @type {SiPrefix} */ (prefix);
+		chart.chartOptions.setDisplayPrefix(/** @type {SiPrefix} */ (prefix));
 	}
 </script>
 
