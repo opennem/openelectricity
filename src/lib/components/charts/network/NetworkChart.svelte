@@ -406,6 +406,7 @@
 			chart.hideChartTypeOptions = true;
 			// Single-series line — the strip total would just repeat the value.
 			if (intensity) chart.chartTooltips.showTotal = false;
+			else chart.chartTooltips.reverseSeriesOrder = true;
 			applyTimeTickFormat(chart);
 			return chart;
 		}
@@ -492,6 +493,7 @@
 		});
 		applyCommonStyles(chart);
 		chart.useDivergingStack = useDivergingStack;
+		chart.chartTooltips.reverseSeriesOrder = true;
 		if (marketValue) {
 			chart.useFormatY = true;
 			chart.formatY = (/** @type {number} */ d) =>
@@ -893,6 +895,12 @@
 			return false;
 		}
 		return manager.initialLoadComplete && !manager.hasPendingFetch && !manager.isLoading;
+	}
+
+	/** The active SI prefix is exposed so adjacent summaries can stay in sync
+	 *  with the unit selected in this chart's options. */
+	export function getDisplayPrefix() {
+		return chartStore?.chartOptions.displayPrefix ?? 'M';
 	}
 </script>
 

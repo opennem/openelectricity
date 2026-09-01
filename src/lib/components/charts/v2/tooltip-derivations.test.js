@@ -198,6 +198,18 @@ describe('buildSeriesRows', () => {
 		expect(rows.map((r) => r.key)).toEqual(['coal', 'gas', 'wind']);
 	});
 
+	it('reverses rows when configured without mutating visibleSeriesNames', () => {
+		const visibleSeriesNames = ['coal', 'gas', 'wind'];
+		const chart = makeChart({
+			visibleSeriesNames,
+			chartTooltips: { valueKey: undefined, showTotal: true, reverseSeriesOrder: true }
+		});
+		const rows = buildSeriesRows(chart, { coal: 10, gas: 20, wind: 30 });
+
+		expect(rows.map((row) => row.key)).toEqual(['wind', 'gas', 'coal']);
+		expect(visibleSeriesNames).toEqual(['coal', 'gas', 'wind']);
+	});
+
 	it('marks only the hovered row with isHovered', () => {
 		const chart = makeChart({
 			visibleSeriesNames: ['coal', 'gas', 'wind'],

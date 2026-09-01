@@ -161,10 +161,13 @@ export function formatTooltipDate(chart, activeData) {
 export function buildSeriesRows(chart, activeData) {
 	if (!activeData) return [];
 	const hoverKey = getValueKey(chart);
+	const seriesNames = chart.chartTooltips.reverseSeriesOrder
+		? [...chart.visibleSeriesNames].reverse()
+		: chart.visibleSeriesNames;
 
 	/** @type {TooltipSeriesRow[]} */
 	const rows = [];
-	for (const key of chart.visibleSeriesNames) {
+	for (const key of seriesNames) {
 		const raw = activeData[key];
 		const numeric = Number(raw);
 		const hasValue = Number.isFinite(numeric);

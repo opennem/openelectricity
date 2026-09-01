@@ -20,6 +20,7 @@
 	 *   rows: import('./types.js').FuelTechTableRow[],
 	 *   valuesPending?: boolean,
 	 *   basis?: 'power' | 'energy',
+	 *   displayPrefix?: SiPrefix,
 	 *   group?: string,
 	 *   contributionMode?: import('./types.js').ContributionMode,
 	 *   curtailmentRows?: Array<{ id: string, label: string, avPowerMW: number, contributionPct: number | null }>,
@@ -42,6 +43,7 @@
 		rows,
 		valuesPending = false,
 		basis = 'power',
+		displayPrefix = 'M',
 		group = DEFAULT_GROUP,
 		contributionMode = 'generation',
 		curtailmentRows = [],
@@ -73,6 +75,7 @@
 
 	let sourceRows = $derived(rows.filter((row) => !row.isLoad));
 	let loadRows = $derived(rows.filter((row) => row.isLoad));
+	let powerUnit = $derived(`${displayPrefix}W`);
 
 	/** Dim stale values until the next complete snapshot is ready. */
 	let valueCell = $derived(
@@ -110,6 +113,19 @@
 	/** @param {number | null} value */
 	function formatPct(value) {
 		return value == null ? '—' : `${formatSI(value, { maximumFractionDigits: 1 })}%`;
+	}
+
+	/** Convert the table's native MW aggregates to the generation chart's
+	 *  selected SI prefix while retaining their average-power meaning.
+	 *  @param {number | null} value */
+	function formatPower(value) {
+		return value == null
+			? '—'
+			: formatSI(value, {
+					fromPrefix: 'M',
+					toPrefix: displayPrefix,
+					maximumFractionDigits: displayPrefix === 'M' ? 1 : 2
+				});
 	}
 
 	/** @param {number | null} value */
@@ -162,7 +178,7 @@
 				{/if}
 			</td>
 			<td class="px-2 py-1.5 text-dark-grey {valueCell}">
-				{formatSI(row.avPowerMW ?? NaN, { maximumFractionDigits: 1 })}
+				{formatPower(row.avPowerMW)}
 			</td>
 			<td class="px-2 py-1.5 text-dark-grey {valueCell}">
 				{formatPct(row.contributionPct)}
@@ -221,7 +237,7 @@
 	</thead>
 {/snippet}
 
-<table class="w-full table-fixed">
+<table class="w-full table-fixed select-none">
 	<thead class="border-b border-warm-grey bg-light-warm-grey">
 		<tr>
 			<th class="w-[40%] px-2 py-3 text-left align-top text-sm font-medium">
@@ -240,7 +256,7 @@
 			<th class="px-2 py-3 text-right align-top font-medium">
 				<div class="flex flex-col items-end">
 					<span class="text-xs">Av power</span>
-					<span class="font-mono text-xxs font-light text-mid-grey">MW</span>
+					<span class="font-mono text-xxs font-light text-mid-grey">{powerUnit}</span>
 				</div>
 			</th>
 			<th class="px-2 py-3 text-right align-top font-medium">
@@ -312,7 +328,7 @@
 						</div>
 					</td>
 					<td class="px-2 py-1.5 text-dark-grey {valueCell}">
-						{formatSI(row.avPowerMW, { maximumFractionDigits: 1 })}
+						{formatPower(row.avPowerMW)}
 					</td>
 					<td class="px-2 py-1.5 text-dark-grey {valueCell}">
 						{formatPct(row.contributionPct)}
@@ -330,9 +346,7 @@
 				showDemandLine,
 				demandLineColour,
 				ondemandlinetoggle,
-				overlaySummary.demandAvMW === null
-					? '—'
-					: formatSI(overlaySummary.demandAvMW, { maximumFractionDigits: 1 }),
+				formatPower(overlaySummary.demandAvMW),
 				'—'
 			)}
 			{@render overlayRow(
@@ -340,9 +354,7 @@
 				showRenewablesLine,
 				renewablesLineColour,
 				onrenewableslinetoggle,
-				overlaySummary.renewablesAvMW === null
-					? '—'
-					: formatSI(overlaySummary.renewablesAvMW, { maximumFractionDigits: 1 }),
+				formatPower(overlaySummary.renewablesAvMW),
 				formatPct(overlaySummary.renewablesSharePct)
 			)}
 		</tbody>

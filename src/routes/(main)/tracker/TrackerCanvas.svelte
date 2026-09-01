@@ -114,6 +114,9 @@
 	let viewEnd = $state(0);
 
 	/** @type {any} */ let generationChart = $state(undefined);
+	let generationDisplayPrefix = $derived(
+		/** @type {SiPrefix} */ (generationChart?.getDisplayPrefix?.() ?? 'M')
+	);
 	/** @type {any} */ let priceChart = $state(undefined);
 	/** @type {any} */ let emissionsChart = $state(undefined);
 
@@ -857,6 +860,7 @@
 				structurePending={tableStructurePending}
 				structureKey={settledStructureKey}
 				basis={range.activeMetric}
+				displayPrefix={generationDisplayPrefix}
 				{group}
 				{contributionMode}
 				hiddenCount={hiddenSeries.length}

@@ -16,6 +16,7 @@
 	 *   structurePending?: boolean,
 	 *   structureKey?: string,
 	 *   basis?: 'power' | 'energy',
+	 *   displayPrefix?: SiPrefix,
 	 *   group?: string,
 	 *   contributionMode?: import('./types.js').ContributionMode,
 	 *   hiddenCount?: number,
@@ -44,6 +45,7 @@
 		structurePending = false,
 		structureKey = '',
 		basis = 'power',
+		displayPrefix = 'M',
 		group = DEFAULT_GROUP,
 		contributionMode = 'generation',
 		hiddenCount = 0,
@@ -125,6 +127,7 @@
 				rows={displayed.rows}
 				valuesPending={valuesPending && !structurePending}
 				{basis}
+				{displayPrefix}
 				{group}
 				{contributionMode}
 				curtailmentRows={displayed.curtailmentRows}

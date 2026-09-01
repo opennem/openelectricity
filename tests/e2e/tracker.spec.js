@@ -166,20 +166,31 @@ test.describe('Tracker smoke tests', () => {
 	});
 
 	test('generation chart options follow the power and energy unit families', async ({ page }) => {
-		await page.goto('/tracker?table=0');
+		await page.goto('/tracker?table=1');
 		await waitForHydration(page);
 		let generationCard = page
 			.getByRole('heading', { name: 'Generation', exact: true })
 			.locator('xpath=ancestor::section[1]');
+		const fuelTechTable = page.getByRole('table');
 		await expect(generationCard.getByText('Power', { exact: true })).toBeVisible({
 			timeout: 30000
 		});
+		await expect(fuelTechTable.getByText('MW', { exact: true })).toBeVisible({ timeout: 30000 });
+		const demandPowerCell = fuelTechTable
+			.getByRole('button', { name: /^Demand\b/ })
+			.locator('td')
+			.nth(1);
+		await expect(demandPowerCell).not.toHaveText('—', { timeout: 30000 });
+		const demandMW = Number((await demandPowerCell.textContent())?.trim().replaceAll(',', ''));
 		await generationCard.getByRole('button', { name: 'Toggle chart options' }).click();
 		await expect(generationCard.getByRole('tab', { name: 'MW', exact: true })).toBeVisible();
 		await expect(generationCard.getByRole('tab', { name: 'GW', exact: true })).toBeVisible();
 		await expect(generationCard.getByRole('tab', { name: 'TWh', exact: true })).toHaveCount(0);
 		await generationCard.getByRole('tab', { name: 'GW', exact: true }).click();
 		await expect(generationCard.getByRole('button', { name: 'GW', exact: true })).toBeVisible();
+		await expect(fuelTechTable.getByText('GW', { exact: true })).toBeVisible();
+		const demandGW = Number((await demandPowerCell.textContent())?.trim().replaceAll(',', ''));
+		expect(demandGW).toBeCloseTo(demandMW / 1000, 1);
 
 		await page.goto('/tracker?range=30d&interval=1d&table=0');
 		await waitForHydration(page);
