@@ -22,6 +22,14 @@ async function expectOverlayParam(page, expected) {
 	await expect.poll(() => new URL(page.url()).searchParams.get('overlay')).toBe(expected);
 }
 
+/**
+ * Match the table's average-power precision rule for an already converted value.
+ * @param {number} value
+ */
+function roundTablePower(value) {
+	return Number(value.toFixed(Math.abs(value) < 10 ? 1 : 0));
+}
+
 test.describe('Tracker smoke tests', () => {
 	test('/tracker loads without errors', async ({ page }) => {
 		const errors = [];
@@ -257,7 +265,7 @@ test.describe('Tracker smoke tests', () => {
 		await expect(generationCard.getByRole('button', { name: 'GW', exact: true })).toBeVisible();
 		await expect(fuelTechTable.getByText('GW', { exact: true })).toBeVisible();
 		const demandGW = Number((await demandPowerCell.textContent())?.trim().replaceAll(',', ''));
-		expect(demandGW).toBeCloseTo(demandMW / 1000, 1);
+		expect(demandGW).toBe(roundTablePower(demandMW / 1000));
 
 		await page.goto('/tracker?range=30d&interval=1d&table=0');
 		await waitForHydration(page);

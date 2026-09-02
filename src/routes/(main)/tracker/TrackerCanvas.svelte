@@ -58,6 +58,7 @@
 		computeOverlaySummary,
 		contributionDenominatorMWh
 	} from './table-model.js';
+	import { formatTrackerPercentageValue } from './table-format.js';
 
 	/** @type {{
 	 *   region: string,
@@ -502,8 +503,7 @@
 				colour: RENEWABLES_LINE_COLOUR,
 				scale: 'percent',
 				tooltipUnit: '%',
-				formatTooltipValue: (/** @type {number} */ value) =>
-					value.toLocaleString('en-AU', { maximumFractionDigits: 1 })
+				formatTooltipValue: formatTrackerPercentageValue
 			});
 		}
 		return lines;

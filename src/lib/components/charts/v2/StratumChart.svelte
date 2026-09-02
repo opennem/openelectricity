@@ -39,6 +39,8 @@
 	 * @property {string} [netTotalKey] - Key for net total values
 	 * @property {string} [netTotalColor] - Color for net total line
 	 * @property {*} [overlayStart] - Start category for hatched overlay (e.g., projection start)
+	 * @property {*} [overlayEnd] - Optional end category for the hatched overlay
+	 * @property {string} [overlayPatternTransform] - SVG transform controlling hatch direction
 	 * @property {(time: number, key?: string) => void} [onhover]
 	 * @property {() => void} [onhoverend]
 	 * @property {(time: number) => void} [onfocus]
@@ -90,6 +92,8 @@
 		netTotalKey,
 		netTotalColor,
 		overlayStart,
+		overlayEnd,
+		overlayPatternTransform,
 		onhover,
 		onhoverend,
 		onfocus,
@@ -336,6 +340,8 @@
 						{netTotalKey}
 						{netTotalColor}
 						{overlayStart}
+						{overlayEnd}
+						{overlayPatternTransform}
 						{clampHoverLine}
 						{animate}
 						{hideAnnotationsOnMobile}

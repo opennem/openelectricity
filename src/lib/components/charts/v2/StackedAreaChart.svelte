@@ -42,6 +42,8 @@
 	 * @property {string} [netTotalKey] - Key for net total values in data (renders step line)
 	 * @property {string} [netTotalColor] - Color for net total line
 	 * @property {number | null} [overlayStart] - Start time (ms) for hatched projection overlay
+	 * @property {number | null} [overlayEnd] - Optional end time (ms) for the hatched overlay
+	 * @property {string} [overlayPatternTransform] - SVG transform controlling hatch direction
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
 	 * @property {boolean} [hideAnnotationsOnMobile] - Hide annotations on mobile viewports
@@ -59,6 +61,8 @@
 		netTotalKey,
 		netTotalColor = '#C74523',
 		overlayStart,
+		overlayEnd,
+		overlayPatternTransform,
 		clampHoverLine = false,
 		animate = false,
 		hideAnnotationsOnMobile = false,
@@ -269,7 +273,12 @@
 				{/if}
 
 				{#if overlayStart != null}
-					<HatchOverlay startTime={overlayStart} patternId="{id}-hatch-pattern" />
+					<HatchOverlay
+						startTime={overlayStart}
+						endTime={overlayEnd}
+						patternId="{id}-hatch-pattern"
+						patternTransform={overlayPatternTransform}
+					/>
 				{/if}
 			</g>
 

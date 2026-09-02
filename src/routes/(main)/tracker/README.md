@@ -37,7 +37,9 @@ The canonical tracker page — the planned replacement for the legacy
   promotes its default from MWh to TWh when the largest visible positive
   stack reaches six digits in MWh, while an explicit unit choice remains
   pinned until the power/energy basis changes. The selected prefix drives the
-  chart header, y-axis and floating tooltip values together.
+  chart header, y-axis and floating tooltip values together. The current open
+  energy bucket (hour/day/week/month and coarser calendar grains) is hatched
+  until that interval is complete.
 - **Grouping menu** mirrors the legacy explore tool: Detailed, Simplified,
   Coal/Gas/Renewables, Flexibility, Renewables/Fossils, VRE/Residual
   (`groups.js` registry). Grouping is applied client-side in

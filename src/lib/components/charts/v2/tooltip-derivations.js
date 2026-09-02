@@ -73,6 +73,22 @@ function intlTooltipDate(date, timeZone) {
 }
 
 /**
+ * Format a standalone tooltip number. Tooltip-specific formatters take
+ * precedence over the chart's default converter for series, overlays and
+ * totals alike.
+ *
+ * @param {ChartStoreLike} chart
+ * @param {number | string | null | undefined} value
+ * @returns {string}
+ */
+export function formatTooltipNumericValue(chart, value) {
+	if (value === undefined || value === null) return '';
+	const numeric = Number(value);
+	if (!Number.isFinite(numeric)) return '';
+	return chart.formatTooltipY?.(numeric) ?? chart.convertAndFormatValue(numeric);
+}
+
+/**
  * Resolve the formatted x-axis label for the tooltip's active row. Routes
  * category charts through `chart.formatX`. For time-based charts, calls the
  * consumer-provided `chart.formatTickX` first; if that returns a Date (i.e.
@@ -122,7 +138,7 @@ export function getFormattedY(chart, value) {
 	if (value === undefined || value === null) return '';
 	const n = Number(value);
 	if (Number.isNaN(n)) return '';
-	if (chart.formatTooltipY) return chart.formatTooltipY(n);
+	if (chart.formatTooltipY) return formatTooltipNumericValue(chart, n);
 	return chart.useFormatY ? chart.formatY(n) : chart.convertAndFormatValue(n);
 }
 
@@ -176,9 +192,7 @@ export function buildSeriesRows(chart, activeData) {
 			label: chart.seriesLabels[key] ?? key,
 			colour: chart.seriesColours[key],
 			value: hasValue ? numeric : undefined,
-			formattedValue: hasValue
-				? (chart.formatTooltipY?.(numeric) ?? chart.convertAndFormatValue(numeric))
-				: '',
+			formattedValue: hasValue ? formatTooltipNumericValue(chart, numeric) : '',
 			isHovered: key === hoverKey
 		});
 	}
@@ -237,7 +251,7 @@ export function buildOverlayRows(chart, activeData) {
 			formattedValue: hasValue
 				? formatter
 					? formatter(numeric)
-					: chart.convertAndFormatValue(numeric)
+					: formatTooltipNumericValue(chart, numeric)
 				: '',
 			isHovered: false,
 			unit,

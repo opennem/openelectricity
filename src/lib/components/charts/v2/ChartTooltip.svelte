@@ -13,7 +13,8 @@
 		getValueKey,
 		getTotalForRow,
 		getFormattedX,
-		getFormattedY
+		getFormattedY,
+		formatTooltipNumericValue
 	} from './tooltip-derivations.js';
 
 	/**
@@ -35,7 +36,7 @@
 
 	let total = $derived(getTotalForRow(chart, activeData));
 	let formattedValue = $derived(getFormattedY(chart, value));
-	let formattedTotal = $derived(chart.convertAndFormatValue(total));
+	let formattedTotal = $derived(formatTooltipNumericValue(chart, total));
 	let activeColour = $derived(valueKey ? chart.seriesColours[valueKey] : undefined);
 	let activeLabel = $derived(valueKey ? chart.seriesLabels[valueKey] : undefined);
 	let formattedDate = $derived(getFormattedX(chart, activeData));

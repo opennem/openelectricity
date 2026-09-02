@@ -44,6 +44,11 @@ describe('formatSI', () => {
 		).toBe('2 GW');
 	});
 
+	it('retains explicit minimumFractionDigits', () => {
+		expect(formatSI(5, { minimumFractionDigits: 1, maximumFractionDigits: 1 })).toBe('5.0');
+		expect(formatSI(50, { minimumFractionDigits: 1 })).toBe('50.0');
+	});
+
 	it('uses grouping by default for large numbers', () => {
 		expect(formatSI(1234567, { fromPrefix: '', toPrefix: '', baseUnit: 'W' })).toBe('1,234,567 W');
 	});

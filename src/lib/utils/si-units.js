@@ -69,6 +69,7 @@ export function convert(fromPrefix, toPrefix, value) {
  * @param {SiPrefix} [options.fromPrefix] - SI prefix the value is currently in (default: '')
  * @param {SiPrefix} [options.toPrefix] - SI prefix to display as (default: '')
  * @param {string} [options.baseUnit] - Base unit to append (e.g. 'W', 'Wh')
+ * @param {number} [options.minimumFractionDigits] - Minimum decimal places to retain
  * @param {number} [options.maximumFractionDigits] - Decimal places (default: auto based on magnitude)
  * @param {boolean} [options.useGrouping] - Use thousands separator (default: true)
  * @returns {string}
@@ -78,6 +79,7 @@ export function formatSI(value, options = {}) {
 		fromPrefix = /** @type {SiPrefix} */ (''),
 		toPrefix = /** @type {SiPrefix} */ (''),
 		baseUnit = '',
+		minimumFractionDigits,
 		maximumFractionDigits,
 		useGrouping = true
 	} = options;
@@ -88,11 +90,13 @@ export function formatSI(value, options = {}) {
 	if (isNaN(converted)) return '—';
 
 	const abs = Math.abs(converted);
-	const digits =
+	const automaticMaximumDigits =
 		maximumFractionDigits !== undefined ? maximumFractionDigits : abs < 10 ? 2 : abs < 100 ? 1 : 0;
+	const maximumDigits = Math.max(automaticMaximumDigits, minimumFractionDigits ?? 0);
 
 	const formatted = new Intl.NumberFormat('en-AU', {
-		maximumFractionDigits: digits,
+		minimumFractionDigits,
+		maximumFractionDigits: maximumDigits,
 		useGrouping
 	}).format(converted);
 

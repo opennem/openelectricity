@@ -54,11 +54,13 @@
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { formatPrice } from '$lib/utils/formatters';
 	import { fetchBufferMultiplierForInterval } from '../v2/fetch-window.js';
+	import { currentIncompleteInterval } from '../v2/incomplete-interval.js';
 	import { ianaFromOffset, offsetMsFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
 	import nighttimes from '$lib/utils/nighttimes';
 	import {
 		automaticGenerationEnergyPrefix,
+		formatGenerationUnitValue,
 		generationUnitMaximumFractionDigits
 	} from './generation-units.js';
 
@@ -494,6 +496,14 @@
 		applyCommonStyles(chart);
 		chart.useDivergingStack = useDivergingStack;
 		chart.chartTooltips.reverseSeriesOrder = true;
+		if (!marketValue && generationUnitOptions) {
+			chart.formatTooltipY = (/** @type {number} */ value) =>
+				formatGenerationUnitValue(
+					value,
+					chart.chartOptions.prefix,
+					chart.chartOptions.displayPrefix
+				);
+		}
 		if (marketValue) {
 			chart.useFormatY = true;
 			chart.formatY = (/** @type {number} */ d) =>
@@ -624,6 +634,18 @@
 		if (!chartStore || panelKind !== 'generation' || !generationUnitOptions) return;
 		chartStore.maximumFractionDigits = generationUnitMaximumFractionDigits(
 			chartStore.chartOptions.displayPrefix
+		);
+	});
+
+	// Energy buckets are cumulative until their calendar interval closes. Match
+	// the legacy Tracker treatment by hatching only the currently open bucket.
+	let incompleteEnergyInterval = $derived.by(() => {
+		if (holdFrame || !chartStore || panelKind !== 'generation' || !isEnergyMetric) return null;
+		return currentIncompleteInterval(
+			chartStore.seriesData,
+			displayInterval,
+			Date.now(),
+			ianaTimeZone
 		);
 	});
 
@@ -908,6 +930,9 @@
 	<div class="group relative {showContainer ? 'rounded-lg p-4' : ''}">
 		<StratumChart
 			chart={chartStore}
+			overlayStart={incompleteEnergyInterval?.start}
+			overlayEnd={incompleteEnergyInterval?.end}
+			overlayPatternTransform="rotate(-45)"
 			{showHeader}
 			{tooltipMode}
 			zoomMode="static"

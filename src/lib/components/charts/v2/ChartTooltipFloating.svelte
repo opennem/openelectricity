@@ -16,6 +16,7 @@
 		getActiveData,
 		getTotalForRow,
 		getFormattedX,
+		formatTooltipNumericValue,
 		buildSeriesRows,
 		buildOverlayRows
 	} from './tooltip-derivations.js';
@@ -90,7 +91,7 @@
 	let rows = $derived(activeData ? buildSeriesRows(chart, activeData) : []);
 	let overlayRows = $derived(activeData ? buildOverlayRows(chart, activeData) : []);
 	let total = $derived(getTotalForRow(chart, activeData));
-	let formattedTotal = $derived(chart.convertAndFormatValue(total));
+	let formattedTotal = $derived(formatTooltipNumericValue(chart, total));
 	let displayUnit = $derived(chart.chartOptions.displayUnit ?? '');
 
 	/**

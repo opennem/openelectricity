@@ -5,7 +5,7 @@
 	import { DEFAULT_GROUP } from './tracker-model.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs.js';
 	import { formatPrice } from '$lib/utils/formatters';
-	import { formatSI } from '$lib/utils/si-units.js';
+	import { formatTablePercentage, formatTablePower } from './table-format.js';
 
 	/**
 	 * FuelTechTable — the tracker's fuel-tech breakdown table. Four columns:
@@ -63,9 +63,11 @@
 	} = $props();
 
 	/** Diagonal hatch in the series colour — the curtailment swatch treatment.
+	 * CSS gradient angles describe the gradient axis rather than the stripe,
+	 * so -45deg matches OverlayArea's vertical SVG line rotated by 45deg.
 	 * @param {string} colour */
 	function hatchStyle(colour) {
-		return `background: repeating-linear-gradient(45deg, ${colour}, ${colour} 3px, rgba(255,255,255,0.6) 3px, rgba(255,255,255,0.6) 5px); border-color: ${colour};`;
+		return `background: repeating-linear-gradient(-45deg, ${colour}, ${colour} 3px, rgba(255,255,255,0.6) 3px, rgba(255,255,255,0.6) 5px); border-color: ${colour};`;
 	}
 
 	const CONTRIBUTION_OPTIONS = [
@@ -112,20 +114,14 @@
 
 	/** @param {number | null} value */
 	function formatPct(value) {
-		return value == null ? '—' : `${formatSI(value, { maximumFractionDigits: 1 })}%`;
+		return formatTablePercentage(value);
 	}
 
 	/** Convert the table's native MW aggregates to the generation chart's
 	 *  selected SI prefix while retaining their average-power meaning.
 	 *  @param {number | null} value */
 	function formatPower(value) {
-		return value == null
-			? '—'
-			: formatSI(value, {
-					fromPrefix: 'M',
-					toPrefix: displayPrefix,
-					maximumFractionDigits: displayPrefix === 'M' ? 1 : 2
-				});
+		return formatTablePower(value, displayPrefix);
 	}
 
 	/** @param {number | null} value */

@@ -4,6 +4,7 @@ import {
 	getValueKey,
 	getTotalForRow,
 	formatTooltipDate,
+	formatTooltipNumericValue,
 	buildSeriesRows,
 	buildOverlayRows
 } from './tooltip-derivations.js';
@@ -282,6 +283,18 @@ describe('buildSeriesRows', () => {
 	});
 });
 
+describe('formatTooltipNumericValue', () => {
+	it('uses the tooltip formatter for totals and other standalone values', () => {
+		const chart = makeChart({
+			formatTooltipY: (/** @type {number} */ value) => `tip:${value.toFixed(0)}`,
+			convertAndFormatValue: () => 'fallback'
+		});
+
+		expect(formatTooltipNumericValue(chart, 12.4)).toBe('tip:12');
+		expect(formatTooltipNumericValue(chart, null)).toBe('');
+	});
+});
+
 describe('buildOverlayRows', () => {
 	it('joins enabled area and line overlays at the active timestamp', () => {
 		const chart = makeChart({
@@ -329,6 +342,32 @@ describe('buildOverlayRows', () => {
 		expect(rows.map((row) => row.formattedValue)).toEqual(['12.0', '8.0', '250.0', '67.9']);
 		expect(rows.map((row) => row.unit)).toEqual(['MW', 'MW', 'MW', '%']);
 		expect(rows.map((row) => row.kind)).toEqual(['area', 'area', 'line', 'line']);
+	});
+
+	it('uses the chart tooltip formatter for overlays without their own formatter', () => {
+		const chart = makeChart({
+			formatTooltipY: (/** @type {number} */ value) => `tip:${value.toFixed(0)}`,
+			overlayAreas: [
+				{
+					id: 'curtailment',
+					data: [{ time: 100, curtailment_wind: 12.4 }],
+					series: [{ id: 'curtailment_wind', colour: '#111' }]
+				}
+			],
+			overlayLines: [
+				{
+					id: 'demand',
+					data: [{ time: 100, demand: 250.4 }],
+					valueKey: 'demand',
+					colour: '#333'
+				}
+			]
+		});
+
+		expect(buildOverlayRows(chart, { time: 100 }).map((row) => row.formattedValue)).toEqual([
+			'tip:12',
+			'tip:250'
+		]);
 	});
 
 	it('keeps enabled overlay rows stable when the active bucket has no value', () => {
