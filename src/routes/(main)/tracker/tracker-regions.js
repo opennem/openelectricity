@@ -1,7 +1,7 @@
 /**
  * Tracker-local region options: the shared Explorer list plus an
- * "All Regions" (NEM+WEM combined, value 'au') entry at the top, which is the
- * tracker's default scope.
+ * "All Regions" (NEM+WEM combined, value 'au') entry at the top. The tracker's
+ * default scope is the NEM (`DEFAULT_REGION` in `tracker-model.js`).
  *
  * Deliberately NOT added to `$lib/regions.js` — that list feeds the scenarios
  * filters, the studio explorer and the positional `regionsNemOnlyOptions` /
@@ -9,8 +9,6 @@
  */
 
 import { regionOptions } from '$lib/regions.js';
-
-export const DEFAULT_REGION = 'au';
 
 export const TRACKER_REGION_OPTIONS = [
 	{
@@ -21,6 +19,9 @@ export const TRACKER_REGION_OPTIONS = [
 	},
 	...regionOptions
 ];
+
+/** Every selectable scope value — the URL validation list. */
+export const TRACKER_REGION_VALUES = TRACKER_REGION_OPTIONS.map((option) => option.value);
 
 const NEM_STATE_VALUES = ['nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 
@@ -37,16 +38,6 @@ export const TRACKER_REGION_TREE = TRACKER_REGION_OPTIONS.filter(
 	}
 	return option;
 });
-
-/**
- * Whole-of-network scopes — 'au' (NEM+WEM) and '_all' (whole NEM). These
- * aggregate every region, so per-region treatments (map highlight, single
- * region chips/corridors) don't apply.
- * @param {string} region
- */
-export function isWholeNetworkScope(region) {
-	return region === 'au' || region === '_all';
-}
 
 /**
  * Whether a scope has a spot price — every scope except 'au' (no national

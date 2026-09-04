@@ -119,6 +119,7 @@
 			axis="y"
 			onstart={startDrag}
 			active={isDragging}
+			alwaysShowGrip
 			class="h-4 rounded-md"
 			role="separator"
 			aria-orientation="horizontal"

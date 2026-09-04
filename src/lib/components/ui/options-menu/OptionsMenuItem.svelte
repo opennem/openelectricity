@@ -1,20 +1,32 @@
 <script>
 	/**
+	 * One row of an OptionsMenu. Pass `selected` to render the row as a radio
+	 * choice within its heading's group: the selected row is bold on a tinted
+	 * background and carries `aria-checked`; the icon gutter stays blank on
+	 * every row so labels align with the icon rows around them.
+	 *
 	 * @type {{
 	 *   icon?: any,
 	 *   onclick?: () => void,
 	 *   kbd?: string | string[],
 	 *   href?: string,
+	 *   selected?: boolean,
 	 *   children: import('svelte').Snippet
 	 * }}
 	 */
-	let { icon, onclick, kbd, href, children } = $props();
+	let { icon, onclick, kbd, href, selected = undefined, children } = $props();
 
 	const Icon = $derived(icon);
 	const kbdKeys = $derived(kbd ? (Array.isArray(kbd) ? kbd : [kbd]) : null);
+	const isRadio = $derived(selected !== undefined);
 
-	const rowClass =
-		'w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left text-dark-grey no-underline hover:no-underline';
+	const baseRowClass =
+		'w-full px-3 py-2 text-xs flex items-center gap-3 transition-colors text-left no-underline hover:no-underline';
+	const rowClass = $derived(
+		selected
+			? `${baseRowClass} bg-warm-grey font-semibold text-black hover:bg-mid-warm-grey`
+			: `${baseRowClass} font-medium text-dark-grey hover:bg-light-warm-grey`
+	);
 </script>
 
 {#snippet inner()}
@@ -44,7 +56,12 @@
 		{@render inner()}
 	</a>
 {:else}
-	<button {onclick} class={rowClass}>
+	<button
+		{onclick}
+		class={rowClass}
+		role={isRadio ? 'menuitemradio' : undefined}
+		aria-checked={isRadio ? selected : undefined}
+	>
 		{@render inner()}
 	</button>
 {/if}

@@ -1,40 +1,28 @@
 <script>
 	import { untrack } from 'svelte';
 	import PanelRightClose from '@lucide/svelte/icons/panel-right-close';
-	import { DEFAULT_GROUP } from './tracker-model.js';
 	import FuelTechTable from './FuelTechTable.svelte';
+
+	/** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
+	/** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */
+	/** @typedef {import('./types.js').OverlaySummary} OverlaySummary */
 
 	/**
 	 * FuelTechPanel — table chrome, loading treatments and panel actions.
 	 *
 	 * Value refreshes dim the previous snapshot. Region and grouping changes
-	 * replace the row structure under an "Updating…" veil.
+	 * replace the row structure under an "Updating…" veil. Every other table
+	 * control is forwarded to FuelTechTable untouched.
 	 *
-	 * @type {{
-	 *   rows: import('./types.js').FuelTechTableRow[] | null,
+	 * @type {import('./types.js').FuelTechTableControls & {
+	 *   rows: FuelTechTableRow[] | null,
 	 *   valuesPending?: boolean,
 	 *   structurePending?: boolean,
 	 *   structureKey?: string,
-	 *   basis?: 'power' | 'energy',
-	 *   displayPrefix?: SiPrefix,
-	 *   group?: string,
-	 *   contributionMode?: import('./types.js').ContributionMode,
+	 *   curtailmentRows?: CurtailmentTableRow[],
+	 *   overlaySummary?: OverlaySummary | null,
 	 *   hiddenCount?: number,
 	 *   rangeLabel?: string,
-	 *   curtailmentRows?: Array<{ id: string, label: string, avPowerMW: number, contributionPct: number | null }>,
-	 *   shownCurtailment?: string[],
-	 *   curtailmentColours?: Record<string, string>,
-	 *   oncurtailmenttoggle?: (id: string, exclusive?: boolean) => void,
-	 *   overlaySummary?: { demandAvMW: number | null, renewablesAvMW: number | null, renewablesSharePct: number | null } | null,
-	 *   showDemandLine?: boolean,
-	 *   showRenewablesLine?: boolean,
-	 *   demandLineColour?: string,
-	 *   renewablesLineColour?: string,
-	 *   ondemandlinetoggle?: (exclusive?: boolean) => void,
-	 *   onrenewableslinetoggle?: (exclusive?: boolean) => void,
-	 *   ongroupchange?: (group: string) => void,
-	 *   oncontributionmodechange?: (mode: import('./types.js').ContributionMode) => void,
-	 *   ontoggle?: (series: string, exclusive?: boolean) => void,
 	 *   onshowall?: () => void,
 	 *   onclose?: () => void
 	 * }}
@@ -44,33 +32,19 @@
 		valuesPending = false,
 		structurePending = false,
 		structureKey = '',
-		basis = 'power',
-		displayPrefix = 'M',
-		group = DEFAULT_GROUP,
-		contributionMode = 'generation',
+		curtailmentRows = [],
+		overlaySummary = null,
 		hiddenCount = 0,
 		rangeLabel = '',
-		curtailmentRows = [],
-		shownCurtailment = [],
-		curtailmentColours = {},
-		oncurtailmenttoggle,
-		overlaySummary = null,
-		showDemandLine = false,
-		showRenewablesLine = false,
-		demandLineColour = '#C74523',
-		renewablesLineColour = '#52A972',
-		ondemandlinetoggle,
-		onrenewableslinetoggle,
-		ongroupchange,
-		oncontributionmodechange,
-		ontoggle,
 		onshowall,
-		onclose
+		onclose,
+		...tableControls
 	} = $props();
 
 	/** Keep one complete table snapshot during value refreshes. Replace it
-	 *  immediately when the region or grouping key changes. */
-	/** @type {{ key: string, rows: import('./types.js').FuelTechTableRow[], curtailmentRows: any[], overlaySummary: any } | null} */
+	 *  immediately when the region or grouping key changes. A latch — it holds
+	 *  the previous snapshot while pending, so it can't be a plain derived. */
+	/** @type {{ key: string, rows: FuelTechTableRow[], curtailmentRows: CurtailmentTableRow[], overlaySummary: OverlaySummary | null } | null} */
 	let displayed = $state.raw(null);
 	$effect(() => {
 		// Capture every dependency before reading the current snapshot untracked.
@@ -124,26 +98,11 @@
 	<div class="relative min-h-0 flex-1 overflow-auto" aria-busy={valuesPending || structurePending}>
 		{#if displayed}
 			<FuelTechTable
+				{...tableControls}
 				rows={displayed.rows}
-				valuesPending={valuesPending && !structurePending}
-				{basis}
-				{displayPrefix}
-				{group}
-				{contributionMode}
 				curtailmentRows={displayed.curtailmentRows}
-				{shownCurtailment}
-				{curtailmentColours}
-				{oncurtailmenttoggle}
 				overlaySummary={displayed.overlaySummary}
-				{showDemandLine}
-				{showRenewablesLine}
-				{demandLineColour}
-				{renewablesLineColour}
-				{ondemandlinetoggle}
-				{onrenewableslinetoggle}
-				{ongroupchange}
-				{oncontributionmodechange}
-				{ontoggle}
+				valuesPending={valuesPending && !structurePending}
 			/>
 			{#if structurePending}
 				<!-- Structural changes replace the rows; value refreshes only dim them. -->

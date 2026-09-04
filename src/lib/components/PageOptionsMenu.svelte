@@ -12,6 +12,9 @@
 	 * `downloadItems` + `ondownloaditem` let a host inject extra rows under the
 	 * "Download as CSV" heading — the facility detail layout uses this to surface
 	 * the page's chart exports (Generation, Energy, …) in the header menus.
+	 * `extraSections` lets a host prepend its own headed groups (each ending in
+	 * an `OptionsMenuDivider`) — the tracker keeps its fuel-tech grouping and
+	 * contribution-basis choices here.
 	 * @type {{
 	 *   isFullscreen?: boolean,
 	 *   onfullscreenchange?: () => void,
@@ -26,7 +29,8 @@
 	 *   showDocumentation?: boolean,
 	 *   searchShortcutKeys?: string[],
 	 *   triggerClass?: string,
-	 *   iconClass?: string
+	 *   iconClass?: string,
+	 *   extraSections?: import('svelte').Snippet<[{ close: () => void }]>
 	 * }}
 	 */
 	let {
@@ -43,7 +47,8 @@
 		showDocumentation = true,
 		searchShortcutKeys = ['/'],
 		triggerClass = undefined,
-		iconClass = undefined
+		iconClass = undefined,
+		extraSections
 	} = $props();
 
 	let downloading = $state(false);
@@ -82,6 +87,8 @@
 	{showDocumentation}
 >
 	{#snippet sections({ close })}
+		{@render extraSections?.({ close })}
+
 		{#if ondownloadcsv || downloadItems.length}
 			<OptionsMenuHeading icon={downloading ? Check : Download}>Download as CSV</OptionsMenuHeading>
 			{#if ondownloadcsv}

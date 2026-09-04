@@ -1,7 +1,7 @@
 /**
- * Pure state helpers for the tracker page — mode normalisation and the
- * region-dependent price-mode resolution. Kept out of the components so the
- * rules are unit-testable.
+ * Pure state helpers for the tracker page — defaults, mode normalisation,
+ * range-snapshot maths and the region-dependent price-mode resolution. Kept
+ * out of the components so the rules are unit-testable.
  */
 
 import {
@@ -9,11 +9,14 @@ import {
 	getIntervalOptionsForDays,
 	getPresetByDays
 } from '$lib/components/charts/facility/range-interval-config.js';
+import { MIN_DATE } from '$lib/utils/date-range.js';
 import { hasSpotPrice } from './tracker-regions.js';
 
 /** @typedef {import('./types.js').EmissionsMode} EmissionsMode */
 /** @typedef {import('./types.js').PriceMode} PriceMode */
 /** @typedef {import('./types.js').TrackerRange} TrackerRange */
+
+const DAY_MS = 86_400_000;
 
 export const DEFAULT_RANGE_DAYS = 3;
 
@@ -22,15 +25,45 @@ export const DEFAULT_RANGE_DAYS = 3;
 export const DEFAULT_REGION = '_all';
 
 /** Simplified grouping by default — the approachable first read; Detailed and
- *  the analytical groupings are a pick away in the table panel. */
+ *  the analytical groupings are a pick away in the nav bar's options menu. */
 export const DEFAULT_GROUP = 'simple';
 
+/** A custom span longer than this counts as the All tier — the same threshold
+ *  `ChartRangeBar` uses to offer the calendar-period filter. */
+const ALL_TIER_MIN_DAYS = 550;
+
 /**
- * @param {unknown} value
- * @returns {PriceMode}
+ * Whole days spanned by a window, never less than one — the day count the
+ * range presets and interval tiers are keyed on.
+ * @param {number} startMs
+ * @param {number} endMs
  */
-export function normalisePriceMode(value) {
-	return value === 'market_value' ? 'market_value' : 'price';
+export function rangeSpanDays(startMs, endMs) {
+	return Math.max(1, Math.ceil((endMs - startMs) / DAY_MS));
+}
+
+/**
+ * Whether a range sits in the All tier, where calendar-period filters apply.
+ * @param {TrackerRange} range
+ */
+export function isAllTierRange(range) {
+	return range.kind === 'preset'
+		? range.days === -1
+		: rangeSpanDays(range.startMs, range.endMs) > ALL_TIER_MIN_DAYS;
+}
+
+/**
+ * Viewport bounds a range snapshot resolves to when anchored at `nowMs` —
+ * the same maths `createChartRangeControl` applies to a preset pick, so the
+ * server-rendered range bar matches what the charts open on.
+ * @param {TrackerRange} range
+ * @param {number} nowMs
+ * @returns {{ startMs: number, endMs: number }}
+ */
+export function rangeSnapshotBounds(range, nowMs) {
+	if (range.kind === 'custom') return { startMs: range.startMs, endMs: range.endMs };
+	const days = range.days === -1 ? rangeSpanDays(new Date(MIN_DATE).getTime(), nowMs) : range.days;
+	return { startMs: nowMs - days * DAY_MS, endMs: nowMs };
 }
 
 /**
@@ -70,12 +103,13 @@ export function normaliseRange(value) {
 		const startMs = Number(value.startMs);
 		const endMs = Number(value.endMs);
 		if (Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs) {
-			const spanDays = Math.max(1, Math.ceil((endMs - startMs) / (24 * 60 * 60 * 1000)));
 			return {
 				kind: 'custom',
 				startMs,
 				endMs,
-				intervalId: String(value.intervalId || getIntervalOptionsForDays(spanDays).default)
+				intervalId: String(
+					value.intervalId || getIntervalOptionsForDays(rangeSpanDays(startMs, endMs)).default
+				)
 			};
 		}
 	}

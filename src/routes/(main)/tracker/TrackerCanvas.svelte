@@ -3,11 +3,11 @@
 	 * TrackerCanvas — the tracker page's chart machinery.
 	 *
 	 * Owns the shared range control, the three always-mounted synced charts
-	 * (Generation, Price⇄Market Value, Emissions Intensity⇄Volume) and the two
-	 * headless providers feeding the fuel-tech table. Split toggles flip metric
-	 * props on a single chart instance — the viewport lives in the chart host,
-	 * so there is no remount and the previous frame stays up under the loading
-	 * veil while the new metric arrives.
+	 * (Generation, Price⇄Market Value, Emissions Intensity⇄Volume) and the
+	 * headless providers feeding the fuel-tech table and overlays. Split toggles
+	 * flip metric props on a single chart instance — the viewport lives in the
+	 * chart host, so there is no remount and the previous frame stays up under
+	 * the loading veil while the new metric arrives.
 	 *
 	 * The page owns the URL-parsed state (region/group/modes/panel) and passes
 	 * it down; the canvas hands its live range control up via `oncontrolschange`
@@ -39,9 +39,8 @@
 		bucketFilterKindFor,
 		bucketFilterPredicate
 	} from '$lib/components/charts/v2/bucket-filter.js';
-	import { createNetworkFuelTechMarketValue } from '$lib/components/charts/network/network-fueltech-market-value.svelte.js';
+	import { createNetworkFuelTechSeries } from '$lib/components/charts/network/network-fueltech-series.svelte.js';
 	import { createMarketSeriesProvider } from '$lib/components/charts/network/network-series-provider.svelte.js';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
 	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
@@ -51,7 +50,13 @@
 	import ChartCard from './ChartCard.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
 	import { createTrackerPrefetchPlan } from './tracker-prefetch.js';
-	import { normaliseRange, resolvePriceMode } from './tracker-model.js';
+	import { DEFAULT_RANGE_DAYS, normaliseRange, resolvePriceMode } from './tracker-model.js';
+	import {
+		CURTAILMENT_SERIES,
+		curtailmentOverlayFor,
+		DEMAND_LINE_COLOUR,
+		RENEWABLES_LINE_COLOUR
+	} from './tracker-overlays.js';
 	import {
 		buildFuelTechTableRows,
 		computeCurtailmentRows,
@@ -60,22 +65,27 @@
 	} from './table-model.js';
 	import { formatTrackerPercentageValue } from './table-format.js';
 
+	/** @typedef {import('./types.js').TrackerRange} TrackerRange */
+	/** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
+	/** @typedef {import('./types.js').GenerationSnapshot} GenerationSnapshot */
+	/** @typedef {import('$lib/components/charts/network/headless-series-provider.svelte.js').HeadlessSeriesProvider} HeadlessSeriesProvider */
+
 	/** @type {{
 	 *   region: string,
 	 *   group: string,
 	 *   priceMode: import('./types.js').PriceMode,
 	 *   emissionsMode: import('./types.js').EmissionsMode,
-	 *   overlays: import('./types.js').TrackerOverlay[],
+	 *   overlays: TrackerOverlay[],
 	 *   tablePanelOpen: boolean,
 	 *   bucketFilter?: string | null,
-	 *   initialRange: any,
+	 *   contributionMode?: import('./types.js').ContributionMode,
+	 *   initialRange: TrackerRange,
 	 *   initialNowMs?: number,
-	 *   oncontrolschange?: (controls: { range: any, getRangeLabel: () => string }) => void,
-	 *   onrangechange?: (range: any) => void,
-	 *   ongroupchange?: (group: string) => void,
+	 *   oncontrolschange?: (controls: { range: typeof range, getRangeLabel: () => string }) => void,
+	 *   onrangechange?: (range: TrackerRange) => void,
 	 *   onpricemodechange?: (mode: import('./types.js').PriceMode) => void,
 	 *   onemissionsmodechange?: (mode: import('./types.js').EmissionsMode) => void,
-	 *   onoverlayschange?: (overlays: import('./types.js').TrackerOverlay[]) => void,
+	 *   onoverlayschange?: (overlays: TrackerOverlay[]) => void,
 	 *   onpaneltoggle?: (open: boolean) => void
 	 * }} */
 	let {
@@ -86,11 +96,11 @@
 		overlays,
 		tablePanelOpen,
 		bucketFilter = null,
+		contributionMode = 'generation',
 		initialRange,
 		initialNowMs,
 		oncontrolschange,
 		onrangechange,
-		ongroupchange,
 		onpricemodechange,
 		onemissionsmodechange,
 		onoverlayschange,
@@ -98,28 +108,30 @@
 	} = $props();
 
 	const DAY_MS = 86_400_000;
-	const INITIAL_RANGE_DAYS = 3;
 
-	const initialAnchor = untrack(() =>
+	// The live anchor is fixed at mount — the tracker has no live-edge ticker,
+	// so the default viewport (and the charts' initial dates) never move.
+	const anchorEnd = untrack(() =>
 		Number.isFinite(initialNowMs) ? /** @type {number} */ (initialNowMs) : Date.now()
 	);
-	let anchorEnd = $state(initialAnchor);
-	let anchorStart = $derived(anchorEnd - INITIAL_RANGE_DAYS * DAY_MS);
+	const anchorStart = anchorEnd - DEFAULT_RANGE_DAYS * DAY_MS;
 	let network = $derived(regionToNetwork(region));
 	let timeZone = $derived(network.timeZone);
-	let dateStart = $derived(
-		toNetworkDateString(initialAnchor - INITIAL_RANGE_DAYS * DAY_MS, timeZone)
-	);
-	let dateEnd = $derived(toNetworkDateString(initialAnchor, timeZone));
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
+	let dateStart = $derived(toNetworkDateString(anchorStart, timeZone));
+	let dateEnd = $derived(toNetworkDateString(anchorEnd, timeZone));
 	let viewStart = $state(0);
 	let viewEnd = $state(0);
 
-	/** @type {any} */ let generationChart = $state(undefined);
+	// Component instances — raw, so the exports objects aren't wrapped in
+	// proxies. The casts keep the declared union: a bare `undefined` initialiser
+	// would narrow every read below to `never`.
+	let generationChart = $state.raw(/** @type {NetworkChart | undefined} */ (undefined));
+	let priceChart = $state.raw(/** @type {NetworkChart | undefined} */ (undefined));
+	let emissionsChart = $state.raw(/** @type {NetworkChart | undefined} */ (undefined));
 	let generationDisplayPrefix = $derived(
-		/** @type {SiPrefix} */ (generationChart?.getDisplayPrefix?.() ?? 'M')
+		/** @type {SiPrefix} */ (generationChart?.getDisplayPrefix() ?? 'M')
 	);
-	/** @type {any} */ let priceChart = $state(undefined);
-	/** @type {any} */ let emissionsChart = $state(undefined);
 
 	/** @type {number | undefined} */
 	let hoverTime = $state(undefined);
@@ -128,7 +140,8 @@
 	/** Whether any synced chart is in a gesture. */
 	let gestureActive = $state(false);
 
-	/** Last settled viewport, shared by the table, overlays, URL and range label. */
+	/** Last settled viewport, shared by the table, overlays, URL and range label.
+	 *  A latch — it holds through gestures, so it can't be a plain derived. */
 	let settledWindow = $state.raw({ start: 0, end: 0 });
 	$effect(() => {
 		if (gestureActive) return;
@@ -139,18 +152,21 @@
 		if (previous.start === start && previous.end === end) return;
 		settledWindow = { start, end };
 	});
+	/** The settled window with the mount anchor as the pre-report fallback. */
+	let viewWindow = $derived({
+		start: settledWindow.start || anchorStart,
+		end: settledWindow.end || anchorEnd
+	});
+
 	/** Fuel-tech groups toggled off via the table — hides chart series and
 	 *  excludes them from the intensity ratio, never from table denominators.
 	 *  Keyed to the grouping that produced the ids: a grouping change renames
 	 *  every series, so stale toggles would silently hide unrelated groups. */
 	let hiddenState = $state.raw({ group: '', ids: /** @type {string[]} */ ([]) });
 	let hiddenSeries = $derived(hiddenState.group === group ? hiddenState.ids : []);
-	/** @type {import('./types.js').ContributionMode} */
-	let contributionMode = $state('generation');
 	/** Latest generation visible-data snapshot — feeds the table. Kept (stale)
 	 *  through refetches so the table never blanks. */
-	/** @type {any} */
-	let generationDataset = $state.raw(null);
+	let generationDataset = $state.raw(/** @type {GenerationSnapshot | null} */ (null));
 	let containerWidth = $state(0);
 
 	/** Table panel width (% of the row). Owned here — the drag handle sits in
@@ -188,6 +204,30 @@
 		window.addEventListener('pointercancel', onUp);
 	}
 
+	// ============================================
+	// Card modes and overlay toggles
+	// ============================================
+
+	let regionHasSpotPrice = $derived(hasSpotPrice(region));
+	// The mode the price card actually renders — 'au' has no spot price, so the
+	// card falls back to market value without losing the user's selection.
+	let effectivePriceMode = $derived(resolvePriceMode(region, priceMode));
+	let priceIsMarketValue = $derived(effectivePriceMode === 'market_value');
+	let emissionsIsIntensity = $derived(emissionsMode === 'intensity');
+
+	// Chart overlays — URL-owned toggles driven from the table's summary rows.
+	let showDemandLine = $derived(overlays.includes('demand'));
+	let showRenewablesLine = $derived(overlays.includes('renewables'));
+	/** Curtailment series toggled onto the generation chart, in band order. */
+	let shownCurtailment = $derived(
+		CURTAILMENT_SERIES.filter((series) => overlays.includes(series.overlay))
+	);
+	let shownCurtailmentIds = $derived(shownCurtailment.map((series) => series.id));
+
+	// ============================================
+	// Range control and headless providers
+	// ============================================
+
 	const range = createChartRangeControl({
 		viewport: () => ({ start: viewStart, end: viewEnd }),
 		defaultViewport: () => ({ start: anchorStart, end: anchorEnd }),
@@ -201,17 +241,25 @@
 			emissionsChart,
 			marketData,
 			mvData,
+			emissionsData,
 			demandData,
 			curtailmentData,
 			shareData
 		],
 		timeZone: () => timeZone,
-		initialRangeDays: INITIAL_RANGE_DAYS,
+		initialRangeDays: DEFAULT_RANGE_DAYS,
 		includeRolling: true
 	});
 
-	// Headless providers — same cache/dedup/reconcile path as the charts.
-	// Providers fetch only while the table or their overlay is visible.
+	let energyMetric = $derived(range.activeMetric === 'energy');
+	let isRollingDisplay = $derived(isRollingInterval(range.displayInterval));
+	let intervalBadge = $derived(
+		getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval
+	);
+
+	// Headless providers — same cache/dedup/reconcile path as the charts. Each
+	// is `enabled`-gated on the surface that consumes it: with the table panel
+	// closed and the overlays off, only the three chart metrics fetch at all.
 	const marketData = createNetworkMarketData({
 		region: () => region,
 		basis: () => range.activeMetric,
@@ -219,9 +267,20 @@
 		timeZone: () => timeZone,
 		enabled: () => tablePanelOpen || (showRenewablesLine && isRollingDisplay)
 	});
-	const mvData = createNetworkFuelTechMarketValue({
+	// Per-fuel-tech market value and emissions feed the table's Av price and
+	// Emissions/Intensity columns; each shares its fetch with the matching chart.
+	const mvData = createNetworkFuelTechSeries({
 		region: () => region,
 		group: () => group,
+		metric: 'market_value',
+		interval: () => range.activeInterval,
+		timeZone: () => timeZone,
+		enabled: () => tablePanelOpen
+	});
+	const emissionsData = createNetworkFuelTechSeries({
+		region: () => region,
+		group: () => group,
+		metric: 'emissions',
 		interval: () => range.activeInterval,
 		timeZone: () => timeZone,
 		enabled: () => tablePanelOpen
@@ -250,30 +309,11 @@
 		enabled: () => tablePanelOpen || (showRenewablesLine && !isRollingDisplay)
 	});
 
-	let energyMetric = $derived(range.activeMetric === 'energy');
-	let intervalBadge = $derived(
-		getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval
-	);
-
 	// Interval-aware nav readout — bucket names at FY/quarter/season grains,
 	// clock times at sub-daily ones. Hoisted to the page via oncontrolschange.
-	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let rangeLabel = $derived(
-		formatRangeLabel(
-			settledWindow.start || anchorStart,
-			settledWindow.end || anchorEnd,
-			range.displayInterval,
-			ianaTimeZone
-		)
+		formatRangeLabel(viewWindow.start, viewWindow.end, range.displayInterval, ianaTimeZone)
 	);
-
-	// The mode the price card actually renders — 'au' has no spot price, so the
-	// card falls back to market value without losing the user's selection.
-	let effectivePriceMode = $derived(resolvePriceMode(region, priceMode));
-	let priceIsMarketValue = $derived(effectivePriceMode === 'market_value');
-	let emissionsIsIntensity = $derived(emissionsMode === 'intensity');
-
-	let isRollingDisplay = $derived(isRollingInterval(range.displayInterval));
 
 	/** Rolling windows keep all source months; filters select only output samples. */
 	let nativeFilterPredicate = $derived.by(() => {
@@ -325,18 +365,62 @@
 	});
 
 	// ============================================
+	// Provider row access
+	// ============================================
+
+	/** Display-grain options for the extras — they track the central Interval
+	 *  control exactly like the charts. Per-bucket quantities (energy basis)
+	 *  aggregate by sum; instantaneous ones by mean. */
+	let displayRowOpts = $derived({
+		displayInterval: range.displayInterval,
+		ianaTimeZone,
+		method: /** @type {'sum' | 'mean'} */ (range.activeMetric === 'energy' ? 'sum' : 'mean'),
+		bucketFilter
+	});
+	let shareRowOpts = $derived({ ...displayRowOpts, method: /** @type {const} */ ('mean') });
+
+	/** Summaries use native rows whenever display rows would overlap (rolling
+	 *  windows) or carry a synthetic band close (calendar filters). */
+	let summariesUseNativeRows = $derived(isRollingDisplay || !!bucketFilter);
+
+	/**
+	 * Native-grain rows with the calendar filter applied to every side of the
+	 * table ratios alike.
+	 * @param {HeadlessSeriesProvider} provider
+	 * @param {number} start
+	 * @param {number} end
+	 */
+	function nativeRows(provider, start, end) {
+		return applyBucketFilter(provider.getVisibleRows(start, end), nativeFilterPredicate);
+	}
+
+	/**
+	 * Rows for a window summary — native when display rows can't be summed
+	 * safely, otherwise the same display-grain rows the chart renders.
+	 * @param {HeadlessSeriesProvider} provider
+	 * @param {number} start
+	 * @param {number} end
+	 * @param {typeof displayRowOpts} opts
+	 */
+	function summaryRows(provider, start, end, opts) {
+		return summariesUseNativeRows
+			? nativeRows(provider, start, end)
+			: provider.getDisplayRows(start, end, opts);
+	}
+
+	// ============================================
 	// Fuel-tech table feed
 	// ============================================
 
 	/** Use the generation snapshot's bounds so table rows and window stay aligned. */
 	let tableWindow = $derived({
-		start: generationDataset?.start ?? (settledWindow.start || anchorStart),
-		end: generationDataset?.end ?? (settledWindow.end || anchorEnd)
+		start: generationDataset?.start ?? viewWindow.start,
+		end: generationDataset?.end ?? viewWindow.end
 	});
 
 	/** Use native rows when display rows overlap or contain a synthetic band close. */
 	let tableGenerationDataset = $derived(
-		(isRollingDisplay || bucketFilter) && generationDataset?.nativeData
+		summariesUseNativeRows && generationDataset?.nativeData
 			? { ...generationDataset, data: generationDataset.nativeData }
 			: generationDataset
 	);
@@ -348,9 +432,9 @@
 		return perfSpan('canvas:table-rows', () =>
 			buildFuelTechTableRows({
 				generationData: tableGenerationDataset,
-				// Apply the same native-row filter to every side of the table ratios.
-				mvRows: applyBucketFilter(mvData.getVisibleRows(start, end), nativeFilterPredicate),
-				demandRows: applyBucketFilter(marketData.getVisibleRows(start, end), nativeFilterPredicate),
+				mvRows: nativeRows(mvData, start, end),
+				emissionsRows: nativeRows(emissionsData, start, end),
+				demandRows: nativeRows(marketData, start, end),
 				basis: range.activeMetric,
 				demandBasis: range.activeMetric,
 				mode: contributionMode,
@@ -359,6 +443,7 @@
 			})
 		);
 	});
+	let tableRowIds = $derived((tableRows ?? []).map((row) => row.id));
 
 	/** Veil region and grouping changes; dim values for all other refreshes. */
 	let settledStructureKey = $state('');
@@ -366,77 +451,48 @@
 		settledStructureKey !== '' && settledStructureKey !== `${region}|${group}`
 	);
 	let tableValuesPending = $derived(
-		mvData.isPending || marketData.isPending || range.rangeSwitchPending
+		mvData.isPending || emissionsData.isPending || marketData.isPending || range.rangeSwitchPending
 	);
 
-	// Chart overlays — URL-owned toggles driven from the table's summary rows.
-	let showDemandLine = $derived(overlays.includes('demand'));
-	let showRenewablesLine = $derived(overlays.includes('renewables'));
-	const CURTAILMENT_COLOURS = /** @type {Record<string, string>} */ ({
-		curtailment_solar: getFuelTechColour('solar_utility'),
-		curtailment_wind: getFuelTechColour('wind')
-	});
-	/** Fixed band order bottom-up: wind rides directly above the solar area,
-	 *  solar curtailment stacks above wind — regardless of toggle order. */
-	const CURTAILMENT_ORDER = ['curtailment_wind', 'curtailment_solar'];
-	const CURTAILMENT_OVERLAY_BY_SERIES =
-		/** @type {Record<string, import('./types.js').TrackerOverlay>} */ ({
-			curtailment_solar: 'curtailment-solar',
-			curtailment_wind: 'curtailment-wind'
+	/** Curtailment sits outside the fuel-tech grouping but shares the table's
+	 *  contribution denominator. Rows list top-down like the fuel techs. */
+	let curtailmentRows = $derived.by(() => {
+		if (!tableGenerationDataset) return [];
+		const { start, end } = tableWindow;
+		return computeCurtailmentRows({
+			rows: summaryRows(curtailmentData, start, end, displayRowOpts),
+			series: [...CURTAILMENT_SERIES].reverse(),
+			basis: range.activeMetric,
+			denominatorMWh: contributionDenominatorMWh({
+				generationRows: tableGenerationDataset.data,
+				seriesNames: tableGenerationDataset.seriesNames,
+				basis: range.activeMetric,
+				mode: contributionMode,
+				demandRows: nativeRows(marketData, start, end),
+				demandBasis: range.activeMetric,
+				loadSeriesIds
+			})
 		});
-	/** Curtailment series toggled onto the generation chart as hatched bands. */
-	let shownCurtailment = $derived(
-		CURTAILMENT_ORDER.filter((id) => overlays.includes(CURTAILMENT_OVERLAY_BY_SERIES[id]))
+	});
+
+	let overlaySummary = $derived(
+		computeOverlaySummary({
+			demandRows: summaryRows(demandData, viewWindow.start, viewWindow.end, displayRowOpts),
+			marketRows: nativeRows(marketData, viewWindow.start, viewWindow.end),
+			shareRows: summaryRows(shareData, viewWindow.start, viewWindow.end, shareRowOpts),
+			basis: range.activeMetric
+		})
 	);
 
-	/** Hide every fuel-tech series in the current grouping. */
-	function hideAllFuelTechSeries() {
-		hiddenState = { group, ids: (tableRows ?? []).map((row) => row.id) };
-	}
-
-	/** @param {import('./types.js').TrackerOverlay} overlay @param {boolean} [exclusive] */
-	function toggleOverlay(overlay, exclusive = false) {
-		if (exclusive) {
-			hideAllFuelTechSeries();
-			onoverlayschange?.([overlay]);
-			return;
-		}
-		onoverlayschange?.(
-			overlays.includes(overlay)
-				? overlays.filter((item) => item !== overlay)
-				: [...overlays, overlay]
-		);
-	}
-
-	/** @param {string} id @param {boolean} [exclusive] */
-	function toggleCurtailment(id, exclusive = false) {
-		const overlay = CURTAILMENT_OVERLAY_BY_SERIES[id];
-		if (overlay) toggleOverlay(overlay, exclusive);
-	}
-	const DEMAND_LINE_COLOUR = '#C74523';
-	const RENEWABLES_LINE_COLOUR = getFuelTechColour('renewables');
-
-	/** Display-grain options for the extras — they track the central Interval
-	 *  control exactly like the charts. Per-bucket quantities (energy basis)
-	 *  aggregate by sum; instantaneous ones by mean. */
-	let displayRowOpts = $derived({
-		displayInterval: range.displayInterval,
-		ianaTimeZone,
-		method: /** @type {'sum' | 'mean'} */ (range.activeMetric === 'energy' ? 'sum' : 'mean'),
-		bucketFilter
-	});
-	let shareRowOpts = $derived({
-		displayInterval: range.displayInterval,
-		ianaTimeZone,
-		method: /** @type {'sum' | 'mean'} */ ('mean'),
-		bucketFilter
-	});
+	// ============================================
+	// Generation chart overlays
+	// ============================================
 
 	/** Stable empty value avoids redundant overlay updates. */
 	const EMPTY_OVERLAYS = /** @type {any[]} */ ([]);
 
 	/** One year of lead-in plus room for half-year bucket alignment. */
-	const ROLLING_LEAD_MS = 580 * 24 * 60 * 60 * 1000;
+	const ROLLING_LEAD_MS = 580 * DAY_MS;
 
 	/**
 	 * Derive rolling renewable share from renewable and demand window sums.
@@ -478,8 +534,7 @@
 
 	let overlayLines = $derived.by(() => {
 		if (!showDemandLine && !showRenewablesLine) return EMPTY_OVERLAYS;
-		const start = settledWindow.start || anchorStart;
-		const end = settledWindow.end || anchorEnd;
+		const { start, end } = viewWindow;
 		/** @type {any[]} */
 		const lines = [];
 		if (showDemandLine) {
@@ -512,63 +567,73 @@
 	/** Hatched curtailment bands riding the generation stack's top. */
 	let overlayAreas = $derived.by(() => {
 		if (!shownCurtailment.length) return EMPTY_OVERLAYS;
-		const start = settledWindow.start || anchorStart;
-		const end = settledWindow.end || anchorEnd;
 		return [
 			{
 				id: 'curtailment',
-				data: curtailmentData.getDisplayRows(start, end, displayRowOpts),
-				series: CURTAILMENT_ORDER.filter((id) => shownCurtailment.includes(id)).map((id) => ({
-					id,
-					colour: CURTAILMENT_COLOURS[id] ?? '#888',
-					label: id === 'curtailment_solar' ? 'Curtailment (Solar)' : 'Curtailment (Wind)'
-				}))
+				data: curtailmentData.getDisplayRows(viewWindow.start, viewWindow.end, displayRowOpts),
+				series: shownCurtailment.map(({ id, colour, label }) => ({ id, colour, label }))
 			}
 		];
 	});
 
-	/** Curtailment sits outside the fuel-tech grouping but shares the table's
-	 *  contribution denominator. */
-	let curtailmentRows = $derived.by(() => {
-		if (!tableGenerationDataset) return [];
-		const { start, end } = tableWindow;
-		return computeCurtailmentRows({
-			rows:
-				isRollingDisplay || bucketFilter
-					? applyBucketFilter(curtailmentData.getVisibleRows(start, end), nativeFilterPredicate)
-					: curtailmentData.getDisplayRows(start, end, displayRowOpts),
-			series: [
-				{ id: 'curtailment_solar', label: 'Curtailment (Solar)' },
-				{ id: 'curtailment_wind', label: 'Curtailment (Wind)' }
-			],
-			basis: range.activeMetric,
-			denominatorMWh: contributionDenominatorMWh({
-				generationRows: tableGenerationDataset.data,
-				seriesNames: tableGenerationDataset.seriesNames,
-				basis: range.activeMetric,
-				mode: contributionMode,
-				demandRows: applyBucketFilter(marketData.getVisibleRows(start, end), nativeFilterPredicate),
-				demandBasis: range.activeMetric,
-				loadSeriesIds
-			})
-		});
-	});
+	// ============================================
+	// Series and overlay toggles
+	// ============================================
 
-	let overlaySummary = $derived.by(() => {
-		const start = settledWindow.start || anchorStart;
-		const end = settledWindow.end || anchorEnd;
-		const useNativeRows = isRollingDisplay || !!bucketFilter;
-		return computeOverlaySummary({
-			demandRows: useNativeRows
-				? applyBucketFilter(demandData.getVisibleRows(start, end), nativeFilterPredicate)
-				: demandData.getDisplayRows(start, end, displayRowOpts),
-			marketRows: applyBucketFilter(marketData.getVisibleRows(start, end), nativeFilterPredicate),
-			shareRows: useNativeRows
-				? applyBucketFilter(shareData.getVisibleRows(start, end), nativeFilterPredicate)
-				: shareData.getDisplayRows(start, end, shareRowOpts),
-			basis: range.activeMetric
-		});
-	});
+	/** @param {TrackerOverlay} overlay @param {boolean} [exclusive] */
+	function toggleOverlay(overlay, exclusive = false) {
+		if (exclusive) {
+			// Solo the overlay: hide every fuel-tech series in the current grouping.
+			hiddenState = { group, ids: tableRowIds };
+			onoverlayschange?.([overlay]);
+			return;
+		}
+		onoverlayschange?.(
+			overlays.includes(overlay)
+				? overlays.filter((item) => item !== overlay)
+				: [...overlays, overlay]
+		);
+	}
+
+	/** @param {string} id @param {boolean} [exclusive] */
+	function toggleCurtailment(id, exclusive = false) {
+		const overlay = curtailmentOverlayFor(id);
+		if (overlay) toggleOverlay(overlay, exclusive);
+	}
+
+	/** @param {string} series @param {boolean} [exclusive] */
+	function toggleSeries(series, exclusive = false) {
+		if (exclusive) {
+			hiddenState = { group, ids: tableRowIds.filter((id) => id !== series) };
+			onoverlayschange?.([]);
+			return;
+		}
+		const ids = hiddenSeries;
+		const visibleCount = tableRowIds.filter((id) => !ids.includes(id)).length;
+		// Toggling off the last visible series restores everything instead.
+		if (!ids.includes(series) && visibleCount === 1) {
+			showAllSeries();
+			onoverlayschange?.([]);
+			return;
+		}
+		hiddenState = {
+			group,
+			ids: ids.includes(series) ? ids.filter((item) => item !== series) : [...ids, series]
+		};
+	}
+
+	function showAllSeries() {
+		hiddenState = { group, ids: [] };
+	}
+
+	/** @param {number | undefined} time */
+	function handleHoverChange(time) {
+		hoverTime = time;
+	}
+
+	// ============================================
+	// Coordinated chart switching
+	// ============================================
 
 	// Hold all three charts during range, interval and region changes, then
 	// release them together. Polling also detects switches served from cache.
@@ -610,59 +675,26 @@
 		if (!chartsSwitchPending) return;
 		// Delay the first poll until switch effects have replaced old managers.
 		const sweep = setInterval(() => {
-			if (generationChart?.isSettled?.()) markChartLoaded('gen');
-			if (priceChart?.isSettled?.()) markChartLoaded('price');
-			if (emissionsChart?.isSettled?.()) markChartLoaded('emissions');
+			if (generationChart?.isSettled()) markChartLoaded('gen');
+			if (priceChart?.isSettled()) markChartLoaded('price');
+			if (emissionsChart?.isSettled()) markChartLoaded('emissions');
 		}, 200);
 		return () => clearInterval(sweep);
 	});
 
-	/** @param {any} payload */
+	/** @param {GenerationSnapshot} payload */
 	function handleGenerationData(payload) {
 		generationDataset = payload;
 		// The debounced snapshot belongs to the current region and grouping.
-		settledStructureKey = untrack(() => `${region}|${group}`);
+		settledStructureKey = `${region}|${group}`;
 		markChartLoaded('gen');
-	}
-
-	/** @param {string} series @param {boolean} [exclusive] */
-	function toggleSeries(series, exclusive = false) {
-		if (exclusive) {
-			hiddenState = {
-				group,
-				ids: (tableRows ?? []).map((row) => row.id).filter((id) => id !== series)
-			};
-			onoverlayschange?.([]);
-			return;
-		}
-		const ids = hiddenSeries;
-		const allIds = (tableRows ?? []).map((row) => row.id);
-		const visibleCount = allIds.filter((id) => !ids.includes(id)).length;
-		if (!ids.includes(series) && visibleCount === 1) {
-			hiddenState = { group, ids: [] };
-			onoverlayschange?.([]);
-			return;
-		}
-		hiddenState = {
-			group,
-			ids: ids.includes(series) ? ids.filter((item) => item !== series) : [...ids, series]
-		};
-	}
-
-	function showAllSeries() {
-		hiddenState = { group, ids: [] };
-	}
-
-	/** @param {number | undefined} time */
-	function handleHoverChange(time) {
-		hoverTime = time;
 	}
 
 	// ============================================
 	// Range snapshot API (page URL sync + popstate restore)
 	// ============================================
 
-	/** @param {any} snapshot */
+	/** @param {TrackerRange} snapshot */
 	export async function applyRangeSnapshot(snapshot) {
 		// Programmatic range changes end any active gesture.
 		gestureActive = false;
@@ -676,10 +708,6 @@
 		}
 		if (next.intervalId !== range.displayInterval) range.handleIntervalChange(next.intervalId);
 		await tick();
-	}
-
-	export function getRangeSnapshot() {
-		return activeRange;
 	}
 
 	onMount(() => {
@@ -750,7 +778,7 @@
 			heightStorageKey="tracker-chart-height-price"
 		>
 			{#snippet actions()}
-				{#if hasSpotPrice(region)}
+				{#if regionHasSpotPrice}
 					<SwitchTabs
 						buttons={[
 							{ label: 'Price', value: 'price' },
@@ -862,6 +890,7 @@
 			axis="x"
 			onstart={startPanelDrag}
 			active={panelResizing}
+			alwaysShowGrip
 			class="w-4 rounded-md"
 			role="separator"
 			aria-orientation="vertical"
@@ -891,19 +920,14 @@
 				hiddenCount={hiddenSeries.length}
 				{rangeLabel}
 				{curtailmentRows}
-				{shownCurtailment}
-				curtailmentColours={CURTAILMENT_COLOURS}
-				oncurtailmenttoggle={toggleCurtailment}
+				shownCurtailment={shownCurtailmentIds}
 				{overlaySummary}
 				{showDemandLine}
 				{showRenewablesLine}
-				demandLineColour={DEMAND_LINE_COLOUR}
-				renewablesLineColour={RENEWABLES_LINE_COLOUR}
+				ontoggle={toggleSeries}
+				oncurtailmenttoggle={toggleCurtailment}
 				ondemandlinetoggle={(exclusive) => toggleOverlay('demand', exclusive)}
 				onrenewableslinetoggle={(exclusive) => toggleOverlay('renewables', exclusive)}
-				{ongroupchange}
-				oncontributionmodechange={(mode) => (contributionMode = mode)}
-				ontoggle={toggleSeries}
 				onshowall={showAllSeries}
 				onclose={() => onpaneltoggle?.(false)}
 			/>

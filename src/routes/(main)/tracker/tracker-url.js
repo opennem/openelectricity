@@ -28,62 +28,53 @@ import {
 	isValidBucketFilter
 } from '$lib/components/charts/v2/bucket-filter.js';
 import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
-import { hasSpotPrice } from './tracker-regions.js';
+import { TRACKER_OVERLAYS } from './tracker-overlays.js';
+import { hasSpotPrice, TRACKER_REGION_VALUES } from './tracker-regions.js';
 import {
 	DEFAULT_GROUP,
 	DEFAULT_RANGE_DAYS,
 	DEFAULT_REGION,
+	isAllTierRange,
 	normaliseEmissionsMode,
-	normalisePriceMode,
 	normaliseRange
 } from './tracker-model.js';
 
+/** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
+/** @typedef {import('./types.js').TrackerRange} TrackerRange */
 /** @typedef {import('./types.js').TrackerUrlState} TrackerUrlState */
 
 const GROUP_VALUES = GROUP_OPTIONS.map((option) => option.value);
-const OVERLAY_VALUES = /** @type {const} */ ([
-	'demand',
-	'renewables',
-	'curtailment-solar',
-	'curtailment-wind'
-]);
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Keep supported overlays unique and in a stable URL order.
  * @param {unknown} value
- * @returns {import('./types.js').TrackerOverlay[]}
+ * @returns {TrackerOverlay[]}
  */
 export function normaliseTrackerOverlays(value) {
 	if (!Array.isArray(value)) return [];
 	const requested = new Set(value.filter((item) => typeof item === 'string'));
-	return OVERLAY_VALUES.filter((overlay) => requested.has(overlay));
+	return TRACKER_OVERLAYS.filter((overlay) => requested.has(overlay));
 }
 
 /**
  * Validate a calendar filter against the current All-range interval.
  * @param {string | null | undefined} filter
- * @param {import('./types.js').TrackerRange} range
+ * @param {TrackerRange} range
  * @returns {string | null}
  */
 export function validBucketFilterFor(filter, range) {
-	if (!filter) return null;
-	const inAllTier =
-		range.kind === 'preset'
-			? range.days === -1
-			: Math.ceil((range.endMs - range.startMs) / DAY_MS) > 550;
-	if (!inAllTier) return null;
+	if (!filter || !isAllTierRange(range)) return null;
 	return isValidBucketFilter(bucketFilterKindFor(range.intervalId), filter) ? filter : null;
 }
 
 /**
  * @param {URLSearchParams} params
- * @param {{ nowMs: number, validRegions: string[] }} context
+ * @param {{ nowMs: number }} context - `nowMs` anchors relative presets
  * @returns {TrackerUrlState}
  */
 export function parseTrackerUrl(params, context) {
 	const requestedRegion = params.get('region') || DEFAULT_REGION;
-	const region = context.validRegions.includes(requestedRegion) ? requestedRegion : DEFAULT_REGION;
+	const region = TRACKER_REGION_VALUES.includes(requestedRegion) ? requestedRegion : DEFAULT_REGION;
 	const requestedGroup = params.get('group') || DEFAULT_GROUP;
 	const group = GROUP_VALUES.includes(requestedGroup) ? requestedGroup : DEFAULT_GROUP;
 	const range = normaliseRange(
@@ -94,7 +85,7 @@ export function parseTrackerUrl(params, context) {
 		group,
 		range,
 		bucketFilter: validBucketFilterFor(params.get('filter'), range),
-		priceMode: normalisePriceMode(params.get('price') === 'mv' ? 'market_value' : 'price'),
+		priceMode: params.get('price') === 'mv' ? 'market_value' : 'price',
 		emissionsMode: normaliseEmissionsMode(params.get('emissions')),
 		overlays: normaliseTrackerOverlays((params.get('overlay') ?? '').split(',')),
 		tablePanelOpen: params.get('table') !== '0',
@@ -121,23 +112,13 @@ export function applyTrackerUrl(url, state) {
 	if (bucketFilter) params.set('filter', bucketFilter);
 	else params.delete('filter');
 
-	if (range.kind === 'preset') {
-		applyRangeParams(params, {
-			selectedRange: range.days,
-			displayInterval: range.intervalId,
-			viewStart: 0,
-			viewEnd: 0,
-			defaultRangeDays: DEFAULT_RANGE_DAYS
-		});
-	} else {
-		applyRangeParams(params, {
-			selectedRange: null,
-			displayInterval: range.intervalId,
-			viewStart: range.startMs,
-			viewEnd: range.endMs,
-			defaultRangeDays: DEFAULT_RANGE_DAYS
-		});
-	}
+	applyRangeParams(params, {
+		selectedRange: range.kind === 'preset' ? range.days : null,
+		displayInterval: range.intervalId,
+		viewStart: range.kind === 'custom' ? range.startMs : 0,
+		viewEnd: range.kind === 'custom' ? range.endMs : 0,
+		defaultRangeDays: DEFAULT_RANGE_DAYS
+	});
 
 	if (state.priceMode === 'market_value' && hasSpotPrice(state.region)) params.set('price', 'mv');
 	else params.delete('price');

@@ -23,7 +23,9 @@ import {
 } from '$lib/components/charts/network/network-market-data.svelte.js';
 
 /** @typedef {import('./types.js').ContributionMode} ContributionMode */
+/** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */
 /** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
+/** @typedef {import('./types.js').OverlaySummary} OverlaySummary */
 
 /** Below this magnitude (MWh) a window's energy is noise, not a denominator. */
 const ENERGY_EPSILON_MWH = 1e-6;
@@ -74,6 +76,48 @@ export function computeVWPrices({ mvRows, generationRows, seriesNames, basis }) 
 			return [name, sumAsEnergy(mvRows, [name], 'energy') / energyMWh];
 		})
 	);
+}
+
+/**
+ * Emissions per series over the window: the volume (tCO₂e, Σ of per-bucket
+ * tonnes — emissions rows are per-bucket totals like energy rows) and the
+ * intensity (kgCO₂e/MWh, Σ tonnes ÷ Σ energy × 1000 — a ratio of window
+ * sums). Loads report null on both: they consume rather than produce, and
+ * their negative energy makes a ratio meaningless. Null also when the series
+ * has no emissions data in the window (imports, the WEM's missing feeds).
+ *
+ * @param {{
+ *   emissionsRows: Array<Record<string, any>>,
+ *   generationRows: Array<Record<string, any>>,
+ *   seriesNames: string[],
+ *   basis: 'power' | 'energy',
+ *   loadSeriesIds: string[]
+ * }} input
+ * @returns {{ volumeT: Record<string, number | null>, intensityKgPerMWh: Record<string, number | null> }}
+ */
+export function computeEmissions({
+	emissionsRows,
+	generationRows,
+	seriesNames,
+	basis,
+	loadSeriesIds
+}) {
+	/** @type {Record<string, number | null>} */
+	const volumeT = {};
+	/** @type {Record<string, number | null>} */
+	const intensityKgPerMWh = {};
+	for (const name of seriesNames) {
+		if (loadSeriesIds.includes(name) || !hasFiniteValue(emissionsRows, name)) {
+			volumeT[name] = null;
+			intensityKgPerMWh[name] = null;
+			continue;
+		}
+		const tonnes = sumAsEnergy(emissionsRows, [name], 'energy');
+		const energyMWh = sumAsEnergy(generationRows, [name], basis);
+		volumeT[name] = tonnes;
+		intensityKgPerMWh[name] = energyMWh > ENERGY_EPSILON_MWH ? (tonnes / energyMWh) * 1000 : null;
+	}
+	return { volumeT, intensityKgPerMWh };
 }
 
 /**
@@ -177,6 +221,7 @@ export function computeContribution({
  *     groupFuelTechs?: Record<string, string[]>
  *   },
  *   mvRows: Array<Record<string, any>>,
+ *   emissionsRows: Array<Record<string, any>>,
  *   demandRows: Array<Record<string, any>>,
  *   basis: 'power' | 'energy',
  *   demandBasis: 'power' | 'energy',
@@ -189,6 +234,7 @@ export function computeContribution({
 export function buildFuelTechTableRows({
 	generationData,
 	mvRows,
+	emissionsRows,
 	demandRows,
 	basis,
 	demandBasis,
@@ -205,6 +251,13 @@ export function buildFuelTechTableRows({
 	} = generationData;
 	const avPower = computeAvPowerMW(generationRows, seriesNames, basis);
 	const vwPrices = computeVWPrices({ mvRows, generationRows, seriesNames, basis });
+	const emissions = computeEmissions({
+		emissionsRows,
+		generationRows,
+		seriesNames,
+		basis,
+		loadSeriesIds
+	});
 	const contribution = computeContribution({
 		generationRows,
 		seriesNames,
@@ -226,6 +279,8 @@ export function buildFuelTechTableRows({
 			avPowerMW: signedAvPower === null ? null : Math.abs(signedAvPower),
 			contributionPct: contribution[name],
 			vwPrice: vwPrices[name],
+			emissionsT: emissions.volumeT[name],
+			intensityKgPerMWh: emissions.intensityKgPerMWh[name],
 			fuelTechs: groupFuelTechs?.[name] ?? []
 		};
 	});
@@ -242,10 +297,10 @@ export function buildFuelTechTableRows({
  *   basis: 'power' | 'energy',
  *   denominatorMWh: number
  * }} input
- * @returns {Array<{ id: string, label: string, avPowerMW: number, contributionPct: number | null }>}
+ * @returns {CurtailmentTableRow[]}
  */
 export function computeCurtailmentRows({ rows, series, basis, denominatorMWh }) {
-	/** @type {Array<{ id: string, label: string, avPowerMW: number, contributionPct: number | null }>} */
+	/** @type {CurtailmentTableRow[]} */
 	const out = [];
 	for (const { id, label } of series) {
 		const av = averagePower(rows, id, basis);
@@ -274,7 +329,7 @@ export function computeCurtailmentRows({ rows, series, basis, denominatorMWh }) 
  *   shareRows: Array<Record<string, any>>,
  *   basis: 'power' | 'energy'
  * }} input
- * @returns {{ demandAvMW: number | null, renewablesAvMW: number | null, renewablesSharePct: number | null }}
+ * @returns {OverlaySummary}
  */
 export function computeOverlaySummary({ demandRows, marketRows, shareRows, basis }) {
 	return {

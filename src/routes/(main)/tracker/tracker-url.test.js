@@ -2,8 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyTrackerUrl, copiedTrackerUrl, parseTrackerUrl } from './tracker-url.js';
 
-const validRegions = ['au', '_all', 'wem', 'nsw1'];
-const context = { nowMs: 2_000_000_000_000, validRegions };
+const context = { nowMs: 2_000_000_000_000 };
 
 /** Apply state to a fresh URL, then parse it back. */
 function roundTrip(state) {

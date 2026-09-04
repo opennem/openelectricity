@@ -3,8 +3,8 @@
 The canonical tracker page — the planned replacement for the legacy
 `explore.openelectricity.org.au`. Lives at `/tracker`, promoted from
 `/tracker/next`. The map/dashboard/explore concepts that informed it live on at
-`/studio/tracker`, with their own copies of `tracker-regions.js` and
-`RegionDropdown.svelte`.
+`/studio/tracker`, with their own copy of `tracker-regions.js` and a
+`RegionDropdown.svelte` wrapper.
 
 ## Composition
 
@@ -12,7 +12,9 @@ The canonical tracker page — the planned replacement for the legacy
   (region, grouping, range snapshot, price/emissions modes, chart overlays,
   table panel) and
   is the sole URL writer (shallow `pushState`/`replaceState`, `popstate`
-  restore). Renders the fullscreen filter bar: Tracker label, `RegionDropdown`,
+  restore). Renders the fullscreen filter bar: Tracker label, the region
+  `FilterSelect` (NEM states nested under the whole-NEM option,
+  `TRACKER_REGION_TREE`),
   `ChartRangeBar` (`variant="expanded"` — the preset switcher with its
   integrated date-picker segment at `md:` and up, the dropdown with a
   "Custom…" row below, plus the interval dropdown), the interval-aware
@@ -21,9 +23,13 @@ The canonical tracker page — the planned replacement for the legacy
   closes from its own edge.
 - **`TrackerCanvas.svelte`** — chart machinery. One `createChartRangeControl`
   (3-day initial window) drives three always-mounted `NetworkChart`s plus the
-  two headless providers; shared `hoverTime` and tap-to-engage `panZoomEngaged`
+  six headless providers; shared `hoverTime` and tap-to-engage `panZoomEngaged`
   sync every surface. On mount it hands the live range control up via
   `oncontrolschange`, so the nav bar's controls drive the charts directly.
+- **`tracker-overlays.js`** — the registry behind the generation chart's
+  URL-owned overlays: canonical `overlay=` order, the demand/renewables line
+  colours and the curtailment bands (ids, labels, colours, stacking order).
+  The canvas, the table swatches and the URL codec all read it.
 - **Split toggles** flip `metric`/`chartKind` props on the single mounted
   chart instance — no remount, so `isSwitchingData` veils the previous frame
   and the response LRU makes toggling back near-instant. For the `au` scope
@@ -42,15 +48,20 @@ The canonical tracker page — the planned replacement for the legacy
   until that interval is complete.
 - **Grouping menu** mirrors the legacy explore tool: Detailed, Simplified,
   Coal/Gas/Renewables, Flexibility, Renewables/Fossils, VRE/Residual
-  (`groups.js` registry). Grouping is applied client-side in
+  (`groups.js` registry). It lives in the nav bar's options (⋮) menu as a
+  radio group, next to the table's contribution basis (% generation ⇄
+  % demand); the table headers echo the current choices as muted sub-labels.
+  Grouping is applied client-side in
   `processNetworkData` — the API always returns detailed per-fuel-tech
   series, so switching groups re-processes cached responses without a fetch.
 - **Fuel-tech table** (`FuelTechPanel` + `FuelTechTable` in a `ResizablePanel`)
-  — Av power, contribution (% of source generation ⇄ % of gross demand) and
-  volume-weighted price ($/MWh) per group, computed in `table-model.js` from:
-  the generation chart's `onvisibledata` snapshot, the headless
-  `createNetworkFuelTechMarketValue` provider, and the market pair's
-  `demand_gross`. Ratios are ratios of window sums (each side normalised to
+  — Av power, contribution (% of source generation ⇄ % of gross demand),
+  volume-weighted price ($/MWh), window emissions (tCO₂e, one column prefix
+  sized to the largest row) and emissions intensity (kgCO₂e/MWh, Σ tonnes ÷ Σ
+  energy) per group, computed in `table-model.js` from: the generation chart's
+  `onvisibledata` snapshot, the headless `createNetworkFuelTechSeries`
+  providers for `market_value` and `emissions`, and the market pair's
+  `demand_gross`. Loads report no emissions. Ratios are ratios of window sums (each side normalised to
   MWh via its own interval length), never means of per-bucket ratios. Row
   clicks toggle chart series; denominators ignore visibility so percentages
   stay stable. Stale rows stay visible under a veil while refetching. The
@@ -65,7 +76,10 @@ The canonical tracker page — the planned replacement for the legacy
   are URL-owned so direct and copied links reproduce them. When enabled, each
   also appears in the generation chart's floating tooltip: demand and
   curtailment follow the selected generation unit, while renewable share uses
-  percent.
+  percent. Below a 660px panel width (a CSS container query) the Technology
+  column pins left and the value columns become a scroll-snap carousel; a tab
+  strip above the table names them, highlights the ones in view and scrolls a
+  column into place on tap (`table-columns.js`).
 
 ## URL schema
 
@@ -91,7 +105,10 @@ contribution mode are deliberately not serialised.
 ## Data notes
 
 - Everything fetches through `/api/network/data`; the providers share the
-  charts' request broker, LRU and gap-aware fetching.
+  charts' request broker, LRU and gap-aware fetching. The six headless
+  providers are thin specialisations of one core
+  (`$lib/components/charts/network/headless-series-provider.svelte.js`),
+  which owns the manager lifecycle, viewport replay and display-grain rows.
 - Individual NEM region generation responses merge the official import/export
   flow metrics into the fuel-tech series. Imports render as a positive source;
   exports render below zero as a load. They therefore appear consistently in
@@ -136,7 +153,8 @@ contribution mode are deliberately not serialised.
 ## Tests
 
 Colocated vitest suites: `tracker-url.test.js`, `tracker-model.test.js`,
-`table-model.test.js`, `page-load.test.js`. E2E smoke:
+`tracker-overlays.test.js`, `table-model.test.js`, `table-format.test.js`,
+`table-columns.test.js`, `tracker-prefetch.test.js`, `page-load.test.js`. E2E smoke:
 `tests/e2e/tracker.spec.js`.
 
 ## Deferred

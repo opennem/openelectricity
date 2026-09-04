@@ -1,5 +1,14 @@
+/**
+ * Cell formatters for the tracker's fuel-tech table. Missing values render as
+ * an em dash — a group can lack a value legitimately (no market settlement,
+ * zero energy, or an inapplicable contribution mode).
+ */
+
 import { formatGenerationUnitValue } from '$lib/components/charts/network/generation-units.js';
+import { formatPrice } from '$lib/utils/formatters';
 import { formatSI } from '$lib/utils/si-units.js';
+
+export const EMPTY_CELL = '—';
 
 /**
  * Format a native MW table aggregate in the selected display prefix. Values
@@ -21,7 +30,7 @@ export function formatTablePower(valueMW, displayPrefix) {
  * @returns {string}
  */
 export function formatTrackerPercentageValue(value) {
-	if (value == null || !Number.isFinite(value)) return '—';
+	if (value == null || !Number.isFinite(value)) return EMPTY_CELL;
 	return formatSI(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 
@@ -33,5 +42,66 @@ export function formatTrackerPercentageValue(value) {
  */
 export function formatTablePercentage(value) {
 	const formatted = formatTrackerPercentageValue(value);
-	return formatted === '—' ? formatted : `${formatted}%`;
+	return formatted === EMPTY_CELL ? formatted : `${formatted}%`;
+}
+
+/**
+ * Format a volume-weighted price ($/MWh), cents always shown.
+ *
+ * @param {number | null | undefined} value
+ * @returns {string}
+ */
+export function formatTablePrice(value) {
+	if (value == null || !Number.isFinite(value)) return EMPTY_CELL;
+	return formatPrice(value);
+}
+
+/**
+ * The SI prefix the Emissions column renders in, chosen once per table from
+ * its largest value so every row shares a unit: tonnes below a thousand,
+ * kilotonnes below a million, megatonnes beyond.
+ *
+ * @param {number} maxTonnes
+ * @returns {SiPrefix}
+ */
+export function emissionsDisplayPrefix(maxTonnes) {
+	if (maxTonnes >= 1_000_000) return 'M';
+	if (maxTonnes >= 1_000) return 'k';
+	return '';
+}
+
+/**
+ * Format a window emissions total (tCO₂e) in the column's prefix, with the
+ * same precision rule as power: one decimal strictly inside (-10, 10).
+ *
+ * @param {number | null | undefined} valueT
+ * @param {SiPrefix} displayPrefix
+ * @returns {string}
+ */
+export function formatTableEmissions(valueT, displayPrefix) {
+	return formatGenerationUnitValue(valueT, '', displayPrefix);
+}
+
+/**
+ * Format an emissions intensity (kgCO₂e/MWh) — one decimal below 10, whole
+ * numbers otherwise.
+ *
+ * @param {number | null | undefined} value
+ * @returns {string}
+ */
+export function formatTableIntensity(value) {
+	return formatGenerationUnitValue(value, '', '');
+}
+
+/**
+ * Split a series label into its name and parenthesised qualifier — "Battery
+ * (Charging)" renders the qualifier in a muted tone.
+ *
+ * @param {string} label
+ * @returns {{ main: string, sub: string }}
+ */
+export function splitTableLabel(label) {
+	const index = label.indexOf(' (');
+	if (index === -1) return { main: label, sub: '' };
+	return { main: label.slice(0, index), sub: label.slice(index + 1) };
 }

@@ -14,9 +14,16 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
-	import { X } from '@lucide/svelte';
+	import { Layers, Percent, X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
+	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
+	import {
+		OptionsMenuDivider,
+		OptionsMenuHeading,
+		OptionsMenuItem
+	} from '$lib/components/ui/options-menu';
+	import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
 	import {
 		FullscreenContainer,
 		FullscreenFilterBar,
@@ -33,10 +40,9 @@
 		toggleFullscreenMode
 	} from '$lib/utils/fullscreen-mode.js';
 	import { MIN_DATE } from '$lib/utils/date-range.js';
-	import { TRACKER_REGION_OPTIONS } from './tracker-regions.js';
-	import RegionDropdown from './RegionDropdown.svelte';
+	import { TRACKER_REGION_TREE } from './tracker-regions.js';
 	import TrackerCanvas from './TrackerCanvas.svelte';
-	import { DEFAULT_REGION } from './tracker-model.js';
+	import { DEFAULT_REGION, rangeSnapshotBounds, rangeSpanDays } from './tracker-model.js';
 	import {
 		applyTrackerUrl,
 		copiedTrackerUrl,
@@ -45,7 +51,16 @@
 		validBucketFilterFor
 	} from './tracker-url.js';
 
-	/** @type {{ data: any }} */
+	/** @typedef {import('./types.js').TrackerRange} TrackerRange */
+	/** @typedef {import('./types.js').ContributionMode} ContributionMode */
+
+	/** @type {Array<{ value: ContributionMode, label: string }>} */
+	const CONTRIBUTION_OPTIONS = [
+		{ value: 'generation', label: '% generation' },
+		{ value: 'demand', label: '% demand' }
+	];
+
+	/** @type {{ data: import('./$types').PageData }} */
 	let { data } = $props();
 	// Route data seeds component-local state once; back/forward synchronisation
 	// is handled explicitly from the materialised URL below.
@@ -57,21 +72,25 @@
 	let emissionsMode = $state(initialData.emissionsMode);
 	let overlays = $state(initialData.overlays);
 	let tablePanelOpen = $state(initialData.tablePanelOpen);
+	/** @type {TrackerRange} */
 	let rangeSnapshot = $state(initialData.range);
 	/** Recurring calendar period in the All range; null shows every period. */
 	let bucketFilter = $state(initialData.bucketFilter ?? null);
+	/** Denominator for the table's contribution column — session-only, not in the URL. */
+	/** @type {ContributionMode} */
+	let contributionMode = $state('generation');
 	let notice = $state('');
 	/** @type {TrackerCanvas | undefined} */
-	let canvas = $state(undefined);
+	let canvas = $state.raw(undefined);
 	/** Live range control hoisted from the canvas (createChartRangeControl). */
-	let rangeControl = $state(/** @type {any} */ (null));
+	/** @type {ReturnType<typeof import('$lib/components/charts/facility/chart-range-control.svelte.js').createChartRangeControl> | null} */
+	let rangeControl = $state.raw(null);
 	/** Interval-aware range readout, hoisted alongside it. */
-	let getRangeLabel = $state(/** @type {(() => string) | null} */ (null));
+	/** @type {(() => string) | null} */
+	let getRangeLabel = $state.raw(null);
 	let suppressUrl = false;
 
 	let isFullscreen = $derived(building ? true : isFullscreenUrl(page.url));
-
-	const DAY_MS = 86_400_000;
 
 	// Nav range-bar props. Until the canvas mounts and hoists its live range
 	// control, the bar renders (and SSRs) from the URL-parsed snapshot — the 3D
@@ -91,20 +110,13 @@
 			};
 		}
 		const snapshot = rangeSnapshot;
-		const end = snapshot.kind === 'custom' ? snapshot.endMs : initialData.nowMs;
-		const days =
-			snapshot.kind === 'custom'
-				? Math.max(1, Math.ceil((snapshot.endMs - snapshot.startMs) / DAY_MS))
-				: snapshot.days === -1
-					? Math.max(1, Math.ceil((end - new Date(MIN_DATE).getTime()) / DAY_MS))
-					: snapshot.days;
-		const start = snapshot.kind === 'custom' ? snapshot.startMs : end - days * DAY_MS;
+		const { startMs, endMs } = rangeSnapshotBounds(snapshot, initialData.nowMs);
 		return {
 			selectedRange: snapshot.kind === 'preset' ? snapshot.days : null,
-			customDays: days,
+			customDays: rangeSpanDays(startMs, endMs),
 			displayInterval: snapshot.intervalId,
-			startDate: toNetworkDateString(start, navTimeZone),
-			endDate: toNetworkDateString(end, navTimeZone),
+			startDate: toNetworkDateString(startMs, navTimeZone),
+			endDate: toNetworkDateString(endMs, navTimeZone),
 			maxDate: toNetworkDateString(initialData.nowMs, navTimeZone),
 			pending: true
 		};
@@ -123,12 +135,18 @@
 		};
 	}
 
-	/** @param {'replace' | 'push'} [mode] */
+	/**
+	 * Mirror the navigation state into the address bar. Discrete picks push a
+	 * history entry; continuous or high-frequency changes (pan/zoom settles,
+	 * overlay toggles) replace it so Back still steps between real decisions.
+	 * @param {'replace' | 'push'} [mode]
+	 */
 	function syncUrl(mode = 'replace') {
 		if (suppressUrl || typeof window === 'undefined') return;
 		const url = applyTrackerUrl(new URL(window.location.href), currentUrlState());
-		if (mode === 'push') pushState(`${resolve('/(main)/tracker')}${url.search}`, {});
-		else replaceState(`${resolve('/(main)/tracker')}${url.search}`, {});
+		const href = `${resolve('/(main)/tracker')}${url.search}`;
+		if (mode === 'push') pushState(href, {});
+		else replaceState(href, {});
 	}
 
 	/** @param {string} value */
@@ -143,7 +161,7 @@
 		syncUrl('push');
 	}
 
-	/** @param {any} value */
+	/** @param {TrackerRange} value */
 	function handleRangeChange(value) {
 		rangeSnapshot = value;
 		// Clear filters that the new range or interval cannot represent.
@@ -193,8 +211,7 @@
 
 	async function restoreFromUrl() {
 		const parsed = parseTrackerUrl(new URL(window.location.href).searchParams, {
-			nowMs: Date.now(),
-			validRegions: TRACKER_REGION_OPTIONS.map((option) => option.value)
+			nowMs: Date.now()
 		});
 		suppressUrl = true;
 		selectedRegion = parsed.region;
@@ -258,10 +275,14 @@
 							? 'pl-3'
 							: ''}"
 					>
-						<RegionDropdown
+						<!-- NEM states nest under the whole-NEM option; the pill goes
+						     active (dark) when deviating from the NEM default. -->
+						<FilterSelect
 							selected={selectedRegion}
-							compact
+							options={TRACKER_REGION_TREE}
+							listLabel="Region"
 							defaultValue={DEFAULT_REGION}
+							compact
 							onchange={handleRegionChange}
 						/>
 
@@ -303,7 +324,38 @@
 						onfullscreenchange={() => toggleFullscreenMode(isFullscreen)}
 						oncopylink={copyLink}
 						showCopyLink
-					/>
+					>
+						{#snippet extraSections({ close })}
+							<!-- Table choices live here so the table header stays clean. -->
+							<OptionsMenuHeading icon={Layers}>Fuel tech grouping</OptionsMenuHeading>
+							{#each GROUP_OPTIONS as option (option.value)}
+								<OptionsMenuItem
+									selected={selectedGroup === option.value}
+									onclick={() => {
+										handleGroupChange(option.value);
+										close();
+									}}
+								>
+									{option.label}
+								</OptionsMenuItem>
+							{/each}
+							<OptionsMenuDivider />
+
+							<OptionsMenuHeading icon={Percent}>Contribution</OptionsMenuHeading>
+							{#each CONTRIBUTION_OPTIONS as option (option.value)}
+								<OptionsMenuItem
+									selected={contributionMode === option.value}
+									onclick={() => {
+										contributionMode = option.value;
+										close();
+									}}
+								>
+									{option.label}
+								</OptionsMenuItem>
+							{/each}
+							<OptionsMenuDivider />
+						{/snippet}
+					</PageOptionsMenu>
 				{/snippet}
 			</FullscreenFilterBar>
 		</div>
@@ -336,6 +388,7 @@
 						{overlays}
 						{tablePanelOpen}
 						{bucketFilter}
+						{contributionMode}
 						initialRange={rangeSnapshot}
 						initialNowMs={initialData.nowMs}
 						oncontrolschange={(controls) => {
@@ -343,7 +396,6 @@
 							getRangeLabel = controls.getRangeLabel;
 						}}
 						onrangechange={handleRangeChange}
-						ongroupchange={handleGroupChange}
 						onpricemodechange={handlePriceModeChange}
 						onemissionsmodechange={handleEmissionsModeChange}
 						onoverlayschange={handleOverlaysChange}

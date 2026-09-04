@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+	EMPTY_CELL,
+	emissionsDisplayPrefix,
+	formatTableEmissions,
+	formatTableIntensity,
 	formatTablePercentage,
 	formatTablePower,
-	formatTrackerPercentageValue
+	formatTablePrice,
+	formatTrackerPercentageValue,
+	splitTableLabel
 } from './table-format.js';
 
 describe('formatTablePower', () => {
@@ -25,8 +31,8 @@ describe('formatTablePower', () => {
 	});
 
 	it('uses an em dash for missing or invalid values', () => {
-		expect(formatTablePower(null, 'M')).toBe('—');
-		expect(formatTablePower(NaN, 'M')).toBe('—');
+		expect(formatTablePower(null, 'M')).toBe(EMPTY_CELL);
+		expect(formatTablePower(NaN, 'M')).toBe(EMPTY_CELL);
 	});
 });
 
@@ -38,8 +44,8 @@ describe('formatTablePercentage', () => {
 	});
 
 	it('uses an em dash for missing or invalid values', () => {
-		expect(formatTablePercentage(null)).toBe('—');
-		expect(formatTablePercentage(NaN)).toBe('—');
+		expect(formatTablePercentage(null)).toBe(EMPTY_CELL);
+		expect(formatTablePercentage(NaN)).toBe(EMPTY_CELL);
 	});
 });
 
@@ -47,5 +53,53 @@ describe('formatTrackerPercentageValue', () => {
 	it('keeps one decimal while leaving the unit to the tooltip', () => {
 		expect(formatTrackerPercentageValue(10)).toBe('10.0');
 		expect(formatTrackerPercentageValue(67.89)).toBe('67.9');
+	});
+});
+
+describe('formatTablePrice', () => {
+	it('always shows cents', () => {
+		expect(formatTablePrice(2)).toBe('$2.00');
+		expect(formatTablePrice(-48.5)).toBe('$-48.50');
+	});
+
+	it('uses an em dash for missing or invalid values', () => {
+		expect(formatTablePrice(null)).toBe(EMPTY_CELL);
+		expect(formatTablePrice(NaN)).toBe(EMPTY_CELL);
+	});
+});
+
+describe('splitTableLabel', () => {
+	it('separates a parenthesised qualifier from the name', () => {
+		expect(splitTableLabel('Battery (Charging)')).toEqual({ main: 'Battery', sub: '(Charging)' });
+		expect(splitTableLabel('Coal')).toEqual({ main: 'Coal', sub: '' });
+	});
+
+	it('keeps every qualifier after the first', () => {
+		expect(splitTableLabel('Gas (OCGT) (Peaking)')).toEqual({
+			main: 'Gas',
+			sub: '(OCGT) (Peaking)'
+		});
+	});
+});
+
+describe('emissions formatting', () => {
+	it('picks one column prefix from the largest value', () => {
+		expect(emissionsDisplayPrefix(999)).toBe('');
+		expect(emissionsDisplayPrefix(1_000)).toBe('k');
+		expect(emissionsDisplayPrefix(2_500_000)).toBe('M');
+	});
+
+	it('formats tonnes in the column prefix with the power precision rule', () => {
+		expect(formatTableEmissions(300, '')).toBe('300');
+		expect(formatTableEmissions(8_500, 'k')).toBe('8.5');
+		expect(formatTableEmissions(1_234_567, 'M')).toBe('1.2');
+		expect(formatTableEmissions(null, 'k')).toBe(EMPTY_CELL);
+	});
+
+	it('formats intensity with one decimal below ten', () => {
+		expect(formatTableIntensity(0)).toBe('0.0');
+		expect(formatTableIntensity(7.25)).toBe('7.3');
+		expect(formatTableIntensity(812.4)).toBe('812');
+		expect(formatTableIntensity(null)).toBe(EMPTY_CELL);
 	});
 });

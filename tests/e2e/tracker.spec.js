@@ -39,7 +39,9 @@ test.describe('Tracker smoke tests', () => {
 
 		await expect(page.locator('body')).not.toBeEmpty();
 		await expect(page.getByRole('heading', { name: 'Generation' })).toBeVisible();
-		await expect(page.getByRole('button', { name: '% generation' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: /Technology/ })).toBeVisible({
+			timeout: 30000
+		});
 
 		// Give the charts time to fetch and render the initial 3-day window.
 		await page.waitForTimeout(3000);
@@ -77,7 +79,9 @@ test.describe('Tracker smoke tests', () => {
 
 		await page.getByRole('button', { name: 'Show fuel tech table' }).click();
 		await expect(page).not.toHaveURL(/table=0/);
-		await expect(page.getByRole('button', { name: '% generation' })).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: /Technology/ })).toBeVisible({
+			timeout: 30000
+		});
 
 		expect(errors).toEqual([]);
 	});
@@ -281,5 +285,116 @@ test.describe('Tracker smoke tests', () => {
 		await expect(generationCard.getByRole('tab', { name: 'TWh', exact: true })).toBeVisible();
 		await generationCard.getByRole('tab', { name: 'TWh', exact: true }).click();
 		await expect(generationCard.getByRole('button', { name: 'TWh', exact: true })).toBeVisible();
+	});
+});
+
+test.describe('Tracker options menu', () => {
+	test('grouping and contribution basis are chosen from the nav options menu', async ({ page }) => {
+		await page.goto('/tracker?table=1');
+		await waitForHydration(page);
+		const techHeader = page.getByRole('columnheader', { name: /Technology/ });
+		await expect(techHeader).toBeVisible({ timeout: 30000 });
+		await expect(techHeader).toContainText('Simplified');
+
+		await page.getByRole('button', { name: 'Options', exact: true }).click();
+		const menu = page.getByRole('menu');
+		await expect(menu.getByRole('menuitemradio', { name: 'Simplified' })).toHaveAttribute(
+			'aria-checked',
+			'true'
+		);
+		await menu.getByRole('menuitemradio', { name: 'Detailed' }).click();
+		await expect(page).toHaveURL(/group=detailed/);
+		await expect(techHeader).toContainText('Detailed');
+
+		const contributionHeader = page.getByRole('columnheader', { name: /Contribution/ });
+		await expect(contributionHeader).toContainText('% generation');
+		await page.getByRole('button', { name: 'Options', exact: true }).click();
+		await menu.getByRole('menuitemradio', { name: '% demand' }).click();
+		await expect(contributionHeader).toContainText('% demand');
+		// Session-only: the contribution basis never reaches the URL.
+		expect(new URL(page.url()).searchParams.has('contribution')).toBe(false);
+	});
+});
+
+test.describe('Tracker table column carousel', () => {
+	const columnStrip = (/** @type {import('@playwright/test').Page} */ page) =>
+		page.getByRole('group', { name: 'Table columns' });
+
+	/** Right edge of a locator's box. @param {import('@playwright/test').Locator} locator */
+	async function rightEdge(locator) {
+		const box = await locator.boundingBox();
+		return box ? box.x + box.width : NaN;
+	}
+
+	test('a narrow panel pins Technology and scrolls value columns via the tabs', async ({
+		page
+	}) => {
+		// The default 30% panel of a 1280px canvas is ~384px — below the 660px breakpoint.
+		await page.setViewportSize({ width: 1280, height: 720 });
+		await page.goto('/tracker?table=1');
+		await waitForHydration(page);
+
+		const strip = columnStrip(page);
+		// The table mounts only once the generation data arrives.
+		await expect(strip).toBeVisible({ timeout: 30000 });
+		const powerTab = strip.getByRole('button', { name: 'Av power' });
+		const priceTab = strip.getByRole('button', { name: 'Av price' });
+		await expect(powerTab).toHaveAttribute('aria-pressed', 'true');
+		await expect(priceTab).toHaveAttribute('aria-pressed', 'false');
+
+		const table = page.getByRole('table');
+		const scroller = table.locator('xpath=..');
+		const techHeader = page.getByRole('columnheader', { name: /Technology/ });
+		const priceHeader = page.getByRole('columnheader', { name: /Av price/ });
+		const view = await scroller.boundingBox();
+		if (!view) throw new Error('scroller not laid out');
+		expect(await rightEdge(priceHeader)).toBeGreaterThan(view.x + view.width + 1);
+
+		await priceTab.click();
+		await expect(priceTab).toHaveAttribute('aria-pressed', 'true');
+		await expect.poll(() => rightEdge(priceHeader)).toBeLessThanOrEqual(view.x + view.width + 1);
+
+		// Technology stays flush with the scroller's left edge after scrolling.
+		const tech = await techHeader.boundingBox();
+		expect(Math.abs((tech?.x ?? NaN) - view.x)).toBeLessThanOrEqual(1);
+		await expect(page.getByRole('button', { name: /^Demand\b/ })).toBeVisible({ timeout: 30000 });
+		const demandLabel = await page
+			.getByRole('button', { name: /^Demand\b/ })
+			.locator('td')
+			.first()
+			.boundingBox();
+		expect(Math.abs((demandLabel?.x ?? NaN) - view.x)).toBeLessThanOrEqual(1);
+	});
+
+	test('a wide panel renders the plain four-column table', async ({ page }) => {
+		// 30% of a 2560px canvas is ~768px — comfortably above the 660px breakpoint.
+		await page.setViewportSize({ width: 2560, height: 1080 });
+		await page.goto('/tracker?table=1');
+		await waitForHydration(page);
+
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30000 });
+		await expect(columnStrip(page)).toBeHidden();
+		const view = await page.getByRole('table').boundingBox();
+		if (!view) throw new Error('table not laid out');
+		const priceHeader = page.getByRole('columnheader', { name: /Av price/ });
+		expect(await rightEdge(priceHeader)).toBeLessThanOrEqual(view.x + view.width + 1);
+	});
+
+	test('dragging the panel wider removes the carousel', async ({ page }) => {
+		await page.setViewportSize({ width: 1280, height: 720 });
+		await page.goto('/tracker?table=1');
+		await waitForHydration(page);
+		await expect(columnStrip(page)).toBeVisible({ timeout: 30000 });
+
+		const handle = await page.getByRole('separator', { name: 'Resize table panel' }).boundingBox();
+		if (!handle) throw new Error('panel handle not laid out');
+		const y = handle.y + handle.height / 2;
+		await page.mouse.move(handle.x + handle.width / 2, y);
+		await page.mouse.down();
+		// The panel sits to the right — dragging left grows it.
+		await page.mouse.move(handle.x - 400, y, { steps: 10 });
+		await page.mouse.up();
+
+		await expect(columnStrip(page)).toBeHidden();
 	});
 });

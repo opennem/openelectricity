@@ -1,11 +1,17 @@
 <script>
 	import { cn } from '$lib/utils';
 
-	/** @type {{ axis: 'x' | 'y', onstart: (e: PointerEvent) => void, active?: boolean, class?: string, el?: HTMLElement | undefined } & import('svelte/elements').HTMLAttributes<HTMLDivElement>} */
+	/**
+	 * `alwaysShowGrip` keeps the five-dot grip visible at every width; by
+	 * default it only appears on hover from `md:` up, where the handle sits in
+	 * an otherwise empty gap.
+	 * @type {{ axis: 'x' | 'y', onstart: (e: PointerEvent) => void, active?: boolean, alwaysShowGrip?: boolean, class?: string, el?: HTMLElement | undefined } & import('svelte/elements').HTMLAttributes<HTMLDivElement>}
+	 */
 	let {
 		axis,
 		onstart,
 		active = false,
+		alwaysShowGrip = false,
 		class: className = '',
 		el = $bindable(undefined),
 		...restProps
@@ -14,7 +20,6 @@
 	let isVertical = $derived(axis === 'x');
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	bind:this={el}
 	data-slot="drag-handle"
@@ -31,7 +36,8 @@
 	<div
 		class={cn(
 			isVertical ? 'flex flex-col gap-1' : 'flex gap-1',
-			'transition-opacity md:opacity-0 md:group-hover:opacity-100',
+			'transition-opacity',
+			alwaysShowGrip ? '' : 'md:opacity-0 md:group-hover:opacity-100',
 			active ? 'md:opacity-100' : ''
 		)}
 	>

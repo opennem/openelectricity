@@ -6,6 +6,7 @@ import {
 	computeAvPowerMW,
 	computeContribution,
 	computeCurtailmentRows,
+	computeEmissions,
 	computeOverlaySummary,
 	computeVWPrices
 } from './table-model.js';
@@ -50,6 +51,13 @@ const mvRows = makeRows(MIN_5, {
 // 200 MW × 2h = 400 MWh gross demand.
 const demandRows = makeRows(MIN_5, {
 	[DEMAND_GROSS_SERIES_ID]: Array(24).fill(200)
+});
+
+// Per-bucket tonnes at 5m: coal 24 × 12.5 = 300 t, rooftop 0 t; imports and
+// battery carry no emissions series.
+const emissionsRows = makeRows(MIN_5, {
+	coal: Array(24).fill(12.5),
+	solar_rooftop: Array(24).fill(0)
 });
 
 describe('computeAvPowerMW', () => {
@@ -159,6 +167,46 @@ describe('computeContribution', () => {
 	});
 });
 
+describe('computeEmissions', () => {
+	const input = {
+		emissionsRows,
+		generationRows,
+		seriesNames,
+		basis: /** @type {const} */ ('power'),
+		loadSeriesIds
+	};
+
+	it("sums window tonnes and ratios them against each series' own energy", () => {
+		const { volumeT, intensityKgPerMWh } = computeEmissions(input);
+		expect(volumeT.coal).toBeCloseTo(300);
+		expect(intensityKgPerMWh.coal).toBeCloseTo(1000); // 300 t ÷ 300 MWh × 1000
+		expect(volumeT.solar_rooftop).toBe(0);
+		expect(intensityKgPerMWh.solar_rooftop).toBe(0);
+	});
+
+	it('nulls series without an emissions feed and every load', () => {
+		const { volumeT, intensityKgPerMWh } = computeEmissions(input);
+		expect(volumeT.imports).toBeNull();
+		expect(intensityKgPerMWh.imports).toBeNull();
+		expect(volumeT.battery_charging).toBeNull();
+		expect(intensityKgPerMWh.battery_charging).toBeNull();
+	});
+
+	it('keeps the volume but nulls the intensity when the energy is ~zero', () => {
+		const idle = makeRows(MIN_30, { idle: [0, 0, 0, 0] });
+		const tonnes = makeRows(MIN_5, { idle: Array(24).fill(1) });
+		const { volumeT, intensityKgPerMWh } = computeEmissions({
+			emissionsRows: tonnes,
+			generationRows: idle,
+			seriesNames: ['idle'],
+			basis: 'power',
+			loadSeriesIds: []
+		});
+		expect(volumeT.idle).toBeCloseTo(24);
+		expect(intensityKgPerMWh.idle).toBeNull();
+	});
+});
+
 describe('buildFuelTechTableRows', () => {
 	const input = {
 		generationData: {
@@ -168,6 +216,7 @@ describe('buildFuelTechTableRows', () => {
 			seriesColours: { coal: '#131313' }
 		},
 		mvRows,
+		emissionsRows,
 		demandRows,
 		basis: /** @type {const} */ ('power'),
 		demandBasis: /** @type {const} */ ('power'),
@@ -198,8 +247,11 @@ describe('buildFuelTechTableRows', () => {
 			isLoad: false,
 			avPowerMW: 150,
 			contributionPct: expect.closeTo(75),
-			vwPrice: expect.closeTo(2)
+			vwPrice: expect.closeTo(2),
+			emissionsT: expect.closeTo(300),
+			intensityKgPerMWh: expect.closeTo(1000)
 		});
+		expect(battery).toMatchObject({ emissionsT: null, intensityKgPerMWh: null });
 	});
 
 	it('files a net-negative mixed group under loads by sign', () => {
