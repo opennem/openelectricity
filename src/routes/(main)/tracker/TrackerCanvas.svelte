@@ -23,6 +23,7 @@
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
 	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
 	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
+	import { rangeSlugFor } from '$lib/components/charts/facility/range-params.js';
 	import {
 		getIntervalSpec,
 		isRollingInterval
@@ -46,7 +47,7 @@
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 	import { formatRangeLabel } from '$lib/components/charts/v2/time-format-policy.js';
 	import { perfSpan } from '$lib/components/charts/v2/perf.js';
-	import { hasSpotPrice } from './tracker-regions.js';
+	import { hasSpotPrice, TRACKER_REGION_OPTIONS } from './tracker-regions.js';
 	import ChartCard from './ChartCard.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
 	import { createTrackerPrefetchPlan } from './tracker-prefetch.js';
@@ -68,6 +69,8 @@
 	/** @typedef {import('./types.js').TrackerRange} TrackerRange */
 	/** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
 	/** @typedef {import('./types.js').GenerationSnapshot} GenerationSnapshot */
+	/** @typedef {import('./types.js').SeriesSnapshot} SeriesSnapshot */
+	/** @typedef {import('./types.js').TrackerExportContext} TrackerExportContext */
 	/** @typedef {import('$lib/components/charts/network/headless-series-provider.svelte.js').HeadlessSeriesProvider} HeadlessSeriesProvider */
 
 	/** @type {{
@@ -167,6 +170,13 @@
 	/** Latest generation visible-data snapshot — feeds the table. Kept (stale)
 	 *  through refetches so the table never blanks. */
 	let generationDataset = $state.raw(/** @type {GenerationSnapshot | null} */ (null));
+	/** Price and emissions snapshots, for the data export only. Tagged with the
+	 *  scope and metric that produced them: like the generation snapshot they
+	 *  persist through refetches, so an export checks the tag before trusting
+	 *  one. */
+	/** @typedef {{ region: string, group: string, metric: string, snapshot: SeriesSnapshot }} TaggedSnapshot */
+	let priceDataset = $state.raw(/** @type {TaggedSnapshot | null} */ (null));
+	let emissionsDataset = $state.raw(/** @type {TaggedSnapshot | null} */ (null));
 	let containerWidth = $state(0);
 
 	/** Table panel width (% of the row). Owned here — the drag handle sits in
@@ -690,6 +700,67 @@
 		markChartLoaded('gen');
 	}
 
+	/** @param {SeriesSnapshot} snapshot */
+	function handlePriceData(snapshot) {
+		priceDataset = { region, group, metric: priceMetric, snapshot };
+	}
+
+	/** @param {SeriesSnapshot} snapshot */
+	function handleEmissionsData(snapshot) {
+		emissionsDataset = { region, group, metric: emissionsMetric, snapshot };
+	}
+
+	// ============================================
+	// Data export
+	// ============================================
+
+	/**
+	 * A tagged snapshot only if it describes the current scope and metric.
+	 * @param {TaggedSnapshot | null} tagged
+	 * @param {string} metric
+	 */
+	function currentSnapshot(tagged, metric) {
+		if (!tagged) return null;
+		const current = tagged.region === region && tagged.group === group && tagged.metric === metric;
+		return current ? tagged.snapshot : null;
+	}
+
+	/**
+	 * Everything `tracker-export.js` needs, from the settled state the charts
+	 * and table already show. The page adds the source URL and timestamp and
+	 * owns the download itself — the canvas has no file side effects.
+	 * @returns {Omit<TrackerExportContext, 'sourceUrl' | 'generatedAtMs'>}
+	 */
+	export function getExportContext() {
+		const structureCurrent = settledStructureKey === `${region}|${group}`;
+		return {
+			region,
+			regionLabel:
+				TRACKER_REGION_OPTIONS.find((option) => option.value === region)?.label ?? region,
+			group,
+			groupLabel: getGroup(group).label,
+			contributionMode,
+			basis: range.activeMetric,
+			displayInterval: range.displayInterval,
+			intervalLabel: intervalBadge,
+			rangeLabel,
+			rangeSlug: rangeSlugFor(range),
+			timeZone,
+			window: viewWindow,
+			priceMetric,
+			emissionsMetric,
+			generation: structureCurrent ? generationDataset : null,
+			price: currentSnapshot(priceDataset, priceMetric),
+			emissions: currentSnapshot(emissionsDataset, emissionsMetric),
+			tableRows: structureCurrent ? tableRows : null,
+			curtailmentRows,
+			overlaySummary,
+			tablePanelOpen,
+			hiddenSeries,
+			pending: chartsHoldFrame
+		};
+	}
+
 	// ============================================
 	// Range snapshot API (page URL sync + popstate restore)
 	// ============================================
@@ -818,6 +889,7 @@
 					onhoverchange={handleHoverChange}
 					onviewportchange={(next) => range.handleDerivedViewportChange(next, priceChart)}
 					onviewportsettle={range.handleViewportSettle}
+					onvisibledata={handlePriceData}
 					onloadcomplete={() => markChartLoaded('price')}
 					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
@@ -869,6 +941,7 @@
 					onhoverchange={handleHoverChange}
 					onviewportchange={(next) => range.handleDerivedViewportChange(next, emissionsChart)}
 					onviewportsettle={range.handleViewportSettle}
+					onvisibledata={handleEmissionsData}
 					onloadcomplete={() => markChartLoaded('emissions')}
 					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
@@ -918,7 +991,6 @@
 				{group}
 				{contributionMode}
 				hiddenCount={hiddenSeries.length}
-				{rangeLabel}
 				{curtailmentRows}
 				shownCurtailment={shownCurtailmentIds}
 				{overlaySummary}

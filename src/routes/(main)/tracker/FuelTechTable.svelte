@@ -10,8 +10,9 @@
 	} from './tracker-overlays.js';
 	import {
 		EMPTY_CELL,
-		emissionsDisplayPrefix,
+		energyDisplayPrefix,
 		formatTableEmissions,
+		formatTableEnergy,
 		formatTableIntensity,
 		formatTablePercentage,
 		formatTablePower,
@@ -89,12 +90,13 @@
 	} = $props();
 
 	// Value columns and their carousel widths. The container-query breakpoint
-	// (660px, spelt out in the `@min-[660px]:` classes below) is the sum of the
-	// narrow widths: Technology 160 + 5 × 100 — equal to the natural table
+	// (760px, spelt out in the `@min-[760px]:` classes below) is the sum of the
+	// narrow widths: Technology 160 + 6 × 100 — equal to the natural table
 	// width, so there is never a band where the strip shows but nothing scrolls.
 	// The value widths also hold in the wide layout, where Technology takes
 	// whatever remains.
 	const VALUE_COLUMNS = [
+		{ key: 'energy', label: 'Energy', widthClass: 'w-[100px]' },
 		{ key: 'power', label: 'Av power', widthClass: 'w-[100px]' },
 		{ key: 'contribution', label: 'Contribution', widthClass: 'w-[100px]' },
 		{ key: 'price', label: 'Av price', widthClass: 'w-[100px]' },
@@ -149,14 +151,17 @@
 		});
 	}
 
-	let powerUnit = $derived(`${displayPrefix}W`);
+	/** Av power follows the chart's MW/GW choice while the chart shows power,
+	 *  and stays in MW otherwise. Energy always sizes its own prefix from the
+	 *  table's largest value — the chart's early jump to TWh doesn't apply. */
+	let powerPrefix = $derived(basis === 'power' ? displayPrefix : 'M');
+	let energyPrefix = $derived(
+		energyDisplayPrefix(Math.max(0, ...rows.map((row) => row.energyMWh ?? 0)))
+	);
+	let powerUnit = $derived(`${powerPrefix}W`);
+	let energyUnit = $derived(`${energyPrefix}Wh`);
 	let groupLabel = $derived(GROUP_OPTIONS.find((option) => option.value === group)?.label ?? '');
 	let contributionUnit = $derived(contributionMode === 'demand' ? '% demand' : '% generation');
-	/** One emissions unit for the whole column, sized to its largest value. */
-	let emissionsPrefix = $derived(
-		emissionsDisplayPrefix(Math.max(0, ...rows.map((row) => row.emissionsT ?? 0)))
-	);
-	let emissionsUnit = $derived(`${emissionsPrefix}tCO₂e`);
 
 	/**
 	 * Underlying fuel techs folded into a group — one label per tooltip line,
@@ -182,10 +187,11 @@
 			activate: (exclusive) => ontoggle?.(row.id, exclusive),
 			swatch: { kind: 'solid', colour: row.colour },
 			cells: [
-				formatTablePower(row.avPowerMW, displayPrefix),
+				formatTableEnergy(row.energyMWh, energyPrefix),
+				formatTablePower(row.avPowerMW, powerPrefix),
 				formatTablePercentage(row.contributionPct),
 				formatTablePrice(row.vwPrice),
-				formatTableEmissions(row.emissionsT, emissionsPrefix),
+				formatTableEmissions(row.emissionsT),
 				formatTableIntensity(row.intensityKgPerMWh)
 			],
 			breakdown: underlyingFuelTechs(row),
@@ -203,7 +209,8 @@
 			activate: (exclusive) => oncurtailmenttoggle?.(row.id, exclusive),
 			swatch: { kind: 'hatch', colour: CURTAILMENT_COLOURS[row.id] ?? '#888' },
 			cells: [
-				formatTablePower(row.avPowerMW, displayPrefix),
+				formatTableEnergy(row.energyMWh, energyPrefix),
+				formatTablePower(row.avPowerMW, powerPrefix),
 				formatTablePercentage(row.contributionPct),
 				EMPTY_CELL,
 				EMPTY_CELL,
@@ -217,11 +224,12 @@
 	 * @param {boolean} active
 	 * @param {string} colour
 	 * @param {((exclusive?: boolean) => void) | undefined} ontogglerow
+	 * @param {number | null} energyMWh
 	 * @param {number | null} avPowerMW
 	 * @param {number | null} sharePct
 	 * @returns {ToggleRow}
 	 */
-	function summaryRow(label, active, colour, ontogglerow, avPowerMW, sharePct) {
+	function summaryRow(label, active, colour, ontogglerow, energyMWh, avPowerMW, sharePct) {
 		return {
 			key: label,
 			label,
@@ -229,7 +237,8 @@
 			activate: (exclusive) => ontogglerow?.(exclusive),
 			swatch: { kind: 'line', colour },
 			cells: [
-				formatTablePower(avPowerMW, displayPrefix),
+				formatTableEnergy(energyMWh, energyPrefix),
+				formatTablePower(avPowerMW, powerPrefix),
 				formatTablePercentage(sharePct),
 				EMPTY_CELL,
 				EMPTY_CELL,
@@ -250,6 +259,7 @@
 						showDemandLine,
 						DEMAND_LINE_COLOUR,
 						ondemandlinetoggle,
+						overlaySummary.demandEnergyMWh,
 						overlaySummary.demandAvMW,
 						null
 					),
@@ -258,6 +268,7 @@
 						showRenewablesLine,
 						RENEWABLES_LINE_COLOUR,
 						onrenewableslinetoggle,
+						overlaySummary.renewablesEnergyMWh,
 						overlaySummary.renewablesAvMW,
 						overlaySummary.renewablesSharePct
 					)
@@ -410,7 +421,7 @@
 	<div
 		role="group"
 		aria-label="Table columns"
-		class="sticky top-0 z-[2] flex justify-end border-b border-warm-grey bg-white px-2 py-1.5 @min-[660px]:hidden"
+		class="sticky top-0 z-[2] flex justify-end border-b border-warm-grey bg-white px-2 py-1.5 @min-[760px]:hidden"
 	>
 		<div
 			class="inline-flex items-center gap-0.5 rounded-md border border-mid-warm-grey/40 bg-light-warm-grey p-0.5"
@@ -435,7 +446,7 @@
 		bind:this={scroller}
 		bind:clientWidth={scrollerWidth}
 		onscroll={() => (scrollLeft = scroller?.scrollLeft ?? 0)}
-		class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--tech-w) scroll-smooth motion-reduce:scroll-auto @min-[660px]:overflow-x-visible @min-[660px]:snap-none"
+		class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--tech-w) scroll-smooth motion-reduce:scroll-auto @min-[760px]:overflow-x-visible @min-[760px]:snap-none"
 	>
 		<!-- border-separate: sticky cells paint over collapsed borders, so the
 		     rules live on the cells instead of the row groups. -->
@@ -444,7 +455,7 @@
 				<tr>
 					<th
 						bind:this={techHeader}
-						class="{pinnedEdgeClass} w-(--tech-w) bg-light-warm-grey px-2 text-left text-sm @min-[660px]:w-auto {HEADER_CELL}"
+						class="{pinnedEdgeClass} w-(--tech-w) bg-light-warm-grey px-2 text-left text-sm @min-[760px]:w-auto {HEADER_CELL}"
 					>
 						<div class="ml-2 flex flex-col items-start">
 							<span class="text-xs text-dark-grey">Technology</span>
@@ -462,12 +473,14 @@
 								<span class="text-xs">{column.label}</span>
 								{#if column.key === 'contribution'}
 									{@render unitLine(contributionUnit)}
+								{:else if column.key === 'energy'}
+									{@render unitLine(energyUnit)}
 								{:else if column.key === 'power'}
 									{@render unitLine(powerUnit)}
 								{:else if column.key === 'price'}
 									{@render unitLine('$/MWh')}
 								{:else if column.key === 'emissions'}
-									{@render unitLine(emissionsUnit)}
+									{@render unitLine('tCO₂e')}
 								{:else}
 									{@render unitLine('kgCO₂e/MWh')}
 								{/if}

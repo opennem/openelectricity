@@ -14,18 +14,27 @@ export function escapeCsv(value) {
 }
 
 /**
- * Trigger a CSV file download from string data.
- * Creates a temporary blob URL and anchor element, clicks it, then revokes the URL.
+ * Save a Blob through a temporary object URL and a synthetic anchor click.
+ * Shared by the CSV and XLSX exporters.
  *
- * @param {string} csvData - The CSV content as a string
+ * @param {Blob} blob
  * @param {string} fileName - The download file name (e.g. 'data.csv')
  */
-export function downloadCsv(csvData, fileName) {
-	const blob = new Blob([csvData], { type: 'text/plain' });
+export function downloadBlob(blob, fileName) {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
 	a.href = url;
 	a.download = fileName;
 	a.click();
 	URL.revokeObjectURL(url);
+}
+
+/**
+ * Trigger a CSV file download from string data.
+ *
+ * @param {string} csvData - The CSV content as a string
+ * @param {string} fileName - The download file name (e.g. 'data.csv')
+ */
+export function downloadCsv(csvData, fileName) {
+	downloadBlob(new Blob([csvData], { type: 'text/plain' }), fileName);
 }

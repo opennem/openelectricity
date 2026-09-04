@@ -40,8 +40,17 @@
 		toggleFullscreenMode
 	} from '$lib/utils/fullscreen-mode.js';
 	import { MIN_DATE } from '$lib/utils/date-range.js';
+	import { downloadCsv } from '$lib/utils/download-csv.js';
+	import { downloadXlsx } from '$lib/utils/download-xlsx.js';
 	import { TRACKER_REGION_TREE } from './tracker-regions.js';
 	import TrackerCanvas from './TrackerCanvas.svelte';
+	import {
+		buildExportDataset,
+		buildWorkbookSheets,
+		datasetToCsv,
+		exportFileName,
+		trackerDownloadItems
+	} from './tracker-export.js';
 	import { DEFAULT_REGION, rangeSnapshotBounds, rangeSpanDays } from './tracker-model.js';
 	import {
 		applyTrackerUrl,
@@ -53,6 +62,8 @@
 
 	/** @typedef {import('./types.js').TrackerRange} TrackerRange */
 	/** @typedef {import('./types.js').ContributionMode} ContributionMode */
+	/** @typedef {import('./types.js').ExportDatasetKey} ExportDatasetKey */
+	/** @typedef {import('./types.js').TrackerExportContext} TrackerExportContext */
 
 	/** @type {Array<{ value: ContributionMode, label: string }>} */
 	const CONTRIBUTION_OPTIONS = [
@@ -209,6 +220,63 @@
 		}
 	}
 
+	// ============================================
+	// Data export
+	// ============================================
+
+	const LOADING_NOTICE = 'Charts are still loading — try again in a moment.';
+	const EMPTY_NOTICE = 'Nothing to export yet.';
+
+	/**
+	 * The canvas's settled state plus the page's provenance, or null while
+	 * the charts are mid-switch (the held frame would be stale).
+	 * @returns {TrackerExportContext | null}
+	 */
+	function exportContext() {
+		const context = canvas?.getExportContext();
+		if (!context || context.pending) return null;
+		return {
+			...context,
+			sourceUrl: copiedTrackerUrl(new URL(window.location.href), currentUrlState()).href,
+			generatedAtMs: Date.now()
+		};
+	}
+
+	/** @param {ExportDatasetKey} key */
+	function handleDownloadItem(key) {
+		const context = exportContext();
+		if (!context) {
+			notice = LOADING_NOTICE;
+			return;
+		}
+		const dataset = buildExportDataset(key, context);
+		if (!dataset) {
+			notice = EMPTY_NOTICE;
+			return;
+		}
+		downloadCsv(datasetToCsv(dataset, context.timeZone), exportFileName(context, key));
+	}
+
+	async function downloadWorkbook() {
+		const context = exportContext();
+		if (!context) {
+			notice = LOADING_NOTICE;
+			return;
+		}
+		const sheets = buildWorkbookSheets(context);
+		// Summary alone means no dataset has arrived.
+		if (sheets.length < 2) {
+			notice = EMPTY_NOTICE;
+			return;
+		}
+		try {
+			await downloadXlsx(sheets, exportFileName(context, 'xlsx'));
+		} catch (error) {
+			console.error('Tracker workbook export failed', error);
+			notice = 'Could not build the workbook.';
+		}
+	}
+
 	async function restoreFromUrl() {
 		const parsed = parseTrackerUrl(new URL(window.location.href).searchParams, {
 			nowMs: Date.now()
@@ -310,7 +378,7 @@
 
 						{#if getRangeLabel}
 							<span
-								class="hidden shrink-0 whitespace-nowrap font-space text-xs text-mid-grey lg:inline"
+								class="ml-auto hidden shrink-0 whitespace-nowrap font-space text-xs text-mid-grey lg:inline"
 							>
 								{getRangeLabel()}
 							</span>
@@ -324,6 +392,9 @@
 						onfullscreenchange={() => toggleFullscreenMode(isFullscreen)}
 						oncopylink={copyLink}
 						showCopyLink
+						downloadItems={trackerDownloadItems({ tablePanelOpen })}
+						ondownloaditem={(key) => handleDownloadItem(/** @type {ExportDatasetKey} */ (key))}
+						ondownloadxlsx={downloadWorkbook}
 					>
 						{#snippet extraSections({ close })}
 							<!-- Table choices live here so the table header stays clean. -->

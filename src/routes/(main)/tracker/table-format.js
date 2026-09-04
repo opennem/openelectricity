@@ -23,6 +23,33 @@ export function formatTablePower(valueMW, displayPrefix) {
 }
 
 /**
+ * Format a window energy total (MWh) in the selected display prefix, with the
+ * same precision rule as power.
+ *
+ * @param {number | null | undefined} valueMWh
+ * @param {SiPrefix} displayPrefix
+ * @returns {string}
+ */
+export function formatTableEnergy(valueMWh, displayPrefix) {
+	return formatGenerationUnitValue(valueMWh, 'M', displayPrefix);
+}
+
+/**
+ * The prefix the Energy column renders in, chosen from its largest value. The
+ * column steps up only once a value would need five digits — 10,000 MWh
+ * becomes 10 GWh, 10,000 GWh becomes 10 TWh — rather than following the
+ * chart's early promotion to TWh, so GWh is always visited first.
+ *
+ * @param {number} maxMWh
+ * @returns {SiPrefix}
+ */
+export function energyDisplayPrefix(maxMWh) {
+	if (maxMWh >= 10_000_000) return 'T';
+	if (maxMWh >= 10_000) return 'G';
+	return 'M';
+}
+
+/**
  * Format a Tracker percentage value without its unit. Tooltips append their
  * unit separately; table cells use the wrapper below.
  *
@@ -57,29 +84,15 @@ export function formatTablePrice(value) {
 }
 
 /**
- * The SI prefix the Emissions column renders in, chosen once per table from
- * its largest value so every row shares a unit: tonnes below a thousand,
- * kilotonnes below a million, megatonnes beyond.
- *
- * @param {number} maxTonnes
- * @returns {SiPrefix}
- */
-export function emissionsDisplayPrefix(maxTonnes) {
-	if (maxTonnes >= 1_000_000) return 'M';
-	if (maxTonnes >= 1_000) return 'k';
-	return '';
-}
-
-/**
- * Format a window emissions total (tCO₂e) in the column's prefix, with the
- * same precision rule as power: one decimal strictly inside (-10, 10).
+ * Format a window emissions total in plain tonnes (tCO₂e) — never scaled to
+ * kt/Mt, so rows read directly against the chart's tonnes — with the same
+ * precision rule as power: one decimal strictly inside (-10, 10).
  *
  * @param {number | null | undefined} valueT
- * @param {SiPrefix} displayPrefix
  * @returns {string}
  */
-export function formatTableEmissions(valueT, displayPrefix) {
-	return formatGenerationUnitValue(valueT, '', displayPrefix);
+export function formatTableEmissions(valueT) {
+	return formatGenerationUnitValue(valueT, '', '');
 }
 
 /**

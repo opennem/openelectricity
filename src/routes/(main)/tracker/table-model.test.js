@@ -238,6 +238,7 @@ describe('buildFuelTechTableRows', () => {
 			label: 'Battery (Charging)',
 			isLoad: true,
 			hidden: false,
+			energyMWh: 20, // magnitude of −20
 			avPowerMW: 10, // magnitude of −10
 			contributionPct: null,
 			vwPrice: expect.closeTo(2.4)
@@ -245,6 +246,7 @@ describe('buildFuelTechTableRows', () => {
 		expect(rows.find((row) => row.id === 'coal')).toMatchObject({
 			colour: '#131313',
 			isLoad: false,
+			energyMWh: 300,
 			avPowerMW: 150,
 			contributionPct: expect.closeTo(75),
 			vwPrice: expect.closeTo(2),
@@ -304,7 +306,12 @@ describe('computeCurtailmentRows', () => {
 			denominatorMWh: 400
 		});
 		expect(out).toHaveLength(1);
-		expect(out[0]).toMatchObject({ id: 'curtailment_solar', label: 'Solar', avPowerMW: 20 });
+		expect(out[0]).toMatchObject({
+			id: 'curtailment_solar',
+			label: 'Solar',
+			energyMWh: 40,
+			avPowerMW: 20
+		});
 		expect(out[0].contributionPct).toBeCloseTo(10); // 40 ÷ 400 MWh
 	});
 
@@ -328,7 +335,9 @@ describe('computeOverlaySummary', () => {
 			shareRows: makeRows(MIN_5, { renewable_share: Array(24).fill(38.8) }),
 			basis: 'power'
 		});
+		expect(summary.demandEnergyMWh).toBeCloseTo(360); // 180 MW × 2h
 		expect(summary.demandAvMW).toBeCloseTo(180);
+		expect(summary.renewablesEnergyMWh).toBeCloseTo(180);
 		expect(summary.renewablesAvMW).toBeCloseTo(90);
 		expect(summary.renewablesSharePct).toBeCloseTo(38.8);
 	});
@@ -340,6 +349,12 @@ describe('computeOverlaySummary', () => {
 			shareRows: [],
 			basis: 'power'
 		});
-		expect(summary).toEqual({ demandAvMW: null, renewablesAvMW: null, renewablesSharePct: null });
+		expect(summary).toEqual({
+			demandEnergyMWh: null,
+			demandAvMW: null,
+			renewablesEnergyMWh: null,
+			renewablesAvMW: null,
+			renewablesSharePct: null
+		});
 	});
 });

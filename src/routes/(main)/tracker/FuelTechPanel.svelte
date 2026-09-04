@@ -22,7 +22,6 @@
 	 *   curtailmentRows?: CurtailmentTableRow[],
 	 *   overlaySummary?: OverlaySummary | null,
 	 *   hiddenCount?: number,
-	 *   rangeLabel?: string,
 	 *   onshowall?: () => void,
 	 *   onclose?: () => void
 	 * }}
@@ -35,7 +34,6 @@
 		curtailmentRows = [],
 		overlaySummary = null,
 		hiddenCount = 0,
-		rangeLabel = '',
 		onshowall,
 		onclose,
 		...tableControls
@@ -69,18 +67,11 @@
 		>
 			<PanelRightClose class="size-5" />
 		</button>
-		{#if rangeLabel}
-			<div
-				class="flex min-w-0 items-center justify-end gap-2 pr-2 text-right font-space text-xs text-mid-grey"
-			>
-				{#if valuesPending && !structurePending}
-					<span
-						class="size-1.5 shrink-0 animate-pulse rounded-full bg-mid-warm-grey"
-						aria-hidden="true"
-					></span>
-				{/if}
-				<span class="truncate">{rangeLabel}</span>
-			</div>
+		{#if valuesPending && !structurePending}
+			<span
+				class="mr-2 size-1.5 shrink-0 animate-pulse rounded-full bg-mid-warm-grey"
+				aria-hidden="true"
+			></span>
 		{/if}
 	</div>
 	{#if hiddenCount > 0}

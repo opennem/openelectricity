@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
 	EMPTY_CELL,
-	emissionsDisplayPrefix,
+	energyDisplayPrefix,
 	formatTableEmissions,
+	formatTableEnergy,
 	formatTableIntensity,
 	formatTablePercentage,
 	formatTablePower,
@@ -82,18 +83,29 @@ describe('splitTableLabel', () => {
 	});
 });
 
-describe('emissions formatting', () => {
-	it('picks one column prefix from the largest value', () => {
-		expect(emissionsDisplayPrefix(999)).toBe('');
-		expect(emissionsDisplayPrefix(1_000)).toBe('k');
-		expect(emissionsDisplayPrefix(2_500_000)).toBe('M');
+describe('energy formatting', () => {
+	it('steps the column prefix up only at five digits, visiting GWh before TWh', () => {
+		expect(energyDisplayPrefix(9_999)).toBe('M');
+		expect(energyDisplayPrefix(10_000)).toBe('G');
+		expect(energyDisplayPrefix(3_600_000)).toBe('G'); // 3,600 GWh, not 3.6 TWh
+		expect(energyDisplayPrefix(10_000_000)).toBe('T');
 	});
 
-	it('formats tonnes in the column prefix with the power precision rule', () => {
-		expect(formatTableEmissions(300, '')).toBe('300');
-		expect(formatTableEmissions(8_500, 'k')).toBe('8.5');
-		expect(formatTableEmissions(1_234_567, 'M')).toBe('1.2');
-		expect(formatTableEmissions(null, 'k')).toBe(EMPTY_CELL);
+	it('formats MWh in the column prefix with the power precision rule', () => {
+		expect(formatTableEnergy(292_000, 'G')).toBe('292');
+		expect(formatTableEnergy(3_600_000, 'G')).toBe('3,600');
+		expect(formatTableEnergy(39_000_000, 'T')).toBe('39');
+		expect(formatTableEnergy(null, 'G')).toBe(EMPTY_CELL);
+	});
+});
+
+describe('emissions formatting', () => {
+	it('formats plain tonnes with the power precision rule, never scaling to kt/Mt', () => {
+		expect(formatTableEmissions(7.25)).toBe('7.3');
+		expect(formatTableEmissions(300)).toBe('300');
+		expect(formatTableEmissions(8_500)).toBe('8,500');
+		expect(formatTableEmissions(1_234_567)).toBe('1,234,567');
+		expect(formatTableEmissions(null)).toBe(EMPTY_CELL);
 	});
 
 	it('formats intensity with one decimal below ten', () => {

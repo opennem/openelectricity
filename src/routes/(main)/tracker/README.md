@@ -55,9 +55,10 @@ The canonical tracker page — the planned replacement for the legacy
   `processNetworkData` — the API always returns detailed per-fuel-tech
   series, so switching groups re-processes cached responses without a fetch.
 - **Fuel-tech table** (`FuelTechPanel` + `FuelTechTable` in a `ResizablePanel`)
-  — Av power, contribution (% of source generation ⇄ % of gross demand),
-  volume-weighted price ($/MWh), window emissions (tCO₂e, one column prefix
-  sized to the largest row) and emissions intensity (kgCO₂e/MWh, Σ tonnes ÷ Σ
+  — window energy (MWh/GWh/TWh), Av power (MW/GW), contribution (% of source
+  generation ⇄ % of gross demand),
+  volume-weighted price ($/MWh), window emissions (tCO₂e, always in
+  plain tonnes) and emissions intensity (kgCO₂e/MWh, Σ tonnes ÷ Σ
   energy) per group, computed in `table-model.js` from: the generation chart's
   `onvisibledata` snapshot, the headless `createNetworkFuelTechSeries`
   providers for `market_value` and `emissions`, and the market pair's
@@ -65,8 +66,7 @@ The canonical tracker page — the planned replacement for the legacy
   MWh via its own interval length), never means of per-bucket ratios. Row
   clicks toggle chart series; denominators ignore visibility so percentages
   stay stable. Stale rows stay visible under a veil while refetching. The
-  panel also shows the visible window in network time (AEST/AWST), a
-  curtailment section (official solar/wind curtailment, outside the
+  panel also shows a curtailment section (official solar/wind curtailment, outside the
   grouping, shared against the same contribution denominator), and Demand /
   Renewables summary rows — official OE series (`demand`,
   `generation_renewable`, `renewable_proportion`), whose row toggles draw an
@@ -79,7 +79,27 @@ The canonical tracker page — the planned replacement for the legacy
   percent. Below a 660px panel width (a CSS container query) the Technology
   column pins left and the value columns become a scroll-snap carousel; a tab
   strip above the table names them, highlights the ones in view and scrolls a
-  column into place on tap (`table-columns.js`).
+  column into place on tap (`table-columns.js`). Av power follows the chart's
+  MW/GW choice while the chart shows power and stays in MW otherwise; Energy
+  sizes its own prefix from the table's largest value, stepping MWh → GWh →
+  TWh only at five digits (`energyDisplayPrefix`).
+- **Data export** (`tracker-export.js`) — the options (⋮) menu's "Download as
+  CSV" rows (Generation, Market, Emissions, and the Fuel tech table while its
+  panel is open) and a single "Download as XLSX" workbook (a Summary sheet —
+  region, range, interval, timezone, grouping, modes, hidden groups, source
+  URL — then one sheet per dataset). Both serialisers share one
+  `ExportDataset` shape built from the canvas's `getExportContext()`, which
+  packages the settled chart snapshots (all three charts pass `onvisibledata`;
+  price/emissions snapshots are tagged with their scope and metric and only
+  exported while current) and the table rows. Every series exports regardless
+  of the chart hide toggles; the intensity line inherits the chart's excluded
+  groups. Values are base units (MW/MWh, $, $/MWh, tCO2e, kgCO2e/MWh) with the
+  unit in the header; the volume-weighted price and intensity lines are
+  re-derived from their exported components. Timestamps are network-local —
+  offset-suffixed text in CSV, real date-time cells in XLSX. The workbook
+  writer (`write-excel-file`, via `$lib/utils/download-xlsx.js`) is imported
+on demand so it stays off the page bundle. Filenames:
+`tracker-<region>-<dataset>-<range>.csv`/`tracker-<region>-<range>.xlsx`.
 
 ## URL schema
 
@@ -154,10 +174,10 @@ contribution mode are deliberately not serialised.
 
 Colocated vitest suites: `tracker-url.test.js`, `tracker-model.test.js`,
 `tracker-overlays.test.js`, `table-model.test.js`, `table-format.test.js`,
-`table-columns.test.js`, `tracker-prefetch.test.js`, `page-load.test.js`. E2E smoke:
+`table-columns.test.js`, `tracker-prefetch.test.js`, `tracker-export.test.js`,
+`page-load.test.js`. E2E smoke:
 `tests/e2e/tracker.spec.js`.
 
 ## Deferred
 
-Nav-items entry (currently behind the `tracker_nav` flag); CSV export; saved
-views.
+Nav-items entry (currently behind the `tracker_nav` flag); saved views.

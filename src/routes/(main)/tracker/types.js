@@ -68,6 +68,7 @@
  * @property {string} colour
  * @property {boolean} isLoad - All-load group, rendered under the Loads heading
  * @property {boolean} hidden - Toggled off in the charts
+ * @property {number | null} energyMWh - Window energy, magnitude
  * @property {number | null} avPowerMW
  * @property {number | null} contributionPct
  * @property {number | null} vwPrice - Volume-weighted price, $/MWh
@@ -82,6 +83,7 @@
  * @typedef {Object} CurtailmentTableRow
  * @property {string} id
  * @property {string} label
+ * @property {number} energyMWh
  * @property {number} avPowerMW
  * @property {number | null} contributionPct
  */
@@ -89,7 +91,9 @@
 /**
  * Window averages behind the table's Demand and Renewables summary rows.
  * @typedef {Object} OverlaySummary
+ * @property {number | null} demandEnergyMWh
  * @property {number | null} demandAvMW
+ * @property {number | null} renewablesEnergyMWh
  * @property {number | null} renewablesAvMW
  * @property {number | null} renewablesSharePct
  */
@@ -101,7 +105,7 @@
  * table only displays them.
  * @typedef {Object} FuelTechTableControls
  * @property {'power' | 'energy'} [basis]
- * @property {SiPrefix} [displayPrefix] - Generation chart's selected unit prefix
+ * @property {SiPrefix} [displayPrefix] - Generation chart's selected unit prefix for the active basis
  * @property {string} [group]
  * @property {ContributionMode} [contributionMode]
  * @property {string[]} [shownCurtailment] - Curtailment series ids banded on the chart
@@ -111,6 +115,71 @@
  * @property {(id: string, exclusive?: boolean) => void} [oncurtailmenttoggle]
  * @property {(exclusive?: boolean) => void} [ondemandlinetoggle]
  * @property {(exclusive?: boolean) => void} [onrenewableslinetoggle]
+ */
+
+/**
+ * A chart's visible-data snapshot as the exporters consume it — the wide,
+ * display-aggregated rows plus series ids and labels.
+ * @typedef {Object} SeriesSnapshot
+ * @property {Array<Record<string, any>>} data
+ * @property {string[]} seriesNames
+ * @property {Record<string, string>} seriesLabels
+ */
+
+/**
+ * The datasets the options menu can export, in menu order.
+ * @typedef {'generation' | 'market' | 'emissions' | 'table'} ExportDatasetKey
+ */
+
+/**
+ * One export column. `time` columns hold epoch ms and are formatted per
+ * output (network-local text in CSV, a date-time cell in XLSX).
+ * @typedef {Object} ExportColumn
+ * @property {string} key - Row property
+ * @property {string} header - Column header, unit included
+ * @property {'time' | 'number' | 'string' | 'boolean'} type
+ */
+
+/**
+ * A tabular dataset ready for either serialiser.
+ * @typedef {Object} ExportDataset
+ * @property {ExportDatasetKey} key
+ * @property {string} title
+ * @property {ExportColumn[]} columns
+ * @property {Array<Record<string, any>>} rows
+ */
+
+/**
+ * Everything the exporters need, packaged by the canvas (`getExportContext`)
+ * and completed by the page (`sourceUrl`, `generatedAtMs`). Chart snapshots
+ * are null until they describe the CURRENT region, grouping and metric — the
+ * canvas keeps stale frames for display but never hands them to an export.
+ * @typedef {Object} TrackerExportContext
+ * @property {string} region
+ * @property {string} regionLabel
+ * @property {string} group
+ * @property {string} groupLabel
+ * @property {ContributionMode} contributionMode
+ * @property {'power' | 'energy'} basis - Generation basis (range control's active metric)
+ * @property {string} displayInterval
+ * @property {string} intervalLabel
+ * @property {string} rangeLabel
+ * @property {string} rangeSlug - Filename-safe range, e.g. '3d' or '2026-01-01-to-2026-02-01'
+ * @property {string} timeZone - Network offset, '+10:00' | '+08:00'
+ * @property {{ start: number, end: number }} window - Settled viewport, epoch ms
+ * @property {'market_value' | 'price' | 'price_vw'} priceMetric
+ * @property {'emissions_intensity' | 'emissions'} emissionsMetric
+ * @property {SeriesSnapshot | null} generation
+ * @property {SeriesSnapshot | null} price
+ * @property {SeriesSnapshot | null} emissions
+ * @property {FuelTechTableRow[] | null} tableRows
+ * @property {CurtailmentTableRow[]} curtailmentRows
+ * @property {OverlaySummary | null} overlaySummary
+ * @property {boolean} tablePanelOpen - The table's providers only fetch while open
+ * @property {string[]} hiddenSeries - Group ids toggled off in the charts
+ * @property {boolean} pending - Charts are mid-switch; the held frame is stale
+ * @property {string} sourceUrl
+ * @property {number} generatedAtMs
  */
 
 export {};

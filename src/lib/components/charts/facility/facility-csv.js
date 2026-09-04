@@ -8,8 +8,12 @@
 
 import { fuelTechNameMap } from '$lib/fuel_techs';
 import { makeUnitLabelGetter } from './helpers.js';
-import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
+import { formatNetworkTimestamp } from '$lib/components/charts/v2/network-time.js';
 import { downloadCsv, escapeCsv } from '$lib/utils/download-csv';
+
+// Re-exported for the existing callers; the implementation lives with the
+// other network-time helpers.
+export { formatNetworkTimestamp };
 
 /**
  * The context the chart CSV builders draw from — the viewport-clipped datasets
@@ -87,20 +91,6 @@ export function downloadChartCsv(key, ctx) {
 	if (!csv) return;
 	const code = (ctx.fileCode ?? ctx.facility?.code)?.toLowerCase() ?? 'facility';
 	downloadCsv(csv, `${code}-${key}-${ctx.rangeSlug}.csv`);
-}
-
-/**
- * Format an instant in the network's local time, offset included:
- * "2026-07-01 14:30:00+10:00". Exact for both networks — NEM (+10:00) and
- * WEM (+08:00) are fixed-offset, no DST.
- *
- * @param {number} ms - epoch ms
- * @param {string} timeZone - network offset, e.g. '+10:00'
- * @returns {string}
- */
-export function formatNetworkTimestamp(ms, timeZone) {
-	const local = new Date(ms + offsetMsFromOffset(timeZone)).toISOString();
-	return `${local.slice(0, 19).replace('T', ' ')}${timeZone}`;
 }
 
 /**

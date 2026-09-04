@@ -255,10 +255,11 @@ test.describe('Tracker smoke tests', () => {
 			timeout: 30000
 		});
 		await expect(fuelTechTable.getByText('MW', { exact: true })).toBeVisible({ timeout: 30000 });
+		// Cells: label, Energy, Av power, …
 		const demandPowerCell = fuelTechTable
 			.getByRole('button', { name: /^Demand\b/ })
 			.locator('td')
-			.nth(1);
+			.nth(2);
 		await expect(demandPowerCell).not.toHaveText('—', { timeout: 30000 });
 		const demandMW = Number((await demandPowerCell.textContent())?.trim().replaceAll(',', ''));
 		await generationCard.getByRole('button', { name: 'Toggle chart options' }).click();
@@ -314,6 +315,26 @@ test.describe('Tracker options menu', () => {
 		// Session-only: the contribution basis never reaches the URL.
 		expect(new URL(page.url()).searchParams.has('contribution')).toBe(false);
 	});
+
+	test('datasets download as CSV and as one XLSX workbook', async ({ page }) => {
+		await page.goto('/tracker?table=1');
+		await waitForHydration(page);
+		// The table renders from the generation snapshot — once it has rows,
+		// the export context is populated.
+		await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible({ timeout: 30000 });
+
+		await page.getByRole('button', { name: 'Options', exact: true }).click();
+		const menu = page.getByRole('menu');
+		await expect(menu.getByRole('button', { name: 'Fuel tech table', exact: true })).toBeVisible();
+		const csvDownload = page.waitForEvent('download');
+		await menu.getByRole('button', { name: 'Generation', exact: true }).click();
+		expect((await csvDownload).suggestedFilename()).toBe('tracker-nem-generation-3d.csv');
+
+		await page.getByRole('button', { name: 'Options', exact: true }).click();
+		const xlsxDownload = page.waitForEvent('download');
+		await menu.getByRole('button', { name: 'Everything (one workbook)', exact: true }).click();
+		expect((await xlsxDownload).suggestedFilename()).toBe('tracker-nem-3d.xlsx');
+	});
 });
 
 test.describe('Tracker table column carousel', () => {
@@ -329,7 +350,7 @@ test.describe('Tracker table column carousel', () => {
 	test('a narrow panel pins Technology and scrolls value columns via the tabs', async ({
 		page
 	}) => {
-		// The default 30% panel of a 1280px canvas is ~384px — below the 660px breakpoint.
+		// The default 30% panel of a 1280px canvas is ~384px — below the 760px breakpoint.
 		await page.setViewportSize({ width: 1280, height: 720 });
 		await page.goto('/tracker?table=1');
 		await waitForHydration(page);
@@ -366,9 +387,9 @@ test.describe('Tracker table column carousel', () => {
 		expect(Math.abs((demandLabel?.x ?? NaN) - view.x)).toBeLessThanOrEqual(1);
 	});
 
-	test('a wide panel renders the plain four-column table', async ({ page }) => {
-		// 30% of a 2560px canvas is ~768px — comfortably above the 660px breakpoint.
-		await page.setViewportSize({ width: 2560, height: 1080 });
+	test('a wide panel renders the plain six-column table', async ({ page }) => {
+		// 30% of a 3000px canvas is ~900px — comfortably above the 760px breakpoint.
+		await page.setViewportSize({ width: 3000, height: 1080 });
 		await page.goto('/tracker?table=1');
 		await waitForHydration(page);
 

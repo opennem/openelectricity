@@ -42,6 +42,17 @@ function hasFiniteValue(rows, key) {
 }
 
 /**
+ * Window energy (MWh) of one series, or null when it has no data at all —
+ * a bare sum would read an absent feed as zero.
+ * @param {Array<Record<string, any>>} rows
+ * @param {string} key
+ * @param {'power' | 'energy'} basis
+ */
+function windowEnergy(rows, key, basis) {
+	return hasFiniteValue(rows, key) ? sumAsEnergy(rows, [key], basis) : null;
+}
+
+/**
  * Average power (MW) per series over the window. Signed — loads stay negative.
  * @param {Array<Record<string, any>>} generationRows
  * @param {string[]} seriesNames
@@ -51,6 +62,20 @@ function hasFiniteValue(rows, key) {
 export function computeAvPowerMW(generationRows, seriesNames, basis) {
 	return Object.fromEntries(
 		seriesNames.map((name) => [name, averagePower(generationRows, name, basis)])
+	);
+}
+
+/**
+ * Window energy (MWh) per series. Signed like average power — loads stay
+ * negative. Null when the series has no finite value in the window.
+ * @param {Array<Record<string, any>>} generationRows
+ * @param {string[]} seriesNames
+ * @param {'power' | 'energy'} basis
+ * @returns {Record<string, number | null>}
+ */
+export function computeEnergyMWh(generationRows, seriesNames, basis) {
+	return Object.fromEntries(
+		seriesNames.map((name) => [name, windowEnergy(generationRows, name, basis)])
 	);
 }
 
@@ -250,6 +275,7 @@ export function buildFuelTechTableRows({
 		groupFuelTechs
 	} = generationData;
 	const avPower = computeAvPowerMW(generationRows, seriesNames, basis);
+	const energy = computeEnergyMWh(generationRows, seriesNames, basis);
 	const vwPrices = computeVWPrices({ mvRows, generationRows, seriesNames, basis });
 	const emissions = computeEmissions({
 		emissionsRows,
@@ -270,12 +296,14 @@ export function buildFuelTechTableRows({
 
 	return [...seriesNames].reverse().map((name) => {
 		const signedAvPower = avPower[name];
+		const signedEnergy = energy[name];
 		return {
 			id: name,
 			label: seriesLabels?.[name] ?? name,
 			colour: seriesColours?.[name] ?? '#6a6a6a',
 			isLoad: loadSeriesIds.includes(name) || (signedAvPower ?? 0) < 0,
 			hidden: hiddenSeries.includes(name),
+			energyMWh: signedEnergy === null ? null : Math.abs(signedEnergy),
 			avPowerMW: signedAvPower === null ? null : Math.abs(signedAvPower),
 			contributionPct: contribution[name],
 			vwPrice: vwPrices[name],
@@ -309,6 +337,7 @@ export function computeCurtailmentRows({ rows, series, basis, denominatorMWh }) 
 		out.push({
 			id,
 			label,
+			energyMWh: Math.abs(energyMWh),
 			avPowerMW: Math.abs(av),
 			contributionPct:
 				denominatorMWh > ENERGY_EPSILON_MWH ? (energyMWh / denominatorMWh) * 100 : null
@@ -333,7 +362,9 @@ export function computeCurtailmentRows({ rows, series, basis, denominatorMWh }) 
  */
 export function computeOverlaySummary({ demandRows, marketRows, shareRows, basis }) {
 	return {
+		demandEnergyMWh: windowEnergy(demandRows, 'demand', basis),
 		demandAvMW: averagePower(demandRows, 'demand', basis),
+		renewablesEnergyMWh: windowEnergy(marketRows, RENEWABLES_SERIES_ID, basis),
 		renewablesAvMW: averagePower(marketRows, RENEWABLES_SERIES_ID, basis),
 		renewablesSharePct: meanSeries(shareRows, 'renewable_share')
 	};
