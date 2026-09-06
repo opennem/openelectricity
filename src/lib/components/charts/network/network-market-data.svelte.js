@@ -13,8 +13,8 @@ import { createHeadlessSeriesProvider } from './headless-series-provider.svelte.
 import { processMarketData } from './process-market-data.js';
 
 /** Stable series ids shared with the metrics calc. */
-export const RENEWABLES_SERIES_ID = 'renewables';
-export const DEMAND_GROSS_SERIES_ID = 'demand_gross';
+import { RENEWABLES_SERIES_ID, DEMAND_GROSS_SERIES_ID } from './market-series-ids.js';
+export { RENEWABLES_SERIES_ID, DEMAND_GROSS_SERIES_ID } from './market-series-ids.js';
 
 /**
  * One def per OE metric in the response — the energy basis is the same pair

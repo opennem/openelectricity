@@ -8,24 +8,28 @@ The canonical tracker page — the planned replacement for the legacy
 
 ## Composition
 
-- **`+page.svelte`** — chrome layer. Owns the URL-parsed navigation state
-  (region, grouping, range snapshot, price/emissions modes, chart overlays,
-  table panel) and
-  is the sole URL writer (shallow `pushState`/`replaceState`, `popstate`
-  restore). Renders the fullscreen filter bar: Tracker label, the region
-  `FilterSelect` (NEM states nested under the whole-NEM option,
-  `TRACKER_REGION_TREE`),
-  `ChartRangeBar` (`variant="expanded"` — the preset switcher with its
-  integrated date-picker segment at `md:` and up, the dropdown with a
-  "Custom…" row below, plus the interval dropdown), the interval-aware
-  range readout (`formatRangeLabel` — bucket names at FY/quarter/season
-  grains, clock times + zone at sub-daily ones). The table panel opens and
-  closes from its own edge.
-- **`TrackerCanvas.svelte`** — chart machinery. One `createChartRangeControl`
-  (3-day initial window) drives three always-mounted `NetworkChart`s plus the
-  six headless providers; shared `hoverTime` and tap-to-engage `panZoomEngaged`
-  sync every surface. On mount it hands the live range control up via
-  `oncontrolschange`, so the nav bar's controls drive the charts directly.
+- **`+page.svelte`** — page chrome, navigation menus, notices and download actions.
+- **`tracker-session.svelte.js`** — one per-page owner of selection state and
+  the shared range controller. Explicit range/date/interval picks push history;
+  settled pan/zoom replaces it. The canvas registers charts and providers here.
+- **`tracker-navigation.js`** — the sole URL writer and restoration adapter,
+  using `tracker-url.js` for parsing/serialisation. SvelteKit shallow history
+  updates the address bar without updating `page.url`, so Back/Forward uses
+  `popstate`; ordinary same-route links are observed through `page.url`.
+- **`TrackerCanvas.svelte`** — three always-mounted chart cards and the table
+  layout, with shared hover/gesture state and series selection.
+- **`tracker-providers.svelte.js`** — enables and coordinates the six optional
+  headless providers through their existing shared request/cache lifecycle.
+- **`tracker-data.svelte.js`** — accepts producer-tagged snapshots only for
+  the current region, grouping, metric, intervals, bounds, calendar filter and
+  exclusions. Reactive chart readiness releases held frames without polling.
+- **`tracker-table.svelte.js`** — derives table sections from matching
+  generation/provider data. The canvas retains one complete table and its
+  descriptive metadata during refreshes; exports use the same accepted values.
+- **`tracker-chart-overlays.js`** — pure rolling renewable-share calculation.
+- **`resize-control.svelte.js`** (shared UI helper) — bounded pointer and keyboard
+  resizing, teardown on unmount and optional persistence. Arrow keys resize,
+  Shift increases the step, and Home/End select the bounds.
 - **`tracker-overlays.js`** — the registry behind the generation chart's
   URL-owned overlays: canonical `overlay=` order, the demand/renewables line
   colours and the curtailment bands (ids, labels, colours, stacking order).
@@ -35,7 +39,7 @@ The canonical tracker page — the planned replacement for the legacy
   and the response LRU makes toggling back near-instant. For the `au` scope
   (no national spot price) `resolvePriceMode` forces market value and hides
   the Price toggle; the user's selection survives the region round trip.
-- **Chart heights are drag-adjustable** (StratumChart's resize handle) and
+- **Chart heights are drag- and keyboard-adjustable** (`ChartCard`'s shared resize control) and
   persist to localStorage per card; each split pair shares one key so
   toggling modes keeps the chosen height.
 - **Generation units are selectable in the chart options**: power offers
@@ -76,7 +80,7 @@ The canonical tracker page — the planned replacement for the legacy
   are URL-owned so direct and copied links reproduce them. When enabled, each
   also appears in the generation chart's floating tooltip: demand and
   curtailment follow the selected generation unit, while renewable share uses
-  percent. Below a 660px panel width (a CSS container query) the Technology
+  percent. Below a 760px panel width (a CSS container query) the Technology
   column pins left and the value columns become a scroll-snap carousel; a tab
   strip above the table names them, highlights the ones in view and scrolls a
   column into place on tap (`table-columns.js`). Av power follows the chart's
@@ -87,15 +91,18 @@ The canonical tracker page — the planned replacement for the legacy
   CSV" rows (Generation, Market, Emissions, and the Fuel tech table while its
   panel is open) and a single "Download as XLSX" workbook (a Summary sheet —
   region, range, interval, timezone, grouping, modes, hidden groups, source
-  URL — then one sheet per dataset). Both serialisers share one
+  URL — then one sheet per dataset). Download actions remain disabled until their own datasets are ready; a CSV
+  can become available before the full workbook. Both serialisers share one
   `ExportDataset` shape built from the canvas's `getExportContext()`, which
   packages the settled chart snapshots (all three charts pass `onvisibledata`;
-  price/emissions snapshots are tagged with their scope and metric and only
-  exported while current) and the table rows. Every series exports regardless
+  snapshots are tagged at the producer with their complete query identity and
+  only exported while current) and the table rows. Every series exports regardless
   of the chart hide toggles; the intensity line inherits the chart's excluded
   groups. Values are base units (MW/MWh, $, $/MWh, tCO2e, kgCO2e/MWh) with the
   unit in the header; the volume-weighted price and intensity lines are
-  re-derived from their exported components. Timestamps are network-local —
+  re-derived from their exported components. Drawing-only calendar-band
+  closing points are omitted. Timestamps are
+  network-local —
   offset-suffixed text in CSV, real date-time cells in XLSX. The workbook
   writer (`write-excel-file`, via `$lib/utils/download-xlsx.js`) is imported
 on demand so it stays off the page bundle. Filenames:
@@ -167,6 +174,11 @@ contribution mode are deliberately not serialised.
   label track the settled window and update once per gesture. Debug flags:
   `localStorage['oe:debug-chart-fetch']` (request counts) and
   `localStorage['oe:debug-chart-fps']` (per-gesture frame stats).
+- HTTP failures remain retryable unknown ranges, not cached empty ranges.
+  Charts and the table offer Retry; a successful empty response settles with
+  an explicit empty state. Workbooks identify empty chart datasets in Summary.
+- Chart-store identity follows metric family. Height, title and timezone update
+  the existing store so resizing preserves explicit display-unit choices.
 - Demand-mode contribution shares needn't sum to 100% (losses, imports,
   basis differences) — this matches the homepage renewables methodology.
 
@@ -175,8 +187,10 @@ contribution mode are deliberately not serialised.
 Colocated vitest suites: `tracker-url.test.js`, `tracker-model.test.js`,
 `tracker-overlays.test.js`, `table-model.test.js`, `table-format.test.js`,
 `table-columns.test.js`, `tracker-prefetch.test.js`, `tracker-export.test.js`,
-`page-load.test.js`. E2E smoke:
-`tests/e2e/tracker.spec.js`.
+`page-load.test.js`, `tracker-session.test.js`, `tracker-data.test.js`.
+Live-data E2E smoke: `tests/e2e/tracker.spec.js`. Deterministic response-order,
+failure/retry, empty-data, history, resize, export-content and responsive checks:
+`tests/e2e/tracker-refactor.spec.js`.
 
 ## Deferred
 

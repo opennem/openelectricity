@@ -16,6 +16,7 @@
  * Must be called during component init — it registers `$effect`s.
  */
 
+import { untrack } from 'svelte';
 import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 import {
@@ -54,6 +55,7 @@ import {
  *   Rows aggregated to the display interval — the grain the charts render, so
  *   overlays and summaries track the central Interval control
  * @property {boolean} isPending - Loading state; disabled providers are never pending
+ * @property {string | null} error - Failure in the requested viewport, if any
  */
 
 /**
@@ -73,9 +75,7 @@ export function createHeadlessSeriesProvider(opts) {
 
 	// Last window pushed by the range control — replayed after a manager swap so
 	// a grain/region/grouping switch refetches without waiting for a gesture.
-	// Plain fields: they only matter at call time, never drive reactivity.
-	let lastStart = 0;
-	let lastEnd = 0;
+	let lastWindow = $state.raw({ start: 0, end: 0 });
 
 	// Memoised viewport slice + aggregation, shared with the charts' pipeline.
 	const visibleAggregation = createVisibleAggregation();
@@ -115,9 +115,14 @@ export function createHeadlessSeriesProvider(opts) {
 		});
 
 		manager = next;
-		if (lastStart && lastEnd) {
-			requestBufferedRange(next, lastStart, lastEnd, interval, spec.metric, { immediate: true });
-		}
+		// Read the latest viewport without making a pan rebuild the manager.
+		untrack(() => {
+			if (lastWindow.start && lastWindow.end) {
+				requestBufferedRange(next, lastWindow.start, lastWindow.end, interval, spec.metric, {
+					immediate: true
+				});
+			}
+		});
 
 		// Cleanup runs before every re-run and on destroy, so the outgoing
 		// manager is always retired exactly once.
@@ -126,14 +131,19 @@ export function createHeadlessSeriesProvider(opts) {
 
 	return {
 		setViewport(startMs, endMs) {
-			lastStart = startMs;
-			lastEnd = endMs;
+			lastWindow = { start: startMs, end: endMs };
 			requestBufferedRange(manager, startMs, endMs, opts.interval(), currentMetric());
 		},
 
 		reconcileFetches() {
-			if (!manager || !lastStart || !lastEnd) return;
-			reconcileBufferedRange(manager, lastStart, lastEnd, opts.interval(), currentMetric());
+			if (!manager || !lastWindow.start || !lastWindow.end) return;
+			reconcileBufferedRange(
+				manager,
+				lastWindow.start,
+				lastWindow.end,
+				opts.interval(),
+				currentMetric()
+			);
 		},
 
 		getVisibleRows(startMs, endMs) {
@@ -155,7 +165,24 @@ export function createHeadlessSeriesProvider(opts) {
 
 		get isPending() {
 			if (!isEnabled()) return false;
-			return !manager || manager.isLoading || !manager.initialLoadComplete;
+			const spec = opts.spec();
+			if (!spec) return false;
+			return (
+				!manager ||
+				manager.cacheKey !== `${opts.region()}:${spec.cacheScope}` ||
+				manager.interval !== opts.interval() ||
+				manager.metric !== spec.metric ||
+				manager.seriesKey !== spec.seriesKey ||
+				manager.hasPendingFetch ||
+				manager.isLoading ||
+				!manager.initialLoadComplete
+			);
+		},
+
+		get error() {
+			return isEnabled()
+				? (manager?.getErrorForRange(lastWindow.start, lastWindow.end) ?? null)
+				: null;
 		}
 	};
 }

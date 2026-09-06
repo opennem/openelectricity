@@ -1,0 +1,169 @@
+import {
+	applyBucketFilter,
+	bucketFilterPredicate,
+	bucketFilterKindFor
+} from '$lib/components/charts/v2/bucket-filter.js';
+import { isRollingInterval } from '$lib/components/charts/facility/range-interval-config.js';
+import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
+import { CURTAILMENT_SERIES } from './tracker-overlays.js';
+import { perfSpan } from '$lib/components/charts/v2/perf.js';
+import {
+	buildFuelTechTableRows,
+	computeCurtailmentRows,
+	computeOverlaySummary,
+	contributionDenominatorMWh
+} from './table-model.js';
+/** @typedef {import('$lib/components/charts/network/headless-series-provider.svelte.js').HeadlessSeriesProvider} HeadlessSeriesProvider */
+
+/** Derive all table sections from the same generation window and provider set.
+ * @param {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>,
+ * providers: ReturnType<typeof import('./tracker-providers.svelte.js').createTrackerProviders>,
+ * generation: () => import('./types.js').GenerationSnapshot | null,
+ * hidden: () => string[], contribution: () => import('./types.js').ContributionMode,
+ * ianaTimeZone: () => string}} opts */
+export function createTrackerTable(opts) {
+	const range = opts.session.range;
+	const { mvData, emissionsData, marketData, demandData, curtailmentData, shareData } =
+		opts.providers;
+	let generationDataset = $derived(opts.generation());
+	let viewWindow = $derived(opts.session.window);
+	let bucketFilter = $derived(opts.session.selection.bucketFilter);
+	let contributionMode = $derived(opts.contribution());
+	let hiddenSeries = $derived(opts.hidden());
+	let loadSeriesIds = $derived(loadGroupsFor(getGroup(opts.session.selection.group)));
+	let isRollingDisplay = $derived(isRollingInterval(range.displayInterval));
+	let ianaTimeZone = $derived(opts.ianaTimeZone());
+	/** Rolling windows keep all source months; filters select only output samples. */
+	let nativeFilterPredicate = $derived.by(() => {
+		if (!bucketFilter || isRollingDisplay) return null;
+		return bucketFilterPredicate(
+			bucketFilterKindFor(range.displayInterval),
+			bucketFilter,
+			ianaTimeZone
+		);
+	});
+
+	/** Display-grain options for the extras — they track the central Interval
+	 *  control exactly like the charts. Per-bucket quantities (energy basis)
+	 *  aggregate by sum; instantaneous ones by mean. */
+	let displayRowOpts = $derived({
+		displayInterval: range.displayInterval,
+		ianaTimeZone,
+		method: /** @type {'sum' | 'mean'} */ (range.activeMetric === 'energy' ? 'sum' : 'mean'),
+		bucketFilter
+	});
+	let shareRowOpts = $derived({ ...displayRowOpts, method: /** @type {const} */ ('mean') });
+
+	/** Summaries use native rows whenever display rows would overlap (rolling
+	 *  windows) or carry a synthetic band close (calendar filters). */
+	let summariesUseNativeRows = $derived(isRollingDisplay || !!bucketFilter);
+
+	/**
+	 * Native-grain rows with the calendar filter applied to every side of the
+	 * table ratios alike.
+	 * @param {HeadlessSeriesProvider} provider
+	 * @param {number} start
+	 * @param {number} end
+	 */
+	function nativeRows(provider, start, end) {
+		return applyBucketFilter(provider.getVisibleRows(start, end), nativeFilterPredicate);
+	}
+
+	/**
+	 * Rows for a window summary — native when display rows can't be summed
+	 * safely, otherwise the same display-grain rows the chart renders.
+	 * @param {HeadlessSeriesProvider} provider
+	 * @param {number} start
+	 * @param {number} end
+	 * @param {typeof displayRowOpts} opts
+	 */
+	function summaryRows(provider, start, end, opts) {
+		return summariesUseNativeRows
+			? nativeRows(provider, start, end)
+			: provider.getDisplayRows(start, end, opts);
+	}
+
+	// ============================================
+	// Fuel-tech table feed
+	// ============================================
+
+	/** Use the generation snapshot's bounds so table rows and window stay aligned. */
+	let tableWindow = $derived({
+		start: generationDataset?.start ?? viewWindow.start,
+		end: generationDataset?.end ?? viewWindow.end
+	});
+
+	/** Use native rows when display rows overlap or contain a synthetic band close. */
+	let tableGenerationDataset = $derived(
+		summariesUseNativeRows && generationDataset?.nativeData
+			? { ...generationDataset, data: generationDataset.nativeData }
+			: generationDataset
+	);
+
+	/** Recompute table rows when chart or provider data changes. */
+	let tableRows = $derived.by(() => {
+		if (!tableGenerationDataset) return null;
+		const { start, end } = tableWindow;
+		return perfSpan('canvas:table-rows', () =>
+			buildFuelTechTableRows({
+				generationData: tableGenerationDataset,
+				mvRows: nativeRows(mvData, start, end),
+				emissionsRows: nativeRows(emissionsData, start, end),
+				demandRows: nativeRows(marketData, start, end),
+				basis: range.activeMetric,
+				demandBasis: range.activeMetric,
+				mode: contributionMode,
+				hiddenSeries,
+				loadSeriesIds
+			})
+		);
+	});
+
+	/** Curtailment sits outside the fuel-tech grouping but shares the table's
+	 *  contribution denominator. Rows list top-down like the fuel techs. */
+	let curtailmentRows = $derived.by(() => {
+		if (!tableGenerationDataset) return [];
+		const { start, end } = tableWindow;
+		return computeCurtailmentRows({
+			rows: summaryRows(curtailmentData, start, end, displayRowOpts),
+			series: [...CURTAILMENT_SERIES].reverse(),
+			basis: range.activeMetric,
+			denominatorMWh: contributionDenominatorMWh({
+				generationRows: tableGenerationDataset.data,
+				seriesNames: tableGenerationDataset.seriesNames,
+				basis: range.activeMetric,
+				mode: contributionMode,
+				demandRows: nativeRows(marketData, start, end),
+				demandBasis: range.activeMetric,
+				loadSeriesIds
+			})
+		});
+	});
+
+	let overlaySummary = $derived(
+		computeOverlaySummary({
+			demandRows: summaryRows(demandData, viewWindow.start, viewWindow.end, displayRowOpts),
+			marketRows: nativeRows(marketData, viewWindow.start, viewWindow.end),
+			shareRows: summaryRows(shareData, viewWindow.start, viewWindow.end, shareRowOpts),
+			basis: range.activeMetric
+		})
+	);
+
+	return {
+		get rows() {
+			return tableRows;
+		},
+		get curtailmentRows() {
+			return curtailmentRows;
+		},
+		get overlaySummary() {
+			return overlaySummary;
+		},
+		get displayRowOpts() {
+			return displayRowOpts;
+		},
+		get shareRowOpts() {
+			return shareRowOpts;
+		}
+	};
+}

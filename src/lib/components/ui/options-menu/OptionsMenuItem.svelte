@@ -11,10 +11,11 @@
 	 *   kbd?: string | string[],
 	 *   href?: string,
 	 *   selected?: boolean,
+	 *   disabled?: boolean,
 	 *   children: import('svelte').Snippet
 	 * }}
 	 */
-	let { icon, onclick, kbd, href, selected = undefined, children } = $props();
+	let { icon, onclick, kbd, href, selected = undefined, disabled = false, children } = $props();
 
 	const Icon = $derived(icon);
 	const kbdKeys = $derived(kbd ? (Array.isArray(kbd) ? kbd : [kbd]) : null);
@@ -58,7 +59,8 @@
 {:else}
 	<button
 		{onclick}
-		class={rowClass}
+		{disabled}
+		class={`${rowClass} disabled:cursor-not-allowed disabled:opacity-40`}
 		role={isRadio ? 'menuitemradio' : undefined}
 		aria-checked={isRadio ? selected : undefined}
 	>

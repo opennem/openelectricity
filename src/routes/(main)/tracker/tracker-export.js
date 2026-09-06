@@ -132,8 +132,11 @@ function seriesColumns(snapshot, unit) {
  * @returns {ExportDataset | null}
  */
 function dataset(key, title, columns, rows) {
-	if (!rows.length || !columns.length) return null;
-	return { key, title, columns: [TIME_COLUMN, ...columns], rows };
+	// Filtered charts duplicate their final point to close the stepped band.
+	// That drawing-only row is not an observation and must not leave in exports.
+	const observations = rows.filter((row) => !row._bandClose);
+	if (!observations.length || !columns.length) return null;
+	return { key, title, columns: [TIME_COLUMN, ...columns], rows: observations };
 }
 
 /** @param {TrackerExportContext} ctx */
@@ -340,6 +343,14 @@ export function summaryRows(ctx) {
 			'Hidden groups',
 			`${labels.join(', ')} — exported in every dataset, but excluded from the intensity line`
 		]);
+	}
+	for (const [label, snapshot] of /** @type {Array<[string, SeriesSnapshot | null]>} */ ([
+		['Generation', ctx.generation],
+		['Market', ctx.price],
+		['Emissions', ctx.emissions]
+	])) {
+		if (snapshot && snapshot.data.length === 0)
+			rows.push([`${label} data`, 'No data in the selected range']);
 	}
 	rows.push(
 		['Generated', formatNetworkTimestamp(ctx.generatedAtMs, ctx.timeZone)],

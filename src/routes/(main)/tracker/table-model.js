@@ -20,7 +20,7 @@ import {
 import {
 	DEMAND_GROSS_SERIES_ID,
 	RENEWABLES_SERIES_ID
-} from '$lib/components/charts/network/network-market-data.svelte.js';
+} from '$lib/components/charts/network/market-series-ids.js';
 
 /** @typedef {import('./types.js').ContributionMode} ContributionMode */
 /** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */

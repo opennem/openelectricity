@@ -132,6 +132,14 @@ describe('headerFor', () => {
 });
 
 describe('buildExportDataset', () => {
+	it('omits synthetic calendar-band closing points without changing source data', () => {
+		const ctx = context();
+		if (!ctx.generation) throw new Error('Missing fixture');
+		ctx.generation.data.push({ time: T0 + 2 * HOUR, coal: 110, _bandClose: true });
+		expect(buildExportDataset('generation', ctx)?.rows).toHaveLength(2);
+		expect(ctx.generation.data).toHaveLength(3);
+	});
+
 	it('labels generation columns by basis and keeps loads negative', () => {
 		const power = buildExportDataset('generation', context());
 		expect(power?.columns.map((column) => column.header)).toEqual([

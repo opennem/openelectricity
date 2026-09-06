@@ -48,6 +48,7 @@
 /**
  * The generation chart's visible-data snapshot (NetworkChart `onvisibledata`).
  * @typedef {Object} GenerationSnapshot
+ * @property {string} queryKey - Identity attached by the producing chart
  * @property {Array<Record<string, any>>} data - Chart-ready rows at the display grain
  * @property {Array<Record<string, any>>} nativeData - Native-cadence rows for window summaries
  * @property {number} start

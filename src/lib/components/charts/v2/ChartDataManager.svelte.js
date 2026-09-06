@@ -262,8 +262,7 @@ function sharedFetch(url, signal, priority) {
 		created.promise = fetch(url, { signal: controller.signal, priority })
 			.then(async (res) => {
 				if (!res.ok) {
-					console.error('ChartDataManager: API returned', res.status);
-					return null;
+					throw new Error(`Data request failed (${res.status})`);
 				}
 				const json = await res.json();
 				storeCachedResponse(requestKey, json.response);
@@ -396,6 +395,17 @@ export default class ChartDataManager {
 
 	/** Whether the first data load (seed or fetch) has completed */
 	initialLoadComplete = $state(false);
+
+	/** Failed windows stay unknown to gap calculation, so they can be retried.
+	 * @type {Array<{ start: number, end: number, message: string }>} */
+	failedRanges = $state.raw([]);
+
+	/** @param {number} start @param {number} end */
+	getErrorForRange(start, end) {
+		return (
+			this.failedRanges.find((range) => range.start <= end && range.end >= start)?.message ?? null
+		);
+	}
 
 	// Loading state
 	/** @type {LoadingRange[]} */
@@ -669,6 +679,13 @@ export default class ChartDataManager {
 				// dispose()/clearCache() while awaiting retired this generation —
 				// drop the result instead of merging into dead/reset state.
 				if (gen !== this.#generation) return;
+				this.failedRanges = this.failedRanges.flatMap((range) => {
+					if (batch.end < range.start || batch.start > range.end) return [range];
+					return [
+						...(range.start < batch.start ? [{ ...range, end: batch.start - 1 }] : []),
+						...(range.end > batch.end ? [{ ...range, start: batch.end + 1 }] : [])
+					];
+				});
 				if (data) {
 					const prevCacheSize = this.#dataCache.length;
 					this.#mergeProcessedData(data);
@@ -688,6 +705,13 @@ export default class ChartDataManager {
 					// requestRange() fetches it again.
 					anyAborted = true;
 				} else {
+					if (gen !== this.#generation) return;
+					this.failedRanges = [
+						...this.failedRanges.filter(
+							(range) => range.start !== batch.start || range.end !== batch.end
+						),
+						{ ...batch, message: err instanceof Error ? err.message : 'Could not load data' }
+					];
 					console.error('ChartDataManager fetch error:', err);
 				}
 			} finally {
@@ -993,6 +1017,7 @@ export default class ChartDataManager {
 		this.#cacheStart = null;
 		this.#cacheEnd = null;
 		this.#emptyRanges = [];
+		this.failedRanges = [];
 		this.initialLoadComplete = false;
 	}
 

@@ -10,6 +10,8 @@
 	 * flows plus their `_energy` variants — configured via `market-metrics.js`.
 	 */
 
+	import { untrack } from 'svelte';
+	import { networkQueryKey } from './network-query.js';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
@@ -93,7 +95,7 @@
 	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
 	 * @property {boolean} [gestureActive] - Whether a peer chart is being manipulated
 	 * @property {((active: boolean) => void)} [ongesturechange] - Reports this chart's gesture state
-	 * @property {((tableData: {data: any[], nativeData: any[], start: number, end: number, seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>, groupFuelTechs?: Record<string, string[]>}) => void)} [onvisibledata] - `data` is chart-ready; `nativeData` keeps the native cadence for window summaries.
+	 * @property {((tableData: {queryKey: string, data: any[], nativeData: any[], start: number, end: number, seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>, groupFuelTechs?: Record<string, string[]>}) => void)} [onvisibledata] - `data` is chart-ready; `nativeData` keeps the native cadence for window summaries.
 	 * @property {((info: {hasData: boolean}) => void)} [onloadcomplete] - Fired whenever a settled
 	 *   fetch leaves the manager idle; the first fire is the initial load, where
 	 *   parents apply their default range preset
@@ -391,7 +393,14 @@
 
 	/** @type {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} */
 	let chartStore = $derived.by(() => {
-		// Recreated when the panel kind flips.
+		// Only a metric family changes store identity. Presentation updates below
+		// must preserve options and focus while the user resizes the chart.
+		const kind = panelKind;
+		return untrack(() => createChartStore(kind));
+	});
+
+	/** @param {typeof panelKind} panelKind */
+	function createChartStore(panelKind) {
 		if (panelKind === 'intensity' || panelKind === 'emissions') {
 			const intensity = panelKind === 'intensity';
 			const chart = new ChartStore({
@@ -511,16 +520,21 @@
 		}
 		applyTimeTickFormat(chart);
 		return chart;
-	});
+	}
 
 	// Keep height in sync on panel resize
 	$effect(() => {
-		if (chartStore && chartHeightPx) chartStore.chartStyles.chartHeightPx = chartHeightPx;
+		if (!chartStore) return;
+		chartStore.chartStyles.chartHeightClasses = chartHeight;
+		if (chartHeightPx) chartStore.chartStyles.chartHeightPx = chartHeightPx;
 	});
 
 	// Title sync
 	$effect(() => {
-		if (chartStore) chartStore.title = title || defaultTitle;
+		if (chartStore) {
+			chartStore.title = title || defaultTitle;
+			chartStore.timeZone = timeZone;
+		}
 	});
 
 	// Series metadata. The intensity line is derived at display time from the
@@ -669,9 +683,20 @@
 	// Visible data + axis
 	$effect(() => {
 		const manager = dataManager;
-		if (!chartStore || !manager?.processedCache) return;
+		if (!chartStore || !manager) return;
 		// Keep the old frame until a coordinated switch releases every chart.
 		if (holdFrame) return;
+		if (!manager.processedCache) {
+			if (
+				manager.initialLoadComplete &&
+				!manager.hasPendingFetch &&
+				!manager.getErrorForRange(viewStart, viewEnd)
+			) {
+				chartStore.seriesData = [];
+				chartStore.setXDomain(viewStart, viewEnd);
+			}
+			return;
+		}
 
 		perfSpan('chart:viewport-effect', () => {
 			const start = viewStart;
@@ -752,12 +777,28 @@
 		const manager = dataManager;
 		const _cache = manager?.processedCache;
 		const callback = onvisibledata;
+		const queryKey = currentQueryKey;
+		const state = getQueryState();
 
 		if (tableDebounceTimer) clearTimeout(tableDebounceTimer);
 		// Build the table snapshot once, after the gesture settles.
 		if (inGesture) return;
-		if (!callback || !manager?.processedCache || !manager.seriesMeta) return;
-
+		if (!callback || !manager || state.pending || state.error) return;
+		if (!manager.processedCache || !manager.seriesMeta) {
+			untrack(() =>
+				callback({
+					queryKey,
+					data: [],
+					nativeData: [],
+					start,
+					end,
+					seriesNames: [],
+					seriesLabels: {},
+					seriesColours: {}
+				})
+			);
+			return;
+		}
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
 			// Usually a memo hit. Read colours here to avoid cloning them on each effect run.
@@ -793,13 +834,14 @@
 									)
 						);
 			callback({
+				queryKey,
 				data: rows,
 				nativeData: nativeRows,
 				start,
 				end,
 				seriesNames: meta.seriesNames,
 				seriesLabels: meta.seriesLabels,
-				seriesColours: { ...chartStore.seriesColours },
+				seriesColours: { ...meta.seriesColours },
 				groupFuelTechs: meta.groupFuelTechs
 			});
 		}, 300);
@@ -919,6 +961,34 @@
 		return manager.initialLoadComplete && !manager.hasPendingFetch && !manager.isLoading;
 	}
 
+	let currentQueryKey = $derived(
+		networkQueryKey({
+			region,
+			group,
+			metric,
+			interval,
+			displayInterval,
+			bucketFilter,
+			start: viewStart,
+			end: viewEnd,
+			excludedGroups: excludedFuelTechGroups
+		})
+	);
+
+	/** Reactive readiness for this exact query, independent of held pixels. */
+	export function getQueryState() {
+		return {
+			key: currentQueryKey,
+			pending: !isSettled() || inGesture,
+			error: dataManager?.getErrorForRange(viewStart, viewEnd) ?? null
+		};
+	}
+
+	let loadError = $derived(dataManager?.getErrorForRange(viewStart, viewEnd) ?? null);
+	function retry() {
+		host.reconcileFetches();
+	}
+
 	/** The active SI prefix is exposed so adjacent summaries can stay in sync
 	 *  with the unit selected in this chart's options. */
 	export function getDisplayPrefix() {
@@ -956,7 +1026,26 @@
 			{heightStorageKey}
 		/>
 
-		{#if showLoadingOverlay}
+		{#if loadError && !dataManager?.hasPendingFetch}
+			<div
+				class="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-white/90"
+				role="status"
+			>
+				<span class="text-sm text-mid-grey">Could not load data.</span>
+				<button
+					type="button"
+					class="rounded border border-warm-grey px-3 py-1 text-sm"
+					onclick={retry}>Retry</button
+				>
+			</div>
+		{:else if !showLoadingOverlay && !dataManager?.hasPendingFetch && chartStore.seriesData.length === 0}
+			<div
+				class="absolute inset-0 flex items-center justify-center rounded-lg bg-white/90 text-sm text-mid-grey"
+				role="status"
+			>
+				No data for this range.
+			</div>
+		{:else if showLoadingOverlay}
 			<div class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
 				<span class="text-sm text-mid-warm-grey">Loading {loadingLabel || 'data'}…</span>
 			</div>

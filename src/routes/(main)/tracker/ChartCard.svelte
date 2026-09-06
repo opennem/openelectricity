@@ -1,4 +1,6 @@
 <script>
+	import { onMount, untrack } from 'svelte';
+	import { createResizeControl } from '$lib/components/ui/panel/resize-control.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 
 	/**
@@ -40,47 +42,31 @@
 		return Math.min(maxHeightPx, Math.max(minHeightPx, value));
 	}
 
-	function initialHeight() {
-		if (heightStorageKey && typeof localStorage !== 'undefined') {
+	let heightPx = $state(untrack(() => clampHeight(defaultHeightPx)));
+	onMount(() => {
+		try {
 			const saved = parseInt(localStorage.getItem(heightStorageKey) ?? '', 10);
-			if (Number.isFinite(saved)) return clampHeight(saved);
+			if (heightStorageKey && Number.isFinite(saved)) heightPx = clampHeight(saved);
+		} catch {
+			/* Storage can be unavailable in embedded/private contexts. */
 		}
-		return defaultHeightPx;
-	}
-
-	let heightPx = $state(initialHeight());
-	let isDragging = $state(false);
-
-	/** @param {PointerEvent} e */
-	function startDrag(e) {
-		e.preventDefault();
-		isDragging = true;
-		const startY = e.clientY;
-		const startHeight = heightPx;
-
-		/** @param {PointerEvent} moveEvent */
-		function onMove(moveEvent) {
-			heightPx = clampHeight(startHeight + (moveEvent.clientY - startY));
-		}
-
-		function onUp() {
-			isDragging = false;
-			window.removeEventListener('pointermove', onMove);
-			window.removeEventListener('pointerup', onUp);
-			window.removeEventListener('pointercancel', onUp);
-			if (heightStorageKey && typeof localStorage !== 'undefined') {
-				try {
-					localStorage.setItem(heightStorageKey, String(heightPx));
-				} catch {
-					// ignore quota/availability errors
-				}
+	});
+	const resize = createResizeControl({
+		axis: 'y',
+		get: () => heightPx,
+		set: (value) => {
+			heightPx = value;
+		},
+		min: () => minHeightPx,
+		max: () => maxHeightPx,
+		commit: () => {
+			try {
+				if (heightStorageKey) localStorage.setItem(heightStorageKey, String(heightPx));
+			} catch {
+				/* The current height remains usable without persistence. */
 			}
 		}
-
-		window.addEventListener('pointermove', onMove);
-		window.addEventListener('pointerup', onUp);
-		window.addEventListener('pointercancel', onUp);
-	}
+	});
 </script>
 
 <div>
@@ -117,8 +103,13 @@
 		     so the whole gap is the drag target; rounded like the cards. -->
 		<DragHandle
 			axis="y"
-			onstart={startDrag}
-			active={isDragging}
+			onstart={resize.start}
+			onkeydown={resize.keydown}
+			tabindex={0}
+			aria-valuemin={minHeightPx}
+			aria-valuemax={maxHeightPx}
+			aria-valuenow={Math.round(heightPx)}
+			active={resize.dragging}
 			alwaysShowGrip
 			class="h-4 rounded-md"
 			role="separator"

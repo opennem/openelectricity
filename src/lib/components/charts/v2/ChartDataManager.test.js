@@ -918,6 +918,33 @@ describe('ChartDataManager', () => {
 			await vi.advanceTimersByTimeAsync(200);
 			expect(fetchSpy).toHaveBeenCalledTimes(2);
 		});
+
+		it('retries a failed window on the same manager instead of recording it as empty', async () => {
+			vi.spyOn(console, 'error').mockImplementation(() => {});
+			const response = buildPowerResponse({
+				networkId: 'NEM',
+				unitCodes: ['UNIT1'],
+				startISO: '2026-02-08T00:00:00+10:00',
+				pointCount: 12
+			});
+			const fetchSpy = vi
+				.fn()
+				.mockResolvedValueOnce({ ok: false, status: 503 })
+				.mockResolvedValue({ ok: true, json: async () => ({ response }) });
+			vi.stubGlobal('fetch', fetchSpy);
+			const manager = createManager();
+			const start = new Date('2026-02-08T00:00:00+10:00').getTime();
+			const end = start + 60 * 60 * 1000;
+			manager.requestRange(start, end, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(manager.getErrorForRange(start, end)).toContain('503');
+			expect(manager.initialLoadComplete).toBe(true);
+			manager.requestRange(start, end, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+			expect(manager.getDataForRange(start, end)).toHaveLength(12);
+			expect(manager.getErrorForRange(start, end)).toBeNull();
+		});
 	});
 
 	// ------------------------------------------

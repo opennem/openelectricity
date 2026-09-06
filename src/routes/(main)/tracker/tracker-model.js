@@ -132,3 +132,8 @@ export function normaliseRange(value) {
 		intervalId: getDefaultIntervalForRange(preset.id)
 	};
 }
+/** Exact custom bounds for the shared date-range controller.
+ * @param {{startMs: number, endMs: number}} range */
+export function customRangeDates(range) {
+	return { start: new Date(range.startMs).toISOString(), end: new Date(range.endMs).toISOString() };
+}

@@ -1,5 +1,4 @@
 <script>
-	import { untrack } from 'svelte';
 	import PanelRightClose from '@lucide/svelte/icons/panel-right-close';
 	import FuelTechTable from './FuelTechTable.svelte';
 
@@ -18,7 +17,8 @@
 	 *   rows: FuelTechTableRow[] | null,
 	 *   valuesPending?: boolean,
 	 *   structurePending?: boolean,
-	 *   structureKey?: string,
+	 *   error?: string | null,
+	 *   onretry?: () => void,
 	 *   curtailmentRows?: CurtailmentTableRow[],
 	 *   overlaySummary?: OverlaySummary | null,
 	 *   hiddenCount?: number,
@@ -30,7 +30,8 @@
 		rows = null,
 		valuesPending = false,
 		structurePending = false,
-		structureKey = '',
+		error = null,
+		onretry,
 		curtailmentRows = [],
 		overlaySummary = null,
 		hiddenCount = 0,
@@ -38,20 +39,6 @@
 		onclose,
 		...tableControls
 	} = $props();
-
-	/** Keep one complete table snapshot during value refreshes. Replace it
-	 *  immediately when the region or grouping key changes. A latch — it holds
-	 *  the previous snapshot while pending, so it can't be a plain derived. */
-	/** @type {{ key: string, rows: FuelTechTableRow[], curtailmentRows: CurtailmentTableRow[], overlaySummary: OverlaySummary | null } | null} */
-	let displayed = $state.raw(null);
-	$effect(() => {
-		// Capture every dependency before reading the current snapshot untracked.
-		const next = { key: structureKey, rows, curtailmentRows, overlaySummary };
-		if (!next.rows) return;
-		const held = untrack(() => displayed);
-		if (held && held.key === next.key && (valuesPending || structurePending)) return;
-		displayed = /** @type {typeof displayed} */ (next);
-	});
 </script>
 
 <div class="flex h-full min-h-0 flex-col">
@@ -86,13 +73,24 @@
 		</header>
 	{/if}
 
+	{#if error}
+		<div
+			class="flex items-center justify-between gap-2 border-b border-warm-grey px-4 py-2 text-xs"
+			role="status"
+		>
+			<span>Could not load table data.</span>
+			<button type="button" class="rounded border border-warm-grey px-2 py-1" onclick={onretry}
+				>Retry</button
+			>
+		</div>
+	{/if}
 	<div class="relative min-h-0 flex-1 overflow-auto" aria-busy={valuesPending || structurePending}>
-		{#if displayed}
+		{#if rows}
 			<FuelTechTable
 				{...tableControls}
-				rows={displayed.rows}
-				curtailmentRows={displayed.curtailmentRows}
-				overlaySummary={displayed.overlaySummary}
+				{rows}
+				{curtailmentRows}
+				{overlaySummary}
 				valuesPending={valuesPending && !structurePending}
 			/>
 			{#if structurePending}

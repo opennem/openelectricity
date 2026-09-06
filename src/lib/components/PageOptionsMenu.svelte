@@ -24,10 +24,11 @@
 	 *   ondownloadcsv?: () => void,
 	 *   oncopylink?: () => void | Promise<void>,
 	 *   downloadLabel?: string,
-	 *   downloadItems?: Array<{ key: string, label: string }>,
+	 *   downloadItems?: Array<{ key: string, label: string, disabled?: boolean }>,
 	 *   ondownloaditem?: (key: string) => void,
 	 *   ondownloadxlsx?: () => void | Promise<void>,
 	 *   downloadXlsxLabel?: string,
+	 *   downloadXlsxDisabled?: boolean,
 	 *   onsearchfacilities?: () => void,
 	 *   showCopyLink?: boolean,
 	 *   showDocumentation?: boolean,
@@ -48,6 +49,7 @@
 		ondownloaditem,
 		ondownloadxlsx,
 		downloadXlsxLabel = 'Everything (one workbook)',
+		downloadXlsxDisabled = false,
 		onsearchfacilities,
 		showCopyLink = false,
 		showDocumentation = true,
@@ -104,6 +106,7 @@
 			{/if}
 			{#each downloadItems as item (item.key)}
 				<OptionsMenuItem
+					disabled={item.disabled}
 					onclick={() => {
 						ondownloaditem?.(item.key);
 						close();
@@ -118,6 +121,7 @@
 		{#if ondownloadxlsx}
 			<OptionsMenuHeading icon={FileSpreadsheet}>Download as XLSX</OptionsMenuHeading>
 			<OptionsMenuItem
+				disabled={downloadXlsxDisabled}
 				onclick={() => {
 					ondownloadxlsx();
 					close();
