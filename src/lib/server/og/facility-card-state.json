@@ -150,7 +150,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 100,
-			"status": "commissioning",
+			"status": "operating",
 			"region": "WEM",
 			"name": "Wagerup"
 		}
@@ -2634,6 +2634,21 @@
 			"name": "Goyder 2"
 		}
 	},
+	"GBWF1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind",
+				"battery"
+			],
+			"dominant": "wind",
+			"capacity": 512,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Gawara Baya"
+		}
+	},
 	"GEORGTWN": {
 		"v": 1,
 		"photo": null,
@@ -5013,7 +5028,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 240,
-			"status": "commissioning",
+			"status": "operating",
 			"region": "VIC",
 			"name": "Mornington"
 		}
@@ -7853,6 +7868,21 @@
 			"status": "operating",
 			"region": "QLD",
 			"name": "Wandoan"
+		}
+	},
+	"WAROONA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility",
+				"battery"
+			],
+			"dominant": "solar_utility",
+			"capacity": 213.5,
+			"status": "committed",
+			"region": "WEM",
+			"name": "Waroona"
 		}
 	},
 	"WARRADARGE": {
