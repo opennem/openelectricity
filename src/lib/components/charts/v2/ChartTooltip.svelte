@@ -61,7 +61,7 @@
 							<span class="text-mid-grey">{activeLabel}</span>
 							<strong class="font-semibold">
 								{formattedValue}
-								{chart.chartOptions.displayUnit}
+								{chart.tooltipUnit}
 							</strong>
 						</div>
 					{/if}
@@ -72,7 +72,7 @@
 							<span class="text-mid-grey">Total</span>
 							<strong class="font-semibold">
 								{formattedTotal}
-								{chart.chartOptions.displayUnit}
+								{chart.tooltipUnit}
 							</strong>
 						</span>
 					{/if}

@@ -10,6 +10,7 @@ import { bisectTime, bisectTimeRight, mergeSortedByTime } from './binary-search.
 import { offsetMsFromOffset } from './network-time.js';
 import { EARLIEST_DATA_MS, isHistoricalWindow } from '$lib/utils/date-range.js';
 import { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
+import { fetchChartResponse } from './fetch-chart-response.js';
 
 export { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
 
@@ -28,6 +29,8 @@ export { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
  *
  * @type {Map<string, { promise: Promise<any>, controller: AbortController, refCount: number }>}
  */
+// I/O ownership is non-reactive; it must not subscribe chart effects to fetch bookkeeping.
+// eslint-disable-next-line svelte/prefer-svelte-reactivity
 const inFlightFetches = new Map();
 
 /**
@@ -175,6 +178,8 @@ function responseTtlMs(requestKey) {
  * `date_end`, so only historical batches — the bulk of a wide window — hit.
  * @type {Map<string, { response: any, ts: number, ttlMs: number }>}
  */
+// Shared response LRU is read imperatively, not rendered or tracked by effects.
+// eslint-disable-next-line svelte/prefer-svelte-reactivity
 const completedResponses = new Map();
 
 /**
@@ -229,7 +234,7 @@ export function clearInFlightFetches() {
 /**
  * Fetch a URL, collapsing concurrent identical requests into one network call
  * and serving recent completed responses from the module-level LRU.
- * Resolves to the API `response` payload, or `null` on a non-OK status.
+ * Resolves to the API `response` payload; failures throw after a bounded retry.
  *
  * When `signal` is given it marks this consumer's interest in the shared
  * request: aborting it rejects this consumer's promise immediately (so its
@@ -259,14 +264,10 @@ function sharedFetch(url, signal, priority) {
 				controller,
 				refCount: 0
 			});
-		created.promise = fetch(url, { signal: controller.signal, priority })
-			.then(async (res) => {
-				if (!res.ok) {
-					throw new Error(`Data request failed (${res.status})`);
-				}
-				const json = await res.json();
-				storeCachedResponse(requestKey, json.response);
-				return json.response;
+		created.promise = fetchChartResponse(url, { signal: controller.signal, priority })
+			.then((response) => {
+				storeCachedResponse(requestKey, response);
+				return response;
 			})
 			.finally(() => {
 				// A fully-aborted entry is deleted eagerly (see onAbort below) and may
@@ -418,6 +419,8 @@ export default class ChartDataManager {
 	// In-flight batches by `${start}-${end}` key — dedups duplicate requests and
 	// lets cancelStaleFetches()/dispose() abort batches that are no longer needed.
 	/** @type {Map<string, { range: LoadingRange, controller: AbortController }>} */
+	// Reactive loadingRanges publishes readiness; this map only owns cancellation.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	#inFlightBatches = new Map();
 
 	// Ranges that returned no data — prevents re-fetching the same empty ranges
@@ -579,6 +582,18 @@ export default class ChartDataManager {
 				this.#executeFetch();
 			}, 150);
 		}
+	}
+
+	/** Make the recent tail eligible for the next ordinary gap request. Keep the
+	 * displayed rows and historical coverage; late observations may fill a span
+	 * previously confirmed empty. Only live-follow owners call this.
+	 * @param {number} start */
+	invalidateTail(start) {
+		if (!Number.isFinite(start)) return;
+		if (this.#cacheEnd !== null) this.#cacheEnd = Math.min(this.#cacheEnd, start);
+		this.#emptyRanges = this.#emptyRanges
+			.filter((range) => range.start < start)
+			.map((range) => ({ start: range.start, end: Math.min(range.end, start) }));
 	}
 
 	/**
@@ -875,7 +890,10 @@ export default class ChartDataManager {
 		// The API expects timezone-naive dates in the network's local time.
 		// Convert UTC ms → local time by adding the network's UTC offset.
 		const offsetMs = offsetMsFromOffset(this.networkTimezone);
+		// Ephemeral serialisation, not reactive date state.
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		let dateStart = new Date(clampedStart + offsetMs).toISOString().slice(0, 19);
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		let dateEnd = new Date(clampedEnd + offsetMs).toISOString().slice(0, 19);
 
 		// Snap date boundaries to the interval: the start DOWN to its bucket
@@ -894,6 +912,8 @@ export default class ChartDataManager {
 				endBucketStart === dateEnd ? dateEnd : nextBucketStart(this.interval, endBucketStart);
 		}
 
+		// A one-shot request value, not reactive URL state.
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const params = new URLSearchParams({
 			interval: this.interval,
 			metric: this.metric,

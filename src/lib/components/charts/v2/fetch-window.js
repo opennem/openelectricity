@@ -17,10 +17,17 @@ export function fetchBufferMultiplierForInterval(interval) {
  * @param {number} endMs
  * @param {number} multiplier - From `fetchBufferMultiplierForInterval`
  * @param {number} [nowMs]
+ * @param {number} [maxBufferMs] - Optional per-side speculative buffer cap
  * @returns {{ start: number, end: number }}
  */
-export function bufferedFetchWindow(startMs, endMs, multiplier, nowMs = Date.now()) {
-	const buffer = (endMs - startMs) * multiplier;
+export function bufferedFetchWindow(
+	startMs,
+	endMs,
+	multiplier,
+	nowMs = Date.now(),
+	maxBufferMs = Infinity
+) {
+	const buffer = Math.min((endMs - startMs) * multiplier, maxBufferMs);
 	return { start: startMs - buffer, end: Math.min(endMs + buffer, nowMs) };
 }
 

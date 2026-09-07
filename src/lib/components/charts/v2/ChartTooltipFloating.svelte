@@ -92,7 +92,7 @@
 	let overlayRows = $derived(activeData ? buildOverlayRows(chart, activeData) : []);
 	let total = $derived(getTotalForRow(chart, activeData));
 	let formattedTotal = $derived(formatTooltipNumericValue(chart, total));
-	let displayUnit = $derived(chart.chartOptions.displayUnit ?? '');
+	let displayUnit = $derived(chart.tooltipUnit);
 
 	/**
 	 * Map a time value to its pixel position inside the chart area, mirroring
@@ -259,9 +259,11 @@
 				<div
 					class="flex items-center gap-3 justify-between pt-1.5 mt-1.5 border-t border-warm-grey/60"
 				>
-					<span class="text-mid-grey">Total</span>
+					<span class="text-mid-grey"
+						>{chart.usesCustomProportion ? 'Visible contribution' : 'Total'}</span
+					>
 					<span class="font-mono font-semibold text-dark-grey tabular-nums">
-						{formattedTotal}{#if displayUnit}&nbsp;{displayUnit}{/if}
+						{#if formattedTotal}{formattedTotal}{#if displayUnit}&nbsp;{displayUnit}{/if}{:else}—{/if}
 					</span>
 				</div>
 			{/if}

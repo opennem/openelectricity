@@ -903,20 +903,75 @@ describe('ChartDataManager', () => {
 		});
 
 		it('does not cache non-OK responses', async () => {
+			vi.spyOn(console, 'error').mockImplementation(() => {});
 			const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 500 });
 			vi.stubGlobal('fetch', fetchSpy);
 
 			const now = Date.now();
 			const m1 = createManager({ interval: '1M', metric: 'energy' });
 			m1.requestRange(now - 100 * DAY, now, { immediate: true });
-			await vi.advanceTimersByTimeAsync(200);
-			expect(fetchSpy).toHaveBeenCalledTimes(1);
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
 
 			// A retry after a failure must hit the network again.
 			const m2 = createManager({ interval: '1M', metric: 'energy' });
 			m2.requestRange(now - 100 * DAY, now, { immediate: true });
-			await vi.advanceTimersByTimeAsync(200);
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(fetchSpy).toHaveBeenCalledTimes(4);
+		});
+
+		it('shares a retry and keeps it alive while another chart still needs it', async () => {
+			const fetchSpy = vi
+				.fn()
+				.mockResolvedValueOnce(Response.json({ error: 'Busy' }, { status: 503 }))
+				.mockResolvedValue(Response.json({ response: { data: [] } }));
+			vi.stubGlobal('fetch', fetchSpy);
+			const now = Date.now();
+			const m1 = createManager();
+			const m2 = createManager();
+			m1.requestRange(now - 3600_000, now, { immediate: true });
+			m2.requestRange(now - 3600_000, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(100);
+			m1.dispose();
+			await vi.advanceTimersByTimeAsync(1000);
 			expect(fetchSpy).toHaveBeenCalledTimes(2);
+			expect(m2.hasPendingFetch).toBe(false);
+			expect(m2.getErrorForRange(now - 3600_000, now)).toBeNull();
+		});
+
+		it('range retirement cancels a pending retry when its last consumer leaves', async () => {
+			const fetchSpy = vi
+				.fn()
+				.mockImplementation(() => Response.json({ error: 'Busy' }, { status: 503 }));
+			vi.stubGlobal('fetch', fetchSpy);
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - 3600_000, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(100);
+			manager.dispose();
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+			expect(manager.failedRanges).toEqual([]);
+			expect(manager.hasPendingFetch).toBe(false);
+		});
+
+		it('switching to a disjoint window cancels old backoff without delaying the new request', async () => {
+			const fetchSpy = vi
+				.fn()
+				.mockResolvedValueOnce(Response.json({ error: 'Busy' }, { status: 503 }))
+				.mockResolvedValue(Response.json({ response: { data: [] } }));
+			vi.stubGlobal('fetch', fetchSpy);
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - 3 * 3600_000, now - 2 * 3600_000, { immediate: true });
+			await vi.advanceTimersByTimeAsync(100);
+			manager.reconcileWindow(now - 3600_000, now);
+			await vi.advanceTimersByTimeAsync(100);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+			expect(manager.failedRanges).toEqual([]);
+			expect(manager.hasPendingFetch).toBe(false);
 		});
 
 		it('retries a failed window on the same manager instead of recording it as empty', async () => {
@@ -930,18 +985,19 @@ describe('ChartDataManager', () => {
 			const fetchSpy = vi
 				.fn()
 				.mockResolvedValueOnce({ ok: false, status: 503 })
+				.mockResolvedValueOnce({ ok: false, status: 503 })
 				.mockResolvedValue({ ok: true, json: async () => ({ response }) });
 			vi.stubGlobal('fetch', fetchSpy);
 			const manager = createManager();
 			const start = new Date('2026-02-08T00:00:00+10:00').getTime();
 			const end = start + 60 * 60 * 1000;
 			manager.requestRange(start, end, { immediate: true });
-			await vi.advanceTimersByTimeAsync(200);
+			await vi.advanceTimersByTimeAsync(1000);
 			expect(manager.getErrorForRange(start, end)).toContain('503');
 			expect(manager.initialLoadComplete).toBe(true);
 			manager.requestRange(start, end, { immediate: true });
 			await vi.advanceTimersByTimeAsync(200);
-			expect(fetchSpy).toHaveBeenCalledTimes(2);
+			expect(fetchSpy).toHaveBeenCalledTimes(3);
 			expect(manager.getDataForRange(start, end)).toHaveLength(12);
 			expect(manager.getErrorForRange(start, end)).toBeNull();
 		});
@@ -1013,6 +1069,48 @@ describe('ChartDataManager', () => {
 	// ------------------------------------------
 
 	describe('empty range tracking', () => {
+		it('revisits an empty live tail without invalidating historical coverage', async () => {
+			const fetchSpy = vi
+				.fn()
+				.mockResolvedValue({ ok: true, json: async () => ({ response: { data: [] } }) });
+			vi.stubGlobal('fetch', fetchSpy);
+			const manager = createManager();
+			const start = Date.parse('2026-02-08T00:00:00+10:00');
+			const end = start + 3_600_000;
+			manager.requestRange(start, end);
+			await vi.advanceTimersByTimeAsync(200);
+			manager.requestRange(start, end);
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+			manager.invalidateTail(end - 600_000);
+			manager.requestRange(start, end);
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+			const url = new URL(fetchSpy.mock.calls[1][0], 'https://example.com');
+			expect(url.searchParams.get('date_start')).toBe('2026-02-08T00:50:00');
+			expect(url.searchParams.get('date_end')).toBe('2026-02-08T01:00:00');
+			manager.dispose();
+		});
+		it('keeps displayed rows while revisiting cached live buckets', async () => {
+			const startISO = '2026-02-08T00:00:00+10:00';
+			const manager = createManager();
+			manager.seedCache(
+				buildPowerResponse({ networkId: 'NEM', unitCodes: ['UNIT1'], startISO, pointCount: 12 })
+			);
+			const rows = manager.processedCache.data;
+			const end = Date.parse(startISO) + 11 * 300_000;
+			expect(manager.cacheEnd).toBe(end);
+			const fetchSpy = vi
+				.fn()
+				.mockResolvedValue({ ok: true, json: async () => ({ response: { data: [] } }) });
+			vi.stubGlobal('fetch', fetchSpy);
+			manager.invalidateTail(end - 600_000);
+			expect(manager.processedCache.data).toBe(rows);
+			manager.requestRange(Date.parse(startISO), end);
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+			manager.dispose();
+		});
 		it('should not re-fetch a range that previously returned no data', async () => {
 			// First fetch returns empty data (no results)
 			const fetchSpy = vi.fn().mockResolvedValue({

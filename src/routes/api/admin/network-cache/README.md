@@ -20,7 +20,7 @@ searchable by administrators.
 flowchart TB
     subgraph Browser["Visitor's browser"]
         Tracker["TrackerCanvas<br/>Generation · Price · Emissions"]
-        Plan["Idle prefetch plan<br/>Widen · 30-day daily · full monthly history"]
+        Plan["Idle prefetch plan<br/>Nearby active-grain data · seven-day cap"]
         Chart["NetworkChart and ChartDataManager"]
         Dashboard["Admin cache dashboard"]
     end
@@ -85,7 +85,7 @@ Cloudflare may evict them earlier.
 ## Tracker prewarming
 
 Prewarming is initiated by the browser, not by a cron job, D1 or the dashboard.
-`TrackerCanvas.svelte` passes an active-metric plan to each of its three
+`TrackerCanvas.svelte` passes a bounded nearby-data plan to each of its three
 `NetworkChart` instances. A chart becomes eligible only after its initially
 visible range has loaded, no visible fetch is pending, a viewport exists and
 the user is not panning or zooming.
@@ -98,23 +98,18 @@ scheduling, not a hard-coded three-second timer. Each resulting browser fetch
 uses `priority: 'low'` and otherwise calls the normal `/api/network/data`
 endpoint.
 
-Jobs run in this order for every chart:
+Each chart widens its current grain by up to three viewport spans on either
+side, capped at seven days per side, the interval's API range limit and the
+current time. For an initial three-day view ending now, this covers the visible
+three days plus at most seven earlier days. Bucket alignment can extend the
+wire request to the next native bucket boundary.
 
-1. **Widen the current grain.** Request up to three current viewport spans on
-   either side, bounded by that interval's API range limit and by the current
-   time. For an initial three-day view ending now, the future side is clipped,
-   so this normally covers the visible three days plus about nine earlier days.
-2. **Warm daily data.** Request the last 30 days at `1d` for the planned metric.
-3. **Warm full history.** Request the last 11,000 days at `1M`, reaching roughly
-   back to December 1998.
-
-The plans are:
-
-| Chart      | Daily/monthly metric                                              |
-| ---------- | ----------------------------------------------------------------- |
-| Generation | `energy`                                                          |
-| Price      | `price` or `market_value`, following the active toggle            |
-| Emissions  | `emissions_intensity` or `emissions`, following the active toggle |
+Tracker no longer speculatively warms other grains. Daily and full monthly
+history are requested on selection; previously visited grains retain their
+warm-manager cache. This avoids launching decades-wide scans while the visitor
+is looking at a short range. Background failures are not automatically retried.
+Active requests retry transient HTTP failures once after a delay, preserving
+the server message if the retry fails; cancellation also stops pending backoff.
 
 Completed job keys, the browser's shared in-flight broker and response LRU,
 warm-manager stashes, same-isolate Worker de-duplication and Cache API hits all
@@ -247,7 +242,7 @@ development keeps working without any of this and the dashboard shows a
 1. Open `/tracker` in the deployed environment and wait for its visible
    charts to settle. In browser developer tools, filter Network requests for
    `/api/network/data`; the idle requests should follow at low priority.
-2. Wait for the daily and monthly requests to finish, then open
+2. Select a daily or monthly range and wait for it to finish, then open
    `/studio/cache/network-data` as a Clerk administrator.
 3. Confirm registry rows appear and use the filters to find the expected
    region, metric and interval. D1 shows projected state only.

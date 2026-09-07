@@ -11,16 +11,11 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
-	import { Layers, Percent, X } from '@lucide/svelte';
+	import { X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
-	import {
-		OptionsMenuDivider,
-		OptionsMenuHeading,
-		OptionsMenuItem
-	} from '$lib/components/ui/options-menu';
-	import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+	import { OptionsMenuDivider, OptionsMenuItem } from '$lib/components/ui/options-menu';
 	import {
 		FullscreenContainer,
 		FullscreenFilterBar,
@@ -39,6 +34,9 @@
 	import { downloadXlsx } from '$lib/utils/download-xlsx.js';
 	import { TRACKER_REGION_TREE } from './tracker-regions.js';
 	import TrackerCanvas from './TrackerCanvas.svelte';
+	import TimeOfDay from './TimeOfDay.svelte';
+	import PngExport from './PngExport.svelte';
+	import { capturePngSnapshot, settleChartAnimations } from './png-export.js';
 	import {
 		buildExportDataset,
 		buildWorkbookSheets,
@@ -50,17 +48,11 @@
 	import { createTrackerSession } from './tracker-session.svelte.js';
 	import { createTrackerNavigation } from './tracker-navigation.js';
 	import { copiedTrackerUrl } from './tracker-url.js';
+	import { startTrackerLive } from './tracker-live.js';
 
 	/** @typedef {import('./types.js').TrackerRange} TrackerRange */
-	/** @typedef {import('./types.js').ContributionMode} ContributionMode */
 	/** @typedef {import('./types.js').ExportDatasetKey} ExportDatasetKey */
 	/** @typedef {import('./types.js').TrackerExportContext} TrackerExportContext */
-
-	/** @type {Array<{ value: ContributionMode, label: string }>} */
-	const CONTRIBUTION_OPTIONS = [
-		{ value: 'generation', label: '% generation' },
-		{ value: 'demand', label: '% demand' }
-	];
 
 	/** @type {{ data: import('./$types').PageData }} */
 	let { data } = $props();
@@ -80,12 +72,22 @@
 		navigation.write(session.selection, mode)
 	);
 	let selectedRegion = $derived(session.selection.region);
-	let selectedGroup = $derived(session.selection.group);
 	let tablePanelOpen = $derived(session.selection.tablePanelOpen);
 	let bucketFilter = $derived(session.selection.bucketFilter);
-	/** @type {ContributionMode} */
-	let contributionMode = $state('generation');
+	let timeOfDay = $derived(session.selection.profileView !== 'timeline');
 	let notice = $state('');
+	/** @type {HTMLElement} */
+	let captureRoot;
+	let pngSnapshot = $state.raw(/** @type {import('./png-export.js').PngSnapshot | null} */ (null));
+	async function openPngExport() {
+		try {
+			await document.fonts.ready;
+			await settleChartAnimations(captureRoot);
+			pngSnapshot = capturePngSnapshot(captureRoot);
+		} catch (error) {
+			notice = error instanceof Error ? error.message : 'Unable to capture the charts.';
+		}
+	}
 	/** @type {TrackerCanvas | undefined} */
 	let canvas = $state.raw(undefined);
 	const rangeControl = session.range;
@@ -103,14 +105,14 @@
 	let downloadItems = $derived(
 		trackerDownloadItems({ tablePanelOpen }).map((item) => ({
 			...item,
-			disabled: !canvas || canvas.getExportContext(item.key).pending
+			disabled: timeOfDay || !canvas || canvas.getExportContext(item.key).pending
 		}))
 	);
-	let workbookDisabled = $derived.by(() => !canvas || canvas.getExportContext('xlsx').pending);
+	let workbookDisabled = $derived.by(
+		() => timeOfDay || !canvas || canvas.getExportContext('xlsx').pending
+	);
 	/** @param {string} value */
 	const handleRegionChange = (value) => session.select('region', value);
-	/** @param {string} value */
-	const handleGroupChange = (value) => session.select('group', value);
 	/** @param {string | null} value */
 	const handleBucketFilterChange = (value) => session.select('bucketFilter', value);
 	$effect(() => {
@@ -202,6 +204,10 @@
 		if (!params.has('table') && window.matchMedia(BELOW_TABLET_QUERY).matches) {
 			session.select('tablePanelOpen', false, null);
 		}
+		return startTrackerLive({
+			document,
+			tick: () => session.tick(Date.now(), canvas?.isLiveReady() ?? false)
+		});
 	});
 </script>
 
@@ -255,38 +261,76 @@
 						/>
 
 						<div class="h-6 w-px shrink-0 bg-warm-grey"></div>
-
-						<ChartRangeBar
-							selectedRange={navRange.selectedRange}
-							customDays={navRange.customDays}
-							displayInterval={navRange.displayInterval}
-							startDate={navRange.startDate}
-							endDate={navRange.endDate}
-							minDate={MIN_DATE}
-							maxDate={navRange.maxDate}
-							showIntervalDropdown
-							includeRollingInterval
-							showBucketFilter
-							{bucketFilter}
-							onbucketfilterchange={handleBucketFilterChange}
-							variant="expanded"
-							pending={navRange.pending}
-							onrangeselect={session.selectRange}
-							ondaterangechange={session.selectDates}
-							onintervalchange={session.selectInterval}
-						/>
-
-						{#if session.rangeLabel}
-							<span
-								class="ml-auto hidden shrink-0 whitespace-nowrap font-space text-xs text-mid-grey lg:inline"
+						<select
+							class="shrink-0 rounded border border-warm-grey bg-white px-2 py-2 text-xs sm:hidden"
+							aria-label="Analysis view"
+							value={timeOfDay ? 'average' : 'timeline'}
+							onchange={(event) =>
+								session.select(
+									'profileView',
+									event.currentTarget.value === 'timeline' ? 'timeline' : 'average'
+								)}
+						>
+							<option value="timeline">Timeline</option><option value="average">Time of day</option>
+						</select>
+						<div class="hidden shrink-0 gap-1 sm:flex" aria-label="Analysis view">
+							<button
+								class="rounded px-3 py-2 text-xs aria-pressed:bg-dark-grey aria-pressed:text-white"
+								aria-pressed={!timeOfDay}
+								onclick={() => session.select('profileView', 'timeline')}>Timeline</button
 							>
-								{session.rangeLabel}
-							</span>
+							<button
+								class="rounded px-3 py-2 text-xs aria-pressed:bg-dark-grey aria-pressed:text-white"
+								aria-pressed={timeOfDay}
+								onclick={() => session.select('profileView', 'average')}>Time of day</button
+							>
+						</div>
+
+						{#if !timeOfDay}
+							<ChartRangeBar
+								selectedRange={navRange.selectedRange}
+								customDays={navRange.customDays}
+								displayInterval={navRange.displayInterval}
+								startDate={navRange.startDate}
+								endDate={navRange.endDate}
+								minDate={MIN_DATE}
+								maxDate={navRange.maxDate}
+								showIntervalDropdown
+								includeRollingInterval
+								showBucketFilter
+								{bucketFilter}
+								onbucketfilterchange={handleBucketFilterChange}
+								variant="expanded"
+								pending={navRange.pending}
+								onrangeselect={session.selectRange}
+								ondaterangechange={session.selectDates}
+								onintervalchange={session.selectInterval}
+							/>
+
+							{#if session.rangeLabel}
+								<span
+									class="ml-auto hidden shrink-0 whitespace-nowrap font-space text-xs text-mid-grey lg:inline"
+								>
+									{session.rangeLabel}
+								</span>
+							{/if}
 						{/if}
 					</div>
 				{/snippet}
 
 				{#snippet options()}
+					{#if !timeOfDay}
+						<button
+							class="mr-2 min-h-[32px] shrink-0 rounded border border-mid-warm-grey px-3 py-2 font-space text-xs text-mid-grey hover:bg-light-warm-grey aria-pressed:bg-warm-grey"
+							aria-label={session.following ? 'Pause live follow' : 'Return to now'}
+							aria-pressed={session.following}
+							title={session.following
+								? 'Following the latest data. Click to pause.'
+								: 'Return to the latest data and resume live follow.'}
+							onclick={() => (session.following ? session.pauseLive() : session.goNow())}
+							>{session.following ? 'Live' : 'Now'}</button
+						>
+					{/if}
 					<PageOptionsMenu
 						{isFullscreen}
 						onfullscreenchange={() => toggleFullscreenMode(isFullscreen)}
@@ -298,33 +342,12 @@
 						ondownloadxlsx={downloadWorkbook}
 					>
 						{#snippet extraSections({ close })}
-							<!-- Table choices live here so the table header stays clean. -->
-							<OptionsMenuHeading icon={Layers}>Fuel tech grouping</OptionsMenuHeading>
-							{#each GROUP_OPTIONS as option (option.value)}
-								<OptionsMenuItem
-									selected={selectedGroup === option.value}
-									onclick={() => {
-										handleGroupChange(option.value);
-										close();
-									}}
-								>
-									{option.label}
-								</OptionsMenuItem>
-							{/each}
-							<OptionsMenuDivider />
-
-							<OptionsMenuHeading icon={Percent}>Contribution</OptionsMenuHeading>
-							{#each CONTRIBUTION_OPTIONS as option (option.value)}
-								<OptionsMenuItem
-									selected={contributionMode === option.value}
-									onclick={() => {
-										contributionMode = option.value;
-										close();
-									}}
-								>
-									{option.label}
-								</OptionsMenuItem>
-							{/each}
+							<OptionsMenuItem
+								onclick={() => {
+									close();
+									openPngExport();
+								}}>Export PNG</OptionsMenuItem
+							>
 							<OptionsMenuDivider />
 						{/snippet}
 					</PageOptionsMenu>
@@ -350,8 +373,12 @@
 					</div>
 				{/if}
 
-				<main class="flex min-h-0 flex-1 flex-col overflow-hidden">
-					<TrackerCanvas bind:this={canvas} {session} {contributionMode} />
+				<main bind:this={captureRoot} class="flex min-h-0 flex-1 flex-col overflow-hidden">
+					{#if timeOfDay}
+						<TimeOfDay {session} />
+					{:else}
+						<TrackerCanvas bind:this={canvas} {session} />
+					{/if}
 				</main>
 			</div>
 			{#snippet footer()}
@@ -363,3 +390,7 @@
 		</FullscreenContainer>
 	{/snippet}
 </FullscreenLayout>
+
+{#if pngSnapshot}
+	<PngExport snapshot={pngSnapshot} onclose={() => (pngSnapshot = null)} />
+{/if}

@@ -20,6 +20,23 @@ describe('fetchBufferMultiplierForInterval', () => {
 });
 
 describe('bufferedFetchWindow', () => {
+	it('caps both sides of a speculative history window without truncating the viewport', () => {
+		const start = 100_000 * HOUR;
+		const end = start + 365 * 24 * HOUR;
+		const cap = 7 * 24 * HOUR;
+		expect(bufferedFetchWindow(start, end, 3, end + 10 * cap, cap)).toEqual({
+			start: start - cap,
+			end: end + cap
+		});
+	});
+
+	it('keeps small capped buffers proportional and still clamps them to now', () => {
+		expect(bufferedFetchWindow(10 * HOUR, 12 * HOUR, 3, 13 * HOUR, 168 * HOUR)).toEqual({
+			start: 4 * HOUR,
+			end: 13 * HOUR
+		});
+	});
+
 	it('extends the viewport by the multiplier on each side', () => {
 		const now = 100_000 * HOUR;
 		const { start, end } = bufferedFetchWindow(10 * HOUR, 12 * HOUR, 3, now);

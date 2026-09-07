@@ -21,6 +21,13 @@ import { perfSpan } from './perf.js';
  * @typedef {import('./types.js').DataTransformType} DataTransformType
  */
 
+/** Optional consumer-defined percentages, applied after display aggregation.
+ * @typedef {Object} ProportionContext
+ * @property {string} label
+ * @property {string[]} excludedSeriesNames
+ * @property {(row: TimeSeriesData, keys: string[]) => TimeSeriesData} transform
+ */
+
 /**
  * @typedef {Object} ChartConfig
  * @property {symbol} key - Unique identifier for the chart
@@ -72,8 +79,21 @@ export default class ChartStore {
 	/** @type {string[]} */
 	hiddenSeriesNames = $state.raw([]);
 
+	/** @type {ProportionContext | null} */
+	proportionContext = $state.raw(null);
+	usesCustomProportion = $derived.by(
+		() => !!this.proportionContext && this.chartOptions?.isDataTransformTypeProportion
+	);
+	tooltipUnit = $derived.by(() =>
+		this.usesCustomProportion ? '%' : (this.chartOptions?.displayUnit ?? '')
+	);
+
 	visibleSeriesNames = $derived(
-		this.seriesNames.filter((name) => !this.hiddenSeriesNames.includes(name))
+		this.seriesNames.filter(
+			(name) =>
+				!this.hiddenSeriesNames.includes(name) &&
+				!(this.usesCustomProportion && this.proportionContext?.excludedSeriesNames.includes(name))
+		)
 	);
 
 	/** @type {Record<string, string>} */
@@ -160,8 +180,8 @@ export default class ChartStore {
 	 *  Percentage lines keep their independent right-hand scale. */
 	automaticYDomainData = $derived.by(() => {
 		const baseRows = this.seriesScaledDataWithMinMax;
-		const primaryLines = this.overlayLines.filter((overlay) => overlay.scale !== 'percent');
-		const areas = this.overlayAreas;
+		const primaryLines = this.displayOverlayLines.filter((overlay) => overlay.scale !== 'percent');
+		const areas = this.displayOverlayAreas;
 		if (!primaryLines.length && !areas.length) return baseRows;
 
 		/** @type {Map<number, {_min: number, _max: number}>} */
@@ -225,6 +245,10 @@ export default class ChartStore {
 		if (this.#frozenYDomain) return this.#frozenYDomain;
 
 		if (this.chartOptions?.isDataTransformTypeProportion && !this.chartOptions?.isChartTypeLine) {
+			if (this.proportionContext) {
+				const [min, max] = computeYDomain(this.automaticYDomainData);
+				return /** @type {[number, number]} */ ([Math.min(0, min), Math.max(100, max)]);
+			}
 			return /** @type {[number, number]} */ ([0, 100]);
 		}
 
@@ -286,6 +310,41 @@ export default class ChartStore {
 	 *  @type {Array<{ id: string, data: any[], series: Array<{ id: string, colour: string, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }> }>} */
 	overlayAreas = $state.raw([]);
 
+	/** Overlay geometry, domain and tooltip all consume the same converted rows. */
+	displayOverlayLines = $derived.by(() => {
+		const context = this.usesCustomProportion ? this.proportionContext : null;
+		if (!context) return this.overlayLines;
+		return this.overlayLines.map((overlay) =>
+			overlay.scale === 'percent'
+				? overlay
+				: {
+						...overlay,
+						data: overlay.data.map((row) => context.transform(row, [overlay.valueKey])),
+						tooltipUnit: '%',
+						formatTooltipValue: (/** @type {number} */ value) => getNumberFormat(1).format(value)
+					}
+		);
+	});
+
+	displayOverlayAreas = $derived.by(() => {
+		const context = this.usesCustomProportion ? this.proportionContext : null;
+		if (!context) return this.overlayAreas;
+		return this.overlayAreas.map((overlay) => ({
+			...overlay,
+			data: overlay.data.map((row) =>
+				context.transform(
+					row,
+					overlay.series.map((series) => series.id)
+				)
+			),
+			series: overlay.series.map((series) => ({
+				...series,
+				tooltipUnit: '%',
+				formatTooltipValue: (/** @type {number} */ value) => getNumberFormat(1).format(value)
+			}))
+		}));
+	});
+
 	// Formatters
 	/** @type {number} */
 	maximumFractionDigits = $state(0);
@@ -340,6 +399,7 @@ export default class ChartStore {
 	// Transformed data
 	seriesScaledData = $derived.by(() => {
 		if (!this.seriesData?.length || !this.chartOptions) return [];
+		if (this.usesCustomProportion) return this.seriesProportionData;
 
 		const isChangeSince = this.chartOptions.selectedDataTransformType === 'changeSince';
 		// Only changeSince depends on xDomain; other modes should not rerun on every pan.
@@ -362,6 +422,13 @@ export default class ChartStore {
 
 	seriesProportionData = $derived.by(() => {
 		if (!this.seriesData?.length) return [];
+		const context = this.proportionContext;
+		if (context)
+			return this.seriesData.map((row) => {
+				const transformed = context.transform(row, this.seriesNames);
+				for (const key of context.excludedSeriesNames) transformed[key] = null;
+				return transformed;
+			});
 		return this.seriesData.map((d) =>
 			transformToProportion({ datapoint: d, domains: this.seriesNames })
 		);

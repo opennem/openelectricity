@@ -49,8 +49,9 @@
 	 * @param {string} type
 	 */
 	function handleDataTransformChange(type) {
-		chart.chartOptions.selectedDataTransformType =
-			/** @type {import('./ChartOptions.svelte.js').DataTransformType} */ (type);
+		chart.chartOptions.setDataTransformType(
+			/** @type {import('./ChartOptions.svelte.js').DataTransformType} */ (type)
+		);
 	}
 
 	/**

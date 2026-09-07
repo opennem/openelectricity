@@ -46,6 +46,7 @@ const LIVE_EDGE_TOLERANCE_MS = 10 * 60 * 1000;
  * @typedef {Object} RangeControlChart
  * @property {(startMs: number, endMs: number) => void} setViewport
  * @property {() => void} [reconcileFetches]
+ * @property {(startMs: number) => void} [invalidateTail]
  */
 
 /**
@@ -206,7 +207,7 @@ export function createChartRangeControl(config) {
 		let actualDays = days;
 		if (days === -1) {
 			const earliest = earliestDate?.() ?? null;
-			const earliestMs = earliest ? new Date(earliest).getTime() : new Date(MIN_DATE).getTime();
+			const earliestMs = Date.parse(earliest || MIN_DATE);
 			actualDays = Math.max(1, Math.ceil((endMs - earliestMs) / DAY_MS));
 		}
 		const startMs = endMs - actualDays * DAY_MS;
@@ -220,8 +221,8 @@ export function createChartRangeControl(config) {
 	/** @param {{ start: string, end: string }} range */
 	function handleDateRangeChange(range) {
 		selectedRange = null;
-		const startMs = new Date(range.start).getTime();
-		const endMs = new Date(range.end).getTime();
+		const startMs = Date.parse(range.start);
+		const endMs = Date.parse(range.end);
 		const days = Math.max(1, Math.ceil((endMs - startMs) / DAY_MS));
 		applyRangeSwitch(startMs, endMs, getIntervalOptionsForDays(days).default);
 	}
@@ -299,11 +300,11 @@ export function createChartRangeControl(config) {
 	 *  tick is ambient, not an explicit pick. The charts' own setViewport
 	 *  fetches the new tail. Callers must update their default-viewport anchor
 	 *  AFTER calling — the pinned test reads the previous anchor. */
-	/** @param {number} newEndMs */
-	function advanceLiveEdge(newEndMs) {
+	/** @param {number} newEndMs @param {{preserveStart?: boolean}} [options] */
+	function advanceLiveEdge(newEndMs, { preserveStart = false } = {}) {
 		const { start, end } = boundedViewport();
 		if (end < defaultViewport().end - LIVE_EDGE_TOLERANCE_MS) return;
-		const newStart = newEndMs - (end - start);
+		const newStart = preserveStart ? start : newEndMs - (end - start);
 		setViewport(newStart, newEndMs);
 		pushToCharts(newStart, newEndMs);
 	}

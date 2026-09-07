@@ -244,7 +244,7 @@
 					<NetTotalLine dataset={renderSeriesData} valueKey={netTotalKey} stroke={netTotalColor} />
 				{/if}
 
-				{#each chart.overlayAreas ?? [] as overlay (overlay.id)}
+				{#each chart.displayOverlayAreas as overlay (overlay.id)}
 					<OverlayArea
 						dataset={overlay.data}
 						series={overlay.series}
@@ -256,7 +256,7 @@
 					/>
 				{/each}
 
-				{#each chart.overlayLines ?? [] as overlay (overlay.id)}
+				{#each chart.displayOverlayLines as overlay (overlay.id)}
 					<OverlayLine
 						dataset={overlay.data}
 						valueKey={overlay.valueKey}
@@ -317,7 +317,7 @@
 				/>
 			</defs>
 
-			<g clip-path={hoverClipPath}>
+			<g clip-path={hoverClipPath} data-png-exclude>
 				{#if isStepMode}
 					<!-- Step mode: band highlight like category charts -->
 					<StepHoverBand

@@ -2,6 +2,21 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { load } from './+page.js';
 
 describe('tracker page load', () => {
+	it('seeds analytical state before charts and emissions exclusions initialise', () => {
+		const data = load(
+			/** @type {Parameters<typeof load>[0]} */ ({
+				url: new URL(
+					'https://example.test/tracker?hidden=coal&contribution=demand&transform=proportion&market-transform=changeSince'
+				)
+			})
+		);
+		expect(data).toMatchObject({
+			hiddenSeries: ['coal'],
+			contributionMode: 'demand',
+			generationTransform: 'proportion',
+			marketValueTransform: 'changeSince'
+		});
+	});
 	afterEach(() => vi.restoreAllMocks());
 
 	it('serialises the range anchor used by the hydrating client', () => {

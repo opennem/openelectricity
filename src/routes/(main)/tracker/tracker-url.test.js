@@ -1,6 +1,12 @@
 // @ts-nocheck
 import { describe, expect, it } from 'vitest';
-import { applyTrackerUrl, copiedTrackerUrl, parseTrackerUrl } from './tracker-url.js';
+import {
+	applyTrackerUrl,
+	copiedTrackerUrl,
+	parseTrackerUrl,
+	normaliseHiddenSeries
+} from './tracker-url.js';
+import { GROUP_OPTIONS, getGroup } from '$lib/components/charts/network/groups.js';
 
 const context = { nowMs: 2_000_000_000_000 };
 
@@ -11,6 +17,98 @@ function roundTrip(state) {
 }
 
 describe('tracker URLs', () => {
+	it('defaults legacy links to visible sources, generation contribution and absolute transforms', () => {
+		expect(parseTrackerUrl(new URLSearchParams('region=nsw1'), context)).toMatchObject({
+			hiddenSeries: [],
+			contributionMode: 'generation',
+			generationTransform: 'absolute',
+			marketValueTransform: 'absolute'
+		});
+	});
+
+	it.each(['absolute', 'proportion', 'changeSince'])(
+		'round trips both chart transforms: %s',
+		(transform) => {
+			const state = {
+				...parseTrackerUrl(new URLSearchParams(), context),
+				hiddenSeries: ['wind', 'coal', 'coal'],
+				contributionMode: 'demand',
+				generationTransform: transform,
+				marketValueTransform: transform
+			};
+			const { url, parsed } = roundTrip(state);
+			expect(parsed).toMatchObject({ ...state, hiddenSeries: ['coal', 'wind'] });
+			expect(url.searchParams.get('hidden')).toBe('coal,wind');
+			expect(url.searchParams.get('contribution')).toBe('demand');
+			expect(url.searchParams.get('transform')).toBe(transform === 'absolute' ? null : transform);
+			expect(url.searchParams.get('market-transform')).toBe(
+				transform === 'absolute' ? null : transform
+			);
+		}
+	);
+
+	it('validates hidden IDs against the grouping and ignores malformed analytical values', () => {
+		const parsed = parseTrackerUrl(
+			new URLSearchParams(
+				'group=simple&hidden=coal_black,wind,wind,,__proto__,%20coal%20&contribution=net&transform=log&market-transform=NaN'
+			),
+			context
+		);
+		expect(parsed.hiddenSeries).toEqual(['coal', 'wind']);
+		expect(parsed).toMatchObject({
+			contributionMode: 'generation',
+			generationTransform: 'absolute',
+			marketValueTransform: 'absolute'
+		});
+		expect(
+			parseTrackerUrl(new URLSearchParams('group=detailed&hidden=coal,coal_black,wind'), context)
+				.hiddenSeries
+		).toEqual(normaliseHiddenSeries(['coal_black', 'wind'], 'detailed'));
+	});
+
+	it.each(GROUP_OPTIONS.map(({ value }) => value))(
+		'accepts all-hidden selections in %s without inventing IDs',
+		(group) => {
+			const ids = getGroup(group).order;
+			expect(normaliseHiddenSeries([...ids].reverse().concat(ids), group)).toEqual(ids);
+			expect(normaliseHiddenSeries(null, group)).toEqual([]);
+		}
+	);
+
+	it('removes analytical defaults and stale parameters when restoring the default view', () => {
+		const state = parseTrackerUrl(new URLSearchParams(), context);
+		const url = copiedTrackerUrl(
+			new URL(
+				'https://example.test/tracker?hidden=coal&contribution=demand&transform=proportion&market-transform=changeSince&fullscreen=false&utm_source=test'
+			),
+			state
+		);
+		for (const key of ['hidden', 'contribution', 'transform', 'market-transform'])
+			expect(url.searchParams.has(key)).toBe(false);
+		expect(url.searchParams.get('fullscreen')).toBe('false');
+		expect(url.searchParams.get('utm_source')).toBe('test');
+	});
+
+	it('copied links retain analytical selections and exact custom bounds without changing the source', () => {
+		const source = new URL('https://example.test/tracker');
+		const state = {
+			...parseTrackerUrl(source.searchParams, context),
+			hiddenSeries: ['coal'],
+			contributionMode: 'demand',
+			generationTransform: 'changeSince',
+			marketValueTransform: 'proportion',
+			range: {
+				kind: 'custom',
+				startMs: 1_700_000_000_000,
+				endMs: 1_700_086_400_000,
+				intervalId: '30m'
+			}
+		};
+		const copied = copiedTrackerUrl(source, state);
+		expect(parseTrackerUrl(copied.searchParams, context)).toEqual(state);
+		expect(source.search).toBe('');
+	});
+
 	it('serialises the default state to a clean URL', () => {
 		const { url, parsed } = roundTrip({
 			region: '_all',

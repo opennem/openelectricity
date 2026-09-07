@@ -1,5 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import ChartOptions from './ChartOptions.svelte.js';
+
+describe('controlled chart transform events', () => {
+	it('emits one event per user change, but none for restoring controlled state', () => {
+		const options = new ChartOptions();
+		const changed = vi.fn();
+		options.onDataTransformChange = changed;
+		options.setDataTransformType('proportion');
+		options.setDataTransformType('proportion');
+		expect(changed).toHaveBeenCalledExactlyOnceWith('proportion');
+		options.selectedDataTransformType = 'absolute';
+		expect(changed).toHaveBeenCalledTimes(1);
+		options.setDataTransformType('changeSince');
+		expect(changed).toHaveBeenLastCalledWith('changeSince');
+	});
+});
 
 describe('ChartOptions display prefix selection', () => {
 	it('allows automatic defaults until the user selects a prefix', () => {

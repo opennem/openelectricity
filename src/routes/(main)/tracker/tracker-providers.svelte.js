@@ -6,7 +6,7 @@ import { isRollingInterval } from '$lib/components/charts/facility/range-interva
 /** Optional data sources share the chart request broker and range lifecycle.
  * @param {{selection: () => import('./types.js').TrackerUrlState,
  * range: ReturnType<typeof import('$lib/components/charts/facility/chart-range-control.svelte.js').createChartRangeControl>,
- * timeZone: () => string}} opts
+ * timeZone: () => string, needsContributionDemand?: () => boolean}} opts
  */
 export function createTrackerProviders(opts) {
 	const range = opts.range;
@@ -25,7 +25,10 @@ export function createTrackerProviders(opts) {
 		basis: () => range.activeMetric,
 		interval: () => range.activeInterval,
 		timeZone: () => timeZone,
-		enabled: () => tablePanelOpen || (showRenewablesLine && isRollingDisplay)
+		enabled: () =>
+			tablePanelOpen ||
+			(showRenewablesLine && isRollingDisplay) ||
+			!!opts.needsContributionDemand?.()
 	});
 	// Per-fuel-tech market value and emissions feed the table's Av price and
 	// Emissions/Intensity columns; each shares its fetch with the matching chart.

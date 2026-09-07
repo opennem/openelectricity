@@ -1,0 +1,109 @@
+<script>
+	import PanelToggle from './PanelToggle.svelte';
+	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
+	import { getNumberFormat } from '$lib/utils/formatters';
+	import { formatGenerationUnitValue } from '$lib/components/charts/network/generation-units.js';
+	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
+	import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
+	import { buildWindowMetrics } from './window-metrics.js';
+
+	/** @type {{input: Parameters<typeof buildWindowMetrics>[0], rangeLabel: string, interval: string,
+	 * intervalLabel: string, zone: string, generationPrefix: SiPrefix, filterLabel?: string,
+	 * status: Record<string, {pending: boolean, error: string | null}>,
+	 * onhighlight: (time: number | undefined) => void, onclose: () => void}} */
+	let {
+		input,
+		rangeLabel,
+		interval,
+		intervalLabel,
+		zone,
+		generationPrefix,
+		filterLabel = '',
+		status,
+		onhighlight,
+		onclose
+	} = $props();
+	let groups = $derived(buildWindowMetrics(input));
+	let formatDate = $derived(getTimeFormatPolicy(interval, ianaFromOffset(zone)).formatTooltip);
+	const extrema = /** @type {const} */ (['min', 'max']);
+	const integer = getNumberFormat(0);
+	const decimal = getNumberFormat(2);
+	/** @param {number} value @param {string} id */
+	function formatValue(value, id) {
+		if (id === 'generation') return formatGenerationUnitValue(value, 'M', generationPrefix);
+		return id === 'market' && input.priceMetric !== 'market_value'
+			? decimal.format(value)
+			: integer.format(value);
+	}
+</script>
+
+<section aria-label="Window metrics" class="min-w-0 bg-white">
+	<header
+		class="sticky top-0 z-10 flex h-[48px] items-center justify-between gap-2 border-b border-warm-grey bg-white px-[4px]"
+	>
+		<h3 class="m-0 pl-[12px] font-space text-sm font-semibold">Metrics</h3>
+		<PanelToggle
+			side="left"
+			open
+			label="Hide metrics"
+			controls="tracker-metrics-panel"
+			onclick={onclose}
+		/>
+	</header>
+	<div class="border-b border-mid-warm-grey/40 bg-light-warm-grey/50 px-[16px] py-[12px]">
+		<p class="text-xxs text-mid-grey">
+			{intervalLabel} intervals · UTC{zone}{filterLabel ? ` · ${filterLabel}` : ''}
+		</p>
+		<p class="mt-1 text-xs text-mid-grey">{rangeLabel}</p>
+	</div>
+	<div class="-mb-px grid grid-cols-1">
+		{#each groups as group (group.id)}
+			<div
+				class="grid min-w-0 grid-cols-1"
+				data-testid={`metrics-${group.id}`}
+				aria-busy={status[group.id].pending}
+			>
+				{#each extrema as kind (kind)}
+					{@const point = group[kind]}
+					{@const label = `${kind === 'min' ? 'Minimum' : 'Maximum'} ${group.label.toLowerCase()}`}
+					{@const subtitle = status[group.id].error
+						? 'Unavailable — retry the chart'
+						: status[group.id].pending
+							? 'Updating selected window…'
+							: point
+								? `${formatDate(point.time)}${point.ties > 1 ? ' · first occurrence' : ''}`
+								: 'No complete intervals'}
+					<button
+						class="min-w-0 border-b border-mid-warm-grey/40 px-4 py-4 text-left transition-colors enabled:hover:bg-light-warm-grey/40 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+						disabled={!point || status[group.id].pending || !!status[group.id].error}
+						data-testid={`metric-${group.id}-${kind}`}
+						title={`${group.description} Hover, focus or select to highlight the interval on the charts.`}
+						onmouseenter={() => onhighlight(point?.time)}
+						onmouseleave={() => onhighlight(undefined)}
+						onfocus={() => onhighlight(point?.time)}
+						onblur={() => onhighlight(undefined)}
+						onclick={() => onhighlight(point?.time)}
+					>
+						<MetricCard
+							{label}
+							value={point ? formatValue(point.value, group.id) : '--'}
+							unit={group.id === 'generation'
+								? `${generationPrefix}${input.basis === 'energy' ? 'Wh' : 'W'}`
+								: group.unit}
+							{subtitle}
+						/>
+					</button>
+				{/each}
+				{#if group.available < group.intervals && !status[group.id].pending && !status[group.id].error}
+					<p class="border-b border-mid-warm-grey/40 px-4 py-2 text-xxs text-mid-grey">
+						{group.label}: {group.available} of {group.intervals} intervals complete.
+					</p>
+				{/if}
+			</div>
+		{/each}
+	</div>
+	<footer class="border-t border-mid-warm-grey/40 px-4 py-2 text-xxs text-mid-grey">
+		Absolute values at the selected interval, not percentage or change-since transforms. Net
+		generation includes selected imports and loads. Hover or focus a metric to locate its interval.
+	</footer>
+</section>

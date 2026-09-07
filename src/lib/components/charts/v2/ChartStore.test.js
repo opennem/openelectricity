@@ -1,5 +1,131 @@
 import { describe, it, expect } from 'vitest';
 import ChartStore from './ChartStore.svelte.js';
+import { createContributionContext } from '../network/contribution.js';
+import { DEMAND_GROSS_SERIES_ID } from '../network/market-series-ids.js';
+import {
+	buildSeriesRows,
+	buildOverlayRows,
+	getActiveData,
+	getTotalForRow,
+	formatTooltipNumericValue
+} from './tooltip-derivations.js';
+
+describe('consumer-defined proportions', () => {
+	function contributionChart() {
+		const chart = new ChartStore({
+			key: Symbol('contribution'),
+			prefix: 'M',
+			displayPrefix: 'G',
+			baseUnit: 'W'
+		});
+		chart.seriesNames = ['coal', 'wind', 'imports', 'load'];
+		chart.seriesData = [{ time: 1, date: new Date(1), coal: 60, wind: 40, imports: 20, load: -10 }];
+		chart.proportionContext = createContributionContext({
+			generationRows: chart.seriesData,
+			demandRows: [],
+			seriesNames: chart.seriesNames,
+			loadSeriesIds: ['load'],
+			mode: 'generation'
+		});
+		chart.chartOptions.selectedDataTransformType = 'proportion';
+		chart.hoverTime = 1;
+		return chart;
+	}
+
+	it('hiding a source does not change shares; excluded series return in absolute view', () => {
+		const chart = contributionChart();
+		chart.hiddenSeriesNames = ['coal'];
+		expect(chart.visibleSeriesNames).toEqual(['wind']);
+		expect(chart.seriesScaledData[0]).toMatchObject({
+			coal: 60,
+			wind: 40,
+			imports: null,
+			load: null
+		});
+		expect(chart.hoverScaledData).toEqual(chart.hoverProportionData);
+		expect(buildSeriesRows(chart, getActiveData(chart))[0].formattedValue).toBe('40');
+		expect(chart.tooltipUnit).toBe('%');
+		chart.chartOptions.selectedDataTransformType = 'absolute';
+		expect(chart.visibleSeriesNames).toEqual(['wind', 'imports', 'load']);
+		expect(chart.seriesScaledData).toEqual(chart.seriesData);
+		expect(chart.tooltipUnit).toBe('GW');
+	});
+
+	it('uses the same converted overlays in domains and tooltips, leaving percent overlays alone', () => {
+		const chart = contributionChart();
+		chart.overlayLines = [
+			{ id: 'demand', valueKey: 'demand', colour: '#000', data: [{ time: 1, demand: 200 }] },
+			{
+				id: 'share',
+				valueKey: 'share',
+				colour: '#000',
+				scale: 'percent',
+				data: [{ time: 1, share: 25 }]
+			}
+		];
+		chart.overlayAreas = [
+			{
+				id: 'curtailment',
+				series: [{ id: 'curtailment', colour: '#000' }],
+				data: [{ time: 1, curtailment: 20 }]
+			}
+		];
+		expect(chart.displayOverlayLines[1]).toBe(chart.overlayLines[1]);
+		expect(chart.yDomain[1]).toBeGreaterThanOrEqual(200);
+		expect(
+			buildOverlayRows(chart, getActiveData(chart)).map(({ value, unit }) => [value, unit])
+		).toEqual([
+			[20, '%'],
+			[200, '%'],
+			[25, '%']
+		]);
+		chart.chartOptions.selectedDataTransformType = 'absolute';
+		expect(chart.displayOverlayAreas).toBe(chart.overlayAreas);
+		expect(chart.displayOverlayLines).toBe(chart.overlayLines);
+	});
+
+	it('focus uses demand shares above 100 without a clamp or SI conversion', () => {
+		const chart = contributionChart();
+		chart.proportionContext = createContributionContext({
+			generationRows: chart.seriesData,
+			demandRows: [{ time: 1, [DEMAND_GROSS_SERIES_ID]: 30 }],
+			seriesNames: chart.seriesNames,
+			loadSeriesIds: ['load'],
+			mode: 'demand'
+		});
+		chart.hoverTime = undefined;
+		chart.focusTime = 1;
+		expect(getActiveData(chart).coal).toBe(200);
+		expect(formatTooltipNumericValue(chart, getActiveData(chart).coal)).toBe('200');
+		expect(chart.yDomain[1]).toBeGreaterThanOrEqual(400);
+		expect(chart.visibleSeriesNames).toContain('imports');
+	});
+
+	it('missing demand produces gaps and unavailable tooltips, never zero totals', () => {
+		const chart = contributionChart();
+		chart.proportionContext = createContributionContext({
+			generationRows: chart.seriesData,
+			demandRows: [],
+			seriesNames: chart.seriesNames,
+			loadSeriesIds: ['load'],
+			mode: 'demand'
+		});
+		expect(
+			buildSeriesRows(chart, getActiveData(chart)).every(
+				(row) => row.value === undefined && row.formattedValue === ''
+			)
+		).toBe(true);
+		expect(getTotalForRow(chart, getActiveData(chart))).toBeNaN();
+	});
+
+	it('keeps default visible-selection proportions for other consumers', () => {
+		const chart = contributionChart();
+		chart.proportionContext = null;
+		chart.hiddenSeriesNames = ['coal', 'imports', 'load'];
+		expect(chart.seriesScaledData[0].wind).toBe(100);
+		expect(chart.yDomain).toEqual([0, 100]);
+	});
+});
 
 /**
  * Build a minimal ChartStore configured for the derivations under test.

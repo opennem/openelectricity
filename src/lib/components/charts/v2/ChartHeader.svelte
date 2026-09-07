@@ -65,7 +65,9 @@
 				<h6 class="m-0 leading-none font-space uppercase text-xs font-normal">{chart.title}</h6>
 
 				{#if chart.chartOptions.isDataTransformTypeProportion}
-					<span class="font-space font-light text-xxs text-mid-grey">%</span>
+					<span class="font-space font-light text-xxs text-mid-grey"
+						>{chart.proportionContext?.label ?? '%'}</span
+					>
 				{:else if chart.chartOptions.allowPrefixSwitch}
 					<button
 						class="font-space font-light text-xxs text-mid-grey hover:underline"

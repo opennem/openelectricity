@@ -1,7 +1,8 @@
 <script>
-	import { onMount, untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import PanelRightOpen from '@lucide/svelte/icons/panel-right-open';
+	import PanelToggle from './PanelToggle.svelte';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 	import { createResizeControl } from '$lib/components/ui/panel/resize-control.svelte.js';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
@@ -12,12 +13,22 @@
 		getIntervalSpec,
 		isRollingInterval
 	} from '$lib/components/charts/facility/range-interval-config.js';
-	import { getGroup } from '$lib/components/charts/network/groups.js';
+	import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
+	import {
+		bucketFilterKindFor,
+		bucketFilterOptionsFor
+	} from '$lib/components/charts/v2/bucket-filter.js';
+	import { createContributionContext } from '$lib/components/charts/network/contribution.js';
 	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 	import { hasSpotPrice, TRACKER_REGION_OPTIONS } from './tracker-regions.js';
 	import ChartCard from './ChartCard.svelte';
+	import ReadingFreshness from './ReadingFreshness.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
+	import FuelTechOptions from './FuelTechOptions.svelte';
+	import DateComparison from './DateComparison.svelte';
+	import WindowMetrics from './WindowMetrics.svelte';
+	import { comparisonBuckets } from './comparison.js';
 	import { createTrackerPrefetchPlan } from './tracker-prefetch.js';
 	import { resolvePriceMode } from './tracker-model.js';
 	import {
@@ -35,17 +46,27 @@
 	/** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
 	/** @typedef {import('./types.js').GenerationSnapshot} GenerationSnapshot */
 	/** @typedef {import('./types.js').TrackerExportContext} TrackerExportContext */
-	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>,
-	 * contributionMode?: import('./types.js').ContributionMode}} */
-	let { session, contributionMode = 'generation' } = $props();
+	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>}} */
+	let { session } = $props();
+	let pageVisible = $state(true);
+	onMount(() => {
+		pageVisible = !document.hidden;
+	});
 	const range = untrack(() => session.range);
 	let region = $derived(session.selection.region);
 	let group = $derived(session.selection.group);
+	let contributionMode = $derived(session.selection.contributionMode);
 	let priceMode = $derived(session.selection.priceMode);
 	let emissionsMode = $derived(session.selection.emissionsMode);
 	let overlays = $derived(session.selection.overlays);
 	let tablePanelOpen = $derived(session.selection.tablePanelOpen);
+	let comparison = $derived(session.selection.comparison);
 	let bucketFilter = $derived(session.selection.bucketFilter);
+	let imageFilterLabel = $derived(
+		bucketFilterOptionsFor(bucketFilterKindFor(range.displayInterval))?.find(
+			(option) => option.id === bucketFilter
+		)?.label
+	);
 	let timeZone = $derived(regionToNetwork(region).timeZone);
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let dateStart = $derived(toNetworkDateString(session.anchorStart, timeZone));
@@ -58,10 +79,11 @@
 	let generationDisplayPrefix = $derived(
 		/** @type {SiPrefix} */ (generationChart?.getDisplayPrefix() ?? 'M')
 	);
+	let showContributions = $derived(session.selection.generationTransform === 'proportion');
+	let needsContributionDemand = $derived(showContributions && contributionMode === 'demand');
 	let hoverTime = $state(/** @type {number | undefined} */ (undefined));
 	let panZoomEngaged = $state(false);
-	let hiddenState = $state.raw({ group: '', ids: /** @type {string[]} */ ([]) });
-	let hiddenSeries = $derived(hiddenState.group === group ? hiddenState.ids : []);
+	let hiddenSeries = $derived(session.selection.hiddenSeries);
 	let regionHasSpotPrice = $derived(hasSpotPrice(region));
 	let priceIsMarketValue = $derived(resolvePriceMode(region, priceMode) === 'market_value');
 	let emissionsIsIntensity = $derived(emissionsMode === 'intensity');
@@ -97,7 +119,8 @@
 	const providers = createTrackerProviders({
 		selection: () => session.selection,
 		range,
-		timeZone: () => timeZone
+		timeZone: () => timeZone,
+		needsContributionDemand: () => needsContributionDemand
 	});
 	const { marketData, demandData, curtailmentData, shareData } = providers;
 	const data = createTrackerData({
@@ -115,6 +138,10 @@
 		contribution: () => contributionMode,
 		ianaTimeZone: () => ianaTimeZone
 	});
+	function openComparison() {
+		const buckets = comparisonBuckets(data.ready('generation') ? data.current('generation') : null);
+		session.select('comparison', { a: buckets[0]?.time ?? null, b: buckets.at(-1)?.time ?? null });
+	}
 	let displayRowOpts = $derived(table.displayRowOpts);
 	let shareRowOpts = $derived(table.shareRowOpts);
 	let tableRows = $derived(table.rows);
@@ -162,13 +189,73 @@
 		displayedTable?.rows.map((row) => ({ ...row, hidden: hiddenSeries.includes(row.id) })) ?? null
 	);
 	const EMPTY_OVERLAYS = /** @type {any[]} */ ([]);
-	const GENERATION_PREFETCH_PLAN = createTrackerPrefetchPlan('energy');
-	let pricePrefetchPlan = $derived(createTrackerPrefetchPlan(priceMetric));
-	let emissionsPrefetchPlan = $derived(createTrackerPrefetchPlan(emissionsMetric));
+	const PREFETCH_PLAN = createTrackerPrefetchPlan();
 
 	let releasedKey = $state('');
 	let switchKey = $derived(`${region}|${group}|${range.activeMetric}|${range.activeInterval}`);
 	let chartsHoldFrame = $derived(releasedKey !== switchKey || range.rangeSwitchPending);
+	let metricsStatus = $derived(
+		Object.fromEntries(
+			['generation', 'market', 'emissions'].map((name) => {
+				const key = /** @type {import('./tracker-data.svelte.js').ChartKey} */ (name);
+				return [
+					name,
+					{
+						error: data.state(key).error,
+						pending:
+							!data.state(key).error &&
+							(chartsHoldFrame || session.gestureActive || !data.ready(key))
+					}
+				];
+			})
+		)
+	);
+	let metricsInput = $derived({
+		generation:
+			!metricsStatus.generation.pending && !metricsStatus.generation.error
+				? data.current('generation')
+				: null,
+		market:
+			!metricsStatus.market.pending && !metricsStatus.market.error ? data.current('market') : null,
+		emissions:
+			!metricsStatus.emissions.pending && !metricsStatus.emissions.error
+				? data.current('emissions')
+				: null,
+		hidden: hiddenSeries,
+		basis: range.activeMetric,
+		priceMetric,
+		emissionsMetric
+	});
+	let contributionDemandReady = $derived(!marketData.isPending && !marketData.error);
+	let imageProvidersReady = $derived(
+		[
+			...(needsContributionDemand || (overlays.includes('renewables') && isRollingDisplay)
+				? [marketData]
+				: []),
+			...(overlays.includes('demand') ? [providers.demandData] : []),
+			...(overlays.includes('renewables') && !isRollingDisplay ? [providers.shareData] : []),
+			...(overlays.some((id) => id.startsWith('curtailment-')) ? [providers.curtailmentData] : [])
+		].every((provider) => !provider.isPending && !provider.error)
+	);
+	let contributionDemandRows = $derived(
+		needsContributionDemand && contributionDemandReady
+			? marketData.getDisplayRows(viewWindow.start, viewWindow.end, displayRowOpts)
+			: []
+	);
+	/** @param {TimeSeriesData[]} rows @param {string[]} names */
+	function chartContributionContext(rows, names) {
+		return createContributionContext({
+			generationRows: rows,
+			demandRows: contributionDemandRows,
+			seriesNames: names,
+			loadSeriesIds: loadGroupsFor(getGroup(group)),
+			mode: contributionMode,
+			ready:
+				showContributions &&
+				!chartsHoldFrame &&
+				(contributionMode === 'generation' || contributionDemandReady)
+		});
+	}
 	$effect(() => {
 		if (!data.settled) return;
 		releasedKey = switchKey;
@@ -176,18 +263,100 @@
 	});
 	/** @param {GenerationSnapshot} value */
 	const handleGenerationData = (value) => data.publish('generation', value);
+	/** Do not advance while the active query or a required provider is still loading.
+	 * Failed requests are eligible for the next scheduled attempt. */
+	export function isLiveReady() {
+		return data.settled && !providers.pending && !session.gestureActive;
+	}
 	/** @param {GenerationSnapshot} value */
 	const handlePriceData = (value) => data.publish('market', value);
 	/** @param {GenerationSnapshot} value */
 	const handleEmissionsData = (value) => data.publish('emissions', value);
 
 	let containerWidth = $state(0);
-	let panelSize = $state(30);
 	const PANEL_MIN_PX = 320;
+	// Reserve a usable chart column, including its padding and table divider.
+	const CHART_SPACE_PX = 376;
+	const PANEL_RAIL_PX = 48;
+	const wideLayout = new MediaQuery('(min-width: 1024px)', true);
+	let metricsOpenOverride = $state(/** @type {boolean | null} */ (null));
+	let metricsOpen = $derived(metricsOpenOverride ?? wideLayout.current);
+	let metricsWidth = $state(256);
+	let metricsMax = $derived(
+		Math.max(
+			224,
+			Math.min(
+				400,
+				containerWidth -
+					(wideLayout.current
+						? (tablePanelOpen ? PANEL_MIN_PX : PANEL_RAIL_PX) + CHART_SPACE_PX
+						: 56)
+			)
+		)
+	);
+	let effectiveMetricsWidth = $derived(Math.min(metricsWidth, metricsMax));
+	let metricsReserved = $derived(
+		metricsOpen && wideLayout.current ? effectiveMetricsWidth : PANEL_RAIL_PX
+	);
+	let metricsToggle = $state(/** @type {HTMLButtonElement | undefined} */ (undefined));
+	let metricsPane = $state(/** @type {HTMLDivElement | undefined} */ (undefined));
+	async function openMetrics() {
+		metricsOpenOverride = true;
+		await tick();
+		metricsPane?.querySelector('button')?.focus();
+	}
+	async function closeMetrics() {
+		handleHoverChange(undefined);
+		metricsOpenOverride = false;
+		// The opener is mounted after this event; return keyboard focus to it.
+		await tick();
+		metricsToggle?.focus();
+	}
+	let tableToggle = $state(/** @type {HTMLButtonElement | undefined} */ (undefined));
+	let tableCloseButton = $state(/** @type {HTMLButtonElement | undefined} */ (undefined));
+	/** @param {boolean} open */
+	async function changeTablePanel(open) {
+		onpaneltoggle(open);
+		await tick();
+		(open ? tableCloseButton : tableToggle)?.focus();
+	}
+	const metricsResize = createResizeControl({
+		axis: 'x',
+		get: () => effectiveMetricsWidth,
+		set: (value) => {
+			metricsWidth = value;
+		},
+		min: () => 224,
+		max: () => metricsMax,
+		commit: () => {
+			try {
+				localStorage.setItem('tracker-metrics-width', String(metricsWidth));
+			} catch {
+				/* Resizing remains usable without persistence. */
+			}
+		}
+	});
+	onMount(() => {
+		try {
+			const saved = Number(localStorage.getItem('tracker-metrics-width'));
+			if (Number.isFinite(saved) && saved >= 224) metricsWidth = Math.min(400, saved);
+		} catch {
+			/* Storage can be unavailable in embedded/private contexts. */
+		}
+	});
+	let panelSize = $state(30);
 	let panelMin = $derived(
 		Math.min(80, containerWidth ? (PANEL_MIN_PX / containerWidth) * 100 : 30)
 	);
-	let effectivePanelSize = $derived(Math.max(panelMin, panelSize));
+	let panelMax = $derived(
+		wideLayout.current && containerWidth
+			? Math.max(
+					panelMin,
+					Math.min(80, ((containerWidth - metricsReserved - CHART_SPACE_PX) / containerWidth) * 100)
+				)
+			: 80
+	);
+	let effectivePanelSize = $derived(Math.min(panelMax, Math.max(panelMin, panelSize)));
 	const panelResize = createResizeControl({
 		axis: 'x',
 		get: () => effectivePanelSize,
@@ -195,7 +364,7 @@
 			panelSize = value;
 		},
 		min: () => panelMin,
-		max: () => 80,
+		max: () => panelMax,
 		scale: () => (containerWidth ? 100 / containerWidth : 0),
 		inverted: true,
 		step: 2
@@ -221,7 +390,7 @@
 		if (showRenewablesLine) {
 			lines.push({
 				id: 'renewable-share',
-				label: 'Renewables',
+				label: showContributions ? 'Renewables (% of gross demand)' : 'Renewables',
 				data: isRollingDisplay
 					? rollingShareRows(marketData.getVisibleRows(start - ROLLING_LEAD_MS, end), {
 							startMs: start,
@@ -257,8 +426,7 @@
 	function toggleOverlay(overlay, exclusive = false) {
 		if (exclusive) {
 			// Solo the overlay: hide every fuel-tech series in the current grouping.
-			hiddenState = { group, ids: tableRowIds };
-			onoverlayschange?.([overlay]);
+			session.selectVisibility(tableRowIds, [overlay]);
 			return;
 		}
 		onoverlayschange?.(
@@ -277,26 +445,26 @@
 	/** @param {string} series @param {boolean} [exclusive] */
 	function toggleSeries(series, exclusive = false) {
 		if (exclusive) {
-			hiddenState = { group, ids: tableRowIds.filter((id) => id !== series) };
-			onoverlayschange?.([]);
+			session.selectVisibility(
+				tableRowIds.filter((id) => id !== series),
+				[]
+			);
 			return;
 		}
 		const ids = hiddenSeries;
 		const visibleCount = tableRowIds.filter((id) => !ids.includes(id)).length;
 		// Toggling off the last visible series restores everything instead.
 		if (!ids.includes(series) && visibleCount === 1) {
-			showAllSeries();
-			onoverlayschange?.([]);
+			session.selectVisibility([], []);
 			return;
 		}
-		hiddenState = {
-			group,
-			ids: ids.includes(series) ? ids.filter((item) => item !== series) : [...ids, series]
-		};
+		session.selectVisibility(
+			ids.includes(series) ? ids.filter((item) => item !== series) : [...ids, series]
+		);
 	}
 
 	function showAllSeries() {
-		hiddenState = { group, ids: [] };
+		session.selectVisibility([]);
 	}
 
 	/** @param {number | undefined} time */
@@ -342,24 +510,167 @@
 	}
 </script>
 
-<div class="flex min-h-0 flex-1 flex-row" bind:clientWidth={containerWidth}>
+{#snippet fuelTechOptions()}
+	<FuelTechOptions
+		{group}
+		{contributionMode}
+		ongroupchange={(value) => session.select('group', value)}
+		oncontributionchange={(value) => session.select('contributionMode', value)}
+	/>
+{/snippet}
+
+{#snippet freshness(name = /** @type {'generation' | 'market' | 'emissions'} */ ('generation'))}
+	<ReadingFreshness
+		snapshot={data.current(name)}
+		now={session.clockMs}
+		interval={range.activeInterval}
+		following={session.following}
+		pending={data.state(name).pending || !data.current(name)}
+		error={data.state(name).error}
+		timeZone={ianaTimeZone}
+		filtered={!!bucketFilter}
+	/>
+{/snippet}
+{#snippet generationFreshness()}{@render freshness('generation')}{/snippet}
+{#snippet marketFreshness()}{@render freshness('market')}{/snippet}
+{#snippet emissionsFreshness()}{@render freshness('emissions')}{/snippet}
+
+<svelte:window
+	onkeydown={(event) => {
+		if (event.key === 'Escape' && metricsOpen && !wideLayout.current) closeMetrics();
+	}}
+/>
+<svelte:document
+	onvisibilitychange={() => {
+		pageVisible = !document.hidden;
+	}}
+/>
+
+<div
+	class="relative flex min-h-0 flex-1 flex-row"
+	bind:clientWidth={containerWidth}
+	data-png-context={`${TRACKER_REGION_OPTIONS.find((option) => option.value === region)?.label ?? region} · ${rangeLabel} · ${intervalBadge} · UTC${timeZone} · ${getGroup(group).label}${imageFilterLabel ? ` · ${imageFilterLabel}` : ''}`}
+>
+	{#if metricsOpen}
+		<div
+			bind:this={metricsPane}
+			id="tracker-metrics-panel"
+			class="z-30 flex shrink-0 {wideLayout.current
+				? 'relative'
+				: 'absolute inset-y-0 left-0 shadow-xl'}"
+			style:width={`${effectiveMetricsWidth}px`}
+			data-testid="metrics-pane"
+		>
+			<ResizablePanel
+				open
+				direction="right"
+				onclose={closeMetrics}
+				defaultSize={100}
+				showDragHandle={false}
+				externalResizing={metricsResize.dragging}
+				class="flex min-w-0 flex-1 bg-white"
+			>
+				{#snippet header()}<span class="hidden"></span>{/snippet}
+				<WindowMetrics
+					input={metricsInput}
+					status={metricsStatus}
+					{rangeLabel}
+					interval={range.displayInterval}
+					intervalLabel={intervalBadge}
+					zone={timeZone}
+					generationPrefix={generationDisplayPrefix}
+					filterLabel={imageFilterLabel}
+					onhighlight={handleHoverChange}
+					onclose={closeMetrics}
+				/>
+			</ResizablePanel>
+			<DragHandle
+				axis="x"
+				onstart={metricsResize.start}
+				onkeydown={metricsResize.keydown}
+				tabindex={0}
+				aria-valuemin={224}
+				aria-valuemax={metricsMax}
+				aria-valuenow={Math.round(effectiveMetricsWidth)}
+				active={metricsResize.dragging}
+				alwaysShowGrip
+				class="w-4 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+				role="separator"
+				aria-orientation="vertical"
+				aria-label="Resize metrics panel"
+				title="Drag to resize metrics, or use the arrow keys"
+			/>
+		</div>
+	{/if}
+	{#if !metricsOpen || !wideLayout.current}
+		<div class="flex w-[48px] shrink-0 justify-center border-r border-warm-grey bg-white pt-[4px]">
+			<PanelToggle
+				side="left"
+				open={metricsOpen}
+				label="Show metrics"
+				controls="tracker-metrics-panel"
+				onclick={openMetrics}
+				bind:el={metricsToggle}
+			/>
+		</div>
+	{/if}
 	<!-- No space-y: each card's full-gap drag handle is the spacer between cards.
-	     Right padding yields to the panel drag handle when the panel is open —
-	     the handle IS the gap between the columns. -->
+	     Side padding yields to an open docked pane's drag handle — the handle
+	     IS the page-background gap between the white columns. -->
 	<div
-		class="min-w-0 flex-1 overflow-y-auto py-4 pl-4 md:py-6 md:pl-6 {tablePanelOpen
+		class="min-w-0 flex-1 overflow-y-auto py-4 md:py-6 {metricsOpen && wideLayout.current
 			? ''
-			: 'pr-4 md:pr-6'}"
+			: 'pl-4 md:pl-6'} {tablePanelOpen ? '' : 'pr-4 md:pr-6'}"
 		use:clickoutside={{ event: 'pointerdown', options: true }}
 		onclickoutside={() => (panZoomEngaged = false)}
 	>
 		<ChartCard
 			title="Generation"
+			status={generationFreshness}
+			png={{
+				id: 'generation',
+				label: 'Generation',
+				caption:
+					range.displayInterval === '5m' &&
+					Object.values(data.current('generation')?.groupFuelTechs ?? {}).some((codes) =>
+						codes.includes('solar_rooftop')
+					)
+						? 'Rooftop solar: 5-minute chart values interpolated between reported half-hour values'
+						: '',
+				ready:
+					data.ready('generation') &&
+					!chartsHoldFrame &&
+					!session.gestureActive &&
+					imageProvidersReady
+			}}
 			badge={intervalBadge}
 			engaged={panZoomEngaged}
 			heightStorageKey="tracker-chart-height-generation"
 		>
+			{#snippet actions()}
+				<button
+					class="text-xs underline"
+					aria-expanded={!!comparison}
+					onclick={() => (comparison ? session.select('comparison', null) : openComparison())}
+					>Compare dates</button
+				>
+			{/snippet}
 			{#snippet children(heightPx)}
+				{#if showContributions}
+					<p class="px-3 py-1 text-xs text-mid-grey" role="status">
+						{#if needsContributionDemand && marketData.error}
+							Gross-demand percentages unavailable.
+							<button class="underline" onclick={() => marketData.reconcileFetches()}
+								>Retry percentage data</button
+							>
+						{:else if needsContributionDemand && !contributionDemandReady}
+							Loading gross-demand percentages…
+						{:else}
+							Shares per interval; the table summarises the selected window. Change the basis in
+							Fuel technology options → Contribution.
+						{/if}
+					</p>
+				{/if}
 				<NetworkChart
 					bind:this={generationChart}
 					{region}
@@ -376,6 +687,10 @@
 					title={energyMetric ? 'Energy' : 'Power'}
 					chartHeightPx={heightPx}
 					generationUnitOptions
+					interpolateRooftop
+					dataTransform={session.selection.generationTransform}
+					ondatatransformchange={(value) => session.select('generationTransform', value)}
+					createProportionContext={chartContributionContext}
 					{overlayLines}
 					{overlayAreas}
 					showContainer={false}
@@ -392,13 +707,35 @@
 					ongesturechange={(active) => (session.gestureActive = active)}
 					loadingLabel={rangeLabel}
 					holdFrame={chartsHoldFrame}
-					prefetchPlan={GENERATION_PREFETCH_PLAN}
+					prefetchPlan={pageVisible ? PREFETCH_PLAN : null}
 				/>
 			{/snippet}
 		</ChartCard>
 
+		{#if comparison}
+			<DateComparison
+				snapshot={data.ready('generation') ? data.current('generation') : null}
+				selection={comparison}
+				hidden={hiddenSeries}
+				pending={!data.state('generation').error && !data.ready('generation')}
+				error={data.state('generation').error}
+				{region}
+				zone={timeZone}
+				interval={range.displayInterval}
+				energy={energyMetric}
+				prefix={generationDisplayPrefix}
+				onchange={(value) => session.select('comparison', value)}
+			/>
+		{/if}
+
 		<ChartCard
 			title="Market"
+			status={marketFreshness}
+			png={{
+				id: 'market',
+				label: 'Market',
+				ready: data.ready('market') && !chartsHoldFrame && !session.gestureActive
+			}}
 			engaged={panZoomEngaged}
 			heightStorageKey="tracker-chart-height-price"
 		>
@@ -439,6 +776,8 @@
 					showContainer={false}
 					tooltipMode="floating"
 					hiddenSeriesNames={priceIsMarketValue ? hiddenSeries : []}
+					dataTransform={priceIsMarketValue ? session.selection.marketValueTransform : 'absolute'}
+					ondatatransformchange={(value) => session.select('marketValueTransform', value)}
 					{hoverTime}
 					onhoverchange={handleHoverChange}
 					onviewportchange={(next) => session.moveViewport(next, priceChart)}
@@ -450,13 +789,19 @@
 					ongesturechange={(active) => (session.gestureActive = active)}
 					loadingLabel={rangeLabel}
 					holdFrame={chartsHoldFrame}
-					prefetchPlan={pricePrefetchPlan}
+					prefetchPlan={pageVisible ? PREFETCH_PLAN : null}
 				/>
 			{/snippet}
 		</ChartCard>
 
 		<ChartCard
 			title="Emissions"
+			status={emissionsFreshness}
+			png={{
+				id: 'emissions',
+				label: 'Emissions',
+				ready: data.ready('emissions') && !chartsHoldFrame && !session.gestureActive
+			}}
 			engaged={panZoomEngaged}
 			heightStorageKey="tracker-chart-height-emissions"
 		>
@@ -501,7 +846,7 @@
 					ongesturechange={(active) => (session.gestureActive = active)}
 					loadingLabel={rangeLabel}
 					holdFrame={chartsHoldFrame}
-					prefetchPlan={emissionsPrefetchPlan}
+					prefetchPlan={pageVisible ? PREFETCH_PLAN : null}
 				/>
 			{/snippet}
 		</ChartCard>
@@ -517,14 +862,15 @@
 			onkeydown={panelResize.keydown}
 			tabindex={0}
 			aria-valuemin={panelMin}
-			aria-valuemax={80}
+			aria-valuemax={panelMax}
 			aria-valuenow={Math.round(effectivePanelSize)}
 			active={panelResize.dragging}
 			alwaysShowGrip
-			class="w-4 rounded-md"
+			class="w-4 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
 			role="separator"
 			aria-orientation="vertical"
 			aria-label="Resize table panel"
+			title="Drag to resize the table, or use the arrow keys"
 		/>
 		<ResizablePanel
 			open
@@ -534,17 +880,20 @@
 			containerSize={containerWidth}
 			showDragHandle={false}
 			externalResizing={panelResize.dragging}
-			onclose={() => onpaneltoggle?.(false)}
+			onclose={() => changeTablePanel(false)}
 			class="z-20 flex bg-white"
 		>
 			{#snippet header()}<span class="hidden"></span>{/snippet}
 			<FuelTechPanel
+				options={fuelTechOptions}
+				bind:closeButton={tableCloseButton}
 				rows={displayedRows}
 				valuesPending={tableValuesPending}
 				structurePending={tableStructurePending}
 				error={tablePanelOpen ? providers.error : null}
 				onretry={providers.retry}
 				basis={displayedTable?.basis ?? range.activeMetric}
+				rooftopInterpolation={range.displayInterval === '5m'}
 				displayPrefix={generationDisplayPrefix}
 				group={displayedTable?.group ?? group}
 				contributionMode={displayedTable?.contributionMode ?? contributionMode}
@@ -559,18 +908,23 @@
 				ondemandlinetoggle={(exclusive) => toggleOverlay('demand', exclusive)}
 				onrenewableslinetoggle={(exclusive) => toggleOverlay('renewables', exclusive)}
 				onshowall={showAllSeries}
-				onclose={() => onpaneltoggle?.(false)}
+				onclose={() => changeTablePanel(false)}
 			/>
 		</ResizablePanel>
 	{:else}
 		<!-- Keep the reopen action at the panel edge. -->
-		<button
-			type="button"
-			onclick={() => onpaneltoggle?.(true)}
-			aria-label="Show fuel tech table"
-			class="z-20 flex w-10 shrink-0 cursor-pointer items-start justify-center border-l border-warm-grey bg-white pt-3 text-dark-grey transition-colors hover:bg-warm-grey"
+		<div
+			class="z-20 flex w-[48px] shrink-0 flex-col items-center border-l border-warm-grey bg-white pt-[4px]"
 		>
-			<PanelRightOpen class="size-5" />
-		</button>
+			<PanelToggle
+				side="right"
+				open={false}
+				label="Show fuel tech table"
+				controls="tracker-table-panel"
+				onclick={() => changeTablePanel(true)}
+				bind:el={tableToggle}
+			/>
+			{@render fuelTechOptions()}
+		</div>
 	{/if}
 </div>

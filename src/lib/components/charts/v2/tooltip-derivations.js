@@ -11,6 +11,7 @@
 
 import { formatDayMonthYearTime } from './date-labels.js';
 import { indexOfTime } from './binary-search.js';
+import { getNumberFormat } from '$lib/utils/formatters';
 
 /**
  * The currently active data row — prefers a live hover, falls back to a
@@ -20,6 +21,7 @@ import { indexOfTime } from './binary-search.js';
  * @returns {any}
  */
 export function getActiveData(chart) {
+	if (chart.usesCustomProportion) return chart.hoverScaledData ?? chart.focusScaledData;
 	return chart.hoverData ?? chart.focusData;
 }
 
@@ -53,10 +55,16 @@ export function getValueKey(chart) {
 export function getTotalForRow(chart, activeData) {
 	if (!activeData) return 0;
 	let total = 0;
+	let hasValue = false;
 	for (const name of chart.visibleSeriesNames) {
+		if (activeData[name] == null) continue;
 		const v = Number(activeData[name]);
-		if (Number.isFinite(v)) total += v;
+		if (Number.isFinite(v)) {
+			total += v;
+			hasValue = true;
+		}
 	}
+	if (chart.usesCustomProportion && !hasValue) return NaN;
 	return total;
 }
 
@@ -85,6 +93,7 @@ export function formatTooltipNumericValue(chart, value) {
 	if (value === undefined || value === null) return '';
 	const numeric = Number(value);
 	if (!Number.isFinite(numeric)) return '';
+	if (chart.usesCustomProportion) return getNumberFormat(1).format(numeric);
 	return chart.formatTooltipY?.(numeric) ?? chart.convertAndFormatValue(numeric);
 }
 
@@ -138,7 +147,8 @@ export function getFormattedY(chart, value) {
 	if (value === undefined || value === null) return '';
 	const n = Number(value);
 	if (Number.isNaN(n)) return '';
-	if (chart.formatTooltipY) return formatTooltipNumericValue(chart, n);
+	if (chart.usesCustomProportion || chart.formatTooltipY)
+		return formatTooltipNumericValue(chart, n);
 	return chart.useFormatY ? chart.formatY(n) : chart.convertAndFormatValue(n);
 }
 
@@ -186,7 +196,7 @@ export function buildSeriesRows(chart, activeData) {
 	for (const key of seriesNames) {
 		const raw = activeData[key];
 		const numeric = Number(raw);
-		const hasValue = Number.isFinite(numeric);
+		const hasValue = raw != null && Number.isFinite(numeric);
 		rows.push({
 			key,
 			label: chart.seriesLabels[key] ?? key,
@@ -233,7 +243,7 @@ export function buildOverlayRows(chart, activeData) {
 	const time = Number(activeData?.time);
 	if (!activeData || !Number.isFinite(time)) return [];
 
-	const defaultUnit = chart.chartOptions?.displayUnit ?? '';
+	const defaultUnit = chart.tooltipUnit ?? chart.chartOptions?.displayUnit ?? '';
 	/** @type {TooltipOverlayRow[]} */
 	const rows = [];
 
@@ -259,7 +269,7 @@ export function buildOverlayRows(chart, activeData) {
 		});
 	}
 
-	for (const overlay of chart.overlayAreas ?? []) {
+	for (const overlay of chart.displayOverlayAreas ?? chart.overlayAreas ?? []) {
 		const row = overlayRowAtTime(overlay.data, time);
 		for (const series of overlay.series ?? []) {
 			addRow({
@@ -274,7 +284,7 @@ export function buildOverlayRows(chart, activeData) {
 		}
 	}
 
-	for (const overlay of chart.overlayLines ?? []) {
+	for (const overlay of chart.displayOverlayLines ?? chart.overlayLines ?? []) {
 		const row = overlayRowAtTime(overlay.data, time);
 		addRow({
 			key: `overlay-line:${overlay.id}`,

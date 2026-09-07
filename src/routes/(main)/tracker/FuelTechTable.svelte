@@ -44,6 +44,7 @@
 	 * @property {boolean} [dimmed] - Fade the whole row while toggled off
 	 * @property {boolean} [summary] - Bold summary treatment for the overlay rows
 	 * @property {string} [testId]
+	 * @property {boolean} [interpolated]
 	 */
 
 	/**
@@ -68,13 +69,15 @@
 	 *   rows: FuelTechTableRow[],
 	 *   valuesPending?: boolean,
 	 *   curtailmentRows?: CurtailmentTableRow[],
-	 *   overlaySummary?: OverlaySummary | null
+	 *   overlaySummary?: OverlaySummary | null,
+	 *   rooftopInterpolation?: boolean
 	 * }}
 	 */
 	let {
 		rows,
 		valuesPending = false,
 		basis = 'power',
+		rooftopInterpolation = false,
 		displayPrefix = 'M',
 		group = DEFAULT_GROUP,
 		contributionMode = 'generation',
@@ -162,6 +165,9 @@
 	let energyUnit = $derived(`${energyPrefix}Wh`);
 	let groupLabel = $derived(GROUP_OPTIONS.find((option) => option.value === group)?.label ?? '');
 	let contributionUnit = $derived(contributionMode === 'demand' ? '% demand' : '% generation');
+	let showRooftopNote = $derived(
+		rooftopInterpolation && rows.some((row) => row.fuelTechs.includes('solar_rooftop'))
+	);
 
 	/**
 	 * Underlying fuel techs folded into a group — one label per tooltip line,
@@ -195,6 +201,7 @@
 				formatTableIntensity(row.intensityKgPerMWh)
 			],
 			breakdown: underlyingFuelTechs(row),
+			interpolated: rooftopInterpolation && row.fuelTechs.includes('solar_rooftop'),
 			dimmed: row.hidden,
 			testId: 'fuel-tech-row'
 		};
@@ -356,6 +363,8 @@
 		{main}
 		<span class="text-mid-grey">{sub}</span>
 	</span>
+	{#if row.interpolated}<sup class="text-mid-grey" aria-label="Chart values interpolated">*</sup
+		>{/if}
 {/snippet}
 
 {#snippet toggleRow(/** @type {ToggleRow} */ row)}
@@ -367,6 +376,7 @@
 		role="button"
 		tabindex="0"
 		aria-pressed={row.active}
+		aria-describedby={row.interpolated ? 'rooftop-interpolation-note' : undefined}
 		class="group cursor-pointer text-sm hover:bg-light-warm-grey {row.summary
 			? 'font-semibold'
 			: ''} {row.dimmed ? 'opacity-50' : ''}"
@@ -505,7 +515,17 @@
 	</div>
 
 	<!-- Outside the table: a colspan footnote would scroll with the strip. -->
-	<p class="m-0 px-4 py-3 text-[11px] leading-4 text-mid-grey">
+	{#if showRooftopNote}
+		<p
+			id="rooftop-interpolation-note"
+			class="m-0 border-t border-warm-grey px-4 pt-3 text-[11px] leading-relaxed text-mid-grey"
+		>
+			* Rooftop solar: 5-minute chart values are linearly interpolated between reported half-hour
+			values where available. Table summaries, metrics, date comparisons and CSV/XLSX retain
+			reported values.
+		</p>
+	{/if}
+	<p class="m-0 px-4 py-3 text-[11px] leading-relaxed text-mid-grey">
 		{#if contributionMode === 'demand'}
 			Shares of gross demand needn't sum to 100% — losses and imports sit outside
 			{basis === 'energy' ? 'generated energy' : 'generated power'}.

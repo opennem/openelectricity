@@ -48,6 +48,10 @@ export default class ChartOptions {
 	/** @type {DataTransformType} */
 	selectedDataTransformType = $state(DEFAULT_DATA_TRANSFORM_TYPE);
 
+	/** User-selection callback; direct assignments restore state without emitting.
+	 * @type {((type: DataTransformType) => void) | undefined} */
+	onDataTransformChange;
+
 	dataTransformFunction = $derived(this.#dataTransformFunctions[this.selectedDataTransformType]);
 	isDataTransformTypeProportion = $derived(this.selectedDataTransformType === 'proportion');
 	isDataTransformTypeChangeSince = $derived(this.selectedDataTransformType === 'changeSince');
@@ -148,7 +152,9 @@ export default class ChartOptions {
 
 	// Convenience setters
 	setDataTransformType(/** @type {DataTransformType} */ type) {
+		if (type === this.selectedDataTransformType) return;
 		this.selectedDataTransformType = type;
+		this.onDataTransformChange?.(type);
 	}
 
 	setCurveType(/** @type {CurveType} */ type) {

@@ -15,8 +15,7 @@
 	 * `ondownloadxlsx` adds a "Download as XLSX" group with a single row — the
 	 * tracker offers its datasets as one workbook there.
 	 * `extraSections` lets a host prepend its own headed groups (each ending in
-	 * an `OptionsMenuDivider`) — the tracker keeps its fuel-tech grouping and
-	 * contribution-basis choices here.
+	 * an `OptionsMenuDivider`) — the tracker adds its PNG export action here.
 	 * @type {{
 	 *   isFullscreen?: boolean,
 	 *   onfullscreenchange?: () => void,

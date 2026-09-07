@@ -47,7 +47,7 @@
  *   manager's viewport request skips the debounce
  * @property {boolean} [seedRequestImmediate=true] - Whether the initial
  *   seeded-viewport request skips the debounce
- * @property {() => ({ widenMultiplier?: number, grains?: Array<{ interval: string, metric: string, seriesKey?: string, windowMs: number }> } | null)} [idlePrefetch] -
+ * @property {() => ({ widenMultiplier?: number, maxWidenMs?: number, grains?: Array<{ interval: string, metric: string, seriesKey?: string, windowMs: number }> } | null)} [idlePrefetch] -
  *   Reactive plan for widening the current cache and warming other intervals
  * @property {(spec: { interval: string, metric: string, seriesKey?: string }) => ChartDataManager} [createManagerFor] -
  *   Build a manager for an interval prefetch
@@ -284,9 +284,13 @@ export function createChartHost(config) {
 		if (widen > 0) {
 			// Cap each side at the grain's API range limit.
 			const capMs = (OE_API_MAX_RANGE_DAYS[manager.interval] ?? 11000) * DAY_MS;
-			const per = Math.min(widen * span, capMs);
-			const start = vs - per;
-			const end = Math.min(ve + per, Date.now());
+			const { start, end } = bufferedFetchWindow(
+				vs,
+				ve,
+				widen,
+				Date.now(),
+				Math.min(capMs, plan.maxWidenMs ?? Infinity)
+			);
 			jobs.push({
 				// Re-widen only after a meaningful viewport move.
 				key: `widen:${manager.interval}|${manager.metric}|${manager.seriesKey}|${Math.round(vs / span)}`,

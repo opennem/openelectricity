@@ -66,6 +66,7 @@ function hasBatterySplits(response, metricFilter) {
  * @property {(groupId: string) => string} getColour - returns hex colour for a group id
  * @property {string} [metricFilter] - metric to keep (default: 'power')
  * @property {string} [networkTimezone] - offset string (default: '+10:00')
+ * @property {boolean} [retainRooftopPower] - Keep the reported rooftop component for display-only interpolation
  */
 
 /**
@@ -136,8 +137,22 @@ export function processNetworkData(response, config) {
 		groupFuelTechs[groupId] = [...(presentByGroup[groupId] ?? [])];
 	}
 
+	const data = rowsFromSeriesMaps(seriesMaps, timestamps, seriesNames);
+	if (config.retainRooftopPower && metricFilter === 'power') {
+		const rooftop = collectSeriesByTimestamp(response, {
+			metricFilter,
+			networkTimezone,
+			mode: 'sum',
+			classifySeries: (series) =>
+				series.columns?.fueltech === 'solar_rooftop' ? { id: 'solar_rooftop' } : null
+		}).seriesMaps.get('solar_rooftop');
+		if (rooftop) {
+			for (const row of data) row._rooftopPower = rooftop.get(row.time) ?? null;
+		}
+	}
+
 	return {
-		data: rowsFromSeriesMaps(seriesMaps, timestamps, seriesNames),
+		data,
 		seriesNames,
 		seriesLabels,
 		seriesColours,

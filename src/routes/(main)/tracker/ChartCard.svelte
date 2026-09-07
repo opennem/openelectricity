@@ -16,24 +16,28 @@
 	 * @type {{
 	 *   title: string,
 	 *   badge?: string,
+	 *   png?: {id: string, label: string, ready: boolean, caption?: string},
 	 *   engaged?: boolean,
 	 *   heightStorageKey?: string,
 	 *   defaultHeightPx?: number,
 	 *   minHeightPx?: number,
 	 *   maxHeightPx?: number,
 	 *   actions?: import('svelte').Snippet,
+	 *   status?: import('svelte').Snippet,
 	 *   children: import('svelte').Snippet<[number]>
 	 * }}
 	 */
 	let {
 		title,
 		badge = '',
+		png,
 		engaged = false,
 		heightStorageKey = '',
 		defaultHeightPx = 260,
 		minHeightPx = 120,
 		maxHeightPx = 800,
 		actions,
+		status,
 		children
 	} = $props();
 
@@ -75,15 +79,16 @@
 	     every width — the flush chart would otherwise paint over the bottom
 	     corner radius. Floating tooltips stay within the chart area. -->
 	<section
+		data-tracker-png={png ? JSON.stringify(png) : undefined}
 		class="overflow-hidden rounded-lg border bg-white transition-colors {engaged
 			? 'border-dark-grey'
 			: 'border-mid-warm-grey/40'}"
 	>
 		<header
-			class="flex min-h-[52px] items-center justify-between gap-4 border-b border-mid-warm-grey/40 px-4 py-2"
+			class="flex min-h-[52px] flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-mid-warm-grey/40 px-4 py-2"
 		>
 			<h3 class="m-0 font-space text-sm font-semibold text-dark-grey">{title}</h3>
-			<div class="flex items-center gap-3">
+			<div class="flex shrink-0 items-center gap-3">
 				{#if badge}
 					<span class="rounded bg-light-warm-grey px-2 py-1 font-mono text-xxs text-mid-grey">
 						{badge}
@@ -91,6 +96,7 @@
 				{/if}
 				{#if actions}{@render actions()}{/if}
 			</div>
+			{#if status}<div class="w-full">{@render status()}</div>{/if}
 		</header>
 		<!-- Bottom breathing room so the date labels stay clear of the border. -->
 		<div class="pb-3">

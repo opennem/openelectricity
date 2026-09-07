@@ -96,8 +96,9 @@
 					return lower[i] + (typeof val === 'number' && val > 0 ? val : 0);
 				});
 				bandGen
-					.defined((/** @type {any} */ row, /** @type {number} */ i) =>
-						Number.isFinite(lower[i] + upper[i])
+					.defined(
+						(/** @type {any} */ row, /** @type {number} */ i) =>
+							Number.isFinite(row[id]) && Number.isFinite(lower[i] + upper[i])
 					)
 					.x((/** @type {any} */ row) => $xScale(row.time))
 					.y0((/** @type {any} */ row, /** @type {number} */ i) => $yScale(lower[i]))

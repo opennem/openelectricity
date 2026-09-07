@@ -1,13 +1,17 @@
 /**
  * URL (de)serialisation for the tracker page. Compact navigation state only —
- * scope, range and card modes. Ephemeral interaction state (hover, pan/zoom
- * engagement, panel width, hidden series, contribution mode) is deliberately
+ * scope, range, card modes and analytical selections. Ephemeral state (hover, pan/zoom
+ * engagement and panel width) is deliberately
  * excluded from browser history.
  *
  * Schema (defaults omitted so the canonical URL stays clean):
  * - `region`    — tracker scope, default `_all` (NEM)
  * - `range` | `start`+`end`, `interval` — via the shared facility range params
  * - `group`     — fuel-tech grouping, default `simple` (Simplified)
+ * - `hidden`    — comma-separated hidden IDs in the selected grouping
+ * - `contribution` — `demand` for gross demand, otherwise source generation
+ * - `transform` / `market-transform` — generation / market-value data transform;
+ *                 `proportion` or `changeSince`, default `absolute`
  * - `filter`    — calendar-period filter id (`jan`…`dec`, `summer`…, `q1`…,
  *                 `h1`/`h2`) for the All range; omitted when All (unfiltered)
  * - `price`     — `mv` when the price card shows market value; never written
@@ -27,9 +31,11 @@ import {
 	bucketFilterKindFor,
 	isValidBucketFilter
 } from '$lib/components/charts/v2/bucket-filter.js';
-import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+import { GROUP_OPTIONS, getGroup } from '$lib/components/charts/network/groups.js';
 import { TRACKER_OVERLAYS } from './tracker-overlays.js';
+import { normaliseProfileView, normaliseProfileDays, normaliseProfileEnd } from './time-of-day.js';
 import { hasSpotPrice, TRACKER_REGION_VALUES } from './tracker-regions.js';
+import { normaliseComparison } from './comparison.js';
 import {
 	DEFAULT_GROUP,
 	DEFAULT_RANGE_DAYS,
@@ -44,6 +50,23 @@ import {
 /** @typedef {import('./types.js').TrackerUrlState} TrackerUrlState */
 
 const GROUP_VALUES = GROUP_OPTIONS.map((option) => option.value);
+
+/** @param {unknown} value @param {string} group @returns {string[]} */
+export function normaliseHiddenSeries(value, group) {
+	if (!Array.isArray(value)) return [];
+	const requested = new Set(value.filter((id) => typeof id === 'string').map((id) => id.trim()));
+	return getGroup(group).order.filter((id) => requested.has(id));
+}
+
+/** @param {unknown} value @returns {import('./types.js').ContributionMode} */
+export function normaliseContributionMode(value) {
+	return value === 'demand' ? 'demand' : 'generation';
+}
+
+/** @param {unknown} value @returns {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} */
+export function normaliseDataTransform(value) {
+	return value === 'proportion' || value === 'changeSince' ? value : 'absolute';
+}
 
 /**
  * Keep supported overlays unique and in a stable URL order.
@@ -83,6 +106,22 @@ export function parseTrackerUrl(params, context) {
 	return {
 		region,
 		group,
+		profileView: normaliseProfileView(params.get('view')),
+		profileDays: normaliseProfileDays(params.get('profile-days')),
+		profileMetric:
+			params.get('profile-metric') === 'price' && hasSpotPrice(region) ? 'price' : 'power',
+		profileSeries: getGroup(group).order.includes(params.get('profile-series') ?? '')
+			? (params.get('profile-series') ?? '')
+			: '',
+		profileEnd: normaliseProfileEnd(params.get('profile-end')),
+		comparison:
+			params.get('compare') === '1'
+				? normaliseComparison({ a: params.get('compare-a'), b: params.get('compare-b') })
+				: null,
+		hiddenSeries: normaliseHiddenSeries((params.get('hidden') ?? '').split(','), group),
+		contributionMode: normaliseContributionMode(params.get('contribution')),
+		generationTransform: normaliseDataTransform(params.get('transform')),
+		marketValueTransform: normaliseDataTransform(params.get('market-transform')),
 		range,
 		bucketFilter: validBucketFilterFor(params.get('filter'), range),
 		priceMode: params.get('price') === 'mv' ? 'market_value' : 'price',
@@ -96,16 +135,54 @@ export function parseTrackerUrl(params, context) {
 /**
  * Materialise navigation state into a URL (mutated and returned).
  * @param {URL} url
- * @param {Pick<TrackerUrlState, 'region' | 'group' | 'range' | 'bucketFilter' | 'priceMode' | 'emissionsMode' | 'overlays' | 'tablePanelOpen'>} state
+ * @param {Omit<TrackerUrlState, 'fullscreen'>} state
  */
 export function applyTrackerUrl(url, state) {
 	const params = url.searchParams;
+	const comparison = normaliseComparison(state.comparison);
+	if (comparison) params.set('compare', '1');
+	else params.delete('compare');
+	for (const side of /** @type {const} */ (['a', 'b'])) {
+		const time = comparison?.[side];
+		if (time != null) params.set(`compare-${side}`, String(time));
+		else params.delete(`compare-${side}`);
+	}
+	const profileParams = {
+		view: normaliseProfileView(state.profileView) === 'timeline' ? '' : state.profileView,
+		'profile-days': normaliseProfileDays(state.profileDays) === 7 ? '' : String(state.profileDays),
+		'profile-metric': state.profileMetric === 'price' && hasSpotPrice(state.region) ? 'price' : '',
+		'profile-series': getGroup(state.group).order.includes(state.profileSeries)
+			? state.profileSeries
+			: '',
+		'profile-end': normaliseProfileEnd(state.profileEnd)
+	};
+	for (const [key, value] of Object.entries(profileParams)) {
+		if (value) params.set(key, value);
+		else params.delete(key);
+	}
 
 	if (state.region === DEFAULT_REGION) params.delete('region');
 	else params.set('region', state.region);
 
 	if (state.group === DEFAULT_GROUP) params.delete('group');
 	else params.set('group', state.group);
+
+	const hidden = normaliseHiddenSeries(state.hiddenSeries, state.group);
+	if (hidden.length) params.set('hidden', hidden.join(','));
+	else params.delete('hidden');
+
+	if (normaliseContributionMode(state.contributionMode) === 'demand')
+		params.set('contribution', 'demand');
+	else params.delete('contribution');
+
+	for (const [key, value] of [
+		['transform', state.generationTransform],
+		['market-transform', state.marketValueTransform]
+	]) {
+		const transform = normaliseDataTransform(value);
+		if (transform === 'absolute') params.delete(key);
+		else params.set(key, transform);
+	}
 
 	const range = normaliseRange(state.range);
 	const bucketFilter = validBucketFilterFor(state.bucketFilter, range);

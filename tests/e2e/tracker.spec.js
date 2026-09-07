@@ -290,14 +290,16 @@ test.describe('Tracker smoke tests', () => {
 });
 
 test.describe('Tracker options menu', () => {
-	test('grouping and contribution basis are chosen from the nav options menu', async ({ page }) => {
+	test('grouping and contribution basis are chosen from the fuel-tech panel menu', async ({
+		page
+	}) => {
 		await page.goto('/tracker?table=1');
 		await waitForHydration(page);
 		const techHeader = page.getByRole('columnheader', { name: /Technology/ });
 		await expect(techHeader).toBeVisible({ timeout: 30000 });
 		await expect(techHeader).toContainText('Simplified');
 
-		await page.getByRole('button', { name: 'Options', exact: true }).click();
+		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
 		const menu = page.getByRole('menu');
 		await expect(menu.getByRole('menuitemradio', { name: 'Simplified' })).toHaveAttribute(
 			'aria-checked',
@@ -309,11 +311,10 @@ test.describe('Tracker options menu', () => {
 
 		const contributionHeader = page.getByRole('columnheader', { name: /Contribution/ });
 		await expect(contributionHeader).toContainText('% generation');
-		await page.getByRole('button', { name: 'Options', exact: true }).click();
+		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
 		await menu.getByRole('menuitemradio', { name: '% demand' }).click();
 		await expect(contributionHeader).toContainText('% demand');
-		// Session-only: the contribution basis never reaches the URL.
-		expect(new URL(page.url()).searchParams.has('contribution')).toBe(false);
+		await expect.poll(() => new URL(page.url()).searchParams.get('contribution')).toBe('demand');
 	});
 
 	test('datasets download as CSV and as one XLSX workbook', async ({ page }) => {

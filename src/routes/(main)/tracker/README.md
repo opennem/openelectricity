@@ -16,8 +16,21 @@ The canonical tracker page — the planned replacement for the legacy
   using `tracker-url.js` for parsing/serialisation. SvelteKit shallow history
   updates the address bar without updating `page.url`, so Back/Forward uses
   `popstate`; ordinary same-route links are observed through `page.url`.
-- **`TrackerCanvas.svelte`** — three always-mounted chart cards and the table
+- **`TrackerCanvas.svelte`** — three mounted timeline chart cards and the table
   layout, with shared hover/gesture state and series selection.
+- **`TimeOfDay.svelte`** / **`time-of-day.js`** — a separate bounded profile view
+  and pure network-local window, aggregation and CSV helpers. Timeline and profile
+  canvases are mutually exclusive; switching views preserves timeline selections.
+- **`AverageDayStack.svelte`** — all-technology average-day stacked area above
+  the individual profiles, including while viewing daily overlays or spot price.
+  **`profile-data.svelte.js`** shares the bounded source lifecycle: one power
+  source serves both stack and individual power, with price enabled on demand.
+- **`ProfileChart.svelte`** / **`profile-chart.js`** — adapt profile rows to the
+  existing StratumChart, sharing its rendering, tooltips, options and gestures.
+  Clock-only axes and bounded viewports keep the synthetic chart date invisible.
+- **`DateComparison.svelte`** / **`comparison.js`** — compare two accepted
+  generation display buckets using Stratum's categorical bars, a signed-value
+  table and CSV. No separate fetch or data manager.
 - **`tracker-providers.svelte.js`** — enables and coordinates the six optional
   headless providers through their existing shared request/cache lifecycle.
 - **`tracker-data.svelte.js`** — accepts producer-tagged snapshots only for
@@ -52,9 +65,22 @@ The canonical tracker page — the planned replacement for the legacy
   until that interval is complete.
 - **Grouping menu** mirrors the legacy explore tool: Detailed, Simplified,
   Coal/Gas/Renewables, Flexibility, Renewables/Fossils, VRE/Residual
-  (`groups.js` registry). It lives in the nav bar's options (⋮) menu as a
-  radio group, next to the table's contribution basis (% generation ⇄
-  % demand); the table headers echo the current choices as muted sub-labels.
+  (`groups.js` registry). It lives in the Fuel technologies panel header's
+  options (sliders) menu, next to contribution basis (% generation ⇄ % demand).
+  Both sections use labelled radio groups with tinted, bold selected rows; the table
+  headers echo current choices as muted sub-labels. The same menu stays in the
+  collapsed table rail, allowing chart configuration without table-provider
+  fetches. Time of day has a grouping-only menu in its own header. Global page
+  options now contain only page actions (exports, link, fullscreen and docs).
+  `FuelTechOptions` uses the installed Bits UI menu primitives for keyboard
+  navigation, typeahead, Escape/outside dismissal, focus restoration, portalling
+  and viewport-bounded scrolling, composed with the same `OptionsMenuItem`,
+  `OptionsMenuHeading` and `OptionsMenuDivider` components as the top-nav menu.
+  Typography, spacing, icon gutters, row highlights and menu chrome follow that
+  existing design rather than a separate panel-specific style.
+  Its trigger matches the panel controls' 40px
+  target with a smaller 16px muted-grey sliders icon. Choices still use the session's URL/history
+  path; they affect linked charts, not just the table.
   Grouping is applied client-side in
   `processNetworkData` — the API always returns detailed per-fuel-tech
   series, so switching groups re-processes cached responses without a fetch.
@@ -108,12 +134,202 @@ The canonical tracker page — the planned replacement for the legacy
 on demand so it stays off the page bundle. Filenames:
 `tracker-<region>-<dataset>-<range>.csv`/`tracker-<region>-<range>.xlsx`.
 
+## Window metrics
+
+The timeline has a resizable left metrics pane, reusing the shared `MetricCard`
+presentation from `/facility/[code]`. Metrics stay in one column with independent
+scrolling. The shared pane/resize controls support dragging, arrow keys, Home/End
+and pointer cancellation; width is remembered locally when storage is available.
+The divider sits in the page-background gap outside the white metrics content,
+matching the fuel-tech table divider on the right.
+Both panels use `PanelToggle`: mirrored open/collapse icons, explicit 16px icons
+inside 40px buttons (the app uses a 10px rem base), matching 48px headers/rails,
+muted grey icons with a lighter 1.5 stroke (also used by the sliders options icon)
+that remain grey on hover, background hover/pressed treatments,
+labelled controls and visible keyboard focus. Closing
+returns focus to the opener; reopening focuses the collapse control. The metrics
+header stays visible while scrolling its values. Resize dividers also show focus.
+
+Desktop widths are bounded to leave space for the charts and fuel-tech table.
+Below 1024px the pane starts closed and opens over the left edge without shrinking
+the charts. The close button (or Escape on small screens) returns focus to the
+opener. Pane visibility is local UI state, not part of the shared URL.
+
+It shows minimum and maximum
+net power/energy, the selected market measure (spot price, volume-weighted price
+or market value), and the selected emissions measure (intensity or volume).
+Hover, focus or select a metric to highlight its interval on the synced charts.
+
+`window-metrics.js` calculates extrema from accepted, query-matching **display
+buckets**, not native-cadence peaks or sums of overlapping rolling periods.
+Only actual interval starts inside the selected bounds are considered; synthetic
+calendar-band closing rows are excluded. Ties show the earliest occurrence.
+Network-local timestamps use the same interval formatting policy as the charts.
+
+Values stay absolute when charts use percentage/change-since transforms. Net
+generation is the signed sum of selected technologies, including imports and
+negative loads; it is not gross demand. Hidden technologies are excluded from
+net generation, market value and emissions. Regional price stays regional;
+volume-weighted price and intensity reuse the charts' ratio-of-components
+helpers after display aggregation. Energy extrema are MWh per displayed bucket,
+not instantaneous MW. Generation units follow the chart's selected prefix.
+
+All selected members of a summed bucket must be finite; missing members never
+become zero. Partial input reports how many returned display intervals have
+complete selected-series values, not guaranteed upstream/native-cadence coverage.
+Zero and negative observations are valid. Loading, failed, empty or stale data
+show placeholders rather than an old value under a new range label. The section
+uses existing snapshots only: no new provider, fetch, endpoint or dependency.
+Time-of-day remains a separate profile view. PNG export still captures charts,
+not the metrics grid; existing CSV/XLSX exports are unchanged.
+
+## Freshness and live follow
+
+The fixed top-nav `Live` / `Now` control remains accessible on mobile. Relative
+timeline presets follow live by default; `Live` pauses at the exact displayed
+bounds. Custom dates and settled pan/zoom gestures also pause. `Now` returns a
+custom/historical selection to the default 3-day view; selecting another preset
+starts following that preset. Pausing serialises exact `start`/`end` bounds, so
+copy/reload and Back/Forward preserve the choice without a second live-state URL
+flag. Ambient ticks never write browser history.
+
+While the tab is visible, the page clock ticks once a minute. An idle, connected
+timeline advances all enabled charts/providers together; busy requests and active
+gestures are not interrupted. All retains its historical floor while its right
+edge grows. Two recent native buckets are made eligible for normal gap fetching
+to revisit late observations and open-bucket revisions, without discarding old
+rows or fetching full history again. Existing request deduplication, completed-
+response caching, server caching and retry limits remain in force: a minute tick
+does not promise a new upstream reading every minute.
+
+Hidden tabs suspend the live timer and queued speculative prefetch work. Existing
+in-flight requests may complete; returning to the tab performs one catch-up tick,
+not a replay of missed ticks. Paused timelines and time-of-day analysis never
+advance automatically. Timers/listeners are disposed on navigation.
+
+Each timeline card shows its latest finite **native interval in the accepted
+view**, in network-local time, rather than the time a request finished. Synthetic
+closing points and missing/non-finite values do not count; zero is a reading.
+This indicates the latest available series reading, not complete coverage of
+every fuel technology (stated in the tooltip). Updating, failed and empty queries
+are explicit and cannot claim a fresh timestamp from a held frame. For a following,
+unfiltered timeline, a reading older than three native intervals is labelled
+`Data delayed`; calendar interval lengths use the existing bucket calculations.
+Historical/calendar-filtered selections say `Latest in view`, not `Data delayed`.
+Monthly/quarterly/yearly data is labelled `Latest bucket`, not a live observation.
+
+## Branded PNG export
+
+Options → Export PNG opens a frozen preview of the current view. Choose ready
+charts, edit the title/description, then download that exact preview. Timeline
+generation, market and emissions charts, an open two-date comparison, and
+time-of-day plots are supported. The image includes the Open Electricity logo,
+visible-series/overlay legends, units, date window, interval, grouping, calendar
+filter, network time zone, attribution and generation timestamp. Displayed
+transforms, negative stacks, chart size, profile zoom and hidden series are retained;
+hover/focus indicators, controls, tables and resize handles are omitted.
+
+`PngExport.svelte` owns the native modal and disposable preview lifecycle.
+`png-export.js` captures all LayerCake SVG layers together, inlines their rendered
+styles and composes them on a white canvas. It uses the existing brand asset and
+browser APIs only: no new package, endpoint or data request. Standard images use
+2× density; extreme layouts are bounded to 8,192 pixels per side and roughly
+24 megapixels. Exported chart text uses Arial for self-contained rendering.
+Capture waits up to one second for finite axis transitions, excluding loading
+spinners, so fading-out ticks are not baked into the image.
+
+Readiness comes from query-matching chart snapshots and the accepted-frame guard;
+generation also waits for active overlay/percentage providers, not unrelated
+table-only providers. Loading, failed, empty or held charts cannot be selected.
+The snapshot is captured when the dialog opens, including its readiness state;
+close and reopen to capture later data. Caption edits do not recapture live charts.
+PNG options are temporary and are not added to shared URLs. Canvas/image errors
+are explicit and retryable, with stale asynchronous previews and object URLs
+disposed on changes or close. CSV/XLSX semantics remain unchanged.
+
 ## URL schema
+
+Time-of-day selections: `view=average|daily` (default timeline),
+`profile-days=14|28` (default 7), `profile-metric=price` (default power),
+`profile-series=<group-id>` (default first available), and
+`profile-end=YYYY-MM-DD` (inclusive last day; default yesterday in network time).
+Copied links and Back/Forward retain these separately from the timeline range.
+All-Australia has no spot-price series and normalises that metric to power.
+Changing grouping validates the chosen series against the new group. A requested
+technology absent from the response stays unavailable instead of showing another.
+
+### Time-of-day semantics
+
+Select **Time of day**, then **Average day** or **Daily overlay**. Choose a fuel
+technology (using the Time of day header's fuel technology options) or regional spot price, a 7/14/28-day
+window and an optional historical last day. Future dates clamp to yesterday;
+days use fixed network offsets (NEM/Australia UTC+10, WEM UTC+08), not civil DST.
+The overview stacks all returned fuel technologies in the selected grouping,
+using the standard group colours/order and the main chart's cumulative stack:
+negative power pulls the stack down rather than forming an independent negative
+stack. Average power uses smooth curves. It is independent of the selected individual technology and
+timeline visibility. Each technology uses the same daily averaging as its
+individual profile. If any technology's half-hour average is missing, that whole
+stacked half-hour is a gap rather than a partial total. The expandable overview
+table retains each technology's available averages and day counts, even where
+the stack cannot be drawn. It remains visible beside spot-price analysis, with
+its own loading/error/retry state.
+Half-hour slots average available 5-minute readings within each day, then average
+those daily values with equal day weights. Nulls/non-finite readings remain gaps;
+zero and negative values are retained. Partial coverage is explicit in the table
+and CSV. Price is time-weighted, not volume-weighted. Power uses absolute MW and
+negative charging/pumping; timeline visibility, contribution and transforms do
+not apply. All profiles use the existing StratumChart. Power curves are smooth;
+spot price remains stepped. The average is a dark line among daily overlays.
+Legend buttons show/hide series; Ctrl/⌘-click solos/restores them. Hover and pinning,
+keyboard inspection, bounded pan/zoom (one hour to 24 hours), unit/curve options
+and resizing use the shared chart conventions. Legend and viewport changes are
+local display state and do not alter aggregation, coverage tables or CSV.
+
+The documented browser caller is `TimeOfDay.svelte` via `profile-data.svelte.js`, using the existing
+`ChartDataManager` and `/api/network/data` (`metric=power|price`, `interval=5m`).
+Each source requests only the selected complete days, with no speculative widening or
+cross-grain prefetch; at most 28 days per source/selection. Power stays mounted
+for the overview; price is fetched only when selected. Scope/window changes dispose
+the prior consumer, and identity checks prevent stale displays/exports. Shared
+response caching, deduplication and bounded retry/error handling remain in use.
+View, technology, legend and chart-interaction changes do not refetch. Profile CSV contains
+the average, every daily value, available-day counts and per-day native sample
+counts in base units; timeline CSV/XLSX actions are disabled in this view.
+
+### Timeline selections
+
+The Generation card's **Compare dates** action opens a two-interval comparison.
+A and B come from the current displayed generation buckets, with the same network
+timezone and interval labels as the chart. The first opening selects the earliest
+and latest available buckets; dropdowns allow exact selection and swapping.
+Changing range, interval or filter never silently substitutes another date:
+unavailable selections remain labelled and cannot export until both are present.
+Synthetic calendar-band closing rows are excluded; rolling values remain rolling
+interval values, not independent window sums. Open/partial buckets remain partial.
+
+Values are absolute MW/MWh, regardless of timeline percentage/change transforms.
+The comparison follows grouping and hidden technologies, and displays the main
+generation chart's unit prefix. Differences are signed B − A; relative change is
+(B − A) / |A| × 100, so negative loads retain a meaningful signed direction. Missing
+readings remain unavailable; a zero baseline has no percentage, while a fall to
+zero from a non-zero baseline remains valid. CSV uses base MW/MWh and includes
+region, network timezone, interval and both date labels. Bar hover and keyboard
+focus on table technology buttons inspect values through the shared Stratum tooltip.
+
+`compare=1`, `compare-a` and `compare-b` persist the open state and exact epoch-ms
+bucket starts through copied URLs, reload and history. Dates do not trigger
+off-screen fetches; change the timeline range to bring other dates into scope.
+Only query-matching, ready generation snapshots are consumed. Loading, failed or
+stale generation cannot display/export old comparison values. Market/table-provider
+failures do not block an otherwise ready generation comparison.
 
 `region` (`_all`, the NEM) · `range`/`start`+`end`/`interval` via the shared
 `range-params.js` (default 3-day preset; the tracker opts into the
 12-month rolling variants on the 1Y/All tiers via `includeRolling`) ·
-`group` (simple) · `price=mv` · `emissions=volume` (intensity is the default) ·
+`group` (simple) · `hidden` (comma-separated group IDs) · `contribution=demand`
+(generation is the default) · `transform` / `market-transform` (`proportion` or
+`changeSince`, absolute is the default) · `price=mv` · `emissions=volume` (intensity is the default) ·
 `overlay` — a canonical comma-separated selection of `demand`, `renewables`,
 `curtailment-solar`, and `curtailment-wind` · `table=0` · `fullscreen=false` ·
 `filter` — a calendar-period id (`jan`…`dec`,
@@ -126,10 +342,59 @@ At the rolling grain every summed surface shows trailing 12-month windows,
 intensity and the price card derive ratios of 12-month sums (the price card
 swaps its spot series for `price_vw`, volume-weighted), and the table computes
 from native monthly rows so overlapping windows do not double-count.
-Hover, pan/zoom engagement, panel width, hidden fuel-tech series and
-contribution mode are deliberately not serialised.
+Hidden fuel-tech IDs, contribution basis and generation/market-value transforms
+are owned by the per-page session and restored from both copied links and browser
+history. Hidden IDs are validated against the selected grouping, deduplicated
+and written in group order. Changing grouping clears them; Back restores the
+previous grouping and its hidden IDs together. Hidden IDs also restore the
+emissions-intensity exclusions, not merely the generation chart's appearance.
+
+Visibility, contribution and transform selections push one history entry.
+Solo/restore actions update visibility and overlays atomically; individual overlay
+toggles and viewport gestures retain replace behaviour. Chart-option events
+publish user changes only, so restoring a URL
+does not echo an update back into history. The market-value transform is retained
+while the card shows Price, but applies only when Market value is displayed.
+Malformed analytical values fall back to defaults; older links need no migration.
+
+For example: `/tracker?region=nsw1&hidden=coal&contribution=demand&transform=proportion`.
+Copied links reproduce selections, not immutable data: presets remain relative
+to opening time, while custom/panned ranges preserve exact bounds. Hover,
+pan/zoom engagement, chart type/curve/unit preferences, chart sizes and custom
+layouts remain session/local preferences rather than URL state.
 
 ## Data notes
+
+### Rooftop solar interpolation
+
+The Timeline generation chart interpolates rooftop solar at the **5-minute
+display interval only**. OE responses observed on 7 September 2026 repeat each
+half-hour rooftop power value at six consecutive 5-minute timestamps. Plotting
+those repeated values creates a staircase; they are not six independent readings.
+
+`network/rooftop-interpolation.js` linearly interpolates the five intermediate
+points between aligned half-hour anchors. A block is eligible only when all six
+reported values are equal, contiguous and finite, and the next half-hour anchor
+is finite and non-negative. Missing timestamps/nulls are not filled, genuine
+5-minute variation is retained, and incomplete leading/trailing blocks are not
+extrapolated. All-zero blocks stay zero. Interpolation uses the full cached
+window before viewport slicing, so panning does not change the anchors. Newly
+available anchors can replace a previously held trailing block on refresh.
+
+This is a **display estimate**, not additional measured data. It changes the
+generation plot, its hover values and derived chart transforms (including
+contribution percentages). In combined groups, only the rooftop component is
+interpolated; utility solar and other technologies are unchanged. It does not
+alter the API response, native cache, published snapshots, table summaries,
+window metrics, date comparisons, CSV/XLSX downloads or emissions calculations.
+Those retain reported values and may therefore differ from an interpolated
+chart hover. The 30-minute/coarser views and time-of-day analysis are unchanged.
+
+The fuel-tech table marks rooftop-containing rows with an asterisk and explains
+the distinction in a visible footnote. Generation PNG exports carry an
+interpolation caption, because the image captures the displayed chart.
+
+### Requests and processing
 
 - Everything fetches through `/api/network/data`; the providers share the
   charts' request broker, LRU and gap-aware fetching. The six headless
@@ -148,13 +413,20 @@ contribution mode are deliberately not serialised.
   with the table panel closed and the overlays off, only the three chart
   metrics fetch at all.
 - Background idle prefetch (`idle-prefetch.js` via the chart host): every
-  chart widens its cached window to 3× the viewport each side after settling,
-  then warms 30 days of daily data and the full monthly history for its active
-  metric. Later 30D/1Y/All selections can revive those managers immediately.
-  Price and emissions history also use the edge cache below. All
-  prefetch traffic runs at fetch priority 'low' during idle slices. The full
+  chart warms nearby data in its active grain after settling: up to 3× the
+  viewport each side, capped at seven days per side and the API range limit.
+  Daily/monthly history is fetched only when selected, avoiding speculative
+  decades-wide scans. Previously visited grains still revive cached managers.
+  Prefetch traffic runs at fetch priority 'low' during idle slices and is not
+  retried automatically. The full
   trigger, job ordering, de-duplication, edge/D1 lifecycle and production test
   procedure live in `src/routes/api/admin/network-cache/README.md`.
+- Active chart requests retry HTTP 408/500/502/503/504 once after 750 ms, through
+  the existing shared request broker. Cancelling the last consumer also cancels
+  the backoff; a remaining consumer keeps the shared retry alive. Other errors
+  (including 429) surface immediately. Final errors retain a bounded server
+  message in the chart and console; HTML/error-detail objects are not rendered.
+  Failed windows remain retryable via the chart's Retry button, never empty data.
 - The route carries a keyed edge SWR cache (`keyed-swr-cache.js`, Cloudflare
   Cache API): any cached window serves instantly and refreshes in the
   background — live windows on a 5-minute horizon, fully-historical ones
@@ -181,6 +453,33 @@ contribution mode are deliberately not serialised.
   the existing store so resizing preserves explicit display-unit choices.
 - Demand-mode contribution shares needn't sum to 100% (losses, imports,
   basis differences) — this matches the homepage renewables methodology.
+
+## Percentage semantics
+
+The generation chart's **Proportion** view uses the same basis selected in
+**Fuel technology options → Contribution** as the table, including from the
+collapsed table rail when the table is closed.
+Generation shares use all source generation, excluding loads and imports;
+gross-demand shares include imports but exclude loads. Hiding a technology
+changes visibility, not the denominator. Excluded technologies are omitted from
+the percentage plot and tooltip; their absolute values remain available.
+
+Chart percentages describe each displayed interval, calculated after aggregation
+or rolling sums. Table contributions summarise the selected window, using native
+rows where rolling or filtered display rows would double-count. They therefore
+need not equal the percentage at any one chart timestamp.
+
+Demand and curtailment overlays use the active denominator in percentage view.
+The renewables overlay retains its independent share-of-gross-demand definition
+and right-hand scale. Shares above 100% are not clipped. Missing, zero or invalid
+denominators produce gaps and unavailable values; gross-demand loading/failure
+is explicit and retryable. Percentages never fall back to visible-selection
+normalisation. Absolute/change-since views and raw CSV/XLSX exports are unchanged.
+
+The shared chart layer supports an opt-in `ProportionContext` (label, excluded
+series and display-row transform); other chart consumers retain their default
+percentage behaviour. The Tracker persists its percentage basis and transforms
+through the URL schema above.
 
 ## Tests
 

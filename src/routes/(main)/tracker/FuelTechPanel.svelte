@@ -1,5 +1,5 @@
 <script>
-	import PanelRightClose from '@lucide/svelte/icons/panel-right-close';
+	import PanelToggle from './PanelToggle.svelte';
 	import FuelTechTable from './FuelTechTable.svelte';
 
 	/** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
@@ -23,7 +23,10 @@
 	 *   overlaySummary?: OverlaySummary | null,
 	 *   hiddenCount?: number,
 	 *   onshowall?: () => void,
-	 *   onclose?: () => void
+	 *   onclose?: () => void,
+	 *   closeButton?: HTMLButtonElement,
+	 *   options?: import('svelte').Snippet
+	 *   rooftopInterpolation?: boolean
 	 * }}
 	 */
 	let {
@@ -37,29 +40,33 @@
 		hiddenCount = 0,
 		onshowall,
 		onclose,
+		closeButton = $bindable(),
+		options,
 		...tableControls
 	} = $props();
 </script>
 
-<div class="flex h-full min-h-0 flex-col">
+<div id="tracker-table-panel" class="flex h-full min-h-0 flex-col">
 	<!-- The pulse distinguishes a value refresh from a structural reload. -->
 	<div
-		class="flex shrink-0 items-center justify-between gap-2 border-b border-warm-grey px-2 py-1.5"
+		class="flex h-[48px] shrink-0 items-center gap-2 border-b border-warm-grey bg-white px-[4px]"
 	>
-		<button
-			type="button"
+		<PanelToggle
+			side="right"
+			open
+			label="Hide fuel tech table"
+			controls="tracker-table-panel"
 			onclick={() => onclose?.()}
-			aria-label="Hide fuel tech table"
-			class="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-dark-grey transition-colors hover:bg-warm-grey"
-		>
-			<PanelRightClose class="size-5" />
-		</button>
+			bind:el={closeButton}
+		/>
+		<h3 class="m-0 min-w-0 flex-1 font-space text-sm font-semibold">Fuel technologies</h3>
 		{#if valuesPending && !structurePending}
 			<span
 				class="mr-2 size-1.5 shrink-0 animate-pulse rounded-full bg-mid-warm-grey"
 				aria-hidden="true"
 			></span>
 		{/if}
+		{@render options?.()}
 	</div>
 	{#if hiddenCount > 0}
 		<header class="flex shrink-0 justify-end border-b border-warm-grey px-4 py-2">

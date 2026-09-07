@@ -22,6 +22,7 @@
 	import BarChart from './BarChart.svelte';
 	import ChartResizeHandle from './ChartResizeHandle.svelte';
 	import { InteractionLayer } from './elements';
+	import { chartImageMetadata } from './image-metadata.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -244,7 +245,7 @@
 	onkeydowncapture={panZoomMode === 'tap-to-engage' ? handleEngagedKeydown : undefined}
 />
 
-<div class="stratum-chart {className}">
+<div class="stratum-chart {className}" data-chart-image={JSON.stringify(chartImageMetadata(chart))}>
 	{#if showHeader}
 		{#if header}
 			{@render header()}

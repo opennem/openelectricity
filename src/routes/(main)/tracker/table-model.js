@@ -21,6 +21,10 @@ import {
 	DEMAND_GROSS_SERIES_ID,
 	RENEWABLES_SERIES_ID
 } from '$lib/components/charts/network/market-series-ids.js';
+import {
+	contributionSeries,
+	contributionPercent
+} from '$lib/components/charts/network/contribution.js';
 
 /** @typedef {import('./types.js').ContributionMode} ContributionMode */
 /** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */
@@ -171,9 +175,7 @@ export function contributionDenominatorMWh({
 	loadSeriesIds
 }) {
 	if (mode === 'demand') return sumAsEnergy(demandRows, [DEMAND_GROSS_SERIES_ID], demandBasis);
-	const sourceKeys = seriesNames.filter(
-		(name) => !loadSeriesIds.includes(name) && name !== 'imports'
-	);
+	const sourceKeys = contributionSeries(seriesNames, loadSeriesIds, 'generation');
 	return sumAsEnergy(generationRows, sourceKeys, basis);
 }
 
@@ -210,7 +212,7 @@ export function computeContribution({
 	demandBasis,
 	loadSeriesIds
 }) {
-	const isLoad = (/** @type {string} */ name) => loadSeriesIds.includes(name);
+	const included = contributionSeries(seriesNames, loadSeriesIds, mode);
 
 	const denominatorMWh = contributionDenominatorMWh({
 		generationRows,
@@ -224,9 +226,15 @@ export function computeContribution({
 
 	return Object.fromEntries(
 		seriesNames.map((name) => {
-			const excluded = isLoad(name) || (mode === 'generation' && name === 'imports');
-			if (excluded || denominatorMWh <= ENERGY_EPSILON_MWH) return [name, null];
-			return [name, (sumAsEnergy(generationRows, [name], basis) / denominatorMWh) * 100];
+			if (!included.includes(name) || !hasFiniteValue(generationRows, name)) return [name, null];
+			return [
+				name,
+				contributionPercent(
+					sumAsEnergy(generationRows, [name], basis),
+					denominatorMWh,
+					ENERGY_EPSILON_MWH
+				)
+			];
 		})
 	);
 }

@@ -119,6 +119,23 @@ describe('computeVWPrices', () => {
 });
 
 describe('computeContribution', () => {
+	it('leaves missing numerators and non-finite demand unavailable', () => {
+		const input = {
+			generationRows: [{ coal: 10, wind: null }],
+			seriesNames: ['coal', 'wind'],
+			basis: 'energy',
+			demandBasis: 'energy',
+			loadSeriesIds: [],
+			mode: 'demand'
+		};
+		expect(
+			computeContribution({ ...input, demandRows: [{ [DEMAND_GROSS_SERIES_ID]: 20 }] })
+		).toEqual({ coal: 50, wind: null });
+		expect(
+			computeContribution({ ...input, demandRows: [{ [DEMAND_GROSS_SERIES_ID]: Infinity }] })
+		).toEqual({ coal: null, wind: null });
+	});
+
 	const input = {
 		generationRows,
 		seriesNames,

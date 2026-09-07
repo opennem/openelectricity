@@ -7,15 +7,24 @@
 	 *
 	 * @type {{
 	 *   icon?: any,
-	 *   onclick?: () => void,
+	 *   onclick?: import('svelte/elements').HTMLButtonAttributes['onclick'],
 	 *   kbd?: string | string[],
 	 *   href?: string,
 	 *   selected?: boolean,
 	 *   disabled?: boolean,
 	 *   children: import('svelte').Snippet
-	 * }}
+	 * } & Omit<import('svelte/elements').HTMLButtonAttributes, 'children'>}
 	 */
-	let { icon, onclick, kbd, href, selected = undefined, disabled = false, children } = $props();
+	let {
+		icon,
+		onclick,
+		kbd,
+		href,
+		selected = undefined,
+		disabled = false,
+		children,
+		...rest
+	} = $props();
 
 	const Icon = $derived(icon);
 	const kbdKeys = $derived(kbd ? (Array.isArray(kbd) ? kbd : [kbd]) : null);
@@ -25,8 +34,8 @@
 		'w-full px-3 py-2 text-xs flex items-center gap-3 transition-colors text-left no-underline hover:no-underline';
 	const rowClass = $derived(
 		selected
-			? `${baseRowClass} bg-warm-grey font-semibold text-black hover:bg-mid-warm-grey`
-			: `${baseRowClass} font-medium text-dark-grey hover:bg-light-warm-grey`
+			? `${baseRowClass} bg-warm-grey font-semibold text-black hover:bg-mid-warm-grey data-[highlighted]:bg-mid-warm-grey`
+			: `${baseRowClass} font-medium text-dark-grey hover:bg-light-warm-grey data-[highlighted]:bg-light-warm-grey`
 	);
 </script>
 
@@ -58,6 +67,7 @@
 	</a>
 {:else}
 	<button
+		{...rest}
 		{onclick}
 		{disabled}
 		class={`${rowClass} disabled:cursor-not-allowed disabled:opacity-40`}

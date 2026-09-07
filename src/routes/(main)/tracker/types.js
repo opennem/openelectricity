@@ -15,7 +15,7 @@
  */
 
 /**
- * Denominator for the fuel-tech table's contribution column.
+ * Denominator for the chart and fuel-tech table's contribution percentages.
  * @typedef {'generation' | 'demand'} ContributionMode
  */
 
@@ -36,6 +36,16 @@
  * @typedef {Object} TrackerUrlState
  * @property {string} region
  * @property {string} group - Fuel-tech grouping value
+ * @property {'timeline' | 'average' | 'daily'} profileView
+ * @property {7 | 14 | 28} profileDays
+ * @property {'power' | 'price'} profileMetric
+ * @property {string} profileSeries
+ * @property {string} profileEnd - Last complete local day, or empty for relative yesterday
+ * @property {import('./comparison.js').Comparison | null} [comparison] - Exact displayed interval starts, or null when closed
+ * @property {string[]} hiddenSeries - Hidden group IDs, validated against the grouping
+ * @property {ContributionMode} contributionMode
+ * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
+ * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} marketValueTransform
  * @property {TrackerRange} range
  * @property {string | null} bucketFilter - Recurring calendar period (All range only)
  * @property {PriceMode} priceMode

@@ -31,6 +31,7 @@
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
 	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 	import { processNetworkData } from './process-network-data.js';
+	import { interpolateRooftopPower } from './rooftop-interpolation.js';
 	import {
 		processEmissionsIntensity,
 		deriveIntensityDisplayRows,
@@ -88,6 +89,10 @@
 	 *   power and MWh/GWh/TWh for generation energy. Energy defaults to TWh once
 	 *   the largest visible positive stack reaches six MWh digits.
 	 * @property {boolean} [useDivergingStack] - Stack positive/negative independently
+	 * @property {boolean} [interpolateRooftop] - Interpolate repeated rooftop power for 5m rendering only; snapshots retain reported values
+	 * @property {import('../v2/ChartOptions.svelte.js').DataTransformType} [dataTransform] - Optional controlled transform; omitted consumers keep local options
+	 * @property {(value: import('../v2/ChartOptions.svelte.js').DataTransformType) => void} [ondatatransformchange] - User choices only, not restoration
+	 * @property {(rows: TimeSeriesData[], names: string[]) => import('../v2/ChartStore.svelte.js').ProportionContext} [createProportionContext] - Optional display-grain percentage calculation
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange]
@@ -116,7 +121,7 @@
 	 *   resized height; share one key across a split pair so toggling keeps it
 	 * @property {string} [loadingLabel] - Target window shown in the loading veil
 	 * @property {boolean} [holdFrame] - Keep the rendered frame until all synced charts are ready
-	 * @property {{ widenMultiplier?: number, grains?: Array<{ interval: string, metric: string, seriesKey?: string, windowMs: number }> } | null} [prefetchPlan]
+	 * @property {{ widenMultiplier?: number, maxWidenMs?: number, grains?: Array<{ interval: string, metric: string, seriesKey?: string, windowMs: number }> } | null} [prefetchPlan]
 	 *   - Idle plan for widening the current cache and warming likely next intervals
 	 * @property {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }>} [overlayLines]
 	 *   - Lines drawn above the stack from independent row sets (e.g. demand,
@@ -145,6 +150,10 @@
 		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('floating'),
 		generationUnitOptions = false,
 		useDivergingStack = false,
+		interpolateRooftop = false,
+		dataTransform,
+		ondatatransformchange,
+		createProportionContext,
 		hoverTime = undefined,
 		onhoverchange,
 		onviewportchange,
@@ -272,6 +281,7 @@
 			loadsToInvert: panelKind === 'emissions' ? [] : loadGroupsToInvert,
 			getColour: getFuelTechColour,
 			metricFilter: targetMetric,
+			retainRooftopPower: interpolateRooftop && targetMetric === 'power' && targetInterval === '5m',
 			networkTimezone: tz
 		};
 		return (/** @type {any} */ resp) => processNetworkData(resp, cfg);
@@ -358,6 +368,18 @@
 	});
 
 	let dataManager = $derived(host.dataManager);
+	// Derived once per cache revision, independently of viewport/hover changes.
+	// The original cache remains the source for summaries, comparisons and CSV/XLSX.
+	let displayCache = $derived.by(() => {
+		const source = dataManager?.processedCache;
+		return source &&
+			interpolateRooftop &&
+			metric === 'power' &&
+			interval === '5m' &&
+			displayInterval === '5m'
+			? interpolateRooftopPower(source)
+			: source;
+	});
 	let viewStart = $derived(host.viewStart);
 	let viewEnd = $derived(host.viewEnd);
 	let isPanning = $derived(host.isPanning);
@@ -567,6 +589,22 @@
 		if (chartStore && !holdFrame) chartStore.hiddenSeriesNames = hiddenSeriesNames;
 	});
 
+	// Adapt the caller's calculation to this chart's accepted display rows.
+	// The factory can withhold denominator data during a coordinated switch.
+	$effect(() => {
+		if (!chartStore) return;
+		chartStore.proportionContext =
+			createProportionContext?.(chartStore.seriesData, chartStore.seriesNames) ?? null;
+	});
+
+	// Restore controlled state without emitting a UI event back into history.
+	$effect(() => {
+		if (!chartStore) return;
+		if (dataTransform !== undefined)
+			chartStore.chartOptions.selectedDataTransformType = dataTransform;
+		chartStore.chartOptions.onDataTransformChange = ondatatransformchange;
+	});
+
 	// Caller-driven overlay lines (demand / renewable share) — independent row
 	// sets drawn above the stack.
 	$effect(() => {
@@ -667,6 +705,7 @@
 	// sample reuse the previous rows array (stable reference → the seriesData
 	// assignment below is a signal no-op on a hit).
 	const visibleAggregation = createVisibleAggregation();
+	const renderAggregation = createVisibleAggregation();
 
 	// Native table rows need a separate memo from filtered or rolling chart rows.
 	const nativeVisibleAggregation = createVisibleAggregation();
@@ -709,8 +748,8 @@
 			if (gesturing) chartStore.freezeYDomain();
 			else chartStore.unfreezeYDomain();
 
-			const visibleData = visibleAggregation(
-				manager.processedCache,
+			const visibleData = renderAggregation(
+				displayCache,
 				{
 					viewStart: start,
 					viewEnd: end,
@@ -945,6 +984,10 @@
 	export function reconcileFetches() {
 		host.reconcileFetches();
 	}
+	/** @param {number} start */
+	export function invalidateTail(start) {
+		dataManager?.invalidateTail(start);
+	}
 
 	/** Whether the current grain is loaded and idle, including cache-only switches. */
 	export function isSettled() {
@@ -1032,6 +1075,7 @@
 				role="status"
 			>
 				<span class="text-sm text-mid-grey">Could not load data.</span>
+				<span class="text-xs text-mid-grey">{loadError}</span>
 				<button
 					type="button"
 					class="rounded border border-warm-grey px-3 py-1 text-sm"
