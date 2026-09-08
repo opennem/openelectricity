@@ -57,7 +57,7 @@ The canonical tracker page — the planned replacement for the legacy
   toggling modes keeps the chosen height.
 - **Generation units are selectable in the chart options**: power offers
   MW/GW and starts in MW; energy offers MWh/GWh/TWh. Energy automatically
-  promotes its default from MWh to TWh when the largest visible positive
+  promotes its default from MWh to GWh when the largest visible positive
   stack reaches six digits in MWh, while an explicit unit choice remains
   pinned until the power/energy basis changes. The selected prefix drives the
   chart header, y-axis and floating tooltip values together. The current open
@@ -137,8 +137,8 @@ on demand so it stays off the page bundle. Filenames:
 ## Window metrics
 
 The timeline has a resizable left metrics pane, reusing the shared `MetricCard`
-presentation from `/facility/[code]`. Metrics stay in one column with independent
-scrolling. The shared pane/resize controls support dragging, arrow keys, Home/End
+presentation from `/facility/[code]`. Metrics use two columns: minimum on the left and maximum on the right, with
+independent panel scrolling. The shared pane/resize controls support dragging, arrow keys, Home/End
 and pointer cancellation; width is remembered locally when storage is available.
 The divider sits in the page-background gap outside the white metrics content,
 matching the fuel-tech table divider on the right.
@@ -157,7 +157,8 @@ opener. Pane visibility is local UI state, not part of the shared URL.
 
 It shows minimum and maximum
 net power/energy, the selected market measure (spot price, volume-weighted price
-or market value), and the selected emissions measure (intensity or volume).
+or market value), regional operational demand and renewables share (%). Emissions volume is also shown
+when Volume is selected; emissions-intensity extrema are omitted.
 Hover, focus or select a metric to highlight its interval on the synced charts.
 
 `window-metrics.js` calculates extrema from accepted, query-matching **display
@@ -170,16 +171,21 @@ Values stay absolute when charts use percentage/change-since transforms. Net
 generation is the signed sum of selected technologies, including imports and
 negative loads; it is not gross demand. Hidden technologies are excluded from
 net generation, market value and emissions. Regional price stays regional;
-volume-weighted price and intensity reuse the charts' ratio-of-components
-helpers after display aggregation. Energy extrema are MWh per displayed bucket,
-not instantaneous MW. Generation units follow the chart's selected prefix.
+demand also stays regional. Volume-weighted price reuses the chart's ratio-of-components
+helper after display aggregation. Energy extrema are MWh per displayed bucket,
+not instantaneous MW. Generation and demand units follow the chart's selected prefix.
 
 All selected members of a summed bucket must be finite; missing members never
 become zero. Partial input reports how many returned display intervals have
 complete selected-series values, not guaranteed upstream/native-cadence coverage.
 Zero and negative observations are valid. Loading, failed, empty or stale data
 show placeholders rather than an old value under a new range label. The section
-uses existing snapshots only: no new provider, fetch, endpoint or dependency.
+uses accepted chart snapshots and existing demand/renewables providers, enabled
+while the metrics pane is open even if the table and overlays are closed. Renewables
+uses the official regional share series, or the ratio of renewable generation to
+gross demand window sums for rolling intervals, matching the chart line. Technology
+visibility does not change this share. Both use shared display aggregation/calendar
+filters, loading/error guards and the request broker, with individual retry controls.
 Time-of-day remains a separate profile view. PNG export still captures charts,
 not the metrics grid; existing CSV/XLSX exports are unchanged.
 
@@ -260,7 +266,8 @@ technology absent from the response stays unavailable instead of showing another
 
 ### Time-of-day semantics
 
-Select **Time of day**, then **Average day** or **Daily overlay**. Choose a fuel
+Use the navigation **Analysis view** dropdown (the same `FilterSelect` component
+as Region) to select **Time of day**, then **Average day** or **Daily overlay**. Choose a fuel
 technology (using the Time of day header's fuel technology options) or regional spot price, a 7/14/28-day
 window and an optional historical last day. Future dates clamp to yesterday;
 days use fixed network offsets (NEM/Australia UTC+10, WEM UTC+08), not civil DST.
@@ -310,7 +317,11 @@ interval values, not independent window sums. Open/partial buckets remain partia
 
 Values are absolute MW/MWh, regardless of timeline percentage/change transforms.
 The comparison follows grouping and hidden technologies, and displays the main
-generation chart's unit prefix. Differences are signed B − A; relative change is
+generation chart's unit prefix. The comparison table matches the main table's
+header/row typography, colour swatches, muted label qualifiers and Sources/Loads
+sections using the same load-group classification. A, B and change values reuse
+its power/energy formatters; percentage changes use its one-decimal formatter.
+Category-axis labels use dark grey for contrast. Differences are signed B − A; relative change is
 (B − A) / |A| × 100, so negative loads retain a meaningful signed direction. Missing
 readings remain unavailable; a zero baseline has no percentage, while a fall to
 zero from a non-zero baseline remains valid. CSV uses base MW/MWh and includes

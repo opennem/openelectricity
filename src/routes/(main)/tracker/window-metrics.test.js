@@ -16,6 +16,8 @@ const input = (
 	/** @type {Partial<Parameters<typeof buildWindowMetrics>[0]>} */ overrides = {}
 ) => ({
 	generation: null,
+	demand: null,
+	renewables: null,
 	market: null,
 	emissions: null,
 	hidden: [],
@@ -143,7 +145,7 @@ describe('Tracker metrics', () => {
 			})
 		);
 		expect(groups[1]).toMatchObject({ unit: '$', min: { value: 20 } });
-		expect(groups[2]).toMatchObject({ unit: 'tCO₂e', min: { value: 20 } });
+		expect(groups[4]).toMatchObject({ unit: 'tCO₂e', min: { value: 20 } });
 	});
 	it('derives volume-weighted price from display components and excludes zero denominators', () => {
 		const market = snapshot(
@@ -160,18 +162,50 @@ describe('Tracker metrics', () => {
 			max: { value: 100 }
 		});
 	});
-	it('derives emissions intensity instead of summing incompatible components', () => {
-		const emissions = snapshot(
+	it('shows regional demand independently of technology visibility and excludes missing intervals', () => {
+		const demand = snapshot(
 			[
-				{ time: 10, emissions: 2, energy_mwh: 4 },
-				{ time: 20, emissions: 1, energy_mwh: 10 }
+				{ time: 10, demand: 120 },
+				{ time: 20, demand: 80 },
+				{ time: 30, demand: null },
+				{ time: 40, demand: 999, _bandClose: true }
 			],
-			['emissions', 'energy_mwh']
+			['demand']
 		);
-		expect(buildWindowMetrics(input({ emissions }))[2]).toMatchObject({
-			min: { value: 100 },
-			max: { value: 500 }
+		const groups = buildWindowMetrics(input({ demand, hidden: ['demand'] }));
+		expect(groups[2]).toMatchObject({
+			id: 'demand',
+			unit: 'MW',
+			available: 2,
+			min: { value: 80, time: 20 },
+			max: { value: 120, time: 10 }
 		});
+		expect(groups.map((group) => group.id)).toEqual([
+			'generation',
+			'market',
+			'demand',
+			'renewables'
+		]);
+		expect(buildWindowMetrics(input({ demand, basis: 'energy' }))[2].unit).toBe('MWh');
+		expect(buildWindowMetrics(input())[2].min).toBeNull();
+	});
+	it('shows regional renewable share without filtering technologies or filling gaps', () => {
+		const renewables = snapshot(
+			[
+				{ time: 10, renewable_share: 0 },
+				{ time: 20, renewable_share: 83.5 },
+				{ time: 30, renewable_share: null }
+			],
+			['renewable_share']
+		);
+		expect(buildWindowMetrics(input({ renewables, hidden: ['renewable_share'] }))[3]).toMatchObject(
+			{
+				unit: '%',
+				available: 2,
+				min: { value: 0 },
+				max: { value: 83.5 }
+			}
+		);
 	});
 	it('preserves synthetic-row exclusions after deriving ratios', () => {
 		const source = snapshot([
@@ -182,6 +216,5 @@ describe('Tracker metrics', () => {
 			input({ market: source, emissions: source, priceMetric: 'price_vw' })
 		);
 		expect(groups[1].max?.value).toBe(2);
-		expect(groups[2].max?.value).toBe(1000);
 	});
 });

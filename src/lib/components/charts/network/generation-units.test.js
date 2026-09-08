@@ -28,10 +28,14 @@ describe('automaticGenerationEnergyPrefix', () => {
 		).toBe('M');
 	});
 
-	it('promotes the first six-digit generation total to TWh', () => {
+	it('promotes the first six-digit generation total to GWh', () => {
 		expect(
 			automaticGenerationEnergyPrefix([{ coal: 60_000, wind: 40_000 }], ['coal', 'wind'])
-		).toBe('T');
+		).toBe('G');
+	});
+
+	it('keeps larger energy windows in GWh unless a user selects TWh', () => {
+		expect(automaticGenerationEnergyPrefix([{ coal: 5_000_000 }], ['coal'])).toBe('G');
 	});
 
 	it('ignores negative load series when measuring the generation stack', () => {
@@ -40,7 +44,7 @@ describe('automaticGenerationEnergyPrefix', () => {
 				[{ generation: 100_000, battery_charging: -30_000 }],
 				['generation', 'battery_charging']
 			)
-		).toBe('T');
+		).toBe('G');
 	});
 });
 

@@ -120,7 +120,8 @@
 		selection: () => session.selection,
 		range,
 		timeZone: () => timeZone,
-		needsContributionDemand: () => needsContributionDemand
+		needsContributionDemand: () => needsContributionDemand,
+		needsWindowMetrics: () => metricsOpen
 	});
 	const { marketData, demandData, curtailmentData, shareData } = providers;
 	const data = createTrackerData({
@@ -196,7 +197,19 @@
 	let chartsHoldFrame = $derived(releasedKey !== switchKey || range.rangeSwitchPending);
 	let metricsStatus = $derived(
 		Object.fromEntries(
-			['generation', 'market', 'emissions'].map((name) => {
+			['generation', 'market', 'emissions', 'demand', 'renewables'].map((name) => {
+				if (name === 'demand' || name === 'renewables') {
+					const provider =
+						name === 'demand' ? demandData : isRollingDisplay ? marketData : shareData;
+					return [
+						name,
+						{
+							error: provider.error,
+							pending:
+								!provider.error && (chartsHoldFrame || session.gestureActive || provider.isPending)
+						}
+					];
+				}
 				const key = /** @type {import('./tracker-data.svelte.js').ChartKey} */ (name);
 				return [
 					name,
@@ -210,6 +223,20 @@
 			})
 		)
 	);
+	let renewableShareRows = $derived(
+		isRollingDisplay
+			? rollingShareRows(
+					marketData.getVisibleRows(viewWindow.start - ROLLING_LEAD_MS, viewWindow.end),
+					{
+						startMs: viewWindow.start,
+						endMs: viewWindow.end,
+						displayInterval: range.displayInterval,
+						ianaTimeZone,
+						bucketFilter
+					}
+				)
+			: shareData.getDisplayRows(viewWindow.start, viewWindow.end, shareRowOpts)
+	);
 	let metricsInput = $derived({
 		generation:
 			!metricsStatus.generation.pending && !metricsStatus.generation.error
@@ -220,6 +247,24 @@
 		emissions:
 			!metricsStatus.emissions.pending && !metricsStatus.emissions.error
 				? data.current('emissions')
+				: null,
+		demand:
+			!metricsStatus.demand.pending && !metricsStatus.demand.error
+				? {
+						data: demandData.getDisplayRows(viewWindow.start, viewWindow.end, displayRowOpts),
+						start: viewWindow.start,
+						end: viewWindow.end,
+						seriesNames: ['demand']
+					}
+				: null,
+		renewables:
+			!metricsStatus.renewables.pending && !metricsStatus.renewables.error
+				? {
+						data: renewableShareRows,
+						start: viewWindow.start,
+						end: viewWindow.end,
+						seriesNames: ['renewable_share']
+					}
 				: null,
 		hidden: hiddenSeries,
 		basis: range.activeMetric,
@@ -391,15 +436,7 @@
 			lines.push({
 				id: 'renewable-share',
 				label: showContributions ? 'Renewables (% of gross demand)' : 'Renewables',
-				data: isRollingDisplay
-					? rollingShareRows(marketData.getVisibleRows(start - ROLLING_LEAD_MS, end), {
-							startMs: start,
-							endMs: end,
-							displayInterval: range.displayInterval,
-							ianaTimeZone,
-							bucketFilter
-						})
-					: shareData.getDisplayRows(start, end, shareRowOpts),
+				data: renewableShareRows,
 				valueKey: 'renewable_share',
 				colour: RENEWABLES_LINE_COLOUR,
 				scale: 'percent',
@@ -574,6 +611,13 @@
 				<WindowMetrics
 					input={metricsInput}
 					status={metricsStatus}
+					onretry={(id) =>
+						(id === 'demand'
+							? demandData
+							: isRollingDisplay
+								? marketData
+								: shareData
+						).reconcileFetches()}
 					{rangeLabel}
 					interval={range.displayInterval}
 					intervalLabel={intervalBadge}
@@ -714,6 +758,7 @@
 
 		{#if comparison}
 			<DateComparison
+				{group}
 				snapshot={data.ready('generation') ? data.current('generation') : null}
 				selection={comparison}
 				hidden={hiddenSeries}

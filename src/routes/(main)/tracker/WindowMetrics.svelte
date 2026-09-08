@@ -10,7 +10,7 @@
 	/** @type {{input: Parameters<typeof buildWindowMetrics>[0], rangeLabel: string, interval: string,
 	 * intervalLabel: string, zone: string, generationPrefix: SiPrefix, filterLabel?: string,
 	 * status: Record<string, {pending: boolean, error: string | null}>,
-	 * onhighlight: (time: number | undefined) => void, onclose: () => void}} */
+	 * onretry: (id: string) => void, onhighlight: (time: number | undefined) => void, onclose: () => void}} */
 	let {
 		input,
 		rangeLabel,
@@ -20,6 +20,7 @@
 		generationPrefix,
 		filterLabel = '',
 		status,
+		onretry,
 		onhighlight,
 		onclose
 	} = $props();
@@ -28,9 +29,12 @@
 	const extrema = /** @type {const} */ (['min', 'max']);
 	const integer = getNumberFormat(0);
 	const decimal = getNumberFormat(2);
+	const percentage = getNumberFormat(1);
 	/** @param {number} value @param {string} id */
 	function formatValue(value, id) {
-		if (id === 'generation') return formatGenerationUnitValue(value, 'M', generationPrefix);
+		if (id === 'generation' || id === 'demand')
+			return formatGenerationUnitValue(value, 'M', generationPrefix);
+		if (id === 'renewables') return percentage.format(value);
 		return id === 'market' && input.priceMetric !== 'market_value'
 			? decimal.format(value)
 			: integer.format(value);
@@ -59,7 +63,7 @@
 	<div class="-mb-px grid grid-cols-1">
 		{#each groups as group (group.id)}
 			<div
-				class="grid min-w-0 grid-cols-1"
+				class="grid min-w-0 grid-cols-2"
 				data-testid={`metrics-${group.id}`}
 				aria-busy={status[group.id].pending}
 			>
@@ -67,14 +71,16 @@
 					{@const point = group[kind]}
 					{@const label = `${kind === 'min' ? 'Minimum' : 'Maximum'} ${group.label.toLowerCase()}`}
 					{@const subtitle = status[group.id].error
-						? 'Unavailable — retry the chart'
+						? group.id === 'demand' || group.id === 'renewables'
+							? `Unavailable — retry ${group.label.toLowerCase()}`
+							: 'Unavailable — retry the chart'
 						: status[group.id].pending
 							? 'Updating selected window…'
 							: point
 								? `${formatDate(point.time)}${point.ties > 1 ? ' · first occurrence' : ''}`
 								: 'No complete intervals'}
 					<button
-						class="min-w-0 border-b border-mid-warm-grey/40 px-4 py-4 text-left transition-colors enabled:hover:bg-light-warm-grey/40 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+						class="min-w-0 content-start break-words border-b border-mid-warm-grey/40 px-4 py-4 text-left transition-colors enabled:hover:bg-light-warm-grey/40 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
 						disabled={!point || status[group.id].pending || !!status[group.id].error}
 						data-testid={`metric-${group.id}-${kind}`}
 						title={`${group.description} Hover, focus or select to highlight the interval on the charts.`}
@@ -85,17 +91,24 @@
 						onclick={() => onhighlight(point?.time)}
 					>
 						<MetricCard
+							size="sm"
 							{label}
 							value={point ? formatValue(point.value, group.id) : '--'}
-							unit={group.id === 'generation'
+							unit={group.id === 'generation' || group.id === 'demand'
 								? `${generationPrefix}${input.basis === 'energy' ? 'Wh' : 'W'}`
 								: group.unit}
 							{subtitle}
 						/>
 					</button>
 				{/each}
+				{#if (group.id === 'demand' || group.id === 'renewables') && status[group.id].error}
+					<button
+						class="col-span-2 px-4 py-2 text-left text-xs underline"
+						onclick={() => onretry(group.id)}>Retry {group.label.toLowerCase()}</button
+					>
+				{/if}
 				{#if group.available < group.intervals && !status[group.id].pending && !status[group.id].error}
-					<p class="border-b border-mid-warm-grey/40 px-4 py-2 text-xxs text-mid-grey">
+					<p class="col-span-2 border-b border-mid-warm-grey/40 px-4 py-2 text-xxs text-mid-grey">
 						{group.label}: {group.available} of {group.intervals} intervals complete.
 					</p>
 				{/if}

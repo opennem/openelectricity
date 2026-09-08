@@ -1,6 +1,6 @@
 import { convert, formatSI } from '$lib/utils/si-units.js';
 
-const AUTO_TWH_THRESHOLD_MWH = 100_000;
+const AUTO_GWH_THRESHOLD_MWH = 100_000;
 
 /**
  * Format a generation quantity after conversion to its displayed SI prefix.
@@ -27,7 +27,7 @@ export function formatGenerationUnitValue(value, fromPrefix, displayPrefix) {
 
 /**
  * Choose the initial energy unit from the largest positive generation stack.
- * The first six-digit MWh value is promoted directly to TWh; GWh remains
+ * The first six-digit MWh value is promoted to GWh; TWh remains
  * available as a manual chart option.
  *
  * @param {any[]} rows
@@ -44,7 +44,7 @@ export function automaticGenerationEnergyPrefix(rows, seriesNames) {
 		}
 		if (totalMWh > maximumMWh) maximumMWh = totalMWh;
 	}
-	return maximumMWh >= AUTO_TWH_THRESHOLD_MWH ? 'T' : 'M';
+	return maximumMWh >= AUTO_GWH_THRESHOLD_MWH ? 'G' : 'M';
 }
 
 /**

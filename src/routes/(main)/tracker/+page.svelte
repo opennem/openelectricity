@@ -261,30 +261,18 @@
 						/>
 
 						<div class="h-6 w-px shrink-0 bg-warm-grey"></div>
-						<select
-							class="shrink-0 rounded border border-warm-grey bg-white px-2 py-2 text-xs sm:hidden"
-							aria-label="Analysis view"
-							value={timeOfDay ? 'average' : 'timeline'}
-							onchange={(event) =>
-								session.select(
-									'profileView',
-									event.currentTarget.value === 'timeline' ? 'timeline' : 'average'
-								)}
-						>
-							<option value="timeline">Timeline</option><option value="average">Time of day</option>
-						</select>
-						<div class="hidden shrink-0 gap-1 sm:flex" aria-label="Analysis view">
-							<button
-								class="rounded px-3 py-2 text-xs aria-pressed:bg-dark-grey aria-pressed:text-white"
-								aria-pressed={!timeOfDay}
-								onclick={() => session.select('profileView', 'timeline')}>Timeline</button
-							>
-							<button
-								class="rounded px-3 py-2 text-xs aria-pressed:bg-dark-grey aria-pressed:text-white"
-								aria-pressed={timeOfDay}
-								onclick={() => session.select('profileView', 'average')}>Time of day</button
-							>
-						</div>
+						<FilterSelect
+							selected={timeOfDay ? 'average' : 'timeline'}
+							options={[
+								{ value: 'timeline', label: 'Timeline' },
+								{ value: 'average', label: 'Time of day' }
+							]}
+							listLabel="Analysis view"
+							defaultValue="timeline"
+							compact
+							onchange={(value) =>
+								session.select('profileView', value === 'timeline' ? 'timeline' : 'average')}
+						/>
 
 						{#if !timeOfDay}
 							<ChartRangeBar

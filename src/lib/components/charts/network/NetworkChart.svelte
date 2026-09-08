@@ -86,7 +86,7 @@
 	 * @property {boolean} [showHeader] - Show the chart header bar
 	 * @property {'strip' | 'floating' | 'none'} [tooltipMode]
 	 * @property {boolean} [generationUnitOptions] - Expose MW/GW for generation
-	 *   power and MWh/GWh/TWh for generation energy. Energy defaults to TWh once
+	 *   power and MWh/GWh/TWh for generation energy. Energy defaults to GWh once
 	 *   the largest visible positive stack reaches six MWh digits.
 	 * @property {boolean} [useDivergingStack] - Stack positive/negative independently
 	 * @property {boolean} [interpolateRooftop] - Interpolate repeated rooftop power for 5m rendering only; snapshots retain reported values

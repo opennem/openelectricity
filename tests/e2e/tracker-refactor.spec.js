@@ -204,9 +204,9 @@ for (const group of ['detailed', 'simple']) {
 		expect(line).not.toContain(group === 'detailed' ? '310' : '510');
 		await expect(solarRow.locator('td')).toHaveText(cells);
 		await page.screenshot({ path: testInfo.outputPath('rooftop-interpolation.png') });
-		await page.setViewportSize({ width: 390, height: 844 });
 		const closeMetrics = page.getByRole('button', { name: 'Hide metrics', exact: true });
 		if (await closeMetrics.isVisible()) await closeMetrics.click();
+		await page.setViewportSize({ width: 390, height: 844 });
 		await note.scrollIntoViewIfNeeded();
 		await expect(note).toBeVisible();
 		expect(
@@ -373,7 +373,7 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await expect(minimum).toContainText('1 Aug 2026');
 	await expect(maximum).toContainText('2 Aug 2026');
 	await expect(metrics).toContainText('UTC+10:00');
-	await expect(metrics.locator('button[data-testid]')).toHaveCount(6);
+	await expect(metrics.locator('button[data-testid]')).toHaveCount(8);
 	const requests = api.requests.length;
 	await maximum.focus();
 	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
@@ -384,7 +384,11 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await expect(minimum).toContainText('100');
 	await expect(maximum).toContainText('200');
 	await metrics.scrollIntoViewIfNeeded();
-	await expect(page.getByTestId('metric-emissions-min')).toBeEnabled();
+	await expect(page.getByTestId('metric-demand-min')).toContainText('100');
+	await expect(page.getByTestId('metric-demand-max')).toContainText('200');
+	await expect(page.getByTestId('metric-emissions-min')).toHaveCount(0);
+	await expect(page.getByTestId('metric-renewables-min')).toContainText('25');
+	await expect(page.getByTestId('metric-renewables-max')).toContainText('%');
 	await page.screenshot({ path: testInfo.outputPath('window-metrics-desktop.png') });
 });
 
@@ -550,6 +554,8 @@ test('window metrics follow range and market modes without applying timeline tra
 	);
 	await expect(page.getByTestId('metric-generation-min')).toContainText('200');
 	await expect(page.getByTestId('metric-generation-min')).toContainText('MW');
+	await expect(page.getByTestId('metric-demand-min')).toContainText('100');
+	await expect(page.getByTestId('metric-demand-max')).toContainText('200');
 	await card(page, 'Market').getByRole('tab', { name: 'Market value', exact: true }).click();
 	await expect(page.getByTestId('metric-market-max')).toBeEnabled();
 	await expect(page.getByTestId('metric-market-max')).toContainText('Maximum market value');
@@ -563,6 +569,8 @@ test('window metrics follow range and market modes without applying timeline tra
 	await expect(page.getByTestId('metric-generation-min')).toContainText('Minimum net energy');
 	await expect(page.getByTestId('metric-generation-min')).toContainText('400');
 	await expect(page.getByTestId('metric-generation-min')).toContainText('MWh');
+	await expect(page.getByTestId('metric-demand-min')).toContainText('MWh');
+	await expect(page.getByTestId('metric-demand-min')).toContainText('200');
 });
 
 test('window metrics never show held, failed or empty data as current', async ({ page }) => {
@@ -577,6 +585,22 @@ test('window metrics never show held, failed or empty data as current', async ({
 	const emissions = page.getByTestId('metric-emissions-min');
 	await expect(emissions).toBeDisabled();
 	await expect(emissions).toContainText('No complete intervals');
+});
+
+test('demand metrics wait for their feed and recover with the table and overlay closed', async ({
+	page
+}) => {
+	const api = await fixture(page, { fail: 'demand' });
+	await page.goto('/tracker?region=nsw1&table=0');
+	const demand = page.getByTestId('metric-demand-min');
+	await expect(page.getByRole('button', { name: 'Retry demand', exact: true })).toBeVisible();
+	await expect(demand).toBeDisabled();
+	await expect(demand).toContainText('Unavailable');
+	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
+	api.recover();
+	await page.getByRole('button', { name: 'Retry demand', exact: true }).click();
+	await expect(demand).toBeEnabled();
+	await expect(demand).toContainText('100');
 });
 
 test('window metrics fit mobile and label WEM network time', async ({ page }, testInfo) => {
@@ -610,7 +634,7 @@ test('window metrics fit mobile and label WEM network time', async ({ page }, te
 	await expect(page.getByRole('region', { name: 'Window metrics' })).toHaveCount(0);
 });
 
-test('metrics pane stays left and single-column, resizes without fetching and remembers its width', async ({
+test('metrics pane stays left with minimum and maximum columns, resizes without fetching and remembers its width', async ({
 	page
 }) => {
 	const api = await fixture(page);
@@ -637,10 +661,12 @@ test('metrics pane stays left and single-column, resizes without fetching and re
 			return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 		})
 	);
-	for (let i = 1; i < cells.length; i++) {
+	for (let i = 0; i < cells.length; i += 2) {
 		expect(cells[i].x).toBe(cells[0].x);
-		expect(cells[i].width).toBe(cells[0].width);
-		expect(cells[i].y).toBeGreaterThanOrEqual(cells[i - 1].y + cells[i - 1].height);
+		expect(cells[i + 1].x).toBeGreaterThan(cells[i].x);
+		expect(cells[i + 1].y).toBe(cells[i].y);
+		expect(cells[i + 1].width).toBeCloseTo(cells[i].width, 0);
+		if (i > 0) expect(cells[i].y).toBeGreaterThanOrEqual(cells[i - 2].y + cells[i - 2].height);
 	}
 	const requests = api.requests.length;
 	const value = await page.getByTestId('metric-generation-min').textContent();
@@ -900,7 +926,7 @@ test('two-date comparison uses signed displayed values, Stratum bars, CSV and hi
 	const a = Date.parse('2026-08-01T00:00:00+10:00');
 	const b = a + 86_400_000;
 	await page.goto(`/tracker?start=${a}&end=${b + 86_400_000}&interval=30m&table=0`);
-	await expect(card(page, 'Generation').getByText('Loading', { exact: true })).toBeHidden();
+	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
 	await card(page, 'Generation')
 		.getByRole('button', { name: 'Compare dates', exact: true })
 		.click();
@@ -911,11 +937,32 @@ test('two-date comparison uses signed displayed values, Stratum bars, CSV and hi
 	const coal = panel
 		.getByRole('row')
 		.filter({ has: page.getByRole('rowheader', { name: 'Coal', exact: true }) });
-	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100%']);
+	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100.0%']);
 	const load = panel
 		.getByRole('row')
 		.filter({ has: page.getByRole('rowheader', { name: 'Battery (Charging)', exact: true }) });
-	await expect(load.getByRole('cell')).toHaveText(['-400', '-800', '-400', '-100%']);
+	await expect(load.getByRole('cell')).toHaveText(['-400', '-800', '-400', '-100.0%']);
+	await expect(
+		panel
+			.getByRole('rowgroup', { name: 'Sources' })
+			.getByRole('rowheader', { name: 'Coal', exact: true })
+	).toBeVisible();
+	await expect(
+		panel
+			.getByRole('rowgroup', { name: 'Loads' })
+			.getByRole('rowheader', { name: 'Battery (Charging)', exact: true })
+	).toBeVisible();
+	await expect(
+		panel
+			.getByRole('rowgroup', { name: 'Sources' })
+			.getByRole('rowheader', { name: 'Battery (Charging)', exact: true })
+	).toHaveCount(0);
+	const axisLabels = panel.locator('.x-axis-rotated text');
+	await expect(axisLabels.first()).toBeVisible();
+	expect(await axisLabels.first().evaluate((el) => getComputedStyle(el).fill)).toBe(
+		'rgb(53, 53, 53)'
+	);
+
 	await expect(panel.locator('.stratum-chart .stacked-bar rect')).toHaveCount(4);
 	await panel.locator('.stacked-bar rect').first().hover();
 	await expect(panel.locator('.stratum-chart')).toContainText('Wind');
@@ -928,13 +975,13 @@ test('two-date comparison uses signed displayed values, Stratum bars, CSV and hi
 	expect(csv).toContain('Change B − A (MW)');
 	expect(csv).toContain(',-400,-800,-400,-100');
 	await panel.getByRole('button', { name: 'Swap A and B' }).click();
-	await expect(coal.getByRole('cell')).toHaveText(['200', '100', '-100', '-50%']);
+	await expect(coal.getByRole('cell')).toHaveText(['200', '100', '-100', '-50.0%']);
 	await page.goBack();
-	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100%']);
+	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100.0%']);
 	expect(api.requests.length).toBe(requestCount);
 	const link = page.url();
 	await page.reload();
-	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100%']);
+	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100.0%']);
 	expect(page.url()).toBe(link);
 	await panel.scrollIntoViewIfNeeded();
 	await page.screenshot({ path: testInfo.outputPath('two-date-comparison.png'), fullPage: true });
@@ -992,8 +1039,8 @@ test('comparison uses raw energy despite timeline transforms and follows visibil
 	const coal = panel
 		.getByRole('row')
 		.filter({ has: page.getByRole('rowheader', { name: 'Coal', exact: true }) });
-	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100%']);
-	await expect(panel.locator('caption')).toContainText('MWh');
+	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100.0%']);
+	await expect(panel.getByRole('columnheader', { name: 'A MWh', exact: true })).toBeVisible();
 	await expect(panel.getByRole('rowheader', { name: 'Wind', exact: true })).toHaveCount(0);
 	const csvDownload = page.waitForEvent('download');
 	await panel.getByRole('button', { name: 'Download comparison CSV' }).click();
@@ -1203,11 +1250,17 @@ test('time-of-day switches preserve timeline bounds and fit narrow screens', asy
 	);
 	const original = new URL(page.url()).searchParams;
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await page.getByRole('button', { name: 'Timeline', exact: true }).click();
+	await page.getByRole('button', { name: 'Time of day', exact: true }).click();
+	await page
+		.getByRole('listbox', { name: 'Analysis view' })
+		.getByRole('option', { name: 'Timeline', exact: true })
+		.click();
+	await expect(page.getByRole('button', { name: 'Timeline', exact: true })).toBeVisible();
 	await expect(card(page, 'Generation')).toBeVisible();
 	for (const key of ['range', 'interval', 'hidden', 'transform'])
 		expect(new URL(page.url()).searchParams.get(key)).toBe(original.get(key));
 	await page.goBack();
+	await expect(page.getByRole('button', { name: 'Time of day', exact: true })).toBeVisible();
 	await expect(page.getByRole('combobox', { name: 'View', exact: true })).toHaveValue('daily');
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await page.setViewportSize({ width: 390, height: 844 });
@@ -1453,6 +1506,10 @@ test('percentage shares stay stable when hiding series and exports keep raw unit
 	tooltip = await hoverGeneration(page);
 	await expect(tooltip).toContainText('Imports');
 	await expect(tooltip).toContainText('MW');
+	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MW');
+	for (const value of await tooltip.getByTestId('tooltip-value').allTextContents()) {
+		expect(value).not.toContain('MW');
+	}
 });
 
 test('demand percentage data loads with the table closed and overlays share its units', async ({

@@ -93,6 +93,7 @@
 	let total = $derived(getTotalForRow(chart, activeData));
 	let formattedTotal = $derived(formatTooltipNumericValue(chart, total));
 	let displayUnit = $derived(chart.tooltipUnit);
+	let unitInHeading = $derived(chart.chartOptions.isChartTypeStackedArea);
 
 	/**
 	 * Map a time value to its pixel position inside the chart area, mirroring
@@ -194,9 +195,14 @@
 			style:top="{tooltipTop}px"
 		>
 			<!-- Date header -->
-			{#if formattedDate}
-				<div class="text-mid-grey font-light pb-1.5 mb-1.5 border-b border-warm-grey/60">
-					{formattedDate}
+			{#if formattedDate || (unitInHeading && displayUnit)}
+				<div
+					class="flex items-baseline justify-between gap-3 text-mid-grey font-light pb-1.5 mb-1.5 border-b border-warm-grey/60"
+				>
+					<span>{formattedDate}</span>
+					{#if unitInHeading && displayUnit}<span data-testid="tooltip-unit" class="font-mono"
+							>{displayUnit}</span
+						>{/if}
 				</div>
 			{/if}
 
@@ -216,12 +222,13 @@
 							>
 						</span>
 						<span
+							data-testid="tooltip-value"
 							class="font-mono tabular-nums {row.isHovered
 								? 'font-semibold text-black'
 								: 'font-medium text-dark-grey'}"
 						>
 							{#if row.formattedValue}
-								{row.formattedValue}{#if displayUnit}&nbsp;{displayUnit}{/if}
+								{row.formattedValue}{#if !unitInHeading && displayUnit}&nbsp;{displayUnit}{/if}
 							{:else}
 								—
 							{/if}
@@ -240,11 +247,20 @@
 									class="w-2 h-2 shrink-0 {row.kind === 'area' ? 'rounded-sm' : 'rounded-full'}"
 									style:background-color={row.colour}
 								></span>
-								<span class="truncate text-dark-grey">{row.label}</span>
+								<span class="truncate text-dark-grey"
+									>{row.label}{#if unitInHeading && row.unit && row.unit !== displayUnit}<span
+											class="text-mid-grey"
+										>
+											({row.unit})</span
+										>{/if}</span
+								>
 							</span>
-							<span class="font-mono tabular-nums font-medium text-dark-grey">
+							<span
+								data-testid="tooltip-value"
+								class="font-mono tabular-nums font-medium text-dark-grey"
+							>
 								{#if row.formattedValue}
-									{row.formattedValue}{#if row.unit}&nbsp;{row.unit}{/if}
+									{row.formattedValue}{#if !unitInHeading && row.unit}&nbsp;{row.unit}{/if}
 								{:else}
 									—
 								{/if}
@@ -262,8 +278,11 @@
 					<span class="text-mid-grey"
 						>{chart.usesCustomProportion ? 'Visible contribution' : 'Total'}</span
 					>
-					<span class="font-mono font-semibold text-dark-grey tabular-nums">
-						{#if formattedTotal}{formattedTotal}{#if displayUnit}&nbsp;{displayUnit}{/if}{:else}—{/if}
+					<span
+						data-testid="tooltip-value"
+						class="font-mono font-semibold text-dark-grey tabular-nums"
+					>
+						{#if formattedTotal}{formattedTotal}{#if !unitInHeading && displayUnit}&nbsp;{displayUnit}{/if}{:else}—{/if}
 					</span>
 				</div>
 			{/if}

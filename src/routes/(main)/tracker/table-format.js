@@ -37,8 +37,8 @@ export function formatTableEnergy(valueMWh, displayPrefix) {
 /**
  * The prefix the Energy column renders in, chosen from its largest value. The
  * column steps up only once a value would need five digits — 10,000 MWh
- * becomes 10 GWh, 10,000 GWh becomes 10 TWh — rather than following the
- * chart's early promotion to TWh, so GWh is always visited first.
+ * becomes 10 GWh, 10,000 GWh becomes 10 TWh. This table-specific scaling is
+ * independent of the chart's automatic GWh default and manual unit choice.
  *
  * @param {number} maxMWh
  * @returns {SiPrefix}

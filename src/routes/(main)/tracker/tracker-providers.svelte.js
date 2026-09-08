@@ -6,7 +6,7 @@ import { isRollingInterval } from '$lib/components/charts/facility/range-interva
 /** Optional data sources share the chart request broker and range lifecycle.
  * @param {{selection: () => import('./types.js').TrackerUrlState,
  * range: ReturnType<typeof import('$lib/components/charts/facility/chart-range-control.svelte.js').createChartRangeControl>,
- * timeZone: () => string, needsContributionDemand?: () => boolean}} opts
+ * timeZone: () => string, needsContributionDemand?: () => boolean, needsWindowMetrics?: () => boolean}} opts
  */
 export function createTrackerProviders(opts) {
 	const range = opts.range;
@@ -27,7 +27,7 @@ export function createTrackerProviders(opts) {
 		timeZone: () => timeZone,
 		enabled: () =>
 			tablePanelOpen ||
-			(showRenewablesLine && isRollingDisplay) ||
+			((showRenewablesLine || !!opts.needsWindowMetrics?.()) && isRollingDisplay) ||
 			!!opts.needsContributionDemand?.()
 	});
 	// Per-fuel-tech market value and emissions feed the table's Av price and
@@ -55,7 +55,7 @@ export function createTrackerProviders(opts) {
 		metricKey: () => (range.activeMetric === 'energy' ? 'demand_energy' : 'demand'),
 		interval: () => range.activeInterval,
 		timeZone: () => timeZone,
-		enabled: () => tablePanelOpen || showDemandLine
+		enabled: () => tablePanelOpen || showDemandLine || !!opts.needsWindowMetrics?.()
 	});
 	const curtailmentData = createMarketSeriesProvider({
 		region: () => region,
@@ -69,7 +69,8 @@ export function createTrackerProviders(opts) {
 		metricKey: () => 'renewable_share',
 		interval: () => range.activeInterval,
 		timeZone: () => timeZone,
-		enabled: () => tablePanelOpen || (showRenewablesLine && !isRollingDisplay)
+		enabled: () =>
+			tablePanelOpen || ((showRenewablesLine || !!opts.needsWindowMetrics?.()) && !isRollingDisplay)
 	});
 
 	const all = [marketData, mvData, emissionsData, demandData, curtailmentData, shareData];

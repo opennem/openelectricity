@@ -156,7 +156,7 @@
 
 	/** Av power follows the chart's MW/GW choice while the chart shows power,
 	 *  and stays in MW otherwise. Energy always sizes its own prefix from the
-	 *  table's largest value — the chart's early jump to TWh doesn't apply. */
+	 *  table's largest value, independently of the chart's selected prefix. */
 	let powerPrefix = $derived(basis === 'power' ? displayPrefix : 'M');
 	let energyPrefix = $derived(
 		energyDisplayPrefix(Math.max(0, ...rows.map((row) => row.energyMWh ?? 0)))

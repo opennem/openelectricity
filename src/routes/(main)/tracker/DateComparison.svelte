@@ -3,12 +3,21 @@
 	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
 	import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
+	import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
+	import { DEFAULT_GROUP } from './tracker-model.js';
+	import {
+		formatTablePower,
+		formatTableEnergy,
+		formatTablePercentage,
+		splitTableLabel,
+		EMPTY_CELL
+	} from './table-format.js';
 	import { comparisonBuckets, comparisonRows, comparisonCsv } from './comparison.js';
 
 	/** @type {{snapshot: import('./types.js').GenerationSnapshot | null,
 	 * selection: import('./comparison.js').Comparison, hidden: string[], pending: boolean,
 	 * error: string | null, region: string, zone: string, interval: string,
-	 * energy: boolean, prefix: SiPrefix,
+	 * energy: boolean, prefix: SiPrefix, group: string,
 	 * onchange: (value: import('./comparison.js').Comparison | null) => void}} */
 	let {
 		snapshot,
@@ -21,11 +30,17 @@
 		interval,
 		energy,
 		prefix,
+		group = DEFAULT_GROUP,
 		onchange
 	} = $props();
 	const sides = /** @type {const} */ (['a', 'b']);
 	let buckets = $derived(comparisonBuckets(snapshot));
 	let rows = $derived(comparisonRows(snapshot, selection, hidden));
+	let loadIds = $derived(loadGroupsFor(getGroup(group)));
+	let sections = $derived([
+		{ label: 'Sources', rows: rows.filter((row) => !loadIds.includes(row.id)) },
+		{ label: 'Loads', rows: rows.filter((row) => loadIds.includes(row.id)) }
+	]);
 	let formatDate = $derived(getTimeFormatPolicy(interval, ianaFromOffset(zone)).formatTooltip);
 	let aAvailable = $derived(buckets.some((row) => row.time === selection.a));
 	let bAvailable = $derived(buckets.some((row) => row.time === selection.b));
@@ -64,7 +79,7 @@
 	}
 	/** @param {number | null} value */
 	function format(value) {
-		return value === null ? '—' : chart.convertAndFormatValue(value);
+		return energy ? formatTableEnergy(value, prefix) : formatTablePower(value, prefix);
 	}
 	function download() {
 		if (!canExport) return;
@@ -157,7 +172,7 @@
 				with zero.
 			</p>
 		{/if}
-		<div class="mt-4 overflow-x-auto">
+		<div class="comparison-chart mt-4 overflow-x-auto">
 			<div style:min-width={`${Math.max(300, rows.length * 70)}px`}>
 				<StratumChart
 					{chart}
@@ -167,39 +182,88 @@
 			</div>
 		</div>
 		<div class="mt-3 overflow-x-auto">
-			<table class="w-full whitespace-nowrap text-right font-space text-xs">
-				<caption class="py-2 text-left"
-					>A: {formatDate(/** @type {number} */ (selection.a))} · B: {formatDate(
+			<table class="w-full min-w-[560px] table-fixed border-separate border-spacing-0">
+				<caption class="py-2 text-left text-xs text-mid-grey">
+					A: {formatDate(/** @type {number} */ (selection.a))} · B: {formatDate(
 						/** @type {number} */ (selection.b)
-					)} · {chart.chartOptions.displayUnit}</caption
-				>
-				<thead
-					><tr
-						><th scope="col">Technology</th><th scope="col">A</th><th scope="col">B</th><th
-							scope="col">Change (B − A)</th
-						><th scope="col">Change (%)</th></tr
-					></thead
-				>
-				<tbody>
-					{#each rows as row (row.id)}
-						<tr
-							><th scope="row" class="text-left">
-								<button
-									class="flex items-center gap-2"
-									onfocus={() => chart.setHoverCategory(row.label, row.id)}
-									onblur={() => chart.clearHover()}
-									onclick={() => chart.setHoverCategory(row.label, row.id)}
-								>
-									<span class="size-3 rounded-sm" style:background={row.colour}></span>{row.label}
-								</button>
-							</th><td>{format(row.a)}</td><td>{format(row.b)}</td><td>{format(row.delta)}</td><td
-								>{row.percent === null
-									? '—'
-									: `${row.percent.toLocaleString('en-AU', { maximumFractionDigits: 1 })}%`}</td
-							></tr
+					)}
+				</caption>
+				<thead class="bg-light-warm-grey">
+					<tr>
+						<th
+							scope="col"
+							class="sticky left-0 z-[1] w-[160px] border-b border-r border-warm-grey bg-light-warm-grey px-2 py-3 text-left align-top font-medium"
 						>
-					{/each}
-				</tbody>
+							<div class="ml-2 flex flex-col items-start">
+								<span class="text-xs text-dark-grey">Technology</span><span
+									class="font-mono text-xxs font-light text-mid-grey">{getGroup(group).label}</span
+								>
+							</div>
+						</th>
+						{#each ['A', 'B', 'Change (B − A)', 'Change (%)'] as label, index (label)}
+							<th
+								scope="col"
+								class="border-b border-warm-grey px-2 py-3 text-right align-top font-medium last:pr-3"
+							>
+								<div class="flex flex-col items-end">
+									<span class="text-xs">{label}</span><span
+										class="font-mono text-xxs font-light text-mid-grey"
+										>{index === 3 ? '%' : chart.chartOptions.displayUnit}</span
+									>
+								</div>
+							</th>
+						{/each}
+					</tr>
+				</thead>
+				{#each sections as section (section.label)}
+					{#if section.rows.length}
+						<tbody aria-label={section.label}>
+							<tr>
+								<th
+									scope="rowgroup"
+									class="sticky left-0 z-[1] border-b border-r border-warm-grey bg-white px-2 pb-1 pt-4 text-left text-sm font-medium"
+									><span class="ml-2">{section.label}</span></th
+								>
+								<td colspan="4" class="border-b border-warm-grey"></td>
+							</tr>
+							{#each section.rows as row (row.id)}
+								{@const label = splitTableLabel(row.label)}
+								<tr class="group text-sm hover:bg-light-warm-grey">
+									<th
+										scope="row"
+										class="sticky left-0 z-[1] border-r border-warm-grey bg-white px-2 py-1.5 text-left font-normal group-hover:bg-light-warm-grey"
+									>
+										<button
+											class="ml-2 flex w-full items-center gap-2.5 text-left"
+											onfocus={() => chart.setHoverCategory(row.label, row.id)}
+											onblur={() => chart.clearHover()}
+											onclick={() => chart.setHoverCategory(row.label, row.id)}
+										>
+											<span
+												class="size-5 shrink-0 rounded-sm border"
+												style:background-color={row.colour}
+												style:border-color={row.colour}
+											></span>
+											<span class="min-w-0 truncate text-dark-grey"
+												>{label.main}<span class="text-mid-grey"
+													>{label.sub ? ` ${label.sub}` : ''}</span
+												></span
+											>
+										</button>
+									</th>
+									{#each [format(row.a), format(row.b), format(row.delta), formatTablePercentage(row.percent)] as cell, index (index)}
+										<td
+											class="whitespace-nowrap px-2 py-1.5 text-right font-mono tabular-nums last:pr-3 {cell ===
+											EMPTY_CELL
+												? 'text-mid-grey'
+												: 'text-dark-grey'}">{cell}</td
+										>
+									{/each}
+								</tr>
+							{/each}
+						</tbody>
+					{/if}
+				{/each}
 			</table>
 		</div>
 		<p class="mt-3 text-xs text-mid-grey">
@@ -211,9 +275,7 @@
 </section>
 
 <style>
-	th,
-	td {
-		padding: 0.8rem;
-		border-bottom: 1px solid #eee;
+	.comparison-chart :global(.x-axis-rotated text) {
+		fill: var(--color-dark-grey, #353535);
 	}
 </style>
