@@ -379,7 +379,7 @@
 
 {#if variant === 'expanded'}
 	<!-- The switcher falls back to dropdowns below `md`. -->
-	<div class="hidden md:flex items-stretch gap-1.5">
+	<div class="hidden md:flex items-stretch gap-[var(--chart-range-gap,0.375rem)]">
 		<SwitchWithIcons
 			buttons={switchButtons}
 			selected={switchSelected}
@@ -395,11 +395,11 @@
 		{@render bucketFilterControl()}
 	</div>
 
-	<div class="flex md:hidden items-stretch gap-1.5">
+	<div class="flex md:hidden items-stretch gap-[var(--chart-range-gap,0.375rem)]">
 		{@render smallControls()}
 	</div>
 {:else}
-	<div class="flex items-stretch gap-1.5">
+	<div class="flex items-stretch gap-[var(--chart-range-gap,0.375rem)]">
 		{@render smallControls()}
 	</div>
 {/if}

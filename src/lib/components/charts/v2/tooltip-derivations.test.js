@@ -5,9 +5,12 @@ import {
 	getTotalForRow,
 	formatTooltipDate,
 	formatTooltipNumericValue,
+	formatTooltipPercentage,
 	buildSeriesRows,
 	buildOverlayRows
 } from './tooltip-derivations.js';
+import { createContributionContext } from '../network/contribution.js';
+import { DEMAND_GROSS_SERIES_ID } from '../network/market-series-ids.js';
 
 /**
  * Build a minimal mock chart with only the properties the helpers read.
@@ -295,6 +298,56 @@ describe('formatTooltipNumericValue', () => {
 	});
 });
 
+describe('formatTooltipPercentage', () => {
+	const row = { time: 100, coal: 60, wind: 40, imports: 20, battery_charging: -10 };
+	const input = {
+		generationRows: [row],
+		demandRows: [{ time: 100, [DEMAND_GROSS_SERIES_ID]: 25 }],
+		seriesNames: ['coal', 'wind', 'imports', 'battery_charging'],
+		loadSeriesIds: ['battery_charging']
+	};
+
+	it('uses the full interval denominator despite hidden technologies or display units', () => {
+		const chart = makeChart({
+			visibleSeriesNames: ['wind'],
+			convertAndFormatValue: (/** @type {number} */ value) => String(value / 1000),
+			proportionContext: createContributionContext({ ...input, mode: 'generation' })
+		});
+		expect(formatTooltipPercentage(chart, row, 'wind')).toBe('40');
+		expect(formatTooltipPercentage(chart, row, 'imports')).toBe('');
+		expect(formatTooltipPercentage(chart, row, 'battery_charging')).toBe('');
+		expect(formatTooltipPercentage(chart, { ...row, wind: 0 }, 'wind')).toBe('0');
+	});
+
+	it('uses the selected demand basis, preserving shares above 100%', () => {
+		const chart = makeChart({
+			proportionContext: createContributionContext({ ...input, mode: 'demand' })
+		});
+		expect(formatTooltipPercentage(chart, row, 'wind')).toBe('160');
+		expect(formatTooltipPercentage(chart, row, 'imports')).toBe('80');
+		expect(formatTooltipPercentage(chart, { ...row, time: 200 }, 'wind')).toBe('');
+		expect(formatTooltipPercentage(chart, { ...row, wind: null }, 'wind')).toBe('');
+	});
+
+	it('leaves pending or zero denominators unavailable', () => {
+		for (const settings of [{ ready: false }, { generationRows: [{ ...row, coal: 0, wind: 0 }] }]) {
+			const chart = makeChart({
+				proportionContext: createContributionContext({ ...input, mode: 'generation', ...settings })
+			});
+			expect(formatTooltipPercentage(chart, row, 'wind')).toBe('');
+		}
+	});
+
+	it('does not duplicate percentages in a proportion view or add them to unconfigured charts', () => {
+		expect(formatTooltipPercentage(makeChart(), row, 'wind')).toBe('');
+		const chart = makeChart({
+			usesCustomProportion: true,
+			proportionContext: createContributionContext({ ...input, mode: 'generation' })
+		});
+		expect(formatTooltipPercentage(chart, { ...row, wind: 40 }, 'wind')).toBe('');
+	});
+});
+
 describe('buildOverlayRows', () => {
 	it('joins enabled area and line overlays at the active timestamp', () => {
 		const chart = makeChart({
@@ -390,5 +443,91 @@ describe('buildOverlayRows', () => {
 	it('returns no rows when no overlays are enabled', () => {
 		expect(buildOverlayRows(makeChart(), { time: 100 })).toEqual([]);
 		expect(buildOverlayRows(makeChart({ overlayLines: [] }), undefined)).toEqual([]);
+	});
+
+	it('pairs renewable amounts with their independently reported percentage without scaling it', () => {
+		const chart = makeChart({
+			chartOptions: { displayUnit: 'GWh' },
+			convertAndFormatValue: (/** @type {number} */ value) => String(value / 1000),
+			overlayLines: [
+				{
+					id: 'renewable-share',
+					valueKey: 'share',
+					scale: 'percent',
+					data: [
+						{ time: 100, share: 67.89 },
+						{ time: 200, share: 0 }
+					],
+					formatTooltipValue: (/** @type {number} */ value) => value.toFixed(1),
+					absoluteTooltipValue: {
+						data: [
+							{ time: 100, renewables: 1200 },
+							{ time: 200, renewables: 0 }
+						],
+						valueKey: 'renewables'
+					}
+				}
+			]
+		});
+		expect(buildOverlayRows(chart, { time: 100 })).toMatchObject([
+			{ formattedValue: '1.2', formattedPercentage: '67.9', unit: 'GWh' }
+		]);
+		expect(buildOverlayRows(chart, { time: 200 })).toMatchObject([
+			{ formattedValue: '0', formattedPercentage: '0.0' }
+		]);
+		chart.usesCustomProportion = true;
+		expect(buildOverlayRows(chart, { time: 100 })).toMatchObject([
+			{ formattedValue: '67.9', formattedPercentage: undefined, unit: '%' }
+		]);
+	});
+
+	it('leaves missing renewable amounts and percentages independently unavailable at the exact time', () => {
+		const chart = makeChart({
+			overlayLines: [
+				{
+					id: 'renewable-share',
+					valueKey: 'share',
+					data: [{ time: 100, share: 25 }],
+					absoluteTooltipValue: { data: [{ time: 200, renewables: 100 }], valueKey: 'renewables' }
+				}
+			]
+		});
+		expect(buildOverlayRows(chart, { time: 100 })).toMatchObject([
+			{ formattedValue: '', formattedPercentage: '25' }
+		]);
+		expect(buildOverlayRows(chart, { time: 200 })).toMatchObject([
+			{ formattedValue: '100.0', formattedPercentage: '' }
+		]);
+	});
+
+	it('pairs curtailment with the selected contribution basis despite hidden generation', () => {
+		const input = {
+			generationRows: [{ time: 100, coal: 60, wind: 40 }],
+			demandRows: [{ time: 100, [DEMAND_GROSS_SERIES_ID]: 25 }],
+			seriesNames: ['coal', 'wind'],
+			loadSeriesIds: []
+		};
+		const chart = makeChart({
+			visibleSeriesNames: ['wind'],
+			proportionContext: createContributionContext({ ...input, mode: 'generation' }),
+			overlayAreas: [
+				{
+					id: 'curtailment',
+					data: [{ time: 100, curtailment_wind: 50 }],
+					series: [{ id: 'curtailment_wind' }]
+				}
+			]
+		});
+		expect(buildOverlayRows(chart, { time: 100 })).toMatchObject([
+			{ formattedValue: '50.0', formattedPercentage: '50', unit: 'MW' }
+		]);
+		chart.proportionContext = createContributionContext({ ...input, mode: 'demand' });
+		expect(buildOverlayRows(chart, { time: 100 })).toMatchObject([
+			{ formattedValue: '50.0', formattedPercentage: '200', unit: 'MW' }
+		]);
+		chart.proportionContext = createContributionContext({ ...input, mode: 'demand', ready: false });
+		expect(buildOverlayRows(chart, { time: 100 })).toMatchObject([
+			{ formattedValue: '50.0', formattedPercentage: '' }
+		]);
 	});
 });

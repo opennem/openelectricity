@@ -51,19 +51,21 @@
 	};
 </script>
 
-<div class="flex flex-col gap-0.5">
-	<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">
-		{#if description}
-			<Tooltip text={description} class="cursor-help">{label}</Tooltip>
-		{:else}
-			{label}
-		{/if}
-	</span>
+<div class="flex min-w-0 flex-col gap-0.5">
+	{#if label}
+		<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">
+			{#if description}
+				<Tooltip text={description} class="cursor-help">{label}</Tooltip>
+			{:else}
+				{label}
+			{/if}
+		</span>
+	{/if}
 
 	{#snippet valueUnit(/** @type {string} */ v, /** @type {string | undefined} */ u)}
-		<span class="flex items-baseline gap-1">
+		<span class="flex min-w-0 flex-wrap items-baseline gap-x-1">
 			<span
-				class="font-semibold tabular-nums {isEmptyValue(v)
+				class="min-w-0 break-words font-semibold tabular-nums {isEmptyValue(v)
 					? 'text-mid-grey'
 					: 'text-dark-grey'} {valueSizeClasses[size]}"
 			>

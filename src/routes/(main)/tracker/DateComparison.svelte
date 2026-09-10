@@ -111,7 +111,7 @@
 	class="mb-4 rounded-lg border border-mid-warm-grey/40 bg-white p-4"
 >
 	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h3 class="m-0 font-space text-sm font-semibold">Compare dates</h3>
+		<h3 class="m-0 text-sm font-semibold">Compare dates</h3>
 		<button class="text-xs underline" onclick={() => onchange(null)}>Close comparison</button>
 	</div>
 	<p class="my-3 text-xs text-mid-grey">
@@ -155,7 +155,7 @@
 			Comparison unavailable: {error}. Retry the generation chart to reload its data.
 		</p>
 	{:else if pending}
-		<p role="status" class="my-4 text-sm">Loading comparison data…</p>
+		<div class="my-4 h-5" aria-hidden="true"></div>
 	{:else if !ready}
 		<p role="status" class="my-4 text-sm">
 			Select two available intervals. Dates outside this range or filter are unavailable; change the

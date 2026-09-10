@@ -155,27 +155,6 @@ export function createTrackerSession(initial, onchange) {
 			anchorEnd = nowMs;
 			settleWindow();
 		},
-		/** Freeze the exact displayed bounds, including copied links and reloads. */
-		pauseLive() {
-			applyRange({
-				kind: 'custom',
-				startMs: window.start,
-				endMs: window.end,
-				intervalId: range.displayInterval
-			});
-			onchange('push');
-		},
-		/** Now returns historical/custom ranges to the default live preset.
-		 * @param {number} [nowMs] */
-		goNow(nowMs = Date.now()) {
-			clockMs = anchorEnd = nowMs;
-			const next =
-				selection.range.kind === 'preset'
-					? selection.range
-					: { kind: /** @type {const} */ ('preset'), days: DEFAULT_RANGE_DAYS, intervalId: '30m' };
-			applyRange(next);
-			onchange('push');
-		},
 		get selection() {
 			return selection;
 		},
@@ -258,6 +237,8 @@ export function createTrackerSession(initial, onchange) {
 		/** @param {{start: number, end: number}} value */
 		settleViewport(value) {
 			gestureActive = false;
+			// Button zoom settles before the chart emits its reactive viewport change.
+			range.handleDerivedViewportChange(value);
 			range.handleViewportSettle(value);
 			settleWindow();
 			onchange('replace');

@@ -23,13 +23,15 @@
 	);
 </script>
 
-<p
-	data-testid="reading-freshness"
-	data-status={status}
-	class="m-0 mt-1 text-xxs font-normal text-mid-grey"
-	title={error ??
-		`${timestamp ? `Latest available native interval in this view: ${timestamp}. ` : ''}This is a data timestamp, not the time of the last request. It does not guarantee every technology has reported.`}
->
-	{status}{#if timestamp && !pending && !error}
-		· <time datetime={new Date(latest).toISOString()}>{timestamp}</time>{/if}
-</p>
+{#if ['Data delayed', 'Update unavailable', 'No readings'].includes(status)}
+	<p
+		data-testid="reading-freshness"
+		data-status={status}
+		class="m-0 mt-1 w-full text-xxs font-normal text-mid-grey"
+		title={error ??
+			`${timestamp ? `Latest available native interval in this view: ${timestamp}. ` : ''}This is a data timestamp, not the time of the last request. It does not guarantee every technology has reported.`}
+	>
+		{status}{#if timestamp && !pending && !error}
+			· <time datetime={new Date(latest).toISOString()}>{timestamp}</time>{/if}
+	</p>
+{/if}

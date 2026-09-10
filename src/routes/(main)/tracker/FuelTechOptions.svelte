@@ -13,8 +13,8 @@
 	 * oncontributionchange?: (value: import('./types.js').ContributionMode) => void}} */
 	let { group, ongroupchange, contributionMode, oncontributionchange } = $props();
 	const contributionOptions = /** @type {const} */ ([
-		{ value: 'generation', label: '% generation' },
-		{ value: 'demand', label: '% demand' }
+		{ value: 'demand', label: '% demand' },
+		{ value: 'generation', label: '% generation' }
 	]);
 	let summary = $derived(
 		`${getGroup(group).label}${contributionMode ? ` · % ${contributionMode}` : ''}`

@@ -123,6 +123,12 @@ async function fixture(
 	return {
 		requests,
 		urls,
+		hold: (metric) => {
+			held = metric;
+		},
+		fail: (metric) => {
+			failing = metric;
+		},
 		recover: () => {
 			failing = '';
 		},
@@ -228,47 +234,43 @@ for (const group of ['detailed', 'simple']) {
 	});
 }
 
-test('live follow advances, pauses exact bounds and resumes through Now and history', async ({
+test('live follow advances, pauses on zoom and resumes through presets and history', async ({
 	page
 }, testInfo) => {
 	const source = await fixture(page, { comparisonGrowth: true });
 	await page.clock.install({ time: new Date() });
 	await page.goto('/tracker?region=nsw1&table=0');
-	await expect(page.getByRole('button', { name: 'Pause live follow' })).toBeVisible();
-	await expect(
-		page.getByTestId('reading-freshness').filter({ hasText: 'Latest interval' })
-	).toHaveCount(3);
+	await expect(page.getByRole('switch', { name: 'Live' })).toHaveCount(0);
+	await chartsSettled(page);
+	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
 	const first = source.urls.length;
 	const history = await page.evaluate(() => window.history.length);
 	await page.clock.fastForward(65_000);
 	await expect.poll(() => source.urls.length).toBeGreaterThan(first);
-	await expect(
-		page.getByTestId('reading-freshness').filter({ hasText: 'Latest interval' })
-	).toHaveCount(3);
+	await chartsSettled(page);
+	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
 	expect(await page.evaluate(() => window.history.length)).toBe(history);
-	await page.getByRole('button', { name: 'Pause live follow' }).click();
+	await pauseByZoom(page, true);
 	await expect(page).toHaveURL(/start=.*end=/);
 	const paused = page.url();
 	await expect(
 		page.getByTestId('reading-freshness').filter({ hasText: 'Latest in view' })
-	).toHaveCount(3);
+	).toHaveCount(0);
 	await page.clock.fastForward(120_000);
 	expect(page.url()).toBe(paused);
-	await page.getByRole('button', { name: 'Return to now' }).click();
+	await page.getByRole('button', { name: '3D', exact: true }).click();
 	await expect(page).not.toHaveURL(/start=|end=/);
-	await expect(page.getByRole('button', { name: 'Pause live follow' })).toBeVisible();
+	await expect(page.getByRole('switch', { name: 'Live' })).toHaveCount(0);
 	await page.goBack();
 	await expect(page).toHaveURL(paused);
-	await expect(page.getByRole('button', { name: 'Return to now' })).toBeVisible();
+	await expect(page.getByRole('button', { name: '3D', exact: true })).not.toHaveClass(/text-white/);
 	await page.goForward();
-	await expect(page.getByRole('button', { name: 'Pause live follow' })).toBeVisible();
-	await expect(
-		page.getByTestId('reading-freshness').filter({ hasText: 'Latest interval' })
-	).toHaveCount(3);
+	await expect(page.getByRole('switch', { name: 'Live' })).toHaveCount(0);
+	await chartsSettled(page);
+	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
 	await page.screenshot({ path: testInfo.outputPath('tracker-live-desktop.png') });
 	await page.setViewportSize({ width: 390, height: 844 });
-	const liveButton = await page.getByRole('button', { name: 'Pause live follow' }).boundingBox();
-	expect(liveButton.x + liveButton.width).toBeLessThanOrEqual(390);
+	await expect(page.getByRole('switch', { name: 'Live' })).toHaveCount(0);
 	await expect
 		.poll(() => page.evaluate(() => document.documentElement.scrollWidth))
 		.toBeLessThanOrEqual(390);
@@ -291,14 +293,10 @@ test('live freshness keeps failed and empty feeds explicit and recovers on the n
 	await expect(card(page, 'Emissions').getByTestId('reading-freshness')).toContainText(
 		'No readings'
 	);
-	await expect(card(page, 'Generation').getByTestId('reading-freshness')).toContainText(
-		'Latest interval'
-	);
+	await expect(card(page, 'Generation').getByTestId('reading-freshness')).toHaveCount(0);
 	source.recover();
 	await page.clock.fastForward(65_000);
-	await expect(card(page, 'Market').getByTestId('reading-freshness')).toContainText(
-		'Latest interval'
-	);
+	await expect(card(page, 'Market').getByTestId('reading-freshness')).toHaveCount(0);
 	await expect(card(page, 'Emissions').getByTestId('reading-freshness')).toContainText(
 		'No readings'
 	);
@@ -315,10 +313,8 @@ test('freshness flags delayed readings but not a deliberately historical view', 
 	await expect(
 		card(page, 'Generation').getByTestId('reading-freshness').locator('time')
 	).toBeVisible();
-	await page.getByRole('button', { name: 'Pause live follow' }).click();
-	await expect(card(page, 'Generation').getByTestId('reading-freshness')).toContainText(
-		'Latest in view'
-	);
+	await pauseByZoom(page);
+	await expect(card(page, 'Generation').getByTestId('reading-freshness')).toHaveCount(0);
 });
 
 test('live ticks stop while hidden and catch up once when visible without moving paused windows', async ({
@@ -327,9 +323,8 @@ test('live ticks stop while hidden and catch up once when visible without moving
 	const source = await fixture(page, { comparisonGrowth: true });
 	await page.clock.install({ time: new Date() });
 	await page.goto('/tracker?region=nsw1&table=0');
-	await expect(
-		page.getByTestId('reading-freshness').filter({ hasText: 'Latest interval' })
-	).toHaveCount(3);
+	await chartsSettled(page);
+	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
 	// Let initial requests settle before testing the foreground-only live loop.
 	await page.clock.fastForward(10_000);
 	await page.evaluate(() => {
@@ -344,13 +339,13 @@ test('live ticks stop while hidden and catch up once when visible without moving
 		document.dispatchEvent(new Event('visibilitychange'));
 	});
 	await expect.poll(() => source.urls.length).toBeGreaterThan(before);
-	await expect(
-		page.getByTestId('reading-freshness').filter({ hasText: 'Latest interval' })
-	).toHaveCount(3);
-	await page.getByRole('button', { name: 'Pause live follow' }).click();
+	await chartsSettled(page);
+	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
+	await pauseByZoom(page, true);
 	await expect(
 		page.getByTestId('reading-freshness').filter({ hasText: 'Latest in view' })
-	).toHaveCount(3);
+	).toHaveCount(0);
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
 	const paused = page.url();
 	const count = source.urls.length;
 	await page.clock.fastForward(300_000);
@@ -372,14 +367,66 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await expect(maximum).toContainText('400');
 	await expect(minimum).toContainText('1 Aug 2026');
 	await expect(maximum).toContainText('2 Aug 2026');
-	await expect(metrics).toContainText('UTC+10:00');
+	await expect(metrics).not.toContainText('UTC+10:00');
 	await expect(metrics.locator('button[data-testid]')).toHaveCount(8);
+	await expect(metrics.getByText('Minimum', { exact: true })).toHaveCount(0);
+	await expect(metrics.getByText('Maximum', { exact: true })).toHaveCount(0);
+	await expect(
+		page.getByTestId('metrics-generation').getByText('Net power', { exact: true })
+	).toHaveCount(1);
+	await expect(minimum).not.toContainText('Net power');
+	for (const cell of [minimum, maximum]) {
+		const fits = await cell.evaluate(
+			(el) => el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth
+		);
+		expect(fits).toBe(true);
+	}
+	await expect(minimum).not.toHaveAttribute('title');
+	await page.getByTestId('metrics-generation').getByText('Net power', { exact: true }).hover();
+	await expect(page.locator('[data-tooltip-content]')).toContainText(
+		'Selected technologies, including imports and subtracting loads.'
+	);
+	await page.mouse.move(0, 0);
+	await page.getByTestId('metrics-generation').getByText('Net power', { exact: true }).focus();
+	await expect(page.locator('[data-tooltip-content]')).toBeVisible();
+	await page.getByTestId('metric-market-min').hover();
+	await expect(
+		page.locator('[data-tooltip-content]').filter({ hasText: 'Minimum spot price' })
+	).toBeVisible();
 	const requests = api.requests.length;
 	await maximum.focus();
+	await expect(
+		page.locator('[data-tooltip-content]').filter({ hasText: 'Maximum net power' })
+	).toBeVisible();
 	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
 		'2 Aug'
 	);
 	expect(api.requests.length).toBe(requests);
+	await maximum.click();
+	await page.mouse.move(0, 0);
+	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
+	await expect(maximum.locator('svg')).toHaveCSS('width', '20px');
+	await expect(maximum.locator('svg')).toHaveCSS('color', 'oklch(0.205 0 0)');
+	await expect(minimum.locator('svg')).toHaveCSS('color', 'rgb(106, 106, 106)');
+	await expect(maximum).toHaveCSS('border-left-width', '1px');
+	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
+		'2 Aug'
+	);
+	await expect(card(page, 'Market').getByTestId('chart-floating-tooltip')).toContainText('2 Aug');
+	await minimum.hover();
+	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
+		'1 Aug'
+	);
+	await page.mouse.move(0, 0);
+	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
+		'2 Aug'
+	);
+	await minimum.click();
+	await expect(minimum).toHaveAttribute('aria-pressed', 'true');
+	await expect(maximum).toHaveAttribute('aria-pressed', 'false');
+	await minimum.press('Enter');
+	await expect(minimum).toHaveAttribute('aria-pressed', 'false');
+	await expect(minimum.locator('svg')).toHaveCSS('color', 'rgb(106, 106, 106)');
 	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
 	await expect(minimum).toContainText('100');
 	await expect(maximum).toContainText('200');
@@ -392,12 +439,172 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await page.screenshot({ path: testInfo.outputPath('window-metrics-desktop.png') });
 });
 
+test('tracker slides one nav logo in place of the date range and overlays charts and table', async ({
+	page
+}, testInfo) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	const source = await fixture(page, { hold: 'power' });
+	await page.goto('/tracker?region=nsw1&table=1');
+	const loader = page.getByTestId('tracker-loading');
+	const loadingStates = page.getByRole('status', { name: /Loading|Updating/ });
+	await expect(loader).toBeVisible();
+	await expect(loadingStates).toHaveCount(1);
+	await expect(loader.locator('svg')).toHaveAttribute('viewBox', '70 6 24 16');
+	const rangeStatus = page.getByTestId('tracker-range-status');
+	const rangeLabel = page.getByTestId('tracker-range-label');
+	const overlays = page.getByTestId('tracker-loading-overlay');
+	await expect(rangeStatus.getByTestId('tracker-loading')).toBeVisible();
+	await expect(rangeLabel).toHaveCSS('opacity', '0');
+	await expect(overlays).toHaveCount(4);
+	for (const overlay of await overlays.all()) {
+		await expect(overlay).toHaveAttribute('data-active', 'true');
+		await expect(overlay).toHaveCSS('pointer-events', 'none');
+		await expect(overlay).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.65)');
+	}
+	await expect(page.getByTestId('metrics-pane').getByTestId('tracker-loading-overlay')).toHaveCount(
+		0
+	);
+	await expect(
+		page.locator('[data-testid="chart-loading"], [data-testid="table-loading"]')
+	).toHaveCount(0);
+	await expect(page.getByTestId('metrics-pane')).not.toContainText('Updating…');
+	await page.screenshot({
+		path: testInfo.outputPath('shared-loading-initial.png'),
+		animations: 'disabled'
+	});
+	source.release();
+	await expect(loader).toHaveCount(0);
+	await expect(rangeLabel).toHaveCSS('opacity', '1');
+	await expect(rangeLabel).not.toHaveText('');
+	const dateBounds = await rangeStatus.boundingBox();
+	await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
+	await expect(card(page, 'Generation').locator('header').first()).not.toContainText('30 min');
+	source.hold('energy');
+	await page.getByRole('button', { name: '30D', exact: true }).click();
+	await expect(loader).toBeVisible();
+	await expect(rangeLabel).toHaveCSS('opacity', '0');
+	const loadingBounds = await rangeStatus.boundingBox();
+	expect(loadingBounds.y).toBe(dateBounds.y);
+	expect(loadingBounds.height).toBe(dateBounds.height);
+	await expect(loadingStates).toHaveCount(1);
+	await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
+	await page.screenshot({
+		path: testInfo.outputPath('shared-loading-refresh.png'),
+		animations: 'disabled'
+	});
+	// Grouping stays usable during a range refresh; the newest selection wins.
+	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
+	await page.getByRole('menuitemradio', { name: 'Detailed', exact: true }).click();
+	await expect(page).toHaveURL(/group=detailed/);
+	await expect(loader).toBeVisible();
+	await expect(loadingStates).toHaveCount(1);
+	await page.screenshot({
+		path: testInfo.outputPath('shared-loading-group.png'),
+		animations: 'disabled'
+	});
+	source.release();
+	await expect(loader).toHaveCount(0);
+	await expect(rangeLabel).toHaveCSS('opacity', '1');
+	for (const overlay of await overlays.all()) await expect(overlay).toHaveCSS('opacity', '0');
+	await expect(page.getByRole('columnheader', { name: /Technology/ })).toContainText('Detailed');
+});
+
+test('shared loading waits for table-only data after charts settle and fits mobile', async ({
+	page
+}, testInfo) => {
+	const source = await fixture(page, { hold: 'market_value' });
+	await page.goto('/tracker?region=nsw1&table=1&emissions=volume');
+	const loader = page.getByTestId('tracker-loading');
+	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
+	await expect(page.getByTestId('metric-market-min')).toBeEnabled();
+	await expect(page.getByTestId('metric-emissions-min')).toBeEnabled();
+	await expect(loader).toBeVisible();
+	await expect(page.getByRole('status', { name: /Loading|Updating/ })).toHaveCount(1);
+	await page.screenshot({
+		path: testInfo.outputPath('shared-loading-table.png'),
+		animations: 'disabled'
+	});
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(loader).toBeInViewport();
+	const bounds = await loader.locator('svg').boundingBox();
+	expect(bounds.y + bounds.height).toBeLessThanOrEqual(60);
+	expect(bounds.x).toBeGreaterThanOrEqual(0);
+	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await expect(loader).toHaveCSS('transition-duration', '0s');
+	await expect(loader.locator('svg')).toHaveCSS('animation-name', 'none');
+	await expect
+		.poll(() =>
+			page
+				.getByTestId('tracker-loading-overlay')
+				.first()
+				.evaluate((el) => getComputedStyle(el, '::after').animationName)
+		)
+		.toBe('none');
+	await page.screenshot({
+		path: testInfo.outputPath('shared-loading-mobile.png'),
+		animations: 'disabled'
+	});
+	source.release();
+	await expect(loader).toHaveCount(0);
+	await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
+});
+
+test('shared loading clears on a failed refresh and retained table values stay stale until retry', async ({
+	page
+}) => {
+	const source = await fixture(page);
+	await page.goto('/tracker?region=nsw1&table=1');
+	const panel = page.locator('#tracker-table-panel');
+	await expect(panel.getByRole('table')).toBeVisible();
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	source.fail('energy');
+	await page.getByRole('button', { name: '30D', exact: true }).click();
+	await expect(panel.getByText('Could not load table data.')).toBeVisible();
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	const body = panel.locator('[aria-busy]');
+	await expect(body).toHaveCSS('opacity', '0.4');
+	await expect(body).toHaveAttribute('aria-busy', 'false');
+	source.recover();
+	await panel.getByRole('button', { name: 'Retry', exact: true }).click();
+	await expect(panel.getByText('Could not load table data.')).toHaveCount(0);
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	await expect(body).toHaveCSS('opacity', '1');
+	await expect(panel.getByRole('columnheader', { name: /Energy/ })).toBeVisible();
+});
+
+test('table header contains Show all and columns scroll without a switcher', async ({ page }) => {
+	await fixture(page);
+	await page.goto('/tracker?region=nsw1&table=1&hidden=coal');
+	const panel = page.locator('#tracker-table-panel');
+	const showAll = panel.getByRole('button', { name: 'Show all', exact: true });
+	const heading = panel.getByRole('heading', { name: 'Fuel technologies' });
+	await expect(showAll).toBeVisible();
+	await expect(page.getByRole('group', { name: 'Table columns' })).toHaveCount(0);
+	const headingBox = await heading.boundingBox();
+	const buttonBox = await showAll.boundingBox();
+	expect(buttonBox.x).toBeGreaterThan(headingBox.x + headingBox.width);
+	expect(
+		Math.abs(buttonBox.y + buttonBox.height / 2 - headingBox.y - headingBox.height / 2)
+	).toBeLessThanOrEqual(1);
+	await expect(panel.getByRole('table')).toBeVisible();
+	const scroller = panel.getByRole('table').locator('xpath=..');
+	const technology = panel.getByRole('columnheader', { name: /Technology/ });
+	const before = await technology.boundingBox();
+	await scroller.evaluate((element) => element.scrollTo({ left: 300, behavior: 'instant' }));
+	await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+	expect((await technology.boundingBox()).x).toBeCloseTo(before.x, 0);
+	await showAll.click();
+	await expect(page).not.toHaveURL(/hidden=/);
+	await expect(showAll).toHaveCount(0);
+});
+
 test('panel controls share generous targets, directional icons and keyboard focus', async ({
 	page
 }, testInfo) => {
 	await fixture(page);
 	await page.goto('/tracker?region=nsw1');
-	await ready(page);
+	await chartsSettled(page);
 	const hideMetrics = page.getByRole('button', { name: 'Hide metrics', exact: true });
 	const hideTable = page.getByRole('button', { name: 'Hide fuel tech table', exact: true });
 	const showMetrics = page.getByRole('button', { name: 'Show metrics', exact: true });
@@ -406,7 +613,7 @@ test('panel controls share generous targets, directional icons and keyboard focu
 		const bounds = await button.boundingBox();
 		expect(bounds.width).toBe(40);
 		expect(bounds.height).toBe(40);
-		expect((await button.locator('svg').boundingBox()).width).toBe(16);
+		expect((await button.locator('svg').boundingBox()).width).toBe(20);
 		await expect(button.locator('svg')).toHaveAttribute('stroke-width', '1.5');
 		await expect(button).toHaveAttribute('aria-expanded', 'true');
 		await expect(button).toHaveCSS('color', 'rgb(106, 106, 106)');
@@ -426,7 +633,7 @@ test('panel controls share generous targets, directional icons and keyboard focu
 		expect(bounds.width).toBe(40);
 		expect(bounds.height).toBe(40);
 		await expect(button).toHaveAttribute('aria-expanded', 'false');
-		await expect(button.locator('svg')).toHaveCSS('width', '16px');
+		await expect(button.locator('svg')).toHaveCSS('width', '20px');
 		await expect(button.locator('svg')).toHaveAttribute('stroke-width', '1.5');
 		await expect(button).toHaveCSS('color', 'rgb(106, 106, 106)');
 	}
@@ -453,7 +660,7 @@ test('fuel technology options move with the panel, support keyboard selection an
 }, testInfo) => {
 	await fixture(page);
 	await page.goto('/tracker?region=nsw1');
-	await ready(page);
+	await chartsSettled(page);
 	const trigger = page.getByRole('button', { name: 'Fuel technology options', exact: true });
 	await expect(
 		page
@@ -489,6 +696,10 @@ test('fuel technology options move with the panel, support keyboard selection an
 	await trigger.press('Enter');
 	const menu = page.getByRole('menu', { name: 'Fuel technology options' });
 	await expect(menu.getByRole('menuitemradio')).toHaveCount(8);
+	await expect(menu.getByRole('menuitemradio', { name: /^% / })).toHaveText([
+		'% demand',
+		'% generation'
+	]);
 	expect(
 		await menu.getByRole('menuitemradio', { name: 'Detailed', exact: true }).evaluate(menuStyle)
 	).toEqual(navRowStyle);
@@ -498,9 +709,10 @@ test('fuel technology options move with the panel, support keyboard selection an
 	await expect(
 		menu.getByRole('menuitemradio', { name: 'Simplified', exact: true })
 	).toHaveAttribute('aria-checked', 'true');
-	await expect(
-		menu.getByRole('menuitemradio', { name: '% generation', exact: true })
-	).toHaveAttribute('aria-checked', 'true');
+	await expect(menu.getByRole('menuitemradio', { name: '% demand', exact: true })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
 	await page.screenshot({ path: testInfo.outputPath('fuel-options-desktop.png') });
 	await page.keyboard.press('Home');
 	await expect(menu.getByRole('menuitemradio', { name: 'Detailed', exact: true })).toBeFocused();
@@ -510,9 +722,9 @@ test('fuel technology options move with the panel, support keyboard selection an
 	await expect(page).toHaveURL(/group=detailed/);
 	await expect(page.getByRole('columnheader', { name: /Technology/ })).toContainText('Detailed');
 	await trigger.click();
-	await menu.getByRole('menuitemradio', { name: '% demand', exact: true }).click();
+	await menu.getByRole('menuitemradio', { name: '% generation', exact: true }).click();
 	await expect(trigger).toBeFocused();
-	await expect(page).toHaveURL(/contribution=demand/);
+	await expect(page).toHaveURL(/contribution=generation/);
 	await page.getByRole('button', { name: 'Hide fuel tech table', exact: true }).click();
 	await expect(page.locator('#tracker-table-panel')).toHaveCount(0);
 	await trigger.click();
@@ -520,10 +732,9 @@ test('fuel technology options move with the panel, support keyboard selection an
 		'aria-checked',
 		'true'
 	);
-	await expect(menu.getByRole('menuitemradio', { name: '% demand', exact: true })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
+	await expect(
+		menu.getByRole('menuitemradio', { name: '% generation', exact: true })
+	).toHaveAttribute('aria-checked', 'true');
 	await page.keyboard.press('Escape');
 	await expect(trigger).toBeFocused();
 	await page.setViewportSize({ width: 390, height: 844 });
@@ -540,7 +751,7 @@ test('fuel technology options move with the panel, support keyboard selection an
 	const shortBounds = await menu.boundingBox();
 	expect(shortBounds.y).toBeGreaterThanOrEqual(0);
 	expect(shortBounds.y + shortBounds.height).toBeLessThanOrEqual(480);
-	await menu.getByRole('menuitemradio', { name: '% generation', exact: true }).click();
+	await menu.getByRole('menuitemradio', { name: '% demand', exact: true }).click();
 	await expect(menu).toBeHidden();
 });
 
@@ -558,7 +769,7 @@ test('window metrics follow range and market modes without applying timeline tra
 	await expect(page.getByTestId('metric-demand-max')).toContainText('200');
 	await card(page, 'Market').getByRole('tab', { name: 'Market value', exact: true }).click();
 	await expect(page.getByTestId('metric-market-max')).toBeEnabled();
-	await expect(page.getByTestId('metric-market-max')).toContainText('Maximum market value');
+	await expect(page.getByTestId('metrics-market')).toContainText('Market value');
 	await card(page, 'Emissions').getByRole('tab', { name: 'Volume', exact: true }).click();
 	await expect(page.getByTestId('metric-emissions-max')).toBeEnabled();
 	await expect(page.getByTestId('metric-emissions-max')).toContainText('tCO₂e');
@@ -566,7 +777,7 @@ test('window metrics follow range and market modes without applying timeline tra
 		`/tracker?start=${start + 86_400_000}&end=${Date.parse('2026-09-01T00:00:00+10:00')}&interval=1d&table=0`
 	);
 	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
-	await expect(page.getByTestId('metric-generation-min')).toContainText('Minimum net energy');
+	await expect(page.getByTestId('metrics-generation')).toContainText('Net energy');
 	await expect(page.getByTestId('metric-generation-min')).toContainText('400');
 	await expect(page.getByTestId('metric-generation-min')).toContainText('MWh');
 	await expect(page.getByTestId('metric-demand-min')).toContainText('MWh');
@@ -579,7 +790,8 @@ test('window metrics never show held, failed or empty data as current', async ({
 	await expect.poll(() => api.requests.includes('power')).toBe(true);
 	const price = page.getByTestId('metric-market-min');
 	await expect(price).toBeDisabled();
-	await expect(price).toContainText('Updating selected window');
+	await expect(page.getByTestId('tracker-loading')).toBeVisible();
+	await expect(price).not.toContainText('Updating…');
 	api.release();
 	await expect(price).toBeEnabled();
 	const emissions = page.getByTestId('metric-emissions-min');
@@ -603,7 +815,7 @@ test('demand metrics wait for their feed and recover with the table and overlay 
 	await expect(demand).toContainText('100');
 });
 
-test('window metrics fit mobile and label WEM network time', async ({ page }, testInfo) => {
+test('window metrics fit mobile in WEM', async ({ page }, testInfo) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await fixture(page, { contributions: true });
 	await page.goto('/tracker?region=wem&table=0');
@@ -613,7 +825,7 @@ test('window metrics fit mobile and label WEM network time', async ({ page }, te
 	await expect(page.getByRole('button', { name: 'Hide metrics', exact: true })).toBeFocused();
 	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
 	const metrics = page.getByRole('region', { name: 'Window metrics' });
-	await expect(metrics).toContainText('UTC+08:00');
+	await expect(metrics).not.toContainText('UTC+08:00');
 	const bounds = await metrics.boundingBox();
 	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
 	await expect
@@ -713,6 +925,7 @@ test('metrics resizing survives unavailable storage and narrower desktop widths'
 	await page.goto('/tracker?region=nsw1');
 	await ready(page);
 	const handle = page.getByRole('separator', { name: 'Resize metrics panel' });
+	await expect(handle).toHaveAttribute('aria-valuemax', '400');
 	await handle.press('End');
 	await expect(handle).toHaveAttribute('aria-valuenow', '400');
 	await page.setViewportSize({ width: 1024, height: 768 });
@@ -1298,9 +1511,13 @@ test('time-of-day failures and empty results remain explicit; switching metric c
 
 async function percentageView(page) {
 	const generation = card(page, 'Generation');
+	// The SVG mounts before data; wait for the chart before targeting its toolbar.
+	await expect(generation.locator('path.path-area').first()).toHaveAttribute('d', /M/);
 	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
 	await generation.getByRole('tab', { name: 'Proportion', exact: true }).click();
-	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
+	// The contribution note moves the chart toolbar; close outside that moving target.
+	await generation.getByRole('heading', { name: 'Generation', exact: true }).click();
+	await expect(generation.getByRole('tab', { name: 'Proportion', exact: true })).toBeHidden();
 	return generation;
 }
 
@@ -1347,7 +1564,7 @@ test('copied analytical links restore hidden sources, contribution, transforms a
 			.some((line) => Number(line.split(',')[1]) > 0)
 	).toBe(true);
 	await percentageView(page);
-	await contributionBasis(page, '% demand');
+	await contributionBasis(page, '% generation');
 	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
 	const market = card(page, 'Market');
 	await market.getByRole('tab', { name: 'Market value', exact: true }).click();
@@ -1358,7 +1575,7 @@ test('copied analytical links restore hidden sources, contribution, transforms a
 	const copied = await copyTrackerLink(page);
 	const params = new URL(copied).searchParams;
 	expect(params.get('hidden')).toBe('coal');
-	expect(params.get('contribution')).toBe('demand');
+	expect(params.get('contribution')).toBe('generation');
 	expect(params.get('transform')).toBe('proportion');
 	expect(params.get('market-transform')).toBe('changeSince');
 	expect(params.get('price')).toBe('mv');
@@ -1368,7 +1585,7 @@ test('copied analytical links restore hidden sources, contribution, transforms a
 	await reopened.goto(copied);
 	await ready(reopened);
 	await expect(
-		card(reopened, 'Generation').getByText('% of gross demand', { exact: true })
+		card(reopened, 'Generation').getByText('% of generation', { exact: true })
 	).toBeVisible();
 	await expect(await hoverGeneration(reopened)).not.toContainText('Coal');
 	const emissions = await readFile(await (await download(reopened, 'Emissions')).path(), 'utf8');
@@ -1388,7 +1605,7 @@ test('copied analytical links restore hidden sources, contribution, transforms a
 	await reopened.reload();
 	await ready(reopened);
 	await expect(
-		card(reopened, 'Generation').getByText('% of gross demand', { exact: true })
+		card(reopened, 'Generation').getByText('% of generation', { exact: true })
 	).toBeVisible();
 	await expect(await hoverGeneration(reopened)).not.toContainText('Coal');
 	await reopened.close();
@@ -1418,10 +1635,12 @@ test('analytical history restores grouping visibility and transform without echo
 		page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first()
 	).toHaveAttribute('aria-pressed', 'true');
 	await page.goBack();
-	await expect(card(page, 'Generation').getByText('% of generation', { exact: true })).toBeHidden();
+	await expect(
+		card(page, 'Generation').getByText('% of gross demand', { exact: true })
+	).toBeHidden();
 	await page.goForward();
 	await expect(
-		card(page, 'Generation').getByText('% of generation', { exact: true })
+		card(page, 'Generation').getByText('% of gross demand', { exact: true })
 	).toBeVisible();
 	expect(await page.evaluate(() => history.length)).toBe(initialHistory + 3);
 });
@@ -1431,7 +1650,7 @@ test('solo selections are atomic and plain same-route links reset analytical sta
 }) => {
 	await fixture(page);
 	await page.goto(
-		'/tracker?region=nsw1&table=1&hidden=coal&contribution=demand&transform=proportion'
+		'/tracker?region=nsw1&table=1&hidden=coal&contribution=generation&transform=proportion'
 	);
 	await ready(page);
 	const historyBefore = await page.evaluate(() => history.length);
@@ -1477,11 +1696,136 @@ async function hoverGeneration(page) {
 	return tooltip;
 }
 
+test('generation tooltip shows interval percentages beside absolute values and follows the contribution basis', async ({
+	page
+}, testInfo) => {
+	await fixture(page, { contributions: true });
+	await page.goto('/tracker?region=nsw1&contribution=generation&table=1');
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	let tooltip = await hoverGeneration(page);
+	const tooltipRow = (label) => tooltip.getByText(label, { exact: true }).locator('xpath=../..');
+	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MW');
+	await expect(tooltip.getByTestId('tooltip-percentage-heading')).toContainText('% of generation');
+	await expect(tooltipRow('Wind').getByTestId('tooltip-value')).toHaveText('200');
+	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('66.7');
+	await expect(tooltipRow('Coal').getByTestId('tooltip-percentage')).toHaveText('33.3');
+	await expect(tooltipRow('Imports').getByTestId('tooltip-percentage')).toHaveText('—');
+	await expect(tooltipRow('Battery (Charging)').getByTestId('tooltip-percentage')).toHaveText('—');
+	await expect(card(page, 'Market').getByTestId('tooltip-percentage')).toHaveCount(0);
+	await page.screenshot({
+		path: testInfo.outputPath('generation-tooltip-percentages.png'),
+		animations: 'disabled'
+	});
+	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
+	tooltip = await hoverGeneration(page);
+	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('66.7');
+	await contributionBasis(page, '% demand');
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	tooltip = await hoverGeneration(page);
+	await expect(tooltip.getByTestId('tooltip-percentage-heading')).toContainText(
+		'% of gross demand'
+	);
+	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('200');
+	await expect(tooltipRow('Imports').getByTestId('tooltip-percentage')).toHaveText('300');
+	await page.getByRole('button', { name: '30D', exact: true }).click();
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	tooltip = await hoverGeneration(page);
+	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MWh');
+	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('200');
+	await page.getByRole('button', { name: 'Hide fuel tech table', exact: true }).click();
+	await page.setViewportSize({ width: 390, height: 844 });
+	tooltip = await hoverGeneration(page);
+	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('200');
+	const bounds = await tooltip.boundingBox();
+	expect(bounds.x).toBeGreaterThanOrEqual(0);
+	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+	await page.screenshot({
+		path: testInfo.outputPath('generation-tooltip-percentages-mobile.png'),
+		animations: 'disabled'
+	});
+});
+
+test('renewables and curtailment tooltips pair amounts and percentages with the table closed', async ({
+	page
+}, testInfo) => {
+	const source = await fixture(page, { contributions: true });
+	await page.goto(
+		'/tracker?region=nsw1&contribution=generation&table=0&hidden=coal&overlay=demand,renewables,curtailment-solar,curtailment-wind'
+	);
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	let tooltip = await hoverGeneration(page);
+	const row = (label) => tooltip.getByText(label, { exact: true }).locator('xpath=../..');
+	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MW');
+	await expect(row('Renewables').getByTestId('tooltip-value')).toHaveText('100');
+	await expect(row('Renewables').getByTestId('tooltip-percentage')).toHaveText('25.0');
+	await expect(row('Demand')).toHaveCSS('border-top-width', '1px');
+	await expect(row('Renewables')).toHaveCSS('border-top-width', '0px');
+	for (const label of ['Curtailment (Solar)', 'Curtailment (Wind)']) {
+		await expect(row(label).getByTestId('tooltip-value')).toHaveText('100');
+		await expect(row(label).getByTestId('tooltip-percentage')).toHaveText('33.3');
+	}
+	expect(source.requests).toContain('renewables');
+	expect(source.requests).not.toContain('market_value');
+	await page.screenshot({
+		path: testInfo.outputPath('overlay-tooltip-percentages.png'),
+		animations: 'disabled'
+	});
+	await contributionBasis(page, '% demand');
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	tooltip = await hoverGeneration(page);
+	await expect(row('Renewables').getByTestId('tooltip-percentage')).toHaveText('25.0');
+	await expect(row('Curtailment (Solar)').getByTestId('tooltip-percentage')).toHaveText('100');
+	await page.getByRole('button', { name: '30D', exact: true }).click();
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	tooltip = await hoverGeneration(page);
+	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MWh');
+	await expect(row('Renewables').getByTestId('tooltip-value')).toHaveText('100');
+	await expect(row('Renewables').getByTestId('tooltip-percentage')).toHaveText('25.0');
+	await expect(row('Curtailment (Wind)').getByTestId('tooltip-value')).toHaveText('100');
+	await expect(row('Curtailment (Wind)').getByTestId('tooltip-percentage')).toHaveText('100');
+	await page.setViewportSize({ width: 390, height: 844 });
+	tooltip = await hoverGeneration(page);
+	const bounds = await tooltip.boundingBox();
+	expect(bounds.x).toBeGreaterThanOrEqual(0);
+	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+	await page.screenshot({
+		path: testInfo.outputPath('overlay-tooltip-percentages-mobile.png'),
+		animations: 'disabled'
+	});
+	await percentageView(page);
+	tooltip = await hoverGeneration(page);
+	await expect(tooltip.getByTestId('tooltip-percentage-heading')).toHaveCount(0);
+	await expect(row('Renewables (% of gross demand)').getByTestId('tooltip-value')).toHaveText(
+		'25.0'
+	);
+	await expect(row('Curtailment (Wind)').getByTestId('tooltip-value')).toHaveText('100');
+});
+
+test('generation tooltip retains its unit and percentage headings in line mode', async ({
+	page
+}) => {
+	await fixture(page, { contributions: true });
+	await page.goto('/tracker?region=nsw1&table=0');
+	const generation = card(page, 'Generation');
+	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
+	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
+	await generation.getByRole('tab', { name: 'Line', exact: true }).click();
+	await generation.getByRole('heading', { name: 'Generation', exact: true }).click();
+	await page.getByTestId('metric-generation-min').focus();
+	const tooltip = generation.getByTestId('chart-floating-tooltip');
+	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MW');
+	await expect(tooltip.getByTestId('tooltip-percentage-heading')).toContainText(
+		'% of gross demand'
+	);
+	await expect(tooltip.getByTestId('tooltip-percentage')).toHaveCount(4);
+	await expect(tooltip.getByTestId('tooltip-percentage')).toContainText(['200', '100', '300', '—']);
+});
+
 test('percentage shares stay stable when hiding series and exports keep raw units', async ({
 	page
 }) => {
 	await fixture(page, { contributions: true });
-	await page.goto('/tracker?region=nsw1');
+	await page.goto('/tracker?region=nsw1&contribution=generation');
 	await ready(page);
 	const generation = await percentageView(page);
 	await expect(generation.getByText('% of generation', { exact: true })).toBeVisible();
@@ -1516,17 +1860,19 @@ test('demand percentage data loads with the table closed and overlays share its 
 	page
 }) => {
 	const source = await fixture(page, { hold: 'renewables', contributions: true });
-	await page.goto('/tracker?region=nsw1&table=0&overlay=demand,curtailment-solar');
+	await page.goto(
+		'/tracker?region=nsw1&contribution=generation&table=0&overlay=demand,curtailment-solar'
+	);
 	await ready(page);
 	const generation = await percentageView(page);
 	expect(source.requests).not.toContain('renewables');
 	await contributionBasis(page, '% demand');
-	await expect(generation.getByText('Loading gross-demand percentages…')).toBeVisible();
+	await expect(page.getByTestId('tracker-loading')).toBeVisible();
 	await expect.poll(() => source.requests.includes('renewables')).toBe(true);
 	// No alternate denominator or old percentage geometry while demand is held.
 	await expect(generation.locator('path.path-area[d*="M"]')).toHaveCount(0);
 	source.release();
-	await expect(generation.getByText('Loading gross-demand percentages…')).toBeHidden();
+	await expect(page.getByTestId('tracker-loading')).toBeHidden();
 	await expect(generation.getByText('% of gross demand', { exact: true })).toBeVisible();
 	const tooltip = await hoverGeneration(page);
 	await expect(tooltip).toContainText('200');
@@ -1546,7 +1892,6 @@ test('failed demand percentages stay unavailable and retry without reopening the
 	await page.goto('/tracker?region=nsw1&table=0');
 	await ready(page);
 	const generation = await percentageView(page);
-	await contributionBasis(page, '% demand');
 	await expect(generation.getByText('Gross-demand percentages unavailable.')).toBeVisible();
 	await expect(generation.locator('path.path-area[d*="M"]')).toHaveCount(0);
 	source.recover();
@@ -1556,6 +1901,19 @@ test('failed demand percentages stay unavailable and retry without reopening the
 	await contributionBasis(page, '% generation');
 	await expect(await hoverGeneration(page)).toContainText('66.7');
 });
+async function pauseByZoom(page, clockInstalled = false) {
+	await card(page, 'Generation').getByRole('button', { name: 'Zoom in', exact: true }).click();
+	if (clockInstalled) await page.clock.runFor(1000);
+	await expect(page).toHaveURL(/start=.*end=/);
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+}
+
+async function chartsSettled(page) {
+	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
+	await expect(page.getByTestId('metric-market-min')).toBeEnabled();
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+}
+
 async function ready(page) {
 	await expect(page.locator('[aria-busy="false"]').first()).toBeAttached();
 	await expect(card(page, 'Generation').locator('svg').first()).toBeVisible();
@@ -1588,14 +1946,14 @@ function workbookXml(buffer, wanted) {
 test('selected units survive pointer and keyboard resizing', async ({ page }) => {
 	await fixture(page);
 	await page.goto('/tracker?region=nsw1&table=0');
-	await ready(page);
+	await chartsSettled(page);
 	const generation = card(page, 'Generation');
 	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
 	await generation.getByRole('tab', { name: 'GW', exact: true }).click();
 	const handle = page.getByRole('separator', { name: 'Resize chart height' }).first();
 	await handle.focus();
 	await handle.press('ArrowDown');
-	await expect(handle).toHaveAttribute('aria-valuenow', '270');
+	await expect(handle).toHaveAttribute('aria-valuenow', '330');
 	await expect(generation.getByRole('button', { name: 'GW', exact: true })).toBeVisible();
 	const box = await handle.boundingBox();
 	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -1605,17 +1963,19 @@ test('selected units survive pointer and keyboard resizing', async ({ page }) =>
 	await expect(generation.getByRole('button', { name: 'GW', exact: true })).toBeVisible();
 });
 
-test('a failed metric retries in place and optional providers stay disabled', async ({ page }) => {
+test('a failed metric retries in place and only required providers load', async ({ page }) => {
 	const source = await fixture(page, { fail: 'price' });
 	await page.goto('/tracker?region=nsw1&table=0');
 	await expect(card(page, 'Market').getByRole('button', { name: 'Retry' })).toBeVisible();
 	await expect(card(page, 'Market')).toContainText('Fixture failure');
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
 	source.recover();
 	await card(page, 'Market').getByRole('button', { name: 'Retry' }).click();
 	await expect(card(page, 'Market').getByRole('button', { name: 'Retry' })).toBeHidden();
 	await ready(page);
 	expect(source.requests.filter((metric) => metric === 'price').length).toBeGreaterThanOrEqual(2);
-	expect(source.requests).not.toContain('renewables');
+	expect(source.requests).toContain('renewables');
+	expect(source.requests).not.toContain('market_value');
 	expect(source.requests).not.toContain('curtailment');
 });
 
@@ -1625,6 +1985,7 @@ test('a transient date-range data failure recovers without a manual retry', asyn
 	await ready(page);
 	// Initialisation and gap fills can use other windows. Count only the failed
 	// URL, whose one retry is shared rather than duplicating the chart request.
+	await expect.poll(() => source.requests.includes('price')).toBe(true);
 	const failedUrl = source.urls.find(
 		(href) => new URL(href).searchParams.get('metric') === 'price'
 	);
@@ -1688,7 +2049,7 @@ test('idle warming stays near the selected range and other grains load only on d
 test('explicit ranges push history and back/forward restore the range', async ({ page }) => {
 	await fixture(page);
 	await page.goto('/tracker?region=nsw1&table=0');
-	await ready(page);
+	await chartsSettled(page);
 	await page.getByRole('button', { name: '30D', exact: true }).click();
 	await expect(page).toHaveURL(/range=30d/);
 	await page.goBack();
@@ -1739,13 +2100,14 @@ test('confirmed empty data settles without a retry or an endless loading state',
 	await fixture(page, { empty: 'price' });
 	await page.goto('/tracker?region=wem&table=0');
 	await expect(card(page, 'Market').getByText('No data for this range.')).toBeVisible();
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
 	await expect(card(page, 'Market').getByRole('button', { name: 'Retry' })).toHaveCount(0);
 	const csv = await download(page, 'Generation');
 	expect(await readFile(await csv.path(), 'utf8')).toContain('+08:00');
 });
 
 test('reopening the table waits for its providers before enabling its export', async ({ page }) => {
-	const source = await fixture(page, { hold: 'renewables' });
+	const source = await fixture(page, { hold: 'market_value' });
 	await page.goto('/tracker?region=nsw1&table=0');
 	await ready(page);
 	await page.getByRole('button', { name: 'Show fuel tech table' }).click();

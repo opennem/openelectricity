@@ -34,6 +34,7 @@
 	import { downloadXlsx } from '$lib/utils/download-xlsx.js';
 	import { TRACKER_REGION_TREE } from './tracker-regions.js';
 	import TrackerCanvas from './TrackerCanvas.svelte';
+	import RangeStatus from './RangeStatus.svelte';
 	import TimeOfDay from './TimeOfDay.svelte';
 	import PngExport from './PngExport.svelte';
 	import { capturePngSnapshot, settleChartAnimations } from './png-export.js';
@@ -90,6 +91,7 @@
 	}
 	/** @type {TrackerCanvas | undefined} */
 	let canvas = $state.raw(undefined);
+	let trackerLoading = $derived.by(() => !timeOfDay && (!canvas || canvas.isLoading()));
 	const rangeControl = session.range;
 	let isFullscreen = $derived(building ? true : isFullscreenUrl(page.url));
 	let navRange = $derived({
@@ -98,8 +100,7 @@
 		displayInterval: rangeControl.displayInterval,
 		startDate: rangeControl.pickerStartDate,
 		endDate: rangeControl.pickerEndDate,
-		maxDate: rangeControl.maxDate,
-		pending: !session.connected || rangeControl.rangeSwitchPending
+		maxDate: rangeControl.maxDate
 	});
 	const currentUrlState = () => session.selection;
 	let downloadItems = $derived(
@@ -276,6 +277,7 @@
 
 						{#if !timeOfDay}
 							<ChartRangeBar
+								--chart-range-gap="0.75rem"
 								selectedRange={navRange.selectedRange}
 								customDays={navRange.customDays}
 								displayInterval={navRange.displayInterval}
@@ -289,36 +291,18 @@
 								{bucketFilter}
 								onbucketfilterchange={handleBucketFilterChange}
 								variant="expanded"
-								pending={navRange.pending}
 								onrangeselect={session.selectRange}
 								ondaterangechange={session.selectDates}
 								onintervalchange={session.selectInterval}
 							/>
-
-							{#if session.rangeLabel}
-								<span
-									class="ml-auto hidden shrink-0 whitespace-nowrap font-space text-xs text-mid-grey lg:inline"
-								>
-									{session.rangeLabel}
-								</span>
-							{/if}
 						{/if}
 					</div>
+					{#if !timeOfDay}
+						<RangeStatus label={session.rangeLabel} loading={trackerLoading} />
+					{/if}
 				{/snippet}
 
 				{#snippet options()}
-					{#if !timeOfDay}
-						<button
-							class="mr-2 min-h-[32px] shrink-0 rounded border border-mid-warm-grey px-3 py-2 font-space text-xs text-mid-grey hover:bg-light-warm-grey aria-pressed:bg-warm-grey"
-							aria-label={session.following ? 'Pause live follow' : 'Return to now'}
-							aria-pressed={session.following}
-							title={session.following
-								? 'Following the latest data. Click to pause.'
-								: 'Return to the latest data and resume live follow.'}
-							onclick={() => (session.following ? session.pauseLive() : session.goNow())}
-							>{session.following ? 'Live' : 'Now'}</button
-						>
-					{/if}
 					<PageOptionsMenu
 						{isFullscreen}
 						onfullscreenchange={() => toggleFullscreenMode(isFullscreen)}

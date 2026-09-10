@@ -27,6 +27,7 @@ export function createTrackerProviders(opts) {
 		timeZone: () => timeZone,
 		enabled: () =>
 			tablePanelOpen ||
+			(showRenewablesLine && opts.selection().generationTransform !== 'proportion') ||
 			((showRenewablesLine || !!opts.needsWindowMetrics?.()) && isRollingDisplay) ||
 			!!opts.needsContributionDemand?.()
 	});

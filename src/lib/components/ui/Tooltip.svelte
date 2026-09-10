@@ -5,7 +5,8 @@
 	 * @type {{
 	 *   text?: string,
 	 *   lines?: string[],
-	 *   children: import('svelte').Snippet,
+	 *   children?: import('svelte').Snippet,
+	 *   trigger?: import('bits-ui').Tooltip.TriggerProps['child'],
 	 *   side?: 'top' | 'bottom' | 'left' | 'right',
 	 *   sideOffset?: number,
 	 *   delayDuration?: number,
@@ -17,6 +18,7 @@
 		text = '',
 		lines = /** @type {string[]} */ ([]),
 		children,
+		trigger,
 		side = 'top',
 		sideOffset = 4,
 		delayDuration = 100,
@@ -29,9 +31,13 @@
 	<T.Root {delayDuration}>
 		<T.Trigger>
 			{#snippet child({ props })}
-				<span {...props} class={className}>
-					{@render children()}
-				</span>
+				{#if trigger}
+					{@render trigger({ props })}
+				{:else}
+					<span {...props} class={className}>
+						{@render children?.()}
+					</span>
+				{/if}
 			{/snippet}
 		</T.Trigger>
 		<T.Portal>

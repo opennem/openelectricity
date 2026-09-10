@@ -19,7 +19,6 @@
 		formatTablePrice,
 		splitTableLabel
 	} from './table-format.js';
-	import { scrollTargetFor, visibleValueColumns } from './table-columns.js';
 
 	/** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
 	/** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */
@@ -49,7 +48,7 @@
 
 	/**
 	 * FuelTechTable — the tracker's fuel-tech breakdown table. Technology plus
-	 * five value columns: average power, contribution share, volume-weighted
+	 * six value columns: energy, average power, contribution share, volume-weighted
 	 * price, window emissions and emissions intensity, split into Sources/Loads
 	 * sections in top-down stack order, followed by curtailment and the
 	 * Demand/Renewables summary rows. Every row toggles its series on the
@@ -59,15 +58,12 @@
 	 * techs folded into that group. The grouping and contribution basis are
 	 * chosen in the page's options menu; the headers echo them as sub-labels.
 	 *
-	 * Below the carousel breakpoint the Technology column pins to the left and
-	 * the value columns become a horizontal scroll-snap carousel; a tab strip
-	 * above the table names them, highlights the ones in view and scrolls a
-	 * column into place on tap (`table-columns.js`). The layout is driven by a
-	 * CSS container query, so it follows the panel width, not the viewport.
+	 * In narrow panels, Technology pins left while the value columns scroll
+	 * horizontally and snap into place. A CSS container query switches to the
+	 * full-width layout when all columns fit.
 	 *
 	 * @type {import('./types.js').FuelTechTableControls & {
 	 *   rows: FuelTechTableRow[],
-	 *   valuesPending?: boolean,
 	 *   curtailmentRows?: CurtailmentTableRow[],
 	 *   overlaySummary?: OverlaySummary | null,
 	 *   rooftopInterpolation?: boolean
@@ -75,12 +71,11 @@
 	 */
 	let {
 		rows,
-		valuesPending = false,
 		basis = 'power',
 		rooftopInterpolation = false,
 		displayPrefix = 'M',
 		group = DEFAULT_GROUP,
-		contributionMode = 'generation',
+		contributionMode = 'demand',
 		curtailmentRows = [],
 		shownCurtailment = [],
 		overlaySummary = null,
@@ -92,10 +87,10 @@
 		onrenewableslinetoggle
 	} = $props();
 
-	// Value columns and their carousel widths. The container-query breakpoint
+	// Value columns and their narrow-panel widths. The container-query breakpoint
 	// (760px, spelt out in the `@min-[760px]:` classes below) is the sum of the
 	// narrow widths: Technology 160 + 6 × 100 — equal to the natural table
-	// width, so there is never a band where the strip shows but nothing scrolls.
+	// width, so the table stops scrolling once all columns fit.
 	// The value widths also hold in the wide layout, where Technology takes
 	// whatever remains.
 	const VALUE_COLUMNS = [
@@ -107,52 +102,7 @@
 		{ key: 'intensity', label: 'Intensity', widthClass: 'w-[100px]' }
 	];
 	const LAST_COLUMN = VALUE_COLUMNS.length - 1;
-
-	/** @type {HTMLDivElement | undefined} */
-	let scroller = $state();
-	/** @type {HTMLTableCellElement | undefined} */
-	let techHeader = $state();
-	/** @type {Array<HTMLTableCellElement | undefined>} */
-	let valueHeaders = $state([]);
 	let scrollLeft = $state(0);
-	let scrollerWidth = $state(0);
-
-	/** Value columns currently inside the visible value region. The layout
-	 *  reads are keyed on `scrollLeft` and `scrollerWidth`: header geometry
-	 *  only changes with the scroller's width, which `bind:clientWidth` tracks. */
-	let inView = $derived.by(() => {
-		const headers = VALUE_COLUMNS.map((_, index) => valueHeaders[index]);
-		if (!techHeader || headers.some((header) => !header)) {
-			return VALUE_COLUMNS.map((_, index) => index === 0);
-		}
-		return visibleValueColumns({
-			scrollLeft,
-			viewportWidth: scrollerWidth,
-			techWidth: techHeader.offsetWidth,
-			columns: headers.map((header) => ({
-				offsetLeft: /** @type {HTMLTableCellElement} */ (header).offsetLeft,
-				width: /** @type {HTMLTableCellElement} */ (header).offsetWidth
-			}))
-		});
-	});
-
-	/** Scroll a value column to the left edge of the value region. Smoothness
-	 *  comes from CSS (`scroll-smooth motion-reduce:scroll-auto`).
-	 *  @param {number} index */
-	function scrollToColumn(index) {
-		const column = valueHeaders[index];
-		if (!scroller || !techHeader || !column) return;
-		scroller.scrollTo({
-			left: scrollTargetFor(
-				{ offsetLeft: column.offsetLeft, width: column.offsetWidth },
-				{
-					techWidth: techHeader.offsetWidth,
-					viewportWidth: scroller.clientWidth,
-					tableWidth: scroller.scrollWidth
-				}
-			)
-		});
-	}
 
 	/** Av power follows the chart's MW/GW choice while the chart shows power,
 	 *  and stays in MW otherwise. Energy always sizes its own prefix from the
@@ -302,7 +252,7 @@
 	function valueCellClass(text, index, cellPad) {
 		return `${index === LAST_COLUMN ? 'pr-3 pl-2' : 'px-2'} ${cellPad} whitespace-nowrap text-right font-mono tabular-nums transition-opacity duration-300 ${
 			text === EMPTY_CELL ? 'text-mid-grey' : 'text-dark-grey'
-		} ${valuesPending ? 'opacity-40' : ''}`;
+		}`;
 	}
 
 	/** Diagonal hatch in the series colour — the curtailment swatch treatment.
@@ -363,8 +313,6 @@
 		{main}
 		<span class="text-mid-grey">{sub}</span>
 	</span>
-	{#if row.interpolated}<sup class="text-mid-grey" aria-label="Chart values interpolated">*</sup
-		>{/if}
 {/snippet}
 
 {#snippet toggleRow(/** @type {ToggleRow} */ row)}
@@ -425,37 +373,11 @@
 <!-- Container-query root. `--tech-w` feeds both the pinned column's width and
      the scroller's snap padding so the two can never drift apart. -->
 <div class="@container [--tech-w:160px]">
-	<!-- Column tabs: the switcher and the scroll-position indicator in one.
-	     Sticky so it survives vertical scrolling of the panel body; gone once
-	     every column fits. -->
-	<div
-		role="group"
-		aria-label="Table columns"
-		class="sticky top-0 z-[2] flex justify-end border-b border-warm-grey bg-white px-2 py-1.5 @min-[760px]:hidden"
-	>
-		<div
-			class="inline-flex items-center gap-0.5 rounded-md border border-mid-warm-grey/40 bg-light-warm-grey p-0.5"
-		>
-			{#each VALUE_COLUMNS as column, index (column.key)}
-				<button
-					type="button"
-					aria-pressed={inView[index]}
-					onclick={() => scrollToColumn(index)}
-					class="cursor-pointer rounded px-2 py-1 font-space text-xxs text-mid-grey transition-colors hover:text-dark-grey aria-pressed:bg-white aria-pressed:text-dark-grey aria-pressed:shadow-sm"
-				>
-					{column.label}
-				</button>
-			{/each}
-		</div>
-	</div>
-
 	<!-- Horizontal scroller. Snap padding reserves the pinned column, so a
 	     snapped value column lands flush against it. Wide containers drop the
 	     overflow, which also makes the sticky cells inert. -->
 	<div
-		bind:this={scroller}
-		bind:clientWidth={scrollerWidth}
-		onscroll={() => (scrollLeft = scroller?.scrollLeft ?? 0)}
+		onscroll={(event) => (scrollLeft = event.currentTarget.scrollLeft)}
 		class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--tech-w) scroll-smooth motion-reduce:scroll-auto @min-[760px]:overflow-x-visible @min-[760px]:snap-none"
 	>
 		<!-- border-separate: sticky cells paint over collapsed borders, so the
@@ -464,7 +386,6 @@
 			<thead class="bg-light-warm-grey">
 				<tr>
 					<th
-						bind:this={techHeader}
 						class="{pinnedEdgeClass} w-(--tech-w) bg-light-warm-grey px-2 text-left text-sm @min-[760px]:w-auto {HEADER_CELL}"
 					>
 						<div class="ml-2 flex flex-col items-start">
@@ -474,7 +395,6 @@
 					</th>
 					{#each VALUE_COLUMNS as column, index (column.key)}
 						<th
-							bind:this={valueHeaders[index]}
 							class="{column.widthClass} snap-start text-right {index === LAST_COLUMN
 								? 'pr-3 pl-2'
 								: 'px-2'} {HEADER_CELL}"
@@ -515,23 +435,24 @@
 	</div>
 
 	<!-- Outside the table: a colspan footnote would scroll with the strip. -->
-	{#if showRooftopNote}
-		<p
-			id="rooftop-interpolation-note"
-			class="m-0 border-t border-warm-grey px-4 pt-3 text-[11px] leading-relaxed text-mid-grey"
-		>
-			* Rooftop solar: 5-minute chart values are linearly interpolated between reported half-hour
-			values where available. Table summaries, metrics, date comparisons and CSV/XLSX retain
-			reported values.
-		</p>
-	{/if}
-	<p class="m-0 px-4 py-3 text-[11px] leading-relaxed text-mid-grey">
-		{#if contributionMode === 'demand'}
-			Shares of gross demand needn't sum to 100% — losses and imports sit outside
-			{basis === 'energy' ? 'generated energy' : 'generated power'}.
-		{:else}
-			Shares of source generation. Loads and imports are excluded from the base.
-		{/if}
-		Emissions intensity divides each technology's window emissions by its own generation.
-	</p>
+	<footer
+		class="m-4 rounded-md border border-dashed border-mid-warm-grey bg-light-warm-grey px-4 py-3 text-[11px] leading-relaxed text-mid-grey"
+	>
+		<ul class="m-0 list-disc space-y-2 pl-4">
+			{#if showRooftopNote}
+				<li id="rooftop-interpolation-note">
+					Rooftop solar: 5-minute charts use linearly interpolated half-hour readings. Tables,
+					metrics, comparisons and exports retain reported values.
+				</li>
+			{/if}
+			<li>
+				{#if contributionMode === 'demand'}
+					Gross-demand shares may not total 100% due to losses and imports.
+				{:else}
+					Generation shares exclude loads and imports.
+				{/if}
+			</li>
+			<li>Emissions intensity: each technology's emissions divided by its generation.</li>
+		</ul>
+	</footer>
 </div>

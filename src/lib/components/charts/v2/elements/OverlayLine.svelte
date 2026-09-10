@@ -97,6 +97,9 @@
 			text-anchor="end"
 			font-size="10"
 			class="fill-mid-grey"
+			stroke="white"
+			stroke-width="3"
+			style="paint-order: stroke fill;"
 			pointer-events="none"
 		>
 			{tick}%

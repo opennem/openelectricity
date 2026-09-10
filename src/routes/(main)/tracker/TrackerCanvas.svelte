@@ -19,6 +19,7 @@
 		bucketFilterOptionsFor
 	} from '$lib/components/charts/v2/bucket-filter.js';
 	import { createContributionContext } from '$lib/components/charts/network/contribution.js';
+	import { RENEWABLES_SERIES_ID } from '$lib/components/charts/network/market-series-ids.js';
 	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 	import { hasSpotPrice, TRACKER_REGION_OPTIONS } from './tracker-regions.js';
@@ -80,8 +81,9 @@
 		/** @type {SiPrefix} */ (generationChart?.getDisplayPrefix() ?? 'M')
 	);
 	let showContributions = $derived(session.selection.generationTransform === 'proportion');
-	let needsContributionDemand = $derived(showContributions && contributionMode === 'demand');
-	let hoverTime = $state(/** @type {number | undefined} */ (undefined));
+	let needsContributionDemand = $derived(contributionMode === 'demand');
+	let previewTime = $state(/** @type {number | undefined} */ (undefined));
+	let metricsPanel = $state.raw(/** @type {WindowMetrics | undefined} */ (undefined));
 	let panZoomEngaged = $state(false);
 	let hiddenSeries = $derived(session.selection.hiddenSeries);
 	let regionHasSpotPrice = $derived(hasSpotPrice(region));
@@ -150,7 +152,7 @@
 	let tableKey = $derived(JSON.stringify([data.queryKey('generation'), contributionMode]));
 	/** One accepted table, including the labels that describe its values. */
 	let displayedTable = $state.raw(
-		/** @type {{key: string, structure: string, group: string, basis: 'power' | 'energy',
+		/** @type {{key: string, group: string, basis: 'power' | 'energy',
 		 * contributionMode: import('./types.js').ContributionMode, rows: import('./types.js').FuelTechTableRow[],
 		 * curtailmentRows: import('./types.js').CurtailmentTableRow[], overlaySummary: import('./types.js').OverlaySummary} | null} */ (
 			null
@@ -161,9 +163,6 @@
 			providers.pending ||
 			!!providers.error ||
 			displayedTable?.key !== tableKey
-	);
-	let tableStructurePending = $derived(
-		!!displayedTable && displayedTable.structure !== `${region}|${group}`
 	);
 	$effect(() => {
 		if (
@@ -176,7 +175,6 @@
 			return;
 		displayedTable = {
 			key: tableKey,
-			structure: `${region}|${group}`,
 			group,
 			basis: range.activeMetric,
 			contributionMode,
@@ -195,6 +193,20 @@
 	let releasedKey = $state('');
 	let switchKey = $derived(`${region}|${group}|${range.activeMetric}|${range.activeInterval}`);
 	let chartsHoldFrame = $derived(releasedKey !== switchKey || range.rangeSwitchPending);
+	// One loading treatment for the selected window, including table/overlay feeds.
+	// Accepted snapshots keep background cache warming from dimming the whole tracker.
+	let trackerLoading = $derived(
+		!session.gestureActive &&
+			(chartsHoldFrame ||
+				(!data.current('generation') && !data.state('generation').error) ||
+				(!data.current('market') && !data.state('market').error) ||
+				(!data.current('emissions') && !data.state('emissions').error) ||
+				providers.pending)
+	);
+	/** The navigation and every data surface share this loading lifecycle. */
+	export function isLoading() {
+		return trackerLoading;
+	}
 	let metricsStatus = $derived(
 		Object.fromEntries(
 			['generation', 'market', 'emissions', 'demand', 'renewables'].map((name) => {
@@ -295,10 +307,7 @@
 			seriesNames: names,
 			loadSeriesIds: loadGroupsFor(getGroup(group)),
 			mode: contributionMode,
-			ready:
-				showContributions &&
-				!chartsHoldFrame &&
-				(contributionMode === 'generation' || contributionDemandReady)
+			ready: !chartsHoldFrame && (contributionMode === 'generation' || contributionDemandReady)
 		});
 	}
 	$effect(() => {
@@ -326,6 +335,9 @@
 	const wideLayout = new MediaQuery('(min-width: 1024px)', true);
 	let metricsOpenOverride = $state(/** @type {boolean | null} */ (null));
 	let metricsOpen = $derived(metricsOpenOverride ?? wideLayout.current);
+	let hoverTime = $derived(
+		previewTime ?? (metricsOpen ? metricsPanel?.getSelectedTime() : undefined)
+	);
 	let metricsWidth = $state(256);
 	let metricsMax = $derived(
 		Math.max(
@@ -441,7 +453,11 @@
 				colour: RENEWABLES_LINE_COLOUR,
 				scale: 'percent',
 				tooltipUnit: '%',
-				formatTooltipValue: formatTrackerPercentageValue
+				formatTooltipValue: formatTrackerPercentageValue,
+				absoluteTooltipValue: {
+					data: marketData.getDisplayRows(start, end, displayRowOpts),
+					valueKey: RENEWABLES_SERIES_ID
+				}
 			});
 		}
 		return lines;
@@ -506,7 +522,7 @@
 
 	/** @param {number | undefined} time */
 	function handleHoverChange(time) {
-		hoverTime = time;
+		previewTime = time;
 	}
 
 	/** @param {import('./types.js').ExportDatasetKey | 'xlsx'} [requested]
@@ -609,6 +625,7 @@
 			>
 				{#snippet header()}<span class="hidden"></span>{/snippet}
 				<WindowMetrics
+					bind:this={metricsPanel}
 					input={metricsInput}
 					status={metricsStatus}
 					onretry={(id) =>
@@ -618,12 +635,9 @@
 								? marketData
 								: shareData
 						).reconcileFetches()}
-					{rangeLabel}
 					interval={range.displayInterval}
-					intervalLabel={intervalBadge}
 					zone={timeZone}
 					generationPrefix={generationDisplayPrefix}
-					filterLabel={imageFilterLabel}
 					onhighlight={handleHoverChange}
 					onclose={closeMetrics}
 				/>
@@ -670,6 +684,7 @@
 	>
 		<ChartCard
 			title="Generation"
+			loading={trackerLoading}
 			status={generationFreshness}
 			png={{
 				id: 'generation',
@@ -687,9 +702,9 @@
 					!session.gestureActive &&
 					imageProvidersReady
 			}}
-			badge={intervalBadge}
 			engaged={panZoomEngaged}
 			heightStorageKey="tracker-chart-height-generation"
+			defaultHeightPx={320}
 		>
 			{#snippet actions()}
 				<button
@@ -700,15 +715,13 @@
 				>
 			{/snippet}
 			{#snippet children(heightPx)}
-				{#if showContributions}
+				{#if showContributions || (needsContributionDemand && marketData.error)}
 					<p class="px-3 py-1 text-xs text-mid-grey" role="status">
 						{#if needsContributionDemand && marketData.error}
 							Gross-demand percentages unavailable.
 							<button class="underline" onclick={() => marketData.reconcileFetches()}
 								>Retry percentage data</button
 							>
-						{:else if needsContributionDemand && !contributionDemandReady}
-							Loading gross-demand percentages…
 						{:else}
 							Shares per interval; the table summarises the selected window. Change the basis in
 							Fuel technology options → Contribution.
@@ -749,7 +762,7 @@
 					bind:panZoomEngaged
 					gestureActive={session.gestureActive}
 					ongesturechange={(active) => (session.gestureActive = active)}
-					loadingLabel={rangeLabel}
+					showLoadingIndicator={false}
 					holdFrame={chartsHoldFrame}
 					prefetchPlan={pageVisible ? PREFETCH_PLAN : null}
 				/>
@@ -775,6 +788,7 @@
 
 		<ChartCard
 			title="Market"
+			loading={trackerLoading}
 			status={marketFreshness}
 			png={{
 				id: 'market',
@@ -832,7 +846,7 @@
 					bind:panZoomEngaged
 					gestureActive={session.gestureActive}
 					ongesturechange={(active) => (session.gestureActive = active)}
-					loadingLabel={rangeLabel}
+					showLoadingIndicator={false}
 					holdFrame={chartsHoldFrame}
 					prefetchPlan={pageVisible ? PREFETCH_PLAN : null}
 				/>
@@ -841,6 +855,7 @@
 
 		<ChartCard
 			title="Emissions"
+			loading={trackerLoading}
 			status={emissionsFreshness}
 			png={{
 				id: 'emissions',
@@ -889,7 +904,7 @@
 					bind:panZoomEngaged
 					gestureActive={session.gestureActive}
 					ongesturechange={(active) => (session.gestureActive = active)}
-					loadingLabel={rangeLabel}
+					showLoadingIndicator={false}
 					holdFrame={chartsHoldFrame}
 					prefetchPlan={pageVisible ? PREFETCH_PLAN : null}
 				/>
@@ -930,13 +945,16 @@
 		>
 			{#snippet header()}<span class="hidden"></span>{/snippet}
 			<FuelTechPanel
+				loading={trackerLoading}
 				options={fuelTechOptions}
 				bind:closeButton={tableCloseButton}
 				rows={displayedRows}
 				valuesPending={tableValuesPending}
-				structurePending={tableStructurePending}
-				error={tablePanelOpen ? providers.error : null}
-				onretry={providers.retry}
+				error={data.state('generation').error ?? providers.error}
+				onretry={() => {
+					generationChart?.reconcileFetches();
+					providers.retry();
+				}}
 				basis={displayedTable?.basis ?? range.activeMetric}
 				rooftopInterpolation={range.displayInterval === '5m'}
 				displayPrefix={generationDisplayPrefix}

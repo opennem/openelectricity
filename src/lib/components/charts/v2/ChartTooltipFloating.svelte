@@ -17,6 +17,7 @@
 		getTotalForRow,
 		getFormattedX,
 		formatTooltipNumericValue,
+		formatTooltipPercentage,
 		buildSeriesRows,
 		buildOverlayRows
 	} from './tooltip-derivations.js';
@@ -93,7 +94,13 @@
 	let total = $derived(getTotalForRow(chart, activeData));
 	let formattedTotal = $derived(formatTooltipNumericValue(chart, total));
 	let displayUnit = $derived(chart.tooltipUnit);
-	let unitInHeading = $derived(chart.chartOptions.isChartTypeStackedArea);
+	let showPercentages = $derived(!!chart.proportionContext && !chart.usesCustomProportion);
+	let unitInHeading = $derived(chart.chartOptions.isChartTypeStackedArea || showPercentages);
+	let rowLayout = $derived(
+		showPercentages
+			? 'grid grid-cols-[minmax(0,1fr)_max-content_6ch] gap-3'
+			: 'flex justify-between gap-3'
+	);
 
 	/**
 	 * Map a time value to its pixel position inside the chart area, mirroring
@@ -197,12 +204,19 @@
 			<!-- Date header -->
 			{#if formattedDate || (unitInHeading && displayUnit)}
 				<div
-					class="flex items-baseline justify-between gap-3 text-mid-grey font-light pb-1.5 mb-1.5 border-b border-warm-grey/60"
+					class="{rowLayout} items-baseline text-mid-grey font-light pb-1.5 mb-1.5 border-b border-warm-grey/60"
 				>
 					<span>{formattedDate}</span>
-					{#if unitInHeading && displayUnit}<span data-testid="tooltip-unit" class="font-mono"
-							>{displayUnit}</span
+					{#if unitInHeading && displayUnit}<span
+							data-testid="tooltip-unit"
+							class="text-right font-mono">{displayUnit}</span
 						>{/if}
+					{#if showPercentages}
+						<span class="text-right font-mono" data-testid="tooltip-percentage-heading">
+							<span class="sr-only">{chart.proportionContext?.label}</span>
+							<span aria-hidden="true">%</span>
+						</span>
+					{/if}
 				</div>
 			{/if}
 
@@ -210,7 +224,7 @@
 			<div class="flex flex-col gap-1">
 				{#each rows as row (row.key)}
 					<div
-						class="flex items-center gap-3 justify-between rounded-sm transition-colors {row.isHovered
+						class="{rowLayout} items-center rounded-sm transition-colors {row.isHovered
 							? '-mx-2 px-2 py-0.5 bg-mid-warm-grey/40'
 							: ''}"
 					>
@@ -223,7 +237,7 @@
 						</span>
 						<span
 							data-testid="tooltip-value"
-							class="font-mono tabular-nums {row.isHovered
+							class="text-right font-mono tabular-nums {row.isHovered
 								? 'font-semibold text-black'
 								: 'font-medium text-dark-grey'}"
 						>
@@ -233,6 +247,16 @@
 								—
 							{/if}
 						</span>
+						{#if showPercentages}
+							<span
+								data-testid="tooltip-percentage"
+								class="text-right font-mono tabular-nums {row.isHovered
+									? 'font-semibold text-black'
+									: 'font-medium text-dark-grey'}"
+							>
+								{formatTooltipPercentage(chart, activeData, row.key) || '—'}
+							</span>
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -240,8 +264,13 @@
 			<!-- Enabled overlays use independent datasets, joined to this timestamp. -->
 			{#if overlayRows.length}
 				<div class="flex flex-col gap-1 pt-1.5 mt-1.5 border-t border-warm-grey/60">
-					{#each overlayRows as row (row.key)}
-						<div class="flex items-center gap-3 justify-between rounded-sm">
+					{#each overlayRows as row, index (row.key)}
+						<div
+							class="{rowLayout} items-center rounded-sm {row.kind === 'line' &&
+							overlayRows[index - 1]?.kind === 'area'
+								? 'border-t border-warm-grey/60 pt-1.5 mt-1.5'
+								: ''}"
+						>
 							<span class="flex items-center gap-1.5 min-w-0">
 								<span
 									class="w-2 h-2 shrink-0 {row.kind === 'area' ? 'rounded-sm' : 'rounded-full'}"
@@ -257,7 +286,7 @@
 							</span>
 							<span
 								data-testid="tooltip-value"
-								class="font-mono tabular-nums font-medium text-dark-grey"
+								class="text-right font-mono tabular-nums font-medium text-dark-grey"
 							>
 								{#if row.formattedValue}
 									{row.formattedValue}{#if !unitInHeading && row.unit}&nbsp;{row.unit}{/if}
@@ -265,6 +294,14 @@
 									—
 								{/if}
 							</span>
+							{#if showPercentages && row.formattedPercentage !== undefined}
+								<span
+									data-testid="tooltip-percentage"
+									class="text-right font-mono tabular-nums font-medium text-dark-grey"
+								>
+									{row.formattedPercentage || '—'}
+								</span>
+							{/if}
 						</div>
 					{/each}
 				</div>
@@ -272,15 +309,13 @@
 
 			<!-- Optional total footer -->
 			{#if chart.chartTooltips.showTotal}
-				<div
-					class="flex items-center gap-3 justify-between pt-1.5 mt-1.5 border-t border-warm-grey/60"
-				>
+				<div class="{rowLayout} items-center pt-1.5 mt-1.5 border-t border-warm-grey/60">
 					<span class="text-mid-grey"
 						>{chart.usesCustomProportion ? 'Visible contribution' : 'Total'}</span
 					>
 					<span
 						data-testid="tooltip-value"
-						class="font-mono font-semibold text-dark-grey tabular-nums"
+						class="text-right font-mono font-semibold text-dark-grey tabular-nums"
 					>
 						{#if formattedTotal}{formattedTotal}{#if !unitInHeading && displayUnit}&nbsp;{displayUnit}{/if}{:else}—{/if}
 					</span>

@@ -17,10 +17,10 @@ function roundTrip(state) {
 }
 
 describe('tracker URLs', () => {
-	it('defaults legacy links to visible sources, generation contribution and absolute transforms', () => {
+	it('defaults legacy links to visible sources, demand contribution and absolute transforms', () => {
 		expect(parseTrackerUrl(new URLSearchParams('region=nsw1'), context)).toMatchObject({
 			hiddenSeries: [],
-			contributionMode: 'generation',
+			contributionMode: 'demand',
 			generationTransform: 'absolute',
 			marketValueTransform: 'absolute'
 		});
@@ -32,14 +32,14 @@ describe('tracker URLs', () => {
 			const state = {
 				...parseTrackerUrl(new URLSearchParams(), context),
 				hiddenSeries: ['wind', 'coal', 'coal'],
-				contributionMode: 'demand',
+				contributionMode: 'generation',
 				generationTransform: transform,
 				marketValueTransform: transform
 			};
 			const { url, parsed } = roundTrip(state);
 			expect(parsed).toMatchObject({ ...state, hiddenSeries: ['coal', 'wind'] });
 			expect(url.searchParams.get('hidden')).toBe('coal,wind');
-			expect(url.searchParams.get('contribution')).toBe('demand');
+			expect(url.searchParams.get('contribution')).toBe('generation');
 			expect(url.searchParams.get('transform')).toBe(transform === 'absolute' ? null : transform);
 			expect(url.searchParams.get('market-transform')).toBe(
 				transform === 'absolute' ? null : transform
@@ -56,7 +56,7 @@ describe('tracker URLs', () => {
 		);
 		expect(parsed.hiddenSeries).toEqual(['coal', 'wind']);
 		expect(parsed).toMatchObject({
-			contributionMode: 'generation',
+			contributionMode: 'demand',
 			generationTransform: 'absolute',
 			marketValueTransform: 'absolute'
 		});
@@ -107,6 +107,15 @@ describe('tracker URLs', () => {
 		const copied = copiedTrackerUrl(source, state);
 		expect(parseTrackerUrl(copied.searchParams, context)).toEqual(state);
 		expect(source.search).toBe('');
+	});
+
+	it('keeps explicit demand links readable and removes the redundant default when copied', () => {
+		const source = new URL('https://example.test/tracker?contribution=demand');
+		const state = parseTrackerUrl(source.searchParams, context);
+		expect(state.contributionMode).toBe('demand');
+		const copied = copiedTrackerUrl(source, state);
+		expect(copied.searchParams.has('contribution')).toBe(false);
+		expect(parseTrackerUrl(copied.searchParams, context).contributionMode).toBe('demand');
 	});
 
 	it('serialises the default state to a clean URL', () => {

@@ -13,6 +13,8 @@ import { formatDayMonthYearTime } from './date-labels.js';
 import { indexOfTime } from './binary-search.js';
 import { getNumberFormat } from '$lib/utils/formatters';
 
+const percentageFormat = getNumberFormat(1);
+
 /**
  * The currently active data row — prefers a live hover, falls back to a
  * sticky focus (click-locked) state.
@@ -93,8 +95,30 @@ export function formatTooltipNumericValue(chart, value) {
 	if (value === undefined || value === null) return '';
 	const numeric = Number(value);
 	if (!Number.isFinite(numeric)) return '';
-	if (chart.usesCustomProportion) return getNumberFormat(1).format(numeric);
+	if (chart.usesCustomProportion) return percentageFormat.format(numeric);
 	return chart.formatTooltipY?.(numeric) ?? chart.convertAndFormatValue(numeric);
+}
+
+/** Format an interval share beside its absolute value. The supplied context
+ * owns the denominator and exclusions, independent of visible technologies.
+ * @param {ChartStoreLike} chart
+ * @param {any} activeData
+ * @param {string} key
+ * @returns {string}
+ */
+export function formatTooltipPercentage(chart, activeData, key) {
+	const context = chart.proportionContext;
+	if (
+		!activeData ||
+		!context ||
+		chart.usesCustomProportion ||
+		context.excludedSeriesNames.includes(key)
+	)
+		return '';
+	const percentage = context.transform(activeData, [key])[key];
+	return typeof percentage === 'number' && Number.isFinite(percentage)
+		? percentageFormat.format(percentage)
+		: '';
 }
 
 /**
@@ -210,7 +234,7 @@ export function buildSeriesRows(chart, activeData) {
 }
 
 /**
- * @typedef {TooltipSeriesRow & { unit: string, kind: 'line' | 'area' }} TooltipOverlayRow
+ * @typedef {TooltipSeriesRow & { unit: string, kind: 'line' | 'area', formattedPercentage?: string }} TooltipOverlayRow
  */
 
 /**
@@ -248,9 +272,9 @@ export function buildOverlayRows(chart, activeData) {
 	const rows = [];
 
 	/**
-	 * @param {{ key: string, label: string, colour?: string, raw: any, unit: string, kind: 'line' | 'area', formatter?: (value: number) => string }} definition
+	 * @param {{ key: string, label: string, colour?: string, raw: any, unit: string, kind: 'line' | 'area', formatter?: (value: number) => string, formattedPercentage?: string }} definition
 	 */
-	function addRow({ key, label, colour, raw, unit, kind, formatter }) {
+	function addRow({ key, label, colour, raw, unit, kind, formatter, formattedPercentage }) {
 		const numeric = Number(raw);
 		const hasValue = raw !== null && raw !== undefined && Number.isFinite(numeric);
 		rows.push({
@@ -265,7 +289,8 @@ export function buildOverlayRows(chart, activeData) {
 				: '',
 			isHovered: false,
 			unit,
-			kind
+			kind,
+			formattedPercentage
 		});
 	}
 
@@ -279,21 +304,35 @@ export function buildOverlayRows(chart, activeData) {
 				raw: row?.[series.id],
 				unit: series.tooltipUnit ?? defaultUnit,
 				kind: 'area',
-				formatter: series.formatTooltipValue
+				formatter: series.formatTooltipValue,
+				formattedPercentage:
+					chart.proportionContext && !chart.usesCustomProportion
+						? formatTooltipPercentage(chart, row, series.id)
+						: undefined
 			});
 		}
 	}
 
 	for (const overlay of chart.displayOverlayLines ?? chart.overlayLines ?? []) {
 		const row = overlayRowAtTime(overlay.data, time);
+		const absolute = !chart.usesCustomProportion ? overlay.absoluteTooltipValue : undefined;
+		const amountRow = absolute ? overlayRowAtTime(absolute.data, time) : undefined;
+		const percentage = row?.[overlay.valueKey];
 		addRow({
 			key: `overlay-line:${overlay.id}`,
 			label: overlay.label ?? overlay.id,
 			colour: overlay.colour,
-			raw: row?.[overlay.valueKey],
-			unit: overlay.tooltipUnit ?? (overlay.scale === 'percent' ? '%' : defaultUnit),
+			raw: absolute ? amountRow?.[absolute.valueKey] : row?.[overlay.valueKey],
+			unit: absolute
+				? defaultUnit
+				: (overlay.tooltipUnit ?? (overlay.scale === 'percent' ? '%' : defaultUnit)),
 			kind: 'line',
-			formatter: overlay.formatTooltipValue
+			formatter: absolute ? undefined : overlay.formatTooltipValue,
+			formattedPercentage: absolute
+				? typeof percentage === 'number' && Number.isFinite(percentage)
+					? (overlay.formatTooltipValue ?? percentageFormat.format)(percentage)
+					: ''
+				: undefined
 		});
 	}
 

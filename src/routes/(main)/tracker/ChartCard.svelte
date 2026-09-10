@@ -2,6 +2,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { createResizeControl } from '$lib/components/ui/panel/resize-control.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
+	import LoadingOverlay from './LoadingOverlay.svelte';
 
 	/**
 	 * ChartCard — shared card shell for the tracker's chart stack: header row
@@ -18,6 +19,7 @@
 	 *   badge?: string,
 	 *   png?: {id: string, label: string, ready: boolean, caption?: string},
 	 *   engaged?: boolean,
+	 *   loading?: boolean,
 	 *   heightStorageKey?: string,
 	 *   defaultHeightPx?: number,
 	 *   minHeightPx?: number,
@@ -32,6 +34,7 @@
 		badge = '',
 		png,
 		engaged = false,
+		loading = false,
 		heightStorageKey = '',
 		defaultHeightPx = 260,
 		minHeightPx = 120,
@@ -87,7 +90,7 @@
 		<header
 			class="flex min-h-[52px] flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-mid-warm-grey/40 px-4 py-2"
 		>
-			<h3 class="m-0 font-space text-sm font-semibold text-dark-grey">{title}</h3>
+			<h3 class="m-0 text-sm font-semibold text-dark-grey">{title}</h3>
 			<div class="flex shrink-0 items-center gap-3">
 				{#if badge}
 					<span class="rounded bg-light-warm-grey px-2 py-1 font-mono text-xxs text-mid-grey">
@@ -96,11 +99,12 @@
 				{/if}
 				{#if actions}{@render actions()}{/if}
 			</div>
-			{#if status}<div class="w-full">{@render status()}</div>{/if}
+			{#if status}{@render status()}{/if}
 		</header>
 		<!-- Bottom breathing room so the date labels stay clear of the border. -->
-		<div class="pb-3">
+		<div class="relative pb-3" aria-busy={loading}>
 			{@render children(heightPx)}
+			<LoadingOverlay active={loading} />
 		</div>
 	</section>
 

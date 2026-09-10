@@ -104,12 +104,11 @@ The canonical tracker page — the planned replacement for the legacy
   that extends past 100% in 20-point steps for exporting regions) over the
   generation chart via `ChartStore.overlayLines`. These four overlay toggles
   are URL-owned so direct and copied links reproduce them. When enabled, each
-  also appears in the generation chart's floating tooltip: demand and
-  curtailment follow the selected generation unit, while renewable share uses
-  percent. Below a 760px panel width (a CSS container query) the Technology
-  column pins left and the value columns become a scroll-snap carousel; a tab
-  strip above the table names them, highlights the ones in view and scrolls a
-  column into place on tap (`table-columns.js`). Av power follows the chart's
+  also appears in the generation chart's floating tooltip: demand follows the
+  selected generation unit, and curtailment/renewables show amounts and shares.
+  A divider separates curtailment from the Demand and Renewables rows.
+  Below a 760px panel width (a CSS container query) the Technology
+  column pins left and the value columns scroll horizontally with snap points. Av power follows the chart's
   MW/GW choice while the chart shows power and stays in MW otherwise; Energy
   sizes its own prefix from the table's largest value, stepping MWh → GWh →
   TWh only at five digits (`energyDisplayPrefix`).
@@ -159,6 +158,17 @@ It shows minimum and maximum
 net power/energy, the selected market measure (spot price, volume-weighted price
 or market value), regional operational demand and renewables share (%). Emissions volume is also shown
 when Volume is selected; emissions-intensity extrema are omitted.
+Each metric has one label spanning both cells, with a tooltip explaining the measure.
+Each cell has an app tooltip such as “Minimum spot price”, with no separate
+Minimum/Maximum header row. The 20px down/up-to-line icons are vertically centred
+in each cell, left of its value and timestamp, and use the primary colour when
+selected. Metric labels use the default font, 14px semibold dark-grey text and a pale
+background, with 16px icons for energy/power, price, demand, renewables and emissions.
+Sections sit flush with light-grey bottom borders and matching borders beneath each label.
+Label rows have equal vertical padding.
+Value cells fit their content, with matching heights within each row; values,
+units and timestamps wrap without clipping. Generation's plot defaults to 320px high; saved resized
+heights still take precedence.
 Hover, focus or select a metric to highlight its interval on the synced charts.
 
 `window-metrics.js` calculates extrema from accepted, query-matching **display
@@ -191,13 +201,12 @@ not the metrics grid; existing CSV/XLSX exports are unchanged.
 
 ## Freshness and live follow
 
-The fixed top-nav `Live` / `Now` control remains accessible on mobile. Relative
-timeline presets follow live by default; `Live` pauses at the exact displayed
-bounds. Custom dates and settled pan/zoom gestures also pause. `Now` returns a
-custom/historical selection to the default 3-day view; selecting another preset
-starts following that preset. Pausing serialises exact `start`/`end` bounds, so
-copy/reload and Back/Forward preserve the choice without a second live-state URL
-flag. Ambient ticks never write browser history.
+Relative timeline presets follow the latest data automatically. Custom dates and
+settled pan/zoom gestures pause at the displayed bounds, selecting the date-picker
+state in the navigation. Selecting a preset resumes following its latest window;
+there is no separate Live control. Pausing serialises exact `start`/`end` bounds,
+so copy/reload and Back/Forward preserve the choice without a second live-state
+URL flag. Ambient ticks never write browser history.
 
 While the tab is visible, the page clock ticks once a minute. An idle, connected
 timeline advances all enabled charts/providers together; busy requests and active
@@ -213,16 +222,13 @@ in-flight requests may complete; returning to the tab performs one catch-up tick
 not a replay of missed ticks. Paused timelines and time-of-day analysis never
 advance automatically. Timers/listeners are disposed on navigation.
 
-Each timeline card shows its latest finite **native interval in the accepted
-view**, in network-local time, rather than the time a request finished. Synthetic
-closing points and missing/non-finite values do not count; zero is a reading.
-This indicates the latest available series reading, not complete coverage of
-every fuel technology (stated in the tooltip). Updating, failed and empty queries
-are explicit and cannot claim a fresh timestamp from a held frame. For a following,
-unfiltered timeline, a reading older than three native intervals is labelled
-`Data delayed`; calendar interval lengths use the existing bucket calculations.
-Historical/calendar-filtered selections say `Latest in view`, not `Data delayed`.
-Monthly/quarterly/yearly data is labelled `Latest bucket`, not a live observation.
+Timeline card headers show exceptional states only: `Data delayed`,
+`Update unavailable` or `No readings`. Routine latest-reading and updating labels
+are hidden. Delayed readings show their latest finite native interval in
+network-local time; synthetic closing points and missing/non-finite values do
+not count. A following, unfiltered timeline is delayed after three native
+intervals; historical and calendar-filtered selections do not show this warning.
+The latest reading does not guarantee complete coverage of every technology.
 
 ## Branded PNG export
 
@@ -338,8 +344,8 @@ failures do not block an otherwise ready generation comparison.
 `region` (`_all`, the NEM) · `range`/`start`+`end`/`interval` via the shared
 `range-params.js` (default 3-day preset; the tracker opts into the
 12-month rolling variants on the 1Y/All tiers via `includeRolling`) ·
-`group` (simple) · `hidden` (comma-separated group IDs) · `contribution=demand`
-(generation is the default) · `transform` / `market-transform` (`proportion` or
+`group` (simple) · `hidden` (comma-separated group IDs) · `contribution=generation`
+(gross demand is the default) · `transform` / `market-transform` (`proportion` or
 `changeSince`, absolute is the default) · `price=mv` · `emissions=volume` (intensity is the default) ·
 `overlay` — a canonical comma-separated selection of `demand`, `renewables`,
 `curtailment-solar`, and `curtailment-wind` · `table=0` · `fullscreen=false` ·
@@ -368,7 +374,7 @@ does not echo an update back into history. The market-value transform is retaine
 while the card shows Price, but applies only when Market value is displayed.
 Malformed analytical values fall back to defaults; older links need no migration.
 
-For example: `/tracker?region=nsw1&hidden=coal&contribution=demand&transform=proportion`.
+For example: `/tracker?region=nsw1&hidden=coal&contribution=generation&transform=proportion`.
 Copied links reproduce selections, not immutable data: presets remain relative
 to opening time, while custom/panned ranges preserve exact bounds. Hover,
 pan/zoom engagement, chart type/curve/unit preferences, chart sizes and custom
@@ -448,9 +454,17 @@ interpolation caption, because the image captures the displayed chart.
   span leaves the tier that offers it (`pinnedInterval` in the range
   control), so the first pan after "All" no longer flips 1M→1y and refires
   every surface.
-- The nav's pending pulse clears when ALL three charts have loaded (slowest
-  wins), not the fastest; each chart's veil names its target window while the
-  stale frame holds.
+- Timeline uses one right-aligned 28px app-logo loading indicator in the top
+  navigation. The date label and logo slide right to hide and left to show
+  within the same desktop slot; the logo also
+  stays visible beside the scrollable controls at smaller widths. Chart bodies
+  and the table share a fading white overlay with a soft sweeping highlight.
+  Headers and metrics remain clear, and range/grouping controls remain usable.
+  All loading visuals clear after the selected chart snapshots and enabled
+  table/overlay feeds settle. Reduced-motion preferences disable the slide,
+  pulse and sweep. Individual chart indicators are suppressed. Background chart
+  cache warming and active pan/zoom gestures do not trigger these visuals.
+  Failed and empty feeds settle into their existing messages.
 - During pan/zoom gestures the charts freeze their y-domains and render
   padded whole-bucket slices with stable identity (`display-aggregation.js`),
   so per-frame work is path regeneration only; the table, overlays, URL and
@@ -466,6 +480,20 @@ interpolation caption, because the image captures the displayed chart.
   basis differences) — this matches the homepage renewables methodology.
 
 ## Percentage semantics
+
+Gross demand is the default contribution basis and appears first in the menu,
+followed by generation. Explicit links for either basis remain supported.
+
+The generation tooltip adds a `%` column beside absolute power or energy values.
+It uses the selected contribution basis for the hovered interval; excluded
+technologies and unavailable denominators show a dash. Other chart tooltips keep
+their existing columns, and Proportion view uses its single percentage column.
+Curtailment rows also pair their power/energy values with the selected contribution
+basis. The Renewables row pairs the official renewable-generation amount with
+the overlay's independent gross-demand percentage. Each value joins at the exact
+hovered timestamp; a missing amount or percentage leaves only that cell unavailable.
+The renewables amount feed loads whenever its absolute tooltip is enabled, even
+with the table closed.
 
 The generation chart's **Proportion** view uses the same basis selected in
 **Fuel technology options → Contribution** as the table, including from the
@@ -496,7 +524,7 @@ through the URL schema above.
 
 Colocated vitest suites: `tracker-url.test.js`, `tracker-model.test.js`,
 `tracker-overlays.test.js`, `table-model.test.js`, `table-format.test.js`,
-`table-columns.test.js`, `tracker-prefetch.test.js`, `tracker-export.test.js`,
+`tracker-prefetch.test.js`, `tracker-export.test.js`,
 `page-load.test.js`, `tracker-session.test.js`, `tracker-data.test.js`.
 Live-data E2E smoke: `tests/e2e/tracker.spec.js`. Deterministic response-order,
 failure/retry, empty-data, history, resize, export-content and responsive checks:

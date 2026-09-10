@@ -18,7 +18,8 @@ describe('Tracker navigation', () => {
 		expect(session.window).toEqual({ start: original.start + 60_000, end: original.end + 60_000 });
 		expect(changed).not.toHaveBeenCalled();
 		expect(session.following).toBe(true);
-		session.pauseLive();
+		await Promise.resolve();
+		session.settleViewport({ start: session.window.start, end: session.window.end - 30_000 });
 		const paused = { ...session.window };
 		expect(session.following).toBe(false);
 		expect(session.selection.range).toMatchObject({
@@ -28,10 +29,12 @@ describe('Tracker navigation', () => {
 		});
 		session.tick(nowMs + 600_000);
 		expect(session.window).toEqual(paused);
-		session.goNow(nowMs + 600_000);
+		const clock = vi.spyOn(Date, 'now').mockReturnValue(nowMs + 600_000);
+		session.selectRange(3);
+		clock.mockRestore();
 		expect(session.following).toBe(true);
 		expect(session.window.end).toBe(nowMs + 600_000);
-		expect(changed.mock.calls).toEqual([['push'], ['push']]);
+		expect(changed.mock.calls).toEqual([['replace'], ['push']]);
 		disconnect();
 		session.tick(nowMs + 700_000);
 		expect(session.window.end).toBe(nowMs + 600_000);
@@ -49,7 +52,6 @@ describe('Tracker navigation', () => {
 		session.tick(nowMs + 60_000);
 		expect(session.window.end).toBe(nowMs);
 		session.select('profileView', 'timeline');
-		session.goNow(nowMs);
 		vi.useFakeTimers();
 		vi.setSystemTime(nowMs);
 		session.selectRange(-1);
@@ -103,7 +105,7 @@ describe('Tracker navigation', () => {
 		const changed = vi.fn();
 		const session = createTrackerSession(initial, changed);
 		const applyRange = vi.spyOn(session.range, 'handleRangeSelect');
-		session.select('contributionMode', 'demand');
+		session.select('contributionMode', 'generation');
 		session.select('generationTransform', 'proportion');
 		session.select('marketValueTransform', 'changeSince');
 		session.selectVisibility(['wind', 'coal', 'invalid'], ['demand']);
@@ -114,7 +116,7 @@ describe('Tracker navigation', () => {
 		session.restore(initial);
 		expect(session.selection).toMatchObject({
 			hiddenSeries: [],
-			contributionMode: 'generation',
+			contributionMode: 'demand',
 			generationTransform: 'absolute',
 			marketValueTransform: 'absolute'
 		});

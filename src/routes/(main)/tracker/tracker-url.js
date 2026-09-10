@@ -9,7 +9,7 @@
  * - `range` | `start`+`end`, `interval` — via the shared facility range params
  * - `group`     — fuel-tech grouping, default `simple` (Simplified)
  * - `hidden`    — comma-separated hidden IDs in the selected grouping
- * - `contribution` — `demand` for gross demand, otherwise source generation
+ * - `contribution` — `generation` for source generation, otherwise gross demand
  * - `transform` / `market-transform` — generation / market-value data transform;
  *                 `proportion` or `changeSince`, default `absolute`
  * - `filter`    — calendar-period filter id (`jan`…`dec`, `summer`…, `q1`…,
@@ -60,7 +60,7 @@ export function normaliseHiddenSeries(value, group) {
 
 /** @param {unknown} value @returns {import('./types.js').ContributionMode} */
 export function normaliseContributionMode(value) {
-	return value === 'demand' ? 'demand' : 'generation';
+	return value === 'generation' ? 'generation' : 'demand';
 }
 
 /** @param {unknown} value @returns {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} */
@@ -171,8 +171,8 @@ export function applyTrackerUrl(url, state) {
 	if (hidden.length) params.set('hidden', hidden.join(','));
 	else params.delete('hidden');
 
-	if (normaliseContributionMode(state.contributionMode) === 'demand')
-		params.set('contribution', 'demand');
+	if (normaliseContributionMode(state.contributionMode) === 'generation')
+		params.set('contribution', 'generation');
 	else params.delete('contribution');
 
 	for (const [key, value] of [

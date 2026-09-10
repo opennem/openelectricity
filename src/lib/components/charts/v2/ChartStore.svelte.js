@@ -300,7 +300,8 @@ export default class ChartStore {
 	 *  `{ id, data, valueKey, colour, scale }`; `scale: 'percent'` renders
 	 *  against a fixed 0–100% right-hand scale. Tooltip metadata is optional;
 	 *  when present, floating tooltips join the independent row by timestamp.
-	 *  @type {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }>} */
+	 *  `absoluteTooltipValue` pairs a percentage line with its independently joined amount.
+	 *  @type {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string, absoluteTooltipValue?: { data: any[], valueKey: string } }>} */
 	overlayLines = $state.raw([]);
 
 	/** Hatched area bands stacked on top of the rendered stack from an

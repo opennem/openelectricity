@@ -11,6 +11,7 @@
 	 */
 
 	import { untrack } from 'svelte';
+	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import { networkQueryKey } from './network-query.js';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
@@ -119,11 +120,12 @@
 	 *   rather than `chartHeightPx`, which would clobber a restored height.
 	 * @property {string} [heightStorageKey] - localStorage key persisting the
 	 *   resized height; share one key across a split pair so toggling keeps it
-	 * @property {string} [loadingLabel] - Target window shown in the loading veil
+	 * @property {string} [loadingLabel] - Target window announced by the loading indicator
+	 * @property {boolean} [showLoadingIndicator] - Disable when a parent coordinates loading across charts
 	 * @property {boolean} [holdFrame] - Keep the rendered frame until all synced charts are ready
 	 * @property {{ widenMultiplier?: number, maxWidenMs?: number, grains?: Array<{ interval: string, metric: string, seriesKey?: string, windowMs: number }> } | null} [prefetchPlan]
 	 *   - Idle plan for widening the current cache and warming likely next intervals
-	 * @property {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }>} [overlayLines]
+	 * @property {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string, absoluteTooltipValue?: { data: any[], valueKey: string } }>} [overlayLines]
 	 *   - Lines drawn above the stack from independent row sets (e.g. demand,
 	 *   renewable share); `scale: 'percent'` adds a right-hand 0–100% axis
 	 * @property {Array<{ id: string, data: any[], series: Array<{ id: string, colour: string, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }> }>} [overlayAreas]
@@ -171,6 +173,7 @@
 		resizable = false,
 		heightStorageKey = undefined,
 		loadingLabel = '',
+		showLoadingIndicator = true,
 		holdFrame = false,
 		prefetchPlan = null,
 		overlayLines = /** @type {any[]} */ ([]),
@@ -1064,7 +1067,7 @@
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
 			viewDomain={null}
-			loadingRanges={dataManager?.loadingRanges ?? []}
+			loadingRanges={showLoadingIndicator ? (dataManager?.loadingRanges ?? []) : []}
 			{resizable}
 			{heightStorageKey}
 		/>
@@ -1089,9 +1092,22 @@
 			>
 				No data for this range.
 			</div>
-		{:else if showLoadingOverlay}
-			<div class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
-				<span class="text-sm text-mid-warm-grey">Loading {loadingLabel || 'data'}…</span>
+		{:else if showLoadingIndicator && showLoadingOverlay}
+			<div
+				class="absolute inset-0 flex items-center justify-center rounded-lg bg-white/70"
+				role="status"
+				aria-label={loadingLabel ? `Loading ${loadingLabel}` : 'Loading chart'}
+				data-testid="chart-loading"
+			>
+				<LogoMarkLoader />
+			</div>
+		{:else if showLoadingIndicator && dataManager?.hasPendingFetch && !loadError}
+			<div
+				class="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 rounded-md bg-white/90 px-2 py-1"
+				role="status"
+				aria-label="Updating chart"
+			>
+				<LogoMarkLoader />
 			</div>
 		{/if}
 	</div>
@@ -1102,6 +1118,15 @@
 			: chartHeight}"
 		style:height={chartHeightPx ? `${chartHeightPx}px` : undefined}
 	>
-		<span class="text-sm text-mid-warm-grey">Loading data…</span>
+		{#if showLoadingIndicator}
+			<div
+				role="status"
+				aria-label="Loading chart"
+				data-testid="chart-loading"
+				class="flex min-h-[160px] items-center justify-center"
+			>
+				<LogoMarkLoader />
+			</div>
+		{/if}
 	</div>
 {/if}

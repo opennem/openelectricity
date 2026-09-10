@@ -1,11 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * The nav range bar server-renders immediately (pulsing as pending), but its
- * handlers only work once the canvas mounts and hands its range control up —
- * the pending pulse clearing (aria-busy="false" on the range trigger) is the
- * signal that the page is hydrated and interactive. Clicking SSR-rendered
- * controls before then would silently do nothing.
+ * The navigation server-renders before the canvas is interactive. Wait for
+ * the first data surface to leave its initial busy state before using controls.
  * @param {import('@playwright/test').Page} page
  */
 async function waitForHydration(page) {
@@ -310,11 +307,13 @@ test.describe('Tracker options menu', () => {
 		await expect(techHeader).toContainText('Detailed');
 
 		const contributionHeader = page.getByRole('columnheader', { name: /Contribution/ });
-		await expect(contributionHeader).toContainText('% generation');
-		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-		await menu.getByRole('menuitemradio', { name: '% demand' }).click();
 		await expect(contributionHeader).toContainText('% demand');
-		await expect.poll(() => new URL(page.url()).searchParams.get('contribution')).toBe('demand');
+		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
+		await menu.getByRole('menuitemradio', { name: '% generation' }).click();
+		await expect(contributionHeader).toContainText('% generation');
+		await expect
+			.poll(() => new URL(page.url()).searchParams.get('contribution'))
+			.toBe('generation');
 	});
 
 	test('datasets download as CSV and as one XLSX workbook', async ({ page }) => {
@@ -338,7 +337,7 @@ test.describe('Tracker options menu', () => {
 	});
 });
 
-test.describe('Tracker table column carousel', () => {
+test.describe('Tracker table horizontal scrolling', () => {
 	const columnStrip = (/** @type {import('@playwright/test').Page} */ page) =>
 		page.getByRole('group', { name: 'Table columns' });
 
@@ -348,21 +347,14 @@ test.describe('Tracker table column carousel', () => {
 		return box ? box.x + box.width : NaN;
 	}
 
-	test('a narrow panel pins Technology and scrolls value columns via the tabs', async ({
-		page
-	}) => {
+	test('a narrow panel pins Technology while value columns scroll', async ({ page }) => {
 		// The default 30% panel of a 1280px canvas is ~384px — below the 760px breakpoint.
 		await page.setViewportSize({ width: 1280, height: 720 });
 		await page.goto('/tracker?table=1');
 		await waitForHydration(page);
 
-		const strip = columnStrip(page);
-		// The table mounts only once the generation data arrives.
-		await expect(strip).toBeVisible({ timeout: 30000 });
-		const powerTab = strip.getByRole('button', { name: 'Av power' });
-		const priceTab = strip.getByRole('button', { name: 'Av price' });
-		await expect(powerTab).toHaveAttribute('aria-pressed', 'true');
-		await expect(priceTab).toHaveAttribute('aria-pressed', 'false');
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30000 });
+		await expect(columnStrip(page)).toHaveCount(0);
 
 		const table = page.getByRole('table');
 		const scroller = table.locator('xpath=..');
@@ -372,8 +364,7 @@ test.describe('Tracker table column carousel', () => {
 		if (!view) throw new Error('scroller not laid out');
 		expect(await rightEdge(priceHeader)).toBeGreaterThan(view.x + view.width + 1);
 
-		await priceTab.click();
-		await expect(priceTab).toHaveAttribute('aria-pressed', 'true');
+		await scroller.evaluate((element) => element.scrollTo({ left: 300, behavior: 'instant' }));
 		await expect.poll(() => rightEdge(priceHeader)).toBeLessThanOrEqual(view.x + view.width + 1);
 
 		// Technology stays flush with the scroller's left edge after scrolling.
@@ -402,11 +393,11 @@ test.describe('Tracker table column carousel', () => {
 		expect(await rightEdge(priceHeader)).toBeLessThanOrEqual(view.x + view.width + 1);
 	});
 
-	test('dragging the panel wider removes the carousel', async ({ page }) => {
+	test('dragging the panel wider fits all columns', async ({ page }) => {
 		await page.setViewportSize({ width: 1280, height: 720 });
 		await page.goto('/tracker?table=1');
 		await waitForHydration(page);
-		await expect(columnStrip(page)).toBeVisible({ timeout: 30000 });
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30000 });
 
 		const handle = await page.getByRole('separator', { name: 'Resize table panel' }).boundingBox();
 		if (!handle) throw new Error('panel handle not laid out');

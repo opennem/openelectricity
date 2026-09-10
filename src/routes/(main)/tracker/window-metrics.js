@@ -74,8 +74,7 @@ export function buildWindowMetrics({
 			id: 'generation',
 			label: basis === 'energy' ? 'Net energy' : 'Net power',
 			unit: basis === 'energy' ? 'MWh' : 'MW',
-			description:
-				'Signed sum of selected technologies, including imports and negative loads. Not gross demand. Incomplete intervals are excluded.',
+			description: 'Selected technologies, including imports and subtracting loads.',
 			...windowExtrema(generation, visible(generation))
 		},
 		{
@@ -89,8 +88,8 @@ export function buildWindowMetrics({
 			unit: priceMetric === 'market_value' ? '$' : '$/MWh',
 			description:
 				priceMetric === 'market_value'
-					? 'Signed market value across selected technologies. Incomplete intervals are excluded.'
-					: 'Regional price per displayed interval. Technology visibility does not change regional prices.',
+					? 'Net market value of selected technologies.'
+					: 'Regional price, independent of technology selection.',
 			...windowExtrema(
 				market,
 				priceRatio
@@ -105,16 +104,14 @@ export function buildWindowMetrics({
 			id: 'demand',
 			label: 'Demand',
 			unit: basis === 'energy' ? 'MWh' : 'MW',
-			description:
-				'Regional operational demand per displayed interval. Technology visibility does not change demand. Incomplete intervals are excluded.',
+			description: 'Regional operational demand, independent of technology selection.',
 			...windowExtrema(demand, ['demand'])
 		},
 		{
 			id: 'renewables',
 			label: 'Renewables',
 			unit: '%',
-			description:
-				'Regional renewable share of gross demand per displayed interval, matching the Renewables chart line. Technology visibility does not change this share.',
+			description: 'Renewable share of regional gross demand, independent of technology selection.',
 			...windowExtrema(renewables, ['renewable_share'])
 		},
 		...(emissionsMetric === 'emissions'
@@ -123,8 +120,7 @@ export function buildWindowMetrics({
 						id: 'emissions',
 						label: 'Emissions volume',
 						unit: 'tCO₂e',
-						description:
-							'Emissions across selected technologies per displayed interval. Incomplete intervals are excluded.',
+						description: 'Emissions from selected technologies.',
 						...windowExtrema(emissions, visible(emissions))
 					}
 				]
