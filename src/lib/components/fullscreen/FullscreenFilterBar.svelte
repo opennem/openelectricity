@@ -29,6 +29,7 @@
 	 *   stableName?: string,
 	 *   paddingX?: string,
 	 *   bgClass?: string,
+	 *   optionsSpacingClass?: string,
 	 *   back?: import('svelte').Snippet,
 	 *   stable?: import('svelte').Snippet,
 	 *   rest?: import('svelte').Snippet,
@@ -41,6 +42,7 @@
 		stableName = 'filter-bar-stable',
 		paddingX = 'px-4',
 		bgClass = 'tablet:bg-light-warm-grey/75',
+		optionsSpacingClass,
 		back,
 		stable,
 		rest,
@@ -79,9 +81,8 @@
 	</div>
 	{#if options}
 		<div
-			class="flex items-center tablet:border-l tablet:border-warm-grey {isFullscreen
-				? 'tablet:pl-2 tablet:ml-2'
-				: 'tablet:pl-4 tablet:ml-4'}"
+			class="flex items-center tablet:border-l tablet:border-warm-grey {optionsSpacingClass ??
+				(isFullscreen ? 'tablet:pl-2 tablet:ml-2' : 'tablet:pl-4 tablet:ml-4')}"
 			style="view-transition-name: filter-bar-options"
 		>
 			{@render options()}

@@ -1,6 +1,6 @@
 import { parseTrackerUrl } from './tracker-url.js';
 
-export function load({ url }) {
+export function load({ url, data }) {
 	const nowMs = Date.now();
-	return { ...parseTrackerUrl(url.searchParams, { nowMs }), nowMs };
+	return { ...data, ...parseTrackerUrl(url.searchParams, { nowMs }), nowMs };
 }

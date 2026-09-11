@@ -8,6 +8,76 @@ The canonical tracker page — the planned replacement for the legacy
 
 ## Composition
 
+### Region comparison
+
+The scenarios-style view switch offers Timeline, Time of day and **Compare
+regions** (`view=regions`). Comparison offers 21 Stratum line charts: carbon
+intensity; renewable, solar + wind, solar, wind, gas and coal generation and
+proportions; net imports proportion; solar, wind, hydro, gas and coal market
+values; and nominal and inflation-adjusted volume-weighted prices. All start
+visible. The existing bordered Facilities FilterDropdown stages chart selections until
+Apply, updating charts and their table/export columns. Its standard grouped
+checkboxes, Select all and Reset controls are reused. A shared gross-demand / source-generation
+selector controls generation proportions; net imports always uses gross demand.
+The shared Regions table controls regional visibility across charts and follows hover, pinned inspection or the latest common complete period.
+NSW, QLD, SA, TAS, VIC and WA (WEM) start selected; NEM and All Regions (NEM + WEM)
+are optional. Colours come from the shared region registry. Chart heights and
+panel width persist separately from Timeline; the panel starts closed on mobile.
+Y axes follow the visible time window during pan/zoom, using selected regions
+and interpolated line segments at the edges. Offscreen peaks and missing-value
+gaps do not distort the visible scale. Charts reuse Timeline's Stratum options
+bar, static zoom buttons, shared pan/zoom engagement and active card border.
+Smooth / Straight / Step styles apply to regional lines, with MWh / GWh / TWh
+choices on generation charts. Regional lines do not offer stacking or proportions
+of overlapping regions. User curve/unit choices survive viewport and height
+changes. The Y-domain helper accounts for the chosen curve at viewport edges;
+Step uses the rendered domain for both plotting and pointer inspection.
+Keyboard inspection is available through a focus-only chart control.
+
+Monthly source data comes through the existing network endpoint and headless
+providers. All history starts at the earliest available completed comparison
+period. Monthly 12-month rolling values are the default, with monthly, calendar
+year and July–June financial year alternatives. Only complete periods are shown;
+rolling gaps and incomplete annual components stay unavailable. Ratios are
+calculated after summing components: emissions tonnes × 1,000 / energy MWh, or
+renewable energy / gross demand or source generation × 100. Intensity and source
+generation reuse Tracker's fuel-tech classifications. The renewable numerator
+is the official `generation_renewable_energy` series, excluding storage discharge.
+Demand shares can exceed 100%. Net imports subtract exported energy from imports
+and can be negative. Non-interconnected whole networks have zero net imports.
+Technology market values divide summed market value by matching fuel-tech energy;
+volume-weighted prices divide total generation market value by intensity energy,
+using the same battery exclusion as Tracker. Negative market values remain valid.
+
+Inflation adjustment uses quarterly CPI from the
+[public monthly aggregate](https://data.openelectricity.org.au/v4/stats/au/all/monthly.json),
+fetched in the server load through the existing SWR cache. Each quarter-end label
+maps to its three calendar months. Monthly market values are adjusted before
+aggregation; unknown CPI quarters stay unavailable. The chart and exports label
+the latest CPI reference month (June 2025 when implemented). A failed CPI fetch
+only affects adjusted prices; it does not block the other metrics.
+
+Provider timestamps use UTC as a synthetic **calendar-label axis**, joining each
+network's January to January without shifting WEM into December. This is not an
+instantaneous cross-network comparison. National values sum NEM + WEM inputs
+before calculating ratios and require both networks. Regional failures can be
+retried independently; stale or disabled providers cannot populate current values.
+
+Comparison settings are independent of Timeline: `compare-interval`,
+`compare-regions` (an empty value intentionally selects none), `compare-renewables`,
+`compare-charts` (empty selects none), `compare-basis`, `compare-start` / `compare-end`, and `compare-table`. Defaults are
+omitted. Explicit view switches reset all query settings to that view's defaults
+(`view=average` or `view=regions`; Timeline has no view parameter). Back/Forward
+and direct links restore the full historical selection. Legacy `profile-view`
+links remain readable. Explicit filter changes push history; settled gestures
+replace it. The top nav holds all three views' filters with uniform spacing and
+a divider after the switcher. The outgoing controls slide left, then the incoming
+controls slide right into place; reduced-motion users get an immediate change. CSV/XLSX export
+the visible metrics for selected regions and visible periods, in base units with
+the percentage denominator stated. PNG uses the existing Stratum capture flow.
+
+### Timeline and profile composition
+
 - **`+page.svelte`** — page chrome, navigation menus, notices and download actions.
 - **`tracker-session.svelte.js`** — one per-page owner of selection state and
   the shared range controller. Explicit range/date/interval picks push history;
@@ -20,7 +90,8 @@ The canonical tracker page — the planned replacement for the legacy
   layout, with shared hover/gesture state and series selection.
 - **`TimeOfDay.svelte`** / **`time-of-day.js`** — a separate bounded profile view
   and pure network-local window, aggregation and CSV helpers. Timeline and profile
-  canvases are mutually exclusive; switching views preserves timeline selections.
+  canvases are mutually exclusive; explicit view changes reset selections and
+  browser history restores them.
 - **`AverageDayStack.svelte`** — all-technology average-day stacked area above
   the individual profiles, including while viewing daily overlays or spot price.
   **`profile-data.svelte.js`** shares the bounded source lifecycle: one power
@@ -70,7 +141,7 @@ The canonical tracker page — the planned replacement for the legacy
   Both sections use labelled radio groups with tinted, bold selected rows; the table
   headers echo current choices as muted sub-labels. The same menu stays in the
   collapsed table rail, allowing chart configuration without table-provider
-  fetches. Time of day has a grouping-only menu in its own header. Global page
+  fetches. Time of day has a grouping-only menu in the top nav. Global page
   options now contain only page actions (exports, link, fullscreen and docs).
   `FuelTechOptions` uses the installed Bits UI menu primitives for keyboard
   navigation, typeahead, Escape/outside dismissal, focus restoration, portalling
@@ -160,10 +231,11 @@ or market value), regional operational demand and renewables share (%). Emission
 when Volume is selected; emissions-intensity extrema are omitted.
 Each metric has one label spanning both cells, with a tooltip explaining the measure.
 Each cell has an app tooltip such as “Minimum spot price”, with no separate
-Minimum/Maximum header row. The 20px down/up-to-line icons are vertically centred
-in each cell, left of its value and timestamp, and use the primary colour when
-selected. Metric labels use the default font, 14px semibold dark-grey text and a pale
-background, with 16px icons for energy/power, price, demand, renewables and emissions.
+Minimum/Maximum header row. Compact Min/Max tags sit on the right, aligned with
+the value line, while values and dates sit on the left. Tags use a primary-colour
+fill when selected.
+Metric labels use the default font, 14px semibold dark-grey text and a pale
+background, without icons.
 Sections sit flush with light-grey bottom borders and matching borders beneath each label.
 Label rows have equal vertical padding.
 Value cells fit their content, with matching heights within each row; values,
@@ -274,7 +346,7 @@ technology absent from the response stays unavailable instead of showing another
 
 Use the navigation **Analysis view** dropdown (the same `FilterSelect` component
 as Region) to select **Time of day**, then **Average day** or **Daily overlay**. Choose a fuel
-technology (using the Time of day header's fuel technology options) or regional spot price, a 7/14/28-day
+technology (using the top nav's fuel technology options) or regional spot price, a 7/14/28-day
 window and an optional historical last day. Future dates clamp to yesterday;
 days use fixed network offsets (NEM/Australia UTC+10, WEM UTC+08), not civil DST.
 The overview stacks all returned fuel technologies in the selected grouping,

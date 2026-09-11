@@ -405,9 +405,12 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await maximum.click();
 	await page.mouse.move(0, 0);
 	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
-	await expect(maximum.locator('svg')).toHaveCSS('width', '20px');
-	await expect(maximum.locator('svg')).toHaveCSS('color', 'oklch(0.205 0 0)');
-	await expect(minimum.locator('svg')).toHaveCSS('color', 'rgb(106, 106, 106)');
+	await expect(maximum.getByText('Max', { exact: true })).toHaveCSS(
+		'background-color',
+		'oklch(0.205 0 0)'
+	);
+	await expect(minimum.getByText('Min', { exact: true })).toHaveCSS('color', 'rgb(106, 106, 106)');
+	await expect(page.getByTestId('metrics-generation').locator('svg')).toHaveCount(0);
 	await expect(maximum).toHaveCSS('border-left-width', '1px');
 	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
 		'2 Aug'
@@ -426,7 +429,7 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await expect(maximum).toHaveAttribute('aria-pressed', 'false');
 	await minimum.press('Enter');
 	await expect(minimum).toHaveAttribute('aria-pressed', 'false');
-	await expect(minimum.locator('svg')).toHaveCSS('color', 'rgb(106, 106, 106)');
+	await expect(minimum.getByText('Min', { exact: true })).toHaveCSS('color', 'rgb(106, 106, 106)');
 	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
 	await expect(minimum).toContainText('100');
 	await expect(maximum).toContainText('200');
@@ -1394,14 +1397,20 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 	await page.goto('/tracker?region=wem&view=average&profile-end=2026-08-31&profile-series=wind');
 	const profile = page.getByRole('region', { name: 'Time-of-day analysis' });
 	await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await expect(profile.getByRole('combobox', { name: 'Fuel technology', exact: true })).toHaveValue(
-		'wind'
-	);
+	await expect(
+		page
+			.getByTestId('tracker-top-nav')
+			.getByRole('combobox', { name: 'Fuel technology', exact: true })
+	).toHaveValue('wind');
 	await expect(profile).toContainText('2026-08-25 to 2026-08-31 · UTC+08:00');
 	expect(api.requests).toEqual(['power']);
-	await profile.getByRole('combobox', { name: 'View', exact: true }).selectOption('daily');
+	await page
+		.getByTestId('tracker-top-nav')
+		.getByRole('combobox', { name: 'View', exact: true })
+		.selectOption('daily');
 	await expect(profile.getByRole('button', { name: '2026-08-31', exact: true })).toBeVisible();
-	await profile
+	await page
+		.getByTestId('tracker-top-nav')
 		.getByRole('combobox', { name: 'Fuel technology', exact: true })
 		.selectOption('coal');
 	await profile.getByRole('button', { name: '2026-08-31', exact: true }).click();
@@ -1411,7 +1420,10 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 	);
 	expect(api.requests).toEqual(['power']);
 	for (const days of [14, 28]) {
-		await profile.getByRole('combobox', { name: 'Window', exact: true }).selectOption(String(days));
+		await page
+			.getByTestId('tracker-top-nav')
+			.getByRole('combobox', { name: 'Window', exact: true })
+			.selectOption(String(days));
 		await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 		await expect(profile.getByRole('button', { name: /2026-\d\d-\d\d/, exact: true })).toHaveCount(
 			days
@@ -1439,41 +1451,50 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 	const url = await copyTrackerLink(page);
 	expect(new URL(url).searchParams.get('view')).toBe('daily');
 	await page.goto(url);
-	await expect(profile.getByRole('combobox', { name: 'Window', exact: true })).toHaveValue('28');
-	await expect(profile.getByRole('combobox', { name: 'View', exact: true })).toHaveValue('daily');
-	await expect(profile.getByRole('combobox', { name: 'Fuel technology', exact: true })).toHaveValue(
-		'coal'
-	);
+	await expect(
+		page.getByTestId('tracker-top-nav').getByRole('combobox', { name: 'Window', exact: true })
+	).toHaveValue('28');
+	await expect(
+		page.getByTestId('tracker-top-nav').getByRole('combobox', { name: 'View', exact: true })
+	).toHaveValue('daily');
+	await expect(
+		page
+			.getByTestId('tracker-top-nav')
+			.getByRole('combobox', { name: 'Fuel technology', exact: true })
+	).toHaveValue('coal');
 	await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await profile.getByRole('combobox', { name: 'Metric', exact: true }).selectOption('price');
+	await page
+		.getByTestId('tracker-top-nav')
+		.getByRole('combobox', { name: 'Metric', exact: true })
+		.selectOption('price');
 	await expect(profile.getByRole('heading', { name: /Spot price/ })).toBeVisible();
 	await page.goBack();
-	await expect(profile.getByRole('combobox', { name: 'Metric', exact: true })).toHaveValue('power');
-	await expect(profile.getByRole('combobox', { name: 'Fuel technology', exact: true })).toHaveValue(
-		'coal'
-	);
+	await expect(
+		page.getByTestId('tracker-top-nav').getByRole('combobox', { name: 'Metric', exact: true })
+	).toHaveValue('power');
+	await expect(
+		page
+			.getByTestId('tracker-top-nav')
+			.getByRole('combobox', { name: 'Fuel technology', exact: true })
+	).toHaveValue('coal');
 });
 
-test('time-of-day switches preserve timeline bounds and fit narrow screens', async ({
+test('time-of-day switches reset settings, restore history and fit narrow screens', async ({
 	page
 }, testInfo) => {
 	await fixture(page);
 	await page.goto(
 		'/tracker?view=daily&profile-end=2026-08-31&profile-days=14&range=30d&interval=1h&hidden=coal&transform=proportion'
 	);
-	const original = new URL(page.url()).searchParams;
+	const original = page.url();
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await page.getByRole('button', { name: 'Time of day', exact: true }).click();
-	await page
-		.getByRole('listbox', { name: 'Analysis view' })
-		.getByRole('option', { name: 'Timeline', exact: true })
-		.click();
+	await page.getByRole('button', { name: 'Timeline', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Timeline', exact: true })).toBeVisible();
 	await expect(card(page, 'Generation')).toBeVisible();
-	for (const key of ['range', 'interval', 'hidden', 'transform'])
-		expect(new URL(page.url()).searchParams.get(key)).toBe(original.get(key));
+	expect(new URL(page.url()).search).toBe('');
 	await page.goBack();
 	await expect(page.getByRole('button', { name: 'Time of day', exact: true })).toBeVisible();
+	await expect(page).toHaveURL(original);
 	await expect(page.getByRole('combobox', { name: 'View', exact: true })).toHaveValue('daily');
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await page.setViewportSize({ width: 390, height: 844 });

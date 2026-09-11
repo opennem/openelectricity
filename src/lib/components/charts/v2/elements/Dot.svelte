@@ -7,7 +7,7 @@
 	 */
 	import { getContext } from 'svelte';
 
-	const { padding, xGet, yGet, zGet, yScale } = getContext('LayerCake');
+	const { xGet, yGet, zGet, yScale } = getContext('LayerCake');
 
 	/**
 	 * @typedef {Object} Props
@@ -33,7 +33,8 @@
 	let innerRadius = $derived(Math.max(r - 3, 1));
 </script>
 
-<g class="indicator-dots pointer-events-none" transform="translate({-$padding.left}, 0)">
+<!-- Use the same padded SVG coordinates as the plotted series and hover line. -->
+<g class="indicator-dots pointer-events-none">
 	{#if value}
 		{#each domains as domain, i (i)}
 			{@const cx = $xGet(value)}

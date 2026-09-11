@@ -96,6 +96,7 @@
 			onclick={handleClick}
 			{value}
 			aria-label={ariaLabel ?? label}
+			aria-pressed={isSelected(value)}
 			class="relative z-10 flex w-full gap-3 md:w-auto items-center justify-center whitespace-nowrap cursor-pointer transition-colors duration-200 {rounded} {compact
 				? 'px-3 py-1.5 md:px-4 md:py-1.5'
 				: 'px-4 py-4 md:px-8 md:py-4'} {isSelected(value)

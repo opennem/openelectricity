@@ -6,10 +6,12 @@ import { applyTrackerUrl, parseTrackerUrl } from './tracker-url.js';
 export function createTrackerNavigation(browser) {
 	let appliedSearch = browser.read().search;
 	return {
-		/** @param {import('./types.js').TrackerUrlState} state @param {'push' | 'replace'} mode */
-		write(state, mode) {
+		/** @param {import('./types.js').TrackerUrlState} state @param {'push' | 'replace'} mode @param {boolean} [resetQuery] */
+		write(state, mode, resetQuery = false) {
 			const current = browser.read();
-			const next = applyTrackerUrl(new URL(current), state);
+			const base = new URL(current);
+			if (resetQuery) base.search = '';
+			const next = applyTrackerUrl(base, state);
 			appliedSearch = next.search;
 			if (next.href !== current.href) browser.write(next, mode);
 		},

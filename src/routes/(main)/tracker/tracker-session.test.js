@@ -7,6 +7,61 @@ const nowMs = new Date('2026-09-06T00:00:00Z').getTime();
 const initial = { ...parseTrackerUrl(new URLSearchParams(), { nowMs }), nowMs };
 
 describe('Tracker navigation', () => {
+	it('resets explicit view switches and restores full history without writing', () => {
+		const changed = vi.fn();
+		const session = createTrackerSession(initial, changed);
+		session.connect(() => []);
+		session.select('region', 'wem');
+		session.select('profileView', 'daily');
+		session.select('profileDays', 28);
+		const previous = session.selection;
+		session.selectView('regions');
+		expect(session.selection).toMatchObject({
+			...parseTrackerUrl(new URLSearchParams(), { nowMs }),
+			compareRegions: true
+		});
+		expect(session.following).toBe(false);
+		expect(changed).toHaveBeenLastCalledWith('push', true);
+		session.select('regionComparison', {
+			...session.selection.regionComparison,
+			interval: '1M',
+			charts: ['price']
+		});
+		session.selectView('average');
+		expect(session.selection.profileView).toBe('average');
+		expect(session.selection.profileDays).toBe(7);
+		expect(session.selection.regionComparison.interval).toBe('12mr');
+		session.selectView('timeline');
+		expect(session.following).toBe(true);
+		changed.mockClear();
+		session.selectView('timeline');
+		expect(changed).not.toHaveBeenCalled();
+		session.restore(previous);
+		expect(session.selection).toEqual(previous);
+		expect(changed).not.toHaveBeenCalled();
+	});
+	it('clears the query on explicit switches but restores historical URLs', () => {
+		let url = new URL('https://example.com/tracker?region=wem&range=30d&unknown=1');
+		const previous = new URL(url);
+		const navigation = createTrackerNavigation({
+			read: () => url,
+			write: (next) => {
+				url = next;
+			}
+		});
+		const session = createTrackerSession(
+			{ ...parseTrackerUrl(url.searchParams, { nowMs }), nowMs },
+			(mode, resetQuery) => navigation.write(session.selection, mode, resetQuery)
+		);
+		session.selectView('regions');
+		expect(url.search).toBe('?view=regions');
+		session.selectView('timeline');
+		expect(url.search).toBe('');
+		const restored = navigation.read(previous, nowMs);
+		expect(restored?.region).toBe('wem');
+		if (restored) session.restore(restored);
+		expect(session.selection.range).toMatchObject({ kind: 'preset', days: 30 });
+	});
 	it('advances live presets without history, preserves span and pauses exact bounds', async () => {
 		const changed = vi.fn();
 		const session = createTrackerSession(initial, changed);

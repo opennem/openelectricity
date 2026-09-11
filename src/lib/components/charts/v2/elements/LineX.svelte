@@ -7,7 +7,7 @@
 	 */
 	import { getContext } from 'svelte';
 
-	const { padding, xGet, yGet, yScale, height, width } = getContext('LayerCake');
+	const { xGet, yGet, yScale, height, width } = getContext('LayerCake');
 
 	/**
 	 * @typedef {Object} Props
@@ -36,7 +36,8 @@
 	let y2Pos = $derived(maxYValue !== undefined ? $yScale(maxYValue) : $height);
 </script>
 
-<g class="indicator-lines pointer-events-none" transform="translate({-$padding.left}, 0)">
+<!-- LayerCake's SVG already starts at the padded plot origin. -->
+<g class="indicator-lines pointer-events-none">
 	<!-- Vertical line at x position -->
 	{#if xValue}
 		<line

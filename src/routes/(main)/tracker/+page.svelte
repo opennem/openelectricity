@@ -11,6 +11,8 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
+	import { fly } from 'svelte/transition';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
@@ -24,11 +26,7 @@
 		FullscreenNavDropdown
 	} from '$lib/components/fullscreen';
 	import { ChartRangeBar } from '$lib/components/charts/v2';
-	import {
-		BELOW_TABLET_QUERY,
-		isFullscreenUrl,
-		toggleFullscreenMode
-	} from '$lib/utils/fullscreen-mode.js';
+	import { BELOW_TABLET_QUERY, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
 	import { MIN_DATE } from '$lib/utils/date-range.js';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
 	import { downloadXlsx } from '$lib/utils/download-xlsx.js';
@@ -36,6 +34,10 @@
 	import TrackerCanvas from './TrackerCanvas.svelte';
 	import RangeStatus from './RangeStatus.svelte';
 	import TimeOfDay from './TimeOfDay.svelte';
+	import RegionComparison from './RegionComparison.svelte';
+	import Switch from '$lib/components/SwitchWithIcons.svelte';
+	import { comparisonCsv, comparisonWorkbook } from './region-comparison-export.js';
+	import { normaliseRegionComparison } from './region-comparison.js';
 	import PngExport from './PngExport.svelte';
 	import { capturePngSnapshot, settleChartAnimations } from './png-export.js';
 	import {
@@ -69,13 +71,24 @@
 			else replaceState(href, {});
 		}
 	});
-	const session = createTrackerSession(initialData, (mode) =>
-		navigation.write(session.selection, mode)
+	const session = createTrackerSession(initialData, (mode, resetQuery) =>
+		navigation.write(session.selection, mode, resetQuery)
 	);
 	let selectedRegion = $derived(session.selection.region);
 	let tablePanelOpen = $derived(session.selection.tablePanelOpen);
 	let bucketFilter = $derived(session.selection.bucketFilter);
-	let timeOfDay = $derived(session.selection.profileView !== 'timeline');
+	let comparingRegions = $derived(!!session.selection.compareRegions);
+	let timeOfDay = $derived(!comparingRegions && session.selection.profileView !== 'timeline');
+	let timeline = $derived(!comparingRegions && !timeOfDay);
+	let view = $derived(comparingRegions ? 'regions' : timeOfDay ? 'average' : 'timeline');
+	const viewOptions = [
+		{ value: 'timeline', label: 'Timeline' },
+		{ value: 'average', label: 'Time of day' },
+		{ value: 'regions', label: 'Compare regions' }
+	];
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	let profileCanvas = $state.raw(/** @type {TimeOfDay | undefined} */ (undefined));
+	let regionCanvas = $state.raw(/** @type {RegionComparison | undefined} */ (undefined));
 	let notice = $state('');
 	/** @type {HTMLElement} */
 	let captureRoot;
@@ -91,9 +104,9 @@
 	}
 	/** @type {TrackerCanvas | undefined} */
 	let canvas = $state.raw(undefined);
-	let trackerLoading = $derived.by(() => !timeOfDay && (!canvas || canvas.isLoading()));
+	let trackerLoading = $derived.by(() => timeline && (!canvas || canvas.isLoading()));
 	const rangeControl = session.range;
-	let isFullscreen = $derived(building ? true : isFullscreenUrl(page.url));
+	let isFullscreen = $derived(building ? true : session.selection.fullscreen);
 	let navRange = $derived({
 		selectedRange: rangeControl.selectedRange,
 		customDays: rangeControl.customDays,
@@ -104,13 +117,23 @@
 	});
 	const currentUrlState = () => session.selection;
 	let downloadItems = $derived(
-		trackerDownloadItems({ tablePanelOpen }).map((item) => ({
-			...item,
-			disabled: timeOfDay || !canvas || canvas.getExportContext(item.key).pending
-		}))
+		comparingRegions
+			? [
+					{
+						key: 'regions',
+						label: 'Region comparison',
+						disabled: !regionCanvas?.exportDataset()?.rows.length
+					}
+				]
+			: trackerDownloadItems({ tablePanelOpen }).map((item) => ({
+					...item,
+					disabled: timeOfDay || !canvas || canvas.getExportContext(item.key).pending
+				}))
 	);
-	let workbookDisabled = $derived.by(
-		() => timeOfDay || !canvas || canvas.getExportContext('xlsx').pending
+	let workbookDisabled = $derived.by(() =>
+		comparingRegions
+			? !regionCanvas?.exportDataset()?.rows.length
+			: timeOfDay || !canvas || canvas.getExportContext('xlsx').pending
 	);
 	/** @param {string} value */
 	const handleRegionChange = (value) => session.select('region', value);
@@ -164,21 +187,48 @@
 		};
 	}
 
-	/** @param {ExportDatasetKey} key */
+	/** @param {string} key */
 	function handleDownloadItem(key) {
-		const context = exportContext(key);
+		if (comparingRegions) {
+			const dataset = regionCanvas?.exportDataset();
+			if (dataset?.rows.length)
+				downloadCsv(comparisonCsv(dataset), 'openelectricity-region-comparison.csv');
+			return;
+		}
+		const context = exportContext(/** @type {ExportDatasetKey} */ (key));
 		if (!context) {
 			return;
 		}
-		const dataset = buildExportDataset(key, context);
+		const dataset = buildExportDataset(/** @type {ExportDatasetKey} */ (key), context);
 		if (!dataset) {
 			notice = EMPTY_NOTICE;
 			return;
 		}
-		downloadCsv(datasetToCsv(dataset, context.timeZone), exportFileName(context, key));
+		downloadCsv(
+			datasetToCsv(dataset, context.timeZone),
+			exportFileName(context, /** @type {ExportDatasetKey} */ (key))
+		);
 	}
 
 	async function downloadWorkbook() {
+		if (comparingRegions) {
+			const dataset = regionCanvas?.exportDataset();
+			if (dataset?.rows.length) {
+				try {
+					await downloadXlsx(
+						comparisonWorkbook(
+							dataset,
+							copiedTrackerUrl(new URL(window.location.href), currentUrlState()).href,
+							normaliseRegionComparison(session.selection.regionComparison)
+						),
+						'openelectricity-region-comparison.xlsx'
+					);
+				} catch {
+					notice = 'Could not build the workbook.';
+				}
+			}
+			return;
+		}
 		const context = exportContext();
 		if (!context) {
 			return;
@@ -228,6 +278,7 @@
 				{isFullscreen}
 				routeKey="tracker"
 				stableName="filter-bar-stable-tracker"
+				optionsSpacingClass="tablet:pl-4"
 				paddingX="px-8"
 				bgClass="bg-light-warm-grey/75"
 			>
@@ -245,59 +296,87 @@
 
 				{#snippet rest()}
 					{#if isFullscreen}<div class="h-8 shrink-0 border-l border-warm-grey"></div>{/if}
-					<div
-						class="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto pb-0.5 {isFullscreen
-							? 'pl-3'
-							: ''}"
-					>
-						<!-- NEM states nest under the whole-NEM option; the pill goes
-						     active (dark) when deviating from the NEM default. -->
-						<FilterSelect
-							selected={selectedRegion}
-							options={TRACKER_REGION_TREE}
-							listLabel="Region"
-							defaultValue={DEFAULT_REGION}
-							compact
-							onchange={handleRegionChange}
-						/>
-
-						<div class="h-6 w-px shrink-0 bg-warm-grey"></div>
-						<FilterSelect
-							selected={timeOfDay ? 'average' : 'timeline'}
-							options={[
-								{ value: 'timeline', label: 'Timeline' },
-								{ value: 'average', label: 'Time of day' }
-							]}
-							listLabel="Analysis view"
-							defaultValue="timeline"
-							compact
-							onchange={(value) =>
-								session.select('profileView', value === 'timeline' ? 'timeline' : 'average')}
-						/>
-
-						{#if !timeOfDay}
-							<ChartRangeBar
-								--chart-range-gap="0.75rem"
-								selectedRange={navRange.selectedRange}
-								customDays={navRange.customDays}
-								displayInterval={navRange.displayInterval}
-								startDate={navRange.startDate}
-								endDate={navRange.endDate}
-								minDate={MIN_DATE}
-								maxDate={navRange.maxDate}
-								showIntervalDropdown
-								includeRollingInterval
-								showBucketFilter
-								{bucketFilter}
-								onbucketfilterchange={handleBucketFilterChange}
-								variant="expanded"
-								onrangeselect={session.selectRange}
-								ondaterangechange={session.selectDates}
-								onintervalchange={session.selectInterval}
+					<div class="flex min-w-0 flex-1 items-center gap-4" data-testid="tracker-top-nav">
+						<div class="hidden shrink-0 sm:block">
+							<Switch
+								buttons={viewOptions}
+								selected={view}
+								compact
+								onchange={(option) => session.selectView(option.value)}
+								aria-label="Analysis view"
 							/>
-						{/if}
+						</div>
+						<div class="shrink-0 sm:hidden">
+							<FilterSelect
+								selected={view}
+								options={viewOptions}
+								listLabel="Analysis view"
+								defaultValue="timeline"
+								compact
+								onchange={(value) => session.selectView(value)}
+							/>
+						</div>
+						<div
+							class="h-8 shrink-0 border-l border-warm-grey"
+							role="separator"
+							aria-orientation="vertical"
+						></div>
+						<div class="grid min-w-0 flex-1 overflow-hidden" data-testid="tracker-view-filters">
+							{#key view}
+								<div
+									class="col-start-1 row-start-1 flex min-w-0 items-center gap-4 overflow-x-auto py-0.5"
+									data-view={view}
+									in:fly={{
+										x: -24,
+										duration: reducedMotion.current ? 0 : 180,
+										delay: reducedMotion.current ? 0 : 140
+									}}
+									out:fly={{ x: -24, duration: reducedMotion.current ? 0 : 140 }}
+								>
+									{#if !comparingRegions}
+										<FilterSelect
+											selected={selectedRegion}
+											options={TRACKER_REGION_TREE}
+											listLabel="Region"
+											defaultValue={DEFAULT_REGION}
+											compact
+											onchange={handleRegionChange}
+										/>
+									{/if}
+
+									{#if timeline}
+										<ChartRangeBar
+											--chart-range-gap="1rem"
+											selectedRange={navRange.selectedRange}
+											customDays={navRange.customDays}
+											displayInterval={navRange.displayInterval}
+											startDate={navRange.startDate}
+											endDate={navRange.endDate}
+											minDate={MIN_DATE}
+											maxDate={navRange.maxDate}
+											showIntervalDropdown
+											includeRollingInterval
+											showBucketFilter
+											{bucketFilter}
+											onbucketfilterchange={handleBucketFilterChange}
+											variant="expanded"
+											onrangeselect={session.selectRange}
+											ondaterangechange={session.selectDates}
+											onintervalchange={session.selectInterval}
+										/>
+									{/if}
+									{#if comparingRegions}
+										{@const controls = regionCanvas?.getControls()}
+										{@render controls?.()}
+									{:else if timeOfDay}
+										{@const controls = profileCanvas?.getControls()}
+										{@render controls?.()}
+									{/if}
+								</div>
+							{/key}
+						</div>
 					</div>
-					{#if !timeOfDay}
+					{#if timeline}
 						<RangeStatus label={session.rangeLabel} loading={trackerLoading} />
 					{/if}
 				{/snippet}
@@ -346,8 +425,10 @@
 				{/if}
 
 				<main bind:this={captureRoot} class="flex min-h-0 flex-1 flex-col overflow-hidden">
-					{#if timeOfDay}
-						<TimeOfDay {session} />
+					{#if comparingRegions}
+						<RegionComparison bind:this={regionCanvas} {session} cpi={data.comparisonCpi} />
+					{:else if timeOfDay}
+						<TimeOfDay bind:this={profileCanvas} {session} />
 					{:else}
 						<TrackerCanvas bind:this={canvas} {session} />
 					{/if}

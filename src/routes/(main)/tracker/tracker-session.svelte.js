@@ -1,3 +1,4 @@
+import { normaliseRegionComparison } from './region-comparison.js';
 import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
 import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
 import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
@@ -10,6 +11,7 @@ import { normaliseComparison } from './comparison.js';
 import { normaliseProfileView, normaliseProfileDays, normaliseProfileEnd } from './time-of-day.js';
 import { DEFAULT_RANGE_DAYS, normaliseRange, customRangeDates } from './tracker-model.js';
 import {
+	parseTrackerUrl,
 	normaliseTrackerOverlays,
 	normaliseHiddenSeries,
 	normaliseContributionMode,
@@ -21,6 +23,8 @@ import {
 function normaliseSelection(value) {
 	return {
 		...value,
+		compareRegions: !!value.compareRegions,
+		regionComparison: normaliseRegionComparison(value.regionComparison),
 		profileView: normaliseProfileView(value.profileView),
 		profileDays: normaliseProfileDays(value.profileDays),
 		profileMetric: /** @type {'power' | 'price'} */ (
@@ -41,7 +45,7 @@ function normaliseSelection(value) {
 
 /** Per-page selection and range ownership. Browser history is an injected side effect.
  * @param {import('./types.js').TrackerUrlState & {nowMs: number}} initial
- * @param {(mode: 'push' | 'replace') => void} onchange
+ * @param {(mode: 'push' | 'replace', resetQuery?: boolean) => void} onchange
  */
 export function createTrackerSession(initial, onchange) {
 	let selection = $state.raw(normaliseSelection(initial));
@@ -121,7 +125,11 @@ export function createTrackerSession(initial, onchange) {
 			return clockMs;
 		},
 		get following() {
-			return selection.profileView === 'timeline' && selection.range.kind === 'preset';
+			return (
+				!selection.compareRegions &&
+				selection.profileView === 'timeline' &&
+				selection.range.kind === 'preset'
+			);
 		},
 		/** Advance only relative timeline windows; no history entries for ambient ticks.
 		 * @param {number} nowMs @param {boolean} [ready] */
@@ -129,6 +137,7 @@ export function createTrackerSession(initial, onchange) {
 			clockMs = nowMs;
 			if (
 				!connected ||
+				selection.compareRegions ||
 				!ready ||
 				gestureActive ||
 				selection.profileView !== 'timeline' ||
@@ -209,6 +218,26 @@ export function createTrackerSession(initial, onchange) {
 				[key]: value
 			});
 			if (history) onchange(history);
+		},
+		/** Explicit view switches start with defaults; restore() preserves history.
+		 * @param {string} view */
+		selectView(view) {
+			const current = selection.compareRegions
+				? 'regions'
+				: selection.profileView === 'timeline'
+					? 'timeline'
+					: 'average';
+			if (view === current) return;
+			anchorEnd = clockMs = Date.now();
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- transient parameters for parsing defaults
+			const params = new URLSearchParams();
+			if (view !== 'timeline') params.set('view', view === 'regions' ? 'regions' : 'average');
+			selection = normaliseSelection({
+				...parseTrackerUrl(params, { nowMs: clockMs }),
+				nowMs: clockMs
+			});
+			applyRange(selection.range);
+			onchange('push', true);
 		},
 		/** Solo and restore update overlays and fuel-tech visibility in one history entry.
 		 * @param {string[]} hiddenSeries @param {import('./types.js').TrackerOverlay[]} [overlays] */

@@ -83,7 +83,82 @@
 			`openelectricity-${selection.region}-time-of-day-${selection.profileMetric}-${window.lastDate}.csv`
 		);
 	}
+	export function getControls() {
+		return controls;
+	}
 </script>
+
+{#snippet controls()}
+	<FuelTechOptions group={groupId} ongroupchange={(value) => session.select('group', value)} />
+	<label
+		><span class="sr-only">View</span>
+		<select
+			value={selection.profileView}
+			onchange={(event) =>
+				session.select('profileView', event.currentTarget.value === 'daily' ? 'daily' : 'average')}
+		>
+			<option value="average">Average day</option><option value="daily">Daily overlay</option>
+		</select>
+	</label>
+	<label
+		><span class="sr-only">Window</span>
+		<select
+			value={selection.profileDays}
+			onchange={(event) =>
+				session.select('profileDays', normaliseProfileDays(event.currentTarget.value))}
+		>
+			{#each [7, 14, 28] as days (days)}<option value={days}>{days} days</option>{/each}
+		</select>
+	</label>
+	<label
+		><span class="sr-only">Last day</span>
+		<input
+			type="date"
+			min="1999-01-01"
+			max={window.maxDate}
+			value={window.lastDate}
+			onchange={(event) => {
+				if (event.currentTarget.validity.valid)
+					session.select('profileEnd', event.currentTarget.value);
+			}}
+		/>
+	</label>
+	{#if selection.profileEnd}<button class="control" onclick={() => session.select('profileEnd', '')}
+			>Latest complete days</button
+		>{/if}
+	<label
+		><span class="sr-only">Metric</span>
+		<select
+			value={selection.profileMetric}
+			onchange={(event) =>
+				session.select('profileMetric', event.currentTarget.value === 'price' ? 'price' : 'power')}
+		>
+			<option value="power">Power</option><option
+				value="price"
+				disabled={!hasSpotPrice(selection.region)}>Spot price</option
+			>
+		</select>
+	</label>
+	{#if !price}
+		<label
+			><span class="sr-only">Fuel technology</span>
+			<select
+				value={series}
+				disabled={pending || !meta}
+				onchange={(event) => session.select('profileSeries', event.currentTarget.value)}
+			>
+				{#if selection.profileSeries && !meta?.seriesNames.includes(selection.profileSeries)}
+					<option value={selection.profileSeries}
+						>{group.labels[selection.profileSeries]} (unavailable)</option
+					>
+				{/if}
+				{#each meta?.seriesNames ?? [] as name (name)}<option value={name}
+						>{meta?.seriesLabels[name] ?? name}</option
+					>{/each}
+			</select>
+		</label>
+	{/if}
+{/snippet}
 
 <section
 	class="overflow-auto p-3 sm:p-5"
@@ -99,82 +174,6 @@
 					{regionLabel} · {window.dates[0]} to {window.lastDate} · UTC{zone}
 				</p>
 			</div>
-			<FuelTechOptions group={groupId} ongroupchange={(value) => session.select('group', value)} />
-			<label
-				>View
-				<select
-					value={selection.profileView}
-					onchange={(event) =>
-						session.select(
-							'profileView',
-							event.currentTarget.value === 'daily' ? 'daily' : 'average'
-						)}
-				>
-					<option value="average">Average day</option><option value="daily">Daily overlay</option>
-				</select>
-			</label>
-			<label
-				>Window
-				<select
-					value={selection.profileDays}
-					onchange={(event) =>
-						session.select('profileDays', normaliseProfileDays(event.currentTarget.value))}
-				>
-					{#each [7, 14, 28] as days (days)}<option value={days}>{days} days</option>{/each}
-				</select>
-			</label>
-			<label
-				>Last day
-				<input
-					type="date"
-					min="1999-01-01"
-					max={window.maxDate}
-					value={window.lastDate}
-					onchange={(event) => {
-						if (event.currentTarget.validity.valid)
-							session.select('profileEnd', event.currentTarget.value);
-					}}
-				/>
-			</label>
-			{#if selection.profileEnd}<button
-					class="control"
-					onclick={() => session.select('profileEnd', '')}>Latest complete days</button
-				>{/if}
-			<label
-				>Metric
-				<select
-					value={selection.profileMetric}
-					onchange={(event) =>
-						session.select(
-							'profileMetric',
-							event.currentTarget.value === 'price' ? 'price' : 'power'
-						)}
-				>
-					<option value="power">Power</option><option
-						value="price"
-						disabled={!hasSpotPrice(selection.region)}>Spot price</option
-					>
-				</select>
-			</label>
-			{#if !price}
-				<label
-					>Fuel technology
-					<select
-						value={series}
-						disabled={pending || !meta}
-						onchange={(event) => session.select('profileSeries', event.currentTarget.value)}
-					>
-						{#if selection.profileSeries && !meta?.seriesNames.includes(selection.profileSeries)}
-							<option value={selection.profileSeries}
-								>{group.labels[selection.profileSeries]} (unavailable)</option
-							>
-						{/if}
-						{#each meta?.seriesNames ?? [] as name (name)}<option value={name}
-								>{meta?.seriesLabels[name] ?? name}</option
-							>{/each}
-					</select>
-				</label>
-			{/if}
 			<button class="control" disabled={pending || !!error || !available} onclick={download}
 				>Download profile CSV</button
 			>

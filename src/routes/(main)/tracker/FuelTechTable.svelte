@@ -1,4 +1,11 @@
 <script>
+	import {
+		TABLE_HEADER_CELL,
+		TABLE_ROW,
+		TABLE_SWATCH,
+		pinnedTableEdge,
+		tableValueCell
+	} from './table-styles.js';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs.js';
@@ -246,15 +253,6 @@
 		row.activate(isExclusive(event));
 	}
 
-	/** Value cells dim while stale and mute the em dash for missing values.
-	 *  The last column carries the table's right gutter.
-	 *  @param {string} text @param {number} index @param {string} cellPad */
-	function valueCellClass(text, index, cellPad) {
-		return `${index === LAST_COLUMN ? 'pr-3 pl-2' : 'px-2'} ${cellPad} whitespace-nowrap text-right font-mono tabular-nums transition-opacity duration-300 ${
-			text === EMPTY_CELL ? 'text-mid-grey' : 'text-dark-grey'
-		}`;
-	}
-
 	/** Diagonal hatch in the series colour — the curtailment swatch treatment.
 	 * CSS gradient angles describe the gradient axis rather than the stripe,
 	 * so -45deg matches OverlayArea's vertical SVG line rotated by 45deg.
@@ -271,13 +269,8 @@
 	// fade at each cell's top and bottom), so the cells' strips join into one
 	// continuous band down the column. The sticky cell is positioned, so the
 	// strip anchors to it and paints above the value cells sliding under.
-	const PINNED_EDGE =
-		'sticky left-0 z-[1] border-r border-warm-grey after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-6 after:bg-linear-to-r after:from-black/5 after:to-transparent after:transition-opacity after:duration-200';
-	let pinnedEdgeClass = $derived(
-		`${PINNED_EDGE} ${scrollLeft > 0 ? 'after:opacity-100' : 'after:opacity-0'}`
-	);
+	let pinnedEdgeClass = $derived(pinnedTableEdge(scrollLeft));
 	let stickyLabelCell = $derived(`${pinnedEdgeClass} bg-white group-hover:bg-light-warm-grey`);
-	const HEADER_CELL = 'border-b border-warm-grey py-3 align-top font-medium';
 </script>
 
 {#snippet swatch(/** @type {Swatch} */ { kind, colour }, /** @type {boolean} */ active)}
@@ -290,7 +283,7 @@
 	{:else if active}
 		<!-- Solid in the series colour, or hatched for a curtailment band. -->
 		<span
-			class="size-5 shrink-0 rounded-sm border"
+			class={TABLE_SWATCH}
 			style={kind === 'hatch'
 				? hatchStyle(colour)
 				: `background-color: ${colour}; border-color: ${colour};`}
@@ -325,9 +318,7 @@
 		tabindex="0"
 		aria-pressed={row.active}
 		aria-describedby={row.interpolated ? 'rooftop-interpolation-note' : undefined}
-		class="group cursor-pointer text-sm hover:bg-light-warm-grey {row.summary
-			? 'font-semibold'
-			: ''} {row.dimmed ? 'opacity-50' : ''}"
+		class="{TABLE_ROW} {row.summary ? 'font-semibold' : ''} {row.dimmed ? 'opacity-50' : ''}"
 	>
 		<td class="{stickyLabelCell} px-2 {cellPad}">
 			{#if row.breakdown?.length}
@@ -341,7 +332,7 @@
 			{/if}
 		</td>
 		{#each row.cells as cell, index (index)}
-			<td class={valueCellClass(cell, index, cellPad)}>{cell}</td>
+			<td class={tableValueCell(cell, index === LAST_COLUMN, cellPad)}>{cell}</td>
 		{/each}
 	</tr>
 {/snippet}
@@ -386,7 +377,7 @@
 			<thead class="bg-light-warm-grey">
 				<tr>
 					<th
-						class="{pinnedEdgeClass} w-(--tech-w) bg-light-warm-grey px-2 text-left text-sm @min-[760px]:w-auto {HEADER_CELL}"
+						class="{pinnedEdgeClass} w-(--tech-w) bg-light-warm-grey px-2 text-left text-sm @min-[760px]:w-auto {TABLE_HEADER_CELL}"
 					>
 						<div class="ml-2 flex flex-col items-start">
 							<span class="text-xs text-dark-grey">Technology</span>
@@ -397,7 +388,7 @@
 						<th
 							class="{column.widthClass} snap-start text-right {index === LAST_COLUMN
 								? 'pr-3 pl-2'
-								: 'px-2'} {HEADER_CELL}"
+								: 'px-2'} {TABLE_HEADER_CELL}"
 						>
 							<div class="flex flex-col items-end">
 								<span class="text-xs">{column.label}</span>

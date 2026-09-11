@@ -1,3 +1,4 @@
+import { parseRegionComparison, applyRegionComparison } from './region-comparison.js';
 /**
  * URL (de)serialisation for the tracker page. Compact navigation state only —
  * scope, range, card modes and analytical selections. Ephemeral state (hover, pan/zoom
@@ -106,7 +107,11 @@ export function parseTrackerUrl(params, context) {
 	return {
 		region,
 		group,
-		profileView: normaliseProfileView(params.get('view')),
+		compareRegions: params.get('view') === 'regions',
+		regionComparison: parseRegionComparison(params),
+		profileView: normaliseProfileView(
+			params.get('view') === 'regions' ? params.get('profile-view') : params.get('view')
+		),
 		profileDays: normaliseProfileDays(params.get('profile-days')),
 		profileMetric:
 			params.get('profile-metric') === 'price' && hasSpotPrice(region) ? 'price' : 'power',
@@ -139,6 +144,7 @@ export function parseTrackerUrl(params, context) {
  */
 export function applyTrackerUrl(url, state) {
 	const params = url.searchParams;
+	applyRegionComparison(params, state.regionComparison);
 	const comparison = normaliseComparison(state.comparison);
 	if (comparison) params.set('compare', '1');
 	else params.delete('compare');
@@ -148,7 +154,13 @@ export function applyTrackerUrl(url, state) {
 		else params.delete(`compare-${side}`);
 	}
 	const profileParams = {
-		view: normaliseProfileView(state.profileView) === 'timeline' ? '' : state.profileView,
+		view: state.compareRegions
+			? 'regions'
+			: normaliseProfileView(state.profileView) === 'timeline'
+				? ''
+				: state.profileView,
+		'profile-view':
+			state.compareRegions && state.profileView !== 'timeline' ? state.profileView : '',
 		'profile-days': normaliseProfileDays(state.profileDays) === 7 ? '' : String(state.profileDays),
 		'profile-metric': state.profileMetric === 'price' && hasSpotPrice(state.region) ? 'price' : '',
 		'profile-series': getGroup(state.group).order.includes(state.profileSeries)

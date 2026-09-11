@@ -36,6 +36,8 @@
  * @typedef {Object} TrackerUrlState
  * @property {string} region
  * @property {string} group - Fuel-tech grouping value
+ * @property {boolean} [compareRegions]
+ * @property {import('./region-comparison.js').RegionComparisonSelection} [regionComparison]
  * @property {'timeline' | 'average' | 'daily'} profileView
  * @property {7 | 14 | 28} profileDays
  * @property {'power' | 'price'} profileMetric
