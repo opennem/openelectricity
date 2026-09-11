@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
 	ALL_COMPARISON_CHARTS,
+	COMPARISON_CHART_OPTIONS,
+	selectComparisonCharts,
 	comparisonFuelRows,
 	processComparisonFinancial,
 	processComparisonFlows,
@@ -27,8 +29,17 @@ const response = (metric, values) => ({
 	]
 });
 describe('expanded regional metrics', () => {
-	it('includes all 21 metrics by default and round-trips empty or filtered charts', () => {
+	it('defaults to intensity and renewable proportion and round-trips selections', () => {
 		expect(ALL_COMPARISON_CHARTS).toHaveLength(21);
+		expect(COMPARISON_CHART_OPTIONS).toHaveLength(15);
+		expect(normaliseRegionComparison().charts).toEqual(['intensity', 'share']);
+		expect(
+			normaliseRegionComparison({ charts: ['intensity', 'generation', 'share'] }).charts
+		).toEqual(['intensity', 'generation']);
+		expect(selectComparisonCharts(['share', 'wind_share'], ['generation'])).toEqual([
+			'generation',
+			'wind_share'
+		]);
 		for (const charts of [undefined, [], ['solar_value', 'price_real', 'unknown']]) {
 			const state = normaliseRegionComparison({ charts });
 			const params = new URLSearchParams();

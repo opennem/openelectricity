@@ -1,7 +1,9 @@
 import { bisectTime, bisectTimeRight } from '$lib/components/charts/v2/binary-search.js';
 import { computeYDomain } from '$lib/components/charts/v2/compute-y-domain.js';
 import {
-	ALL_COMPARISON_CHARTS,
+	COMPARISON_CHART_OPTIONS,
+	DEFAULT_COMPARISON_CHARTS,
+	comparisonChartId,
 	FUEL_COMPONENTS,
 	comparisonFuelRows,
 	comparisonMetricValue
@@ -48,8 +50,11 @@ export function normaliseRegionComparison(value = undefined) {
 			: '12mr',
 		regions,
 		charts: Array.isArray(value?.charts)
-			? ALL_COMPARISON_CHARTS.filter((id) => value.charts?.includes(id))
-			: [...ALL_COMPARISON_CHARTS],
+			? COMPARISON_CHART_OPTIONS.flatMap(({ id }) => {
+					const selected = value.charts?.find((entry) => comparisonChartId(entry) === id);
+					return selected ? [selected] : [];
+				})
+			: [...DEFAULT_COMPARISON_CHARTS],
 		mode: value?.mode === 'generation' ? 'generation' : 'share',
 		basis: value?.basis === 'generation' ? 'generation' : 'demand',
 		start: validWindow ? start : null,
@@ -80,7 +85,9 @@ export function applyRegionComparison(params, selection) {
 	const state = normaliseRegionComparison(selection);
 	const values = {
 		'compare-charts':
-			state.charts.join(',') === ALL_COMPARISON_CHARTS.join(',') ? null : state.charts.join(','),
+			state.charts.join(',') === DEFAULT_COMPARISON_CHARTS.join(',')
+				? null
+				: state.charts.join(','),
 		'compare-interval': state.interval === '12mr' ? '' : state.interval,
 		'compare-regions':
 			state.regions.join(',') === DEFAULT_COMPARISON_REGIONS.join(',')

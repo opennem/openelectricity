@@ -11,11 +11,16 @@ The canonical tracker page — the planned replacement for the legacy
 ### Region comparison
 
 The scenarios-style view switch offers Timeline, Time of day and **Compare
-regions** (`view=regions`). Comparison offers 21 Stratum line charts: carbon
+regions** (`view=regions`). Comparison offers 15 selectable Stratum charts covering
+21 metrics: carbon
 intensity; renewable, solar + wind, solar, wind, gas and coal generation and
 proportions; net imports proportion; solar, wind, hydro, gas and coal market
-values; and nominal and inflation-adjusted volume-weighted prices. All start
-visible. The existing bordered Facilities FilterDropdown stages chart selections until
+values; and nominal and inflation-adjusted volume-weighted prices. Only carbon
+intensity and renewables proportion start visible. Each generation/proportion pair
+shares one chart-selector entry and uses the existing Timeline tabs to switch its
+presentation. Newly selected fuel charts default to Proportion; the table and
+exports follow the selected presentation, which is preserved in the URL. The
+existing bordered Facilities FilterDropdown stages chart selections until
 Apply, updating charts and their table/export columns. Its standard grouped
 checkboxes, Select all and Reset controls are reused. A shared gross-demand / source-generation
 selector controls generation proportions; net imports always uses gross demand.

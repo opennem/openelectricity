@@ -67,9 +67,33 @@ export const COMPARISON_METRICS = [
 	}
 ];
 export const ALL_COMPARISON_CHARTS = COMPARISON_METRICS.map((metric) => metric.id);
+export const DEFAULT_COMPARISON_CHARTS = ['intensity', 'share'];
+/** A fuel has one selectable chart, with proportion and generation presentations. */
+export function comparisonChartId(/** @type {string} */ id) {
+	const metric = comparisonMetric(id);
+	return metric.kind === 'energy'
+		? metric.fuel === 'renewables'
+			? 'share'
+			: `${metric.fuel}_share`
+		: id;
+}
+export const COMPARISON_CHART_OPTIONS = COMPARISON_METRICS.filter(
+	(metric) => metric.kind !== 'energy'
+).map((metric) => ({
+	...metric,
+	label: metric.kind === 'share' && metric.fuel ? labels[metric.fuel] : metric.label,
+	group: metric.kind === 'share' ? 'Generation / Proportion' : metric.group
+}));
 export const COMPARISON_METRIC_GROUPS = [
-	...new Set(COMPARISON_METRICS.map((metric) => metric.group))
+	...new Set(COMPARISON_CHART_OPTIONS.map((metric) => metric.group))
 ];
+/** Preserve each selected fuel's presentation when applying the chart picker. */
+export function selectComparisonCharts(
+	/** @type {string[]} */ ids,
+	/** @type {string[]} */ previous = []
+) {
+	return ids.map((id) => previous.find((value) => comparisonChartId(value) === id) ?? id);
+}
 /** @param {string} id */
 export const comparisonMetric = (id) =>
 	COMPARISON_METRICS.find((metric) => metric.id === id) ?? COMPARISON_METRICS[0];

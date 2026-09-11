@@ -184,17 +184,17 @@ describe('region comparison navigation and export', () => {
 		const state = normaliseRegionComparison({
 			regions: ['nsw1'],
 			interval: '1M',
-			charts: ['intensity', 'generation', 'share']
+			charts: ['intensity', 'share']
 		});
 		const data = { nsw1: [{ ...monthly(1)[0], emissions: null }] };
 		const dataset = comparisonExportDataset(data, state, { start, end: Date.UTC(2025, 0) });
 		const csv = comparisonCsv(dataset);
 		expect(csv).toContain('Carbon intensity (kgCO2e/MWh)');
 		expect(csv).toContain('gross demand (%)');
-		expect(csv).toContain('Jan 2024,New South Wales,,1500,150');
+		expect(csv).toContain('Jan 2024,New South Wales,,150');
 		const sheets = comparisonWorkbook(dataset, 'https://example.com/tracker?view=regions', state);
 		expect(sheets).toHaveLength(2);
-		expect(sheets[1].data[1][3]).toEqual({ value: 1500, type: Number });
+		expect(sheets[1].data[1][3]).toEqual({ value: 150, type: Number });
 	});
 });
 

@@ -1,11 +1,13 @@
 <script>
+	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { onMount, tick, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import ComparisonChartSelect from './ComparisonChartSelect.svelte';
 	import {
-		COMPARISON_METRICS,
+		comparisonMetric,
+		comparisonChartId,
 		comparisonMetricValue,
 		comparisonUnit
 	} from './comparison-metrics.js';
@@ -37,10 +39,8 @@
 
 	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>, cpi: any}} */
 	let { session, cpi } = $props();
-	let metrics = $derived(
-		COMPARISON_METRICS.filter((metric) => selection.charts.includes(metric.id))
-	);
 	let selection = $derived(normaliseRegionComparison(session.selection.regionComparison));
+	let metrics = $derived(selection.charts.map(comparisonMetric));
 	const source = createRegionComparisonData(
 		() => selection,
 		untrack(() => session.clockMs),
@@ -257,7 +257,7 @@
 			{#if !metrics.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
 					No charts selected. Use Charts to show comparisons.
 				</p>{/if}
-			{#each metrics as metric (metric.id)}
+			{#each metrics as metric (comparisonChartId(metric.id))}
 				{@const cardReady =
 					!source.pending &&
 					selection.regions.some((id) =>
@@ -268,7 +268,7 @@
 				<ChartCard
 					title={metric.label}
 					defaultHeightPx={320}
-					heightStorageKey={`tracker-comparison-${metric.id}-height`}
+					heightStorageKey={`tracker-comparison-${comparisonChartId(metric.id)}-height`}
 					loading={source.pending && !selection.regions.some((id) => source.data[id]?.length)}
 					engaged={panZoomEngaged}
 					png={{
@@ -282,6 +282,24 @@
 					}}
 				>
 					{#snippet actions()}
+						{#if metric.fuel && (metric.kind === 'energy' || metric.kind === 'share')}
+							<SwitchTabs
+								buttons={[
+									{ label: 'Proportion', value: comparisonChartId(metric.id) },
+									{
+										label: 'Generation',
+										value: metric.fuel === 'renewables' ? 'generation' : `${metric.fuel}_generation`
+									}
+								]}
+								selected={metric.id}
+								onChange={(id) =>
+									select({
+										charts: selection.charts.map((current) =>
+											current === metric.id ? id : current
+										)
+									})}
+							/>
+						{/if}
 						{#if metric.id === 'price_real'}<span class="text-xs text-mid-grey"
 								>{cpi?.reference ? `${cpi.reference} dollars` : 'CPI unavailable'}</span
 							>{/if}

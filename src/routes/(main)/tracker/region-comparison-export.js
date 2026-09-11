@@ -1,10 +1,10 @@
-import { COMPARISON_METRICS, comparisonMetricValue, comparisonUnit } from './comparison-metrics.js';
+import { comparisonMetric, comparisonMetricValue, comparisonUnit } from './comparison-metrics.js';
 import { COMPARISON_REGIONS, comparisonPeriod } from './region-comparison.js';
 import { datasetToCsv, datasetToSheet, summaryToSheet } from './tracker-export.js';
 
 /** @param {Record<string,any[]>} data @param {import('./region-comparison.js').RegionComparisonSelection} state @param {{start:number,end:number}} viewport @param {string | null} [cpiReference] */
 export function comparisonExportDataset(data, state, viewport, cpiReference = null) {
-	const metrics = COMPARISON_METRICS.filter((metric) => state.charts.includes(metric.id));
+	const metrics = state.charts.map(comparisonMetric);
 	const rows = state.regions.flatMap((id) =>
 		(data[id] ?? [])
 			.filter((row) => row.time >= viewport.start && row.time < viewport.end)
@@ -44,7 +44,8 @@ export function comparisonWorkbook(dataset, url, state) {
 			['View', 'Compare regions'],
 			[
 				'Charts',
-				COMPARISON_METRICS.filter((metric) => state.charts.includes(metric.id))
+				state.charts
+					.map(comparisonMetric)
 					.map((metric) => metric.label)
 					.join(', ')
 			],

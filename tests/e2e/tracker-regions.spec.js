@@ -90,7 +90,7 @@ test('defaults, region colours, complete rolling values and synchronised keyboar
 	await ready(page);
 	await expect(page.getByRole('heading', { name: 'Carbon intensity', exact: true })).toBeVisible();
 	await expect(
-		page.getByRole('heading', { name: 'Renewables generation', exact: true })
+		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
 	).toBeVisible();
 	await expect(regionRow(page, 'NSW')).toContainText('150');
 	await expect(page.getByRole('button', { name: 'Compare NSW', exact: true })).toHaveAttribute(
@@ -141,7 +141,7 @@ test('metric and percentage switches reuse requests, preserve URL state and expo
 test('regional toggles, national sums, failure isolation and retry', async ({ page }) => {
 	const data = await fixture(page, { fail: 'wem' });
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=regions&compare-interval=1M');
+	await page.goto('/tracker?view=regions&compare-interval=1M&compare-charts=intensity,generation');
 	await expect(page.getByRole('button', { name: 'Retry WA (WEM)', exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Compare WA (WEM)', exact: true }).click();
 	await ready(page);
@@ -187,7 +187,7 @@ test('view clicks reset query settings while history restores each view and its 
 	await expect(page).toHaveURL(/\/tracker\?view=regions$/);
 	await ready(page);
 	await expect(nav.getByRole('button', { name: '12-month rolling', exact: true })).toBeVisible();
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(21);
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 	await expect(nav.locator('[data-view="regions"]')).toHaveCSS('opacity', '1');
 	await page.screenshot({ path: 'test-results/tracker-top-nav.png' });
 });
@@ -374,32 +374,26 @@ for (const [interval, expected] of [
 	});
 }
 
-test('all 21 charts start visible and the multiselect controls charts, table and exports without refetching', async ({
+test('two charts start visible and the multiselect controls charts, table and exports without refetching', async ({
 	page
 }) => {
 	const data = await fixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions');
 	await ready(page);
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(21);
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 	const requests = data.requests.length;
 	await page.getByRole('button', { name: /^Charts/ }).click();
 	const selector = page
 		.locator('div.fixed')
 		.filter({ has: page.getByRole('button', { name: 'Apply', exact: true }) });
-	await expect(selector.getByText('21 selected', { exact: true })).toBeVisible();
+	await expect(selector.getByText('2 selected', { exact: true })).toBeVisible();
 	await expect(selector).toHaveCSS('opacity', '1');
 	await page.screenshot({ path: 'test-results/tracker-chart-multiselect.png' });
-	for (const name of [
-		'Emissions',
-		'Generation',
-		'Proportion',
-		'Average spot market value',
-		'Price'
-	]) {
+	for (const name of ['Carbon intensity', 'Renewables']) {
 		await selector.getByRole('button', { name, exact: true }).click();
 	}
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(21);
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
 	await expect(page.getByText('No charts selected. Use Charts to show comparisons.')).toBeVisible();
 	await expect(table(page).getByRole('columnheader')).toHaveCount(1);
@@ -427,7 +421,11 @@ test('all 21 charts start visible and the multiselect controls charts, table and
 	await page.getByRole('button', { name: /^Charts/ }).click();
 	await page.getByRole('button', { name: 'Select all', exact: true }).click();
 	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(21);
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(15);
+	await page.getByRole('button', { name: /^Charts/ }).click();
+	await selector.getByRole('button', { name: 'Reset', exact: true }).click();
+	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 });
 
 test('comparison Y axis rescales on zoom and pan as an offscreen peak enters or leaves', async ({
@@ -527,4 +525,43 @@ test('comparison charts reuse timeline options, retain curve and units, and shar
 	await energy.getByRole('button', { name: 'Toggle chart options' }).click();
 	await expect(energy.locator('.backdrop-blur-md')).toHaveCSS('opacity', '1');
 	await page.screenshot({ path: 'test-results/tracker-comparison-chart-options.png' });
+});
+
+test('fuel chart toggles share one picker entry and persist presentation through history', async ({
+	page
+}) => {
+	const data = await fixture(page);
+	await page.goto('/tracker?view=regions');
+	await ready(page);
+	const requests = data.requests.length;
+	await page.getByRole('tab', { name: 'Generation', exact: true }).click();
+	await expect(
+		page.getByRole('heading', { name: 'Renewables generation', exact: true })
+	).toBeVisible();
+	await expect(regionRow(page, 'NSW')).toContainText('31.2');
+	await expect(page).toHaveURL(/compare-charts=intensity%2Cgeneration/);
+	await page.getByRole('button', { name: /^Charts/ }).click();
+	const picker = page
+		.locator('div.fixed')
+		.filter({ has: page.getByRole('button', { name: 'Apply', exact: true }) });
+	await expect(picker.getByRole('button', { name: 'Renewables', exact: true })).toHaveCount(1);
+	await picker.getByRole('button', { name: 'Wind', exact: true }).click();
+	await picker.getByRole('button', { name: 'Apply', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Wind proportion', exact: true })).toBeVisible();
+	await expect(
+		page.getByRole('heading', { name: 'Renewables generation', exact: true })
+	).toBeVisible();
+	expect(data.requests.length).toBe(requests);
+	await expect(picker).toHaveCount(0);
+	await page.screenshot({ path: 'test-results/tracker-comparison-combined.png', fullPage: true });
+	await page.reload();
+	await expect(
+		page.getByRole('heading', { name: 'Renewables generation', exact: true })
+	).toBeVisible();
+	await page.goBack();
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
+	await page.goBack();
+	await expect(
+		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
+	).toBeVisible();
 });

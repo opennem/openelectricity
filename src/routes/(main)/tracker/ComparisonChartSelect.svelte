@@ -1,8 +1,10 @@
 <script>
 	import FilterDropdown from '../facilities/_components/filters/FilterDropdown.svelte';
 	import {
-		COMPARISON_METRICS,
-		ALL_COMPARISON_CHARTS,
+		COMPARISON_CHART_OPTIONS,
+		comparisonChartId,
+		selectComparisonCharts,
+		DEFAULT_COMPARISON_CHARTS,
 		COMPARISON_METRIC_GROUPS
 	} from './comparison-metrics.js';
 	/** @type {{selected:string[],onchange:(charts:string[])=>void}} */
@@ -10,7 +12,7 @@
 	const options = COMPARISON_METRIC_GROUPS.map((group) => ({
 		value: group,
 		label: group,
-		children: COMPARISON_METRICS.filter((metric) => metric.group === group).map((metric) => ({
+		children: COMPARISON_CHART_OPTIONS.filter((metric) => metric.group === group).map((metric) => ({
 			value: metric.id,
 			label: metric.label
 		}))
@@ -19,11 +21,11 @@
 
 <FilterDropdown
 	label="Charts"
-	{selected}
+	selected={selected.map(comparisonChartId)}
 	{options}
-	defaults={ALL_COMPARISON_CHARTS}
+	defaults={DEFAULT_COMPARISON_CHARTS}
 	defaultExpanded={COMPARISON_METRIC_GROUPS}
 	clearLabel="Reset"
 	compact
-	onapply={onchange}
+	onapply={(ids) => onchange(selectComparisonCharts(ids, selected))}
 />
