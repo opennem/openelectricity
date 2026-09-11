@@ -231,11 +231,10 @@ or market value), regional operational demand and renewables share (%). Emission
 when Volume is selected; emissions-intensity extrema are omitted.
 Each metric has one label spanning both cells, with a tooltip explaining the measure.
 Each cell has an app tooltip such as “Minimum spot price”, with no separate
-Minimum/Maximum header row. Compact Min/Max tags sit on the right, aligned with
-the value line, while values and dates sit on the left. Tags use a primary-colour
-fill when selected.
-Metric labels use the default font, 14px semibold dark-grey text and a pale
-background, without icons.
+Minimum/Maximum header row. The 20px down/up-to-line icons are vertically centred
+in each cell, left of its value and timestamp, and use the primary colour when
+selected. Metric labels use the default font, 14px semibold dark-grey text and a pale
+background, with 16px icons for energy/power, price, demand, renewables and emissions.
 Sections sit flush with light-grey bottom borders and matching borders beneath each label.
 Label rows have equal vertical padding.
 Value cells fit their content, with matching heights within each row; values,

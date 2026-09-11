@@ -405,12 +405,9 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await maximum.click();
 	await page.mouse.move(0, 0);
 	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
-	await expect(maximum.getByText('Max', { exact: true })).toHaveCSS(
-		'background-color',
-		'oklch(0.205 0 0)'
-	);
-	await expect(minimum.getByText('Min', { exact: true })).toHaveCSS('color', 'rgb(106, 106, 106)');
-	await expect(page.getByTestId('metrics-generation').locator('svg')).toHaveCount(0);
+	await expect(maximum.locator('svg')).toHaveCSS('width', '20px');
+	await expect(maximum.locator('svg')).toHaveCSS('color', 'oklch(0.205 0 0)');
+	await expect(minimum.locator('svg')).toHaveCSS('color', 'rgb(106, 106, 106)');
 	await expect(maximum).toHaveCSS('border-left-width', '1px');
 	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
 		'2 Aug'
@@ -429,7 +426,7 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await expect(maximum).toHaveAttribute('aria-pressed', 'false');
 	await minimum.press('Enter');
 	await expect(minimum).toHaveAttribute('aria-pressed', 'false');
-	await expect(minimum.getByText('Min', { exact: true })).toHaveCSS('color', 'rgb(106, 106, 106)');
+	await expect(minimum.locator('svg')).toHaveCSS('color', 'rgb(106, 106, 106)');
 	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
 	await expect(minimum).toContainText('100');
 	await expect(maximum).toContainText('200');
