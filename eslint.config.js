@@ -51,8 +51,8 @@ export default [
 		}
 	},
 	{
-		// Svelte 5 runes modules
-		files: ['**/*.svelte.js', '**/*.svelte.ts'],
+		// Svelte 5 runes modules, and the tests that drive them with `$state`/`$effect.root`
+		files: ['**/*.svelte.js', '**/*.svelte.ts', '**/*.svelte.test.js'],
 		languageOptions: {
 			globals: {
 				$state: 'readonly',

@@ -46,6 +46,7 @@
 		"eslint-plugin-svelte": "^3.17.0",
 		"globals": "^17.4.0",
 		"js-base64": "^3.7.8",
+		"jsdom": "^30.0.1",
 		"layercake": "^10.0.2",
 		"lz-string": "^1.5.0",
 		"md5": "^2.3.0",

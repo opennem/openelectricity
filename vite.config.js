@@ -21,6 +21,29 @@ export default defineConfig({
 		chunkSizeWarningLimit: 1600
 	},
 	test: {
-		exclude: ['**/node_modules/**', 'tests/e2e/**']
+		// The `runes` project compiles rune modules (`*.svelte.js`) for the
+		// client, so `$effect` runs and `flushSync` flushes. The node project
+		// compiles them for the server, where effects never run and a test of
+		// effect-driven state passes vacuously. Every `*.svelte.test.js` suite
+		// therefore runs in `runes`; everything else runs in node.
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: 'node',
+					include: ['src/**/*.test.js'],
+					exclude: ['**/node_modules/**', 'tests/e2e/**', '**/*.svelte.test.js']
+				}
+			},
+			{
+				extends: true,
+				resolve: { conditions: ['browser'] },
+				test: {
+					name: 'runes',
+					include: ['src/**/*.svelte.test.js'],
+					environment: 'jsdom'
+				}
+			}
+		]
 	}
 });

@@ -1,17 +1,40 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
+import { flushSync } from 'svelte';
 import StratifyPlotProject from './StratifyPlotProject.svelte.js';
 import { examples } from '../_utils/examples.js';
 
 /**
- * Build a fresh project. The constructor schedules $effect calls; in a
- * non-component test environment they're tolerated because we never trigger
- * the dependencies they read.
- *
+ * `it` whose body runs inside an effect root. The constructor registers
+ * `$effect`s (chart-type switching, column validation, map auto-detect),
+ * which are orphans outside a component or root, so every test hosts its
+ * projects here. The root is torn down after the body; a body that throws is
+ * destroyed by Svelte before the error propagates.
+ * @param {string} name
+ * @param {() => void} body
+ */
+function it(name, body) {
+	test(name, () => {
+		const stop = $effect.root(body);
+		stop();
+	});
+}
+
+/**
+ * Build a fresh project with its constructor effects settled. Call inside
+ * `it` (an effect root).
  * @returns {StratifyPlotProject}
  */
 function createProject() {
-	return new StratifyPlotProject();
+	const project = new StratifyPlotProject();
+	flushSync();
+	return project;
 }
+
+/** Two-region series — valid backing for `facetColumn = 'region'`. */
+const FACET_CSV = 'date,region,solar,wind\n2024-01-01,NSW,100,50\n2024-02-01,VIC,120,60';
+
+/** A mean with min/max bounds — valid backing for the line range mapping. */
+const RANGE_CSV = 'date,mean,minimum,maximum\n2025-01-01,20,10,30\n2025-01-02,25,12,36';
 
 describe('StratifyPlotProject — annotation dataset', () => {
 	it('adds, updates and compiles a guided annotation', () => {
@@ -28,6 +51,7 @@ describe('StratifyPlotProject — annotation dataset', () => {
 				ruleColour: '#5b9f7b'
 			}
 		});
+		flushSync();
 
 		expect(project.annotationItems[0].appearance).toMatchObject({
 			ruleColour: '#5b9f7b',
@@ -51,6 +75,7 @@ describe('StratifyPlotProject — annotation dataset', () => {
 			label: 'Peak',
 			y: '105'
 		});
+		flushSync();
 
 		expect(project.dataAnnotations[0]).toMatchObject({
 			type: 'point',
@@ -78,6 +103,7 @@ describe('StratifyPlotProject — annotation dataset', () => {
 
 		const restored = createProject();
 		restored.loadFromSnapshot(project.toJSON());
+		flushSync();
 
 		expect(restored.annotationItems).toEqual(project.annotationItems);
 		expect(restored.annotationItems[0].appearance).toMatchObject({
@@ -92,6 +118,7 @@ describe('StratifyPlotProject — annotation dataset', () => {
 		project.addAnnotation();
 		project.annotationStyle = { ...project.annotationStyle, pointRadius: 10 };
 		project.reset();
+		flushSync();
 
 		expect(project.annotationItems).toEqual([]);
 		expect(project.annotationStyle.pointRadius).toBe(6);
@@ -134,6 +161,7 @@ describe('StratifyPlotProject — tooltip date format', () => {
 		project.tooltipDateFormat = 'date-time';
 		const restored = createProject();
 		restored.loadFromSnapshot(project.toJSON());
+		flushSync();
 		expect(restored.tooltipDateFormat).toBe('date-time');
 	});
 
@@ -141,6 +169,7 @@ describe('StratifyPlotProject — tooltip date format', () => {
 		const project = createProject();
 		project.tooltipDateFormat = 'time';
 		project.reset();
+		flushSync();
 		expect(project.tooltipDateFormat).toBe('date');
 	});
 });
@@ -165,6 +194,7 @@ describe('StratifyPlotProject — showLegend', () => {
 	it('loadFromSnapshot() accepts showLegend: false', () => {
 		const project = createProject();
 		project.loadFromSnapshot(/** @type {any} */ ({ showLegend: false }));
+		flushSync();
 		expect(project.showLegend).toBe(false);
 	});
 
@@ -172,6 +202,7 @@ describe('StratifyPlotProject — showLegend', () => {
 		const project = createProject();
 		project.showLegend = false;
 		project.loadFromSnapshot(/** @type {any} */ ({}));
+		flushSync();
 		expect(project.showLegend).toBe(true);
 	});
 
@@ -179,6 +210,7 @@ describe('StratifyPlotProject — showLegend', () => {
 		const project = createProject();
 		project.showLegend = false;
 		project.reset();
+		flushSync();
 		expect(project.showLegend).toBe(true);
 	});
 });
@@ -196,34 +228,56 @@ describe('StratifyPlotProject — facetColumn', () => {
 
 	it('toJSON() reflects user changes', () => {
 		const project = createProject();
+		project.csvText = FACET_CSV;
 		project.facetColumn = 'region';
+		flushSync();
 		expect(project.toJSON().facetColumn).toBe('region');
 	});
 
 	it('loadFromSnapshot() accepts facetColumn', () => {
 		const project = createProject();
-		project.loadFromSnapshot(/** @type {any} */ ({ facetColumn: 'region' }));
+		project.loadFromSnapshot(/** @type {any} */ ({ csvText: FACET_CSV, facetColumn: 'region' }));
+		flushSync();
 		expect(project.facetColumn).toBe('region');
 	});
 
 	it('loadFromSnapshot() defaults facetColumn to null when omitted (back-compat)', () => {
 		const project = createProject();
+		project.csvText = FACET_CSV;
 		project.facetColumn = 'region';
+		flushSync();
 		project.loadFromSnapshot(/** @type {any} */ ({}));
+		flushSync();
 		expect(project.facetColumn).toBeNull();
 	});
 
 	it('reset() restores facetColumn to null', () => {
 		const project = createProject();
+		project.csvText = FACET_CSV;
 		project.facetColumn = 'region';
+		flushSync();
 		project.reset();
+		flushSync();
+		expect(project.facetColumn).toBeNull();
+	});
+
+	it('clears facetColumn once its column leaves the data', () => {
+		const project = createProject();
+		project.csvText = FACET_CSV;
+		project.facetColumn = 'region';
+		flushSync();
+		expect(project.facetColumn).toBe('region');
+
+		project.csvText = 'date,solar,wind\n2024-01-01,100,50';
+		flushSync();
 		expect(project.facetColumn).toBeNull();
 	});
 
 	it('orderedSeriesNames excludes the facet column', () => {
 		const project = createProject();
-		project.csvText = 'date,region,solar,wind\n2024-01-01,NSW,100,50\n2024-02-01,VIC,120,60';
+		project.csvText = FACET_CSV;
 		project.facetColumn = 'region';
+		flushSync();
 		expect(project.orderedSeriesNames).not.toContain('region');
 		expect(project.orderedSeriesNames).toEqual(expect.arrayContaining(['solar', 'wind']));
 	});
@@ -237,27 +291,54 @@ describe('StratifyPlotProject — animateAsOneChart', () => {
 
 	it('toJSON() includes animateAsOneChart', () => {
 		const project = createProject();
+		project.csvText = FACET_CSV;
+		project.facetColumn = 'region';
 		project.animateAsOneChart = true;
+		flushSync();
 		expect(project.toJSON().animateAsOneChart).toBe(true);
 	});
 
 	it('loadFromSnapshot() restores animateAsOneChart', () => {
 		const project = createProject();
-		project.loadFromSnapshot(/** @type {any} */ ({ animateAsOneChart: true }));
+		project.loadFromSnapshot(
+			/** @type {any} */ ({ csvText: FACET_CSV, facetColumn: 'region', animateAsOneChart: true })
+		);
+		flushSync();
 		expect(project.animateAsOneChart).toBe(true);
 	});
 
 	it('loadFromSnapshot() defaults to false when omitted', () => {
 		const project = createProject();
+		project.csvText = FACET_CSV;
+		project.facetColumn = 'region';
 		project.animateAsOneChart = true;
+		flushSync();
 		project.loadFromSnapshot(/** @type {any} */ ({}));
+		flushSync();
 		expect(project.animateAsOneChart).toBe(false);
 	});
 
 	it('reset() restores animateAsOneChart to false', () => {
 		const project = createProject();
+		project.csvText = FACET_CSV;
+		project.facetColumn = 'region';
 		project.animateAsOneChart = true;
+		flushSync();
 		project.reset();
+		flushSync();
+		expect(project.animateAsOneChart).toBe(false);
+	});
+
+	it('clears the toggle when the facet column is cleared', () => {
+		const project = createProject();
+		project.csvText = FACET_CSV;
+		project.facetColumn = 'region';
+		project.animateAsOneChart = true;
+		flushSync();
+		expect(project.animateAsOneChart).toBe(true);
+
+		project.facetColumn = null;
+		flushSync();
 		expect(project.animateAsOneChart).toBe(false);
 	});
 });
@@ -290,10 +371,12 @@ describe('StratifyPlotProject — map fields', () => {
 		project.mapMinRadius = 8;
 		project.mapMaxRadius = 40;
 		project.mapTheme = 'satellite';
+		flushSync();
 
 		const snapshot = project.toJSON();
 		const restored = createProject();
 		restored.loadFromSnapshot(snapshot);
+		flushSync();
 
 		expect(restored.chartType).toBe('map');
 		expect(restored.latColumn).toBe('lat');
@@ -314,6 +397,7 @@ describe('StratifyPlotProject — map fields', () => {
 		project.mapColourMode = 'category';
 		project.mapTheme = 'dark';
 		project.reset();
+		flushSync();
 
 		expect(project.latColumn).toBeNull();
 		expect(project.mapColourMode).toBe('single');
@@ -325,6 +409,7 @@ describe('StratifyPlotProject — map fields', () => {
 		project.csvText =
 			'name,lat,lng,fueltech\nBayswater,-32.4,150.9,coal\nLiddell,-32.3,150.9,coal\nHornsdale,-33.1,138.3,battery';
 		project.colourColumn = 'fueltech';
+		flushSync();
 
 		expect(project.mapColourGroupNames).toEqual(['coal', 'battery']);
 	});
@@ -332,6 +417,7 @@ describe('StratifyPlotProject — map fields', () => {
 	it('mapColourGroupNames is empty when colourColumn is null', () => {
 		const project = createProject();
 		project.csvText = 'name,lat,lng,fueltech\nBayswater,-32.4,150.9,coal';
+		flushSync();
 		expect(project.mapColourGroupNames).toEqual([]);
 	});
 });
@@ -343,11 +429,14 @@ describe('StratifyPlotProject — line range fields', () => {
 		expect(project.lineRangeMaxColumn).toBeNull();
 		expect(project.lineRangeOpacity).toBe(0.2);
 
+		project.csvText = RANGE_CSV;
 		project.lineRangeMinColumn = 'minimum';
 		project.lineRangeMaxColumn = 'maximum';
 		project.lineRangeOpacity = 0;
+		flushSync();
 		const restored = createProject();
 		restored.loadFromSnapshot(project.toJSON());
+		flushSync();
 
 		expect(restored.lineRangeMinColumn).toBe('minimum');
 		expect(restored.lineRangeMaxColumn).toBe('maximum');
@@ -356,9 +445,10 @@ describe('StratifyPlotProject — line range fields', () => {
 
 	it('excludes range columns from line series while preserving their row values', () => {
 		const project = createProject();
-		project.csvText = 'date,mean,minimum,maximum\n2025-01-01,20,10,30\n2025-01-02,25,12,36';
+		project.csvText = RANGE_CSV;
 		project.lineRangeMinColumn = 'minimum';
 		project.lineRangeMaxColumn = 'maximum';
+		flushSync();
 
 		expect(project.orderedSeriesNames).toEqual(['mean']);
 		expect(project.visibleData[0]).toMatchObject({ mean: 20, minimum: 10, maximum: 30 });
@@ -368,6 +458,7 @@ describe('StratifyPlotProject — line range fields', () => {
 		const project = createProject();
 		project.csvText = 'date,mean,minimum,maximum\n2025-01-01,20,10,30';
 		project.lineRangeMinColumn = 'minimum';
+		flushSync();
 
 		expect(project.orderedSeriesNames).toEqual(['mean', 'minimum', 'maximum']);
 	});
@@ -378,6 +469,7 @@ describe('StratifyPlotProject — line range fields', () => {
 		project.lineRangeMinColumn = 'minimum';
 		project.lineRangeMaxColumn = 'maximum';
 		project.chartType = 'column';
+		flushSync();
 
 		expect(project.orderedSeriesNames).toEqual(['mean', 'minimum', 'maximum']);
 	});
@@ -395,17 +487,21 @@ describe('StratifyPlotProject — line range fields', () => {
 		project.validateLineRangeColumns();
 		expect(project.lineRangeMaxColumn).toBeNull();
 
+		// The constructor effect re-validates when the data changes.
 		project.csvText = 'date,mean\n2025-01-01,20';
-		project.validateLineRangeColumns();
+		flushSync();
 		expect(project.lineRangeMinColumn).toBeNull();
 	});
 
 	it('reset restores line range defaults', () => {
 		const project = createProject();
+		project.csvText = RANGE_CSV;
 		project.lineRangeMinColumn = 'minimum';
 		project.lineRangeMaxColumn = 'maximum';
 		project.lineRangeOpacity = 0.8;
+		flushSync();
 		project.reset();
+		flushSync();
 
 		expect(project.lineRangeMinColumn).toBeNull();
 		expect(project.lineRangeMaxColumn).toBeNull();
@@ -425,15 +521,19 @@ describe('StratifyPlotProject — scatter fields', () => {
 
 	it('round-trips through JSON and preserves explicit zero values', () => {
 		const project = createProject();
+		project.csvText = 'x,y,demand\n1,2,30\n2,3,40';
+		project.displayMode = 'linear';
 		project.chartType = 'scatter';
 		project.scatterSizeColumn = 'demand';
 		project.scatterPointRadius = 0;
 		project.scatterMinRadius = 0;
 		project.scatterMaxRadius = 22;
 		project.scatterPointOpacity = 0;
+		flushSync();
 
 		const restored = createProject();
 		restored.loadFromSnapshot(project.toJSON());
+		flushSync();
 
 		expect(restored.chartType).toBe('scatter');
 		expect(restored.scatterSizeColumn).toBe('demand');
@@ -445,12 +545,16 @@ describe('StratifyPlotProject — scatter fields', () => {
 
 	it('reset restores scatter defaults', () => {
 		const project = createProject();
+		project.csvText = 'x,y,demand\n1,2,30\n2,3,40';
+		project.displayMode = 'linear';
 		project.scatterSizeColumn = 'demand';
 		project.scatterPointRadius = 9;
 		project.scatterMinRadius = 5;
 		project.scatterMaxRadius = 30;
 		project.scatterPointOpacity = 0.2;
+		flushSync();
 		project.reset();
+		flushSync();
 
 		expect(project.scatterSizeColumn).toBeNull();
 		expect(project.scatterPointRadius).toBe(4);
@@ -465,6 +569,7 @@ describe('StratifyPlotProject — scatter fields', () => {
 		project.displayMode = 'linear';
 		project.chartType = 'scatter';
 		project.scatterSizeColumn = 'nem';
+		flushSync();
 
 		expect(project.orderedSeriesNames).toEqual(['nsw', 'vic']);
 		expect(project.visibleSeriesNames).toEqual(['nsw', 'vic']);
@@ -480,6 +585,7 @@ Tue 02 Jul 2024, 18:00\t2024\t12\t12.008`;
 		project.xColumn = 'temperature_c';
 		project.displayMode = 'auto';
 		project.colourSeries = 'series';
+		flushSync();
 
 		expect(project.parsedData.mode).toBe('linear');
 		expect(project.orderedSeriesNames).toEqual(['demand_gwh_per_h']);
@@ -493,6 +599,7 @@ Tue 02 Jul 2024, 18:00\t2024\t12\t12.008`;
 		project.displayMode = 'linear';
 		project.scatterSizeColumn = 'nem';
 		project.chartType = 'line';
+		flushSync();
 
 		expect(project.orderedSeriesNames).toEqual(['nsw', 'nem']);
 	});
@@ -505,8 +612,9 @@ Tue 02 Jul 2024, 18:00\t2024\t12\t12.008`;
 		project.validateScatterSizeColumn();
 		expect(project.scatterSizeColumn).toBe('size');
 
+		// The constructor effect re-validates when the data changes.
 		project.csvText = 'x,y\n1,2\n2,3';
-		project.validateScatterSizeColumn();
+		flushSync();
 		expect(project.scatterSizeColumn).toBeNull();
 	});
 
@@ -515,6 +623,7 @@ Tue 02 Jul 2024, 18:00\t2024\t12\t12.008`;
 		expect(example).toBeDefined();
 		const project = createProject();
 		project.loadExample(/** @type {any} */ (example));
+		flushSync();
 
 		expect(project.chartType).toBe('scatter');
 		expect(project.displayMode).toBe('linear');
@@ -525,6 +634,7 @@ Tue 02 Jul 2024, 18:00\t2024\t12\t12.008`;
 	it('keeps legacy dot snapshot migration unchanged', () => {
 		const project = createProject();
 		project.loadFromSnapshot(/** @type {any} */ ({ chartType: 'dot' }));
+		flushSync();
 		expect(project.chartType).toBe('line');
 	});
 });

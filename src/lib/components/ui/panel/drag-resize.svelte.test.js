@@ -1,44 +1,31 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { createDragHandler } from './drag-resize.svelte.js';
 
-/** Minimal localStorage shim for the test runner (node env, no DOM). */
-function installLocalStorage() {
-	const store = new Map();
-	const ls = {
-		getItem: (k) => (store.has(k) ? store.get(k) : null),
-		setItem: (k, v) => store.set(k, String(v)),
-		removeItem: (k) => store.delete(k),
-		clear: () => store.clear()
-	};
-	globalThis.localStorage = /** @type {any} */ (ls);
-	return ls;
+/**
+ * The handler listens for `pointermove`/`pointerup` on `window`, so the drag
+ * is driven with real pointer events on the jsdom window.
+ * @param {number} clientX
+ * @param {number} clientY
+ */
+function pointerDown(clientX, clientY) {
+	return new PointerEvent('pointerdown', { clientX, clientY, cancelable: true });
 }
 
-/** Minimal window shim that captures registered event listeners. */
-function installWindow() {
-	const listeners = {};
-	globalThis.window = /** @type {any} */ ({
-		addEventListener: (type, fn) => {
-			listeners[type] = fn;
-		},
-		removeEventListener: (type) => {
-			delete listeners[type];
-		}
-	});
-	return listeners;
+/**
+ * @param {number} clientX
+ * @param {number} clientY
+ */
+function move(clientX, clientY) {
+	window.dispatchEvent(new PointerEvent('pointermove', { clientX, clientY }));
+}
+
+function release() {
+	window.dispatchEvent(new PointerEvent('pointerup'));
 }
 
 describe('createDragHandler', () => {
-	let listeners;
-
 	beforeEach(() => {
-		installLocalStorage();
-		listeners = installWindow();
-	});
-
-	afterEach(() => {
-		delete globalThis.localStorage;
-		delete globalThis.window;
+		localStorage.clear();
 	});
 
 	it('falls back to initial when storage is empty', () => {
@@ -86,21 +73,25 @@ describe('createDragHandler', () => {
 			storageKey: 'test-drag-x'
 		});
 
-		drag.start(/** @type {any} */ ({ clientX: 200, clientY: 0, preventDefault: () => {} }));
+		drag.start(pointerDown(200, 0));
 		expect(drag.isDragging).toBe(true);
 
-		listeners.pointermove({ clientX: 320, clientY: 0 });
+		move(320, 0);
 		expect(drag.value).toBe(370);
 
-		listeners.pointermove({ clientX: 9999, clientY: 0 });
+		move(9999, 0);
 		expect(drag.value).toBe(500);
 
-		listeners.pointermove({ clientX: -9999, clientY: 0 });
+		move(-9999, 0);
 		expect(drag.value).toBe(100);
 
-		listeners.pointerup();
+		release();
 		expect(drag.isDragging).toBe(false);
 		expect(localStorage.getItem('test-drag-x')).toBe('100');
+
+		// The window listeners are removed on release: a later move no longer drags.
+		move(320, 0);
+		expect(drag.value).toBe(100);
 	});
 
 	it('reads clientY when axis is y', () => {
@@ -112,10 +103,10 @@ describe('createDragHandler', () => {
 			storageKey: 'test-drag-y'
 		});
 
-		drag.start(/** @type {any} */ ({ clientX: 0, clientY: 100, preventDefault: () => {} }));
-		listeners.pointermove({ clientX: 0, clientY: 180 });
+		drag.start(pointerDown(0, 100));
+		move(0, 180);
 		expect(drag.value).toBe(280);
-		listeners.pointerup();
+		release();
 	});
 
 	it('flips delta sign when invert is true', () => {
@@ -128,10 +119,10 @@ describe('createDragHandler', () => {
 			invert: true
 		});
 
-		drag.start(/** @type {any} */ ({ clientX: 200, clientY: 0, preventDefault: () => {} }));
-		listeners.pointermove({ clientX: 250, clientY: 0 });
+		drag.start(pointerDown(200, 0));
+		move(250, 0);
 		expect(drag.value).toBe(250);
-		listeners.pointerup();
+		release();
 	});
 
 	it('value setter updates the reactive state', () => {
@@ -156,18 +147,18 @@ describe('createDragHandler', () => {
 			scale: () => 1000
 		});
 
-		drag.start(/** @type {any} */ ({ clientX: 500, clientY: 0, preventDefault: () => {} }));
-		listeners.pointermove({ clientX: 600, clientY: 0 });
+		drag.start(pointerDown(500, 0));
+		move(600, 0);
 		// +100px / 1000px scale = +0.1 fraction
 		expect(drag.value).toBeCloseTo(0.6, 5);
 
-		listeners.pointermove({ clientX: 9999, clientY: 0 });
+		move(9999, 0);
 		expect(drag.value).toBeCloseTo(0.8, 5);
 
-		listeners.pointermove({ clientX: -9999, clientY: 0 });
+		move(-9999, 0);
 		expect(drag.value).toBeCloseTo(0.2, 5);
 
-		listeners.pointerup();
+		release();
 		expect(parseFloat(localStorage.getItem('test-fraction') ?? '')).toBeCloseTo(0.2, 5);
 	});
 
@@ -186,6 +177,7 @@ describe('createDragHandler', () => {
 
 	it('persist override bypasses localStorage on read and write', () => {
 		localStorage.setItem('test-persist-override', '0.999'); // should be ignored
+		/** @type {number[]} */
 		const writes = [];
 		const drag = createDragHandler({
 			axis: 'x',
@@ -201,9 +193,9 @@ describe('createDragHandler', () => {
 		});
 		expect(drag.value).toBeCloseTo(0.42, 5);
 
-		drag.start(/** @type {any} */ ({ clientX: 100, clientY: 0, preventDefault: () => {} }));
-		listeners.pointermove({ clientX: 200, clientY: 0 });
-		listeners.pointerup();
+		drag.start(pointerDown(100, 0));
+		move(200, 0);
+		release();
 
 		expect(writes).toHaveLength(1);
 		expect(writes[0]).toBeCloseTo(0.52, 5);
