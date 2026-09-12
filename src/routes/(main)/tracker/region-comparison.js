@@ -3,12 +3,13 @@ import { computeYDomain } from '$lib/components/charts/v2/compute-y-domain.js';
 import {
 	COMPARISON_CHART_OPTIONS,
 	DEFAULT_COMPARISON_CHARTS,
+	calendarLabelMs,
 	comparisonChartId,
 	FUEL_COMPONENTS,
 	comparisonFuelRows,
 	comparisonMetricValue
 } from './comparison-metrics.js';
-import { regionOptions } from '$lib/regions.js';
+import { allRegionsOption, regionOptions } from '$lib/regions.js';
 import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
 import { contributionSeries } from '$lib/components/charts/network/contribution.js';
@@ -24,8 +25,10 @@ export const COMPARISON_REGIONS = [
 			shortLabel: region.value === 'wem' ? 'WA (WEM)' : region.shortLabel
 		})),
 	regionOptions[0],
-	{ value: 'au', label: 'All Regions (NEM + WEM)', shortLabel: 'All Regions', colour: '#333333' }
+	{ ...allRegionsOption, label: 'All Regions (NEM + WEM)', shortLabel: 'All Regions' }
 ];
+/** The shortest comparison window — one full year of periods. */
+export const COMPARISON_MIN_SPAN_MS = 366 * 86_400_000;
 export const DEFAULT_COMPARISON_REGIONS = COMPARISON_REGIONS.slice(0, 6).map((r) => r.value);
 export const COMPARISON_INTERVALS = [
 	{ value: '12mr', label: '12-month rolling' },
@@ -132,7 +135,10 @@ export function comparisonBounds(now) {
 /** Bound copied/custom viewports to complete history, including future URLs.
  * @param {number} start @param {number} end @param {{start:number,end:number}} bounds */
 export function clampComparisonViewport(start, end, bounds) {
-	const duration = Math.min(Math.max(end - start, 366 * 86_400_000), bounds.end - bounds.start);
+	const duration = Math.min(
+		Math.max(end - start, COMPARISON_MIN_SPAN_MS),
+		bounds.end - bounds.start
+	);
 	const right = Math.max(bounds.start + duration, Math.min(end, bounds.end));
 	return { start: right - duration, end: right };
 }
@@ -166,7 +172,7 @@ export function processComparisonEnergy(response) {
 			if (tech === 'battery' || !group.fuelTechs[tech]) continue;
 			for (const [stamp, value] of series.data ?? []) {
 				if (Number.isFinite(value)) continue;
-				const time = Date.parse(String(stamp).slice(0, 19) + 'Z');
+				const time = calendarLabelMs(stamp);
 				const keys = invalid.get(time) ?? new Set();
 				keys.add(entry.metric === 'emissions' ? 'emissions' : 'energy_mwh');
 				if (entry.metric === 'energy' && sourceIds.includes(tech)) keys.add('generation_mwh');
@@ -254,17 +260,6 @@ export function aggregateComparison(rows, interval, end) {
 			};
 		});
 }
-/** @param {any} row @param {'demand' | 'generation'} basis */
-export function comparisonValues(row, basis) {
-	const ratio = (/** @type {number} */ a, /** @type {number} */ b, /** @type {number} */ scale) =>
-		Number.isFinite(a) && Number.isFinite(b) && b > 0 ? (a / b) * scale : null;
-	return {
-		intensity: ratio(row?.emissions, row?.energy_mwh, 1000),
-		generation: Number.isFinite(row?.renewables) ? row.renewables : null,
-		share: ratio(row?.renewables, basis === 'demand' ? row?.demand_gross : row?.generation_mwh, 100)
-	};
-}
-
 /** Drawing-only empty periods stop Stratum joining lines across entirely absent
  * months/years. Exports continue to use the original observations.
  * @param {Record<string, any[]>} data @param {string[]} regions
@@ -308,9 +303,81 @@ export function comparisonPeriod(time, interval) {
 	});
 	return interval === '12mr' ? `12 months to ${month}` : month;
 }
-/** @param {Record<string, any[]>} data @param {string[]} regions @param {'demand' | 'generation'} basis @param {{start: number,end: number}} viewport */
-export function latestCommonComparisonPeriod(data, regions, basis, viewport) {
-	if (!regions.length) return null;
+/** Regions that do not import or export outside their own network. */
+const CLOSED_NETWORKS = ['_all', 'wem'];
+
+/** The provider sources each comparison region fetches, by name.
+ * @typedef {{ energy: any[], market: any[], financial: any[], flows: any[] }} ComparisonSourceRows */
+
+/**
+ * Whether a comparison region's providers must fetch: the region itself is
+ * selected, or the combined scope needs it as a component.
+ * @param {string[]} regions - Selected comparison regions
+ * @param {string} id
+ */
+export function comparisonSourceActive(regions, id) {
+	return regions.includes(id) || (regions.includes('au') && CLOSED_NETWORKS.includes(id));
+}
+
+/**
+ * Per-region loading/error state, with the combined scope rolled up from its
+ * two networks.
+ * @param {Record<string, { pending: boolean, error: string | null }>} sources
+ * @returns {Record<string, { pending: boolean, error: string | null }>}
+ */
+export function comparisonStatus(sources) {
+	return {
+		...sources,
+		au: {
+			pending: !!(sources._all?.pending || sources.wem?.pending),
+			error: sources._all?.error || sources.wem?.error || null
+		}
+	};
+}
+
+/**
+ * Join each region's component rows into one monthly series, zero the net
+ * imports of closed networks, and sum NEM + WEM into the combined scope.
+ * @param {Record<string, ComparisonSourceRows>} sources
+ * @returns {Record<string, any[]>}
+ */
+export function assembleComparisonMonthly(sources) {
+	/** @type {Record<string, any[]>} */
+	const monthly = {};
+	for (const [id, rows] of Object.entries(sources)) {
+		const core = joinComparisonComponents(rows.energy, rows.market);
+		monthly[id] = joinComparisonComponents(
+			joinComparisonComponents(core, rows.financial),
+			rows.flows
+		).map((row) => (CLOSED_NETWORKS.includes(id) ? { ...row, net_imports: 0 } : row));
+	}
+	monthly.au = sumComparisonNetworks(monthly._all ?? [], monthly.wem ?? []);
+	return monthly;
+}
+
+/** Rows inside a half-open viewport, in time order.
+ * @template {{ time: number }} Row
+ * @param {Row[]} rows @param {{start: number, end: number}} viewport
+ * @returns {Row[]} */
+export function visibleComparisonRows(rows, viewport) {
+	return rows.filter((row) => row.time >= viewport.start && row.time < viewport.end);
+}
+
+/** Up to six evenly spaced tick dates across the visible rows, so tick counts
+ * stay bounded however long the monthly history is.
+ * @param {Array<{date: Date}>} visibleRows */
+export function comparisonTicks(visibleRows) {
+	const step = Math.max(1, Math.ceil(visibleRows.length / 6));
+	return visibleRows.filter((_, index) => index % step === 0).map((row) => row.date);
+}
+
+/** The latest visible period where every selected region has a finite value
+ * for every displayed metric — the Regions table's resting inspection period.
+ * @param {Record<string, any[]>} data @param {string[]} regions
+ * @param {'demand' | 'generation'} basis @param {{start: number,end: number}} viewport
+ * @param {string[]} metricIds - The displayed comparison metrics */
+export function latestCommonComparisonPeriod(data, regions, basis, viewport, metricIds) {
+	if (!regions.length || !metricIds.length) return null;
 	const times = regions.map(
 		(id) =>
 			new Set(
@@ -319,7 +386,9 @@ export function latestCommonComparisonPeriod(data, regions, basis, viewport) {
 						(row) =>
 							row.time >= viewport.start &&
 							row.time < viewport.end &&
-							Object.values(comparisonValues(row, basis)).every(Number.isFinite)
+							metricIds.every((metric) =>
+								Number.isFinite(comparisonMetricValue(row, metric, basis))
+							)
 					)
 					.map((row) => row.time)
 			)

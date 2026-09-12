@@ -2,11 +2,15 @@ import { comparisonYDomain } from './region-comparison.js';
 import { describe, expect, it } from 'vitest';
 import {
 	aggregateComparison,
+	assembleComparisonMonthly,
 	clampComparisonViewport,
+	comparisonSourceActive,
+	comparisonStatus,
+	comparisonTicks,
+	visibleComparisonRows,
 	applyRegionComparison,
 	comparisonBounds,
 	comparisonPeriod,
-	comparisonValues,
 	comparisonChartRows,
 	DEFAULT_COMPARISON_REGIONS,
 	joinComparisonComponents,
@@ -18,10 +22,12 @@ import {
 	sumComparisonNetworks
 } from './region-comparison.js';
 import {
-	comparisonCsv,
 	comparisonExportDataset,
-	comparisonWorkbook
+	comparisonFileName,
+	comparisonWorkbook,
+	regionComparisonCsv
 } from './region-comparison-export.js';
+import { comparisonMetricValue } from './comparison-metrics.js';
 import { parseTrackerUrl, applyTrackerUrl } from './tracker-url.js';
 
 const start = Date.UTC(2024, 0, 1);
@@ -51,25 +57,25 @@ describe('region comparison calculations', () => {
 	it('uses weighted component ratios, including demand shares above 100%', () => {
 		const rows = aggregateComparison(monthly(), '12mr', Date.UTC(2026, 0));
 		expect(rows).toHaveLength(13);
-		expect(comparisonValues(rows[0], 'demand')).toEqual({
-			intensity: (10000 / 34000) * 1000,
-			generation: 18000,
-			share: 150
-		});
-		expect(comparisonValues(rows[0], 'generation').share).toBe(75);
+		expect(comparisonMetricValue(rows[0], 'intensity', 'demand')).toBe((10000 / 34000) * 1000);
+		expect(comparisonMetricValue(rows[0], 'generation', 'demand')).toBe(18000);
+		expect(comparisonMetricValue(rows[0], 'share', 'demand')).toBe(150);
+		expect(comparisonMetricValue(rows[0], 'share', 'generation')).toBe(75);
 	});
 	it('preserves zero numerators and rejects non-positive or missing denominators', () => {
+		const zero = { emissions: 0, energy_mwh: 10, renewables: 0, demand_gross: 10 };
 		expect(
-			comparisonValues({ emissions: 0, energy_mwh: 10, renewables: 0, demand_gross: 10 }, 'demand')
-		).toEqual({ intensity: 0, generation: 0, share: 0 });
+			['intensity', 'generation', 'share'].map((id) => comparisonMetricValue(zero, id, 'demand'))
+		).toEqual([0, 0, 0]);
+		const bad = { emissions: 5, energy_mwh: 0, renewables: 10, demand_gross: -1 };
 		expect(
-			comparisonValues({ emissions: 5, energy_mwh: 0, renewables: 10, demand_gross: -1 }, 'demand')
-		).toEqual({ intensity: null, generation: 10, share: null });
-		expect(comparisonValues(undefined, 'generation')).toEqual({
-			intensity: null,
-			generation: null,
-			share: null
-		});
+			['intensity', 'generation', 'share'].map((id) => comparisonMetricValue(bad, id, 'demand'))
+		).toEqual([null, 10, null]);
+		expect(
+			['intensity', 'generation', 'share'].map((id) =>
+				comparisonMetricValue(undefined, id, 'generation')
+			)
+		).toEqual([null, null, null]);
 	});
 	it('does not fill incomplete or gapped rolling windows', () => {
 		expect(aggregateComparison(monthly(11), '12mr', Date.UTC(2026, 0))).toEqual([]);
@@ -129,15 +135,76 @@ describe('region comparison calculations', () => {
 	it('selects a common completed period without mixing region dates', () => {
 		const data = { a: monthly(12), b: monthly(10) };
 		const viewport = { start, end: Date.UTC(2025, 0) };
-		expect(latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport)).toBe(
+		const charts = ['intensity', 'share'];
+		expect(latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, charts)).toBe(
 			Date.UTC(2024, 9)
 		);
-		expect(latestCommonComparisonPeriod(data, ['a', 'missing'], 'demand', viewport)).toBeNull();
-		expect(latestCommonComparisonPeriod(data, [], 'demand', viewport)).toBeNull();
+		expect(
+			latestCommonComparisonPeriod(data, ['a', 'missing'], 'demand', viewport, charts)
+		).toBeNull();
+		expect(latestCommonComparisonPeriod(data, [], 'demand', viewport, charts)).toBeNull();
+		expect(latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, [])).toBeNull();
+	});
+	it('thins ticks to at most six across the visible rows', () => {
+		const rows = monthly(24);
+		const viewport = { start: monthStart(start, 3), end: monthStart(start, 15) };
+		const visible = visibleComparisonRows(rows, viewport);
+		expect(visible).toHaveLength(12);
+		expect(visible[0].time).toBe(monthStart(start, 3));
+		expect(comparisonTicks(visible)).toHaveLength(6);
+		expect(comparisonTicks(visible.slice(0, 4))).toHaveLength(4);
+		expect(comparisonTicks([])).toEqual([]);
+	});
+	it('activates the two networks behind the combined scope and rolls their status up', () => {
+		expect(comparisonSourceActive(['nsw1'], 'nsw1')).toBe(true);
+		expect(comparisonSourceActive(['au'], 'wem')).toBe(true);
+		expect(comparisonSourceActive(['au'], 'nsw1')).toBe(false);
+		const status = comparisonStatus({
+			_all: { pending: false, error: 'Upstream failed' },
+			wem: { pending: true, error: null },
+			nsw1: { pending: false, error: null }
+		});
+		expect(status.au).toEqual({ pending: true, error: 'Upstream failed' });
+		expect(status.nsw1).toEqual({ pending: false, error: null });
+	});
+	it('assembles monthly components, zeroes closed-network imports and sums the combined scope', () => {
+		const rows = monthly(2);
+		const flows = rows.map((row) => ({ time: row.time, date: row.date, net_imports: 5 }));
+		const assembled = assembleComparisonMonthly({
+			_all: { energy: rows, market: [], financial: [], flows },
+			wem: { energy: rows, market: [], financial: [], flows },
+			nsw1: { energy: rows, market: [], financial: [], flows }
+		});
+		expect(assembled.nsw1[0].net_imports).toBe(5);
+		expect(assembled._all[0].net_imports).toBe(0);
+		expect(assembled.wem[0].net_imports).toBe(0);
+		expect(assembled.au[0].energy_mwh).toBe(2000);
+		expect(assembled.au).toHaveLength(2);
+	});
+	it('judges completeness by the displayed metrics, not the legacy trio', () => {
+		const data = { a: monthly(12), b: monthly(10) };
+		const viewport = { start, end: Date.UTC(2025, 0) };
+		// No market values: a price-only view has no complete period, a share-only view does.
+		expect(
+			latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, ['price'])
+		).toBeNull();
+		expect(latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, ['share'])).toBe(
+			Date.UTC(2024, 9)
+		);
 	});
 });
 
 describe('region comparison navigation and export', () => {
+	it('names downloads by interval and visible periods', () => {
+		const state = normaliseRegionComparison({ interval: '1M' });
+		const viewport = { start: Date.UTC(2024, 0), end: Date.UTC(2025, 0) };
+		expect(comparisonFileName(state, viewport, 'csv')).toBe(
+			'tracker-regions-1m-2024-01-to-2024-12.csv'
+		);
+		expect(comparisonFileName(normaliseRegionComparison({}), viewport, 'xlsx')).toBe(
+			'tracker-regions-12mr-2024-01-to-2024-12.xlsx'
+		);
+	});
 	it('clamps copied future windows and short ranges to available complete history', () => {
 		const bounds = { start, end: Date.UTC(2026, 0) };
 		expect(clampComparisonViewport(Date.UTC(2030, 0), Date.UTC(2031, 0), bounds).end).toBe(
@@ -188,7 +255,7 @@ describe('region comparison navigation and export', () => {
 		});
 		const data = { nsw1: [{ ...monthly(1)[0], emissions: null }] };
 		const dataset = comparisonExportDataset(data, state, { start, end: Date.UTC(2025, 0) });
-		const csv = comparisonCsv(dataset);
+		const csv = regionComparisonCsv(dataset);
 		expect(csv).toContain('Carbon intensity (kgCO2e/MWh)');
 		expect(csv).toContain('gross demand (%)');
 		expect(csv).toContain('Jan 2024,New South Wales,,150');

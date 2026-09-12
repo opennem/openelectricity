@@ -9,7 +9,8 @@ import {
 	headerFor,
 	sheetName,
 	summaryRows,
-	trackerDownloadItems
+	trackerDownloadItems,
+	trackerFileName
 } from './tracker-export.js';
 
 /** @typedef {import('./types.js').TrackerExportContext} TrackerExportContext */
@@ -328,6 +329,19 @@ describe('summaryRows / buildWorkbookSheets', () => {
 });
 
 describe('exportFileName', () => {
+	it('names every tracker download the same way', () => {
+		expect(
+			trackerFileName({
+				scope: '_all',
+				dataset: 'time-of-day power',
+				range: '2026-09-10',
+				extension: 'csv'
+			})
+		).toBe('tracker-nem-time-of-day-power-2026-09-10.csv');
+		expect(
+			trackerFileName({ scope: 'regions', dataset: '12mr', range: '', extension: 'xlsx' })
+		).toBe('tracker-regions-12mr-range.xlsx');
+	});
 	it('names files by region, dataset and range', () => {
 		expect(exportFileName(context(), 'generation')).toBe('tracker-nem-generation-3d.csv');
 		expect(exportFileName(context({ region: 'nsw1' }), 'xlsx')).toBe('tracker-nsw1-3d.xlsx');

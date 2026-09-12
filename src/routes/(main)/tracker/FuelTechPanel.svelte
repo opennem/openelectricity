@@ -1,5 +1,5 @@
 <script>
-	import PanelToggle from './PanelToggle.svelte';
+	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
 	import FuelTechTable from './FuelTechTable.svelte';
 	import LoadingOverlay from './LoadingOverlay.svelte';
 
@@ -25,7 +25,7 @@
 	 *   onshowall?: () => void,
 	 *   onclose?: () => void,
 	 *   closeButton?: HTMLButtonElement,
-	 *   options?: import('svelte').Snippet
+	 *   options?: import('svelte').Snippet,
 	 *   rooftopInterpolation?: boolean
 	 * }}
 	 */
@@ -47,18 +47,14 @@
 </script>
 
 <div id="tracker-table-panel" class="flex h-full min-h-0 flex-col">
-	<div
-		class="flex h-[48px] shrink-0 items-center gap-[10px] border-b border-warm-grey bg-white px-[4px]"
+	<TrackerPanelHeader
+		side="right"
+		title="Fuel technologies"
+		label="Hide fuel tech table"
+		controls="tracker-table-panel"
+		onclose={() => onclose?.()}
+		bind:closeButton
 	>
-		<PanelToggle
-			side="right"
-			open
-			label="Hide fuel tech table"
-			controls="tracker-table-panel"
-			onclick={() => onclose?.()}
-			bind:el={closeButton}
-		/>
-		<h3 class="m-0 min-w-0 flex-1 truncate text-sm font-semibold">Fuel technologies</h3>
 		{#if hiddenCount > 0}
 			<button
 				type="button"
@@ -69,7 +65,7 @@
 			</button>
 		{/if}
 		{@render options?.()}
-	</div>
+	</TrackerPanelHeader>
 
 	{#if error}
 		<div

@@ -3,9 +3,10 @@ import {
 	comparisonBuckets,
 	comparisonValues,
 	comparisonRows,
-	comparisonCsv,
+	dateComparisonDataset,
 	normaliseComparison
 } from './comparison.js';
+import { datasetToCsv } from './tracker-export.js';
 import { applyTrackerUrl, parseTrackerUrl } from './tracker-url.js';
 
 const a = Date.parse('2026-08-01T00:00:00Z');
@@ -48,6 +49,14 @@ describe('two-date comparison', () => {
 		]);
 		expect(comparisonRows(snapshot, { a, b }, ['coal']).map((row) => row.id)).toEqual(['load']);
 	});
+	it('files technologies under Loads like the fuel-tech table: listed loads or negative readings', () => {
+		expect(comparisonRows(snapshot, { a, b }).map((row) => row.isLoad)).toEqual([false, true]);
+		expect(comparisonRows(snapshot, { a, b }, [], ['coal']).map((row) => row.isLoad)).toEqual([
+			true,
+			true
+		]);
+		expect(comparisonRows(snapshot, { a: a + 1000, b: a + 1000 })[1].isLoad).toBe(false);
+	});
 	it('does not snap missing dates to a neighbour or silently reselect after range changes', () => {
 		expect(comparisonRows(snapshot, { a: a + 1000, b })[0]).toMatchObject({
 			a: null,
@@ -78,8 +87,8 @@ describe('two-date comparison', () => {
 			parseTrackerUrl(new URLSearchParams('compare=1&compare-a=bad'), context).comparison
 		).toEqual({ a: null, b: null });
 	});
-	it('exports raw signed values, blanks and reproducible context', () => {
-		const csv = comparisonCsv(comparisonRows(snapshot, { a, b }), {
+	it('exports raw signed values, blanks and reproducible context through the shared serialiser', () => {
+		const dataset = dateComparisonDataset(comparisonRows(snapshot, { a, b }), {
 			region: 'wem',
 			zone: '+08:00',
 			interval: '1d',
@@ -87,7 +96,9 @@ describe('two-date comparison', () => {
 			b: '2 Aug 2026',
 			unit: 'MWh'
 		});
+		const csv = datasetToCsv(dataset, '+08:00');
 		expect(csv).toContain('Change B − A (MWh)');
-		expect(csv).toContain('wem,UTC+08:00,1d,Charging,1 Aug 2026,2 Aug 2026,-40,-20,20,50');
+		expect(csv).toContain('wem,AWST (UTC+08:00),1d,Charging,1 Aug 2026,2 Aug 2026,-40,-20,20,50');
+		expect(csv).toContain('wem,AWST (UTC+08:00),1d,Coal,1 Aug 2026,2 Aug 2026,100,0,-100,-100');
 	});
 });

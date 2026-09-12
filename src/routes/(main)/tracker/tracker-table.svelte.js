@@ -15,12 +15,28 @@ import {
 } from './table-model.js';
 /** @typedef {import('$lib/components/charts/network/headless-series-provider.svelte.js').HeadlessSeriesProvider} HeadlessSeriesProvider */
 
-/** Derive all table sections from the same generation window and provider set.
+/**
+ * One complete, accepted table together with the labels that describe its
+ * values — held through refreshes so the panel never shows half of a new window.
+ * @typedef {Object} AcceptedTable
+ * @property {string} key - The generation query plus the percentage basis
+ * @property {string} group
+ * @property {'power' | 'energy'} basis
+ * @property {import('./types.js').ContributionMode} contributionMode
+ * @property {import('./types.js').FuelTechTableRow[]} rows
+ * @property {import('./types.js').CurtailmentTableRow[]} curtailmentRows
+ * @property {import('./types.js').OverlaySummary} overlaySummary
+ */
+
+/** Derive all table sections from the same generation window and provider set,
+ * and accept a complete table only once every feed behind it has settled.
  * @param {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>,
  * providers: ReturnType<typeof import('./tracker-providers.svelte.js').createTrackerProviders>,
  * generation: () => import('./types.js').GenerationSnapshot | null,
+ * queryKey: () => string, ready: () => boolean,
  * hidden: () => string[], contribution: () => import('./types.js').ContributionMode,
- * ianaTimeZone: () => string}} opts */
+ * ianaTimeZone: () => string}} opts - `generation` is the accepted generation
+ *   snapshot, `queryKey`/`ready` its identity and readiness */
 export function createTrackerTable(opts) {
 	const range = opts.session.range;
 	const { mvData, emissionsData, marketData, demandData, curtailmentData, shareData } =
@@ -28,6 +44,8 @@ export function createTrackerTable(opts) {
 	let generationDataset = $derived(opts.generation());
 	let viewWindow = $derived(opts.session.window);
 	let bucketFilter = $derived(opts.session.selection.bucketFilter);
+	let tablePanelOpen = $derived(opts.session.selection.tablePanelOpen);
+	let group = $derived(opts.session.selection.group);
 	let contributionMode = $derived(opts.contribution());
 	let hiddenSeries = $derived(opts.hidden());
 	let loadSeriesIds = $derived(loadGroupsFor(getGroup(opts.session.selection.group)));
@@ -149,9 +167,48 @@ export function createTrackerTable(opts) {
 		})
 	);
 
+	// ============================================
+	// Accepted table
+	// ============================================
+
+	/** Identity of the values on screen: the generation query and its percentage basis. */
+	let key = $derived(JSON.stringify([opts.queryKey(), contributionMode]));
+	let accepted = $state.raw(/** @type {AcceptedTable | null} */ (null));
+	// A latch rather than a derivation: the previous table must survive while
+	// the next is pending, and only a fully settled candidate may replace it.
+	$effect(() => {
+		if (
+			!tablePanelOpen ||
+			!opts.ready() ||
+			opts.providers.pending ||
+			opts.providers.error ||
+			!tableRows
+		)
+			return;
+		accepted = {
+			key,
+			group,
+			basis: range.activeMetric,
+			contributionMode,
+			rows: tableRows,
+			curtailmentRows,
+			overlaySummary
+		};
+	});
+	let valuesPending = $derived(
+		!opts.ready() || opts.providers.pending || !!opts.providers.error || accepted?.key !== key
+	);
+	/** Visibility stays responsive while the values are held through a refresh. */
+	let displayedRows = $derived(
+		accepted?.rows.map((row) => ({ ...row, hidden: hiddenSeries.includes(row.id) })) ?? null
+	);
+
 	return {
 		get rows() {
 			return tableRows;
+		},
+		get rowIds() {
+			return (tableRows ?? []).map((row) => row.id);
 		},
 		get curtailmentRows() {
 			return curtailmentRows;
@@ -164,6 +221,15 @@ export function createTrackerTable(opts) {
 		},
 		get shareRowOpts() {
 			return shareRowOpts;
+		},
+		get accepted() {
+			return accepted;
+		},
+		get valuesPending() {
+			return valuesPending;
+		},
+		get displayedRows() {
+			return displayedRows;
 		}
 	};
 }

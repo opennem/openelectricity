@@ -7,8 +7,17 @@
 		COMPARISON_REGIONS,
 		comparisonPeriod,
 		comparisonChartRows,
-		comparisonYDomain
+		comparisonTicks,
+		comparisonYDomain,
+		COMPARISON_MIN_SPAN_MS,
+		visibleComparisonRows
 	} from './region-comparison.js';
+
+	/** Region labels and colours never change: set once on the store. */
+	const SERIES_LABELS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.shortLabel]));
+	const SERIES_COLOURS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.colour]));
+	/** Below three years the axis shows months as well as years. */
+	const MONTH_TICKS_BELOW_MS = 3 * 365 * 86_400_000;
 
 	/** @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string,
 	 * viewport: {start:number,end:number}, bounds: {start:number,end:number}, height: number,
@@ -38,9 +47,18 @@
 		hideDataOptions: true,
 		hideChartTypeOptions: true
 	});
+	chart.seriesLabels = SERIES_LABELS;
+	chart.seriesColours = SERIES_COLOURS;
+	chart.chartTooltips.showTotal = false;
+	chart.maximumFractionDigits = 1;
+	chart.chartStyles.chartPadding = { top: 0, bottom: 20, left: 0, right: 0 };
+	chart.chartStyles.snapTicks = true;
 	const inspectionHintId = $props.id();
 	let definition = $derived(comparisonMetric(metric));
 	let rows = $derived(comparisonChartRows(data, regions, metric, basis, interval));
+	let visibleRows = $derived(visibleComparisonRows(rows, viewport));
+	// Each effect syncs one concern into the store, so a pan frame re-runs only
+	// the viewport sync rather than rebuilding labels, data and units.
 	$effect(() => {
 		chart.chartOptions.baseUnit =
 			definition.kind === 'energy'
@@ -57,16 +75,14 @@
 	$effect(() => {
 		chart.seriesData = rows;
 		chart.seriesNames = regions;
-		chart.seriesLabels = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.shortLabel]));
-		chart.seriesColours = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.colour]));
 		chart.title = definition.shortLabel;
-		chart.chartTooltips.showTotal = false;
-		chart.maximumFractionDigits = 1;
-		chart.chartStyles.chartHeightPx = height;
-		chart.chartStyles.chartPadding = { top: 0, bottom: 20, left: 0, right: 0 };
-		chart.chartStyles.snapTicks = true;
 		chart.formatTooltipX = (date) => comparisonPeriod(Number(date), interval);
-		const short = viewport.end - viewport.start < 3 * 365 * 86_400_000;
+	});
+	$effect(() => {
+		chart.chartStyles.chartHeightPx = height;
+	});
+	$effect(() => {
+		const short = viewport.end - viewport.start < MONTH_TICKS_BELOW_MS;
 		chart.formatTickX = (date) =>
 			new Date(date).toLocaleDateString('en-AU', {
 				timeZone: 'UTC',
@@ -74,17 +90,7 @@
 				...(short ? { month: 'short' } : {})
 			});
 		chart.setXDomain(viewport.start, viewport.end);
-		// Tick counts are bounded independently of monthly history length.
-		const step = Math.max(
-			1,
-			Math.ceil(
-				rows.filter((row) => row.time >= viewport.start && row.time < viewport.end).length / 6
-			)
-		);
-		const ticks = rows
-			.filter((row) => row.time >= viewport.start && row.time < viewport.end)
-			.filter((_, i) => i % step === 0)
-			.map((row) => row.date);
+		const ticks = comparisonTicks(visibleRows);
 		chart.xTicks = ticks;
 		chart.xGridlineTicks = ticks;
 	});
@@ -109,7 +115,7 @@
 		viewport: () => viewport,
 		apply: (start, end) => onviewport(start, end, false),
 		minDateMs: () => bounds.start,
-		minDurationMs: () => 366 * 86_400_000,
+		minDurationMs: () => COMPARISON_MIN_SPAN_MS,
 		maxDurationMs: () => bounds.end - bounds.start,
 		onGestureStart: () => onhover(null),
 		onSettle: (start, end) => onviewport(start, end, true)
@@ -118,7 +124,7 @@
 	/** @param {KeyboardEvent} event */
 	function inspect(event) {
 		if (event.target !== event.currentTarget) return;
-		const visible = rows.filter((row) => row.time >= viewport.start && row.time < viewport.end);
+		const visible = visibleRows;
 		if (!visible.length) return;
 		const current = hover ?? focus ?? visible[visible.length - 1].time;
 		const index = Math.max(
@@ -156,7 +162,7 @@
 		onzoom={gestures.handleZoom}
 		onzoomin={gestures.zoomIn}
 		onzoomout={gestures.zoomOut}
-		isAtMinZoom={viewport.end - viewport.start <= 366 * 86_400_000}
+		isAtMinZoom={viewport.end - viewport.start <= COMPARISON_MIN_SPAN_MS}
 		isAtMaxZoom={viewport.start <= bounds.start && viewport.end >= bounds.end}
 		onhover={(time) => onhover(time)}
 		onhoverend={() => onhover(null)}
@@ -166,11 +172,7 @@
 		type="button"
 		class="sr-only focus:not-sr-only focus:absolute focus:bottom-2 focus:left-2 focus:z-30 rounded border border-mid-warm-grey bg-white px-3 py-2 text-xs focus:outline focus:outline-dark-grey"
 		onkeydown={inspect}
-		onclick={() =>
-			onhover(
-				rows.filter((row) => row.time >= viewport.start && row.time < viewport.end).at(-1)?.time ??
-					null
-			)}
+		onclick={() => onhover(visibleRows.at(-1)?.time ?? null)}
 		aria-label={`Inspect ${definition.label.toLowerCase()} values`}
 		aria-describedby={inspectionHintId}>Inspect values</button
 	>

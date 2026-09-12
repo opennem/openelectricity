@@ -1,10 +1,11 @@
 <script>
-	import { onMount, tick, untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import PanelToggle from './PanelToggle.svelte';
+	import PanelRail from './PanelRail.svelte';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
-	import { createResizeControl } from '$lib/components/ui/panel/resize-control.svelte.js';
+	import { createDockedPanel } from '$lib/components/ui/panel/docked-panel.svelte.js';
+	import { percentPanelBounds } from '$lib/components/ui/panel/panel-bounds.js';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
 	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
@@ -20,9 +21,8 @@
 	} from '$lib/components/charts/v2/bucket-filter.js';
 	import { createContributionContext } from '$lib/components/charts/network/contribution.js';
 	import { RENEWABLES_SERIES_ID } from '$lib/components/charts/network/market-series-ids.js';
-	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
-	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
-	import { hasSpotPrice, TRACKER_REGION_OPTIONS } from './tracker-regions.js';
+	import { toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
+	import { hasSpotPrice, regionLabel } from './tracker-regions.js';
 	import ChartCard from './ChartCard.svelte';
 	import ReadingFreshness from './ReadingFreshness.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
@@ -42,7 +42,8 @@
 	import { createTrackerProviders } from './tracker-providers.svelte.js';
 	import { createTrackerTable } from './tracker-table.svelte.js';
 	import { createTrackerData } from './tracker-data.svelte.js';
-	import { rollingShareRows, ROLLING_LEAD_MS } from './tracker-chart-overlays.js';
+	import { createTrackerMetrics } from './tracker-metrics.svelte.js';
+	import { toggleOverlayVisibility, toggleSeriesVisibility } from './tracker-visibility.js';
 
 	/** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
 	/** @typedef {import('./types.js').GenerationSnapshot} GenerationSnapshot */
@@ -68,8 +69,8 @@
 			(option) => option.id === bucketFilter
 		)?.label
 	);
-	let timeZone = $derived(regionToNetwork(region).timeZone);
-	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
+	let timeZone = $derived(session.timeZone);
+	let ianaTimeZone = $derived(session.ianaTimeZone);
 	let dateStart = $derived(toNetworkDateString(session.anchorStart, timeZone));
 	let dateEnd = $derived(toNetworkDateString(session.anchorEnd, timeZone));
 	let viewWindow = $derived(session.window);
@@ -125,7 +126,7 @@
 		needsContributionDemand: () => needsContributionDemand,
 		needsWindowMetrics: () => metricsOpen
 	});
-	const { marketData, demandData, curtailmentData, shareData } = providers;
+	const { marketData, demandData, curtailmentData } = providers;
 	const data = createTrackerData({
 		session: untrack(() => session),
 		priceMetric: () => priceMetric,
@@ -137,56 +138,31 @@
 		session: untrack(() => session),
 		providers,
 		generation: () => data.current('generation'),
+		queryKey: () => data.queryKey('generation'),
+		ready: () => data.ready('generation'),
 		hidden: () => hiddenSeries,
 		contribution: () => contributionMode,
 		ianaTimeZone: () => ianaTimeZone
+	});
+	const metrics = createTrackerMetrics({
+		session: untrack(() => session),
+		data,
+		providers,
+		table,
+		hidden: () => hiddenSeries,
+		priceMetric: () => priceMetric,
+		emissionsMetric: () => emissionsMetric,
+		holdFrame: () => chartsHoldFrame
 	});
 	function openComparison() {
 		const buckets = comparisonBuckets(data.ready('generation') ? data.current('generation') : null);
 		session.select('comparison', { a: buckets[0]?.time ?? null, b: buckets.at(-1)?.time ?? null });
 	}
 	let displayRowOpts = $derived(table.displayRowOpts);
-	let shareRowOpts = $derived(table.shareRowOpts);
-	let tableRows = $derived(table.rows);
-	let tableRowIds = $derived((tableRows ?? []).map((row) => row.id));
-	let tableKey = $derived(JSON.stringify([data.queryKey('generation'), contributionMode]));
-	/** One accepted table, including the labels that describe its values. */
-	let displayedTable = $state.raw(
-		/** @type {{key: string, group: string, basis: 'power' | 'energy',
-		 * contributionMode: import('./types.js').ContributionMode, rows: import('./types.js').FuelTechTableRow[],
-		 * curtailmentRows: import('./types.js').CurtailmentTableRow[], overlaySummary: import('./types.js').OverlaySummary} | null} */ (
-			null
-		)
-	);
-	let tableValuesPending = $derived(
-		!data.ready('generation') ||
-			providers.pending ||
-			!!providers.error ||
-			displayedTable?.key !== tableKey
-	);
-	$effect(() => {
-		if (
-			!tablePanelOpen ||
-			!data.ready('generation') ||
-			providers.pending ||
-			providers.error ||
-			!tableRows
-		)
-			return;
-		displayedTable = {
-			key: tableKey,
-			group,
-			basis: range.activeMetric,
-			contributionMode,
-			rows: tableRows,
-			curtailmentRows: table.curtailmentRows,
-			overlaySummary: table.overlaySummary
-		};
-	});
-	// Visibility stays responsive while the values are held through a refresh.
-	let displayedRows = $derived(
-		displayedTable?.rows.map((row) => ({ ...row, hidden: hiddenSeries.includes(row.id) })) ?? null
-	);
+	let tableRowIds = $derived(table.rowIds);
+	let displayedTable = $derived(table.accepted);
+	let tableValuesPending = $derived(table.valuesPending);
+	let displayedRows = $derived(table.displayedRows);
 	const EMPTY_OVERLAYS = /** @type {any[]} */ ([]);
 	const PREFETCH_PLAN = createTrackerPrefetchPlan();
 
@@ -207,82 +183,6 @@
 	export function isLoading() {
 		return trackerLoading;
 	}
-	let metricsStatus = $derived(
-		Object.fromEntries(
-			['generation', 'market', 'emissions', 'demand', 'renewables'].map((name) => {
-				if (name === 'demand' || name === 'renewables') {
-					const provider =
-						name === 'demand' ? demandData : isRollingDisplay ? marketData : shareData;
-					return [
-						name,
-						{
-							error: provider.error,
-							pending:
-								!provider.error && (chartsHoldFrame || session.gestureActive || provider.isPending)
-						}
-					];
-				}
-				const key = /** @type {import('./tracker-data.svelte.js').ChartKey} */ (name);
-				return [
-					name,
-					{
-						error: data.state(key).error,
-						pending:
-							!data.state(key).error &&
-							(chartsHoldFrame || session.gestureActive || !data.ready(key))
-					}
-				];
-			})
-		)
-	);
-	let renewableShareRows = $derived(
-		isRollingDisplay
-			? rollingShareRows(
-					marketData.getVisibleRows(viewWindow.start - ROLLING_LEAD_MS, viewWindow.end),
-					{
-						startMs: viewWindow.start,
-						endMs: viewWindow.end,
-						displayInterval: range.displayInterval,
-						ianaTimeZone,
-						bucketFilter
-					}
-				)
-			: shareData.getDisplayRows(viewWindow.start, viewWindow.end, shareRowOpts)
-	);
-	let metricsInput = $derived({
-		generation:
-			!metricsStatus.generation.pending && !metricsStatus.generation.error
-				? data.current('generation')
-				: null,
-		market:
-			!metricsStatus.market.pending && !metricsStatus.market.error ? data.current('market') : null,
-		emissions:
-			!metricsStatus.emissions.pending && !metricsStatus.emissions.error
-				? data.current('emissions')
-				: null,
-		demand:
-			!metricsStatus.demand.pending && !metricsStatus.demand.error
-				? {
-						data: demandData.getDisplayRows(viewWindow.start, viewWindow.end, displayRowOpts),
-						start: viewWindow.start,
-						end: viewWindow.end,
-						seriesNames: ['demand']
-					}
-				: null,
-		renewables:
-			!metricsStatus.renewables.pending && !metricsStatus.renewables.error
-				? {
-						data: renewableShareRows,
-						start: viewWindow.start,
-						end: viewWindow.end,
-						seriesNames: ['renewable_share']
-					}
-				: null,
-		hidden: hiddenSeries,
-		basis: range.activeMetric,
-		priceMetric,
-		emissionsMetric
-	});
 	let contributionDemandReady = $derived(!marketData.isPending && !marketData.error);
 	let imageProvidersReady = $derived(
 		[
@@ -338,10 +238,12 @@
 	let hoverTime = $derived(
 		previewTime ?? (metricsOpen ? metricsPanel?.getSelectedTime() : undefined)
 	);
-	let metricsWidth = $state(256);
+	// Metrics pane: pixel width, remembered locally. Desktop widths leave room
+	// for the chart column and the fuel-tech table; small screens overlay.
+	const METRICS_MIN_PX = 224;
 	let metricsMax = $derived(
 		Math.max(
-			224,
+			METRICS_MIN_PX,
 			Math.min(
 				400,
 				containerWidth -
@@ -351,80 +253,41 @@
 			)
 		)
 	);
-	let effectiveMetricsWidth = $derived(Math.min(metricsWidth, metricsMax));
-	let metricsReserved = $derived(
-		metricsOpen && wideLayout.current ? effectiveMetricsWidth : PANEL_RAIL_PX
-	);
-	let metricsToggle = $state(/** @type {HTMLButtonElement | undefined} */ (undefined));
 	let metricsPane = $state(/** @type {HTMLDivElement | undefined} */ (undefined));
-	async function openMetrics() {
-		metricsOpenOverride = true;
-		await tick();
-		metricsPane?.querySelector('button')?.focus();
-	}
-	async function closeMetrics() {
-		handleHoverChange(undefined);
-		metricsOpenOverride = false;
-		// The opener is mounted after this event; return keyboard focus to it.
-		await tick();
-		metricsToggle?.focus();
-	}
-	let tableToggle = $state(/** @type {HTMLButtonElement | undefined} */ (undefined));
-	let tableCloseButton = $state(/** @type {HTMLButtonElement | undefined} */ (undefined));
-	/** @param {boolean} open */
-	async function changeTablePanel(open) {
-		onpaneltoggle(open);
-		await tick();
-		(open ? tableCloseButton : tableToggle)?.focus();
-	}
-	const metricsResize = createResizeControl({
-		axis: 'x',
-		get: () => effectiveMetricsWidth,
-		set: (value) => {
-			metricsWidth = value;
-		},
-		min: () => 224,
+	const metricsDock = createDockedPanel({
+		initial: 256,
+		min: () => METRICS_MIN_PX,
 		max: () => metricsMax,
-		commit: () => {
-			try {
-				localStorage.setItem('tracker-metrics-width', String(metricsWidth));
-			} catch {
-				/* Resizing remains usable without persistence. */
-			}
-		}
-	});
-	onMount(() => {
-		try {
-			const saved = Number(localStorage.getItem('tracker-metrics-width'));
-			if (Number.isFinite(saved) && saved >= 224) metricsWidth = Math.min(400, saved);
-		} catch {
-			/* Storage can be unavailable in embedded/private contexts. */
-		}
-	});
-	let panelSize = $state(30);
-	let panelMin = $derived(
-		Math.min(80, containerWidth ? (PANEL_MIN_PX / containerWidth) * 100 : 30)
-	);
-	let panelMax = $derived(
-		wideLayout.current && containerWidth
-			? Math.max(
-					panelMin,
-					Math.min(80, ((containerWidth - metricsReserved - CHART_SPACE_PX) / containerWidth) * 100)
-				)
-			: 80
-	);
-	let effectivePanelSize = $derived(Math.min(panelMax, Math.max(panelMin, panelSize)));
-	const panelResize = createResizeControl({
-		axis: 'x',
-		get: () => effectivePanelSize,
-		set: (value) => {
-			panelSize = value;
+		storageKey: 'tracker-metrics-width',
+		setOpen: (open) => {
+			if (!open) handleHoverChange(undefined);
+			metricsOpenOverride = open;
 		},
-		min: () => panelMin,
-		max: () => panelMax,
+		focusOnOpen: () => metricsPane?.querySelector('button')
+	});
+	let metricsReserved = $derived(
+		metricsOpen && wideLayout.current ? metricsDock.size : PANEL_RAIL_PX
+	);
+	// Fuel-tech table: a percentage of the container, bounded so the charts
+	// keep a usable column. Its open state lives in the URL.
+	let panelBounds = $derived(
+		percentPanelBounds({
+			containerWidth,
+			minPx: PANEL_MIN_PX,
+			reservedPx: metricsReserved + CHART_SPACE_PX,
+			maxPct: 80,
+			wide: wideLayout.current,
+			narrowMaxPct: 80
+		})
+	);
+	const tablePanel = createDockedPanel({
+		initial: 30,
+		min: () => panelBounds.min,
+		max: () => panelBounds.max,
 		scale: () => (containerWidth ? 100 / containerWidth : 0),
 		inverted: true,
-		step: 2
+		step: 2,
+		setOpen: onpaneltoggle
 	});
 	onMount(() =>
 		session.connect(() => [generationChart, priceChart, emissionsChart, ...providers.all])
@@ -448,7 +311,7 @@
 			lines.push({
 				id: 'renewable-share',
 				label: showContributions ? 'Renewables (% of gross demand)' : 'Renewables',
-				data: renewableShareRows,
+				data: providers.renewableShareRows(start, end, table.shareRowOpts),
 				valueKey: 'renewable_share',
 				colour: RENEWABLES_LINE_COLOUR,
 				scale: 'percent',
@@ -475,18 +338,14 @@
 		];
 	});
 
-	/** @param {TrackerOverlay} overlay @param {boolean} [exclusive] */
+	let visibility = $derived({ hiddenSeries, overlays, rowIds: tableRowIds });
+
+	/** Solo pushes one history entry; a plain overlay toggle replaces (see README).
+	 * @param {TrackerOverlay} overlay @param {boolean} [exclusive] */
 	function toggleOverlay(overlay, exclusive = false) {
-		if (exclusive) {
-			// Solo the overlay: hide every fuel-tech series in the current grouping.
-			session.selectVisibility(tableRowIds, [overlay]);
-			return;
-		}
-		onoverlayschange?.(
-			overlays.includes(overlay)
-				? overlays.filter((item) => item !== overlay)
-				: [...overlays, overlay]
-		);
+		const next = toggleOverlayVisibility(visibility, overlay, exclusive);
+		if (exclusive) session.selectVisibility(next.hiddenSeries, next.overlays);
+		else onoverlayschange?.(next.overlays);
 	}
 
 	/** @param {string} id @param {boolean} [exclusive] */
@@ -497,23 +356,8 @@
 
 	/** @param {string} series @param {boolean} [exclusive] */
 	function toggleSeries(series, exclusive = false) {
-		if (exclusive) {
-			session.selectVisibility(
-				tableRowIds.filter((id) => id !== series),
-				[]
-			);
-			return;
-		}
-		const ids = hiddenSeries;
-		const visibleCount = tableRowIds.filter((id) => !ids.includes(id)).length;
-		// Toggling off the last visible series restores everything instead.
-		if (!ids.includes(series) && visibleCount === 1) {
-			session.selectVisibility([], []);
-			return;
-		}
-		session.selectVisibility(
-			ids.includes(series) ? ids.filter((item) => item !== series) : [...ids, series]
-		);
+		const next = toggleSeriesVisibility(visibility, series, exclusive);
+		session.selectVisibility(next.hiddenSeries, next.overlays);
 	}
 
 	function showAllSeries() {
@@ -525,6 +369,39 @@
 		previewTime = time;
 	}
 
+	/** Everything the three timeline charts share: scope, grain, hover and
+	 *  gesture wiring, the held-frame veil and idle prefetch. Each card adds
+	 *  its metric, chart kind, transforms and its own viewport/data callbacks.
+	 *  `hoverTime` is passed separately: it reads the metrics pane's selection,
+	 *  and the pane's inputs read the charts' query state, so folding it into
+	 *  one spread object would make that derivation reference itself. */
+	let sharedChartProps = $derived(
+		/** @type {Pick<import('svelte').ComponentProps<typeof NetworkChart>,
+		 * 'region' | 'bucketFilter' | 'interval' | 'displayInterval' | 'group' | 'timeZone' |
+		 * 'dateStart' | 'dateEnd' | 'showContainer' | 'tooltipMode' | 'onhoverchange' |
+		 * 'onviewportsettle' | 'panZoomMode' | 'gestureActive' | 'ongesturechange' |
+		 * 'showLoadingIndicator' | 'holdFrame' | 'prefetchPlan'>} */ ({
+			region,
+			bucketFilter,
+			interval: range.activeInterval,
+			displayInterval: range.displayInterval,
+			group,
+			timeZone,
+			dateStart,
+			dateEnd,
+			showContainer: false,
+			tooltipMode: 'floating',
+			onhoverchange: handleHoverChange,
+			onviewportsettle: session.settleViewport,
+			panZoomMode: 'tap-to-engage',
+			gestureActive: session.gestureActive,
+			ongesturechange: (active) => (session.gestureActive = active),
+			showLoadingIndicator: false,
+			holdFrame: chartsHoldFrame,
+			prefetchPlan: pageVisible ? PREFETCH_PLAN : null
+		})
+	);
+
 	/** @param {import('./types.js').ExportDatasetKey | 'xlsx'} [requested]
 	 * @returns {Omit<TrackerExportContext, 'sourceUrl' | 'generatedAtMs'> & {error: boolean}} */
 	export function getExportContext(requested = 'xlsx') {
@@ -535,8 +412,7 @@
 			required.some((name) => !data.ready(name)) || (needsTable && tableValuesPending);
 		return {
 			region,
-			regionLabel:
-				TRACKER_REGION_OPTIONS.find((option) => option.value === region)?.label ?? region,
+			regionLabel: regionLabel(region),
 			group,
 			groupLabel: getGroup(group).label,
 			contributionMode,
@@ -590,7 +466,7 @@
 
 <svelte:window
 	onkeydown={(event) => {
-		if (event.key === 'Escape' && metricsOpen && !wideLayout.current) closeMetrics();
+		if (event.key === 'Escape' && metricsOpen && !wideLayout.current) metricsDock.close();
 	}}
 />
 <svelte:document
@@ -602,7 +478,7 @@
 <div
 	class="relative flex min-h-0 flex-1 flex-row"
 	bind:clientWidth={containerWidth}
-	data-png-context={`${TRACKER_REGION_OPTIONS.find((option) => option.value === region)?.label ?? region} · ${rangeLabel} · ${intervalBadge} · UTC${timeZone} · ${getGroup(group).label}${imageFilterLabel ? ` · ${imageFilterLabel}` : ''}`}
+	data-png-context={`${regionLabel(region)} · ${rangeLabel} · ${intervalBadge} · UTC${timeZone} · ${getGroup(group).label}${imageFilterLabel ? ` · ${imageFilterLabel}` : ''}`}
 >
 	{#if metricsOpen}
 		<div
@@ -611,46 +487,40 @@
 			class="z-30 flex shrink-0 {wideLayout.current
 				? 'relative'
 				: 'absolute inset-y-0 left-0 shadow-xl'}"
-			style:width={`${effectiveMetricsWidth}px`}
+			style:width={`${metricsDock.size}px`}
 			data-testid="metrics-pane"
 		>
 			<ResizablePanel
 				open
 				direction="right"
-				onclose={closeMetrics}
+				onclose={metricsDock.close}
 				defaultSize={100}
 				showDragHandle={false}
-				externalResizing={metricsResize.dragging}
+				externalResizing={metricsDock.dragging}
 				class="flex min-w-0 flex-1 bg-white"
 			>
 				{#snippet header()}<span class="hidden"></span>{/snippet}
 				<WindowMetrics
 					bind:this={metricsPanel}
-					input={metricsInput}
-					status={metricsStatus}
-					onretry={(id) =>
-						(id === 'demand'
-							? demandData
-							: isRollingDisplay
-								? marketData
-								: shareData
-						).reconcileFetches()}
+					input={metrics.input}
+					status={metrics.status}
+					onretry={metrics.retry}
 					interval={range.displayInterval}
 					zone={timeZone}
 					generationPrefix={generationDisplayPrefix}
 					onhighlight={handleHoverChange}
-					onclose={closeMetrics}
+					onclose={metricsDock.close}
 				/>
 			</ResizablePanel>
 			<DragHandle
 				axis="x"
-				onstart={metricsResize.start}
-				onkeydown={metricsResize.keydown}
+				onstart={metricsDock.start}
+				onkeydown={metricsDock.keydown}
 				tabindex={0}
-				aria-valuemin={224}
+				aria-valuemin={METRICS_MIN_PX}
 				aria-valuemax={metricsMax}
-				aria-valuenow={Math.round(effectiveMetricsWidth)}
-				active={metricsResize.dragging}
+				aria-valuenow={Math.round(metricsDock.size)}
+				active={metricsDock.dragging}
 				alwaysShowGrip
 				class="w-4 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
 				role="separator"
@@ -661,16 +531,13 @@
 		</div>
 	{/if}
 	{#if !metricsOpen || !wideLayout.current}
-		<div class="flex w-[48px] shrink-0 justify-center border-r border-warm-grey bg-white pt-[4px]">
-			<PanelToggle
-				side="left"
-				open={metricsOpen}
-				label="Show metrics"
-				controls="tracker-metrics-panel"
-				onclick={openMetrics}
-				bind:el={metricsToggle}
-			/>
-		</div>
+		<PanelRail
+			side="left"
+			label="Show metrics"
+			controls="tracker-metrics-panel"
+			onopen={metricsDock.open}
+			bind:opener={metricsDock.opener}
+		/>
 	{/if}
 	<!-- No space-y: each card's full-gap drag handle is the spacer between cards.
 	     Side padding yields to an open docked pane's drag handle — the handle
@@ -730,17 +597,11 @@
 				{/if}
 				<NetworkChart
 					bind:this={generationChart}
-					{region}
-					{bucketFilter}
+					{...sharedChartProps}
+					{hoverTime}
 					metric={range.activeMetric}
-					interval={range.activeInterval}
-					displayInterval={range.displayInterval}
-					{group}
 					chartKind="stacked"
 					nightShading
-					{timeZone}
-					{dateStart}
-					{dateEnd}
 					title={energyMetric ? 'Energy' : 'Power'}
 					chartHeightPx={heightPx}
 					generationUnitOptions
@@ -750,21 +611,10 @@
 					createProportionContext={chartContributionContext}
 					{overlayLines}
 					{overlayAreas}
-					showContainer={false}
-					tooltipMode="floating"
 					hiddenSeriesNames={hiddenSeries}
-					{hoverTime}
-					onhoverchange={handleHoverChange}
 					onviewportchange={(next) => session.moveViewport(next, generationChart)}
-					onviewportsettle={session.settleViewport}
 					onvisibledata={handleGenerationData}
-					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
-					gestureActive={session.gestureActive}
-					ongesturechange={(active) => (session.gestureActive = active)}
-					showLoadingIndicator={false}
-					holdFrame={chartsHoldFrame}
-					prefetchPlan={pageVisible ? PREFETCH_PLAN : null}
 				/>
 			{/snippet}
 		</ChartCard>
@@ -816,39 +666,22 @@
 			{#snippet children(heightPx)}
 				<NetworkChart
 					bind:this={priceChart}
-					{region}
-					{bucketFilter}
+					{...sharedChartProps}
+					{hoverTime}
 					metric={priceMetric}
-					interval={range.activeInterval}
-					displayInterval={range.displayInterval}
-					{group}
 					chartKind={priceIsMarketValue ? 'stacked' : 'line'}
-					{timeZone}
-					{dateStart}
-					{dateEnd}
 					title={priceIsMarketValue
 						? 'Market value'
 						: isRollingDisplay
 							? 'Volume-weighted price'
 							: 'Spot price'}
 					chartHeightPx={heightPx}
-					showContainer={false}
-					tooltipMode="floating"
 					hiddenSeriesNames={priceIsMarketValue ? hiddenSeries : []}
 					dataTransform={priceIsMarketValue ? session.selection.marketValueTransform : 'absolute'}
 					ondatatransformchange={(value) => session.select('marketValueTransform', value)}
-					{hoverTime}
-					onhoverchange={handleHoverChange}
 					onviewportchange={(next) => session.moveViewport(next, priceChart)}
-					onviewportsettle={session.settleViewport}
 					onvisibledata={handlePriceData}
-					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
-					gestureActive={session.gestureActive}
-					ongesturechange={(active) => (session.gestureActive = active)}
-					showLoadingIndicator={false}
-					holdFrame={chartsHoldFrame}
-					prefetchPlan={pageVisible ? PREFETCH_PLAN : null}
 				/>
 			{/snippet}
 		</ChartCard>
@@ -879,34 +712,17 @@
 			{#snippet children(heightPx)}
 				<NetworkChart
 					bind:this={emissionsChart}
-					{region}
-					{bucketFilter}
+					{...sharedChartProps}
+					{hoverTime}
 					metric={emissionsMetric}
-					interval={range.activeInterval}
-					displayInterval={range.displayInterval}
-					{group}
 					chartKind={emissionsIsIntensity ? 'line' : 'stacked'}
-					{timeZone}
-					{dateStart}
-					{dateEnd}
 					title={emissionsIsIntensity ? 'Intensity' : 'Volume'}
 					chartHeightPx={heightPx}
-					showContainer={false}
-					tooltipMode="floating"
 					hiddenSeriesNames={emissionsIsIntensity ? [] : hiddenSeries}
 					excludedFuelTechGroups={emissionsIsIntensity ? hiddenSeries : []}
-					{hoverTime}
-					onhoverchange={handleHoverChange}
 					onviewportchange={(next) => session.moveViewport(next, emissionsChart)}
-					onviewportsettle={session.settleViewport}
 					onvisibledata={handleEmissionsData}
-					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
-					gestureActive={session.gestureActive}
-					ongesturechange={(active) => (session.gestureActive = active)}
-					showLoadingIndicator={false}
-					holdFrame={chartsHoldFrame}
-					prefetchPlan={pageVisible ? PREFETCH_PLAN : null}
 				/>
 			{/snippet}
 		</ChartCard>
@@ -918,13 +734,13 @@
 		<!-- w-4: same gap length as the chart cards' h-4 drag handles. -->
 		<DragHandle
 			axis="x"
-			onstart={panelResize.start}
-			onkeydown={panelResize.keydown}
+			onstart={tablePanel.start}
+			onkeydown={tablePanel.keydown}
 			tabindex={0}
-			aria-valuemin={panelMin}
-			aria-valuemax={panelMax}
-			aria-valuenow={Math.round(effectivePanelSize)}
-			active={panelResize.dragging}
+			aria-valuemin={panelBounds.min}
+			aria-valuemax={panelBounds.max}
+			aria-valuenow={Math.round(tablePanel.size)}
+			active={tablePanel.dragging}
 			alwaysShowGrip
 			class="w-4 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
 			role="separator"
@@ -935,19 +751,19 @@
 		<ResizablePanel
 			open
 			direction="left"
-			defaultSize={effectivePanelSize}
+			defaultSize={tablePanel.size}
 			minSize={PANEL_MIN_PX}
 			containerSize={containerWidth}
 			showDragHandle={false}
-			externalResizing={panelResize.dragging}
-			onclose={() => changeTablePanel(false)}
+			externalResizing={tablePanel.dragging}
+			onclose={tablePanel.close}
 			class="z-20 flex bg-white"
 		>
 			{#snippet header()}<span class="hidden"></span>{/snippet}
 			<FuelTechPanel
 				loading={trackerLoading}
 				options={fuelTechOptions}
-				bind:closeButton={tableCloseButton}
+				bind:closeButton={tablePanel.closer}
 				rows={displayedRows}
 				valuesPending={tableValuesPending}
 				error={data.state('generation').error ?? providers.error}
@@ -971,23 +787,19 @@
 				ondemandlinetoggle={(exclusive) => toggleOverlay('demand', exclusive)}
 				onrenewableslinetoggle={(exclusive) => toggleOverlay('renewables', exclusive)}
 				onshowall={showAllSeries}
-				onclose={() => changeTablePanel(false)}
+				onclose={tablePanel.close}
 			/>
 		</ResizablePanel>
 	{:else}
 		<!-- Keep the reopen action at the panel edge. -->
-		<div
-			class="z-20 flex w-[48px] shrink-0 flex-col items-center border-l border-warm-grey bg-white pt-[4px]"
+		<PanelRail
+			side="right"
+			label="Show fuel tech table"
+			controls="tracker-table-panel"
+			onopen={tablePanel.open}
+			bind:opener={tablePanel.opener}
 		>
-			<PanelToggle
-				side="right"
-				open={false}
-				label="Show fuel tech table"
-				controls="tracker-table-panel"
-				onclick={() => changeTablePanel(true)}
-				bind:el={tableToggle}
-			/>
 			{@render fuelTechOptions()}
-		</div>
+		</PanelRail>
 	{/if}
 </div>

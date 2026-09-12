@@ -1,4 +1,6 @@
-/** Shared presentation for the Tracker's fuel technology and region tables. */
+import { EMPTY_CELL } from './table-format.js';
+
+/** Shared presentation for the Tracker's fuel technology, region and date-comparison tables. */
 export const TABLE_HEADER_CELL = 'border-b border-warm-grey py-3 align-top font-medium';
 export const TABLE_ROW = 'group cursor-pointer text-sm hover:bg-light-warm-grey';
 export const TABLE_SWATCH = 'size-5 shrink-0 rounded-sm border';
@@ -11,5 +13,5 @@ export function pinnedTableEdge(scrollLeft) {
 
 /** @param {string} text @param {boolean} last @param {string} [padding] */
 export function tableValueCell(text, last, padding = 'py-1.5') {
-	return `${last ? 'pr-3 pl-2' : 'px-2'} ${padding} whitespace-nowrap text-right font-mono tabular-nums transition-opacity duration-300 ${text === '—' ? 'text-mid-grey' : 'text-dark-grey'}`;
+	return `${last ? 'pr-3 pl-2' : 'px-2'} ${padding} whitespace-nowrap text-right font-mono tabular-nums transition-opacity duration-300 ${text === EMPTY_CELL ? 'text-mid-grey' : 'text-dark-grey'}`;
 }

@@ -106,6 +106,16 @@ export function comparisonUnit(id, basis, base = false) {
 	return `% ${id === 'net_imports_share' || basis === 'demand' ? 'demand' : 'generation'}`;
 }
 export const FUEL_COMPONENTS = ['solar', 'wind', 'hydro', 'gas', 'coal'];
+
+/**
+ * A provider timestamp read as a calendar label: the local wall-clock date
+ * taken as UTC, so NEM and WEM months share one synthetic axis instead of
+ * being shifted apart by their offsets.
+ * @param {unknown} stamp - e.g. '2026-07-01T00:00:00+10:00'
+ */
+export function calendarLabelMs(stamp) {
+	return Date.parse(String(stamp).slice(0, 19) + 'Z');
+}
 /** @param {string} tech @param {string} fuel */
 export function matchesComparisonFuel(tech, fuel) {
 	return tech === fuel || tech.startsWith(`${fuel}_`);
@@ -120,10 +130,7 @@ export function comparisonFuelRows(response, metric) {
 	if (!series.length) return [];
 	const entries = series.map((series) => {
 		const values = new Map(
-			(series.data ?? []).map(([stamp, value]) => [
-				Date.parse(String(stamp).slice(0, 19) + 'Z'),
-				value
-			])
+			(series.data ?? []).map(([stamp, value]) => [calendarLabelMs(stamp), value])
 		);
 		return {
 			tech: series.columns?.fueltech ?? series.name ?? '',
@@ -176,12 +183,7 @@ export function processComparisonFlows(response) {
 	const series = (response?.data ?? []).flatMap((entry) =>
 		(entry.results ?? []).map((series) => ({
 			metric: entry.metric,
-			values: new Map(
-				(series.data ?? []).map(([stamp, value]) => [
-					Date.parse(String(stamp).slice(0, 19) + 'Z'),
-					value
-				])
-			)
+			values: new Map((series.data ?? []).map(([stamp, value]) => [calendarLabelMs(stamp), value]))
 		}))
 	);
 	const times = [...new Set(series.flatMap((entry) => [...entry.values.keys()]))].sort(

@@ -1,46 +1,20 @@
-import { normaliseRegionComparison } from './region-comparison.js';
 import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
 import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
 import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
 import { formatRangeLabel } from '$lib/components/charts/v2/time-format-policy.js';
 import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
-import { getGroup } from '$lib/components/charts/network/groups.js';
-import { hasSpotPrice } from './tracker-regions.js';
-import { normaliseComparison } from './comparison.js';
-import { normaliseProfileView, normaliseProfileDays, normaliseProfileEnd } from './time-of-day.js';
 import { DEFAULT_RANGE_DAYS, normaliseRange, customRangeDates } from './tracker-model.js';
-import {
-	parseTrackerUrl,
-	normaliseTrackerOverlays,
-	normaliseHiddenSeries,
-	normaliseContributionMode,
-	normaliseDataTransform,
-	validBucketFilterFor
-} from './tracker-url.js';
+import { normaliseTrackerState, parseTrackerUrl } from './tracker-url.js';
 
-/** @template {import('./types.js').TrackerUrlState} T @param {T} value */
-function normaliseSelection(value) {
-	return {
-		...value,
-		compareRegions: !!value.compareRegions,
-		regionComparison: normaliseRegionComparison(value.regionComparison),
-		profileView: normaliseProfileView(value.profileView),
-		profileDays: normaliseProfileDays(value.profileDays),
-		profileMetric: /** @type {'power' | 'price'} */ (
-			value.profileMetric === 'price' && hasSpotPrice(value.region) ? 'price' : 'power'
-		),
-		profileSeries: getGroup(value.group).order.includes(value.profileSeries)
-			? value.profileSeries
-			: '',
-		profileEnd: normaliseProfileEnd(value.profileEnd),
-		comparison: normaliseComparison(value.comparison),
-		hiddenSeries: normaliseHiddenSeries(value.hiddenSeries, value.group),
-		contributionMode: normaliseContributionMode(value.contributionMode),
-		generationTransform: normaliseDataTransform(value.generationTransform),
-		marketValueTransform: normaliseDataTransform(value.marketValueTransform),
-		overlays: normaliseTrackerOverlays(value.overlays)
-	};
+/** @typedef {'timeline' | 'average' | 'regions'} TrackerView */
+
+/** The analysis view a selection describes — the value the nav's view switch shows.
+ * @param {import('./types.js').TrackerUrlState} selection
+ * @returns {TrackerView} */
+export function trackerView(selection) {
+	if (selection.compareRegions) return 'regions';
+	return selection.profileView === 'timeline' ? 'timeline' : 'average';
 }
 
 /** Per-page selection and range ownership. Browser history is an injected side effect.
@@ -48,7 +22,7 @@ function normaliseSelection(value) {
  * @param {(mode: 'push' | 'replace', resetQuery?: boolean) => void} onchange
  */
 export function createTrackerSession(initial, onchange) {
-	let selection = $state.raw(normaliseSelection(initial));
+	let selection = $state.raw(normaliseTrackerState(initial));
 	let viewport = $state.raw({ start: 0, end: 0 });
 	let window = $state.raw({ start: 0, end: 0 });
 	let connected = $state(false);
@@ -56,6 +30,12 @@ export function createTrackerSession(initial, onchange) {
 	let clockMs = $state(initial.nowMs);
 	let anchorEnd = $state(initial.nowMs);
 	let anchorStart = $derived(anchorEnd - DEFAULT_RANGE_DAYS * 86_400_000);
+	let view = $derived(trackerView(selection));
+	/** Network offset ('+10:00' | '+08:00') and its IANA name for the selected scope. */
+	let timeZone = $derived(regionToNetwork(selection.region).timeZone);
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
+	/** Relative timeline presets follow the latest data; everything else is pinned. */
+	let following = $derived(view === 'timeline' && selection.range.kind === 'preset');
 	/** @type {() => Array<import('$lib/components/charts/facility/chart-range-control.svelte.js').RangeControlChart | null | undefined>} */
 	let charts = () => [];
 	const range = createChartRangeControl({
@@ -67,7 +47,7 @@ export function createTrackerSession(initial, onchange) {
 			viewport = { start: Math.max(start, EARLIEST_DATA_MS), end };
 		},
 		charts: () => charts(),
-		timeZone: () => regionToNetwork(selection.region).timeZone,
+		timeZone: () => timeZone,
 		initialRangeDays: DEFAULT_RANGE_DAYS,
 		includeRolling: true
 	});
@@ -87,11 +67,8 @@ export function createTrackerSession(initial, onchange) {
 
 	function settleWindow() {
 		window = viewport;
-		selection = {
-			...selection,
-			range: snapshot(),
-			bucketFilter: validBucketFilterFor(selection.bucketFilter, snapshot())
-		};
+		// Re-normalising validates the calendar filter against the settled range.
+		selection = normaliseTrackerState({ ...selection, range: snapshot() });
 	}
 
 	/** @param {import('./types.js').TrackerRange} value */
@@ -124,43 +101,36 @@ export function createTrackerSession(initial, onchange) {
 		get clockMs() {
 			return clockMs;
 		},
+		get view() {
+			return view;
+		},
+		get timeZone() {
+			return timeZone;
+		},
+		get ianaTimeZone() {
+			return ianaTimeZone;
+		},
 		get following() {
-			return (
-				!selection.compareRegions &&
-				selection.profileView === 'timeline' &&
-				selection.range.kind === 'preset'
-			);
+			return following;
 		},
 		/** Advance only relative timeline windows; no history entries for ambient ticks.
 		 * @param {number} nowMs @param {boolean} [ready] */
 		tick(nowMs, ready = true) {
 			clockMs = nowMs;
-			if (
-				!connected ||
-				selection.compareRegions ||
-				!ready ||
-				gestureActive ||
-				selection.profileView !== 'timeline' ||
-				selection.range.kind !== 'preset'
-			)
-				return;
+			if (!connected || !ready || gestureActive || !following) return;
 			if (nowMs <= anchorEnd) return;
 			// Revisit two native buckets for late observations and open-bucket
 			// revisions. Normal request deduplication, HTTP caching and retries apply.
 			const tailStart = Math.max(
 				window.start,
 				window.end -
-					2 *
-						getIntervalHours(
-							range.activeInterval,
-							window.end,
-							ianaFromOffset(regionToNetwork(selection.region).timeZone)
-						) *
-						3_600_000
+					2 * getIntervalHours(range.activeInterval, window.end, ianaTimeZone) * 3_600_000
 			);
 			for (const chart of charts()) chart?.invalidateTail?.(tailStart);
 			// All grows at the right edge; never slide the historical data floor.
-			range.advanceLiveEdge(nowMs, { preserveStart: selection.range.days === -1 });
+			range.advanceLiveEdge(nowMs, {
+				preserveStart: selection.range.kind === 'preset' && selection.range.days === -1
+			});
 			anchorEnd = nowMs;
 			settleWindow();
 		},
@@ -180,12 +150,7 @@ export function createTrackerSession(initial, onchange) {
 			gestureActive = value;
 		},
 		get rangeLabel() {
-			return formatRangeLabel(
-				window.start,
-				window.end,
-				range.displayInterval,
-				ianaFromOffset(regionToNetwork(selection.region).timeZone)
-			);
+			return formatRangeLabel(window.start, window.end, range.displayInterval, ianaTimeZone);
 		},
 		/** @param {typeof charts} getCharts */
 		connect(getCharts) {
@@ -205,14 +170,14 @@ export function createTrackerSession(initial, onchange) {
 			const rangeChanged =
 				selection.region !== value.region ||
 				JSON.stringify(selection.range) !== JSON.stringify(value.range);
-			selection = normaliseSelection({ ...selection, ...value });
+			selection = normaliseTrackerState({ ...selection, ...value });
 			if (rangeChanged) applyRange(value.range);
 		},
 		/** @template {keyof import('./types.js').TrackerUrlState} K
 		 * @param {K} key @param {import('./types.js').TrackerUrlState[K]} value
 		 * @param {'push' | 'replace' | null} [history] */
 		select(key, value, history = 'push') {
-			selection = normaliseSelection({
+			selection = normaliseTrackerState({
 				...selection,
 				...(key === 'group' && value !== selection.group ? { hiddenSeries: [] } : {}),
 				[key]: value
@@ -220,29 +185,21 @@ export function createTrackerSession(initial, onchange) {
 			if (history) onchange(history);
 		},
 		/** Explicit view switches start with defaults; restore() preserves history.
-		 * @param {string} view */
-		selectView(view) {
-			const current = selection.compareRegions
-				? 'regions'
-				: selection.profileView === 'timeline'
-					? 'timeline'
-					: 'average';
-			if (view === current) return;
+		 * @param {string} next */
+		selectView(next) {
+			if (next === view) return;
 			anchorEnd = clockMs = Date.now();
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- transient parameters for parsing defaults
 			const params = new URLSearchParams();
-			if (view !== 'timeline') params.set('view', view === 'regions' ? 'regions' : 'average');
-			selection = normaliseSelection({
-				...parseTrackerUrl(params, { nowMs: clockMs }),
-				nowMs: clockMs
-			});
+			if (next !== 'timeline') params.set('view', next === 'regions' ? 'regions' : 'average');
+			selection = parseTrackerUrl(params, { nowMs: clockMs });
 			applyRange(selection.range);
 			onchange('push', true);
 		},
 		/** Solo and restore update overlays and fuel-tech visibility in one history entry.
 		 * @param {string[]} hiddenSeries @param {import('./types.js').TrackerOverlay[]} [overlays] */
 		selectVisibility(hiddenSeries, overlays = selection.overlays) {
-			selection = normaliseSelection({ ...selection, hiddenSeries, overlays });
+			selection = normaliseTrackerState({ ...selection, hiddenSeries, overlays });
 			onchange('push');
 		},
 		/** @param {number} days */

@@ -1,8 +1,17 @@
 import { comparisonMetric, comparisonMetricValue, comparisonUnit } from './comparison-metrics.js';
 import { COMPARISON_REGIONS, comparisonPeriod } from './region-comparison.js';
-import { datasetToCsv, datasetToSheet, summaryToSheet } from './tracker-export.js';
+import { datasetToCsv, datasetToSheet, summaryToSheet, trackerFileName } from './tracker-export.js';
+import { regionLabel } from '$lib/regions.js';
 
-/** @param {Record<string,any[]>} data @param {import('./region-comparison.js').RegionComparisonSelection} state @param {{start:number,end:number}} viewport @param {string | null} [cpiReference] */
+/** @typedef {import('./region-comparison.js').RegionComparisonSelection} RegionComparisonSelection */
+/** The region comparison's dataset, plus the CPI reference its real prices used.
+ * @typedef {import('./types.js').ExportDataset & { cpiReference: string | null }} RegionComparisonDataset */
+
+/** Calendar labels are synthetic UTC instants, so the serialisers get UTC. */
+const CALENDAR_ZONE = '+00:00';
+
+/** @param {Record<string,any[]>} data @param {RegionComparisonSelection} state @param {{start:number,end:number}} viewport @param {string | null} [cpiReference]
+ * @returns {RegionComparisonDataset} */
 export function comparisonExportDataset(data, state, viewport, cpiReference = null) {
 	const metrics = state.charts.map(comparisonMetric);
 	const rows = state.regions.flatMap((id) =>
@@ -10,18 +19,18 @@ export function comparisonExportDataset(data, state, viewport, cpiReference = nu
 			.filter((row) => row.time >= viewport.start && row.time < viewport.end)
 			.map((row) => ({
 				period: comparisonPeriod(row.time, state.interval),
-				region: COMPARISON_REGIONS.find((region) => region.value === id)?.label ?? id,
+				region: regionLabel(id, COMPARISON_REGIONS),
 				...Object.fromEntries(
 					metrics.map((metric) => [metric.id, comparisonMetricValue(row, metric.id, state.basis)])
 				)
 			}))
 	);
 	return {
-		key: /** @type {const} */ ('table'),
+		key: 'regions',
 		title: 'Region comparison',
 		columns: [
-			{ key: 'period', header: 'Period', type: /** @type {const} */ ('string') },
-			{ key: 'region', header: 'Region', type: /** @type {const} */ ('string') },
+			{ key: 'period', header: 'Period', type: 'string' },
+			{ key: 'region', header: 'Region', type: 'string' },
 			...metrics.map((metric) => ({
 				key: metric.id,
 				header:
@@ -35,9 +44,24 @@ export function comparisonExportDataset(data, state, viewport, cpiReference = nu
 		cpiReference
 	};
 }
-/** @param {ReturnType<typeof comparisonExportDataset>} dataset */
-export const comparisonCsv = (dataset) => datasetToCsv(dataset, '+00:00');
-/** @param {ReturnType<typeof comparisonExportDataset>} dataset @param {string} url @param {import('./region-comparison.js').RegionComparisonSelection} state */
+
+/** @param {RegionComparisonDataset} dataset */
+export const regionComparisonCsv = (dataset) => datasetToCsv(dataset, CALENDAR_ZONE);
+
+/** `tracker-regions-<interval>-<first period>-to-<last period>.<ext>`.
+ * @param {RegionComparisonSelection} state @param {{start:number,end:number}} viewport
+ * @param {'csv' | 'xlsx'} extension */
+export function comparisonFileName(state, viewport, extension) {
+	const month = (/** @type {number} */ ms) => new Date(ms).toISOString().slice(0, 7);
+	return trackerFileName({
+		scope: 'regions',
+		dataset: state.interval,
+		range: `${month(viewport.start)}-to-${month(viewport.end - 1)}`,
+		extension
+	});
+}
+
+/** @param {RegionComparisonDataset} dataset @param {string} url @param {RegionComparisonSelection} state */
 export function comparisonWorkbook(dataset, url, state) {
 	return [
 		summaryToSheet([
@@ -53,14 +77,9 @@ export function comparisonWorkbook(dataset, url, state) {
 			['Source URL', url],
 			['Periods', 'Complete local calendar periods; NEM and WEM aligned by calendar label'],
 			['Percentage basis', state.basis === 'demand' ? 'Gross demand' : 'Source generation'],
-			[
-				'Regions',
-				state.regions
-					.map((id) => COMPARISON_REGIONS.find((r) => r.value === id)?.label ?? id)
-					.join(', ')
-			],
+			['Regions', state.regions.map((id) => regionLabel(id, COMPARISON_REGIONS)).join(', ')],
 			['Method', 'Ratios of component sums; All Regions = NEM + WEM; missing values are blank']
 		]),
-		datasetToSheet(dataset, '+00:00')
+		datasetToSheet(dataset, CALENDAR_ZONE)
 	];
 }

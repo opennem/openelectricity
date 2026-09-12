@@ -1,6 +1,6 @@
 <script>
 	import { mergeProps } from 'bits-ui';
-	import PanelToggle from './PanelToggle.svelte';
+	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
 	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import { getNumberFormat } from '$lib/utils/formatters';
@@ -43,18 +43,14 @@
 </script>
 
 <section aria-label="Window metrics" class="min-w-0 bg-white">
-	<header
-		class="sticky top-0 z-10 flex h-[48px] items-center gap-[10px] border-b border-warm-grey bg-white px-[4px]"
-	>
-		<h3 class="m-0 min-w-0 flex-1 text-right text-sm font-semibold">Metrics</h3>
-		<PanelToggle
-			side="left"
-			open
-			label="Hide metrics"
-			controls="tracker-metrics-panel"
-			onclick={onclose}
-		/>
-	</header>
+	<TrackerPanelHeader
+		side="left"
+		title="Metrics"
+		label="Hide metrics"
+		controls="tracker-metrics-panel"
+		{onclose}
+		class="sticky top-0 z-10"
+	/>
 	<div class="-mb-px grid grid-cols-1">
 		{#each groups as group (group.id)}
 			<div

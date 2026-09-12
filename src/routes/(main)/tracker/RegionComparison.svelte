@@ -1,7 +1,7 @@
 <script>
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { onMount, tick, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import ComparisonChartSelect from './ComparisonChartSelect.svelte';
@@ -13,7 +13,8 @@
 	} from './comparison-metrics.js';
 	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
-	import { createResizeControl } from '$lib/components/ui/panel/resize-control.svelte.js';
+	import { createDockedPanel } from '$lib/components/ui/panel/docked-panel.svelte.js';
+	import { percentPanelBounds } from '$lib/components/ui/panel/panel-bounds.js';
 	import ChartCard from './ChartCard.svelte';
 	import { splitTableLabel } from './table-format.js';
 	import {
@@ -24,8 +25,10 @@
 		pinnedTableEdge,
 		tableValueCell
 	} from './table-styles.js';
-	import PanelToggle from './PanelToggle.svelte';
+	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
+	import PanelRail from './PanelRail.svelte';
 	import RegionComparisonChart from './RegionComparisonChart.svelte';
+	import { CONTRIBUTION_OPTIONS } from './tracker-model.js';
 	import { createRegionComparisonData } from './region-comparison-data.svelte.js';
 	import { comparisonExportDataset } from './region-comparison-export.js';
 	import {
@@ -73,66 +76,49 @@
 	let period = $derived(
 		hover ??
 			focus ??
-			latestCommonComparisonPeriod(source.data, selection.regions, selection.basis, viewport)
+			latestCommonComparisonPeriod(
+				source.data,
+				selection.regions,
+				selection.basis,
+				viewport,
+				metrics.map((metric) => metric.id)
+			)
 	);
 	let tableScrollLeft = $state(0);
 	let panZoomEngaged = $state(false);
 	let pinnedEdgeClass = $derived(pinnedTableEdge(tableScrollLeft));
-	let panelWidth = $state(38);
 	let containerWidth = $state(0);
 	const desktop = new MediaQuery('(min-width: 1024px)');
 	let panelOpen = $derived(selection.table ?? desktop.current);
-	let panelMin = $derived(containerWidth ? Math.min(80, (360 / containerWidth) * 100) : 30);
-	let panelMax = $derived(
-		desktop.current
-			? Math.max(panelMin, Math.min(65, ((containerWidth - 360) / containerWidth) * 100))
-			: 94
-	);
-	let panelSize = $derived(
-		desktop.current ? Math.min(panelMax, Math.max(panelMin, panelWidth)) : 94
-	);
-	/** @type {HTMLButtonElement | undefined} */
-	let toggleButton = $state();
-	/** @type {HTMLButtonElement | undefined} */
-	let closeButton = $state();
 	/** @param {Partial<import('./region-comparison.js').RegionComparisonSelection>} change @param {'push'|'replace'|null} [history] */
 	function select(change, history = 'push') {
 		hover = focus = null;
 		session.select('regionComparison', { ...selection, ...change }, history);
 	}
-	/** @param {boolean} open */
-	async function changePanel(open) {
-		select({ table: open });
-		await tick();
-		(open ? closeButton : toggleButton)?.focus();
-	}
-	const resize = createResizeControl({
-		axis: 'x',
+	// Regions table: a percentage of the container, remembered locally; small
+	// screens overlay it at a fixed width instead.
+	const PANEL_MIN_PX = 360;
+	let panelBounds = $derived(
+		percentPanelBounds({
+			containerWidth,
+			minPx: PANEL_MIN_PX,
+			reservedPx: PANEL_MIN_PX,
+			maxPct: 65,
+			wide: desktop.current,
+			narrowMaxPct: 94
+		})
+	);
+	const panel = createDockedPanel({
+		initial: 38,
+		min: () => panelBounds.min,
+		max: () => panelBounds.max,
+		storageKey: 'tracker-comparison-panel-width',
+		scale: () => (containerWidth ? 100 / containerWidth : 0),
 		inverted: true,
 		step: 2,
-		get: () => panelSize,
-		set: (value) => {
-			panelWidth = value;
-		},
-		min: () => panelMin,
-		max: () => panelMax,
-		scale: () => (containerWidth ? 100 / containerWidth : 0),
-		commit: () => {
-			try {
-				localStorage.setItem('tracker-comparison-panel-width', String(panelWidth));
-			} catch {
-				/* Optional persistence. */
-			}
-		}
+		setOpen: (open) => select({ table: open })
 	});
-	onMount(() => {
-		try {
-			const saved = Number(localStorage.getItem('tracker-comparison-panel-width'));
-			if (saved > 0) panelWidth = saved;
-		} catch {
-			/* Optional persistence. */
-		}
-	});
+	let panelSize = $derived(desktop.current ? panel.size : 94);
 	/** @param {number} start @param {number} end @param {boolean} settled */
 	function moveViewport(start, end, settled) {
 		select(clampComparisonViewport(start, end, chartBounds), settled ? 'replace' : null);
@@ -168,6 +154,12 @@
 	export function exportDataset() {
 		return ready ? comparisonExportDataset(source.data, selection, viewport, cpi?.reference) : null;
 	}
+	export function getSelection() {
+		return selection;
+	}
+	export function getViewport() {
+		return viewport;
+	}
 	export function isLoading() {
 		return source.pending;
 	}
@@ -178,7 +170,7 @@
 
 <svelte:window
 	onkeydown={(event) => {
-		if (event.key === 'Escape' && !desktop.current && panelOpen) changePanel(false);
+		if (event.key === 'Escape' && !desktop.current && panelOpen) panel.close();
 	}}
 />
 
@@ -201,10 +193,7 @@
 	</div>
 	<FilterSelect
 		selected={selection.basis}
-		options={[
-			{ value: 'demand', label: '% demand' },
-			{ value: 'generation', label: '% generation' }
-		]}
+		options={CONTRIBUTION_OPTIONS}
 		listLabel="Percentage basis"
 		defaultValue="demand"
 		compact
@@ -346,16 +335,16 @@
 			{#if desktop.current}
 				<DragHandle
 					axis="x"
-					onstart={resize.start}
-					onkeydown={resize.keydown}
+					onstart={panel.start}
+					onkeydown={panel.keydown}
 					tabindex={0}
 					role="separator"
 					aria-orientation="vertical"
 					aria-label="Resize regions panel"
-					aria-valuemin={panelMin}
-					aria-valuemax={panelMax}
+					aria-valuemin={panelBounds.min}
+					aria-valuemax={panelBounds.max}
 					aria-valuenow={Math.round(panelSize)}
-					active={resize.dragging}
+					active={panel.dragging}
 					alwaysShowGrip
 					class="w-4"
 				/>
@@ -366,25 +355,20 @@
 				defaultSize={panelSize}
 				containerSize={containerWidth}
 				showDragHandle={false}
-				externalResizing={resize.dragging}
-				onclose={() => changePanel(false)}
+				externalResizing={panel.dragging}
+				onclose={panel.close}
 				class={`z-20 flex shrink-0 border-l border-warm-grey bg-white ${desktop.current ? 'relative' : 'absolute inset-y-0 right-0 shadow-xl'}`}
 			>
 				{#snippet header()}
-					<div
+					<TrackerPanelHeader
 						id="tracker-regions-panel"
-						class="flex h-[48px] shrink-0 items-center gap-[10px] border-b border-warm-grey px-[4px]"
-					>
-						<PanelToggle
-							side="right"
-							open
-							label="Hide regions table"
-							controls="tracker-regions-panel"
-							onclick={() => changePanel(false)}
-							bind:el={closeButton}
-						/>
-						<h3 class="m-0 text-sm font-semibold">Regions</h3>
-					</div>
+						side="right"
+						title="Regions"
+						label="Hide regions table"
+						controls="tracker-regions-panel"
+						onclose={panel.close}
+						bind:closeButton={panel.closer}
+					/>
 				{/snippet}
 				<div class="border-b border-warm-grey px-4 py-3 text-xs text-mid-grey" role="status">
 					{period == null
@@ -477,18 +461,13 @@
 				</div>
 			</ResizablePanel>
 		{:else}
-			<div
-				class="z-20 flex w-[48px] shrink-0 flex-col items-center border-l border-warm-grey bg-white pt-[4px]"
-			>
-				<PanelToggle
-					side="right"
-					open={false}
-					label="Show regions table"
-					controls="tracker-regions-panel"
-					onclick={() => changePanel(true)}
-					bind:el={toggleButton}
-				/>
-			</div>
+			<PanelRail
+				side="right"
+				label="Show regions table"
+				controls="tracker-regions-panel"
+				onopen={panel.open}
+				bind:opener={panel.opener}
+			/>
 		{/if}
 	</div>
 </section>

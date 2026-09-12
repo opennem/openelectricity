@@ -36,14 +36,14 @@
  * @typedef {Object} TrackerUrlState
  * @property {string} region
  * @property {string} group - Fuel-tech grouping value
- * @property {boolean} [compareRegions]
- * @property {import('./region-comparison.js').RegionComparisonSelection} [regionComparison]
+ * @property {boolean} compareRegions
+ * @property {import('./region-comparison.js').RegionComparisonSelection} regionComparison
  * @property {'timeline' | 'average' | 'daily'} profileView
  * @property {7 | 14 | 28} profileDays
  * @property {'power' | 'price'} profileMetric
  * @property {string} profileSeries
  * @property {string} profileEnd - Last complete local day, or empty for relative yesterday
- * @property {import('./comparison.js').Comparison | null} [comparison] - Exact displayed interval starts, or null when closed
+ * @property {import('./comparison.js').Comparison | null} comparison - Exact displayed interval starts, or null when closed
  * @property {string[]} hiddenSeries - Hidden group IDs, validated against the grouping
  * @property {ContributionMode} contributionMode
  * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
@@ -140,7 +140,7 @@
  */
 
 /**
- * The datasets the options menu can export, in menu order.
+ * The timeline datasets the options menu can export, in menu order.
  * @typedef {'generation' | 'market' | 'emissions' | 'table'} ExportDatasetKey
  */
 
@@ -154,9 +154,11 @@
  */
 
 /**
- * A tabular dataset ready for either serialiser.
+ * A tabular dataset ready for either serialiser. Every tracker view exports
+ * through this shape — the timeline datasets, the fuel-tech table, the
+ * time-of-day profile, the two-date comparison and the region comparison.
  * @typedef {Object} ExportDataset
- * @property {ExportDatasetKey} key
+ * @property {ExportDatasetKey | 'profile' | 'comparison' | 'regions'} key
  * @property {string} title
  * @property {ExportColumn[]} columns
  * @property {Array<Record<string, any>>} rows

@@ -5,6 +5,7 @@
  */
 
 import {
+	ALL_TIER_MIN_DAYS,
 	getDefaultIntervalForRange,
 	getIntervalOptionsForDays,
 	getPresetByDays
@@ -28,9 +29,23 @@ export const DEFAULT_REGION = '_all';
  *  the analytical groupings are a pick away in the nav bar's options menu. */
 export const DEFAULT_GROUP = 'simple';
 
-/** A custom span longer than this counts as the All tier — the same threshold
- *  `ChartRangeBar` uses to offer the calendar-period filter. */
-const ALL_TIER_MIN_DAYS = 550;
+/**
+ * The contribution bases in menu order — gross demand first, the default.
+ * @type {Array<{ value: import('./types.js').ContributionMode, label: string }>}
+ */
+export const CONTRIBUTION_OPTIONS = [
+	{ value: 'demand', label: '% demand' },
+	{ value: 'generation', label: '% generation' }
+];
+
+/**
+ * The short "% demand" / "% generation" label the menus, table header and
+ * exports all use for a contribution basis.
+ * @param {import('./types.js').ContributionMode} mode
+ */
+export function contributionLabel(mode) {
+	return CONTRIBUTION_OPTIONS.find((option) => option.value === mode)?.label ?? `% ${mode}`;
+}
 
 /**
  * Whole days spanned by a window, never less than one — the day count the

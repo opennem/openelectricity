@@ -20,11 +20,12 @@ intensity and renewables proportion start visible. Each generation/proportion pa
 shares one chart-selector entry and uses the existing Timeline tabs to switch its
 presentation. Newly selected fuel charts default to Proportion; the table and
 exports follow the selected presentation, which is preserved in the URL. The
-existing bordered Facilities FilterDropdown stages chart selections until
+shared bordered `FilterDropdown` (`$lib/components/filters`, promoted from the
+facilities route) stages chart selections until
 Apply, updating charts and their table/export columns. Its standard grouped
 checkboxes, Select all and Reset controls are reused. A shared gross-demand / source-generation
 selector controls generation proportions; net imports always uses gross demand.
-The shared Regions table controls regional visibility across charts and follows hover, pinned inspection or the latest common complete period.
+The shared Regions table controls regional visibility across charts and follows hover, pinned inspection or the latest common complete period (the latest period where every selected region has a value for every displayed chart).
 NSW, QLD, SA, TAS, VIC and WA (WEM) start selected; NEM and All Regions (NEM + WEM)
 are optional. Colours come from the shared region registry. Chart heights and
 panel width persist separately from Timeline; the panel starts closed on mobile.
@@ -84,9 +85,18 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow.
 ### Timeline and profile composition
 
 - **`+page.svelte`** — page chrome, navigation menus, notices and download actions.
+  Its `<main>` gains `data-hydrated` once mounted: the server-rendered charts
+  already contain svgs, so automation waits for this marker before clicking
+  (a click on the SSR skeleton is lost).
 - **`tracker-session.svelte.js`** — one per-page owner of selection state and
   the shared range controller. Explicit range/date/interval picks push history;
   settled pan/zoom replaces it. The canvas registers charts and providers here.
+- **`tracker-url.js`** — `normaliseTrackerState()` is the one place the
+  selection's invariants live (valid region/group, hidden and profile series
+  within the grouping, spot-price-gated profile metric, All-tier calendar
+  filter); parsing, serialising and the session all pass through it. The
+  session also exposes `view`, `timeZone` and `ianaTimeZone` so components
+  do not re-derive them.
 - **`tracker-navigation.js`** — the sole URL writer and restoration adapter,
   using `tracker-url.js` for parsing/serialisation. SvelteKit shallow history
   updates the address bar without updating `page.url`, so Back/Forward uses
@@ -99,26 +109,49 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow.
   browser history restores them.
 - **`AverageDayStack.svelte`** — all-technology average-day stacked area above
   the individual profiles, including while viewing daily overlays or spot price.
-  **`profile-data.svelte.js`** shares the bounded source lifecycle: one power
-  source serves both stack and individual power, with price enabled on demand.
+  **`profile-data.svelte.js`** shares the bounded source lifecycle on the
+  headless provider core (`exactWindow`, so the selected days are fetched with
+  no speculative buffer): one power source serves both stack and individual
+  power, with price enabled on demand, and each source exposes `rows`, `meta`,
+  `pending`, `error` and `retry()`.
 - **`ProfileChart.svelte`** / **`profile-chart.js`** — adapt profile rows to the
   existing StratumChart, sharing its rendering, tooltips, options and gestures.
   Clock-only axes and bounded viewports keep the synthetic chart date invisible.
 - **`DateComparison.svelte`** / **`comparison.js`** — compare two accepted
   generation display buckets using Stratum's categorical bars, a signed-value
-  table and CSV. No separate fetch or data manager.
+  table and CSV. No separate fetch or data manager. Rows carry `isLoad` by the
+  fuel-tech table's rule (a listed load group, or a negative reading), and the
+  table uses the shared `table-styles.js`.
 - **`tracker-providers.svelte.js`** — enables and coordinates the six optional
   headless providers through their existing shared request/cache lifecycle.
 - **`tracker-data.svelte.js`** — accepts producer-tagged snapshots only for
   the current region, grouping, metric, intervals, bounds, calendar filter and
   exclusions. Reactive chart readiness releases held frames without polling.
 - **`tracker-table.svelte.js`** — derives table sections from matching
-  generation/provider data. The canvas retains one complete table and its
-  descriptive metadata during refreshes; exports use the same accepted values.
+  generation/provider data and owns the accepted table: one complete table and
+  its descriptive metadata is held during refreshes (`accepted`,
+  `valuesPending`, `displayedRows`); exports use the same accepted values.
+- **`tracker-metrics.svelte.js`** — the window-metrics feed: per-metric
+  readiness and inputs from accepted chart snapshots plus the demand and
+  renewables providers. `tracker-providers.svelte.js` decides which provider
+  serves the renewables share (`renewablesSource`, `renewableShareRows`) for
+  the overlay, the metrics and retries alike.
+- **`tracker-visibility.js`** — pure show/hide rules for the table's row and
+  overlay toggles (solo, restore-on-last, overlay solo); the canvas applies the
+  result through the session.
 - **`tracker-chart-overlays.js`** — pure rolling renewable-share calculation.
-- **`resize-control.svelte.js`** (shared UI helper) — bounded pointer and keyboard
-  resizing, teardown on unmount and optional persistence. Arrow keys resize,
-  Shift increases the step, and Home/End select the bounds.
+- **`TrackerPanelHeader.svelte`** / **`PanelRail.svelte`** — the 48px header
+  (collapse control on the outer edge, title, panel actions) and the 48px
+  collapsed rail (reopen control plus any controls that must stay reachable)
+  shared by the metrics pane, the fuel-tech table and the regions table.
+- **`docked-panel.svelte.js`** (shared UI helper, `$lib/components/ui/panel`)
+  — a resizable pane on the shared `resize-control` (pointer and keyboard,
+  teardown on unmount): bounded size, a remembered size restored after mount,
+  and the open/close focus hand-off between a panel's close control and its
+  rail opener. The metrics pane, the fuel-tech table, the regions table and
+  `ChartCard` heights all use it; `panel-bounds.js` holds the pure
+  percentage-of-container bounds. Arrow keys resize, Shift increases the step,
+  and Home/End select the bounds.
 - **`tracker-overlays.js`** — the registry behind the generation chart's
   URL-owned overlays: canonical `overlay=` order, the demand/renewables line
   colours and the curtailment bands (ids, labels, colours, stacking order).
@@ -202,7 +235,13 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow.
   groups. Values are base units (MW/MWh, $, $/MWh, tCO2e, kgCO2e/MWh) with the
   unit in the header; the volume-weighted price and intensity lines are
   re-derived from their exported components. Drawing-only calendar-band
-  closing points are omitted. Timestamps are
+  closing points are omitted. Every view exports through the same
+  `ExportDataset` shape and `datasetToCsv`: the profile and the two-date
+  comparison build theirs in the pure `time-of-day.js` and `comparison.js`
+  modules, and `trackerFileName` names every download (time-of-day, date
+  comparison and region comparison included) with the NEM's `_all` scope
+  written as `nem`. Zone labels come from `networkTimeZoneLabel`, so every
+  export states the zone as "AEST (UTC+10:00)". Timestamps are
   network-local —
   offset-suffixed text in CSV, real date-time cells in XLSX. The workbook
   writer (`write-excel-file`, via `$lib/utils/download-xlsx.js`) is imported
@@ -379,7 +418,8 @@ local display state and do not alter aggregation, coverage tables or CSV.
 The documented browser caller is `TimeOfDay.svelte` via `profile-data.svelte.js`, using the existing
 `ChartDataManager` and `/api/network/data` (`metric=power|price`, `interval=5m`).
 Each source requests only the selected complete days, with no speculative widening or
-cross-grain prefetch; at most 28 days per source/selection. Power stays mounted
+cross-grain prefetch; at most 28 days per source/selection. Widening the window
+fetches only the missing earlier days (the provider's cache is gap-aware). Power stays mounted
 for the overview; price is fetched only when selected. Scope/window changes dispose
 the prior consumer, and identity checks prevent stale displays/exports. Shared
 response caching, deduplication and bounded retry/error handling remain in use.
@@ -599,13 +639,33 @@ through the URL schema above.
 
 ## Tests
 
-Colocated vitest suites: `tracker-url.test.js`, `tracker-model.test.js`,
-`tracker-overlays.test.js`, `table-model.test.js`, `table-format.test.js`,
-`tracker-prefetch.test.js`, `tracker-export.test.js`,
-`page-load.test.js`, `tracker-session.test.js`, `tracker-data.test.js`.
+Every pure module has a colocated vitest suite (`thing.js` → `thing.test.js`):
+URL codec, model, overlays, visibility, table model and formatting, window
+metrics, comparison metrics, date and region comparisons, exports, PNG layout,
+live follow, prefetch, time of day and the profile chart adapter.
+`page-load.test.js`, `tracker-session.test.js` and `tracker-data.test.js`
+cover the page load and the rune-based state owners that use only `$state` and
+`$derived`.
+
+Rune modules whose behaviour depends on `$effect` are tested as
+`*.svelte.test.js` in the `runes` vitest project (`vite.config.js`), which
+compiles them for the client under jsdom so effects run and `flushSync`
+flushes; the node project compiles rune modules for the server, where effects
+never run. `tracker-table` and `tracker-metrics` are driven with reactive
+provider stand-ins; `tracker-providers`, `profile-data` and
+`region-comparison-data` run their real `ChartDataManager` lifecycles against
+a stubbed `fetch` (`stubNetworkFetch` in `test-fixtures.svelte.js`, with fake
+timers for the request debounce and retry backoff), asserting which requests
+each selection issues, exact windows, gap-aware widening, enable gating,
+failure roll-up and retry.
+
 Live-data E2E smoke: `tests/e2e/tracker.spec.js`. Deterministic response-order,
 failure/retry, empty-data, history, resize, export-content and responsive checks:
-`tests/e2e/tracker-refactor.spec.js`.
+`tests/e2e/tracker-refactor.spec.js`; region comparison flows:
+`tests/e2e/tracker-regions.spec.js`. The specs share `tests/e2e/helpers/tracker.js`:
+the OE-shaped response synthesisers (`trackerFixture`, `regionsFixture`), the
+hydration wait, card/table locators, the options-menu download flow and the
+horizontal-scroll check.
 
 ## Deferred
 

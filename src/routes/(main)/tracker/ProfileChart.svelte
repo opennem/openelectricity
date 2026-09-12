@@ -1,5 +1,5 @@
 <script>
-	import { onDestroy } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import {
@@ -15,10 +15,14 @@
 	let { rows, names, labels, colours, title, zone, stacked = false, price = false } = $props();
 	let viewport = $state.raw({ start: PROFILE_DAY_START, end: PROFILE_DAY_END });
 	let engaged = $state(false);
+	// Units and chart type are constructor options, so the store is rebuilt
+	// only when the metric or stacking changes. Everything else syncs into the
+	// same store, keeping the user's resized height, legend and pinned slot
+	// when the technology or window changes.
 	let chart = $derived.by(() => {
 		const next = new ChartStore({
 			key: Symbol('time-of-day'),
-			title,
+			title: untrack(() => title),
 			prefix: price ? '' : 'M',
 			displayPrefix: price ? '' : 'M',
 			allowedPrefixes: price ? [] : ['M', 'G'],
@@ -28,10 +32,6 @@
 			hideDataOptions: true,
 			hideChartTypeOptions: true
 		});
-		next.seriesData = rows;
-		next.seriesNames = names;
-		next.seriesLabels = labels;
-		next.seriesColours = colours;
 		// Match the main generation chart: negative power pulls the cumulative
 		// stack down. Average power uses its smooth curve, price remains stepped.
 		next.useDivergingStack = false;
@@ -42,9 +42,16 @@
 		next.chartTooltips.showTotal = false;
 		next.maximumFractionDigits = 1;
 		next.formatTickX = profileClock;
-		next.formatTooltipX = (date) =>
-			`${profileClock(date)}–${profileClock(Number(date) + PROFILE_SLOT_MS)} · UTC${zone}`;
 		return next;
+	});
+	$effect(() => {
+		chart.title = title;
+		chart.seriesData = rows;
+		chart.seriesNames = names;
+		chart.seriesLabels = labels;
+		chart.seriesColours = colours;
+		chart.formatTooltipX = (date) =>
+			`${profileClock(date)}–${profileClock(Number(date) + PROFILE_SLOT_MS)} · UTC${zone}`;
 	});
 	// Adapt the bounded profile viewport to Stratum's interval-start step domain.
 	$effect(() => {

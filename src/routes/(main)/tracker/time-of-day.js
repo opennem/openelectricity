@@ -1,7 +1,13 @@
-import { escapeCsv } from '$lib/utils/download-csv.js';
+import {
+	networkTimeZoneLabel,
+	offsetMsFromOffset
+} from '$lib/components/charts/v2/network-time.js';
 
 const DAY = 86_400_000;
 const SLOT = 30 * 60_000;
+
+/** The earliest last day a profile accepts — complete 5-minute days exist from here. */
+export const PROFILE_MIN_DATE = '1999-01-01';
 
 /** @param {unknown} value @returns {'timeline' | 'average' | 'daily'} */
 export function normaliseProfileView(value) {
@@ -19,7 +25,7 @@ export function normaliseProfileEnd(value) {
 	const ms = Date.parse(`${value}T00:00:00Z`);
 	return Number.isFinite(ms) &&
 		new Date(ms).toISOString().slice(0, 10) === value &&
-		value >= '1999-01-01'
+		value >= PROFILE_MIN_DATE
 		? value
 		: '';
 }
@@ -27,9 +33,7 @@ export function normaliseProfileEnd(value) {
 /** Complete network-local days, half-open [start, end). Offsets deliberately ignore DST.
  * @param {number} nowMs @param {string} timeZone @param {number} days @param {string} [lastDate] */
 export function profileWindow(nowMs, timeZone, days, lastDate = '') {
-	const sign = timeZone.startsWith('-') ? -1 : 1;
-	const [hours, minutes] = timeZone.slice(1).split(':').map(Number);
-	const offset = sign * (hours * 60 + minutes) * 60_000;
+	const offset = offsetMsFromOffset(timeZone);
 	const today = Math.floor((nowMs + offset) / DAY) * DAY;
 	const requested = normaliseProfileEnd(lastDate);
 	const endLocal = requested ? Math.min(Date.parse(`${requested}T00:00:00Z`) + DAY, today) : today;
@@ -110,31 +114,42 @@ export function buildAverageDayStack(rows, names, window) {
 	return layers;
 }
 
-/** @param {ReturnType<typeof buildDailyProfile>} profile
+/** The profile as an export dataset for the shared CSV serialiser: the
+ * average, every daily value and the native sample counts behind each.
+ * @param {ReturnType<typeof buildDailyProfile>} profile
  * @param {ReturnType<typeof profileWindow>} window
- * @param {{label: string, unit: string, region: string, timeZone: string}} context */
-export function profileCsv(profile, window, context) {
+ * @param {{label: string, unit: string, region: string, timeZone: string}} context
+ * @returns {import('./types.js').ExportDataset} */
+export function profileDataset(profile, window, context) {
 	const { label, unit, region, timeZone } = context;
-	return [
-		[
-			'Region',
-			'Network time',
-			'Series',
-			'Time of day',
-			`Average (${unit})`,
-			'Days available',
-			...window.dates.flatMap((date) => [`${date} (${unit})`, `${date} samples`])
+	return {
+		key: 'profile',
+		title: 'Time of day',
+		columns: [
+			{ key: 'region', header: 'Region', type: 'string' },
+			{ key: 'timeZone', header: 'Network time', type: 'string' },
+			{ key: 'series', header: 'Series', type: 'string' },
+			{ key: 'label', header: 'Time of day', type: 'string' },
+			{ key: 'average', header: `Average (${unit})`, type: 'number' },
+			{ key: 'days', header: 'Days available', type: 'number' },
+			...window.dates.flatMap((date, i) => [
+				{ key: `value${i}`, header: `${date} (${unit})`, type: /** @type {const} */ ('number') },
+				{ key: `samples${i}`, header: `${date} samples`, type: /** @type {const} */ ('number') }
+			])
 		],
-		...profile.map((row) => [
+		rows: profile.map((row) => ({
 			region,
-			`UTC${timeZone}`,
-			label,
-			row.label,
-			row.average,
-			row.days,
-			...row.values.flatMap((value, i) => [value, row.samples[i]])
-		])
-	]
-		.map((row) => row.map(escapeCsv).join(','))
-		.join('\r\n');
+			timeZone: networkTimeZoneLabel(timeZone),
+			series: label,
+			label: row.label,
+			average: row.average,
+			days: row.days,
+			...Object.fromEntries(
+				row.values.flatMap((value, i) => [
+					[`value${i}`, value],
+					[`samples${i}`, row.samples[i]]
+				])
+			)
+		}))
+	};
 }

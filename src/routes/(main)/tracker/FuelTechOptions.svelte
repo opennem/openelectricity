@@ -7,17 +7,15 @@
 		OptionsMenuDivider
 	} from '$lib/components/ui/options-menu';
 	import { getGroup, GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+	import { CONTRIBUTION_OPTIONS, contributionLabel } from './tracker-model.js';
 
 	/** @type {{group: string, ongroupchange: (value: string) => void,
 	 * contributionMode?: import('./types.js').ContributionMode,
 	 * oncontributionchange?: (value: import('./types.js').ContributionMode) => void}} */
 	let { group, ongroupchange, contributionMode, oncontributionchange } = $props();
-	const contributionOptions = /** @type {const} */ ([
-		{ value: 'demand', label: '% demand' },
-		{ value: 'generation', label: '% generation' }
-	]);
+	const contributionOptions = CONTRIBUTION_OPTIONS;
 	let summary = $derived(
-		`${getGroup(group).label}${contributionMode ? ` · % ${contributionMode}` : ''}`
+		`${getGroup(group).label}${contributionMode ? ` · ${contributionLabel(contributionMode)}` : ''}`
 	);
 </script>
 

@@ -36,8 +36,11 @@
 	import TimeOfDay from './TimeOfDay.svelte';
 	import RegionComparison from './RegionComparison.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
-	import { comparisonCsv, comparisonWorkbook } from './region-comparison-export.js';
-	import { normaliseRegionComparison } from './region-comparison.js';
+	import {
+		comparisonFileName,
+		comparisonWorkbook,
+		regionComparisonCsv
+	} from './region-comparison-export.js';
 	import PngExport from './PngExport.svelte';
 	import { capturePngSnapshot, settleChartAnimations } from './png-export.js';
 	import {
@@ -77,10 +80,10 @@
 	let selectedRegion = $derived(session.selection.region);
 	let tablePanelOpen = $derived(session.selection.tablePanelOpen);
 	let bucketFilter = $derived(session.selection.bucketFilter);
-	let comparingRegions = $derived(!!session.selection.compareRegions);
-	let timeOfDay = $derived(!comparingRegions && session.selection.profileView !== 'timeline');
-	let timeline = $derived(!comparingRegions && !timeOfDay);
-	let view = $derived(comparingRegions ? 'regions' : timeOfDay ? 'average' : 'timeline');
+	let view = $derived(session.view);
+	let comparingRegions = $derived(view === 'regions');
+	let timeOfDay = $derived(view === 'average');
+	let timeline = $derived(view === 'timeline');
 	const viewOptions = [
 		{ value: 'timeline', label: 'Timeline' },
 		{ value: 'average', label: 'Time of day' },
@@ -92,6 +95,9 @@
 	let notice = $state('');
 	/** @type {HTMLElement} */
 	let captureRoot;
+	// Set after mount so automation can tell the hydrated page from the SSR
+	// skeleton before interacting; the server-rendered charts already contain svgs.
+	let hydrated = $state(false);
 	let pngSnapshot = $state.raw(/** @type {import('./png-export.js').PngSnapshot | null} */ (null));
 	async function openPngExport() {
 		try {
@@ -115,7 +121,8 @@
 		endDate: rangeControl.pickerEndDate,
 		maxDate: rangeControl.maxDate
 	});
-	const currentUrlState = () => session.selection;
+	/** The current selection as a shareable address — copied links and export provenance. */
+	const shareUrl = () => copiedTrackerUrl(new URL(window.location.href), session.selection);
 	let downloadItems = $derived(
 		comparingRegions
 			? [
@@ -151,7 +158,7 @@
 	}
 
 	async function copyLink() {
-		const url = copiedTrackerUrl(new URL(window.location.href), currentUrlState());
+		const url = shareUrl();
 		try {
 			await navigator.clipboard.writeText(url.href);
 			notice = 'Link copied.';
@@ -182,7 +189,7 @@
 		}
 		return {
 			...context,
-			sourceUrl: copiedTrackerUrl(new URL(window.location.href), currentUrlState()).href,
+			sourceUrl: shareUrl().href,
 			generatedAtMs: Date.now()
 		};
 	}
@@ -190,9 +197,13 @@
 	/** @param {string} key */
 	function handleDownloadItem(key) {
 		if (comparingRegions) {
-			const dataset = regionCanvas?.exportDataset();
-			if (dataset?.rows.length)
-				downloadCsv(comparisonCsv(dataset), 'openelectricity-region-comparison.csv');
+			const regions = regionCanvas;
+			const dataset = regions?.exportDataset();
+			if (regions && dataset?.rows.length)
+				downloadCsv(
+					regionComparisonCsv(dataset),
+					comparisonFileName(regions.getSelection(), regions.getViewport(), 'csv')
+				);
 			return;
 		}
 		const context = exportContext(/** @type {ExportDatasetKey} */ (key));
@@ -212,16 +223,13 @@
 
 	async function downloadWorkbook() {
 		if (comparingRegions) {
-			const dataset = regionCanvas?.exportDataset();
-			if (dataset?.rows.length) {
+			const regions = regionCanvas;
+			const dataset = regions?.exportDataset();
+			if (regions && dataset?.rows.length) {
 				try {
 					await downloadXlsx(
-						comparisonWorkbook(
-							dataset,
-							copiedTrackerUrl(new URL(window.location.href), currentUrlState()).href,
-							normaliseRegionComparison(session.selection.regionComparison)
-						),
-						'openelectricity-region-comparison.xlsx'
+						comparisonWorkbook(dataset, shareUrl().href, regions.getSelection()),
+						comparisonFileName(regions.getSelection(), regions.getViewport(), 'xlsx')
 					);
 				} catch {
 					notice = 'Could not build the workbook.';
@@ -248,6 +256,7 @@
 	}
 
 	onMount(() => {
+		hydrated = true;
 		// Below the tablet breakpoint the side-by-side panel would crush the
 		// charts — default it closed unless the URL explicitly asked for it.
 		// SSR stays stable (open); this only adjusts after hydration.
@@ -424,7 +433,11 @@
 					</div>
 				{/if}
 
-				<main bind:this={captureRoot} class="flex min-h-0 flex-1 flex-col overflow-hidden">
+				<main
+					bind:this={captureRoot}
+					class="flex min-h-0 flex-1 flex-col overflow-hidden"
+					data-hydrated={hydrated || undefined}
+				>
 					{#if comparingRegions}
 						<RegionComparison bind:this={regionCanvas} {session} cpi={data.comparisonCpi} />
 					{:else if timeOfDay}

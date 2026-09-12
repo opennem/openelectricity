@@ -1,4 +1,3 @@
-import { parseRegionComparison, applyRegionComparison } from './region-comparison.js';
 /**
  * URL (de)serialisation for the tracker page. Compact navigation state only —
  * scope, range, card modes and analytical selections. Ephemeral state (hover, pan/zoom
@@ -34,6 +33,11 @@ import {
 } from '$lib/components/charts/v2/bucket-filter.js';
 import { GROUP_OPTIONS, getGroup } from '$lib/components/charts/network/groups.js';
 import { TRACKER_OVERLAYS } from './tracker-overlays.js';
+import {
+	applyRegionComparison,
+	normaliseRegionComparison,
+	parseRegionComparison
+} from './region-comparison.js';
 import { normaliseProfileView, normaliseProfileDays, normaliseProfileEnd } from './time-of-day.js';
 import { hasSpotPrice, TRACKER_REGION_VALUES } from './tracker-regions.js';
 import { normaliseComparison } from './comparison.js';
@@ -92,135 +96,145 @@ export function validBucketFilterFor(filter, range) {
 }
 
 /**
+ * Every invariant the navigation state must satisfy, applied in one place so
+ * parsing a URL, serialising one and the per-page session cannot disagree:
+ * unknown regions/groups fall back to the defaults, hidden series and the
+ * profile series must belong to the selected grouping, the profile metric
+ * needs a spot price, and the calendar filter needs the All tier.
+ * @param {{ [K in keyof TrackerUrlState]?: unknown }} value
+ * @returns {TrackerUrlState}
+ */
+export function normaliseTrackerState(value) {
+	const region =
+		typeof value.region === 'string' && TRACKER_REGION_VALUES.includes(value.region)
+			? value.region
+			: DEFAULT_REGION;
+	const group =
+		typeof value.group === 'string' && GROUP_VALUES.includes(value.group)
+			? value.group
+			: DEFAULT_GROUP;
+	const range = normaliseRange(value.range);
+	const profileSeries = typeof value.profileSeries === 'string' ? value.profileSeries : '';
+	return {
+		region,
+		group,
+		compareRegions: !!value.compareRegions,
+		regionComparison: normaliseRegionComparison(
+			/** @type {Partial<import('./region-comparison.js').RegionComparisonSelection> | undefined} */ (
+				value.regionComparison ?? undefined
+			)
+		),
+		profileView: normaliseProfileView(value.profileView),
+		profileDays: normaliseProfileDays(value.profileDays),
+		profileMetric: value.profileMetric === 'price' && hasSpotPrice(region) ? 'price' : 'power',
+		profileSeries: getGroup(group).order.includes(profileSeries) ? profileSeries : '',
+		profileEnd: normaliseProfileEnd(value.profileEnd),
+		comparison: normaliseComparison(value.comparison),
+		hiddenSeries: normaliseHiddenSeries(value.hiddenSeries, group),
+		contributionMode: normaliseContributionMode(value.contributionMode),
+		generationTransform: normaliseDataTransform(value.generationTransform),
+		marketValueTransform: normaliseDataTransform(value.marketValueTransform),
+		range,
+		bucketFilter: validBucketFilterFor(
+			typeof value.bucketFilter === 'string' ? value.bucketFilter : null,
+			range
+		),
+		priceMode: value.priceMode === 'market_value' ? 'market_value' : 'price',
+		emissionsMode: normaliseEmissionsMode(value.emissionsMode),
+		overlays: normaliseTrackerOverlays(value.overlays),
+		tablePanelOpen: value.tablePanelOpen !== false,
+		fullscreen: value.fullscreen !== false
+	};
+}
+
+/**
  * @param {URLSearchParams} params
  * @param {{ nowMs: number }} context - `nowMs` anchors relative presets
  * @returns {TrackerUrlState}
  */
 export function parseTrackerUrl(params, context) {
-	const requestedRegion = params.get('region') || DEFAULT_REGION;
-	const region = TRACKER_REGION_VALUES.includes(requestedRegion) ? requestedRegion : DEFAULT_REGION;
-	const requestedGroup = params.get('group') || DEFAULT_GROUP;
-	const group = GROUP_VALUES.includes(requestedGroup) ? requestedGroup : DEFAULT_GROUP;
-	const range = normaliseRange(
-		parseRangeParams(params, { nowMs: context.nowMs, includeRolling: true })
-	);
-	return {
-		region,
-		group,
-		compareRegions: params.get('view') === 'regions',
+	const compareRegions = params.get('view') === 'regions';
+	return normaliseTrackerState({
+		region: params.get('region') || DEFAULT_REGION,
+		group: params.get('group') || DEFAULT_GROUP,
+		compareRegions,
 		regionComparison: parseRegionComparison(params),
-		profileView: normaliseProfileView(
-			params.get('view') === 'regions' ? params.get('profile-view') : params.get('view')
-		),
-		profileDays: normaliseProfileDays(params.get('profile-days')),
-		profileMetric:
-			params.get('profile-metric') === 'price' && hasSpotPrice(region) ? 'price' : 'power',
-		profileSeries: getGroup(group).order.includes(params.get('profile-series') ?? '')
-			? (params.get('profile-series') ?? '')
-			: '',
-		profileEnd: normaliseProfileEnd(params.get('profile-end')),
+		// Legacy `profile-view` links stay readable while comparing regions.
+		profileView: compareRegions ? params.get('profile-view') : params.get('view'),
+		profileDays: params.get('profile-days'),
+		profileMetric: params.get('profile-metric'),
+		profileSeries: params.get('profile-series') ?? '',
+		profileEnd: params.get('profile-end'),
 		comparison:
 			params.get('compare') === '1'
-				? normaliseComparison({ a: params.get('compare-a'), b: params.get('compare-b') })
+				? { a: params.get('compare-a'), b: params.get('compare-b') }
 				: null,
-		hiddenSeries: normaliseHiddenSeries((params.get('hidden') ?? '').split(','), group),
-		contributionMode: normaliseContributionMode(params.get('contribution')),
-		generationTransform: normaliseDataTransform(params.get('transform')),
-		marketValueTransform: normaliseDataTransform(params.get('market-transform')),
-		range,
-		bucketFilter: validBucketFilterFor(params.get('filter'), range),
+		hiddenSeries: (params.get('hidden') ?? '').split(','),
+		contributionMode: params.get('contribution'),
+		generationTransform: params.get('transform'),
+		marketValueTransform: params.get('market-transform'),
+		range: parseRangeParams(params, { nowMs: context.nowMs, includeRolling: true }),
+		bucketFilter: params.get('filter'),
 		priceMode: params.get('price') === 'mv' ? 'market_value' : 'price',
-		emissionsMode: normaliseEmissionsMode(params.get('emissions')),
-		overlays: normaliseTrackerOverlays((params.get('overlay') ?? '').split(',')),
+		emissionsMode: params.get('emissions'),
+		overlays: (params.get('overlay') ?? '').split(','),
 		tablePanelOpen: params.get('table') !== '0',
 		fullscreen: params.get('fullscreen') !== 'false'
-	};
+	});
 }
 
 /**
- * Materialise navigation state into a URL (mutated and returned).
+ * Materialise navigation state into a URL (mutated and returned). Defaults
+ * are deleted rather than written so the canonical URL stays clean.
  * @param {URL} url
  * @param {Omit<TrackerUrlState, 'fullscreen'>} state
  */
 export function applyTrackerUrl(url, state) {
 	const params = url.searchParams;
-	applyRegionComparison(params, state.regionComparison);
-	const comparison = normaliseComparison(state.comparison);
-	if (comparison) params.set('compare', '1');
-	else params.delete('compare');
+	const next = normaliseTrackerState(state);
+	applyRegionComparison(params, next.regionComparison);
+	/** @param {string} key @param {string | null} value */
+	const set = (key, value) => (value ? params.set(key, value) : params.delete(key));
+
+	set('compare', next.comparison ? '1' : null);
 	for (const side of /** @type {const} */ (['a', 'b'])) {
-		const time = comparison?.[side];
-		if (time != null) params.set(`compare-${side}`, String(time));
-		else params.delete(`compare-${side}`);
+		const time = next.comparison?.[side];
+		set(`compare-${side}`, time == null ? null : String(time));
 	}
-	const profileParams = {
-		view: state.compareRegions
-			? 'regions'
-			: normaliseProfileView(state.profileView) === 'timeline'
-				? ''
-				: state.profileView,
-		'profile-view':
-			state.compareRegions && state.profileView !== 'timeline' ? state.profileView : '',
-		'profile-days': normaliseProfileDays(state.profileDays) === 7 ? '' : String(state.profileDays),
-		'profile-metric': state.profileMetric === 'price' && hasSpotPrice(state.region) ? 'price' : '',
-		'profile-series': getGroup(state.group).order.includes(state.profileSeries)
-			? state.profileSeries
-			: '',
-		'profile-end': normaliseProfileEnd(state.profileEnd)
-	};
-	for (const [key, value] of Object.entries(profileParams)) {
-		if (value) params.set(key, value);
-		else params.delete(key);
-	}
-
-	if (state.region === DEFAULT_REGION) params.delete('region');
-	else params.set('region', state.region);
-
-	if (state.group === DEFAULT_GROUP) params.delete('group');
-	else params.set('group', state.group);
-
-	const hidden = normaliseHiddenSeries(state.hiddenSeries, state.group);
-	if (hidden.length) params.set('hidden', hidden.join(','));
-	else params.delete('hidden');
-
-	if (normaliseContributionMode(state.contributionMode) === 'generation')
-		params.set('contribution', 'generation');
-	else params.delete('contribution');
-
-	for (const [key, value] of [
-		['transform', state.generationTransform],
-		['market-transform', state.marketValueTransform]
-	]) {
-		const transform = normaliseDataTransform(value);
-		if (transform === 'absolute') params.delete(key);
-		else params.set(key, transform);
-	}
-
-	const range = normaliseRange(state.range);
-	const bucketFilter = validBucketFilterFor(state.bucketFilter, range);
-	if (bucketFilter) params.set('filter', bucketFilter);
-	else params.delete('filter');
-
+	set(
+		'view',
+		next.compareRegions ? 'regions' : next.profileView === 'timeline' ? null : next.profileView
+	);
+	set(
+		'profile-view',
+		next.compareRegions && next.profileView !== 'timeline' ? next.profileView : null
+	);
+	set('profile-days', next.profileDays === 7 ? null : String(next.profileDays));
+	set('profile-metric', next.profileMetric === 'price' ? 'price' : null);
+	set('profile-series', next.profileSeries || null);
+	set('profile-end', next.profileEnd || null);
+	set('region', next.region === DEFAULT_REGION ? null : next.region);
+	set('group', next.group === DEFAULT_GROUP ? null : next.group);
+	set('hidden', next.hiddenSeries.length ? next.hiddenSeries.join(',') : null);
+	set('contribution', next.contributionMode === 'generation' ? 'generation' : null);
+	set('transform', next.generationTransform === 'absolute' ? null : next.generationTransform);
+	set(
+		'market-transform',
+		next.marketValueTransform === 'absolute' ? null : next.marketValueTransform
+	);
+	set('filter', next.bucketFilter);
 	applyRangeParams(params, {
-		selectedRange: range.kind === 'preset' ? range.days : null,
-		displayInterval: range.intervalId,
-		viewStart: range.kind === 'custom' ? range.startMs : 0,
-		viewEnd: range.kind === 'custom' ? range.endMs : 0,
+		selectedRange: next.range.kind === 'preset' ? next.range.days : null,
+		displayInterval: next.range.intervalId,
+		viewStart: next.range.kind === 'custom' ? next.range.startMs : 0,
+		viewEnd: next.range.kind === 'custom' ? next.range.endMs : 0,
 		defaultRangeDays: DEFAULT_RANGE_DAYS
 	});
-
-	if (state.priceMode === 'market_value' && hasSpotPrice(state.region)) params.set('price', 'mv');
-	else params.delete('price');
-
-	if (state.emissionsMode === 'volume') params.set('emissions', 'volume');
-	else params.delete('emissions');
-
-	const overlays = normaliseTrackerOverlays(state.overlays);
-	if (overlays.length) params.set('overlay', overlays.join(','));
-	else params.delete('overlay');
-
-	if (state.tablePanelOpen) params.delete('table');
-	else params.set('table', '0');
+	// Market value is forced, not chosen, where there is no spot price.
+	set('price', next.priceMode === 'market_value' && hasSpotPrice(next.region) ? 'mv' : null);
+	set('emissions', next.emissionsMode === 'volume' ? 'volume' : null);
+	set('overlay', next.overlays.length ? next.overlays.join(',') : null);
+	set('table', next.tablePanelOpen ? null : '0');
 
 	return url;
 }

@@ -2,22 +2,13 @@
 	import ProfileChart from './ProfileChart.svelte';
 	import { stackedProfileRows } from './profile-chart.js';
 	import { buildAverageDayStack } from './time-of-day.js';
-	/** @type {{manager: import('$lib/components/charts/v2/ChartDataManager.svelte.js').default | null,
+	/** @type {{source: ReturnType<typeof import('./profile-data.svelte.js').createProfileData>,
 	 * window: ReturnType<typeof import('./time-of-day.js').profileWindow>, zone: string, groupLabel: string}} */
-	let { manager, window, zone, groupLabel } = $props();
-	let error = $derived(manager?.getErrorForRange(window.start, window.end));
-	let pending = $derived(
-		!error &&
-			(!manager || !manager.initialLoadComplete || manager.hasPendingFetch || manager.isLoading)
-	);
-	let meta = $derived(manager?.seriesMeta);
-	let layers = $derived(
-		buildAverageDayStack(
-			manager?.getDataForRange(window.start, window.end) ?? [],
-			meta?.seriesNames ?? [],
-			window
-		)
-	);
+	let { source, window, zone, groupLabel } = $props();
+	let error = $derived(source.error);
+	let pending = $derived(source.pending);
+	let meta = $derived(source.meta);
+	let layers = $derived(buildAverageDayStack(source.rows, meta?.seriesNames ?? [], window));
 	let available = $derived(layers.some((layer) => layer.points.some((point) => point.y1 !== null)));
 	let chartRows = $derived(stackedProfileRows(layers));
 	const format = (/** @type {number | null} */ value) =>
@@ -35,9 +26,7 @@
 	</p>
 	{#if error}
 		<p class="my-4 text-sm">Average-day overview unavailable: {error}</p>
-		<button
-			class="rounded border border-warm-grey px-3 py-2 text-xs"
-			onclick={() => manager?.requestRange(window.start, window.end, { immediate: true })}
+		<button class="rounded border border-warm-grey px-3 py-2 text-xs" onclick={() => source.retry()}
 			>Retry average-day overview</button
 		>
 	{:else if pending}

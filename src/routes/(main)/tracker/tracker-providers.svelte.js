@@ -2,6 +2,9 @@ import { createNetworkMarketData } from '$lib/components/charts/network/network-
 import { createNetworkFuelTechSeries } from '$lib/components/charts/network/network-fueltech-series.svelte.js';
 import { createMarketSeriesProvider } from '$lib/components/charts/network/network-series-provider.svelte.js';
 import { isRollingInterval } from '$lib/components/charts/facility/range-interval-config.js';
+import { rollingShareRows, ROLLING_LEAD_MS } from './tracker-chart-overlays.js';
+
+/** @typedef {import('$lib/components/charts/network/headless-series-provider.svelte.js').DisplayRowOptions} DisplayRowOptions */
 
 /** Optional data sources share the chart request broker and range lifecycle.
  * @param {{selection: () => import('./types.js').TrackerUrlState,
@@ -91,6 +94,26 @@ export function createTrackerProviders(opts) {
 		},
 		retry() {
 			for (const provider of all) provider.reconcileFetches();
+		},
+		/** The provider behind the renewables share: rolling windows derive it
+		 *  from 12-month sums of the market pair; native grains use the
+		 *  official share series. Overlays, metrics and retries all follow it. */
+		get renewablesSource() {
+			return isRollingDisplay ? marketData : shareData;
+		},
+		/** Renewable-share display rows for a window, whichever source serves it.
+		 * @param {number} start @param {number} end
+		 * @param {DisplayRowOptions} rowOpts - The table's mean-aggregated display options */
+		renewableShareRows(start, end, rowOpts) {
+			return isRollingDisplay
+				? rollingShareRows(marketData.getVisibleRows(start - ROLLING_LEAD_MS, end), {
+						startMs: start,
+						endMs: end,
+						displayInterval: rowOpts.displayInterval,
+						ianaTimeZone: rowOpts.ianaTimeZone,
+						bucketFilter: rowOpts.bucketFilter ?? null
+					})
+				: shareData.getDisplayRows(start, end, rowOpts);
 		}
 	};
 }

@@ -44,7 +44,13 @@ describe('Tracker snapshot publication', () => {
 		expect(data.ready('generation')).toBe(true);
 		session.selectInterval('1d');
 		data.publish('generation', snapshot('generation'));
+		// Calendar filters only exist in the All tier; the session validates them.
+		session.selectRange(-1);
+		session.selectInterval('1M');
+		data.publish('generation', snapshot('generation'));
+		expect(data.ready('generation')).toBe(true);
 		session.select('bucketFilter', 'jan');
+		expect(session.selection.bucketFilter).toBe('jan');
 		expect(data.ready('generation')).toBe(false);
 		data.publish('emissions', snapshot('emissions'));
 		hidden = ['coal'];

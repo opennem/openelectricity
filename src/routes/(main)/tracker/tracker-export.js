@@ -21,7 +21,12 @@
 
 import { escapeCsv } from '$lib/utils/download-csv.js';
 import { excelDateSerial } from '$lib/utils/download-xlsx.js';
-import { formatNetworkTimestamp } from '$lib/components/charts/v2/network-time.js';
+import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
+import {
+	formatNetworkTimestamp,
+	networkTimeZoneLabel
+} from '$lib/components/charts/v2/network-time.js';
+import { contributionLabel } from './tracker-model.js';
 import {
 	deriveVwPriceDisplayRows,
 	VW_PRICE_SERIES_ID
@@ -101,11 +106,6 @@ function emissionsModeLabel(metric) {
 	return metric === 'emissions_intensity' ? 'Intensity (kgCO2e/MWh)' : 'Volume (tCO2e)';
 }
 
-/** @param {string} timeZone */
-function timeZoneLabel(timeZone) {
-	return `${timeZone === '+08:00' ? 'AWST' : 'AEST'} (UTC${timeZone})`;
-}
-
 // ============================================
 // Datasets
 // ============================================
@@ -134,7 +134,7 @@ function seriesColumns(snapshot, unit) {
 function dataset(key, title, columns, rows) {
 	// Filtered charts duplicate their final point to close the stepped band.
 	// That drawing-only row is not an observation and must not leave in exports.
-	const observations = rows.filter((row) => !row._bandClose);
+	const observations = rows.filter(isObservationRow);
 	if (!observations.length || !columns.length) return null;
 	return { key, title, columns: [TIME_COLUMN, ...columns], rows: observations };
 }
@@ -222,7 +222,7 @@ function emissionsDataset(ctx) {
  */
 function tableDataset(ctx) {
 	if (!ctx.tablePanelOpen || !ctx.tableRows?.length) return null;
-	const contributionHeader = `Contribution (% ${ctx.contributionMode})`;
+	const contributionHeader = `Contribution (${contributionLabel(ctx.contributionMode)})`;
 	/** @type {ExportColumn[]} */
 	const columns = [
 		{ key: 'label', header: 'Technology', type: 'string' },
@@ -330,9 +330,9 @@ export function summaryRows(ctx) {
 		['Interval', ctx.intervalLabel],
 		['Window start', formatNetworkTimestamp(ctx.window.start, ctx.timeZone)],
 		['Window end', formatNetworkTimestamp(ctx.window.end, ctx.timeZone)],
-		['Timezone', `${timeZoneLabel(ctx.timeZone)} — all timestamps are network-local`],
+		['Timezone', `${networkTimeZoneLabel(ctx.timeZone)} — all timestamps are network-local`],
 		['Fuel tech grouping', ctx.groupLabel],
-		['Contribution basis', `% ${ctx.contributionMode}`],
+		['Contribution basis', contributionLabel(ctx.contributionMode)],
 		['Generation', ctx.basis === 'energy' ? 'Energy (MWh)' : 'Power (MW)'],
 		['Market', marketModeLabel(ctx.priceMetric)],
 		['Emissions', emissionsModeLabel(ctx.emissionsMetric)]
@@ -485,15 +485,31 @@ function slugify(value) {
 }
 
 /**
+ * Every tracker download is named `tracker-<scope>[-<dataset>]-<range>.<ext>`
+ * — the timeline datasets, the profile, the date comparison and the region
+ * comparison alike. The NEM's `_all` scope reads as `nem`.
+ * @param {{ scope: string, dataset?: string, range: string, extension: 'csv' | 'xlsx' }} parts
+ */
+export function trackerFileName({ scope, dataset = '', range, extension }) {
+	const name = [
+		'tracker',
+		scope === '_all' ? 'nem' : slugify(scope),
+		slugify(dataset),
+		slugify(range) || 'range'
+	].filter(Boolean);
+	return `${name.join('-')}.${extension}`;
+}
+
+/**
  * `tracker-<region>-<dataset>-<range>.csv` or `tracker-<region>-<range>.xlsx`.
- * The NEM's `_all` scope reads as `nem`.
- * @param {TrackerExportContext} ctx
+ * @param {Pick<TrackerExportContext, 'region' | 'rangeSlug'>} ctx
  * @param {ExportDatasetKey | 'xlsx'} key
  */
 export function exportFileName(ctx, key) {
-	const region = ctx.region === '_all' ? 'nem' : slugify(ctx.region);
-	const range = slugify(ctx.rangeSlug) || 'range';
-	return key === 'xlsx'
-		? `tracker-${region}-${range}.xlsx`
-		: `tracker-${region}-${key}-${range}.csv`;
+	return trackerFileName({
+		scope: ctx.region,
+		dataset: key === 'xlsx' ? '' : key,
+		range: ctx.rangeSlug,
+		extension: key === 'xlsx' ? 'xlsx' : 'csv'
+	});
 }

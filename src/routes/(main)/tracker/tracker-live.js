@@ -1,4 +1,5 @@
 import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
+import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
 
 /** Polling is foreground-only. Returning to the tab performs one catch-up tick,
  * not a replay of the ticks missed while hidden. Existing requests may finish.
@@ -30,7 +31,7 @@ export function latestReading(snapshot) {
 	if (!snapshot) return latest;
 	for (const row of snapshot.nativeData) {
 		if (
-			row._bandClose ||
+			!isObservationRow(row) ||
 			!Number.isFinite(row.time) ||
 			row.time < snapshot.start ||
 			row.time > snapshot.end

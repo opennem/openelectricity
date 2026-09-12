@@ -1,5 +1,6 @@
 import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
-import { escapeCsv } from '$lib/utils/download-csv.js';
+import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
+import { networkTimeZoneLabel } from '$lib/components/charts/v2/network-time.js';
 
 /** @typedef {{a: number | null, b: number | null}} Comparison */
 
@@ -24,7 +25,7 @@ export function normaliseComparison(value) {
  * @param {import('./types.js').GenerationSnapshot | null} snapshot */
 export function comparisonBuckets(snapshot) {
 	return (snapshot?.data ?? []).filter(
-		(row) => !row._bandClose && Number.isFinite(row.time) && row.time <= (snapshot?.end ?? 0)
+		(row) => isObservationRow(row) && Number.isFinite(row.time) && row.time <= (snapshot?.end ?? 0)
 	);
 }
 
@@ -44,52 +45,64 @@ export function comparisonValues(a, b) {
 	};
 }
 
-/** @param {import('./types.js').GenerationSnapshot | null} snapshot
- * @param {Comparison} selection @param {string[]} hidden */
-export function comparisonRows(snapshot, selection, hidden = []) {
+/** Top-down group order, hidden groups omitted. `isLoad` follows the fuel-tech
+ * table's rule — a listed load group, or a negative reading — so both tables
+ * file a technology under the same heading.
+ * @param {import('./types.js').GenerationSnapshot | null} snapshot
+ * @param {Comparison} selection @param {string[]} [hidden]
+ * @param {string[]} [loadSeriesIds] - Load groups in the selected grouping */
+export function comparisonRows(snapshot, selection, hidden = [], loadSeriesIds = []) {
 	const buckets = comparisonBuckets(snapshot);
 	const a = buckets.find((row) => row.time === selection.a);
 	const b = buckets.find((row) => row.time === selection.b);
 	return [...(snapshot?.seriesNames ?? [])]
 		.reverse()
 		.filter((id) => !hidden.includes(id))
-		.map((id) => ({
-			id,
-			label: snapshot?.seriesLabels[id] ?? id,
-			colour: snapshot?.seriesColours[id] ?? '#777777',
-			...comparisonValues(a?.[id], b?.[id])
-		}));
+		.map((id) => {
+			const values = comparisonValues(a?.[id], b?.[id]);
+			return {
+				id,
+				label: snapshot?.seriesLabels[id] ?? id,
+				colour: snapshot?.seriesColours[id] ?? '#777777',
+				isLoad: loadSeriesIds.includes(id) || (values.a ?? values.b ?? 0) < 0,
+				...values
+			};
+		});
 }
 
-/** @param {ReturnType<typeof comparisonRows>} rows
- * @param {{region: string, zone: string, interval: string, a: string, b: string, unit: string}} context */
-export function comparisonCsv(rows, context) {
-	return [
-		[
-			'Region',
-			'Network time',
-			'Interval',
-			'Technology',
-			'A',
-			'B',
-			`A (${context.unit})`,
-			`B (${context.unit})`,
-			`Change B − A (${context.unit})`,
-			'Change / |A| (%)'
+/** The comparison as an export dataset for the shared CSV serialiser: raw
+ * signed base-unit values plus the context needed to reproduce them.
+ * @param {ReturnType<typeof comparisonRows>} rows
+ * @param {{region: string, zone: string, interval: string, a: string, b: string, unit: string}} context
+ * @returns {import('./types.js').ExportDataset} */
+export function dateComparisonDataset(rows, context) {
+	const { region, zone, interval, a, b, unit } = context;
+	return {
+		key: 'comparison',
+		title: 'Two-date comparison',
+		columns: [
+			{ key: 'region', header: 'Region', type: 'string' },
+			{ key: 'timeZone', header: 'Network time', type: 'string' },
+			{ key: 'interval', header: 'Interval', type: 'string' },
+			{ key: 'label', header: 'Technology', type: 'string' },
+			{ key: 'dateA', header: 'A', type: 'string' },
+			{ key: 'dateB', header: 'B', type: 'string' },
+			{ key: 'a', header: `A (${unit})`, type: 'number' },
+			{ key: 'b', header: `B (${unit})`, type: 'number' },
+			{ key: 'delta', header: `Change B − A (${unit})`, type: 'number' },
+			{ key: 'percent', header: 'Change / |A| (%)', type: 'number' }
 		],
-		...rows.map((row) => [
-			context.region,
-			`UTC${context.zone}`,
-			context.interval,
-			row.label,
-			context.a,
-			context.b,
-			row.a,
-			row.b,
-			row.delta,
-			row.percent
-		])
-	]
-		.map((row) => row.map(escapeCsv).join(','))
-		.join('\r\n');
+		rows: rows.map((row) => ({
+			region,
+			timeZone: networkTimeZoneLabel(zone),
+			interval,
+			label: row.label,
+			dateA: a,
+			dateB: b,
+			a: row.a,
+			b: row.b,
+			delta: row.delta,
+			percent: row.percent
+		}))
+	};
 }

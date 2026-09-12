@@ -9,10 +9,17 @@
 		formatTablePower,
 		formatTableEnergy,
 		formatTablePercentage,
-		splitTableLabel,
-		EMPTY_CELL
+		splitTableLabel
 	} from './table-format.js';
-	import { comparisonBuckets, comparisonRows, comparisonCsv } from './comparison.js';
+	import { comparisonBuckets, comparisonRows, dateComparisonDataset } from './comparison.js';
+	import {
+		TABLE_HEADER_CELL,
+		TABLE_SWATCH,
+		pinnedTableEdge,
+		tableValueCell
+	} from './table-styles.js';
+	import { datasetToCsv, trackerFileName } from './tracker-export.js';
+	import { toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 
 	/** @type {{snapshot: import('./types.js').GenerationSnapshot | null,
 	 * selection: import('./comparison.js').Comparison, hidden: string[], pending: boolean,
@@ -35,17 +42,21 @@
 	} = $props();
 	const sides = /** @type {const} */ (['a', 'b']);
 	let buckets = $derived(comparisonBuckets(snapshot));
-	let rows = $derived(comparisonRows(snapshot, selection, hidden));
-	let loadIds = $derived(loadGroupsFor(getGroup(group)));
+	let rows = $derived(comparisonRows(snapshot, selection, hidden, loadGroupsFor(getGroup(group))));
 	let sections = $derived([
-		{ label: 'Sources', rows: rows.filter((row) => !loadIds.includes(row.id)) },
-		{ label: 'Loads', rows: rows.filter((row) => loadIds.includes(row.id)) }
+		{ label: 'Sources', rows: rows.filter((row) => !row.isLoad) },
+		{ label: 'Loads', rows: rows.filter((row) => row.isLoad) }
 	]);
 	let formatDate = $derived(getTimeFormatPolicy(interval, ianaFromOffset(zone)).formatTooltip);
 	let aAvailable = $derived(buckets.some((row) => row.time === selection.a));
 	let bAvailable = $derived(buckets.some((row) => row.time === selection.b));
 	let ready = $derived(!pending && !error && aAvailable && bAvailable);
 	let canExport = $derived(ready && rows.some((row) => row.delta !== null));
+	let tableScrollLeft = $state(0);
+	let pinnedEdgeClass = $derived(pinnedTableEdge(tableScrollLeft));
+	// The store's units are constructor options, so it is rebuilt only when
+	// they change; row updates sync into the same store so a live refresh
+	// keeps the user's hover and pinned category.
 	let chart = $derived.by(() => {
 		const next = new ChartStore({
 			key: Symbol('date-comparison'),
@@ -59,19 +70,21 @@
 		});
 		next.isCategoryChart = true;
 		next.xKey = 'category';
-		next.seriesNames = rows.map((row) => row.id);
-		next.seriesLabels = Object.fromEntries(rows.map((row) => [row.id, row.label]));
-		next.seriesColours = Object.fromEntries(rows.map((row) => [row.id, row.colour]));
 		// One independent signed bar per technology, not a cumulative generation stack.
-		// The shared store's type is time-series-only; category mode consumes
-		// category-keyed rows without fabricated timestamps.
-		next.seriesData = /** @type {any[]} */ (
-			rows.map((row) => ({ category: row.label, [row.id]: row.delta }))
-		);
 		next.useDivergingStack = true;
 		next.chartStyles.chartHeightPx = 280;
 		next.chartTooltips.showTotal = false;
 		return next;
+	});
+	$effect(() => {
+		chart.seriesNames = rows.map((row) => row.id);
+		chart.seriesLabels = Object.fromEntries(rows.map((row) => [row.id, row.label]));
+		chart.seriesColours = Object.fromEntries(rows.map((row) => [row.id, row.colour]));
+		// The shared store's type is time-series-only; category mode consumes
+		// category-keyed rows without fabricated timestamps.
+		chart.seriesData = /** @type {any[]} */ (
+			rows.map((row) => ({ category: row.label, [row.id]: row.delta }))
+		);
 	});
 	/** @param {'a' | 'b'} side @param {string} value */
 	function choose(side, value) {
@@ -83,16 +96,26 @@
 	}
 	function download() {
 		if (!canExport) return;
+		const a = /** @type {number} */ (selection.a);
+		const b = /** @type {number} */ (selection.b);
 		downloadCsv(
-			comparisonCsv(rows, {
-				region,
-				zone,
-				interval,
-				a: formatDate(/** @type {number} */ (selection.a)),
-				b: formatDate(/** @type {number} */ (selection.b)),
-				unit: energy ? 'MWh' : 'MW'
-			}),
-			`openelectricity-${region}-comparison.csv`
+			datasetToCsv(
+				dateComparisonDataset(rows, {
+					region,
+					zone,
+					interval,
+					a: formatDate(a),
+					b: formatDate(b),
+					unit: energy ? 'MWh' : 'MW'
+				}),
+				zone
+			),
+			trackerFileName({
+				scope: region,
+				dataset: 'comparison',
+				range: `${toNetworkDateString(a, zone)}-to-${toNetworkDateString(b, zone)}`,
+				extension: 'csv'
+			})
 		);
 	}
 </script>
@@ -181,7 +204,10 @@
 				/>
 			</div>
 		</div>
-		<div class="mt-3 overflow-x-auto">
+		<div
+			class="mt-3 overflow-x-auto"
+			onscroll={(event) => (tableScrollLeft = event.currentTarget.scrollLeft)}
+		>
 			<table class="w-full min-w-[560px] table-fixed border-separate border-spacing-0">
 				<caption class="py-2 text-left text-xs text-mid-grey">
 					A: {formatDate(/** @type {number} */ (selection.a))} · B: {formatDate(
@@ -192,7 +218,7 @@
 					<tr>
 						<th
 							scope="col"
-							class="sticky left-0 z-[1] w-[160px] border-b border-r border-warm-grey bg-light-warm-grey px-2 py-3 text-left align-top font-medium"
+							class="{pinnedEdgeClass} w-[160px] bg-light-warm-grey px-2 text-left {TABLE_HEADER_CELL}"
 						>
 							<div class="ml-2 flex flex-col items-start">
 								<span class="text-xs text-dark-grey">Technology</span><span
@@ -201,10 +227,7 @@
 							</div>
 						</th>
 						{#each ['A', 'B', 'Change (B − A)', 'Change (%)'] as label, index (label)}
-							<th
-								scope="col"
-								class="border-b border-warm-grey px-2 py-3 text-right align-top font-medium last:pr-3"
-							>
+							<th scope="col" class="px-2 text-right last:pr-3 {TABLE_HEADER_CELL}">
 								<div class="flex flex-col items-end">
 									<span class="text-xs">{label}</span><span
 										class="font-mono text-xxs font-light text-mid-grey"
@@ -231,7 +254,7 @@
 								<tr class="group text-sm hover:bg-light-warm-grey">
 									<th
 										scope="row"
-										class="sticky left-0 z-[1] border-r border-warm-grey bg-white px-2 py-1.5 text-left font-normal group-hover:bg-light-warm-grey"
+										class="{pinnedEdgeClass} bg-white px-2 py-1.5 text-left font-normal group-hover:bg-light-warm-grey"
 									>
 										<button
 											class="ml-2 flex w-full items-center gap-2.5 text-left"
@@ -240,7 +263,7 @@
 											onclick={() => chart.setHoverCategory(row.label, row.id)}
 										>
 											<span
-												class="size-5 shrink-0 rounded-sm border"
+												class={TABLE_SWATCH}
 												style:background-color={row.colour}
 												style:border-color={row.colour}
 											></span>
@@ -252,12 +275,7 @@
 										</button>
 									</th>
 									{#each [format(row.a), format(row.b), format(row.delta), formatTablePercentage(row.percent)] as cell, index (index)}
-										<td
-											class="whitespace-nowrap px-2 py-1.5 text-right font-mono tabular-nums last:pr-3 {cell ===
-											EMPTY_CELL
-												? 'text-mid-grey'
-												: 'text-dark-grey'}">{cell}</td
-										>
+										<td class={tableValueCell(cell, index === 3)}>{cell}</td>
 									{/each}
 								</tr>
 							{/each}

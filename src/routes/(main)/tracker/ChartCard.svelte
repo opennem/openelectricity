@@ -1,6 +1,6 @@
 <script>
-	import { onMount, untrack } from 'svelte';
-	import { createResizeControl } from '$lib/components/ui/panel/resize-control.svelte.js';
+	import { untrack } from 'svelte';
+	import { createDockedPanel } from '$lib/components/ui/panel/docked-panel.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 	import LoadingOverlay from './LoadingOverlay.svelte';
 
@@ -44,36 +44,14 @@
 		children
 	} = $props();
 
-	/** @param {number} value */
-	function clampHeight(value) {
-		return Math.min(maxHeightPx, Math.max(minHeightPx, value));
-	}
-
-	let heightPx = $state(untrack(() => clampHeight(defaultHeightPx)));
-	onMount(() => {
-		try {
-			const saved = parseInt(localStorage.getItem(heightStorageKey) ?? '', 10);
-			if (heightStorageKey && Number.isFinite(saved)) heightPx = clampHeight(saved);
-		} catch {
-			/* Storage can be unavailable in embedded/private contexts. */
-		}
-	});
-	const resize = createResizeControl({
+	const height = createDockedPanel({
 		axis: 'y',
-		get: () => heightPx,
-		set: (value) => {
-			heightPx = value;
-		},
+		initial: untrack(() => defaultHeightPx),
 		min: () => minHeightPx,
 		max: () => maxHeightPx,
-		commit: () => {
-			try {
-				if (heightStorageKey) localStorage.setItem(heightStorageKey, String(heightPx));
-			} catch {
-				/* The current height remains usable without persistence. */
-			}
-		}
+		storageKey: untrack(() => heightStorageKey) || undefined
 	});
+	let heightPx = $derived(height.size);
 </script>
 
 <div>
@@ -113,13 +91,13 @@
 		     so the whole gap is the drag target; rounded like the cards. -->
 		<DragHandle
 			axis="y"
-			onstart={resize.start}
-			onkeydown={resize.keydown}
+			onstart={height.start}
+			onkeydown={height.keydown}
 			tabindex={0}
 			aria-valuemin={minHeightPx}
 			aria-valuemax={maxHeightPx}
 			aria-valuenow={Math.round(heightPx)}
-			active={resize.dragging}
+			active={height.dragging}
 			alwaysShowGrip
 			class="h-4 rounded-md"
 			role="separator"

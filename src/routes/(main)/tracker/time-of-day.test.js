@@ -4,9 +4,10 @@ import {
 	buildAverageDayStack,
 	normaliseProfileDays,
 	normaliseProfileEnd,
-	profileCsv,
+	profileDataset,
 	profileWindow
 } from './time-of-day.js';
+import { datasetToCsv } from './tracker-export.js';
 import { applyTrackerUrl, parseTrackerUrl } from './tracker-url.js';
 
 const nowMs = Date.parse('2026-09-06T15:00:00Z');
@@ -133,15 +134,16 @@ describe('time-of-day aggregation', () => {
 	});
 	it('exports values, network time and native coverage without zero-filling blanks', () => {
 		const profile = buildDailyProfile([{ time: window.start, power: 0 }], 'power', window);
-		const csv = profileCsv(profile, window, {
+		const dataset = profileDataset(profile, window, {
 			label: 'Wind, offshore',
 			unit: 'MW',
 			region: 'NEM',
 			timeZone: '+10:00'
 		});
-		expect(csv.split('\r\n')).toHaveLength(49);
+		const csv = datasetToCsv(dataset, '+10:00');
+		expect(csv.split('\n')).toHaveLength(49);
 		expect(csv).toContain('Average (MW),Days available');
-		expect(csv).toContain('NEM,UTC+10:00,"Wind, offshore",00:00,0,1,0,1,,0');
+		expect(csv).toContain('NEM,AEST (UTC+10:00),"Wind, offshore",00:00,0,1,0,1,,0');
 	});
 });
 

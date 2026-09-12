@@ -2,17 +2,18 @@
 	import FuelTechOptions from './FuelTechOptions.svelte';
 	import ProfileChart from './ProfileChart.svelte';
 	import { individualProfileRows } from './profile-chart.js';
-	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 	import { getGroup } from '$lib/components/charts/network/groups.js';
 	import { createProfileData } from './profile-data.svelte.js';
 	import AverageDayStack from './AverageDayStack.svelte';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
-	import { hasSpotPrice, TRACKER_REGION_OPTIONS } from './tracker-regions.js';
+	import { hasSpotPrice, regionLabel as regionLabelFor } from './tracker-regions.js';
+	import { datasetToCsv, trackerFileName } from './tracker-export.js';
 	import {
 		buildDailyProfile,
 		normaliseProfileDays,
 		profileWindow,
-		profileCsv
+		profileDataset,
+		PROFILE_MIN_DATE
 	} from './time-of-day.js';
 
 	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>}} */
@@ -22,7 +23,7 @@
 	let groupId = $derived(selection.group);
 	let days = $derived(selection.profileDays);
 	let lastDate = $derived(selection.profileEnd);
-	let zone = $derived(regionToNetwork(region).timeZone);
+	let zone = $derived(session.timeZone);
 	let window = $derived(profileWindow(session.anchorEnd, zone, days, lastDate));
 	let group = $derived(getGroup(groupId));
 	let daily = $derived(selection.profileView === 'daily');
@@ -37,26 +38,18 @@
 		window,
 		enabled: price
 	}));
-	let manager = $derived(price ? priceData.manager : powerData.manager);
-	let error = $derived(manager?.getErrorForRange(window.start, window.end));
-	let pending = $derived(
-		!error &&
-			(!manager || !manager.initialLoadComplete || manager.hasPendingFetch || manager.isLoading)
-	);
-	let meta = $derived(manager?.seriesMeta);
+	let source = $derived(price ? priceData : powerData);
+	let error = $derived(source.error);
+	let pending = $derived(source.pending);
+	let meta = $derived(source.meta);
 	let series = $derived(
 		!price && selection.profileSeries ? selection.profileSeries : (meta?.seriesNames[0] ?? '')
 	);
 	let label = $derived(
 		meta?.seriesLabels[series] ?? group.labels[series] ?? (price ? 'Spot price' : 'Generation')
 	);
-	let regionLabel = $derived(
-		TRACKER_REGION_OPTIONS.find((option) => option.value === selection.region)?.label ??
-			selection.region
-	);
-	let profile = $derived(
-		buildDailyProfile(manager?.getDataForRange(window.start, window.end) ?? [], series, window)
-	);
+	let regionLabel = $derived(regionLabelFor(region));
+	let profile = $derived(buildDailyProfile(source.rows, series, window));
 	let available = $derived(profile.some((row) => row.average !== null));
 	let chartRows = $derived(individualProfileRows(profile, window.dates, daily));
 	let chartNames = $derived(daily ? [...window.dates, 'average'] : ['average']);
@@ -74,13 +67,21 @@
 	const format = (/** @type {number | null} */ value) =>
 		value === null ? '—' : value.toLocaleString('en-AU', { maximumFractionDigits: 2 });
 	function retry() {
-		manager?.requestRange(window.start, window.end, { immediate: true });
+		source.retry();
 	}
 	function download() {
 		if (pending || error || !available) return;
 		downloadCsv(
-			profileCsv(profile, window, { label, unit, region: regionLabel, timeZone: zone }),
-			`openelectricity-${selection.region}-time-of-day-${selection.profileMetric}-${window.lastDate}.csv`
+			datasetToCsv(
+				profileDataset(profile, window, { label, unit, region: regionLabel, timeZone: zone }),
+				zone
+			),
+			trackerFileName({
+				scope: region,
+				dataset: `time-of-day-${selection.profileMetric}`,
+				range: window.lastDate,
+				extension: 'csv'
+			})
 		);
 	}
 	export function getControls() {
@@ -114,7 +115,7 @@
 		><span class="sr-only">Last day</span>
 		<input
 			type="date"
-			min="1999-01-01"
+			min={PROFILE_MIN_DATE}
 			max={window.maxDate}
 			value={window.lastDate}
 			onchange={(event) => {
@@ -184,7 +185,7 @@
 				? 'Spot price is time-weighted, not volume-weighted.'
 				: 'Absolute power; charging and pumping are negative. Timeline visibility and transforms do not apply.'}
 		</p>
-		<AverageDayStack manager={powerData.manager} {window} {zone} groupLabel={group.label} />
+		<AverageDayStack source={powerData} {window} {zone} groupLabel={group.label} />
 		{#if error}
 			<div role="alert" class="py-12 text-center">
 				<p>{error}</p>

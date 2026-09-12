@@ -7,9 +7,9 @@
 		tableValueCell
 	} from './table-styles.js';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
-	import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+	import { getGroup } from '$lib/components/charts/network/groups.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs.js';
-	import { DEFAULT_GROUP } from './tracker-model.js';
+	import { DEFAULT_GROUP, contributionLabel } from './tracker-model.js';
 	import {
 		CURTAILMENT_COLOURS,
 		DEMAND_LINE_COLOUR,
@@ -120,8 +120,8 @@
 	);
 	let powerUnit = $derived(`${powerPrefix}W`);
 	let energyUnit = $derived(`${energyPrefix}Wh`);
-	let groupLabel = $derived(GROUP_OPTIONS.find((option) => option.value === group)?.label ?? '');
-	let contributionUnit = $derived(contributionMode === 'demand' ? '% demand' : '% generation');
+	let groupLabel = $derived(getGroup(group).label);
+	let contributionUnit = $derived(contributionLabel(contributionMode));
 	let showRooftopNote = $derived(
 		rooftopInterpolation && rows.some((row) => row.fuelTechs.includes('solar_rooftop'))
 	);
