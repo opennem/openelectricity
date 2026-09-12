@@ -1,93 +1,24 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-
-async function fixture(page, { fail = '', hold = '', empty = false, spike = false } = {}) {
-	let failure = fail;
-	let held = hold;
-	const waiting = [];
-	const requests = [];
-	await page.clock.install({ time: new Date('2026-09-11T00:00:00Z') });
-	await page.route('**/api/network/data?**', async (route) => {
-		const params = new URL(route.request().url()).searchParams;
-		const region = params.get('region');
-		const metric = params.get('metric');
-		requests.push({ region, metric });
-		if (region === held) await new Promise((resolve) => waiting.push(resolve));
-		if (empty) return route.fulfill({ json: { response: { data: [] } } });
-		if (region === failure)
-			return route.fulfill({ status: 503, json: { error: 'Regional fixture unavailable' } });
-		const amount = { nsw1: 1, qld1: 2, sa1: 3, tas1: 4, vic1: 5, wem: 6, _all: 15 }[region] ?? 1;
-		const months = Array.from(
-			{ length: 80 },
-			(_, i) =>
-				new Date(Date.UTC(2020, i, 1)).toISOString().slice(0, 19) +
-				(region === 'wem' ? '+08:00' : '+10:00')
-		);
-		const series = (fueltech, value) => ({
-			name: fueltech,
-			columns: { fueltech },
-			data: months.map((time, i) => [
-				time,
-				value * amount * (1 + i / 100) * (spike && i < 12 ? 50 : 1)
-			])
-		});
-		const data =
-			metric === 'flows_energy'
-				? [
-						{ metric: 'flow_imports_energy', results: [series('imports', 200)] },
-						{ metric: 'flow_exports_energy', results: [series('exports', 300)] }
-					]
-				: metric === 'price_vw'
-					? [
-							{
-								metric: 'market_value',
-								results: [series('coal_black', 25000), series('wind', 75000)]
-							}
-						]
-					: metric === 'renewables_energy'
-						? [
-								{ metric: 'generation_renewable_energy', results: [series('renewables', 1500)] },
-								{ metric: 'demand_gross_energy', results: [series('demand', 1000)] }
-							]
-						: [
-								{ metric: 'emissions', results: [series('coal_black', 500), series('wind', 0)] },
-								{ metric: 'energy', results: [series('coal_black', 500), series('wind', 1500)] }
-							];
-		await route.fulfill({ json: { response: { data } } });
-	});
-	return {
-		requests,
-		release() {
-			held = '';
-			for (const resume of waiting) resume();
-		},
-		recover() {
-			failure = '';
-		}
-	};
-}
-
-const table = (page) => page.getByRole('table', { name: 'Region comparison values' });
-const regionRow = (page, name) =>
-	table(page)
-		.getByRole('row')
-		.filter({ has: page.getByRole('button', { name: `Compare ${name}`, exact: true }) });
-async function ready(page) {
-	await expect(
-		page.getByText('Complete periods · monthly source data', { exact: true })
-	).toBeVisible();
-	await expect(regionRow(page, 'NSW')).toContainText('250');
-}
+import {
+	collectPageErrors,
+	download,
+	expectNoHorizontalScroll,
+	openOptions,
+	regionRow,
+	regionsFixture,
+	regionsReady,
+	regionsTable
+} from './helpers/tracker.js';
 
 test('defaults, region colours, complete rolling values and synchronised keyboard inspection', async ({
 	page
 }) => {
-	const errors = [];
-	page.on('pageerror', (error) => errors.push(error.message));
-	const data = await fixture(page);
+	const errors = collectPageErrors(page);
+	const data = await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions');
-	await ready(page);
+	await regionsReady(page);
 	await expect(page.getByRole('heading', { name: 'Carbon intensity', exact: true })).toBeVisible();
 	await expect(
 		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
@@ -113,10 +44,10 @@ test('defaults, region colours, complete rolling values and synchronised keyboar
 test('metric and percentage switches reuse requests, preserve URL state and export data', async ({
 	page
 }) => {
-	const data = await fixture(page);
+	const data = await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions');
-	await ready(page);
+	await regionsReady(page);
 	const count = data.requests.length;
 	await expect(
 		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
@@ -125,26 +56,23 @@ test('metric and percentage switches reuse requests, preserve URL state and expo
 	await page.getByRole('option', { name: '% generation', exact: true }).click();
 	await expect(regionRow(page, 'NSW')).toContainText('75');
 	expect(data.requests.length).toBe(count);
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
-	const download = page.waitForEvent('download');
-	await page.getByRole('button', { name: 'Region comparison', exact: true }).click();
-	const file = await download;
+	const file = await download(page, 'Region comparison');
 	const csv = await readFile(await file.path(), 'utf8');
 	expect(csv).toContain('source generation (%)');
 	expect(csv).toContain('New South Wales');
 	await page.reload();
-	await ready(page);
+	await regionsReady(page);
 
 	await expect(regionRow(page, 'NSW')).toContainText('75');
 });
 
 test('regional toggles, national sums, failure isolation and retry', async ({ page }) => {
-	const data = await fixture(page, { fail: 'wem' });
+	const data = await regionsFixture(page, { fail: 'wem' });
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions&compare-interval=1M&compare-charts=intensity,generation');
 	await expect(page.getByRole('button', { name: 'Retry WA (WEM)', exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Compare WA (WEM)', exact: true }).click();
-	await ready(page);
+	await regionsReady(page);
 	await page.getByRole('button', { name: 'Compare All Regions', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Retry All Regions', exact: true })).toBeVisible();
 	data.recover();
@@ -157,12 +85,12 @@ test('regional toggles, national sums, failure isolation and retry', async ({ pa
 test('view clicks reset query settings while history restores each view and its top-nav filters', async ({
 	page
 }) => {
-	await fixture(page);
+	await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	const original =
 		'/tracker?view=regions&range=30d&compare-interval=1M&compare-charts=intensity&unknown=1';
 	await page.goto(original);
-	await ready(page);
+	await regionsReady(page);
 	const nav = page.getByTestId('tracker-top-nav');
 	await expect(nav.getByRole('button', { name: 'Monthly', exact: true })).toBeVisible();
 	await expect(nav.getByRole('separator')).toHaveCount(1);
@@ -185,7 +113,7 @@ test('view clicks reset query settings while history restores each view and its 
 	await expect(nav.getByRole('combobox', { name: 'Window', exact: true })).toHaveValue('7');
 	await nav.getByRole('button', { name: 'Compare regions', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker\?view=regions$/);
-	await ready(page);
+	await regionsReady(page);
 	await expect(nav.getByRole('button', { name: '12-month rolling', exact: true })).toBeVisible();
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 	await expect(nav.locator('[data-view="regions"]')).toHaveCSS('opacity', '1');
@@ -193,33 +121,33 @@ test('view clicks reset query settings while history restores each view and its 
 });
 
 test('mobile panel, keyboard dismissal and responsive chart layout', async ({ page }) => {
-	await fixture(page);
+	await regionsFixture(page);
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/tracker?view=regions');
 	await expect(
 		page.getByText('Complete periods · monthly source data', { exact: true })
 	).toBeVisible();
-	await expect(table(page)).toHaveCount(0);
+	await expect(regionsTable(page)).toHaveCount(0);
 	await page.getByRole('button', { name: 'Show regions table' }).click();
-	await expect(table(page)).toBeVisible();
+	await expect(regionsTable(page)).toBeVisible();
 	await page.screenshot({ path: 'test-results/tracker-regions-mobile-table.png', fullPage: true });
 	await page.keyboard.press('Escape');
 	await expect(page.getByRole('button', { name: 'Show regions table' })).toBeFocused();
 	await page.screenshot({ path: 'test-results/tracker-regions-mobile.png', fullPage: true });
-	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+	await expectNoHorizontalScroll(page);
 });
 
 test('chart and region panel resizing and PNG export', async ({ page }) => {
-	await fixture(page);
+	await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions');
-	await ready(page);
+	await regionsReady(page);
 	const handle = page.getByRole('separator', { name: 'Resize regions panel' });
 	const before = Number(await handle.getAttribute('aria-valuenow'));
 	await handle.focus();
 	await page.keyboard.press('ArrowLeft');
 	expect(Number(await handle.getAttribute('aria-valuenow'))).toBeGreaterThan(before);
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
+	await openOptions(page);
 	await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
 	await expect(page.getByRole('dialog')).toBeVisible();
 	await expect(page.getByRole('dialog')).toContainText('Carbon intensity');
@@ -228,12 +156,12 @@ test('chart and region panel resizing and PNG export', async ({ page }) => {
 test('late responses cannot restore a deselected region; interval and zoom choices survive history', async ({
 	page
 }) => {
-	const data = await fixture(page, { hold: 'wem' });
+	const data = await regionsFixture(page, { hold: 'wem' });
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions');
 	await expect(regionRow(page, 'WA (WEM)')).toContainText('…');
 	await page.getByRole('button', { name: 'Compare WA (WEM)', exact: true }).click();
-	await ready(page);
+	await regionsReady(page);
 	data.release();
 	await expect(page.getByRole('button', { name: 'Compare WA (WEM)', exact: true })).toHaveAttribute(
 		'aria-pressed',
@@ -256,12 +184,12 @@ test('late responses cannot restore a deselected region; interval and zoom choic
 test('empty results display a clear state and disable CSV and workbook exports', async ({
 	page
 }) => {
-	await fixture(page, { empty: true });
+	await regionsFixture(page, { empty: true });
 	await page.goto('/tracker?view=regions');
 	await expect(
 		page.getByText('No completed regional data available for this selection.')
 	).toBeVisible();
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
+	await openOptions(page);
 	await expect(page.getByRole('button', { name: 'Region comparison', exact: true })).toBeDisabled();
 	await expect(
 		page.getByRole('button', { name: 'Everything (one workbook)', exact: true })
@@ -271,8 +199,7 @@ test('empty results display a clear state and disable CSV and workbook exports',
 test('live comparison renders regional history and exports a workbook', async ({ page }) => {
 	test.skip(process.env.OE_TRACKER_LIVE !== '1', 'Requires the local OE API connection');
 	test.setTimeout(90000);
-	const errors = [];
-	page.on('pageerror', (error) => errors.push(error.message));
+	const errors = collectPageErrors(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions');
 	await expect(
@@ -296,10 +223,10 @@ test('live comparison renders regional history and exports a workbook', async ({
 		.filter({ hasText: /12 months to/ })
 		.innerText();
 	await inspectLatestPoints(page, latestPeriod);
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
-	const download = page.waitForEvent('download');
-	await page.getByRole('button', { name: 'Everything (one workbook)', exact: true }).click();
-	expect((await download).suggestedFilename()).toBe('openelectricity-region-comparison.xlsx');
+	const workbook = await download(page, 'Everything (one workbook)');
+	expect(workbook.suggestedFilename()).toMatch(
+		/^tracker-regions-[a-z0-9]+-\d{4}-\d{2}-to-\d{4}-\d{2}\.xlsx$/
+	);
 	expect(errors).toEqual([]);
 });
 
@@ -366,10 +293,10 @@ for (const [interval, expected] of [
 	['fy', '2025–26 financial year']
 ]) {
 	test(`pointer inspection reaches the latest plotted point for ${interval}`, async ({ page }) => {
-		await fixture(page);
+		await regionsFixture(page);
 		await page.setViewportSize({ width: 1440, height: 1000 });
 		await page.goto(`/tracker?view=regions&compare-interval=${interval}`);
-		await ready(page);
+		await regionsReady(page);
 		await inspectLatestPoints(page, expected);
 	});
 }
@@ -377,10 +304,10 @@ for (const [interval, expected] of [
 test('two charts start visible and the multiselect controls charts, table and exports without refetching', async ({
 	page
 }) => {
-	const data = await fixture(page);
+	const data = await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions');
-	await ready(page);
+	await regionsReady(page);
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 	const requests = data.requests.length;
 	await page.getByRole('button', { name: /^Charts/ }).click();
@@ -396,7 +323,7 @@ test('two charts start visible and the multiselect controls charts, table and ex
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
 	await expect(page.getByText('No charts selected. Use Charts to show comparisons.')).toBeVisible();
-	await expect(table(page).getByRole('columnheader')).toHaveCount(1);
+	await expect(regionsTable(page).getByRole('columnheader')).toHaveCount(1);
 	await page.getByRole('button', { name: /^Charts/ }).click();
 	await selector.getByRole('button', { name: 'Wind value', exact: true }).click();
 	await selector.getByRole('button', { name: 'Volume-weighted price', exact: true }).click();
@@ -405,13 +332,10 @@ test('two charts start visible and the multiselect controls charts, table and ex
 	await expect(
 		page.getByRole('heading', { name: 'Wind value', exact: true, level: 3 })
 	).toBeVisible();
-	await expect(table(page).getByRole('columnheader')).toHaveCount(3);
+	await expect(regionsTable(page).getByRole('columnheader')).toHaveCount(3);
 	await expect(regionRow(page, 'NSW')).toContainText('50');
 	expect(data.requests.length).toBe(requests);
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
-	const download = page.waitForEvent('download');
-	await page.getByRole('button', { name: 'Region comparison', exact: true }).click();
-	const csv = await readFile(await (await download).path(), 'utf8');
+	const csv = await readFile(await (await download(page, 'Region comparison')).path(), 'utf8');
 	expect(csv.split('\n')[0]).toBe('Period,Region,Wind value ($/MWh),Volume-weighted price ($/MWh)');
 	await page.reload();
 	await expect(
@@ -431,7 +355,7 @@ test('two charts start visible and the multiselect controls charts, table and ex
 test('comparison Y axis rescales on zoom and pan as an offscreen peak enters or leaves', async ({
 	page
 }) => {
-	await fixture(page, { spike: true });
+	await regionsFixture(page, { spike: true });
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto(
 		'/tracker?view=regions&compare-charts=generation&compare-regions=nsw1&compare-interval=1M'
@@ -465,10 +389,10 @@ test('comparison Y axis rescales on zoom and pan as an offscreen peak enters or 
 test('comparison charts reuse timeline options, retain curve and units, and share pan engagement', async ({
 	page
 }) => {
-	await fixture(page);
+	await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions&compare-charts=intensity,generation');
-	await ready(page);
+	await regionsReady(page);
 	const intensity = page.getByRole('group', {
 		name: 'Carbon intensity comparison chart',
 		exact: true
@@ -530,9 +454,9 @@ test('comparison charts reuse timeline options, retain curve and units, and shar
 test('fuel chart toggles share one picker entry and persist presentation through history', async ({
 	page
 }) => {
-	const data = await fixture(page);
+	const data = await regionsFixture(page);
 	await page.goto('/tracker?view=regions');
-	await ready(page);
+	await regionsReady(page);
 	const requests = data.requests.length;
 	await page.getByRole('tab', { name: 'Generation', exact: true }).click();
 	await expect(

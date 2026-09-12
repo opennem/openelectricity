@@ -1,152 +1,115 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { inflateRawSync } from 'node:zlib';
-import { MARKET_METRIC_NAMES } from '../../src/lib/components/charts/network/market-metric-names.js';
+import {
+	card,
+	download,
+	expectNoHorizontalScroll,
+	openOptions,
+	trackerFixture,
+	trackerReady
+} from './helpers/tracker.js';
 
-/** Deterministic network responses; no OE credentials or upstream timing required. */
-async function fixture(
-	page,
-	{
-		fail = '',
-		failOnce = '',
-		hold = '',
-		empty = '',
-		contributions = false,
-		comparisonGrowth = false,
-		distinctEmissions = false,
-		latestAt = Infinity
-	} = {}
-) {
-	let failing = fail;
-	let singleFailure = failOnce;
-	let held = hold;
-	const waiting = [];
-	const requests = [];
-	const urls = [];
-	await page.route('**/api/network/data?**', async (route) => {
-		const params = new URL(route.request().url()).searchParams;
-		const metric = params.get('metric');
-		requests.push(metric);
-		urls.push(route.request().url());
-		if (metric === held) await new Promise((resolve) => waiting.push(resolve));
-		if (metric === singleFailure) {
-			singleFailure = '';
-			return route.fulfill({ status: 500, json: { error: 'Upstream query timed out' } });
-		}
-		if (metric === failing)
-			return route.fulfill({ status: 503, json: { error: 'Fixture failure' } });
-		if (metric === empty) return route.fulfill({ json: { response: { data: [] } } });
-		const interval = params.get('interval');
-		const step =
-			{
-				'5m': 300_000,
-				'1h': 3_600_000,
-				'1d': 86_400_000,
-				'1M': 30 * 86_400_000,
-				'3M': 90 * 86_400_000,
-				'1y': 365 * 86_400_000
-			}[interval] ?? 86_400_000;
-		const zone = params.get('region') === 'wem' ? '+08:00' : '+10:00';
-		const parse = (value) =>
-			new Date(value + (/[zZ]|[+-]\d\d:\d\d$/.test(value) ? '' : zone)).getTime();
-		const start = parse(params.get('date_start'));
-		const end = parse(params.get('date_end'));
-		let times = Array.from(
-			{ length: Math.min(15000, Math.floor((end - start) / step) + 1) },
-			(_, i) => new Date(start + i * step).toISOString()
-		);
-		// Daily API buckets align to network midnight, not a buffered request's
-		// arbitrary start clock. Keep comparison fixture dates on that lattice.
-		if (comparisonGrowth && interval === '1d') {
-			const offset = zone === '+08:00' ? 8 * 3_600_000 : 10 * 3_600_000;
-			const first = Math.ceil((start + offset) / step) * step - offset;
-			times = Array.from({ length: Math.max(0, Math.floor((end - first) / step) + 1) }, (_, i) =>
-				new Date(first + i * step).toISOString()
-			);
-		}
-		if (interval === '1M') {
-			const offset = zone === '+08:00' ? 8 * 3_600_000 : 10 * 3_600_000;
-			const month = new Date(start + offset);
-			month.setUTCDate(1);
-			month.setUTCHours(0, 0, 0, 0);
-			times = [];
-			while (month.getTime() - offset <= end) {
-				times.push(new Date(month.getTime() - offset).toISOString());
-				month.setUTCMonth(month.getUTCMonth() + 1);
-			}
-		}
-		times = times.filter((time) => Date.parse(time) <= latestAt);
-		const basis = interval === '5m' || interval === '1h' ? 'power' : 'energy';
-		const metrics =
-			metric === 'emissions_intensity'
-				? ['emissions', basis]
-				: metric === 'price_vw'
-					? ['market_value', basis]
-					: (MARKET_METRIC_NAMES[metric] ?? [metric]);
-		const data = metrics.map((name) => ({
-			metric: name,
-			interval,
-			results: (['power', 'energy', 'market_value', 'emissions'].includes(name)
-				? contributions
-					? ['coal_black', 'wind', 'imports', 'battery_charging']
-					: ['coal_black', 'wind']
-				: [name]
-			).map((fueltech, index) => ({
-				name: `${name}_${fueltech}`,
-				columns: { fueltech },
-				data: times.map((time) => [
-					// OE feeds use network-local wall-clock timestamps. The shared
-					// processor reapplies the network offset, even for zoned input.
-					comparisonGrowth
-						? new Date(Date.parse(time) + (zone === '+08:00' ? 8 : 10) * 3_600_000)
-								.toISOString()
-								.slice(0, 19) + zone
-						: time,
-					name === 'emissions' && distinctEmissions
-						? index === 0
-							? 100
-							: 0
-						: name === 'price'
-							? 50
-							: name.includes('proportion')
-								? 25
-								: (index + 1) *
-									100 *
-									(comparisonGrowth && Date.parse(time) >= Date.parse('2026-08-02T00:00:00+10:00')
-										? 2
-										: 1)
-				])
-			}))
-		}));
-		await route.fulfill({ json: { response: { data } } });
-	});
-	return {
-		requests,
-		urls,
-		hold: (metric) => {
-			held = metric;
-		},
-		fail: (metric) => {
-			failing = metric;
-		},
-		recover: () => {
-			failing = '';
-		},
-		release: () => {
-			held = '';
-			for (const resume of waiting) resume();
-		}
-	};
+async function openPng(page) {
+	await openOptions(page);
+	await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+	return page.getByRole('dialog', { name: 'Export PNG' });
 }
 
-const card = (page, title) =>
-	page.getByRole('heading', { name: title, exact: true }).locator('xpath=ancestor::section[1]');
+async function percentageView(page) {
+	const generation = card(page, 'Generation');
+	// The SVG mounts before data; wait for the chart before targeting its toolbar.
+	await expect(generation.locator('path.path-area').first()).toHaveAttribute('d', /M/);
+	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
+	await generation.getByRole('tab', { name: 'Proportion', exact: true }).click();
+	// The contribution note moves the chart toolbar; close outside that moving target.
+	await generation.getByRole('heading', { name: 'Generation', exact: true }).click();
+	await expect(generation.getByRole('tab', { name: 'Proportion', exact: true })).toBeHidden();
+	return generation;
+}
+
+async function contributionBasis(page, label) {
+	const trigger = page.getByRole('button', { name: 'Fuel technology options', exact: true });
+	await trigger.click();
+	await page.getByRole('menu').getByRole('menuitemradio', { name: label, exact: true }).click();
+	await expect(page.getByRole('menu', { name: 'Fuel technology options' })).toBeHidden();
+	await expect(trigger).toBeFocused();
+}
+
+async function copyTrackerLink(page) {
+	// Stub only the browser clipboard boundary; exercise the real copy action.
+	await page.evaluate(() =>
+		Object.defineProperty(navigator, 'clipboard', {
+			configurable: true,
+			value: {
+				writeText: async (value) => {
+					document.documentElement.dataset.copiedTrackerUrl = value;
+				}
+			}
+		})
+	);
+	const menu = await openOptions(page);
+	await menu.getByRole('button', { name: 'Copy link', exact: true }).click();
+	await expect(page.getByText('Link copied.', { exact: true })).toBeVisible();
+	return page.locator('html').getAttribute('data-copied-tracker-url');
+}
+
+async function hoverGeneration(page) {
+	const generation = card(page, 'Generation');
+	const area = generation.locator('path.path-area').first();
+	await expect(area).toHaveAttribute('d', /M/);
+	// The path animates when percentage scales change and can temporarily lie
+	// outside the clipped plot. Hover the stable SVG viewport, not that path box.
+	const box = await area.evaluate((path) => {
+		const bounds = /** @type {SVGPathElement} */ (path).ownerSVGElement.getBoundingClientRect();
+		return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+	});
+	const tooltip = generation.getByTestId('chart-floating-tooltip');
+	// Local basis changes can publish after the first pointer event and clear
+	// its old hover. Re-enter through real pointer input until publication settles.
+	await expect
+		.poll(async () => {
+			await page.mouse.move(box.x + box.width / 2, box.y + Math.max(1, box.height / 2));
+			return tooltip.isVisible();
+		})
+		.toBe(true);
+	return tooltip;
+}
+
+async function pauseByZoom(page, clockInstalled = false) {
+	await card(page, 'Generation').getByRole('button', { name: 'Zoom in', exact: true }).click();
+	if (clockInstalled) await page.clock.runFor(1000);
+	await expect(page).toHaveURL(/start=.*end=/);
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+}
+
+async function chartsSettled(page) {
+	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
+	await expect(page.getByTestId('metric-market-min')).toBeEnabled();
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+}
+
+/** Read a generated XLSX's XML via its ZIP directory, without a second spreadsheet library. */
+function workbookXml(buffer, wanted) {
+	for (let offset = 0; offset < buffer.length - 46; offset++) {
+		if (buffer.readUInt32LE(offset) !== 0x02014b50) continue;
+		const length = buffer.readUInt16LE(offset + 28);
+		const name = buffer.subarray(offset + 46, offset + 46 + length).toString();
+		if (name !== wanted) continue;
+		const size = buffer.readUInt32LE(offset + 20);
+		const local = buffer.readUInt32LE(offset + 42);
+		const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
+		const content = buffer.subarray(start, start + size);
+		return (buffer.readUInt16LE(offset + 10) === 8 ? inflateRawSync(content) : content).toString();
+	}
+	throw new Error(`Missing workbook entry: ${wanted}`);
+}
 
 for (const group of ['detailed', 'simple']) {
 	test(`rooftop interpolation is display-only and disclosed in ${group} grouping`, async ({
 		page
 	}, testInfo) => {
-		await fixture(page);
+		await trackerFixture(page);
 		const start = Date.parse('2026-09-01T10:00:00+10:00');
 		const end = start + 3.5 * 3_600_000;
 		await page.route('**/api/network/data?**', async (route) => {
@@ -201,6 +164,7 @@ for (const group of ['detailed', 'simple']) {
 			'data-tracker-png',
 			/Rooftop solar.*interpolated/
 		);
+		await trackerReady(page);
 		const csv = await readFile(await (await download(page, 'Generation')).path(), 'utf8');
 		expect(csv).not.toContain('_rooftopPower');
 		// The 11:45 raw value is 280 MW (480 MW with utility solar), not the hover estimate.
@@ -221,9 +185,7 @@ for (const group of ['detailed', 'simple']) {
 				return parseFloat(style.lineHeight) / parseFloat(style.fontSize);
 			})
 		).toBeGreaterThan(1.4);
-		expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-			true
-		);
+		await expectNoHorizontalScroll(page);
 		await page.screenshot({ path: testInfo.outputPath('rooftop-interpolation-mobile.png') });
 		await page.goto(
 			`/tracker?start=${start}&end=${end}&interval=30m&group=${group}&hidden=${hidden}&table=1`
@@ -237,7 +199,7 @@ for (const group of ['detailed', 'simple']) {
 test('live follow advances, pauses on zoom and resumes through presets and history', async ({
 	page
 }, testInfo) => {
-	const source = await fixture(page, { comparisonGrowth: true });
+	const source = await trackerFixture(page, { comparisonGrowth: true });
 	await page.clock.install({ time: new Date() });
 	await page.goto('/tracker?region=nsw1&table=0');
 	await expect(page.getByRole('switch', { name: 'Live' })).toHaveCount(0);
@@ -271,16 +233,14 @@ test('live follow advances, pauses on zoom and resumes through presets and histo
 	await page.screenshot({ path: testInfo.outputPath('tracker-live-desktop.png') });
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(page.getByRole('switch', { name: 'Live' })).toHaveCount(0);
-	await expect
-		.poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-		.toBeLessThanOrEqual(390);
+	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('tracker-live-mobile.png') });
 });
 
 test('live freshness keeps failed and empty feeds explicit and recovers on the next tick', async ({
 	page
 }) => {
-	const source = await fixture(page, {
+	const source = await trackerFixture(page, {
 		comparisonGrowth: true,
 		fail: 'price',
 		empty: 'emissions_intensity'
@@ -305,7 +265,7 @@ test('live freshness keeps failed and empty feeds explicit and recovers on the n
 test('freshness flags delayed readings but not a deliberately historical view', async ({
 	page
 }) => {
-	await fixture(page, { comparisonGrowth: true, latestAt: Date.now() - 3_600_000 });
+	await trackerFixture(page, { comparisonGrowth: true, latestAt: Date.now() - 3_600_000 });
 	await page.goto('/tracker?region=nsw1&table=0');
 	await expect(card(page, 'Generation').getByTestId('reading-freshness')).toContainText(
 		'Data delayed'
@@ -320,7 +280,7 @@ test('freshness flags delayed readings but not a deliberately historical view', 
 test('live ticks stop while hidden and catch up once when visible without moving paused windows', async ({
 	page
 }) => {
-	const source = await fixture(page, { comparisonGrowth: true });
+	const source = await trackerFixture(page, { comparisonGrowth: true });
 	await page.clock.install({ time: new Date() });
 	await page.goto('/tracker?region=nsw1&table=0');
 	await chartsSettled(page);
@@ -356,7 +316,7 @@ test('live ticks stop while hidden and catch up once when visible without moving
 test('window metrics use facility cards, signed displayed values and keyboard chart highlighting', async ({
 	page
 }, testInfo) => {
-	const api = await fixture(page, { contributions: true, comparisonGrowth: true });
+	const api = await trackerFixture(page, { contributions: true, comparisonGrowth: true });
 	const start = Date.parse('2026-08-01T00:00:00+10:00');
 	await page.goto(`/tracker?start=${start}&end=${start + 2 * 86_400_000}&interval=30m`);
 	const metrics = page.getByRole('region', { name: 'Window metrics' });
@@ -446,7 +406,7 @@ test('tracker slides one nav logo in place of the date range and overlays charts
 	page
 }, testInfo) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
-	const source = await fixture(page, { hold: 'power' });
+	const source = await trackerFixture(page, { hold: 'power' });
 	await page.goto('/tracker?region=nsw1&table=1');
 	const loader = page.getByTestId('tracker-loading');
 	const loadingStates = page.getByRole('status', { name: /Loading|Updating/ });
@@ -515,7 +475,7 @@ test('tracker slides one nav logo in place of the date range and overlays charts
 test('shared loading waits for table-only data after charts settle and fits mobile', async ({
 	page
 }, testInfo) => {
-	const source = await fixture(page, { hold: 'market_value' });
+	const source = await trackerFixture(page, { hold: 'market_value' });
 	await page.goto('/tracker?region=nsw1&table=1&emissions=volume');
 	const loader = page.getByTestId('tracker-loading');
 	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
@@ -556,7 +516,7 @@ test('shared loading waits for table-only data after charts settle and fits mobi
 test('shared loading clears on a failed refresh and retained table values stay stale until retry', async ({
 	page
 }) => {
-	const source = await fixture(page);
+	const source = await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1&table=1');
 	const panel = page.locator('#tracker-table-panel');
 	await expect(panel.getByRole('table')).toBeVisible();
@@ -577,7 +537,7 @@ test('shared loading clears on a failed refresh and retained table values stay s
 });
 
 test('table header contains Show all and columns scroll without a switcher', async ({ page }) => {
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1&table=1&hidden=coal');
 	const panel = page.locator('#tracker-table-panel');
 	const showAll = panel.getByRole('button', { name: 'Show all', exact: true });
@@ -605,7 +565,7 @@ test('table header contains Show all and columns scroll without a switcher', asy
 test('panel controls share generous targets, directional icons and keyboard focus', async ({
 	page
 }, testInfo) => {
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1');
 	await chartsSettled(page);
 	const hideMetrics = page.getByRole('button', { name: 'Hide metrics', exact: true });
@@ -652,16 +612,14 @@ test('panel controls share generous targets, directional icons and keyboard focu
 	await hideTable.click();
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(hideMetrics).toBeVisible();
-	await expect
-		.poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-		.toBeLessThanOrEqual(390);
+	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('panels-mobile.png') });
 });
 
 test('fuel technology options move with the panel, support keyboard selection and fit mobile', async ({
 	page
 }, testInfo) => {
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1');
 	await chartsSettled(page);
 	const trigger = page.getByRole('button', { name: 'Fuel technology options', exact: true });
@@ -677,7 +635,7 @@ test('fuel technology options move with the panel, support keyboard selection an
 	await expect(trigger.locator('svg')).toHaveCSS('width', '16px');
 	await expect(trigger.locator('svg')).toHaveCSS('height', '16px');
 	await expect(trigger.locator('svg')).toHaveAttribute('stroke-width', '1.5');
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
+	await openOptions(page);
 	const menuStyle = (element) => {
 		const style = getComputedStyle(element);
 		return ['fontFamily', 'fontSize', 'fontWeight', 'padding', 'gap', 'color', 'borderRadius'].map(
@@ -695,7 +653,7 @@ test('fuel technology options move with the panel, support keyboard selection an
 	await expect(page.getByRole('menu').getByRole('menuitemradio')).toHaveCount(0);
 	await expect(page.getByRole('menu')).not.toContainText('Fuel tech grouping');
 	await expect(page.getByRole('menu')).not.toContainText('Contribution');
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
+	await openOptions(page);
 	await trigger.press('Enter');
 	const menu = page.getByRole('menu', { name: 'Fuel technology options' });
 	await expect(menu.getByRole('menuitemradio')).toHaveCount(8);
@@ -761,7 +719,7 @@ test('fuel technology options move with the panel, support keyboard selection an
 test('window metrics follow range and market modes without applying timeline transforms', async ({
 	page
 }) => {
-	await fixture(page, { contributions: true, comparisonGrowth: true });
+	await trackerFixture(page, { contributions: true, comparisonGrowth: true });
 	const start = Date.parse('2026-08-01T00:00:00+10:00');
 	await page.goto(
 		`/tracker?start=${start}&end=${start + 2 * 86_400_000}&interval=30m&table=0&transform=proportion`
@@ -788,7 +746,7 @@ test('window metrics follow range and market modes without applying timeline tra
 });
 
 test('window metrics never show held, failed or empty data as current', async ({ page }) => {
-	const api = await fixture(page, { hold: 'price', empty: 'emissions' });
+	const api = await trackerFixture(page, { hold: 'price', empty: 'emissions' });
 	await page.goto('/tracker?region=nsw1&table=0&emissions=volume');
 	await expect.poll(() => api.requests.includes('power')).toBe(true);
 	const price = page.getByTestId('metric-market-min');
@@ -805,7 +763,7 @@ test('window metrics never show held, failed or empty data as current', async ({
 test('demand metrics wait for their feed and recover with the table and overlay closed', async ({
 	page
 }) => {
-	const api = await fixture(page, { fail: 'demand' });
+	const api = await trackerFixture(page, { fail: 'demand' });
 	await page.goto('/tracker?region=nsw1&table=0');
 	const demand = page.getByTestId('metric-demand-min');
 	await expect(page.getByRole('button', { name: 'Retry demand', exact: true })).toBeVisible();
@@ -820,7 +778,7 @@ test('demand metrics wait for their feed and recover with the table and overlay 
 
 test('window metrics fit mobile in WEM', async ({ page }, testInfo) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await fixture(page, { contributions: true });
+	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?region=wem&table=0');
 	await expect(page.getByRole('region', { name: 'Window metrics' })).toHaveCount(0);
 	const chartWidth = (await card(page, 'Generation').boundingBox()).width;
@@ -831,16 +789,12 @@ test('window metrics fit mobile in WEM', async ({ page }, testInfo) => {
 	await expect(metrics).not.toContainText('UTC+08:00');
 	const bounds = await metrics.boundingBox();
 	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
-	await expect
-		.poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-		.toBeLessThanOrEqual(390);
+	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('window-metrics-mobile.png') });
 	const resize = page.getByRole('separator', { name: 'Resize metrics panel' });
 	await resize.press('End');
 	await expect(resize).toHaveAttribute('aria-valuenow', '334');
-	await expect
-		.poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-		.toBeLessThanOrEqual(390);
+	await expectNoHorizontalScroll(page);
 	expect((await card(page, 'Generation').boundingBox()).width).toBe(chartWidth);
 	await page.getByRole('button', { name: 'Hide metrics', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Show metrics', exact: true })).toBeFocused();
@@ -852,9 +806,9 @@ test('window metrics fit mobile in WEM', async ({ page }, testInfo) => {
 test('metrics pane stays left with minimum and maximum columns, resizes without fetching and remembers its width', async ({
 	page
 }) => {
-	const api = await fixture(page);
+	const api = await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1');
-	await ready(page);
+	await trackerReady(page);
 	await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 	const pane = page.getByTestId('metrics-pane');
 	const handle = page.getByRole('separator', { name: 'Resize metrics panel' });
@@ -924,18 +878,16 @@ test('metrics resizing survives unavailable storage and narrower desktop widths'
 			};
 		}
 	});
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1');
-	await ready(page);
+	await trackerReady(page);
 	const handle = page.getByRole('separator', { name: 'Resize metrics panel' });
 	await expect(handle).toHaveAttribute('aria-valuemax', '400');
 	await handle.press('End');
 	await expect(handle).toHaveAttribute('aria-valuenow', '400');
 	await page.setViewportSize({ width: 1024, height: 768 });
 	await expect(handle).toHaveAttribute('aria-valuenow', '328');
-	await expect
-		.poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-		.toBeLessThanOrEqual(1024);
+	await expectNoHorizontalScroll(page);
 	await page.getByRole('button', { name: 'Hide metrics', exact: true }).click();
 	await page.getByRole('button', { name: 'Show metrics', exact: true }).click();
 	await expect(handle).toHaveAttribute('aria-valuenow', '328');
@@ -944,7 +896,7 @@ test('metrics resizing survives unavailable storage and narrower desktop widths'
 test('window metrics recover from a failed chart without presenting an old value', async ({
 	page
 }) => {
-	const api = await fixture(page, { fail: 'price' });
+	const api = await trackerFixture(page, { fail: 'price' });
 	await page.goto('/tracker?region=nsw1&table=0');
 	const minimum = page.getByTestId('metric-market-min');
 	await expect(minimum).toContainText('Unavailable — retry the chart');
@@ -956,18 +908,12 @@ test('window metrics recover from a failed chart without presenting an old value
 	await expect(minimum).toContainText('50');
 });
 
-async function openPng(page) {
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
-	await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
-	return page.getByRole('dialog', { name: 'Export PNG' });
-}
-
 test('PNG exports selected Stratum layers, legends and edited captions as the exact preview', async ({
 	page
 }, testInfo) => {
-	await fixture(page, { contributions: true });
+	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?region=nsw1&range=7d&table=0');
-	await ready(page);
+	await trackerReady(page);
 	await expect
 		.poll(() => card(page, 'Generation').getAttribute('data-tracker-png'))
 		.toContain('"ready":true');
@@ -1039,7 +985,7 @@ test('PNG exports selected Stratum layers, legends and edited captions as the ex
 });
 
 test('PNG prevents held-frame export and freezes readiness until reopened', async ({ page }) => {
-	const api = await fixture(page, { hold: 'price' });
+	const api = await trackerFixture(page, { hold: 'price' });
 	await page.goto('/tracker?region=nsw1&table=0');
 	await expect.poll(() => api.requests.includes('power')).toBe(true);
 	const dialog = await openPng(page);
@@ -1060,7 +1006,7 @@ test('PNG prevents held-frame export and freezes readiness until reopened', asyn
 
 test('PNG captures average-day charts and fits a narrow screen', async ({ page }, testInfo) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await fixture(page, { contributions: true });
+	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?view=average&profile-end=2026-08-31&profile-series=wind');
 	await expect(page.locator('[data-tracker-png]')).toHaveCount(2);
 	const dialog = await openPng(page);
@@ -1078,7 +1024,7 @@ test('PNG captures average-day charts and fits a narrow screen', async ({ page }
 test('PNG excludes confirmed empty charts while keeping ready charts selectable', async ({
 	page
 }) => {
-	await fixture(page, { empty: 'price' });
+	await trackerFixture(page, { empty: 'price' });
 	await page.goto('/tracker?region=nsw1&table=0');
 	await expect(card(page, 'Market').getByText('No data for this range.')).toBeVisible();
 	await expect
@@ -1093,7 +1039,7 @@ test('PNG excludes confirmed empty charts while keeping ready charts selectable'
 test('PNG supports percentage overlays and comparisons without refetching and can retry rendering', async ({
 	page
 }, testInfo) => {
-	const api = await fixture(page, { contributions: true, comparisonGrowth: true });
+	const api = await trackerFixture(page, { contributions: true, comparisonGrowth: true });
 	const a = Date.parse('2026-08-01T00:00:00+10:00');
 	const b = a + 86_400_000;
 	await page.goto(
@@ -1138,7 +1084,7 @@ test('PNG supports percentage overlays and comparisons without refetching and ca
 test('two-date comparison uses signed displayed values, Stratum bars, CSV and history without fetching', async ({
 	page
 }, testInfo) => {
-	const api = await fixture(page, { contributions: true, comparisonGrowth: true });
+	const api = await trackerFixture(page, { contributions: true, comparisonGrowth: true });
 	const a = Date.parse('2026-08-01T00:00:00+10:00');
 	const b = a + 86_400_000;
 	await page.goto(`/tracker?start=${a}&end=${b + 86_400_000}&interval=30m&table=0`);
@@ -1203,7 +1149,7 @@ test('two-date comparison uses signed displayed values, Stratum bars, CSV and hi
 	await page.screenshot({ path: testInfo.outputPath('two-date-comparison.png'), fullPage: true });
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(panel).toBeVisible();
-	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+	await expectNoHorizontalScroll(page);
 	await page.screenshot({
 		path: testInfo.outputPath('two-date-comparison-mobile.png'),
 		fullPage: true
@@ -1213,7 +1159,7 @@ test('two-date comparison uses signed displayed values, Stratum bars, CSV and hi
 test('comparison rejects stale range dates and waits for failed or missing generation', async ({
 	page
 }) => {
-	const api = await fixture(page, { fail: 'power' });
+	const api = await trackerFixture(page, { fail: 'power' });
 	const a = Date.parse('2026-08-01T00:00:00+08:00');
 	const b = a + 86_400_000;
 	await page.goto(
@@ -1242,7 +1188,7 @@ test('comparison rejects stale range dates and waits for failed or missing gener
 test('comparison uses raw energy despite timeline transforms and follows visibility and grouping', async ({
 	page
 }) => {
-	await fixture(page, { contributions: true, comparisonGrowth: true });
+	await trackerFixture(page, { contributions: true, comparisonGrowth: true });
 	const start = Date.parse('2026-07-01T00:00:00+10:00');
 	const end = Date.parse('2026-09-01T00:00:00+10:00');
 	const a = Date.parse('2026-08-01T00:00:00+10:00');
@@ -1271,7 +1217,7 @@ test('comparison uses raw energy despite timeline transforms and follows visibil
 test('Stratum profiles support hover, keyboard pinning, legend filtering and bounded zoom without fetching', async ({
 	page
 }, testInfo) => {
-	const api = await fixture(page, { contributions: true });
+	const api = await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?view=daily&profile-end=2026-08-31&profile-series=wind');
 	const stack = page.getByRole('region', {
 		name: 'Average day fuel technology stack',
@@ -1349,7 +1295,7 @@ test('Stratum profiles support hover, keyboard pinning, legend filtering and bou
 test('average-day stack includes every technology and persists beside price without duplicate power requests', async ({
 	page
 }, testInfo) => {
-	const api = await fixture(page, { contributions: true });
+	const api = await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?view=average&profile-end=2026-08-31&hidden=coal&profile-series=wind');
 	const stack = page.getByRole('region', {
 		name: 'Average day fuel technology stack',
@@ -1393,7 +1339,7 @@ test('average-day stack includes every technology and persists beside price with
 test('time-of-day profiles keep requests bounded and reproduce selections, coverage and CSV', async ({
 	page
 }) => {
-	const api = await fixture(page);
+	const api = await trackerFixture(page);
 	await page.goto('/tracker?region=wem&view=average&profile-end=2026-08-31&profile-series=wind');
 	const profile = page.getByRole('region', { name: 'Time-of-day analysis' });
 	await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
@@ -1429,13 +1375,17 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 			days
 		);
 	}
+	// Every request stays inside the selected complete days: widening the window
+	// fetches only the missing earlier days, never a speculative buffer.
+	const windowEnd = Date.parse('2026-09-01T00:00:00+08:00');
 	for (const url of api.urls) {
 		const params = new URL(url).searchParams;
 		const start = Date.parse(`${params.get('date_start')}+08:00`);
 		const end = Date.parse(`${params.get('date_end')}+08:00`);
 		expect(end - start).toBeLessThanOrEqual(28 * 86_400_000);
 		expect(params.get('interval')).toBe('5m');
-		expect(params.get('date_end')).toBe('2026-09-01T00:00:00');
+		expect(end).toBeLessThanOrEqual(windowEnd);
+		expect(start).toBeGreaterThanOrEqual(windowEnd - 28 * 86_400_000);
 	}
 	await profile.getByText('Profile data and coverage', { exact: true }).click();
 	await expect(
@@ -1447,7 +1397,7 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 	await profile.getByRole('button', { name: 'Download profile CSV' }).click();
 	const csv = await readFile(await (await saved).path(), 'utf8');
 	expect(csv).toContain('Average (MW),Days available');
-	expect(csv).toContain('UTC+08:00,Coal,00:00,100,28,100,6');
+	expect(csv).toContain('AWST (UTC+08:00),Coal,00:00,100,28,100,6');
 	const url = await copyTrackerLink(page);
 	expect(new URL(url).searchParams.get('view')).toBe('daily');
 	await page.goto(url);
@@ -1482,7 +1432,7 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 test('time-of-day switches reset settings, restore history and fit narrow screens', async ({
 	page
 }, testInfo) => {
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto(
 		'/tracker?view=daily&profile-end=2026-08-31&profile-days=14&range=30d&interval=1h&hidden=coal&transform=proportion'
 	);
@@ -1499,9 +1449,7 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(page.getByRole('combobox', { name: 'Window', exact: true })).toBeVisible();
-	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-		true
-	);
+	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('time-of-day-mobile.png'), fullPage: true });
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.screenshot({ path: testInfo.outputPath('time-of-day-desktop.png'), fullPage: true });
@@ -1510,7 +1458,7 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 test('time-of-day failures and empty results remain explicit; switching metric cannot export stale data', async ({
 	page
 }) => {
-	const api = await fixture(page, { fail: 'power', hold: 'price' });
+	const api = await trackerFixture(page, { fail: 'power', hold: 'price' });
 	await page.goto('/tracker?view=average&profile-end=2026-08-31');
 	await expect(page.getByRole('alert')).toContainText('Fixture failure');
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeDisabled();
@@ -1522,7 +1470,7 @@ test('time-of-day failures and empty results remain explicit; switching metric c
 	await expect(page.getByRole('status')).toContainText('Loading time-of-day');
 	api.release();
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await fixture(page, { empty: 'power' });
+	await trackerFixture(page, { empty: 'power' });
 	await page.getByRole('combobox', { name: 'Metric', exact: true }).selectOption('power');
 	// Use a new window so the successful response cache cannot satisfy it.
 	await page.getByLabel('Last day', { exact: true }).fill('2026-07-31');
@@ -1530,51 +1478,13 @@ test('time-of-day failures and empty results remain explicit; switching metric c
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeDisabled();
 });
 
-async function percentageView(page) {
-	const generation = card(page, 'Generation');
-	// The SVG mounts before data; wait for the chart before targeting its toolbar.
-	await expect(generation.locator('path.path-area').first()).toHaveAttribute('d', /M/);
-	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
-	await generation.getByRole('tab', { name: 'Proportion', exact: true }).click();
-	// The contribution note moves the chart toolbar; close outside that moving target.
-	await generation.getByRole('heading', { name: 'Generation', exact: true }).click();
-	await expect(generation.getByRole('tab', { name: 'Proportion', exact: true })).toBeHidden();
-	return generation;
-}
-
-async function contributionBasis(page, label) {
-	const trigger = page.getByRole('button', { name: 'Fuel technology options', exact: true });
-	await trigger.click();
-	await page.getByRole('menu').getByRole('menuitemradio', { name: label, exact: true }).click();
-	await expect(page.getByRole('menu', { name: 'Fuel technology options' })).toBeHidden();
-	await expect(trigger).toBeFocused();
-}
-
-async function copyTrackerLink(page) {
-	// Stub only the browser clipboard boundary; exercise the real copy action.
-	await page.evaluate(() =>
-		Object.defineProperty(navigator, 'clipboard', {
-			configurable: true,
-			value: {
-				writeText: async (value) => {
-					document.documentElement.dataset.copiedTrackerUrl = value;
-				}
-			}
-		})
-	);
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
-	await page.getByRole('menu').getByRole('button', { name: 'Copy link', exact: true }).click();
-	await expect(page.getByText('Link copied.', { exact: true })).toBeVisible();
-	return page.locator('html').getAttribute('data-copied-tracker-url');
-}
-
 test('copied analytical links restore hidden sources, contribution, transforms and emissions exclusions', async ({
 	page,
 	context
 }) => {
-	await fixture(page, { distinctEmissions: true });
+	await trackerFixture(page, { distinctEmissions: true });
 	await page.goto('/tracker?region=nsw1&table=1');
-	await ready(page);
+	await trackerReady(page);
 	const before = await readFile(await (await download(page, 'Emissions')).path(), 'utf8');
 	expect(before.split(/\r?\n/)[0].split(',')[1]).toBe('Emissions intensity (kgCO2e/MWh)');
 	expect(
@@ -1602,13 +1512,14 @@ test('copied analytical links restore hidden sources, contribution, transforms a
 	expect(params.get('price')).toBe('mv');
 	expect(params.get('table')).toBe('0');
 	const reopened = await context.newPage();
-	await fixture(reopened, { distinctEmissions: true });
+	await trackerFixture(reopened, { distinctEmissions: true });
 	await reopened.goto(copied);
-	await ready(reopened);
+	await trackerReady(reopened);
 	await expect(
 		card(reopened, 'Generation').getByText('% of generation', { exact: true })
 	).toBeVisible();
 	await expect(await hoverGeneration(reopened)).not.toContainText('Coal');
+	await trackerReady(reopened);
 	const emissions = await readFile(await (await download(reopened, 'Emissions')).path(), 'utf8');
 	expect(emissions.split(/\r?\n/)[0].split(',')[1]).toBe('Emissions intensity (kgCO2e/MWh)');
 	expect(
@@ -1624,7 +1535,7 @@ test('copied analytical links restore hidden sources, contribution, transforms a
 		restoredMarket.getByRole('tab', { name: 'Change since', exact: true })
 	).toHaveAttribute('aria-selected', 'true');
 	await reopened.reload();
-	await ready(reopened);
+	await trackerReady(reopened);
 	await expect(
 		card(reopened, 'Generation').getByText('% of generation', { exact: true })
 	).toBeVisible();
@@ -1635,9 +1546,9 @@ test('copied analytical links restore hidden sources, contribution, transforms a
 test('analytical history restores grouping visibility and transform without echo entries', async ({
 	page
 }) => {
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1&table=1');
-	await ready(page);
+	await trackerReady(page);
 	const initialHistory = await page.evaluate(() => history.length);
 	await percentageView(page);
 	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
@@ -1669,11 +1580,11 @@ test('analytical history restores grouping visibility and transform without echo
 test('solo selections are atomic and plain same-route links reset analytical state', async ({
 	page
 }) => {
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto(
 		'/tracker?region=nsw1&table=1&hidden=coal&contribution=generation&transform=proportion'
 	);
-	await ready(page);
+	await trackerReady(page);
 	const historyBefore = await page.evaluate(() => history.length);
 	await page
 		.getByTestId('fuel-tech-row')
@@ -1686,7 +1597,7 @@ test('solo selections are atomic and plain same-route links reset analytical sta
 	await expect.poll(() => new URL(page.url()).searchParams.get('hidden')).toBe('coal');
 	await page.getByRole('link', { name: 'Tracker', exact: true }).click();
 	await expect(page).not.toHaveURL(/hidden=|contribution=|transform=/);
-	await ready(page);
+	await trackerReady(page);
 	await expect(
 		card(page, 'Generation').getByText('% of gross demand', { exact: true })
 	).toBeHidden();
@@ -1695,32 +1606,10 @@ test('solo selections are atomic and plain same-route links reset analytical sta
 	).toHaveAttribute('aria-pressed', 'true');
 });
 
-async function hoverGeneration(page) {
-	const generation = card(page, 'Generation');
-	const area = generation.locator('path.path-area').first();
-	await expect(area).toHaveAttribute('d', /M/);
-	// The path animates when percentage scales change and can temporarily lie
-	// outside the clipped plot. Hover the stable SVG viewport, not that path box.
-	const box = await area.evaluate((path) => {
-		const bounds = /** @type {SVGPathElement} */ (path).ownerSVGElement.getBoundingClientRect();
-		return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
-	});
-	const tooltip = generation.getByTestId('chart-floating-tooltip');
-	// Local basis changes can publish after the first pointer event and clear
-	// its old hover. Re-enter through real pointer input until publication settles.
-	await expect
-		.poll(async () => {
-			await page.mouse.move(box.x + box.width / 2, box.y + Math.max(1, box.height / 2));
-			return tooltip.isVisible();
-		})
-		.toBe(true);
-	return tooltip;
-}
-
 test('generation tooltip shows interval percentages beside absolute values and follows the contribution basis', async ({
 	page
 }, testInfo) => {
-	await fixture(page, { contributions: true });
+	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?region=nsw1&contribution=generation&table=1');
 	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
 	let tooltip = await hoverGeneration(page);
@@ -1769,7 +1658,7 @@ test('generation tooltip shows interval percentages beside absolute values and f
 test('renewables and curtailment tooltips pair amounts and percentages with the table closed', async ({
 	page
 }, testInfo) => {
-	const source = await fixture(page, { contributions: true });
+	const source = await trackerFixture(page, { contributions: true });
 	await page.goto(
 		'/tracker?region=nsw1&contribution=generation&table=0&hidden=coal&overlay=demand,renewables,curtailment-solar,curtailment-wind'
 	);
@@ -1825,7 +1714,7 @@ test('renewables and curtailment tooltips pair amounts and percentages with the 
 test('generation tooltip retains its unit and percentage headings in line mode', async ({
 	page
 }) => {
-	await fixture(page, { contributions: true });
+	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?region=nsw1&table=0');
 	const generation = card(page, 'Generation');
 	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
@@ -1845,9 +1734,9 @@ test('generation tooltip retains its unit and percentage headings in line mode',
 test('percentage shares stay stable when hiding series and exports keep raw units', async ({
 	page
 }) => {
-	await fixture(page, { contributions: true });
+	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?region=nsw1&contribution=generation');
-	await ready(page);
+	await trackerReady(page);
 	const generation = await percentageView(page);
 	await expect(generation.getByText('% of generation', { exact: true })).toBeVisible();
 	let tooltip = await hoverGeneration(page);
@@ -1861,6 +1750,7 @@ test('percentage shares stay stable when hiding series and exports keep raw unit
 	await expect(tooltip).toContainText('66.7');
 	await expect(tooltip).not.toContainText('Coal');
 	await expect(tooltip).not.toContainText('MW');
+	await trackerReady(page);
 	const csv = await download(page, 'Generation');
 	const content = await readFile(await csv.path(), 'utf8');
 	expect(content).toContain('(MW)');
@@ -1880,11 +1770,11 @@ test('percentage shares stay stable when hiding series and exports keep raw unit
 test('demand percentage data loads with the table closed and overlays share its units', async ({
 	page
 }) => {
-	const source = await fixture(page, { hold: 'renewables', contributions: true });
+	const source = await trackerFixture(page, { hold: 'renewables', contributions: true });
 	await page.goto(
 		'/tracker?region=nsw1&contribution=generation&table=0&overlay=demand,curtailment-solar'
 	);
-	await ready(page);
+	await trackerReady(page);
 	const generation = await percentageView(page);
 	expect(source.requests).not.toContain('renewables');
 	await contributionBasis(page, '% demand');
@@ -1909,9 +1799,9 @@ test('demand percentage data loads with the table closed and overlays share its 
 test('failed demand percentages stay unavailable and retry without reopening the table', async ({
 	page
 }) => {
-	const source = await fixture(page, { fail: 'renewables' });
+	const source = await trackerFixture(page, { fail: 'renewables' });
 	await page.goto('/tracker?region=nsw1&table=0');
-	await ready(page);
+	await trackerReady(page);
 	const generation = await percentageView(page);
 	await expect(generation.getByText('Gross-demand percentages unavailable.')).toBeVisible();
 	await expect(generation.locator('path.path-area[d*="M"]')).toHaveCount(0);
@@ -1922,50 +1812,9 @@ test('failed demand percentages stay unavailable and retry without reopening the
 	await contributionBasis(page, '% generation');
 	await expect(await hoverGeneration(page)).toContainText('66.7');
 });
-async function pauseByZoom(page, clockInstalled = false) {
-	await card(page, 'Generation').getByRole('button', { name: 'Zoom in', exact: true }).click();
-	if (clockInstalled) await page.clock.runFor(1000);
-	await expect(page).toHaveURL(/start=.*end=/);
-	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
-}
-
-async function chartsSettled(page) {
-	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
-	await expect(page.getByTestId('metric-market-min')).toBeEnabled();
-	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
-}
-
-async function ready(page) {
-	await expect(page.locator('[aria-busy="false"]').first()).toBeAttached();
-	await expect(card(page, 'Generation').locator('svg').first()).toBeVisible();
-}
-async function download(page, label) {
-	await ready(page);
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
-	const menu = page.getByRole('menu');
-	const result = page.waitForEvent('download');
-	await menu.getByRole('button', { name: label, exact: true }).click();
-	return result;
-}
-
-/** Read a generated XLSX's XML via its ZIP directory, without a second spreadsheet library. */
-function workbookXml(buffer, wanted) {
-	for (let offset = 0; offset < buffer.length - 46; offset++) {
-		if (buffer.readUInt32LE(offset) !== 0x02014b50) continue;
-		const length = buffer.readUInt16LE(offset + 28);
-		const name = buffer.subarray(offset + 46, offset + 46 + length).toString();
-		if (name !== wanted) continue;
-		const size = buffer.readUInt32LE(offset + 20);
-		const local = buffer.readUInt32LE(offset + 42);
-		const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
-		const content = buffer.subarray(start, start + size);
-		return (buffer.readUInt16LE(offset + 10) === 8 ? inflateRawSync(content) : content).toString();
-	}
-	throw new Error(`Missing workbook entry: ${wanted}`);
-}
 
 test('selected units survive pointer and keyboard resizing', async ({ page }) => {
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1&table=0');
 	await chartsSettled(page);
 	const generation = card(page, 'Generation');
@@ -1985,7 +1834,7 @@ test('selected units survive pointer and keyboard resizing', async ({ page }) =>
 });
 
 test('a failed metric retries in place and only required providers load', async ({ page }) => {
-	const source = await fixture(page, { fail: 'price' });
+	const source = await trackerFixture(page, { fail: 'price' });
 	await page.goto('/tracker?region=nsw1&table=0');
 	await expect(card(page, 'Market').getByRole('button', { name: 'Retry' })).toBeVisible();
 	await expect(card(page, 'Market')).toContainText('Fixture failure');
@@ -1993,7 +1842,7 @@ test('a failed metric retries in place and only required providers load', async 
 	source.recover();
 	await card(page, 'Market').getByRole('button', { name: 'Retry' }).click();
 	await expect(card(page, 'Market').getByRole('button', { name: 'Retry' })).toBeHidden();
-	await ready(page);
+	await trackerReady(page);
 	expect(source.requests.filter((metric) => metric === 'price').length).toBeGreaterThanOrEqual(2);
 	expect(source.requests).toContain('renewables');
 	expect(source.requests).not.toContain('market_value');
@@ -2001,9 +1850,9 @@ test('a failed metric retries in place and only required providers load', async 
 });
 
 test('a transient date-range data failure recovers without a manual retry', async ({ page }) => {
-	const source = await fixture(page, { failOnce: 'price' });
+	const source = await trackerFixture(page, { failOnce: 'price' });
 	await page.goto('/tracker?region=sa1&range=30d&interval=1d&table=0');
-	await ready(page);
+	await trackerReady(page);
 	// Initialisation and gap fills can use other windows. Count only the failed
 	// URL, whose one retry is shared rather than duplicating the chart request.
 	await expect.poll(() => source.requests.includes('price')).toBe(true);
@@ -2035,11 +1884,11 @@ test('idle warming stays near the selected range and other grains load only on d
 			return batch.length;
 		};
 	});
-	const source = await fixture(page);
+	const source = await trackerFixture(page);
 	await page.goto('/tracker?region=sa1&table=0');
-	await ready(page);
+	await trackerReady(page);
 	await expect.poll(() => page.evaluate(() => window.flushTrackerIdle())).toBeGreaterThan(0);
-	await ready(page);
+	await trackerReady(page);
 	await expect.poll(() => source.urls.length).toBeGreaterThan(3);
 	for (const href of source.urls) {
 		const params = new URL(href).searchParams;
@@ -2049,7 +1898,7 @@ test('idle warming stays near the selected range and other grains load only on d
 		expect(end - start).toBeLessThanOrEqual(10 * 86_400_000 + 300_000);
 	}
 	await page.getByRole('button', { name: '30D', exact: true }).click();
-	await ready(page);
+	await trackerReady(page);
 	await expect
 		.poll(() => source.urls.some((href) => new URL(href).searchParams.get('interval') === '1d'))
 		.toBe(true);
@@ -2058,17 +1907,17 @@ test('idle warming stays near the selected range and other grains load only on d
 		false
 	);
 	await page.getByRole('button', { name: 'All', exact: true }).click();
-	await ready(page);
+	await trackerReady(page);
 	await expect
 		.poll(() => source.urls.some((href) => new URL(href).searchParams.get('interval') === '1M'))
 		.toBe(true);
 	await page.getByRole('button', { name: '3D', exact: true }).click();
-	await ready(page);
+	await trackerReady(page);
 	await expect(card(page, 'Generation').getByText('Power', { exact: true })).toBeVisible();
 });
 
 test('explicit ranges push history and back/forward restore the range', async ({ page }) => {
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1&table=0');
 	await chartsSettled(page);
 	await page.getByRole('button', { name: '30D', exact: true }).click();
@@ -2083,13 +1932,12 @@ test('explicit ranges push history and back/forward restore the range', async ({
 test('CSV can export an independent ready dataset while a workbook waits for all datasets', async ({
 	page
 }) => {
-	const source = await fixture(page, { hold: 'price' });
+	const source = await trackerFixture(page, { hold: 'price' });
 	await page.goto('/tracker?region=nsw1&table=0');
 	// The generation snapshot publishes independently of the held market response.
 	// A client request proves hydration without waiting on the held chart.
 	await expect.poll(() => source.requests.includes('power')).toBe(true);
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
-	const menu = page.getByRole('menu');
+	const menu = await openOptions(page);
 	await expect(
 		menu.getByRole('button', { name: 'Everything (one workbook)', exact: true })
 	).toBeDisabled();
@@ -2098,15 +1946,17 @@ test('CSV can export an independent ready dataset while a workbook waits for all
 	await menu.getByRole('button', { name: 'Generation', exact: true }).click();
 	expect((await independent).suggestedFilename()).toContain('generation');
 	source.release();
-	await ready(page);
+	await trackerReady(page);
 	// Wait for publication through a visible table after opening it.
 	await page.getByRole('button', { name: 'Show fuel tech table' }).click();
 	await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
+	await trackerReady(page);
 	const csv = await download(page, 'Generation');
 	const content = await readFile(await csv.path(), 'utf8');
 	expect(content).toContain('(MW)');
 	expect(content.split('\n').length).toBeGreaterThan(2);
 	expect(content).toMatch(/\+10:00/);
+	await trackerReady(page);
 	const workbook = await download(page, 'Everything (one workbook)');
 	const bytes = await readFile(await workbook.path());
 	const index = workbookXml(bytes, 'xl/workbook.xml');
@@ -2118,21 +1968,22 @@ test('CSV can export an independent ready dataset while a workbook waits for all
 test('confirmed empty data settles without a retry or an endless loading state', async ({
 	page
 }) => {
-	await fixture(page, { empty: 'price' });
+	await trackerFixture(page, { empty: 'price' });
 	await page.goto('/tracker?region=wem&table=0');
 	await expect(card(page, 'Market').getByText('No data for this range.')).toBeVisible();
 	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
 	await expect(card(page, 'Market').getByRole('button', { name: 'Retry' })).toHaveCount(0);
+	await trackerReady(page);
 	const csv = await download(page, 'Generation');
 	expect(await readFile(await csv.path(), 'utf8')).toContain('+08:00');
 });
 
 test('reopening the table waits for its providers before enabling its export', async ({ page }) => {
-	const source = await fixture(page, { hold: 'market_value' });
+	const source = await trackerFixture(page, { hold: 'market_value' });
 	await page.goto('/tracker?region=nsw1&table=0');
-	await ready(page);
+	await trackerReady(page);
 	await page.getByRole('button', { name: 'Show fuel tech table' }).click();
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
+	await openOptions(page);
 	const tableDownload = page
 		.getByRole('menu')
 		.getByRole('button', { name: 'Fuel tech table', exact: true });
@@ -2147,17 +1998,15 @@ test('reopening the table waits for its providers before enabling its export', a
 test('same-route links reset selection and phone/tablet layouts remain usable', async ({
 	page
 }, testInfo) => {
-	await fixture(page);
+	await trackerFixture(page);
 	for (const width of [390, 820, 1440]) {
 		await page.setViewportSize({ width, height: 900 });
 		await page.goto('/tracker?region=nsw1');
-		await ready(page);
+		await trackerReady(page);
 		if (width === 390)
 			await expect(page.getByRole('button', { name: 'Show fuel tech table' })).toBeVisible();
 		else await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
-		expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-			width
-		);
+		await expectNoHorizontalScroll(page);
 		await page.screenshot({ path: testInfo.outputPath(`tracker-${width}.png`) });
 	}
 	await page.getByRole('link', { name: 'Tracker', exact: true }).click();
@@ -2168,7 +2017,7 @@ test('same-route links reset selection and phone/tablet layouts remain usable', 
 test('repeated grouping changes reuse responses and measure table calculations', async ({
 	page
 }, testInfo) => {
-	const source = await fixture(page);
+	const source = await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1&table=1');
 	await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
 	await page.evaluate(() => performance.clearMeasures());
@@ -2209,9 +2058,9 @@ test('resize bounds and pointer cancellation work when height storage is unavail
 			};
 		}
 	});
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1&table=0');
-	await ready(page);
+	await trackerReady(page);
 	const handle = page.getByRole('separator', { name: 'Resize chart height' }).first();
 	await handle.press('Home');
 	await handle.press('ArrowUp');
@@ -2229,8 +2078,9 @@ test('resize bounds and pointer cancellation work when height storage is unavail
 });
 
 test('calendar-filtered rolling data exports only the selected months', async ({ page }) => {
-	await fixture(page);
+	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1&range=all&interval=12mr&filter=jan&table=0');
+	await trackerReady(page);
 	const csv = await download(page, 'Generation');
 	const content = await readFile(await csv.path(), 'utf8');
 	const dates = content.split('\n').filter((line) => /^\d{4}-/.test(line));

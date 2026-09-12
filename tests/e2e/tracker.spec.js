@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { card, collectPageErrors, download, hydrated, openOptions } from './helpers/tracker.js';
 
 /**
  * The navigation server-renders before the canvas is interactive. Wait for
@@ -6,6 +7,7 @@ import { test, expect } from '@playwright/test';
  * @param {import('@playwright/test').Page} page
  */
 async function waitForHydration(page) {
+	await hydrated(page);
 	await expect(page.getByRole('button', { name: '3D', exact: true })).toBeVisible();
 	await expect(page.locator('[aria-busy="false"]').first()).toBeAttached({ timeout: 15000 });
 }
@@ -29,8 +31,7 @@ function roundTablePower(value) {
 
 test.describe('Tracker smoke tests', () => {
 	test('/tracker loads without errors', async ({ page }) => {
-		const errors = [];
-		page.on('pageerror', (error) => errors.push(error.message));
+		const errors = collectPageErrors(page);
 
 		await page.goto('/tracker');
 
@@ -47,8 +48,7 @@ test.describe('Tracker smoke tests', () => {
 	});
 
 	test('split toggles and region change update the URL without errors', async ({ page }) => {
-		const errors = [];
-		page.on('pageerror', (error) => errors.push(error.message));
+		const errors = collectPageErrors(page);
 
 		// A single-price region so the Price⇄Market value toggle is present.
 		await page.goto('/tracker?region=nsw1');
@@ -65,8 +65,7 @@ test.describe('Tracker smoke tests', () => {
 	});
 
 	test('table panel toggles closed and back open', async ({ page }) => {
-		const errors = [];
-		page.on('pageerror', (error) => errors.push(error.message));
+		const errors = collectPageErrors(page);
 
 		await page.goto('/tracker');
 		await waitForHydration(page);
@@ -98,9 +97,7 @@ test.describe('Tracker smoke tests', () => {
 		await waitForHydration(page);
 
 		const rows = page.getByTestId('fuel-tech-row');
-		const generationCard = page
-			.getByRole('heading', { name: 'Generation', exact: true })
-			.locator('xpath=ancestor::section[1]');
+		const generationCard = card(page, 'Generation');
 		const demandRow = page.getByRole('button', { name: /^Demand\b/ });
 		const renewablesRow = page.getByRole('button', { name: /^Renewables\b/ });
 		await expect(rows.nth(1)).toBeVisible({ timeout: 30000 });
@@ -164,9 +161,7 @@ test.describe('Tracker smoke tests', () => {
 		);
 		await waitForHydration(page);
 
-		const generationCard = page
-			.getByRole('heading', { name: 'Generation', exact: true })
-			.locator('xpath=ancestor::section[1]');
+		const generationCard = card(page, 'Generation');
 		const tooltip = generationCard.getByTestId('chart-floating-tooltip');
 		const areas = generationCard.locator('path.path-area');
 		await expect(areas.first()).toBeVisible({ timeout: 30000 });
@@ -195,8 +190,7 @@ test.describe('Tracker smoke tests', () => {
 	});
 
 	test('overlay row selections update the current URL and survive reload', async ({ page }) => {
-		const errors = [];
-		page.on('pageerror', (error) => errors.push(error.message));
+		const errors = collectPageErrors(page);
 
 		await page.goto('/tracker');
 		await waitForHydration(page);
@@ -244,9 +238,7 @@ test.describe('Tracker smoke tests', () => {
 	test('generation chart options follow the power and energy unit families', async ({ page }) => {
 		await page.goto('/tracker?table=1');
 		await waitForHydration(page);
-		let generationCard = page
-			.getByRole('heading', { name: 'Generation', exact: true })
-			.locator('xpath=ancestor::section[1]');
+		let generationCard = card(page, 'Generation');
 		const fuelTechTable = page.getByRole('table');
 		await expect(generationCard.getByText('Power', { exact: true })).toBeVisible({
 			timeout: 30000
@@ -271,9 +263,7 @@ test.describe('Tracker smoke tests', () => {
 
 		await page.goto('/tracker?range=30d&interval=1d&table=0');
 		await waitForHydration(page);
-		generationCard = page
-			.getByRole('heading', { name: 'Generation', exact: true })
-			.locator('xpath=ancestor::section[1]');
+		generationCard = card(page, 'Generation');
 		await expect(generationCard.getByText('Energy', { exact: true })).toBeVisible({
 			timeout: 30000
 		});
@@ -323,17 +313,14 @@ test.describe('Tracker options menu', () => {
 		// the export context is populated.
 		await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible({ timeout: 30000 });
 
-		await page.getByRole('button', { name: 'Options', exact: true }).click();
-		const menu = page.getByRole('menu');
+		const menu = await openOptions(page);
 		await expect(menu.getByRole('button', { name: 'Fuel tech table', exact: true })).toBeVisible();
 		const csvDownload = page.waitForEvent('download');
 		await menu.getByRole('button', { name: 'Generation', exact: true }).click();
 		expect((await csvDownload).suggestedFilename()).toBe('tracker-nem-generation-3d.csv');
 
-		await page.getByRole('button', { name: 'Options', exact: true }).click();
-		const xlsxDownload = page.waitForEvent('download');
-		await menu.getByRole('button', { name: 'Everything (one workbook)', exact: true }).click();
-		expect((await xlsxDownload).suggestedFilename()).toBe('tracker-nem-3d.xlsx');
+		const xlsxDownload = await download(page, 'Everything (one workbook)');
+		expect(xlsxDownload.suggestedFilename()).toBe('tracker-nem-3d.xlsx');
 	});
 });
 
