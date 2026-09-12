@@ -52,6 +52,41 @@ export const regionOptions = [
 	}
 ];
 
+/**
+ * The combined NEM + WEM scope. Kept out of `regionOptions` — the positional
+ * derivations below (`regionsOnly`, `regionsNemOnlyOptions`) and the scenarios
+ * filters assume single-network scopes — but exported once so every tracker
+ * surface describes it the same way.
+ */
+export const allRegionsOption = {
+	value: 'au',
+	label: 'All Regions',
+	shortLabel: 'AU',
+	description: 'NEM and WEM combined',
+	colour: '#333333'
+};
+
+/** The Explorer regions with the combined scope first. */
+export const regionOptionsWithAu = [allRegionsOption, ...regionOptions];
+
+/**
+ * Whether a scope has a spot price — every scope except the combined one,
+ * which has no national spot price.
+ * @param {string} region
+ */
+export function hasSpotPrice(region) {
+	return region !== allRegionsOption.value;
+}
+
+/**
+ * Display label for a region value, falling back to the value itself.
+ * @param {string} value
+ * @param {Array<{ value: string, label: string }>} [options]
+ */
+export function regionLabel(value, options = regionOptionsWithAu) {
+	return options.find((option) => option.value === value)?.label ?? value;
+}
+
 export const regionsNemOnlyOptions = regionOptions.filter((d) => d.value !== 'wem');
 export const regionsOnly = regionOptions.map((d) => d.value).slice(1);
 export const regionsWithShortLabels = optionsReducer(regionOptions, 'value', 'shortLabel');

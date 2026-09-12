@@ -10,6 +10,7 @@
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import X from '@lucide/svelte/icons/x';
 	import {
+		ALL_TIER_MIN_DAYS,
 		RANGE_PRESETS,
 		getPresetByDays,
 		getIntervalsForRange,
@@ -116,7 +117,7 @@
 	}
 
 	let inAllTier = $derived(
-		selectedRange === -1 || (selectedRange == null && (customDays ?? 0) > 550)
+		selectedRange === -1 || (selectedRange == null && (customDays ?? 0) > ALL_TIER_MIN_DAYS)
 	);
 	let bucketFilterOptions = $derived(bucketFilterOptionsFor(bucketFilterKindFor(displayInterval)));
 	let bucketFilterVisible = $derived(showBucketFilter && inAllTier && !!bucketFilterOptions);

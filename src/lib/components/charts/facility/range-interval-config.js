@@ -239,6 +239,13 @@ const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
 /**
+ * A span longer than this many days sits in the All tier — the threshold the
+ * interval options, the range bar's calendar filter and the tracker's range
+ * snapshot all key on.
+ */
+export const ALL_TIER_MIN_DAYS = 550;
+
+/**
  * Zoom-duration limits for a chart viewport. Fine (sub-daily power) grains get
  * a tight window; energy grains span up to a full history. Shared so every
  * component clamping the same page-level viewport (FacilityChart, NetworkChart,
@@ -316,6 +323,6 @@ export function getIntervalOptionsForDays(days, { includeRolling = false } = {})
 	if (days <= 5) return table['3D'];
 	if (days < POWER_THRESHOLD) return table['7D'];
 	if (days <= 60) return table['30D'];
-	if (days <= 550) return table['1Y'];
+	if (days <= ALL_TIER_MIN_DAYS) return table['1Y'];
 	return table['ALL'];
 }

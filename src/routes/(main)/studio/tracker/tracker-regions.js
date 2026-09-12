@@ -1,26 +1,16 @@
 /**
- * Tracker-local region options: the shared Explorer list plus an
- * "All Regions" (NEM+WEM combined, value 'au') entry at the top, which is the
- * tracker's default scope.
- *
- * Deliberately NOT added to `$lib/regions.js` — that list feeds the scenarios
- * filters, the studio explorer and the positional `regionsNemOnlyOptions` /
- * `regionsOnly` derivations, none of which can handle a two-network scope.
+ * Studio tracker region options: the shared Explorer list plus the combined
+ * "All Regions" (NEM+WEM, value 'au') scope, which is this tracker's default.
+ * The scope itself and the spot-price rule come from `$lib/regions.js`.
  */
 
-import { regionOptions } from '$lib/regions.js';
+import { regionOptionsWithAu } from '$lib/regions.js';
+
+export { hasSpotPrice } from '$lib/regions.js';
 
 export const DEFAULT_REGION = 'au';
 
-export const TRACKER_REGION_OPTIONS = [
-	{
-		value: 'au',
-		label: 'All Regions',
-		shortLabel: 'AU',
-		description: 'NEM and WEM combined'
-	},
-	...regionOptions
-];
+export const TRACKER_REGION_OPTIONS = regionOptionsWithAu;
 
 /**
  * Whole-of-network scopes — 'au' (NEM+WEM) and '_all' (whole NEM). These
@@ -30,13 +20,4 @@ export const TRACKER_REGION_OPTIONS = [
  */
 export function isWholeNetworkScope(region) {
 	return region === 'au' || region === '_all';
-}
-
-/**
- * Whether a scope has a spot price — every scope except 'au' (no national
- * spot price exists).
- * @param {string} region
- */
-export function hasSpotPrice(region) {
-	return region !== 'au';
 }

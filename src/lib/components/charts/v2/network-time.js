@@ -40,6 +40,27 @@ export function tzAbbreviationFromIana(ianaTimeZone) {
 }
 
 /**
+ * Timezone abbreviation for a network offset string.
+ *
+ * @param {string | undefined | null} offset - e.g. '+08:00'
+ * @returns {string}
+ */
+export function tzAbbreviationFromOffset(offset) {
+	return tzAbbreviationFromIana(ianaFromOffset(offset));
+}
+
+/**
+ * The zone as the data exports and profile captions state it:
+ * "AEST (UTC+10:00)".
+ *
+ * @param {string} offset - network offset, e.g. '+10:00'
+ * @returns {string}
+ */
+export function networkTimeZoneLabel(offset) {
+	return `${tzAbbreviationFromOffset(offset)} (UTC${offset})`;
+}
+
+/**
  * Whole-hour UTC offset for a network offset string.
  *
  * @param {string | undefined | null} offset - e.g. '+08:00'

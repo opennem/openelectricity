@@ -1,8 +1,8 @@
 <script>
 	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
 	import MobileFilterModal from './_components/MobileFilterModal.svelte';
-	import SearchInput from './_components/SearchInput.svelte';
-	import FilterDropdown from './_components/filters/FilterDropdown.svelte';
+	import SearchInput from '$lib/components/filters/SearchInput.svelte';
+	import FilterDropdown from '$lib/components/filters/FilterDropdown.svelte';
 	import FilterRangeDropdown from './_components/filters/FilterRangeDropdown.svelte';
 	import FuelTechRowContent from './_components/filters/FuelTechRowContent.svelte';
 	import { ListFilter } from '@lucide/svelte';

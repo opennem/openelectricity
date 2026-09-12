@@ -1,5 +1,5 @@
 <script>
-	import SearchInput from '../SearchInput.svelte';
+	import SearchInput from './SearchInput.svelte';
 	import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
 	import FilterOptionList from './FilterOptionList.svelte';
 	import {

@@ -134,6 +134,16 @@ export function applyBucketFilter(rows, predicate) {
 }
 
 /**
+ * Whether a display row is a real observation rather than the drawing-only
+ * closing point `applyBucketFilterToDisplayRows` appends to close a band.
+ * Exports, extrema, freshness and comparisons all skip closing points.
+ * @param {{ _bandClose?: boolean }} row
+ */
+export function isObservationRow(row) {
+	return !row._bandClose;
+}
+
+/**
  * Keep matching display rows and close the last stepped band one year later.
  * The closing row must not be used in summary calculations because it repeats
  * the final value.

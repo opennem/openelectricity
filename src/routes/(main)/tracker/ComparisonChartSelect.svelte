@@ -1,5 +1,5 @@
 <script>
-	import FilterDropdown from '../facilities/_components/filters/FilterDropdown.svelte';
+	import FilterDropdown from '$lib/components/filters/FilterDropdown.svelte';
 	import {
 		COMPARISON_CHART_OPTIONS,
 		comparisonChartId,

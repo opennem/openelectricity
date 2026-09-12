@@ -1,6 +1,4 @@
 <script>
-	import { Search, X } from '@lucide/svelte';
-
 	/**
 	 * @type {{
 	 *   value: string,

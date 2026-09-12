@@ -57,6 +57,8 @@ import {
  * @property {(startMs: number) => void} invalidateTail - Revisit recent native buckets on the next live request
  * @property {boolean} isPending - Loading state; disabled providers are never pending
  * @property {string | null} error - Failure in the requested viewport, if any
+ * @property {import('$lib/components/charts/v2/ChartDataManager.svelte.js').default['seriesMeta'] | null} seriesMeta -
+ *   Names, labels and colours of the processed series, once a response has arrived
  */
 
 /**
@@ -65,12 +67,16 @@ import {
  *   interval: () => string,
  *   timeZone: () => string,
  *   spec: () => HeadlessSeriesSpec | null,
- *   enabled?: () => boolean
+ *   enabled?: () => boolean,
+ *   exactWindow?: boolean
  * }} opts - Reactive getters. A null spec or a disabled provider fetches
  *   nothing; the last viewport is replayed when a manager is (re)built.
+ *   `exactWindow` fetches the viewport itself rather than the charts' buffered
+ *   window — for bounded sources that must never widen speculatively.
  * @returns {HeadlessSeriesProvider}
  */
 export function createHeadlessSeriesProvider(opts) {
+	const exact = opts.exactWindow === true;
 	/** @type {ChartDataManager | null} */
 	let manager = $state.raw(null);
 
@@ -120,7 +126,8 @@ export function createHeadlessSeriesProvider(opts) {
 		untrack(() => {
 			if (lastWindow.start && lastWindow.end) {
 				requestBufferedRange(next, lastWindow.start, lastWindow.end, interval, spec.metric, {
-					immediate: true
+					immediate: true,
+					exact
 				});
 			}
 		});
@@ -137,7 +144,7 @@ export function createHeadlessSeriesProvider(opts) {
 		},
 		setViewport(startMs, endMs) {
 			lastWindow = { start: startMs, end: endMs };
-			requestBufferedRange(manager, startMs, endMs, opts.interval(), currentMetric());
+			requestBufferedRange(manager, startMs, endMs, opts.interval(), currentMetric(), { exact });
 		},
 
 		reconcileFetches() {
@@ -147,8 +154,13 @@ export function createHeadlessSeriesProvider(opts) {
 				lastWindow.start,
 				lastWindow.end,
 				opts.interval(),
-				currentMetric()
+				currentMetric(),
+				exact
 			);
+		},
+
+		get seriesMeta() {
+			return manager?.seriesMeta ?? null;
 		},
 
 		getVisibleRows(startMs, endMs) {

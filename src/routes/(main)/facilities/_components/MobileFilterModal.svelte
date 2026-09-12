@@ -4,9 +4,9 @@
 
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import RangeSlider from '$lib/components/ui/range-slider/RangeSlider.svelte';
-	import SearchInput from './SearchInput.svelte';
+	import SearchInput from '$lib/components/filters/SearchInput.svelte';
 	import FilterAccordionSection from './filters/FilterAccordionSection.svelte';
-	import FilterOptionList from './filters/FilterOptionList.svelte';
+	import FilterOptionList from '$lib/components/filters/FilterOptionList.svelte';
 	import {
 		getSelectedLabels,
 		activeLeafCount,

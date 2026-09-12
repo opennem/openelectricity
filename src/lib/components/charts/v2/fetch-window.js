@@ -52,6 +52,22 @@ export function viewportRequestAllowed(manager, interval, metric) {
 }
 
 /**
+ * The window a viewport fetches: the standard buffer, or exactly the viewport
+ * for bounded sources (the time-of-day profile) that must never widen.
+ *
+ * @param {number} startMs
+ * @param {number} endMs
+ * @param {string} interval
+ * @param {boolean} [exact]
+ * @returns {{ start: number, end: number }}
+ */
+export function fetchWindowFor(startMs, endMs, interval, exact = false) {
+	return exact
+		? { start: startMs, end: endMs }
+		: bufferedFetchWindow(startMs, endMs, fetchBufferMultiplierForInterval(interval));
+}
+
+/**
  * Request the standard buffered window when the manager identity matches.
  *
  * @param {ViewportManager | null | undefined} manager
@@ -59,13 +75,15 @@ export function viewportRequestAllowed(manager, interval, metric) {
  * @param {number} endMs
  * @param {string} interval
  * @param {string} metric
- * @param {{ immediate?: boolean, priority?: 'low' }} [options]
+ * @param {{ immediate?: boolean, priority?: 'low', exact?: boolean }} [options] - `exact`
+ *   requests the viewport itself instead of the buffered window
  * @returns {boolean}
  */
-export function requestBufferedRange(manager, startMs, endMs, interval, metric, options) {
+export function requestBufferedRange(manager, startMs, endMs, interval, metric, options = {}) {
 	if (!manager || !viewportRequestAllowed(manager, interval, metric)) return false;
-	const window = bufferedFetchWindow(startMs, endMs, fetchBufferMultiplierForInterval(interval));
-	manager.requestRange(window.start, window.end, options);
+	const { exact = false, ...request } = options;
+	const window = fetchWindowFor(startMs, endMs, interval, exact);
+	manager.requestRange(window.start, window.end, request);
 	return true;
 }
 
@@ -77,11 +95,12 @@ export function requestBufferedRange(manager, startMs, endMs, interval, metric, 
  * @param {number} endMs
  * @param {string} interval
  * @param {string} metric
+ * @param {boolean} [exact] - Reconcile the viewport itself, not the buffered window
  * @returns {boolean}
  */
-export function reconcileBufferedRange(manager, startMs, endMs, interval, metric) {
+export function reconcileBufferedRange(manager, startMs, endMs, interval, metric, exact = false) {
 	if (!manager || !viewportRequestAllowed(manager, interval, metric)) return false;
-	const window = bufferedFetchWindow(startMs, endMs, fetchBufferMultiplierForInterval(interval));
+	const window = fetchWindowFor(startMs, endMs, interval, exact);
 	manager.reconcileWindow(window.start, window.end);
 	return true;
 }
