@@ -1,13 +1,4 @@
 <script>
-	import {
-		ArrowDownToLine,
-		ArrowUpToLine,
-		CircleDollarSign,
-		Cloud,
-		Leaf,
-		Plug,
-		Zap
-	} from '@lucide/svelte';
 	import { mergeProps } from 'bits-ui';
 	import PanelToggle from './PanelToggle.svelte';
 	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
@@ -37,14 +28,6 @@
 	let groups = $derived(buildWindowMetrics(input));
 	let formatDate = $derived(getTimeFormatPolicy(interval, ianaFromOffset(zone)).formatTooltip);
 	const extrema = /** @type {const} */ (['min', 'max']);
-	/** @type {Record<string, typeof Zap>} */
-	const metricIcons = {
-		generation: Zap,
-		market: CircleDollarSign,
-		demand: Plug,
-		renewables: Leaf,
-		emissions: Cloud
-	};
 	const integer = getNumberFormat(0);
 	const decimal = getNumberFormat(2);
 	const percentage = getNumberFormat(1);
@@ -74,7 +57,6 @@
 	</header>
 	<div class="-mb-px grid grid-cols-1">
 		{#each groups as group (group.id)}
-			{@const LabelIcon = metricIcons[group.id]}
 			<div
 				class="grid min-w-0 grid-cols-2 border-b border-mid-warm-grey/40"
 				data-testid={`metrics-${group.id}`}
@@ -83,13 +65,11 @@
 				<div
 					class="col-span-2 flex items-center border-b border-mid-warm-grey/40 bg-light-warm-grey/50 px-4 py-2 text-sm font-semibold text-dark-grey"
 				>
-					<Tooltip text={group.description} class="inline-flex items-center gap-2 cursor-help">
-						<LabelIcon class="size-[16px] shrink-0" strokeWidth={1.5} aria-hidden="true" />
+					<Tooltip text={group.description} class="cursor-help">
 						{group.label}
 					</Tooltip>
 				</div>
 				{#each extrema as kind (kind)}
-					{@const Icon = kind === 'min' ? ArrowDownToLine : ArrowUpToLine}
 					{@const point = group[kind]}
 					{@const active = selected?.id === group.id && selected.kind === kind}
 					{@const label = `${kind === 'min' ? 'Minimum' : 'Maximum'} ${group.label.toLowerCase()}`}
@@ -118,7 +98,7 @@
 										onhighlight(undefined);
 									}
 								})}
-								class="grid min-w-0 grid-cols-[20px_minmax(0,1fr)] items-start gap-x-2 break-words border-mid-warm-grey/40 px-4 py-3 text-left transition-colors enabled:hover:bg-warm-grey {kind ===
+								class="grid min-w-0 grid-cols-[minmax(0,1fr)_30px] items-start gap-x-2 break-words border-mid-warm-grey/40 px-5 py-5 text-left transition-colors enabled:hover:bg-warm-grey {kind ===
 								'max'
 									? 'border-l'
 									: ''} {active
@@ -129,13 +109,6 @@
 								aria-label={label}
 								aria-pressed={active}
 							>
-								<Icon
-									class="size-[20px] self-center transition-colors {active
-										? 'text-primary'
-										: 'text-mid-grey'}"
-									strokeWidth={1.5}
-									aria-hidden="true"
-								/>
 								<MetricCard
 									size="sm"
 									label=""
@@ -145,6 +118,12 @@
 										: group.unit}
 									{subtitle}
 								/>
+								<span
+									class="inline-flex self-start items-center justify-center rounded border py-[2px] text-[10px] font-semibold leading-[14px] transition-colors {active
+										? 'border-primary bg-primary text-primary-foreground'
+										: 'border-mid-warm-grey bg-light-warm-grey text-mid-grey'}"
+									aria-hidden="true">{kind === 'min' ? 'Min' : 'Max'}</span
+								>
 							</button>
 						{/snippet}
 					</Tooltip>
