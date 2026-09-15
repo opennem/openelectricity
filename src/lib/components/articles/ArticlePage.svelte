@@ -43,8 +43,10 @@
 	canonical={!preview}
 />
 
-<div class="relative">
-	<div class="bg-light-warm-grey absolute w-full h-[500px] md:h-[750px] z-0"></div>
+<div class={['relative', !hasCover && 'bg-light-warm-grey']}>
+	{#if hasCover}
+		<div class="bg-light-warm-grey absolute w-full h-[500px] md:h-[750px] z-0"></div>
+	{/if}
 
 	<div class="container max-w-none lg:container py-12 relative z-10">
 		<div class="pb-10 md:py-14">
