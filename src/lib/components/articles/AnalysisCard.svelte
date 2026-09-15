@@ -1,5 +1,5 @@
 <script>
-	import { format, parse } from 'date-fns';
+	import { format, isValid, parse } from 'date-fns';
 	import { urlFor } from '$lib/sanity';
 
 	/**
@@ -12,7 +12,7 @@
 
 	// $: console.log('isSpecialCard', isSpecialCard, article.title);
 
-	let publishedDate = $derived(parse(article.publish_date, 'yyyy-MM-dd', new Date()));
+	let publishedDate = $derived(parse(article.publish_date ?? '', 'yyyy-MM-dd', new Date()));
 	// $: console.log('article', article);
 
 	let hasCover = $derived(article.cover);
@@ -39,7 +39,9 @@
 			{#if tag}
 				<span class="px-2 rounded-full bg-warm-grey text-dark-grey">{tag.title}</span>
 			{/if}
-			<span>{format(publishedDate, 'dd MMM yyyy')}</span>
+			{#if isValid(publishedDate)}
+				<span>{format(publishedDate, 'dd MMM yyyy')}</span>
+			{/if}
 		</div>
 
 		<h3 class="font-medium mt-8 line-clamp-4">

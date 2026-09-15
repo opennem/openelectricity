@@ -1,5 +1,5 @@
 <script>
-	import { format, parse } from 'date-fns';
+	import { format, isValid, parse } from 'date-fns';
 	import { urlFor } from '$lib/sanity';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 
@@ -11,7 +11,7 @@
 	/** @type {Props & { [key: string]: any }} */
 	let { article, preview = false, ...rest } = $props();
 
-	let publishedDate = $derived(parse(article.publish_date, 'yyyy-MM-dd', new Date()));
+	let publishedDate = $derived(parse(article.publish_date ?? '', 'yyyy-MM-dd', new Date()));
 </script>
 
 <a
@@ -21,7 +21,9 @@
 	<header class="mt-8">
 		<div class="flex items-center justify-between px-8">
 			<FuelTechTag fueltech={article.fueltech}>Milestone</FuelTechTag>
-			<span class="text-xs">{format(publishedDate, 'dd MMM yyyy')}</span>
+			{#if isValid(publishedDate)}
+				<span class="text-xs">{format(publishedDate, 'dd MMM yyyy')}</span>
+			{/if}
 		</div>
 
 		<h3 class="font-medium px-8 mt-8">{article.title}</h3>
