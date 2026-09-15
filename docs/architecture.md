@@ -26,6 +26,11 @@ scenario modelling.
 - `/studio` — internal and experimental exploration tools.
 - `/strata*` — published and community chart views.
 
+Published `/analysis/[article]` and preview `/article-drafts/[article]` pages
+share `src/lib/components/articles/ArticlePage.svelte` for article layout and
+rendering. Preview mode changes the back link and suppresses the canonical URL;
+each route keeps its own server loader and Sanity publication perspective.
+
 `src/routes/(micro)/` contains embed-friendly or minimal experiences, including
 the widget and Stratify chart builder. `src/routes/api/` contains only data that
 must be fetched from the browser.
