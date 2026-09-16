@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          # Corepack makes pnpm available in the following step.
+          package-manager-cache: false
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - name: Verify CPI parsing, calculation and safe publishing
