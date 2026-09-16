@@ -752,7 +752,7 @@
 			<RadioBigButton name="ds-radio" label="By region" changeHandler={() => {}} />
 		</div>
 		<p class="text-xs text-mid-grey -mt-6 mb-10">
-			The "Table" label is hardcoded inside <code>Toggle.svelte</code>.
+			The toggle label defaults to "Table" and can be set with the <code>label</code> prop.
 		</p>
 
 		<h3 class="subhead-primary mb-4">Card &amp; floating chrome</h3>

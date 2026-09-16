@@ -20,7 +20,7 @@ import {
  * join, roll-up and status rules are pure (`region-comparison.js`); this
  * module only owns the provider lifecycle.
  * @param {() => import('./region-comparison.js').RegionComparisonSelection} selection
- * @param {number} now @param {() => any} cpi */
+ * @param {number} now @param {() => ReturnType<typeof import('$lib/comparison-cpi.js').comparisonCpi>} cpi */
 export function createRegionComparisonData(selection, now, cpi) {
 	const bounds = comparisonBounds(now);
 	const calendar = { interval: () => '1M', timeZone: () => '+00:00' };

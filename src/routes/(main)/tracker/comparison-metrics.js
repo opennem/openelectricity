@@ -48,28 +48,29 @@ export const COMPARISON_METRICS = [
 		fuel,
 		label: `${labels[fuel]} value`,
 		shortLabel: `${labels[fuel]} value`,
-		group: 'Average spot market value',
+		group: 'Prices',
 		kind: 'price'
 	})),
 	{
 		id: 'price',
 		label: 'Volume-weighted price',
 		shortLabel: 'VW price',
-		group: 'Price',
+		group: 'Prices',
 		kind: 'price'
 	},
 	{
 		id: 'price_real',
 		label: 'Volume-weighted price (inflation adjusted)',
 		shortLabel: 'Real VW price',
-		group: 'Price',
+		group: 'Prices',
 		kind: 'price'
 	}
 ];
 export const ALL_COMPARISON_CHARTS = COMPARISON_METRICS.map((metric) => metric.id);
 export const DEFAULT_COMPARISON_CHARTS = ['intensity', 'share'];
-/** A fuel has one selectable chart, with proportion and generation presentations. */
+/** Paired metrics share one selectable chart and retain their chosen presentation. */
 export function comparisonChartId(/** @type {string} */ id) {
+	if (id === 'price') return 'price_real';
 	const metric = comparisonMetric(id);
 	return metric.kind === 'energy'
 		? metric.fuel === 'renewables'
@@ -78,16 +79,21 @@ export function comparisonChartId(/** @type {string} */ id) {
 		: id;
 }
 export const COMPARISON_CHART_OPTIONS = COMPARISON_METRICS.filter(
-	(metric) => metric.kind !== 'energy'
+	(metric) => metric.kind !== 'energy' && metric.id !== 'price'
 ).map((metric) => ({
 	...metric,
-	label: metric.kind === 'share' && metric.fuel ? labels[metric.fuel] : metric.label,
+	label:
+		metric.id === 'price_real'
+			? 'Volume-weighted price'
+			: metric.kind === 'share' && metric.fuel
+				? labels[metric.fuel]
+				: metric.label,
 	group: metric.kind === 'share' ? 'Generation / Proportion' : metric.group
 }));
 export const COMPARISON_METRIC_GROUPS = [
 	...new Set(COMPARISON_CHART_OPTIONS.map((metric) => metric.group))
 ];
-/** Preserve each selected fuel's presentation when applying the chart picker. */
+/** Preserve each selected chart's presentation when applying the chart picker. */
 export function selectComparisonCharts(
 	/** @type {string[]} */ ids,
 	/** @type {string[]} */ previous = []

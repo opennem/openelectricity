@@ -24,7 +24,7 @@ function harness(regions) {
 		source = createRegionComparisonData(
 			() => state.selection,
 			nowMs,
-			() => null
+			() => ({ values: [], source: '', fetchedAt: '', reference: '' })
 		);
 	});
 	// @ts-expect-error assigned synchronously inside the root

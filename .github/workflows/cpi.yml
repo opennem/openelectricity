@@ -1,0 +1,35 @@
+name: Refresh Australian CPI
+
+on:
+  schedule:
+    # Check daily for monthly releases and revisions; publish only changed data.
+    - cron: '0 1 * * *'
+      timezone: Australia/Melbourne
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: abs-cpi-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Verify CPI parsing, calculation and safe publishing
+        run: pnpm run test:unit src/lib/comparison-cpi.test.js src/lib/server/cpi-refresh.test.js src/lib/server/comparison-cpi.test.js
+      - name: Fetch ABS CPI and publish validated changes
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CPI_KV_NAMESPACE_ID: ${{ vars.CPI_KV_NAMESPACE_ID }}
+          CPI_CLOUDFLARE_API_TOKEN: ${{ secrets.CPI_CLOUDFLARE_API_TOKEN }}
+        run: pnpm cpi:refresh --publish

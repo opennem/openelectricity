@@ -39,6 +39,7 @@ declare global {
 			};
 			env?: {
 				CACHE_REGISTRY?: D1Database;
+				CPI_DATA?: import('@cloudflare/workers-types').KVNamespace;
 			};
 		}
 	}

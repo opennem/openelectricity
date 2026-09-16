@@ -11,14 +11,15 @@ The canonical tracker page — the planned replacement for the legacy
 ### Region comparison
 
 The scenarios-style view switch offers Timeline, Time of day and **Compare
-regions** (`view=regions`). Comparison offers 15 selectable Stratum charts covering
+regions** (`view=regions`). Comparison offers 14 selectable Stratum charts covering
 21 metrics: carbon
 intensity; renewable, solar + wind, solar, wind, gas and coal generation and
 proportions; net imports proportion; solar, wind, hydro, gas and coal market
 values; and nominal and inflation-adjusted volume-weighted prices. Only carbon
 intensity and renewables proportion start visible. Each generation/proportion pair
 shares one chart-selector entry and uses the existing Timeline tabs to switch its
-presentation. Newly selected fuel charts default to Proportion; the table and
+presentation. The Prices section groups market values and a single volume-weighted price entry.
+Newly selected fuel charts default to Proportion; the table and
 exports follow the selected presentation, which is preserved in the URL. The
 shared bordered `FilterDropdown` (`$lib/components/filters`, promoted from the
 facilities route) stages chart selections until
@@ -55,13 +56,24 @@ Technology market values divide summed market value by matching fuel-tech energy
 volume-weighted prices divide total generation market value by intensity energy,
 using the same battery exclusion as Tracker. Negative market values remain valid.
 
-Inflation adjustment uses quarterly CPI from the
-[public monthly aggregate](https://data.openelectricity.org.au/v4/stats/au/all/monthly.json),
-fetched in the server load through the existing SWR cache. Each quarter-end label
-maps to its three calendar months. Monthly market values are adjusted before
-aggregation; unknown CPI quarters stay unavailable. The chart and exports label
-the latest CPI reference month (June 2025 when implemented). A failed CPI fetch
-only affects adjusted prices; it does not block the other metrics.
+Electricity data comes from the OE API via `/api/network/data` and its shared
+server cache. Energy, emissions and market value use `/v4/data/network`;
+renewables, demand and flows use `/v4/market/network`. Ratios and national totals
+are calculated locally from those inputs. ABS All Groups CPI is the explicit
+exception for inflation adjustment; no legacy OE static feed is used.
+
+The single volume-weighted price entry has an Inflation adjusted toggle, enabled
+for newly selected charts. Existing nominal links preserve their choice; the
+selected presentation persists in the URL, table, CSV, workbook and PNG exports.
+Prices are expressed in the latest available quarter's dollars, labelled on the
+chart. Each month uses its quarter's index. Monthly dollar totals are adjusted
+before rolling/yearly aggregation; unpublished CPI quarters remain gaps.
+
+GitHub Actions refreshes the full validated ABS quarterly series into Cloudflare
+KV. The server loader reads the binding (one-hour KV read cache) and falls back
+to a bundled ABS snapshot on missing/invalid KV data. Page loads never fetch ABS.
+See [CPI setup and methodology](../../../../docs/cpi.md) for sources, refreshes,
+credentials, bindings and failure handling.
 
 Provider timestamps use UTC as a synthetic **calendar-label axis**, joining each
 network's January to January without shifting WEM into December. This is not an

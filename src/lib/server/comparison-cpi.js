@@ -1,16 +1,25 @@
-import { createSwrCache } from './swr-cache.js';
-import { COMPARISON_CPI_SOURCE, parseComparisonCpi } from '$lib/comparison-cpi.js';
-export const comparisonCpi = createSwrCache({
-	edgeCacheKey: 'https://edge-cache.openelectricity.org.au/comparison-cpi-v1',
-	fetcher: async () => {
-		try {
-			const response = await fetch(COMPARISON_CPI_SOURCE, { signal: AbortSignal.timeout(8000) });
-			if (!response.ok) throw new Error('CPI data unavailable');
-			return parseComparisonCpi(await response.json());
-		} catch {
-			return { values: [], reference: null, error: 'CPI data is unavailable. Reload to retry.' };
+import bundled from './data/abs-cpi.json';
+import {
+	CPI_KV_KEY,
+	assertCpiCoverage,
+	comparisonCpi,
+	validateCpiSnapshot
+} from '../comparison-cpi.js';
+
+/** Read the durable, scheduled snapshot. No request to ABS on page loads.
+ * The bundled ABS snapshot keeps development and KV outages usable.
+ * @param {App.Platform | undefined} platform */
+export async function loadComparisonCpi(platform) {
+	const fallback = validateCpiSnapshot(bundled);
+	try {
+		const value = await platform?.env?.CPI_DATA?.get(CPI_KV_KEY, { type: 'json', cacheTtl: 3600 });
+		if (value) {
+			const snapshot = validateCpiSnapshot(value);
+			assertCpiCoverage(snapshot, fallback);
+			return comparisonCpi(snapshot);
 		}
-	},
-	isFresh: (_, at) => Date.now() - at < 6 * 60 * 60 * 1000,
-	isCacheable: (value) => value.values.length > 0
-});
+	} catch {
+		console.warn('CPI snapshot unavailable or invalid; using bundled ABS history');
+	}
+	return comparisonCpi(fallback);
+}

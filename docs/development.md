@@ -38,6 +38,9 @@ Studio dashboard; setup steps and endpoint documentation live in
 `src/routes/api/admin/network-cache/README.md`. It is optional at runtime, so
 local development continues to work without Cloudflare bindings.
 
+The optional `CPI_DATA` KV binding stores the ABS CPI snapshot updated by GitHub
+Actions. Local development uses a bundled snapshot. See [CPI setup](cpi.md).
+
 ## MCP configuration
 
 `.mcp.json` is intentionally local and ignored because it can contain

@@ -14,7 +14,7 @@
 	} from './region-comparison.js';
 
 	/** Region labels and colours never change: set once on the store. */
-	const SERIES_LABELS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.shortLabel]));
+	const SERIES_LABELS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.label]));
 	const SERIES_COLOURS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.colour]));
 	/** Below three years the axis shows months as well as years. */
 	const MONTH_TICKS_BELOW_MS = 3 * 365 * 86_400_000;

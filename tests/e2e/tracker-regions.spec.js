@@ -23,13 +23,15 @@ test('defaults, region colours, complete rolling values and synchronised keyboar
 	await expect(
 		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
 	).toBeVisible();
-	await expect(regionRow(page, 'NSW')).toContainText('150');
-	await expect(page.getByRole('button', { name: 'Compare NSW', exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	await expect(regionRow(page, 'New South Wales')).toContainText('150');
 	await expect(
-		page.getByRole('button', { name: 'Compare NSW', exact: true }).locator('span').first()
+		page.getByRole('button', { name: 'Compare New South Wales', exact: true })
+	).toHaveAttribute('aria-pressed', 'true');
+	await expect(
+		page
+			.getByRole('button', { name: 'Compare New South Wales', exact: true })
+			.locator('span')
+			.first()
 	).toHaveCSS('background-color', 'rgb(160, 120, 215)');
 	expect(new Set(data.requests.map((request) => request.region)).size).toBe(6);
 	await page.getByRole('button', { name: 'Inspect carbon intensity values' }).focus();
@@ -54,7 +56,7 @@ test('metric and percentage switches reuse requests, preserve URL state and expo
 	).toBeVisible();
 	await page.getByRole('button', { name: '% demand', exact: true }).click();
 	await page.getByRole('option', { name: '% generation', exact: true }).click();
-	await expect(regionRow(page, 'NSW')).toContainText('75');
+	await expect(regionRow(page, 'New South Wales')).toContainText('75');
 	expect(data.requests.length).toBe(count);
 	const file = await download(page, 'Region comparison');
 	const csv = await readFile(await file.path(), 'utf8');
@@ -63,23 +65,29 @@ test('metric and percentage switches reuse requests, preserve URL state and expo
 	await page.reload();
 	await regionsReady(page);
 
-	await expect(regionRow(page, 'NSW')).toContainText('75');
+	await expect(regionRow(page, 'New South Wales')).toContainText('75');
 });
 
 test('regional toggles, national sums, failure isolation and retry', async ({ page }) => {
 	const data = await regionsFixture(page, { fail: 'wem' });
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions&compare-interval=1M&compare-charts=intensity,generation');
-	await expect(page.getByRole('button', { name: 'Retry WA (WEM)', exact: true })).toBeVisible();
-	await page.getByRole('button', { name: 'Compare WA (WEM)', exact: true }).click();
+	await expect(
+		page.getByRole('button', { name: 'Retry Western Australia', exact: true })
+	).toBeVisible();
+	await page.getByRole('button', { name: 'Compare Western Australia', exact: true }).click();
 	await regionsReady(page);
-	await page.getByRole('button', { name: 'Compare All Regions', exact: true }).click();
-	await expect(page.getByRole('button', { name: 'Retry All Regions', exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Compare All Regions (NEM + WEM)', exact: true }).click();
+	await expect(
+		page.getByRole('button', { name: 'Retry All Regions (NEM + WEM)', exact: true })
+	).toBeVisible();
 	data.recover();
-	await page.getByRole('button', { name: 'Retry All Regions', exact: true }).click();
-	await expect(regionRow(page, 'All Regions')).toContainText('250');
-	await expect(regionRow(page, 'All Regions')).toContainText('56.4');
-	await expect(page.getByRole('button', { name: 'Retry All Regions', exact: true })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Retry All Regions (NEM + WEM)', exact: true }).click();
+	await expect(regionRow(page, 'All Regions (NEM + WEM)')).toContainText('250');
+	await expect(regionRow(page, 'All Regions (NEM + WEM)')).toContainText('56.4');
+	await expect(
+		page.getByRole('button', { name: 'Retry All Regions (NEM + WEM)', exact: true })
+	).toHaveCount(0);
 });
 
 test('view clicks reset query settings while history restores each view and its top-nav filters', async ({
@@ -159,15 +167,14 @@ test('late responses cannot restore a deselected region; interval and zoom choic
 	const data = await regionsFixture(page, { hold: 'wem' });
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions');
-	await expect(regionRow(page, 'WA (WEM)')).toContainText('…');
-	await page.getByRole('button', { name: 'Compare WA (WEM)', exact: true }).click();
+	await expect(regionRow(page, 'Western Australia')).toContainText('…');
+	await page.getByRole('button', { name: 'Compare Western Australia', exact: true }).click();
 	await regionsReady(page);
 	data.release();
-	await expect(page.getByRole('button', { name: 'Compare WA (WEM)', exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'false'
-	);
-	await expect(regionRow(page, 'WA (WEM)')).toContainText('—');
+	await expect(
+		page.getByRole('button', { name: 'Compare Western Australia', exact: true })
+	).toHaveAttribute('aria-pressed', 'false');
+	await expect(regionRow(page, 'Western Australia')).toContainText('—');
 	await page.getByRole('button', { name: '12-month rolling', exact: true }).click();
 	await page.getByRole('option', { name: 'Financial year', exact: true }).click();
 	await expect(page).toHaveURL(/compare-interval=fy/);
@@ -206,7 +213,7 @@ test('live comparison renders regional history and exports a workbook', async ({
 		page.getByText('Complete periods · monthly source data', { exact: true })
 	).toBeVisible({ timeout: 60000 });
 	await expect(page.getByRole('alert')).toHaveCount(0);
-	await expect(regionRow(page, 'NSW').getByRole('cell').nth(1)).not.toContainText('—');
+	await expect(regionRow(page, 'New South Wales').getByRole('cell').nth(1)).not.toContainText('—');
 	await expect(
 		page
 			.getByRole('group', { name: 'Volume-weighted price comparison chart', exact: true })
@@ -326,6 +333,13 @@ test('two charts start visible and the multiselect controls charts, table and ex
 	await expect(regionsTable(page).getByRole('columnheader')).toHaveCount(1);
 	await page.getByRole('button', { name: /^Charts/ }).click();
 	await selector.getByRole('button', { name: 'Wind value', exact: true }).click();
+	await expect(selector.getByRole('button', { name: 'Prices', exact: true })).toBeVisible();
+	await expect(
+		selector.getByRole('button', {
+			name: 'Volume-weighted price (inflation adjusted)',
+			exact: true
+		})
+	).toHaveCount(0);
 	await selector.getByRole('button', { name: 'Volume-weighted price', exact: true }).click();
 	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
 	await expect(selector).toHaveCount(0);
@@ -333,7 +347,28 @@ test('two charts start visible and the multiselect controls charts, table and ex
 		page.getByRole('heading', { name: 'Wind value', exact: true, level: 3 })
 	).toBeVisible();
 	await expect(regionsTable(page).getByRole('columnheader')).toHaveCount(3);
-	await expect(regionRow(page, 'NSW')).toContainText('50');
+	const adjusted = page.getByRole('switch', { name: 'Inflation adjusted', exact: true });
+	await expect(adjusted).toBeChecked();
+	await expect(page.getByRole('link', { name: 'ABS All Groups CPI' })).toBeVisible();
+	const realCsv = await readFile(await (await download(page, 'Region comparison')).path(), 'utf8');
+	expect(realCsv).toContain('Volume-weighted price (inflation adjusted)');
+	expect(realCsv).toContain('dollars');
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(adjusted).toBeVisible();
+	await expectNoHorizontalScroll(page);
+	await page.screenshot({ path: 'test-results/tracker-abs-cpi-mobile.png', fullPage: true });
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await adjusted.focus();
+	await page.keyboard.press('Space');
+	await expect(adjusted).not.toBeChecked();
+	await expect(
+		page.getByRole('heading', { name: 'Volume-weighted price', exact: true })
+	).toBeVisible();
+	await page.goBack();
+	await expect(adjusted).toBeChecked();
+	await page.goForward();
+	await expect(adjusted).not.toBeChecked();
+	await expect(regionRow(page, 'New South Wales')).toContainText('50');
 	expect(data.requests.length).toBe(requests);
 	const csv = await readFile(await (await download(page, 'Region comparison')).path(), 'utf8');
 	expect(csv.split('\n')[0]).toBe('Period,Region,Wind value ($/MWh),Volume-weighted price ($/MWh)');
@@ -342,10 +377,11 @@ test('two charts start visible and the multiselect controls charts, table and ex
 		page.getByRole('heading', { name: 'Wind value', exact: true, level: 3 })
 	).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Carbon intensity', exact: true })).toHaveCount(0);
+	await expect(adjusted).not.toBeChecked();
 	await page.getByRole('button', { name: /^Charts/ }).click();
 	await page.getByRole('button', { name: 'Select all', exact: true }).click();
 	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(15);
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(14);
 	await page.getByRole('button', { name: /^Charts/ }).click();
 	await selector.getByRole('button', { name: 'Reset', exact: true }).click();
 	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
@@ -462,7 +498,7 @@ test('fuel chart toggles share one picker entry and persist presentation through
 	await expect(
 		page.getByRole('heading', { name: 'Renewables generation', exact: true })
 	).toBeVisible();
-	await expect(regionRow(page, 'NSW')).toContainText('31.2');
+	await expect(regionRow(page, 'New South Wales')).toContainText('31.2');
 	await expect(page).toHaveURL(/compare-charts=intensity%2Cgeneration/);
 	await page.getByRole('button', { name: /^Charts/ }).click();
 	const picker = page
@@ -479,6 +515,7 @@ test('fuel chart toggles share one picker entry and persist presentation through
 	await expect(picker).toHaveCount(0);
 	await page.screenshot({ path: 'test-results/tracker-comparison-combined.png', fullPage: true });
 	await page.reload();
+	await regionsReady(page);
 	await expect(
 		page.getByRole('heading', { name: 'Renewables generation', exact: true })
 	).toBeVisible();

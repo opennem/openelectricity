@@ -4,6 +4,7 @@
 	"devDependencies": {
 		"@clerk/backend": "^3.5.0",
 		"@clerk/clerk-js": "^6.25.5",
+		"@cloudflare/workers-types": "^5.20260915.1",
 		"@eslint/js": "^9.39.4",
 		"@fontsource/dm-sans": "^5.2.8",
 		"@fontsource/space-grotesk": "^5.2.10",
@@ -99,7 +100,8 @@
 		"test:e2e:debug": "playwright test --headed",
 		"data:fetch-power": "node scripts/solar-heatmap/fetch-power.js",
 		"data:build-solar": "node scripts/solar-heatmap/build.js",
-		"data:export-solar-csv": "node scripts/solar-heatmap/export-csv.js"
+		"data:export-solar-csv": "node scripts/solar-heatmap/export-csv.js",
+		"cpi:refresh": "node --env-file-if-exists=.env scripts/refresh-cpi.mjs"
 	},
 	"type": "module"
 }

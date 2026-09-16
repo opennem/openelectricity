@@ -301,7 +301,7 @@ export const regionsTable = (page) => page.getByRole('table', { name: 'Region co
 /**
  * A region's row in the comparison table, found by its "Compare …" toggle.
  * @param {Page} page
- * @param {string} name Region label as shown in the table, e.g. `'NSW'`.
+ * @param {string} name Region label as shown in the table, e.g. `'New South Wales'`.
  */
 export const regionRow = (page, name) =>
 	regionsTable(page)
@@ -340,7 +340,7 @@ export async function regionsReady(page) {
 	await expect(
 		page.getByText('Complete periods · monthly source data', { exact: true })
 	).toBeVisible();
-	await expect(regionRow(page, 'NSW')).toContainText('250');
+	await expect(regionRow(page, 'New South Wales')).toContainText('250');
 }
 
 /**

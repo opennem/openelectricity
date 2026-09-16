@@ -159,6 +159,12 @@ The `og-cards` GitHub workflow automates this (weekly schedule + manual dispatch
 with a `force` input for full refreshes) and commits only the cards that changed —
 once its OE/Sanity secrets are configured.
 
+## CPI updates
+
+Compare regions combines OE API electricity data with ABS CPI for optional
+inflation adjustment. A scheduled GitHub workflow updates Cloudflare KV without
+a website deployment. See [CPI setup and methodology](docs/cpi.md).
+
 ## Licence
 
 See [LICENSE](LICENSE) for details.

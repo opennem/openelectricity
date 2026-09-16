@@ -1,0 +1,1256 @@
+{
+	"version": 1,
+	"source": "https://data.api.abs.gov.au/rest/data/ABS,CPI,2.0.0/1.10001.10.50.Q",
+	"basePeriod": "Sep 2025 = 100.0",
+	"fetchedAt": "2026-09-16T03:55:47.439Z",
+	"observations": [
+		{
+			"period": "1948-Q3",
+			"value": 2.59
+		},
+		{
+			"period": "1948-Q4",
+			"value": 2.63
+		},
+		{
+			"period": "1949-Q1",
+			"value": 2.71
+		},
+		{
+			"period": "1949-Q2",
+			"value": 2.74
+		},
+		{
+			"period": "1949-Q3",
+			"value": 2.82
+		},
+		{
+			"period": "1949-Q4",
+			"value": 2.86
+		},
+		{
+			"period": "1950-Q1",
+			"value": 2.9
+		},
+		{
+			"period": "1950-Q2",
+			"value": 3.02
+		},
+		{
+			"period": "1950-Q3",
+			"value": 3.05
+		},
+		{
+			"period": "1950-Q4",
+			"value": 3.17
+		},
+		{
+			"period": "1951-Q1",
+			"value": 3.32
+		},
+		{
+			"period": "1951-Q2",
+			"value": 3.52
+		},
+		{
+			"period": "1951-Q3",
+			"value": 3.71
+		},
+		{
+			"period": "1951-Q4",
+			"value": 3.98
+		},
+		{
+			"period": "1952-Q1",
+			"value": 4.1
+		},
+		{
+			"period": "1952-Q2",
+			"value": 4.25
+		},
+		{
+			"period": "1952-Q3",
+			"value": 4.33
+		},
+		{
+			"period": "1952-Q4",
+			"value": 4.37
+		},
+		{
+			"period": "1953-Q1",
+			"value": 4.41
+		},
+		{
+			"period": "1953-Q2",
+			"value": 4.45
+		},
+		{
+			"period": "1953-Q3",
+			"value": 4.48
+		},
+		{
+			"period": "1953-Q4",
+			"value": 4.45
+		},
+		{
+			"period": "1954-Q1",
+			"value": 4.48
+		},
+		{
+			"period": "1954-Q2",
+			"value": 4.48
+		},
+		{
+			"period": "1954-Q3",
+			"value": 4.48
+		},
+		{
+			"period": "1954-Q4",
+			"value": 4.48
+		},
+		{
+			"period": "1955-Q1",
+			"value": 4.52
+		},
+		{
+			"period": "1955-Q2",
+			"value": 4.56
+		},
+		{
+			"period": "1955-Q3",
+			"value": 4.6
+		},
+		{
+			"period": "1955-Q4",
+			"value": 4.64
+		},
+		{
+			"period": "1956-Q1",
+			"value": 4.68
+		},
+		{
+			"period": "1956-Q2",
+			"value": 4.83
+		},
+		{
+			"period": "1956-Q3",
+			"value": 4.95
+		},
+		{
+			"period": "1956-Q4",
+			"value": 4.95
+		},
+		{
+			"period": "1957-Q1",
+			"value": 4.95
+		},
+		{
+			"period": "1957-Q2",
+			"value": 4.99
+		},
+		{
+			"period": "1957-Q3",
+			"value": 4.99
+		},
+		{
+			"period": "1957-Q4",
+			"value": 4.99
+		},
+		{
+			"period": "1958-Q1",
+			"value": 5.03
+		},
+		{
+			"period": "1958-Q2",
+			"value": 5.03
+		},
+		{
+			"period": "1958-Q3",
+			"value": 5.03
+		},
+		{
+			"period": "1958-Q4",
+			"value": 5.06
+		},
+		{
+			"period": "1959-Q1",
+			"value": 5.1
+		},
+		{
+			"period": "1959-Q2",
+			"value": 5.1
+		},
+		{
+			"period": "1959-Q3",
+			"value": 5.14
+		},
+		{
+			"period": "1959-Q4",
+			"value": 5.18
+		},
+		{
+			"period": "1960-Q1",
+			"value": 5.22
+		},
+		{
+			"period": "1960-Q2",
+			"value": 5.3
+		},
+		{
+			"period": "1960-Q3",
+			"value": 5.37
+		},
+		{
+			"period": "1960-Q4",
+			"value": 5.41
+		},
+		{
+			"period": "1961-Q1",
+			"value": 5.45
+		},
+		{
+			"period": "1961-Q2",
+			"value": 5.49
+		},
+		{
+			"period": "1961-Q3",
+			"value": 5.45
+		},
+		{
+			"period": "1961-Q4",
+			"value": 5.45
+		},
+		{
+			"period": "1962-Q1",
+			"value": 5.45
+		},
+		{
+			"period": "1962-Q2",
+			"value": 5.45
+		},
+		{
+			"period": "1962-Q3",
+			"value": 5.45
+		},
+		{
+			"period": "1962-Q4",
+			"value": 5.45
+		},
+		{
+			"period": "1963-Q1",
+			"value": 5.45
+		},
+		{
+			"period": "1963-Q2",
+			"value": 5.45
+		},
+		{
+			"period": "1963-Q3",
+			"value": 5.49
+		},
+		{
+			"period": "1963-Q4",
+			"value": 5.49
+		},
+		{
+			"period": "1964-Q1",
+			"value": 5.53
+		},
+		{
+			"period": "1964-Q2",
+			"value": 5.57
+		},
+		{
+			"period": "1964-Q3",
+			"value": 5.64
+		},
+		{
+			"period": "1964-Q4",
+			"value": 5.68
+		},
+		{
+			"period": "1965-Q1",
+			"value": 5.72
+		},
+		{
+			"period": "1965-Q2",
+			"value": 5.8
+		},
+		{
+			"period": "1965-Q3",
+			"value": 5.84
+		},
+		{
+			"period": "1965-Q4",
+			"value": 5.91
+		},
+		{
+			"period": "1966-Q1",
+			"value": 5.95
+		},
+		{
+			"period": "1966-Q2",
+			"value": 5.99
+		},
+		{
+			"period": "1966-Q3",
+			"value": 5.99
+		},
+		{
+			"period": "1966-Q4",
+			"value": 6.07
+		},
+		{
+			"period": "1967-Q1",
+			"value": 6.11
+		},
+		{
+			"period": "1967-Q2",
+			"value": 6.15
+		},
+		{
+			"period": "1967-Q3",
+			"value": 6.26
+		},
+		{
+			"period": "1967-Q4",
+			"value": 6.26
+		},
+		{
+			"period": "1968-Q1",
+			"value": 6.3
+		},
+		{
+			"period": "1968-Q2",
+			"value": 6.34
+		},
+		{
+			"period": "1968-Q3",
+			"value": 6.38
+		},
+		{
+			"period": "1968-Q4",
+			"value": 6.42
+		},
+		{
+			"period": "1969-Q1",
+			"value": 6.49
+		},
+		{
+			"period": "1969-Q2",
+			"value": 6.53
+		},
+		{
+			"period": "1969-Q3",
+			"value": 6.57
+		},
+		{
+			"period": "1969-Q4",
+			"value": 6.61
+		},
+		{
+			"period": "1970-Q1",
+			"value": 6.69
+		},
+		{
+			"period": "1970-Q2",
+			"value": 6.77
+		},
+		{
+			"period": "1970-Q3",
+			"value": 6.8
+		},
+		{
+			"period": "1970-Q4",
+			"value": 6.92
+		},
+		{
+			"period": "1971-Q1",
+			"value": 7
+		},
+		{
+			"period": "1971-Q2",
+			"value": 7.11
+		},
+		{
+			"period": "1971-Q3",
+			"value": 7.27
+		},
+		{
+			"period": "1971-Q4",
+			"value": 7.42
+		},
+		{
+			"period": "1972-Q1",
+			"value": 7.5
+		},
+		{
+			"period": "1972-Q2",
+			"value": 7.58
+		},
+		{
+			"period": "1972-Q3",
+			"value": 7.69
+		},
+		{
+			"period": "1972-Q4",
+			"value": 7.77
+		},
+		{
+			"period": "1973-Q1",
+			"value": 7.93
+		},
+		{
+			"period": "1973-Q2",
+			"value": 8.2
+		},
+		{
+			"period": "1973-Q3",
+			"value": 8.47
+		},
+		{
+			"period": "1973-Q4",
+			"value": 8.78
+		},
+		{
+			"period": "1974-Q1",
+			"value": 9.01
+		},
+		{
+			"period": "1974-Q2",
+			"value": 9.39
+		},
+		{
+			"period": "1974-Q3",
+			"value": 9.86
+		},
+		{
+			"period": "1974-Q4",
+			"value": 10.21
+		},
+		{
+			"period": "1975-Q1",
+			"value": 10.59
+		},
+		{
+			"period": "1975-Q2",
+			"value": 10.98
+		},
+		{
+			"period": "1975-Q3",
+			"value": 11.06
+		},
+		{
+			"period": "1975-Q4",
+			"value": 11.68
+		},
+		{
+			"period": "1976-Q1",
+			"value": 11.98
+		},
+		{
+			"period": "1976-Q2",
+			"value": 12.29
+		},
+		{
+			"period": "1976-Q3",
+			"value": 12.6
+		},
+		{
+			"period": "1976-Q4",
+			"value": 13.34
+		},
+		{
+			"period": "1977-Q1",
+			"value": 13.65
+		},
+		{
+			"period": "1977-Q2",
+			"value": 13.96
+		},
+		{
+			"period": "1977-Q3",
+			"value": 14.23
+		},
+		{
+			"period": "1977-Q4",
+			"value": 14.57
+		},
+		{
+			"period": "1978-Q1",
+			"value": 14.77
+		},
+		{
+			"period": "1978-Q2",
+			"value": 15.08
+		},
+		{
+			"period": "1978-Q3",
+			"value": 15.35
+		},
+		{
+			"period": "1978-Q4",
+			"value": 15.7
+		},
+		{
+			"period": "1979-Q1",
+			"value": 15.97
+		},
+		{
+			"period": "1979-Q2",
+			"value": 16.39
+		},
+		{
+			"period": "1979-Q3",
+			"value": 16.78
+		},
+		{
+			"period": "1979-Q4",
+			"value": 17.28
+		},
+		{
+			"period": "1980-Q1",
+			"value": 17.67
+		},
+		{
+			"period": "1980-Q2",
+			"value": 18.17
+		},
+		{
+			"period": "1980-Q3",
+			"value": 18.48
+		},
+		{
+			"period": "1980-Q4",
+			"value": 18.87
+		},
+		{
+			"period": "1981-Q1",
+			"value": 19.33
+		},
+		{
+			"period": "1981-Q2",
+			"value": 19.76
+		},
+		{
+			"period": "1981-Q3",
+			"value": 20.14
+		},
+		{
+			"period": "1981-Q4",
+			"value": 20.99
+		},
+		{
+			"period": "1982-Q1",
+			"value": 21.38
+		},
+		{
+			"period": "1982-Q2",
+			"value": 21.88
+		},
+		{
+			"period": "1982-Q3",
+			"value": 22.65
+		},
+		{
+			"period": "1982-Q4",
+			"value": 23.31
+		},
+		{
+			"period": "1983-Q1",
+			"value": 23.81
+		},
+		{
+			"period": "1983-Q2",
+			"value": 24.32
+		},
+		{
+			"period": "1983-Q3",
+			"value": 24.74
+		},
+		{
+			"period": "1983-Q4",
+			"value": 25.32
+		},
+		{
+			"period": "1984-Q1",
+			"value": 25.21
+		},
+		{
+			"period": "1984-Q2",
+			"value": 25.28
+		},
+		{
+			"period": "1984-Q3",
+			"value": 25.59
+		},
+		{
+			"period": "1984-Q4",
+			"value": 25.98
+		},
+		{
+			"period": "1985-Q1",
+			"value": 26.33
+		},
+		{
+			"period": "1985-Q2",
+			"value": 26.95
+		},
+		{
+			"period": "1985-Q3",
+			"value": 27.56
+		},
+		{
+			"period": "1985-Q4",
+			"value": 28.11
+		},
+		{
+			"period": "1986-Q1",
+			"value": 28.76
+		},
+		{
+			"period": "1986-Q2",
+			"value": 29.23
+		},
+		{
+			"period": "1986-Q3",
+			"value": 30
+		},
+		{
+			"period": "1986-Q4",
+			"value": 30.85
+		},
+		{
+			"period": "1987-Q1",
+			"value": 31.47
+		},
+		{
+			"period": "1987-Q2",
+			"value": 31.93
+		},
+		{
+			"period": "1987-Q3",
+			"value": 32.47
+		},
+		{
+			"period": "1987-Q4",
+			"value": 33.05
+		},
+		{
+			"period": "1988-Q1",
+			"value": 33.63
+		},
+		{
+			"period": "1988-Q2",
+			"value": 34.21
+		},
+		{
+			"period": "1988-Q3",
+			"value": 34.87
+		},
+		{
+			"period": "1988-Q4",
+			"value": 35.57
+		},
+		{
+			"period": "1989-Q1",
+			"value": 35.91
+		},
+		{
+			"period": "1989-Q2",
+			"value": 36.8
+		},
+		{
+			"period": "1989-Q3",
+			"value": 37.65
+		},
+		{
+			"period": "1989-Q4",
+			"value": 38.35
+		},
+		{
+			"period": "1990-Q1",
+			"value": 39.01
+		},
+		{
+			"period": "1990-Q2",
+			"value": 39.63
+		},
+		{
+			"period": "1990-Q3",
+			"value": 39.94
+		},
+		{
+			"period": "1990-Q4",
+			"value": 40.98
+		},
+		{
+			"period": "1991-Q1",
+			"value": 40.9
+		},
+		{
+			"period": "1991-Q2",
+			"value": 40.98
+		},
+		{
+			"period": "1991-Q3",
+			"value": 41.21
+		},
+		{
+			"period": "1991-Q4",
+			"value": 41.6
+		},
+		{
+			"period": "1992-Q1",
+			"value": 41.6
+		},
+		{
+			"period": "1992-Q2",
+			"value": 41.48
+		},
+		{
+			"period": "1992-Q3",
+			"value": 41.52
+		},
+		{
+			"period": "1992-Q4",
+			"value": 41.71
+		},
+		{
+			"period": "1993-Q1",
+			"value": 42.1
+		},
+		{
+			"period": "1993-Q2",
+			"value": 42.25
+		},
+		{
+			"period": "1993-Q3",
+			"value": 42.45
+		},
+		{
+			"period": "1993-Q4",
+			"value": 42.53
+		},
+		{
+			"period": "1994-Q1",
+			"value": 42.68
+		},
+		{
+			"period": "1994-Q2",
+			"value": 42.99
+		},
+		{
+			"period": "1994-Q3",
+			"value": 43.26
+		},
+		{
+			"period": "1994-Q4",
+			"value": 43.61
+		},
+		{
+			"period": "1995-Q1",
+			"value": 44.34
+		},
+		{
+			"period": "1995-Q2",
+			"value": 44.92
+		},
+		{
+			"period": "1995-Q3",
+			"value": 45.46
+		},
+		{
+			"period": "1995-Q4",
+			"value": 45.81
+		},
+		{
+			"period": "1996-Q1",
+			"value": 46
+		},
+		{
+			"period": "1996-Q2",
+			"value": 46.31
+		},
+		{
+			"period": "1996-Q3",
+			"value": 46.43
+		},
+		{
+			"period": "1996-Q4",
+			"value": 46.51
+		},
+		{
+			"period": "1997-Q1",
+			"value": 46.58
+		},
+		{
+			"period": "1997-Q2",
+			"value": 46.47
+		},
+		{
+			"period": "1997-Q3",
+			"value": 46.28
+		},
+		{
+			"period": "1997-Q4",
+			"value": 46.39
+		},
+		{
+			"period": "1998-Q1",
+			"value": 46.51
+		},
+		{
+			"period": "1998-Q2",
+			"value": 46.78
+		},
+		{
+			"period": "1998-Q3",
+			"value": 46.91
+		},
+		{
+			"period": "1998-Q4",
+			"value": 47.11
+		},
+		{
+			"period": "1999-Q1",
+			"value": 47.08
+		},
+		{
+			"period": "1999-Q2",
+			"value": 47.29
+		},
+		{
+			"period": "1999-Q3",
+			"value": 47.72
+		},
+		{
+			"period": "1999-Q4",
+			"value": 47.97
+		},
+		{
+			"period": "2000-Q1",
+			"value": 48.4
+		},
+		{
+			"period": "2000-Q2",
+			"value": 48.77
+		},
+		{
+			"period": "2000-Q3",
+			"value": 50.59
+		},
+		{
+			"period": "2000-Q4",
+			"value": 50.76
+		},
+		{
+			"period": "2001-Q1",
+			"value": 51.3
+		},
+		{
+			"period": "2001-Q2",
+			"value": 51.73
+		},
+		{
+			"period": "2001-Q3",
+			"value": 51.87
+		},
+		{
+			"period": "2001-Q4",
+			"value": 52.35
+		},
+		{
+			"period": "2002-Q1",
+			"value": 52.82
+		},
+		{
+			"period": "2002-Q2",
+			"value": 53.2
+		},
+		{
+			"period": "2002-Q3",
+			"value": 53.56
+		},
+		{
+			"period": "2002-Q4",
+			"value": 53.92
+		},
+		{
+			"period": "2003-Q1",
+			"value": 54.62
+		},
+		{
+			"period": "2003-Q2",
+			"value": 54.62
+		},
+		{
+			"period": "2003-Q3",
+			"value": 54.93
+		},
+		{
+			"period": "2003-Q4",
+			"value": 55.22
+		},
+		{
+			"period": "2004-Q1",
+			"value": 55.71
+		},
+		{
+			"period": "2004-Q2",
+			"value": 55.97
+		},
+		{
+			"period": "2004-Q3",
+			"value": 56.2
+		},
+		{
+			"period": "2004-Q4",
+			"value": 56.63
+		},
+		{
+			"period": "2005-Q1",
+			"value": 57.01
+		},
+		{
+			"period": "2005-Q2",
+			"value": 57.35
+		},
+		{
+			"period": "2005-Q3",
+			"value": 57.92
+		},
+		{
+			"period": "2005-Q4",
+			"value": 58.22
+		},
+		{
+			"period": "2006-Q1",
+			"value": 58.72
+		},
+		{
+			"period": "2006-Q2",
+			"value": 59.65
+		},
+		{
+			"period": "2006-Q3",
+			"value": 60.18
+		},
+		{
+			"period": "2006-Q4",
+			"value": 60.11
+		},
+		{
+			"period": "2007-Q1",
+			"value": 60.16
+		},
+		{
+			"period": "2007-Q2",
+			"value": 60.9
+		},
+		{
+			"period": "2007-Q3",
+			"value": 61.32
+		},
+		{
+			"period": "2007-Q4",
+			"value": 61.89
+		},
+		{
+			"period": "2008-Q1",
+			"value": 62.72
+		},
+		{
+			"period": "2008-Q2",
+			"value": 63.63
+		},
+		{
+			"period": "2008-Q3",
+			"value": 64.37
+		},
+		{
+			"period": "2008-Q4",
+			"value": 64.16
+		},
+		{
+			"period": "2009-Q1",
+			"value": 64.23
+		},
+		{
+			"period": "2009-Q2",
+			"value": 64.55
+		},
+		{
+			"period": "2009-Q3",
+			"value": 65.16
+		},
+		{
+			"period": "2009-Q4",
+			"value": 65.51
+		},
+		{
+			"period": "2010-Q1",
+			"value": 66.12
+		},
+		{
+			"period": "2010-Q2",
+			"value": 66.52
+		},
+		{
+			"period": "2010-Q3",
+			"value": 67
+		},
+		{
+			"period": "2010-Q4",
+			"value": 67.26
+		},
+		{
+			"period": "2011-Q1",
+			"value": 68.3
+		},
+		{
+			"period": "2011-Q2",
+			"value": 68.93
+		},
+		{
+			"period": "2011-Q3",
+			"value": 69.34
+		},
+		{
+			"period": "2011-Q4",
+			"value": 69.34
+		},
+		{
+			"period": "2012-Q1",
+			"value": 69.38
+		},
+		{
+			"period": "2012-Q2",
+			"value": 69.74
+		},
+		{
+			"period": "2012-Q3",
+			"value": 70.69
+		},
+		{
+			"period": "2012-Q4",
+			"value": 70.87
+		},
+		{
+			"period": "2013-Q1",
+			"value": 71.11
+		},
+		{
+			"period": "2013-Q2",
+			"value": 71.38
+		},
+		{
+			"period": "2013-Q3",
+			"value": 72.25
+		},
+		{
+			"period": "2013-Q4",
+			"value": 72.77
+		},
+		{
+			"period": "2014-Q1",
+			"value": 73.2
+		},
+		{
+			"period": "2014-Q2",
+			"value": 73.57
+		},
+		{
+			"period": "2014-Q3",
+			"value": 73.88
+		},
+		{
+			"period": "2014-Q4",
+			"value": 74.02
+		},
+		{
+			"period": "2015-Q1",
+			"value": 74.16
+		},
+		{
+			"period": "2015-Q2",
+			"value": 74.69
+		},
+		{
+			"period": "2015-Q3",
+			"value": 74.98
+		},
+		{
+			"period": "2015-Q4",
+			"value": 75.27
+		},
+		{
+			"period": "2016-Q1",
+			"value": 75.12
+		},
+		{
+			"period": "2016-Q2",
+			"value": 75.45
+		},
+		{
+			"period": "2016-Q3",
+			"value": 75.98
+		},
+		{
+			"period": "2016-Q4",
+			"value": 76.38
+		},
+		{
+			"period": "2017-Q1",
+			"value": 76.73
+		},
+		{
+			"period": "2017-Q2",
+			"value": 76.88
+		},
+		{
+			"period": "2017-Q3",
+			"value": 77.35
+		},
+		{
+			"period": "2017-Q4",
+			"value": 77.87
+		},
+		{
+			"period": "2018-Q1",
+			"value": 78.21
+		},
+		{
+			"period": "2018-Q2",
+			"value": 78.49
+		},
+		{
+			"period": "2018-Q3",
+			"value": 78.83
+		},
+		{
+			"period": "2018-Q4",
+			"value": 79.24
+		},
+		{
+			"period": "2019-Q1",
+			"value": 79.23
+		},
+		{
+			"period": "2019-Q2",
+			"value": 79.7
+		},
+		{
+			"period": "2019-Q3",
+			"value": 80.15
+		},
+		{
+			"period": "2019-Q4",
+			"value": 80.7
+		},
+		{
+			"period": "2020-Q1",
+			"value": 81
+		},
+		{
+			"period": "2020-Q2",
+			"value": 79.44
+		},
+		{
+			"period": "2020-Q3",
+			"value": 80.67
+		},
+		{
+			"period": "2020-Q4",
+			"value": 81.4
+		},
+		{
+			"period": "2021-Q1",
+			"value": 81.87
+		},
+		{
+			"period": "2021-Q2",
+			"value": 82.47
+		},
+		{
+			"period": "2021-Q3",
+			"value": 83.17
+		},
+		{
+			"period": "2021-Q4",
+			"value": 84.23
+		},
+		{
+			"period": "2022-Q1",
+			"value": 86.05
+		},
+		{
+			"period": "2022-Q2",
+			"value": 87.59
+		},
+		{
+			"period": "2022-Q3",
+			"value": 89.2
+		},
+		{
+			"period": "2022-Q4",
+			"value": 90.85
+		},
+		{
+			"period": "2023-Q1",
+			"value": 92.08
+		},
+		{
+			"period": "2023-Q2",
+			"value": 92.87
+		},
+		{
+			"period": "2023-Q3",
+			"value": 93.94
+		},
+		{
+			"period": "2023-Q4",
+			"value": 94.53
+		},
+		{
+			"period": "2024-Q1",
+			"value": 95.41
+		},
+		{
+			"period": "2024-Q2",
+			"value": 96.41
+		},
+		{
+			"period": "2024-Q3",
+			"value": 96.62
+		},
+		{
+			"period": "2024-Q4",
+			"value": 96.81
+		},
+		{
+			"period": "2025-Q1",
+			"value": 97.7
+		},
+		{
+			"period": "2025-Q2",
+			"value": 98.43
+		},
+		{
+			"period": "2025-Q3",
+			"value": 99.73
+		},
+		{
+			"period": "2025-Q4",
+			"value": 100.32
+		},
+		{
+			"period": "2026-Q1",
+			"value": 101.7
+		},
+		{
+			"period": "2026-Q2",
+			"value": 102.31
+		}
+	]
+}

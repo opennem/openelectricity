@@ -1,4 +1,5 @@
 <script>
+	import Toggle from '$lib/components/form-elements/Toggle.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { untrack } from 'svelte';
@@ -40,7 +41,7 @@
 		latestCommonComparisonPeriod
 	} from './region-comparison.js';
 
-	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>, cpi: any}} */
+	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>, cpi: ReturnType<typeof import('$lib/comparison-cpi.js').comparisonCpi>}} */
 	let { session, cpi } = $props();
 	let selection = $derived(normaliseRegionComparison(session.selection.regionComparison));
 	let metrics = $derived(selection.charts.map(comparisonMetric));
@@ -152,7 +153,7 @@
 			)
 	);
 	export function exportDataset() {
-		return ready ? comparisonExportDataset(source.data, selection, viewport, cpi?.reference) : null;
+		return ready ? comparisonExportDataset(source.data, selection, viewport, cpi.reference) : null;
 	}
 	export function getSelection() {
 		return selection;
@@ -233,13 +234,13 @@
 					class="mb-3 flex items-center justify-between gap-3 rounded-lg border border-warm-grey bg-white p-4 text-xs"
 				>
 					<span
-						>{COMPARISON_REGIONS.find((r) => r.value === id)?.shortLabel}: {source.status[id]
+						>{COMPARISON_REGIONS.find((r) => r.value === id)?.label}: {source.status[id]
 							.error}</span
 					>
 					<button
 						class="rounded border border-mid-warm-grey px-3 py-2"
 						onclick={() => source.retry(id)}
-						>Retry {COMPARISON_REGIONS.find((r) => r.value === id)?.shortLabel}</button
+						>Retry {COMPARISON_REGIONS.find((r) => r.value === id)?.label}</button
 					>
 				</div>
 			{/each}
@@ -266,7 +267,7 @@
 						ready: cardReady,
 						caption:
 							metric.id === 'price_real'
-								? `${caption} · ${cpi?.reference ?? 'Unknown CPI reference'} dollars`
+								? `${caption} · ${cpi.reference} dollars · ABS CPI`
 								: caption
 					}}
 				>
@@ -289,9 +290,25 @@
 									})}
 							/>
 						{/if}
-						{#if metric.id === 'price_real'}<span class="text-xs text-mid-grey"
-								>{cpi?.reference ? `${cpi.reference} dollars` : 'CPI unavailable'}</span
-							>{/if}
+						{#if comparisonChartId(metric.id) === 'price_real'}
+							<Toggle
+								label="Inflation adjusted"
+								checked={metric.id === 'price_real'}
+								onclick={() =>
+									select({
+										charts: selection.charts.map((current) =>
+											current === metric.id
+												? metric.id === 'price_real'
+													? 'price'
+													: 'price_real'
+												: current
+										)
+									})}
+							/>
+						{/if}
+						{#if metric.id === 'price_real'}
+							<span class="text-xs text-mid-grey">{cpi.reference} dollars</span>
+						{/if}
 					{/snippet}
 					{#snippet children(height)}
 						<RegionComparisonChart
@@ -323,13 +340,17 @@
 				Demand shares can exceed 100% in exporting regions. WA covers the WEM. Hover or use the
 				arrow keys to inspect a period; press Enter to pin it.
 			</p>
-			{#if selection.charts.includes('price_real')}<p
-					class="px-2 pt-2 text-xs text-mid-grey"
-					role="status"
-				>
-					{cpi?.error ??
-						`Inflation adjusted prices use CPI through ${cpi?.reference}. Later periods remain blank until CPI is available.`}
-				</p>{/if}
+			{#if selection.charts.includes('price_real')}
+				<p class="px-2 pt-2 text-xs text-mid-grey" role="status">
+					Inflation adjusted using <a
+						href={cpi.source}
+						target="_blank"
+						rel="noreferrer"
+						class="underline">ABS All Groups CPI</a
+					>, in {cpi.reference} dollars. Each month uses its quarter’s CPI; later periods remain blank
+					until CPI is published.
+				</p>
+			{/if}
 		</div>
 		{#if panelOpen}
 			{#if desktop.current}
@@ -381,13 +402,13 @@
 							}}>Clear pinned period</button
 						>{/if}
 				</div>
-				<div class="[--region-w:160px]">
+				<div class="[--region-w:240px]">
 					<div
 						onscroll={(event) => (tableScrollLeft = event.currentTarget.scrollLeft)}
 						class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--region-w) scroll-smooth motion-reduce:scroll-auto"
 					>
 						<table
-							style:min-width={`${160 + metrics.length * 100}px`}
+							style:min-width={`${240 + metrics.length * 100}px`}
 							class="w-full table-fixed border-separate border-spacing-0 select-none"
 							aria-label="Region comparison values"
 						>
@@ -421,7 +442,7 @@
 							<tbody>
 								{#each COMPARISON_REGIONS as region (region.value)}
 									{@const selected = selection.regions.includes(region.value)}
-									{@const label = splitTableLabel(region.shortLabel)}
+									{@const label = splitTableLabel(region.label)}
 									{@const row = source.data[region.value]?.find((row) => row.time === period)}
 									<tr class="{TABLE_ROW} {selected ? '' : 'opacity-50'}">
 										<th
@@ -431,7 +452,7 @@
 											<button
 												type="button"
 												aria-pressed={selected}
-												aria-label={`Compare ${region.shortLabel}`}
+												aria-label={`Compare ${region.label}`}
 												title={region.label}
 												onclick={(event) =>
 													toggleRegion(region.value, event.metaKey || event.ctrlKey)}

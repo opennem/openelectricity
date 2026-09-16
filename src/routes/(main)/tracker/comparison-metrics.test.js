@@ -31,7 +31,7 @@ const response = (metric, values) => ({
 describe('expanded regional metrics', () => {
 	it('defaults to intensity and renewable proportion and round-trips selections', () => {
 		expect(ALL_COMPARISON_CHARTS).toHaveLength(21);
-		expect(COMPARISON_CHART_OPTIONS).toHaveLength(15);
+		expect(COMPARISON_CHART_OPTIONS).toHaveLength(14);
 		expect(normaliseRegionComparison().charts).toEqual(['intensity', 'share']);
 		expect(
 			normaliseRegionComparison({ charts: ['intensity', 'generation', 'share'] }).charts
@@ -40,8 +40,29 @@ describe('expanded regional metrics', () => {
 			'generation',
 			'wind_share'
 		]);
-		for (const charts of [undefined, [], ['solar_value', 'price_real', 'unknown']]) {
+		for (const charts of [undefined, [], ['solar_value', 'price', 'unknown']]) {
 			const state = normaliseRegionComparison({ charts });
+			const params = new URLSearchParams();
+			applyRegionComparison(params, state);
+			expect(parseRegionComparison(params).charts).toEqual(state.charts);
+		}
+	});
+	it('offers one price chart, defaults to adjusted and preserves nominal selections', () => {
+		const prices = COMPARISON_CHART_OPTIONS.filter((metric) => metric.group === 'Prices');
+		expect(prices).toHaveLength(6);
+		expect(
+			prices.filter((metric) => metric.label === 'Volume-weighted price').map((metric) => metric.id)
+		).toEqual(['price_real']);
+		expect(selectComparisonCharts(['price_real'])).toEqual(['price_real']);
+		expect(selectComparisonCharts(['price_real'], ['price'])).toEqual(['price']);
+		for (const charts of [
+			['price'],
+			['price_real'],
+			['price', 'price_real'],
+			['price_real', 'price']
+		]) {
+			const state = normaliseRegionComparison({ charts });
+			expect(state.charts).toEqual([charts[0]]);
 			const params = new URLSearchParams();
 			applyRegionComparison(params, state);
 			expect(parseRegionComparison(params).charts).toEqual(state.charts);
