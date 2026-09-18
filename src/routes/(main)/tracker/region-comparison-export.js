@@ -52,11 +52,12 @@ export const regionComparisonCsv = (dataset) => datasetToCsv(dataset, CALENDAR_Z
  * @param {RegionComparisonSelection} state @param {{start:number,end:number}} viewport
  * @param {'csv' | 'xlsx'} extension */
 export function comparisonFileName(state, viewport, extension) {
-	const month = (/** @type {number} */ ms) => new Date(ms).toISOString().slice(0, 7);
+	const length = state.interval === '1d' ? 10 : 7;
+	const period = (/** @type {number} */ ms) => new Date(ms).toISOString().slice(0, length);
 	return trackerFileName({
 		scope: 'regions',
 		dataset: state.interval,
-		range: `${month(viewport.start)}-to-${month(viewport.end - 1)}`,
+		range: `${period(viewport.start)}-to-${period(viewport.end - 1)}`,
 		extension
 	});
 }

@@ -7,12 +7,11 @@
 	 */
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import Minus from '@lucide/svelte/icons/minus';
 	import Move from '@lucide/svelte/icons/move';
-	import Plus from '@lucide/svelte/icons/plus';
 	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import ChartControls from './ChartControls.svelte';
+	import StaticZoomButtons from './StaticZoomButtons.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -107,30 +106,7 @@
 					{#if showPanZoomToggle}
 						<div class="mx-0.5 h-4 w-px bg-mid-warm-grey/60" aria-hidden="true"></div>
 					{/if}
-					<Tooltip text="Zoom out" class="inline-flex">
-						<button
-							class="p-1 rounded transition-colors {isAtMaxZoom
-								? 'text-mid-warm-grey cursor-not-allowed'
-								: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
-							onclick={onzoomout}
-							disabled={isAtMaxZoom}
-							aria-label="Zoom out"
-						>
-							<Minus size={12} />
-						</button>
-					</Tooltip>
-					<Tooltip text="Zoom in" class="inline-flex">
-						<button
-							class="p-1 rounded transition-colors {isAtMinZoom
-								? 'text-mid-warm-grey cursor-not-allowed'
-								: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
-							onclick={onzoomin}
-							disabled={isAtMinZoom}
-							aria-label="Zoom in"
-						>
-							<Plus size={12} />
-						</button>
-					</Tooltip>
+					<StaticZoomButtons {onzoomin} {onzoomout} {isAtMinZoom} {isAtMaxZoom} />
 				{/if}
 			</div>
 		{/if}

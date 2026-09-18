@@ -104,5 +104,8 @@
 			aria-orientation="horizontal"
 			aria-label="Resize chart height"
 		/>
+	{:else}
+		<!-- Same rhythm as the handle gap for cards whose height is their content. -->
+		<div class="h-4" aria-hidden="true"></div>
 	{/if}
 </div>

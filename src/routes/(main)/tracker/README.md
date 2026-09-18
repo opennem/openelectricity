@@ -81,8 +81,78 @@ instantaneous cross-network comparison. National values sum NEM + WEM inputs
 before calculating ratios and require both networks. Regional failures can be
 retried independently; stale or disabled providers cannot populate current values.
 
-Comparison settings are independent of Timeline: `compare-interval`,
-`compare-regions` (an empty value intentionally selects none), `compare-renewables`,
+**Stripes display.** A two-icon segmented control at the start of the
+comparison filter row (`compare-display=stripes`; omitted for line charts)
+re-renders every selected metric card as stripes: one row per selected region,
+one colour cell per period, over the same viewport, ticks, hover and pinned
+period as the line charts, so the Regions table doubles as the readout. Colour
+scales are fixed and absolute so a shade means the same in every region and
+year: carbon intensity uses the house intensity ramp at 0 / 100 / 300 / 550 /
+1,000 kgCO₂e/MWh; renewable, solar + wind, solar and wind proportions run
+white → fuel colour → darker over 0–100 %; gas and coal proportions start at
+renewables green so a fossil-free period is unmistakable; net imports diverge
+export-blue → white → import-red over −25 / 0 / +25 %; prices use the eight
+legacy stops from −$1k to $15k/MWh; generation alone scales to the visible
+maximum. Missing readings are `warm-grey`, never zero. Each card's header
+carries its legend. The cells are painted to a canvas per card (one `fillRect` per visible cell,
+edges rounded to whole pixels so neighbours share an edge), repainted once
+per frame from an effect; labels, axis, month cells, the highlight and the
+pointer overlay are SVG above it, so the DOM holds a few dozen nodes per card
+however many periods are visible; mouse drag and horizontal wheel pan, touch keeps scrolling
+the page, and the same sr-only Inspect button drives keyboard inspection
+(`comparison-inspection.js` is shared with the line chart). Labels and swatches
+are SVG so PNG export keeps them; `png-export.js` captures any
+`svg[data-png-layer]` or `canvas[data-png-layer]` (embedded as a raster
+image) inside a `[data-chart-area]` root as well as LayerCake layers. `comparison-stripes.js` holds the scales and geometry.
+
+**Windows and ticks.** Each interval opens on its own window, which the reset
+button in the filter row names and returns to (`comparisonDefaultViewport`,
+`comparisonDefaultLabel`): the latest year of days, the latest five years for
+monthly and 12-month rolling ("Last 5 years"), and all history for calendar
+and financial years ("All history"). Axis ticks are anchored to the calendar
+(`comparisonTicks`): daily windows tick at month starts, monthly rows at the
+finest month step from January (1, 2, 3, 6, 12… months) that keeps at most
+six ticks, yearly rows at a year step (1, 2, 5…), so a tick keeps its date as
+the window slides and leaves the axis only when it leaves the viewport. The
+stripes' daily month cells are anchored the same way, the first beginning
+left of the viewport and clipped.
+
+**Daily interval.** `compare-interval=1d` turns the comparison into a fixed
+one-year window of days for both displays. The right edge defaults to the last
+complete day in both networks (`comparisonBounds().dayEnd`) and never passes
+it; the window never resizes, so the zoom buttons hide and wheel zoom is inert.
+A year navigator replaces "All history" in the filter row: previous / next
+year, the window's first and last day, and Latest when the window is behind.
+With a navigator button focused, ← → move a month, Shift six months, Cmd/Ctrl
+snap to a 1 January, Home is the latest window and End the earliest
+(`comparison-navigation.js`). Both displays tick at month starts; the stripes
+axis renders month cells and clicking one makes that month the window's first
+month. Switching Monthly → Daily keeps the right edge, and Daily → Monthly
+widens to the monthly minimum span around it. Data comes from a second
+provider set per region (`region-comparison-data.svelte.js`), enabled only
+for the daily interval, that fetches the viewport plus three whole months
+either side (`dailyFetchWindow`): a slide inside that buffer fetches nothing
+and crossing a month boundary fetches one month; a settled gesture reconciles
+the buffer. Daily rows keep their cached months while new ones load; the
+monthly set stays warm, so switching back is free. Daily bounds clamp the
+window to the data floor rather than to loaded rows. The data module derives
+only the interval and regions from the selection and the buffer's start and
+end as numbers, so a pan (which replaces the selection object each frame)
+never rebuilds the joined dataset while it stays inside the buffer. For the
+same reason `RegionComparison` derives its `metrics` and `regions` arrays from
+join-keys of the selection (stable identity while the contents are) and
+passes `basis` and `interval` through its own string deriveds rather than as
+`selection.basis` (a prop expression tracks the object it reads, so children
+would re-derive on every move even though the string is unchanged); the
+stripes colour scale is memoised on metric, basis and visible maximum, and
+the UTC date formatters are cached. Pointer and wheel deltas are
+accumulated and applied once per animation frame. Measured under the dev
+server with two cards of daily stripes: a synthetic wheel pan at 63 frames per
+second and a real mouse drag at 125, with 32 DOM nodes per card.
+
+Comparison settings are independent of Timeline: `compare-display`
+(`stripes`), `compare-interval` (`1d`, `1M`, `1y`, `fy`; 12-month rolling is
+the default), `compare-regions` (an empty value intentionally selects none), `compare-renewables`,
 `compare-charts` (empty selects none), `compare-basis`, `compare-start` / `compare-end`, and `compare-table`. Defaults are
 omitted. Explicit view switches reset all query settings to that view's defaults
 (`view=average` or `view=regions`; Timeline has no view parameter). Back/Forward
@@ -92,7 +162,7 @@ replace it. The top nav holds all three views' filters with uniform spacing and
 a divider after the switcher. The outgoing controls slide left, then the incoming
 controls slide right into place; reduced-motion users get an immediate change. CSV/XLSX export
 the visible metrics for selected regions and visible periods, in base units with
-the percentage denominator stated. PNG uses the existing Stratum capture flow.
+the percentage denominator stated. PNG uses the existing Stratum capture flow, extended to the stripes' own SVG.
 
 ### Timeline and profile composition
 

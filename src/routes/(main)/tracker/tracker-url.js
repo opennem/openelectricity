@@ -22,6 +22,11 @@
  * - `columns`   — visible table value columns, comma-separated; empty hides all
  * - `table`     — `0` when the fuel-tech panel is closed
  * - `fullscreen`— `false` opts out of the fullscreen chrome
+ * - `compare-*` — Compare regions (`view=regions`) controls, see
+ *                 `region-comparison.js`: `compare-display=stripes` for the
+ *                 stripes display, `compare-interval` (`1d` is the daily
+ *                 one-year window), `compare-regions`, `compare-charts`,
+ *                 `compare-basis`, `compare-start`/`compare-end`, `compare-table`
  */
 
 import {

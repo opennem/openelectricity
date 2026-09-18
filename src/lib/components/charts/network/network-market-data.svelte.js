@@ -52,9 +52,11 @@ const metricKeyFor = (basis) => (basis === 'energy' ? 'renewables_energy' : 'ren
  *   basis: () => 'power' | 'energy',
  *   interval: () => string,
  *   timeZone: () => string,
- *   enabled?: () => boolean
+ *   enabled?: () => boolean,
+ *   exactWindow?: boolean
  * }} opts - Reactive getters. A disabled provider fetches nothing and replays
- *   its last viewport when enabled.
+ *   its last viewport when enabled. `exactWindow` fetches the viewport itself
+ *   rather than the buffered window.
  */
 export function createNetworkMarketData(opts) {
 	return createHeadlessSeriesProvider({
@@ -62,6 +64,7 @@ export function createNetworkMarketData(opts) {
 		interval: opts.interval,
 		timeZone: opts.timeZone,
 		enabled: opts.enabled,
+		exactWindow: opts.exactWindow,
 		spec: () => {
 			const basis = opts.basis();
 			const tz = opts.timeZone();

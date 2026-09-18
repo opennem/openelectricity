@@ -87,6 +87,13 @@ The legacy scenario selection component also imports the shared checkbox.
 MultiSelect's embedded indicators and other inline native checkboxes remain a
 separate follow-up; they do not use these shared checkbox components.
 
+## Segmented switch note
+
+`SwitchWithIcons.svelte` (hand-rolled, the tracker's view switcher and the
+Compare regions display chip) now accepts an optional `title` per button so
+icon-only buttons carry a native tooltip alongside their `ariaLabel`. It is not
+a Bits UI component; a Toggle Group migration remains a candidate below.
+
 ## Suggested next migrations
 
 1. `ui/options-menu/OptionsMenu.svelte` and other custom action menus → Bits UI
@@ -96,5 +103,8 @@ separate follow-up; they do not use these shared checkbox components.
 3. Remaining standalone dialogs (facility mobile filters, tracker PNG export,
    Stratify's expanded editor) → the shared Dialog wrapper. Confirmation dialogs
    in Stratify and Tracker Explore are candidates for Bits UI Alert Dialog.
+
+4. `SwitchWithIcons.svelte` → Bits UI Toggle Group, keeping the sliding thumb
+   and the per-button icon, `ariaLabel` and `title` options its callers use.
 
 These are follow-up suggestions and are not included in this migration.

@@ -3,21 +3,22 @@
 	import { onDestroy, untrack } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
+	import { inspectionStep } from './comparison-inspection.js';
 	import {
 		COMPARISON_REGIONS,
 		comparisonPeriod,
 		comparisonChartRows,
+		comparisonTickLabel,
 		comparisonTicks,
 		comparisonYDomain,
 		COMPARISON_MIN_SPAN_MS,
+		DAILY_WINDOW_MS,
 		visibleComparisonRows
 	} from './region-comparison.js';
 
 	/** Region labels and colours never change: set once on the store. */
 	const SERIES_LABELS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.label]));
 	const SERIES_COLOURS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.colour]));
-	/** Below three years the axis shows months as well as years. */
-	const MONTH_TICKS_BELOW_MS = 3 * 365 * 86_400_000;
 
 	/** @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string,
 	 * viewport: {start:number,end:number}, bounds: {start:number,end:number}, height: number,
@@ -81,16 +82,12 @@
 	$effect(() => {
 		chart.chartStyles.chartHeightPx = height;
 	});
+	// The daily interval is a fixed one-year window: zoom is exhausted both ways.
+	let fixedWindow = $derived(interval === '1d');
 	$effect(() => {
-		const short = viewport.end - viewport.start < MONTH_TICKS_BELOW_MS;
-		chart.formatTickX = (date) =>
-			new Date(date).toLocaleDateString('en-AU', {
-				timeZone: 'UTC',
-				year: 'numeric',
-				...(short ? { month: 'short' } : {})
-			});
+		chart.formatTickX = (date) => comparisonTickLabel(Number(date), interval, viewport);
 		chart.setXDomain(viewport.start, viewport.end);
-		const ticks = comparisonTicks(visibleRows);
+		const ticks = comparisonTicks(visibleRows, interval);
 		chart.xTicks = ticks;
 		chart.xGridlineTicks = ticks;
 	});
@@ -115,8 +112,8 @@
 		viewport: () => viewport,
 		apply: (start, end) => onviewport(start, end, false),
 		minDateMs: () => bounds.start,
-		minDurationMs: () => COMPARISON_MIN_SPAN_MS,
-		maxDurationMs: () => bounds.end - bounds.start,
+		minDurationMs: () => (fixedWindow ? DAILY_WINDOW_MS : COMPARISON_MIN_SPAN_MS),
+		maxDurationMs: () => (fixedWindow ? DAILY_WINDOW_MS : bounds.end - bounds.start),
 		onGestureStart: () => onhover(null),
 		onSettle: (start, end) => onviewport(start, end, true)
 	});
@@ -124,27 +121,11 @@
 	/** @param {KeyboardEvent} event */
 	function inspect(event) {
 		if (event.target !== event.currentTarget) return;
-		const visible = visibleRows;
-		if (!visible.length) return;
-		const current = hover ?? focus ?? visible[visible.length - 1].time;
-		const index = Math.max(
-			0,
-			visible.findIndex((row) => row.time === current)
-		);
-		if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-			event.preventDefault();
-			onhover(
-				visible[
-					Math.max(0, Math.min(visible.length - 1, index + (event.key === 'ArrowLeft' ? -1 : 1)))
-				].time
-			);
-		} else if (event.key === 'Enter' || event.key === ' ') {
-			event.preventDefault();
-			onfocus(focus === current ? null : current);
-		} else if (event.key === 'Escape') {
-			onhover(null);
-			onfocus(null);
-		}
+		const step = inspectionStep(event.key, visibleRows, hover, focus);
+		if (!step) return;
+		if (event.key !== 'Escape') event.preventDefault();
+		if ('hover' in step) onhover(step.hover ?? null);
+		if ('focus' in step) onfocus(step.focus ?? null);
 	}
 </script>
 
@@ -162,8 +143,8 @@
 		onzoom={gestures.handleZoom}
 		onzoomin={gestures.zoomIn}
 		onzoomout={gestures.zoomOut}
-		isAtMinZoom={viewport.end - viewport.start <= COMPARISON_MIN_SPAN_MS}
-		isAtMaxZoom={viewport.start <= bounds.start && viewport.end >= bounds.end}
+		isAtMinZoom={fixedWindow || viewport.end - viewport.start <= COMPARISON_MIN_SPAN_MS}
+		isAtMaxZoom={fixedWindow || (viewport.start <= bounds.start && viewport.end >= bounds.end)}
 		onhover={(time) => onhover(time)}
 		onhoverend={() => onhover(null)}
 		onfocus={(time) => onfocus(focus === time ? null : time)}

@@ -1,5 +1,66 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import { pngDimensions, settleChartAnimations, wrapText } from './png-export.js';
+import {
+	capturePngSnapshot,
+	pngDimensions,
+	settleChartAnimations,
+	wrapText
+} from './png-export.js';
+
+describe('PNG snapshot capture', () => {
+	/** @param {string} inner */
+	const mount = (inner) => {
+		document.body.innerHTML = `<main><section data-png-context="Compare regions" data-tracker-png='{"id":"regions-share","label":"Renewables","ready":true,"caption":"Monthly"}'>${inner}</section></main>`;
+		for (const canvas of Array.from(document.querySelectorAll('canvas')))
+			canvas.toDataURL = () => 'data:image/png;base64,AA==';
+		for (const element of Array.from(
+			document.querySelectorAll('svg, canvas, [data-chart-area], .stratum-chart-area')
+		))
+			element.getBoundingClientRect = () =>
+				/** @type {DOMRect} */ ({
+					left: 10,
+					top: 20,
+					width: 300,
+					height: 120,
+					right: 310,
+					bottom: 140,
+					x: 10,
+					y: 20,
+					toJSON: () => ({})
+				});
+		return capturePngSnapshot(/** @type {HTMLElement} */ (document.querySelector('main')));
+	};
+	it('captures a chart that draws its own SVG layers', () => {
+		const snapshot = mount(
+			`<div data-chart-image='{"hasData":true,"title":"Renewables","unit":"%","legend":[]}'><div data-chart-area><svg data-png-layer><rect data-png-exclude/><rect fill="#fff"/></svg></div></div>`
+		);
+		expect(snapshot.charts).toHaveLength(1);
+		expect(snapshot.charts[0].ready).toBe(true);
+		expect(snapshot.charts[0].caption).toBe('Compare regions · Monthly');
+		expect(snapshot.charts[0].svg).toContain('<rect');
+		expect(snapshot.charts[0].svg).not.toContain('data-png-exclude');
+		expect(snapshot.charts[0].width).toBe(300);
+	});
+	it('embeds canvas layers as raster images under the SVG chrome', () => {
+		const snapshot = mount(
+			`<div data-chart-image='{"hasData":true,"legend":[]}'><div data-chart-area><canvas data-png-layer></canvas><svg data-png-layer><text>NSW</text></svg></div></div>`
+		);
+		expect(snapshot.charts[0].ready).toBe(true);
+		expect(snapshot.charts[0].svg).toContain('<image');
+		expect(snapshot.charts[0].svg).toContain('NSW');
+	});
+	it('still captures LayerCake charts and reports unready ones', () => {
+		const ready = mount(
+			`<div data-chart-image='{"hasData":true,"legend":[]}'><div class="stratum-chart-area"><svg class="layercake-layout-svg"></svg></div></div>`
+		);
+		expect(ready.charts[0].ready).toBe(true);
+		const missing = mount(
+			`<div data-chart-image='{"hasData":true,"legend":[]}'><div data-chart-area></div></div>`
+		);
+		expect(missing.charts[0].ready).toBe(false);
+		expect(missing.charts[0].svg).toBe('');
+	});
+});
 
 it('waits for finite transitions, but not loading spinners or paused animation', async () => {
 	let finish = () => {};

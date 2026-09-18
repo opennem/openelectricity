@@ -112,6 +112,14 @@ export function comparisonUnit(id, basis, base = false) {
 	return `% ${id === 'net_imports_share' || basis === 'demand' ? 'demand' : 'generation'}`;
 }
 export const FUEL_COMPONENTS = ['solar', 'wind', 'hydro', 'gas', 'coal'];
+/** Display value for the Regions table and stripes tooltips: one decimal,
+ * energy in GWh, missing readings as an em dash.
+ * @param {number | null | undefined} value @param {string} id */
+export function formatComparisonValue(value, id) {
+	if (!Number.isFinite(value)) return '—';
+	const shown = comparisonMetric(id).kind === 'energy' ? Number(value) / 1000 : Number(value);
+	return shown.toLocaleString('en-AU', { maximumFractionDigits: 1 });
+}
 
 /**
  * A provider timestamp read as a calendar label: the local wall-clock date
@@ -224,7 +232,8 @@ export function comparisonMetricValue(row, id, basis) {
 		Number.isFinite(a) && Number.isFinite(b) && b > 0 ? (a / b) * scale : null;
 	const sum = (/** @type {number} */ a, /** @type {number} */ b) =>
 		Number.isFinite(a) && Number.isFinite(b) ? a + b : null;
-	const fuel = comparisonMetric(id).fuel;
+	const metric = comparisonMetric(id);
+	const fuel = metric.fuel;
 	const energy =
 		fuel === 'renewables'
 			? row?.renewables
@@ -235,7 +244,7 @@ export function comparisonMetricValue(row, id, basis) {
 	if (id === 'price' || id === 'price_real')
 		return ratio(row?.[id === 'price' ? 'market_value' : 'market_value_real'], row?.energy_mwh);
 	if (id === 'net_imports_share') return ratio(row?.net_imports, row?.demand_gross, 100);
-	const kind = comparisonMetric(id).kind;
+	const kind = metric.kind;
 	if (kind === 'energy') return Number.isFinite(energy) ? energy : null;
 	if (kind === 'price') return ratio(row?.[`${fuel}_market_value`], energy);
 	return ratio(energy, basis === 'generation' ? row?.generation_mwh : row?.demand_gross, 100);

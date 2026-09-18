@@ -1,6 +1,14 @@
 import { comparisonYDomain } from './region-comparison.js';
 import { describe, expect, it } from 'vitest';
 import {
+	DAILY_WINDOW_MS,
+	comparisonBoundsFor,
+	comparisonDefaultLabel,
+	comparisonDefaultViewport,
+	comparisonTickLabel,
+	dailyFetchWindow,
+	dayStart,
+	nextPeriodStart,
 	aggregateComparison,
 	assembleComparisonMonthly,
 	clampComparisonViewport,
@@ -145,15 +153,55 @@ describe('region comparison calculations', () => {
 		expect(latestCommonComparisonPeriod(data, [], 'demand', viewport, charts)).toBeNull();
 		expect(latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, [])).toBeNull();
 	});
-	it('thins ticks to at most six across the visible rows', () => {
+	it('thins ticks to at most six, anchored to the calendar so they slide with the window', () => {
 		const rows = monthly(24);
 		const viewport = { start: monthStart(start, 3), end: monthStart(start, 15) };
 		const visible = visibleComparisonRows(rows, viewport);
 		expect(visible).toHaveLength(12);
 		expect(visible[0].time).toBe(monthStart(start, 3));
-		expect(comparisonTicks(visible)).toHaveLength(6);
+		const ticks = comparisonTicks(visible).map((date) => date.getTime());
+		expect(ticks).toHaveLength(6);
+		expect(ticks[0]).toBe(monthStart(start, 4)); // May: even months from January
+		const shifted = comparisonTicks(
+			visibleComparisonRows(rows, { start: monthStart(start, 4), end: monthStart(start, 16) })
+		).map((date) => date.getTime());
+		expect(shifted.slice(0, 5)).toEqual(
+			ticks
+				.slice(0, 5)
+				.map((t) => t)
+				.filter((t) => t >= monthStart(start, 4))
+		);
 		expect(comparisonTicks(visible.slice(0, 4))).toHaveLength(4);
 		expect(comparisonTicks([])).toEqual([]);
+		const years = Array.from({ length: 30 }, (_, i) => ({
+			time: Date.UTC(1999 + i, 0, 1),
+			date: new Date(Date.UTC(1999 + i, 0, 1))
+		}));
+		expect(comparisonTicks(years, '1y').map((date) => date.getUTCFullYear())).toEqual([
+			2000, 2005, 2010, 2015, 2020, 2025
+		]);
+	});
+	it('opens each interval on its own window and names the reset', () => {
+		const bounds = { start: Date.UTC(1998, 11, 7), end: Date.UTC(2026, 8, 1) };
+		expect(comparisonDefaultViewport('12mr', bounds)).toEqual({
+			start: Date.UTC(2021, 8, 1),
+			end: bounds.end
+		});
+		expect(comparisonDefaultViewport('1M', bounds).start).toBe(Date.UTC(2021, 8, 1));
+		expect(comparisonDefaultViewport('1y', bounds)).toEqual(bounds);
+		expect(comparisonDefaultViewport('fy', bounds)).toEqual(bounds);
+		expect(
+			comparisonDefaultViewport('1d', { start: bounds.start, end: Date.UTC(2026, 8, 11) })
+		).toEqual({
+			start: Date.UTC(2026, 8, 11) - DAILY_WINDOW_MS,
+			end: Date.UTC(2026, 8, 11)
+		});
+		expect(
+			comparisonDefaultViewport('1M', { start: Date.UTC(2024, 0), end: bounds.end }).start
+		).toBe(Date.UTC(2024, 0));
+		expect(comparisonDefaultLabel('12mr')).toBe('Last 5 years');
+		expect(comparisonDefaultLabel('fy')).toBe('All history');
+		expect(comparisonDefaultLabel('1d')).toBe('Latest year');
 	});
 	it('activates the two networks behind the combined scope and rolls their status up', () => {
 		expect(comparisonSourceActive(['nsw1'], 'nsw1')).toBe(true);
@@ -221,6 +269,7 @@ describe('region comparison navigation and export', () => {
 		for (const regions of [[], ['nsw1', 'au']]) {
 			const state = normaliseRegionComparison({
 				interval: 'fy',
+				display: 'stripes',
 				mode: 'generation',
 				basis: 'generation',
 				table: false,
@@ -230,8 +279,72 @@ describe('region comparison navigation and export', () => {
 			});
 			const params = new URLSearchParams();
 			applyRegionComparison(params, state);
+			expect(params.get('compare-display')).toBe('stripes');
 			expect(parseRegionComparison(params)).toEqual(state);
 		}
+		expect(normaliseRegionComparison({ display: 'bogus' }).display).toBe('charts');
+		const params = new URLSearchParams();
+		applyRegionComparison(params, normaliseRegionComparison({}));
+		expect(params.has('compare-display')).toBe(false);
+	});
+	it('fixes the daily interval to a one-year window ending on the last complete day', () => {
+		const now = Date.UTC(2026, 8, 17, 20);
+		const bounds = comparisonBounds(now);
+		expect(bounds.end).toBe(Date.UTC(2026, 8, 1));
+		expect(bounds.dayEnd).toBe(Date.UTC(2026, 8, 18));
+		expect(comparisonBoundsFor(bounds, '1d').end).toBe(bounds.dayEnd);
+		expect(comparisonBoundsFor(bounds, '1M').end).toBe(bounds.end);
+		const daily = comparisonBoundsFor(bounds, '1d');
+		const latest = clampComparisonViewport(Date.UTC(2030, 0), Date.UTC(2031, 0), daily, '1d');
+		expect(latest).toEqual({ start: daily.end - DAILY_WINDOW_MS, end: daily.end });
+		const wide = clampComparisonViewport(Date.UTC(2010, 0), Date.UTC(2020, 0), daily, '1d');
+		expect(wide.end - wide.start).toBe(DAILY_WINDOW_MS);
+		expect(wide.end).toBe(Date.UTC(2020, 0));
+		expect(clampComparisonViewport(Date.UTC(1990, 0), Date.UTC(1990, 6), daily, '1d').start).toBe(
+			daily.start
+		);
+		expect(nextPeriodStart(Date.UTC(2024, 1, 28), '1d')).toBe(Date.UTC(2024, 1, 29));
+		expect(nextPeriodStart(Date.UTC(2024, 1, 1), '1M')).toBe(Date.UTC(2024, 2, 1));
+		expect(nextPeriodStart(Date.UTC(2024, 6, 1), 'fy')).toBe(Date.UTC(2025, 6, 1));
+		expect(dayStart(Date.UTC(2024, 0, 31, 23), 1)).toBe(Date.UTC(2024, 1, 1));
+	});
+	it('buffers daily fetches by three whole months either side of the viewport', () => {
+		const bounds = { start: Date.UTC(1998, 11, 7), end: Date.UTC(2026, 8, 11) };
+		expect(
+			dailyFetchWindow({ start: Date.UTC(2025, 8, 11), end: Date.UTC(2026, 8, 11) }, bounds)
+		).toEqual({ start: Date.UTC(2025, 5, 1), end: bounds.end });
+		expect(
+			dailyFetchWindow({ start: Date.UTC(2024, 0, 1), end: Date.UTC(2024, 11, 31) }, bounds)
+		).toEqual({ start: Date.UTC(2023, 9, 1), end: Date.UTC(2025, 3, 1) });
+		expect(
+			dailyFetchWindow({ start: Date.UTC(1999, 0, 1), end: Date.UTC(2000, 0, 1) }, bounds).start
+		).toBe(bounds.start);
+	});
+	it('ticks daily windows at month starts and labels the calendar', () => {
+		const days = Array.from({ length: 70 }, (_, i) => ({
+			time: dayStart(Date.UTC(2024, 11, 15), i),
+			date: new Date(dayStart(Date.UTC(2024, 11, 15), i))
+		}));
+		const rows = aggregateComparison(days, '1d', Date.UTC(2025, 1, 10));
+		expect(rows).toHaveLength(57);
+		const ticks = comparisonTicks(rows, '1d').map((date) => date.getTime());
+		expect(ticks).toEqual([Date.UTC(2025, 0, 1), Date.UTC(2025, 1, 1)]);
+		const viewport = { start: days[0].time, end: days[0].time + DAILY_WINDOW_MS };
+		expect(comparisonTickLabel(Date.UTC(2025, 0, 1), '1d', viewport)).toBe('Jan 2025');
+		expect(comparisonTickLabel(Date.UTC(2025, 1, 1), '1d', viewport)).toBe('Feb');
+		expect(comparisonTickLabel(days[0].time, '1d', viewport)).toBe('Dec');
+		expect(comparisonTickLabel(Date.UTC(2025, 0, 15), '1d', viewport)).toBe('Jan');
+		expect(comparisonTickLabel(Date.UTC(2025, 0, 1), '1M', viewport)).toBe('Jan 2025');
+		expect(
+			comparisonTickLabel(Date.UTC(2025, 0, 1), '12mr', { start: 0, end: 10 * DAILY_WINDOW_MS })
+		).toBe('2025');
+		expect(comparisonPeriod(Date.UTC(2024, 6, 16), '1d')).toBe('16 July 2024');
+		expect(
+			comparisonChartRows({ nsw1: days.slice(0, 3) }, ['nsw1'], 'share', 'demand', '1d')
+		).toHaveLength(3);
+		expect(comparisonFileName(normaliseRegionComparison({ interval: '1d' }), viewport, 'csv')).toBe(
+			'tracker-regions-1d-2024-12-15-to-2025-12-14.csv'
+		);
 	});
 	it('preserves legacy view, range and comparison state through shared navigation', () => {
 		const original = parseTrackerUrl(new URLSearchParams('view=daily&range=30d'), { nowMs: start });

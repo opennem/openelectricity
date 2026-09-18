@@ -3,7 +3,7 @@
 	 * Segmented switcher with a thumb that slides to the selected option.
 	 * The thumb is inset from the track via the container padding.
 	 * @typedef {Object} Props
-	 * @property {{ label?: string, ariaLabel?: string, value: string | number, icon?: *, size?: string }[]} [buttons]
+	 * @property {{ label?: string, ariaLabel?: string, title?: string, value: string | number, icon?: *, size?: string }[]} [buttons]
 	 * @property {string | number } [selected]
 	 * @property {boolean} [compact]
 	 * @property {string} [rounded] - Tailwind radius class for the container, thumb and buttons
@@ -89,12 +89,13 @@
 		></div>
 	{/if}
 
-	{#each buttons as { label, ariaLabel, value, icon, size } (value)}
+	{#each buttons as { label, ariaLabel, title, value, icon, size } (value)}
 		<button
 			type="button"
 			bind:this={buttonEls[value]}
 			onclick={handleClick}
 			{value}
+			{title}
 			aria-label={ariaLabel ?? label}
 			aria-pressed={isSelected(value)}
 			class="relative z-10 flex w-full gap-3 md:w-auto items-center justify-center whitespace-nowrap cursor-pointer transition-colors duration-200 {rounded} {compact

@@ -87,10 +87,28 @@ function styledClone(source) {
 	return clone;
 }
 
-/** Capture every LayerCake SVG layer in its rendered position, including axes.
+/** Layers an image is composed from: LayerCake's SVGs, or a chart that draws
+ * its own SVG or canvas and marks it `data-png-layer` inside a
+ * `data-chart-area` root. A canvas is embedded as a raster image. */
+const PNG_LAYERS = 'svg.layercake-layout-svg, svg[data-png-layer], canvas[data-png-layer]';
+
+/** A canvas layer as an SVG image, or null where the raster cannot be read.
+ * @param {HTMLCanvasElement} canvas */
+function rasterLayer(canvas) {
+	try {
+		const image = document.createElementNS(NS, 'image');
+		image.setAttribute('href', canvas.toDataURL('image/png'));
+		image.setAttribute('preserveAspectRatio', 'none');
+		return image;
+	} catch {
+		return null;
+	}
+}
+
+/** Capture every SVG layer in its rendered position, including axes.
  * @param {Element} chart */
 export function captureChartSvg(chart) {
-	const area = chart.querySelector('.stratum-chart-area');
+	const area = chart.querySelector('.stratum-chart-area, [data-chart-area]');
 	if (!area) throw new Error('The chart has not rendered yet. Close the export and try again.');
 	const bounds = area.getBoundingClientRect();
 	if (bounds.width < 1 || bounds.height < 1) throw new Error('The chart has no visible size.');
@@ -98,11 +116,12 @@ export function captureChartSvg(chart) {
 	root.setAttribute('width', String(bounds.width));
 	root.setAttribute('height', String(bounds.height));
 	root.setAttribute('viewBox', `0 0 ${bounds.width} ${bounds.height}`);
-	const layers = area.querySelectorAll('svg.layercake-layout-svg');
+	const layers = area.querySelectorAll(PNG_LAYERS);
 	if (!layers.length) throw new Error('The chart has not rendered yet.');
 	for (const layer of Array.from(layers)) {
 		const rect = layer.getBoundingClientRect();
-		const clone = styledClone(layer);
+		const clone = layer instanceof HTMLCanvasElement ? rasterLayer(layer) : styledClone(layer);
+		if (!clone) continue;
 		clone.setAttribute('x', String(rect.left - bounds.left));
 		clone.setAttribute('y', String(rect.top - bounds.top));
 		clone.setAttribute('width', String(rect.width));
@@ -124,10 +143,7 @@ export function capturePngSnapshot(root) {
 		const chart = element.querySelector('[data-chart-image]');
 		const metadata = JSON.parse(chart?.getAttribute('data-chart-image') || '{}');
 		const context = element.closest('[data-png-context]')?.getAttribute('data-png-context');
-		const ready =
-			!!eligibility.ready &&
-			!!metadata.hasData &&
-			!!chart?.querySelector('svg.layercake-layout-svg');
+		const ready = !!eligibility.ready && !!metadata.hasData && !!chart?.querySelector(PNG_LAYERS);
 		return {
 			...metadata,
 			...eligibility,

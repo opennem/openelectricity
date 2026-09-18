@@ -29,16 +29,26 @@ export const COMPARISON_REGIONS = [
 ];
 /** The shortest comparison window — one full year of periods. */
 export const COMPARISON_MIN_SPAN_MS = 366 * 86_400_000;
+/** The daily interval always shows exactly one year of days. */
+export const DAILY_WINDOW_MS = 365 * 86_400_000;
+/** Monthly and rolling intervals open on the latest five years. */
+export const DEFAULT_MONTHLY_SPAN_MONTHS = 60;
+/** Below three years the axis shows months as well as years. */
+export const MONTH_TICKS_BELOW_MS = 3 * 365 * 86_400_000;
 export const DEFAULT_COMPARISON_REGIONS = COMPARISON_REGIONS.slice(0, 6).map((r) => r.value);
 export const COMPARISON_INTERVALS = [
+	{ value: '1d', label: 'Daily' },
 	{ value: '12mr', label: '12-month rolling' },
 	{ value: '1M', label: 'Monthly' },
 	{ value: '1y', label: 'Calendar year' },
 	{ value: 'fy', label: 'Financial year' }
 ];
 
-/** @typedef {{charts: string[], interval: string, regions: string[], mode: 'generation' | 'share', basis: 'demand' | 'generation', start: number | null, end: number | null, table: boolean | null}} RegionComparisonSelection */
-/** @param {Partial<RegionComparisonSelection> | null | undefined} value @returns {RegionComparisonSelection} */
+/** @typedef {'charts' | 'stripes'} ComparisonDisplay */
+/** @typedef {{charts: string[], display: ComparisonDisplay, interval: string, regions: string[], mode: 'generation' | 'share', basis: 'demand' | 'generation', start: number | null, end: number | null, table: boolean | null}} RegionComparisonSelection */
+/** Unvalidated input (URL values, callers): `display` is any string until normalised.
+ * @typedef {Partial<Omit<RegionComparisonSelection, 'display'>> & {display?: string}} RegionComparisonInput */
+/** @param {RegionComparisonInput | null | undefined} value @returns {RegionComparisonSelection} */
 export function normaliseRegionComparison(value = undefined) {
 	const regions = Array.isArray(value?.regions)
 		? COMPARISON_REGIONS.filter((r) => value.regions?.includes(r.value)).map((r) => r.value)
@@ -58,6 +68,7 @@ export function normaliseRegionComparison(value = undefined) {
 					return selected ? [selected] : [];
 				})
 			: [...DEFAULT_COMPARISON_CHARTS],
+		display: value?.display === 'stripes' ? 'stripes' : 'charts',
 		mode: value?.mode === 'generation' ? 'generation' : 'share',
 		basis: value?.basis === 'generation' ? 'generation' : 'demand',
 		start: validWindow ? start : null,
@@ -72,6 +83,7 @@ export function parseRegionComparison(params) {
 		charts: params.has('compare-charts')
 			? (params.get('compare-charts') ?? '').split(',')
 			: undefined,
+		display: params.get('compare-display') ?? undefined,
 		interval: params.get('compare-interval') ?? undefined,
 		regions: params.has('compare-regions')
 			? (params.get('compare-regions') ?? '').split(',')
@@ -83,7 +95,7 @@ export function parseRegionComparison(params) {
 		table: params.has('compare-table') ? params.get('compare-table') !== '0' : null
 	});
 }
-/** @param {URLSearchParams} params @param {Partial<RegionComparisonSelection> | undefined} selection */
+/** @param {URLSearchParams} params @param {RegionComparisonInput | undefined} selection */
 export function applyRegionComparison(params, selection) {
 	const state = normaliseRegionComparison(selection);
 	const values = {
@@ -91,6 +103,7 @@ export function applyRegionComparison(params, selection) {
 			state.charts.join(',') === DEFAULT_COMPARISON_CHARTS.join(',')
 				? null
 				: state.charts.join(','),
+		'compare-display': state.display === 'charts' ? '' : state.display,
 		'compare-interval': state.interval === '12mr' ? '' : state.interval,
 		'compare-regions':
 			state.regions.join(',') === DEFAULT_COMPARISON_REGIONS.join(',')
@@ -126,19 +139,61 @@ export function monthStart(time, offset = 0) {
 	const date = new Date(time);
 	return Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + offset, 1);
 }
-/** @param {number} now */
+/** @param {number} time @param {number} [offset] */
+export function dayStart(time, offset = 0) {
+	const date = new Date(time);
+	return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + offset);
+}
+/** The start of the period after the one beginning at `time`.
+ * @param {number} time @param {string} interval */
+export function nextPeriodStart(time, interval) {
+	if (interval === '1d') return dayStart(time, 1);
+	return monthStart(time, interval === 'fy' || interval === '1y' ? 12 : 1);
+}
+/** @typedef {{start: number, end: number, dayEnd: number}} ComparisonBounds */
+/** @param {number} now @returns {ComparisonBounds} */
 export function comparisonBounds(now) {
-	// The last complete calendar month in both networks (WEM is two hours behind NEM).
-	return { start: EARLIEST_DATA_MS, end: monthStart(now + 8 * 3_600_000) };
+	// The last complete calendar month and day in both networks (WEM is two
+	// hours behind NEM, so the WEM-local clock is the earlier of the two).
+	const local = now + 8 * 3_600_000;
+	return { start: EARLIEST_DATA_MS, end: monthStart(local), dayEnd: dayStart(local) };
+}
+/** The complete-history window an interval may show: months, or days.
+ * @param {ComparisonBounds} bounds @param {string} interval */
+export function comparisonBoundsFor(bounds, interval) {
+	return { start: bounds.start, end: interval === '1d' ? bounds.dayEnd : bounds.end };
+}
+
+/** The window an interval opens on, and the reset control returns to: the
+ * latest year of days, the latest five years of months, or all history for
+ * calendar and financial years.
+ * @param {string} interval @param {{start: number, end: number}} bounds - The interval's bounds */
+export function comparisonDefaultViewport(interval, bounds) {
+	if (interval === '1d')
+		return { start: Math.max(bounds.start, bounds.end - DAILY_WINDOW_MS), end: bounds.end };
+	if (interval === '1M' || interval === '12mr')
+		return {
+			start: Math.max(bounds.start, monthStart(bounds.end, -DEFAULT_MONTHLY_SPAN_MONTHS)),
+			end: bounds.end
+		};
+	return { start: bounds.start, end: bounds.end };
+}
+/** @param {string} interval */
+export function comparisonDefaultLabel(interval) {
+	if (interval === '1d') return 'Latest year';
+	if (interval === '1M' || interval === '12mr') return 'Last 5 years';
+	return 'All history';
 }
 
 /** Bound copied/custom viewports to complete history, including future URLs.
- * @param {number} start @param {number} end @param {{start:number,end:number}} bounds */
-export function clampComparisonViewport(start, end, bounds) {
-	const duration = Math.min(
-		Math.max(end - start, COMPARISON_MIN_SPAN_MS),
-		bounds.end - bounds.start
-	);
+ * The daily interval is a fixed one-year window that only slides.
+ * @param {number} start @param {number} end @param {{start:number,end:number}} bounds
+ * @param {string} [interval] */
+export function clampComparisonViewport(start, end, bounds, interval = '12mr') {
+	const duration =
+		interval === '1d'
+			? Math.min(DAILY_WINDOW_MS, bounds.end - bounds.start)
+			: Math.min(Math.max(end - start, COMPARISON_MIN_SPAN_MS), bounds.end - bounds.start);
 	const right = Math.max(bounds.start + duration, Math.min(end, bounds.end));
 	return { start: right - duration, end: right };
 }
@@ -227,11 +282,11 @@ export function sumComparisonNetworks(nem, wem) {
 	}));
 }
 
-/** Complete months only, with complete annual and rolling windows.
+/** Complete periods only, with complete annual and rolling windows.
  * @param {any[]} rows @param {string} interval @param {number} end */
 export function aggregateComparison(rows, interval, end) {
 	const monthly = rows.filter((row) => row.time < end);
-	if (interval === '1M') return monthly;
+	if (interval === '1M' || interval === '1d') return monthly;
 	if (interval === '12mr') return rollingSum12MonthRows(monthly, COMPONENTS);
 	const buckets = new Map();
 	for (const row of monthly) {
@@ -277,11 +332,7 @@ export function comparisonChartRows(data, regions, metric, basis, interval) {
 		])
 	);
 	const rows = [];
-	for (
-		let time = first;
-		time <= last;
-		time = monthStart(time, interval === 'fy' || interval === '1y' ? 12 : 1)
-	) {
+	for (let time = first; time <= last; time = nextPeriodStart(time, interval)) {
 		rows.push({
 			date: new Date(time),
 			time,
@@ -290,21 +341,53 @@ export function comparisonChartRows(data, regions, metric, basis, interval) {
 	}
 	return rows;
 }
+/** @type {Map<string, Intl.DateTimeFormat>} */
+const formatters = new Map();
+/** A cached en-AU UTC formatter: building one costs more than a pan frame
+ * can afford across every axis label and readout.
+ * @param {Intl.DateTimeFormatOptions} options */
+export function utcFormatter(options) {
+	const key = JSON.stringify(options);
+	let formatter = formatters.get(key);
+	if (!formatter) {
+		formatter = new Intl.DateTimeFormat('en-AU', { ...options, timeZone: 'UTC' });
+		formatters.set(key, formatter);
+	}
+	return formatter;
+}
+/** @type {Intl.DateTimeFormatOptions} */
+const DAY_LABEL = { day: 'numeric', month: 'short', year: 'numeric' };
+/** @type {Intl.DateTimeFormatOptions} */
+const MONTH_LABEL = { month: 'short', year: 'numeric' };
+/** @type {Intl.DateTimeFormatOptions} */
+const MONTH_ONLY = { month: 'short' };
+/** @type {Intl.DateTimeFormatOptions} */
+const YEAR_ONLY = { year: 'numeric' };
 /** @param {number} time @param {string} interval */
 export function comparisonPeriod(time, interval) {
 	const date = new Date(time),
 		year = date.getUTCFullYear();
 	if (interval === 'fy') return `${year}–${String(year + 1).slice(-2)} financial year`;
 	if (interval === '1y') return String(year);
-	const month = date.toLocaleDateString('en-AU', {
-		month: 'short',
-		year: 'numeric',
-		timeZone: 'UTC'
-	});
+	if (interval === '1d') return utcFormatter(DAY_LABEL).format(date);
+	const month = utcFormatter(MONTH_LABEL).format(date);
 	return interval === '12mr' ? `12 months to ${month}` : month;
 }
 /** Regions that do not import or export outside their own network. */
-const CLOSED_NETWORKS = ['_all', 'wem'];
+export const CLOSED_NETWORKS = ['_all', 'wem'];
+
+/** Buffer months fetched either side of a daily viewport. */
+export const DAILY_FETCH_BUFFER_MONTHS = 3;
+/** The daily rows a viewport needs: the window plus three whole months either
+ * side, clipped to complete history. Month alignment means a slide inside the
+ * buffer fetches nothing and crossing a month boundary fetches one month.
+ * @param {{start: number, end: number}} viewport @param {{start: number, end: number}} bounds - Daily bounds */
+export function dailyFetchWindow(viewport, bounds) {
+	return {
+		start: Math.max(bounds.start, monthStart(viewport.start, -DAILY_FETCH_BUFFER_MONTHS)),
+		end: Math.min(bounds.end, monthStart(viewport.end - 1, DAILY_FETCH_BUFFER_MONTHS + 1))
+	};
+}
 
 /** The provider sources each comparison region fetches, by name.
  * @typedef {{ energy: any[], market: any[], financial: any[], flows: any[] }} ComparisonSourceRows */
@@ -363,12 +446,42 @@ export function visibleComparisonRows(rows, viewport) {
 	return rows.filter((row) => row.time >= viewport.start && row.time < viewport.end);
 }
 
-/** Up to six evenly spaced tick dates across the visible rows, so tick counts
- * stay bounded however long the monthly history is.
- * @param {Array<{date: Date}>} visibleRows */
-export function comparisonTicks(visibleRows) {
-	const step = Math.max(1, Math.ceil(visibleRows.length / 6));
-	return visibleRows.filter((_, index) => index % step === 0).map((row) => row.date);
+/** Tick steps, in months and in years, from finest to coarsest. */
+const MONTH_STEPS = [1, 2, 3, 6, 12, 24, 60, 120, 240];
+const YEAR_STEPS = [1, 2, 5, 10, 20];
+const MAX_TICKS = 6;
+/**
+ * Tick dates anchored to the calendar, so a tick keeps its date as the
+ * window slides and leaves the axis only when it leaves the viewport. Daily
+ * windows tick at every month start; monthly rows tick at the finest month
+ * step (1, 2, 3, 6, 12… months, counted from January) that keeps the count
+ * within six; yearly rows likewise at a year step (1, 2, 5… years).
+ * @param {Array<{date: Date, time: number}>} visibleRows @param {string} [interval] */
+export function comparisonTicks(visibleRows, interval = '12mr') {
+	const dates = visibleRows.map((row) => new Date(row.time));
+	if (interval === '1d') return dates.filter((date) => date.getUTCDate() === 1);
+	const yearly = interval === '1y' || interval === 'fy';
+	const index = yearly
+		? (/** @type {Date} */ date) => date.getUTCFullYear()
+		: (/** @type {Date} */ date) => date.getUTCFullYear() * 12 + date.getUTCMonth();
+	for (const step of yearly ? YEAR_STEPS : MONTH_STEPS) {
+		const ticks = dates.filter((date) => index(date) % step === 0);
+		if (ticks.length <= MAX_TICKS) return ticks;
+	}
+	return [];
+}
+/** Axis label for a comparison tick: years, with months below three years and
+ * on daily windows (where January carries the year; every one-year window
+ * contains a January, and the navigator names both years).
+ * @param {number} time @param {string} interval @param {{start:number,end:number}} viewport */
+export function comparisonTickLabel(time, interval, viewport) {
+	const date = new Date(time);
+	if (interval === '1d') {
+		const withYear = date.getUTCMonth() === 0 && date.getUTCDate() === 1;
+		return utcFormatter(withYear ? MONTH_LABEL : MONTH_ONLY).format(date);
+	}
+	const short = viewport.end - viewport.start < MONTH_TICKS_BELOW_MS;
+	return utcFormatter(short ? MONTH_LABEL : YEAR_ONLY).format(date);
 }
 
 /** The latest visible period where every selected region has a finite value

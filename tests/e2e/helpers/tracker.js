@@ -226,27 +226,40 @@ export async function regionsFixture(
 ) {
 	let failure = fail;
 	const held = createHold(hold);
-	/** @type {{ region: string | null, metric: string | null }[]} */
+	/** @type {{ region: string | null, metric: string | null, interval: string | null, dateStart: string | null }[]} */
 	const requests = [];
 	await page.clock.install({ time: new Date('2026-09-11T00:00:00Z') });
 	await page.route(NETWORK_DATA, async (route) => {
 		const params = new URL(route.request().url()).searchParams;
 		const region = params.get('region');
 		const metric = params.get('metric');
-		requests.push({ region, metric });
+		const interval = params.get('interval');
+		const dateStart = params.get('date_start');
+		requests.push({ region, metric, interval, dateStart });
 		await held.wait(region);
 		if (empty) return respond(route, []);
 		if (region === failure)
 			return route.fulfill({ status: 503, json: { error: 'Regional fixture unavailable' } });
 		const amount = { nsw1: 1, qld1: 2, sa1: 3, tas1: 4, vic1: 5, wem: 6, _all: 15 }[region] ?? 1;
-		const months = Array.from(
-			{ length: 80 },
-			(_, i) => new Date(Date.UTC(2020, i, 1)).toISOString().slice(0, 19) + zoneFor(region)
-		);
+		// Monthly requests always answer 80 months from 2020; daily requests answer
+		// exactly the requested calendar window, one reading per day.
+		const dayMs = 86_400_000;
+		const dailyStart = Date.parse(`${dateStart}Z`);
+		const dailyEnd = Date.parse(`${params.get('date_end')}Z`);
+		const periods =
+			interval === '1d'
+				? Array.from(
+						{ length: Math.max(0, Math.round((dailyEnd - dailyStart) / dayMs)) },
+						(_, i) => new Date(dailyStart + i * dayMs).toISOString().slice(0, 19) + zoneFor(region)
+					)
+				: Array.from(
+						{ length: 80 },
+						(_, i) => new Date(Date.UTC(2020, i, 1)).toISOString().slice(0, 19) + zoneFor(region)
+					);
 		const series = (fueltech, value) => ({
 			name: fueltech,
 			columns: { fueltech },
-			data: months.map((time, i) => [
+			data: periods.map((time, i) => [
 				time,
 				value * amount * (1 + i / 100) * (spike && i < 12 ? 50 : 1)
 			])

@@ -5,7 +5,7 @@ import {
 	clearInFlightFetches
 } from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 import { createRegionComparisonData } from './region-comparison-data.svelte.js';
-import { normaliseRegionComparison } from './region-comparison.js';
+import { DAILY_WINDOW_MS, normaliseRegionComparison } from './region-comparison.js';
 import { failedResponse, stubNetworkFetch } from './test-fixtures.svelte.js';
 
 const nowMs = Date.parse('2026-09-06T00:00:00Z');
@@ -15,16 +15,21 @@ async function settle(ms = 200) {
 	flushSync();
 }
 
-/** @param {string[]} regions */
-function harness(regions) {
-	const state = $state({ selection: normaliseRegionComparison({ regions }) });
+/** @param {string[]} regions @param {{interval?: string}} [overrides]
+ * @param {{start: number, end: number}} [viewport] */
+function harness(regions, overrides = {}, viewport = { start: 0, end: 0 }) {
+	const state = $state({
+		selection: normaliseRegionComparison({ regions, ...overrides }),
+		viewport
+	});
 	/** @type {ReturnType<typeof createRegionComparisonData>} */
 	let source;
 	const stop = $effect.root(() => {
 		source = createRegionComparisonData(
 			() => state.selection,
 			nowMs,
-			() => ({ values: [], source: '', fetchedAt: '', reference: '' })
+			() => ({ values: [], source: '', fetchedAt: '', reference: '' }),
+			() => state.viewport
 		);
 	});
 	// @ts-expect-error assigned synchronously inside the root
@@ -95,6 +100,66 @@ describe('region comparison data', () => {
 		await settle();
 		expect(api.urls.length).toBeGreaterThan(before);
 		expect(source.status.au).toEqual({ pending: false, error: null });
+		stop();
+	});
+
+	it('fetches daily rows with a three-month buffer, only when the buffer moves', async () => {
+		const api = stubNetworkFetch();
+		const dayEnd = Date.UTC(2026, 8, 6);
+		/** @param {string} interval */
+		const windows = (interval) =>
+			api.urls
+				.map((href) => new URL(href, 'http://test').searchParams)
+				.filter((params) => params.get('interval') === interval)
+				.map((params) => params.get('date_start'));
+		const { state, source, stop } = harness(
+			['nsw1'],
+			{ interval: '1d' },
+			{ start: dayEnd - DAILY_WINDOW_MS, end: dayEnd }
+		);
+		expect(source.pending).toBe(true);
+		await settle();
+		expect(windows('1M')).toHaveLength(4);
+		expect(windows('1d')).toEqual(Array(4).fill('2025-06-01T00:00:00'));
+		expect(
+			api
+				.params(api.urls.length - 1)
+				.get('date_end')
+				?.slice(0, 7)
+		).toBe('2026-09');
+		expect(source.pending).toBe(false);
+		// A slide inside the buffer fetches nothing, even though the pan replaces
+		// the selection object as the URL state does.
+		state.viewport = { start: Date.UTC(2025, 8, 20), end: Date.UTC(2026, 8, 1) };
+		state.selection = normaliseRegionComparison({
+			regions: ['nsw1'],
+			interval: '1d',
+			start: state.viewport.start,
+			end: state.viewport.end
+		});
+		const before = source.data;
+		await settle();
+		expect(windows('1d')).toHaveLength(4);
+		// …and leaves the joined dataset untouched, so nothing downstream recomputes.
+		expect(source.data).toBe(before);
+		// Moving the window back a year fetches only the months not yet cached.
+		state.viewport = { start: Date.UTC(2024, 6, 1), end: Date.UTC(2025, 6, 1) };
+		await settle();
+		expect(windows('1d').slice(4)).toEqual(Array(4).fill('2024-04-01T00:00:00'));
+		expect(
+			api
+				.params(api.urls.length - 1)
+				.get('date_end')
+				?.slice(0, 7)
+		).toBe('2025-06');
+		source.settle();
+		await settle();
+		expect(windows('1d')).toHaveLength(8);
+		// The monthly set stayed warm: switching back issues no monthly request.
+		state.selection = normaliseRegionComparison({ regions: ['nsw1'], interval: '12mr' });
+		await settle();
+		expect(windows('1M')).toHaveLength(4);
+		expect(source.pending).toBe(false);
 		stop();
 	});
 });

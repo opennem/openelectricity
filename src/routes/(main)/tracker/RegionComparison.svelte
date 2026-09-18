@@ -1,16 +1,25 @@
 <script>
 	import Toggle from '$lib/components/form-elements/Toggle.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
+	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
+	import ChartLine from '@lucide/svelte/icons/chart-line';
+	import Stripes from '$lib/icons/Stripes.svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { untrack } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { MediaQuery } from 'svelte/reactivity';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import ComparisonChartSelect from './ComparisonChartSelect.svelte';
+	import ComparisonYearNavigator from './ComparisonYearNavigator.svelte';
+	import RegionStripes from './RegionStripes.svelte';
+	import { stripeGradient, stripeMax, stripeScale } from './comparison-stripes.js';
+	import { formatDailyWindow } from './comparison-navigation.js';
 	import {
 		comparisonMetric,
 		comparisonChartId,
 		comparisonMetricValue,
-		comparisonUnit
+		comparisonUnit,
+		formatComparisonValue
 	} from './comparison-metrics.js';
 	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
@@ -36,6 +45,9 @@
 		COMPARISON_REGIONS,
 		COMPARISON_INTERVALS,
 		normaliseRegionComparison,
+		comparisonBoundsFor,
+		comparisonDefaultLabel,
+		comparisonDefaultViewport,
 		comparisonPeriod,
 		clampComparisonViewport,
 		latestCommonComparisonPeriod
@@ -44,34 +56,63 @@
 	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>, cpi: ReturnType<typeof import('$lib/comparison-cpi.js').comparisonCpi>}} */
 	let { session, cpi } = $props();
 	let selection = $derived(normaliseRegionComparison(session.selection.regionComparison));
-	let metrics = $derived(selection.charts.map(comparisonMetric));
+	// Every move replaces the selection, whose arrays are rebuilt each time.
+	// Deriving them from join-keys keeps their identity stable while their
+	// contents are, so a pan frame does not recompute every card and cell.
+	let chartsKey = $derived(selection.charts.join(','));
+	let regionsKey = $derived(selection.regions.join(','));
+	let metrics = $derived(chartsKey ? chartsKey.split(',').map(comparisonMetric) : []);
+	let regions = $derived(regionsKey ? regionsKey.split(',') : []);
+	// Likewise the strings: a prop written as `selection.basis` tracks the
+	// selection itself, so children would re-derive on every move.
+	let basis = $derived(selection.basis);
+	let interval = $derived(selection.interval);
 	const source = createRegionComparisonData(
 		() => selection,
 		untrack(() => session.clockMs),
-		() => cpi
+		() => cpi,
+		() => viewport
 	);
+	let stripes = $derived(selection.display === 'stripes');
+	let daily = $derived(interval === '1d');
+	let bounds = $derived(comparisonBoundsFor(source.bounds, interval));
+	// Monthly history starts where the displayed metrics first have data. The
+	// daily cache only ever holds a few years, so its window slides over the
+	// whole data floor instead of the loaded rows.
 	let chartBounds = $derived.by(() => {
-		const times = selection.regions.flatMap((id) =>
+		if (daily) return bounds;
+		const times = regions.flatMap((id) =>
 			(source.data[id] ?? [])
 				.filter((row) =>
-					metrics.some((metric) =>
-						Number.isFinite(comparisonMetricValue(row, metric.id, selection.basis))
-					)
+					metrics.some((metric) => Number.isFinite(comparisonMetricValue(row, metric.id, basis)))
 				)
 				.map((row) => row.time)
 		);
-		return {
-			start: times.length ? Math.min(...times) : source.bounds.start,
-			end: source.bounds.end
-		};
+		return { start: times.length ? Math.min(...times) : bounds.start, end: bounds.end };
 	});
+	let defaultViewport = $derived(comparisonDefaultViewport(interval, chartBounds));
 	let viewport = $derived(
 		clampComparisonViewport(
-			selection.start ?? chartBounds.start,
-			selection.end ?? chartBounds.end,
-			chartBounds
+			selection.start ?? defaultViewport.start,
+			selection.end ?? defaultViewport.end,
+			chartBounds,
+			interval
 		)
 	);
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	/** The visible maximum of a generation metric, for its data-driven ramp;
+	 * zero for every other kind, so their memoised scales never change.
+	 * @param {{id: string, kind: string}} metric */
+	function visibleMax(metric) {
+		if (metric.kind !== 'energy') return 0;
+		return stripeMax(
+			regions.flatMap((region) =>
+				(source.data[region] ?? [])
+					.filter((row) => row.time >= viewport.start && row.time < viewport.end)
+					.map((row) => comparisonMetricValue(row, metric.id, basis))
+			)
+		);
+	}
 	let hover = $state(/** @type {number | null} */ (null));
 	let focus = $state(/** @type {number | null} */ (null));
 	let period = $derived(
@@ -79,8 +120,8 @@
 			focus ??
 			latestCommonComparisonPeriod(
 				source.data,
-				selection.regions,
-				selection.basis,
+				regions,
+				basis,
 				viewport,
 				metrics.map((metric) => metric.id)
 			)
@@ -122,33 +163,34 @@
 	let panelSize = $derived(desktop.current ? panel.size : 94);
 	/** @param {number} start @param {number} end @param {boolean} settled */
 	function moveViewport(start, end, settled) {
-		select(clampComparisonViewport(start, end, chartBounds), settled ? 'replace' : null);
+		select(clampComparisonViewport(start, end, chartBounds, interval), settled ? 'replace' : null);
+		if (settled) source.settle();
 	}
 	/** @param {string} id @param {boolean} [solo] */
 	function toggleRegion(id, solo = false) {
 		select({
 			regions: solo
 				? [id]
-				: selection.regions.includes(id)
-					? selection.regions.filter((region) => region !== id)
-					: [...selection.regions, id]
+				: regions.includes(id)
+					? regions.filter((region) => region !== id)
+					: [...regions, id]
 		});
 	}
-	const format = (/** @type {number | null} */ value) =>
-		Number.isFinite(value)
-			? Number(value).toLocaleString('en-AU', { maximumFractionDigits: 1 })
-			: '—';
 	let caption = $derived(
-		`${COMPARISON_INTERVALS.find((i) => i.value === selection.interval)?.label} · % of ${selection.basis === 'demand' ? 'gross demand' : 'generation'}`
+		[
+			COMPARISON_INTERVALS.find((i) => i.value === interval)?.label,
+			daily ? formatDailyWindow(viewport) : null,
+			`% of ${basis === 'demand' ? 'gross demand' : 'generation'}`
+		]
+			.filter(Boolean)
+			.join(' · ')
 	);
 	let ready = $derived(
 		metrics.length > 0 &&
 			!source.pending &&
-			selection.regions.some((id) =>
+			regions.some((id) =>
 				source.data[id]?.some((row) =>
-					metrics.some((metric) =>
-						Number.isFinite(comparisonMetricValue(row, metric.id, selection.basis))
-					)
+					metrics.some((metric) => Number.isFinite(comparisonMetricValue(row, metric.id, basis)))
 				)
 			)
 	);
@@ -176,13 +218,36 @@
 />
 
 {#snippet controls()}
-	<button
-		type="button"
-		class="rounded-lg border border-mid-warm-grey px-4 py-2 text-xs font-medium hover:bg-warm-grey"
-		onclick={() => select({ start: null, end: null })}>All history</button
-	>
+	<SwitchWithIcons
+		compact
+		rounded="rounded-lg"
+		darkSelected
+		trackClass="border-mid-warm-grey bg-white"
+		aria-label="Comparison display"
+		selected={selection.display}
+		buttons={[
+			{
+				value: 'charts',
+				icon: ChartLine,
+				size: 'size-4',
+				ariaLabel: 'Line charts',
+				title: 'Line charts'
+			},
+			{ value: 'stripes', icon: Stripes, size: 'size-4', ariaLabel: 'Stripes', title: 'Stripes' }
+		]}
+		onchange={({ value }) => select({ display: value === 'stripes' ? 'stripes' : 'charts' })}
+	/>
+	{#if daily}
+		<ComparisonYearNavigator {viewport} {bounds} onmove={(next) => select(next)} />
+	{:else}
+		<button
+			type="button"
+			class="rounded-lg border border-mid-warm-grey px-4 py-2 text-xs font-medium hover:bg-warm-grey"
+			onclick={() => select({ start: null, end: null })}>{comparisonDefaultLabel(interval)}</button
+		>
+	{/if}
 	<FilterSelect
-		selected={selection.interval}
+		selected={interval}
 		options={COMPARISON_INTERVALS}
 		listLabel="Comparison interval"
 		defaultValue="12mr"
@@ -193,7 +258,7 @@
 		<ComparisonChartSelect selected={selection.charts} onchange={(charts) => select({ charts })} />
 	</div>
 	<FilterSelect
-		selected={selection.basis}
+		selected={basis}
 		options={CONTRIBUTION_OPTIONS}
 		listLabel="Percentage basis"
 		defaultValue="demand"
@@ -208,7 +273,9 @@
 	data-png-context={`Compare regions · ${caption}`}
 >
 	<span class="sr-only" role="status"
-		>{source.pending ? 'Loading regional data…' : 'Complete periods · monthly source data'}</span
+		>{source.pending
+			? 'Loading regional data…'
+			: `Complete periods · ${daily ? 'daily' : 'monthly'} source data`}</span
 	>
 	<div bind:clientWidth={containerWidth} class="relative flex min-h-0 flex-1 overflow-hidden">
 		<!-- The docked panel's drag handle provides the right gutter, as in Timeline. -->
@@ -219,16 +286,16 @@
 			use:clickoutside={{ event: 'pointerdown', options: true }}
 			onclickoutside={() => (panZoomEngaged = false)}
 		>
-			{#if !selection.regions.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
+			{#if !regions.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
 					Select a region in the Regions panel to compare.
 				</p>{/if}
-			{#if selection.regions.length && !source.pending && !selection.regions.some((id) => source.data[id]?.length || source.status[id].error)}<p
+			{#if regions.length && !source.pending && !regions.some((id) => source.data[id]?.length || source.status[id].error)}<p
 					role="status"
 					class="mb-4 rounded-lg bg-white p-4 text-sm"
 				>
 					No completed regional data available for this selection.
 				</p>{/if}
-			{#each selection.regions.filter((id) => source.status[id].error) as id (id)}
+			{#each regions.filter((id) => source.status[id].error) as id (id)}
 				<div
 					role="alert"
 					class="mb-3 flex items-center justify-between gap-3 rounded-lg border border-warm-grey bg-white p-4 text-xs"
@@ -247,98 +314,164 @@
 			{#if !metrics.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
 					No charts selected. Use Charts to show comparisons.
 				</p>{/if}
-			{#each metrics as metric (comparisonChartId(metric.id))}
-				{@const cardReady =
-					!source.pending &&
-					selection.regions.some((id) =>
-						source.data[id]?.some((row) =>
-							Number.isFinite(comparisonMetricValue(row, metric.id, selection.basis))
-						)
-					)}
-				<ChartCard
-					title={metric.label}
-					defaultHeightPx={320}
-					heightStorageKey={`tracker-comparison-${comparisonChartId(metric.id)}-height`}
-					loading={source.pending && !selection.regions.some((id) => source.data[id]?.length)}
-					engaged={panZoomEngaged}
-					png={{
-						id: `regions-${metric.id}`,
-						label: metric.label,
-						ready: cardReady,
-						caption:
-							metric.id === 'price_real'
-								? `${caption} · ${cpi.reference} dollars · ABS CPI`
-								: caption
-					}}
-				>
-					{#snippet actions()}
-						{#if metric.fuel && (metric.kind === 'energy' || metric.kind === 'share')}
-							<SwitchTabs
-								buttons={[
-									{ label: 'Proportion', value: comparisonChartId(metric.id) },
-									{
-										label: 'Generation',
-										value: metric.fuel === 'renewables' ? 'generation' : `${metric.fuel}_generation`
-									}
-								]}
-								selected={metric.id}
-								onChange={(id) =>
-									select({
-										charts: selection.charts.map((current) =>
-											current === metric.id ? id : current
-										)
-									})}
-							/>
-						{/if}
-						{#if comparisonChartId(metric.id) === 'price_real'}
-							<Toggle
-								label="Inflation adjusted"
-								checked={metric.id === 'price_real'}
-								onclick={() =>
-									select({
-										charts: selection.charts.map((current) =>
-											current === metric.id
-												? metric.id === 'price_real'
-													? 'price'
-													: 'price_real'
-												: current
-										)
-									})}
-							/>
-						{/if}
-						{#if metric.id === 'price_real'}
-							<span class="text-xs text-mid-grey">{cpi.reference} dollars</span>
-						{/if}
-					{/snippet}
-					{#snippet children(height)}
-						<RegionComparisonChart
-							data={source.data}
-							regions={selection.regions}
-							metric={metric.id}
-							basis={selection.basis}
-							interval={selection.interval}
-							{viewport}
-							bounds={chartBounds}
-							{height}
-							bind:engaged={panZoomEngaged}
-							{hover}
-							{focus}
-							onhover={(time) => {
-								hover = time;
+			{#key selection.display}
+				<div in:fade={{ duration: reducedMotion.current ? 0 : 160 }}>
+					{#each metrics as metric (comparisonChartId(metric.id))}
+						{@const cardReady =
+							!source.pending &&
+							regions.some((id) =>
+								source.data[id]?.some((row) =>
+									Number.isFinite(comparisonMetricValue(row, metric.id, basis))
+								)
+							)}
+						{@const scale = stripes ? stripeScale(metric.id, basis, visibleMax(metric)) : null}
+						<ChartCard
+							title={metric.label}
+							defaultHeightPx={320}
+							heightStorageKey={scale
+								? ''
+								: `tracker-comparison-${comparisonChartId(metric.id)}-height`}
+							loading={source.pending && !regions.some((id) => source.data[id]?.length)}
+							engaged={scale ? false : panZoomEngaged}
+							png={{
+								id: `regions-${metric.id}`,
+								label: metric.label,
+								ready: cardReady,
+								caption:
+									metric.id === 'price_real'
+										? `${caption} · ${cpi.reference} dollars · ABS CPI`
+										: caption
 							}}
-							onfocus={(time) => {
-								focus = time;
-							}}
-							onviewport={moveViewport}
-						/>
-					{/snippet}
-				</ChartCard>
-			{/each}
+						>
+							{#snippet actions()}
+								{#if scale}
+									<div
+										class="flex items-center gap-2 font-mono text-xxs text-mid-grey"
+										role="img"
+										aria-label={`Colour scale from ${scale.labels[0]} to ${scale.labels[scale.labels.length - 1]} ${scale.unit}; grey means no data`}
+										data-testid="stripes-legend"
+									>
+										<span>{scale.labels[0]}</span>
+										{#if scale.kind === 'swatch'}
+											<span class="flex h-2 overflow-hidden rounded-sm">
+												{#each scale.colours as colour, index (colour)}
+													<span
+														class="block h-2 w-3"
+														style:background-color={colour}
+														title={scale.labels[index]}
+													></span>
+												{/each}
+											</span>
+										{:else}
+											<span
+												class="block h-2 w-24 rounded-sm"
+												style:background={stripeGradient(scale)}
+											></span>
+										{/if}
+										<span>{scale.labels[scale.labels.length - 1]}</span>
+										<span class="text-mid-warm-grey">{scale.unit}</span>
+									</div>
+								{/if}
+								{#if metric.fuel && (metric.kind === 'energy' || metric.kind === 'share')}
+									<SwitchTabs
+										buttons={[
+											{ label: 'Proportion', value: comparisonChartId(metric.id) },
+											{
+												label: 'Generation',
+												value:
+													metric.fuel === 'renewables' ? 'generation' : `${metric.fuel}_generation`
+											}
+										]}
+										selected={metric.id}
+										onChange={(id) =>
+											select({
+												charts: selection.charts.map((current) =>
+													current === metric.id ? id : current
+												)
+											})}
+									/>
+								{/if}
+								{#if comparisonChartId(metric.id) === 'price_real'}
+									<Toggle
+										label="Inflation adjusted"
+										checked={metric.id === 'price_real'}
+										onclick={() =>
+											select({
+												charts: selection.charts.map((current) =>
+													current === metric.id
+														? metric.id === 'price_real'
+															? 'price'
+															: 'price_real'
+														: current
+												)
+											})}
+									/>
+								{/if}
+								{#if metric.id === 'price_real'}
+									<span class="text-xs text-mid-grey">{cpi.reference} dollars</span>
+								{/if}
+							{/snippet}
+							{#snippet children(height)}
+								{#if scale}
+									<RegionStripes
+										data={source.data}
+										{regions}
+										metric={metric.id}
+										{basis}
+										{interval}
+										{viewport}
+										bounds={chartBounds}
+										{scale}
+										{hover}
+										{focus}
+										onhover={(time) => {
+											hover = time;
+										}}
+										onfocus={(time) => {
+											focus = time;
+										}}
+										onviewport={moveViewport}
+									/>
+								{:else}
+									<RegionComparisonChart
+										data={source.data}
+										{regions}
+										metric={metric.id}
+										{basis}
+										{interval}
+										{viewport}
+										bounds={chartBounds}
+										{height}
+										bind:engaged={panZoomEngaged}
+										{hover}
+										{focus}
+										onhover={(time) => {
+											hover = time;
+										}}
+										onfocus={(time) => {
+											focus = time;
+										}}
+										onviewport={moveViewport}
+									/>
+								{/if}
+							{/snippet}
+						</ChartCard>
+					{/each}
+				</div>
+			{/key}
 			<p class="px-2 text-xs leading-relaxed text-mid-grey">
 				Ratios use period totals. Renewable generation excludes storage discharge. Net imports are
 				imports minus exports, as a share of gross demand. Market values are weighted by generation.
 				Demand shares can exceed 100% in exporting regions. WA covers the WEM. Hover or use the
 				arrow keys to inspect a period; press Enter to pin it.
+				{#if stripes}
+					Stripes use fixed colour scales so a shade means the same in every region and year;
+					generation scales to the visible maximum and grey marks periods without data.
+				{/if}
+				{#if daily}
+					The daily view shows one year at a time: drag or scroll the stripes, click a month, or use
+					the year controls to move through history.
+				{/if}
 			</p>
 			{#if selection.charts.includes('price_real')}
 				<p class="px-2 pt-2 text-xs text-mid-grey" role="status">
@@ -392,9 +525,7 @@
 					/>
 				{/snippet}
 				<div class="border-b border-warm-grey px-4 py-3 text-xs text-mid-grey" role="status">
-					{period == null
-						? 'No common completed period'
-						: comparisonPeriod(period, selection.interval)}
+					{period == null ? 'No common completed period' : comparisonPeriod(period, interval)}
 					{#if focus != null}<button
 							class="ml-2 underline"
 							onclick={() => {
@@ -422,7 +553,7 @@
 											<span class="text-xs text-dark-grey">Region</span>
 										</div>
 									</th>
-									{#each metrics.map( (metric) => ({ label: metric.shortLabel, unit: comparisonUnit(metric.id, selection.basis) }) ) as column, index (index)}
+									{#each metrics.map( (metric) => ({ label: metric.shortLabel, unit: comparisonUnit(metric.id, basis) }) ) as column, index (index)}
 										<th
 											scope="col"
 											class="w-[100px] snap-start text-right {index === metrics.length - 1
@@ -441,7 +572,7 @@
 							</thead>
 							<tbody>
 								{#each COMPARISON_REGIONS as region (region.value)}
-									{@const selected = selection.regions.includes(region.value)}
+									{@const selected = regions.includes(region.value)}
 									{@const label = splitTableLabel(region.label)}
 									{@const row = source.data[region.value]?.find((row) => row.time === period)}
 									<tr class="{TABLE_ROW} {selected ? '' : 'opacity-50'}">
@@ -469,8 +600,8 @@
 											</button>
 										</th>
 										{#each metrics.map((metric) => {
-											const value = comparisonMetricValue(row, metric.id, selection.basis);
-											return source.status[region.value]?.pending ? '…' : format(value == null ? null : metric.kind === 'energy' ? value / 1000 : value);
+											const value = comparisonMetricValue(row, metric.id, basis);
+											return source.status[region.value]?.pending && !row ? '…' : formatComparisonValue(value, metric.id);
 										}) as cell, index (index)}
 											<td class={tableValueCell(cell, index === metrics.length - 1)}>{cell}</td>
 										{/each}

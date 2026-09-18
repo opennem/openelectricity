@@ -199,6 +199,22 @@ describe('tracker URLs', () => {
 		expect(parsed.range).toEqual({ kind: 'preset', days: 365, intervalId: '1M' });
 	});
 
+	it('round-trips the comparison display and daily interval with the regions view', () => {
+		const params = new URLSearchParams('view=regions&compare-display=stripes&compare-interval=1d');
+		const parsed = parseTrackerUrl(params, context);
+		expect(parsed.compareRegions).toBe(true);
+		expect(parsed.regionComparison.display).toBe('stripes');
+		expect(parsed.regionComparison.interval).toBe('1d');
+		const url = applyTrackerUrl(new URL('https://example.test/tracker'), parsed);
+		expect(url.searchParams.get('compare-display')).toBe('stripes');
+		expect(url.searchParams.get('compare-interval')).toBe('1d');
+		const charts = applyTrackerUrl(
+			new URL('https://example.test/tracker'),
+			parseTrackerUrl(new URLSearchParams('view=regions'), context)
+		);
+		expect(charts.searchParams.has('compare-display')).toBe(false);
+	});
+
 	it('materialises copied links without mutating the source URL', () => {
 		const source = new URL('https://example.test/tracker?region=nsw1');
 		const copied = copiedTrackerUrl(source, {

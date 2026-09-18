@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import {
+	card,
 	collectPageErrors,
 	download,
 	expectNoHorizontalScroll,
+	hydrated,
 	openOptions,
 	regionRow,
 	regionsFixture,
@@ -393,8 +395,9 @@ test('comparison Y axis rescales on zoom and pan as an offscreen peak enters or 
 }) => {
 	await regionsFixture(page, { spike: true });
 	await page.setViewportSize({ width: 1440, height: 1000 });
+	// Monthly opens on the latest five years; the spike sits in 2020, so open on all history.
 	await page.goto(
-		'/tracker?view=regions&compare-charts=generation&compare-regions=nsw1&compare-interval=1M'
+		`/tracker?view=regions&compare-charts=generation&compare-regions=nsw1&compare-interval=1M&compare-start=${Date.UTC(2020, 0)}&compare-end=${Date.UTC(2026, 8)}`
 	);
 	const chart = page.getByRole('group', {
 		name: 'Renewables generation comparison chart',
@@ -433,6 +436,12 @@ test('comparison charts reuse timeline options, retain curve and units, and shar
 		name: 'Carbon intensity comparison chart',
 		exact: true
 	});
+	// Rolling months open on the latest five years, so zoom out is still available
+	// until the reset control shows all history.
+	await expect(intensity.getByRole('button', { name: 'Zoom out', exact: true })).toBeEnabled();
+	await expect(page.getByRole('button', { name: 'Last 5 years', exact: true })).toBeVisible();
+	const zoomOut = intensity.getByRole('button', { name: 'Zoom out', exact: true });
+	while (await zoomOut.isEnabled()) await zoomOut.click();
 	const energy = page.getByRole('group', {
 		name: 'Renewables generation comparison chart',
 		exact: true
@@ -525,4 +534,134 @@ test('fuel chart toggles share one picker entry and persist presentation through
 	await expect(
 		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
 	).toBeVisible();
+});
+
+test('stripes display shares hover and pinning with the table, exports PNG and restores through history', async ({
+	page
+}) => {
+	const errors = collectPageErrors(page);
+	const data = await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/tracker?view=regions');
+	await regionsReady(page);
+	const requests = data.requests.length;
+	await page.getByRole('button', { name: 'Stripes', exact: true }).click();
+	await expect(page).toHaveURL(/compare-display=stripes/);
+	const intensity = card(page, 'Carbon intensity');
+	const stripes = intensity.locator('svg[data-png-layer]');
+	await expect(stripes).toBeVisible();
+	await expect(intensity.locator('.stratum-chart')).toHaveCount(0);
+	await expect(intensity.getByTestId('stripes-legend')).toContainText('kgCO₂e/MWh');
+	await expect(intensity.locator('text', { hasText: 'NSW' })).toBeVisible();
+	expect(data.requests.length).toBe(requests);
+	// Hovering a column inspects that period in the Regions table.
+	const period = page.getByRole('status').filter({ hasText: /12 months to/ });
+	const resting = (await period.textContent()) ?? '';
+	const box = await stripes.boundingBox();
+	if (!box) throw new Error('Stripes have no size');
+	await page.mouse.move(box.x + 96 + (box.width - 96) * 0.3, box.y + 20);
+	await expect(period).not.toHaveText(resting);
+	await expect(intensity.getByTestId('chart-floating-tooltip')).toContainText('NSW');
+	await page.mouse.down();
+	await page.mouse.up();
+	await expect(page.getByRole('button', { name: 'Clear pinned period' })).toBeVisible();
+	await page.getByRole('button', { name: 'Clear pinned period' }).click();
+	await page.mouse.move(0, 0);
+	await expect(period).toHaveText(resting);
+	// Keyboard inspection works exactly as it does on the line charts.
+	await page.getByRole('button', { name: 'Inspect carbon intensity values' }).focus();
+	await page.keyboard.press('ArrowLeft');
+	await expect(period).not.toHaveText(resting);
+	await page.keyboard.press('Escape');
+	await expect(period).toHaveText(resting);
+	// The stripes card is a ready PNG export.
+	const menu = await openOptions(page);
+	await menu.getByRole('button', { name: 'Export PNG', exact: true }).click();
+	const dialog = page.getByRole('dialog');
+	await expect(dialog.getByRole('checkbox', { name: /Carbon intensity/ })).toBeEnabled();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toHaveCount(0);
+	await page.screenshot({ path: 'test-results/tracker-regions-stripes.png', fullPage: true });
+	// History restores the display either way.
+	await page.goBack();
+	await expect(page).not.toHaveURL(/compare-display/);
+	await expect(card(page, 'Carbon intensity').locator('.stratum-chart')).toHaveCount(1);
+	await page.goForward();
+	await expect(card(page, 'Carbon intensity').locator('svg[data-png-layer]')).toBeVisible();
+	await page.setViewportSize({ width: 390, height: 800 });
+	await expectNoHorizontalScroll(page);
+	expect(errors).toEqual([]);
+});
+
+test('daily interval is a sliding one-year window fetched with a three-month buffer', async ({
+	page
+}) => {
+	const errors = collectPageErrors(page);
+	const data = await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/tracker?view=regions&compare-display=stripes&compare-interval=1d');
+	await hydrated(page);
+	await expect(
+		page.getByText('Complete periods · daily source data', { exact: true })
+	).toBeVisible();
+	const daily = () => data.requests.filter((request) => request.interval === '1d');
+	const window = page.getByTestId('comparison-window');
+	await expect(window).toHaveText('11 Sept 2025 – 10 Sept 2026');
+	// Six regions × four sources, less flows for the closed WEM network.
+	await expect.poll(() => daily().length).toBe(23);
+	expect(new Set(daily().map((request) => request.dateStart))).toEqual(
+		new Set(['2025-06-01T00:00:00'])
+	);
+	await expect(page.getByRole('button', { name: 'Next year' })).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Latest' })).toHaveCount(0);
+	const intensity = card(page, 'Carbon intensity');
+	const stripes = intensity.locator('svg[data-png-layer]');
+	await expect(stripes.locator('text', { hasText: 'Jan 2026' })).toBeVisible();
+	await expect(stripes.locator('text', { hasText: 'Aug' })).toBeVisible();
+	// Hovering inspects a single day.
+	const box = await stripes.boundingBox();
+	if (!box) throw new Error('Stripes have no size');
+	await page.mouse.move(box.x + 96 + (box.width - 96) * 0.5, box.y + 20);
+	await expect(page.getByRole('status').filter({ hasText: /^\d{1,2} \w+ 2026/ })).toBeVisible();
+	await page.mouse.move(0, 0);
+	// Stepping back a year fetches only the months the buffer does not hold.
+	await page.getByRole('button', { name: 'Previous year' }).click();
+	await expect(window).toHaveText('11 Sept 2024 – 10 Sept 2025');
+	await expect
+		.poll(() => daily().filter((request) => request.dateStart === '2024-06-01T00:00:00').length)
+		.toBe(23);
+	expect(daily().length).toBe(46);
+	await expect(page.getByRole('button', { name: 'Latest' })).toBeVisible();
+	// Keyboard moves from the navigator: month, six months, year boundary, latest.
+	await page.getByRole('button', { name: 'Previous year' }).focus();
+	await page.keyboard.press('ArrowRight');
+	await expect(window).toHaveText('11 Oct 2024 – 10 Oct 2025');
+	expect(daily().length).toBe(46); // inside the buffer
+	await page.keyboard.press('Shift+ArrowLeft');
+	await expect(window).toHaveText('11 Apr 2024 – 10 Apr 2025');
+	await expect.poll(() => daily().length).toBe(69); // January to May 2024
+	await page.keyboard.press('Control+ArrowLeft');
+	await expect(window).toHaveText('1 Jan 2024 – 30 Dec 2024'); // a fixed 365-day window in a leap year
+	await expect.poll(() => daily().length).toBe(92); // October to December 2023
+	await page.keyboard.press('Home');
+	await expect(window).toHaveText('11 Sept 2025 – 10 Sept 2026');
+	expect(daily().length).toBe(92); // the latest window was warm
+	expect(new Set(daily().map((request) => request.dateStart)).size).toBe(4);
+	// A month label makes that month the window's first.
+	await page.getByRole('button', { name: 'Previous year' }).click();
+	await stripes.locator('text', { hasText: 'Jan 2025' }).click();
+	await expect(window).toHaveText('1 Jan 2025 – 31 Dec 2025');
+	await expect(page).toHaveURL(/compare-end=1767225600000/);
+	// Switching back to rolling months keeps the right edge and the warm monthly cache.
+	const monthly = data.requests.filter((request) => request.interval === '1M').length;
+	await page.getByRole('button', { name: 'Daily', exact: true }).click();
+	await page.getByRole('option', { name: '12-month rolling', exact: true }).click();
+	await expect(
+		page.getByText('Complete periods · monthly source data', { exact: true })
+	).toBeVisible();
+	await expect(page).toHaveURL(/compare-end=1767225600000/);
+	expect(data.requests.filter((request) => request.interval === '1M').length).toBe(monthly);
+	await page.setViewportSize({ width: 390, height: 800 });
+	await expectNoHorizontalScroll(page);
+	expect(errors).toEqual([]);
 });
