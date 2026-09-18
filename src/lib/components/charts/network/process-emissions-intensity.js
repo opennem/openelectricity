@@ -5,7 +5,8 @@
  * plus an energy basis in one response — `power` at sub-daily grains, `energy`
  * at daily-and-coarser. The processor collapses each to a network-wide total
  * per native bucket and normalises the basis to MWh, emitting COMPONENT rows
- * (`emissions`, `energy_mwh`), not the ratio: components survive display
+ * (`emissions`, `energy_mwh`), optionally retained per group for frontend
+ * visibility filtering, not the ratio: components survive display
  * aggregation by summing, so the chart derives intensity per DISPLAY bucket as
  * a ratio of sums — the same semantics as the facility charts'
  * `deriveIntensityRows` — instead of a mean of ratios.
@@ -20,6 +21,11 @@ import { intensityKgPerMWh } from '$lib/components/charts/facility/intensity-lin
 export const INTENSITY_SERIES_ID = 'intensity';
 const EMISSIONS_ID = 'emissions';
 const ENERGY_ID = 'energy_mwh';
+const COMPONENT_META = {
+	seriesNames: [EMISSIONS_ID, ENERGY_ID],
+	seriesLabels: { [EMISSIONS_ID]: 'Emissions (t)', [ENERGY_ID]: 'Energy (MWh)' },
+	seriesColours: { [EMISSIONS_ID]: '#594929', [ENERGY_ID]: '#888888' }
+};
 
 /**
  * @typedef {Object} ProcessEmissionsIntensityConfig
@@ -29,6 +35,7 @@ const ENERGY_ID = 'energy_mwh';
  * @property {Record<string, string[]>} [groupMap] - Optional group id → member
  *   fuel-tech codes. When supplied, only technologies in the grouping count.
  * @property {string[]} [excludedGroups] - Group ids hidden by the caller.
+ * @property {boolean} [retainGroups] - Keep grouped components for later frontend filtering.
  */
 
 /**
@@ -39,7 +46,13 @@ const ENERGY_ID = 'energy_mwh';
 export function processEmissionsIntensity(response, config) {
 	if (!response?.data) return null;
 
-	const { intervalHours, networkTimezone = '+10:00', groupMap, excludedGroups = [] } = config;
+	const {
+		intervalHours,
+		networkTimezone = '+10:00',
+		groupMap,
+		excludedGroups = [],
+		retainGroups = false
+	} = config;
 	const excludedGroupSet = new Set(excludedGroups);
 	/** @type {Record<string, string>} */
 	const fuelTechToGroup = {};
@@ -67,7 +80,9 @@ export function processEmissionsIntensity(response, config) {
 				if (fuelTech === 'battery') return null;
 				if (!groupMap) return { id: metricFilter };
 				const groupId = fuelTechToGroup[fuelTech];
-				return groupId && !excludedGroupSet.has(groupId) ? { id: metricFilter } : null;
+				return groupId && !excludedGroupSet.has(groupId)
+					? { id: retainGroups ? `${metricFilter}:${groupId}` : metricFilter }
+					: null;
 			}
 		});
 
@@ -85,28 +100,65 @@ export function processEmissionsIntensity(response, config) {
 
 	/** @type {Map<string, Map<number, number>>} */
 	const merged = new Map();
-	merged.set(
-		EMISSIONS_ID,
-		/** @type {Map<number, number>} */ (emissions.seriesMaps.get('emissions'))
-	);
+	for (const [key, values] of emissions.seriesMaps) merged.set(key, values);
 
-	// Normalise the basis onto MWh per native bucket.
-	const basisMap = /** @type {Map<number, number>} */ (basis.seriesMaps.get(basisMetric));
-	/** @type {Map<number, number>} */
-	const energyMap = new Map();
-	for (const [ms, value] of basisMap) {
-		energyMap.set(ms, basisMetric === 'power' ? value * intervalHours : value);
+	// Normalise each retained group's basis onto MWh per native bucket. Keys are
+	// the bare metric or `<metric>:<group>`, so swap the metric prefix for the energy id.
+	for (const [key, values] of basis.seriesMaps) {
+		const energyKey = `${ENERGY_ID}${key.slice(basisMetric.length)}`;
+		merged.set(
+			energyKey,
+			new Map(
+				[...values].map(([ms, value]) => [
+					ms,
+					basisMetric === 'power' ? value * intervalHours : value
+				])
+			)
+		);
 	}
-	merged.set(ENERGY_ID, energyMap);
 
 	/** @type {Set<number>} */
 	const timestamps = new Set([...emissions.timestamps, ...basis.timestamps]);
 
+	const seriesNames = [...merged.keys()];
 	return {
-		data: rowsFromSeriesMaps(merged, timestamps, [EMISSIONS_ID, ENERGY_ID]),
-		seriesNames: [EMISSIONS_ID, ENERGY_ID],
-		seriesLabels: { [EMISSIONS_ID]: 'Emissions (t)', [ENERGY_ID]: 'Energy (MWh)' },
-		seriesColours: { [EMISSIONS_ID]: '#594929', [ENERGY_ID]: '#888888' }
+		...COMPONENT_META,
+		data: rowsFromSeriesMaps(merged, timestamps, seriesNames),
+		seriesNames
+	};
+}
+
+/** Collapse cached per-group components for a visibility selection, without
+ * changing the data manager or consulting the HTTP response cache.
+ * @param {NonNullable<ReturnType<typeof processEmissionsIntensity>>} source
+ * @param {string[]} excludedGroups
+ */
+export function selectIntensityComponents(source, excludedGroups) {
+	const excluded = new Set(excludedGroups);
+	const keysFor = (/** @type {string} */ metric) => {
+		const grouped = source.seriesNames.filter(
+			(key) => key.startsWith(`${metric}:`) && !excluded.has(key.slice(metric.length + 1))
+		);
+		// Components processed without a group map carry the bare metric id and
+		// have nothing to filter; grouped components with every group hidden stay empty.
+		return grouped.length === 0 && source.seriesNames.includes(metric) ? [metric] : grouped;
+	};
+	const emissionsKeys = keysFor(EMISSIONS_ID);
+	const energyKeys = keysFor(ENERGY_ID);
+	const sum = (/** @type {Record<string, any>} */ row, /** @type {string[]} */ keys) => {
+		const values = keys
+			.map((key) => row[key])
+			.filter((value) => typeof value === 'number' && Number.isFinite(value));
+		return values.length ? values.reduce((total, value) => total + value, 0) : null;
+	};
+	return {
+		...COMPONENT_META,
+		data: source.data.map((row) => ({
+			date: row.date,
+			time: row.time,
+			emissions: sum(row, emissionsKeys),
+			energy_mwh: sum(row, energyKeys)
+		}))
 	};
 }
 

@@ -209,89 +209,84 @@
 	}
 </script>
 
-{#if showMobileFilterOptions}
-	<Modal
-		maxWidthClass=""
-		class="fixed! bg-white top-0 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain rounded-none! my-0! pt-0 px-0 z-50"
-	>
-		<header
-			class="sticky top-0 z-50 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
-		>
-			<h3 class="mb-2">Filters</h3>
+<Modal
+	bind:open={showMobileFilterOptions}
+	title="Filters"
+	titleLevel={3}
+	titleClass="m-0"
+	fullscreen
+>
+	{#snippet header()}
+		<IconAdjustmentsHorizontal class="size-10" />
+	{/snippet}
 
-			<div class="mb-2">
-				<IconAdjustmentsHorizontal class="size-10" />
-			</div>
-		</header>
+	<section class="p-10 w-full flex flex-col gap-12 relative">
+		{#if $isSingleSelectionMode}
+			<FormSelect
+				formLabel="Plan"
+				options={planOptions}
+				selected={selectedModel}
+				paddingX=""
+				staticDisplay={true}
+				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+				onchange={handlePlanSelect}
+			/>
 
-		<section class="p-10 w-full flex flex-col gap-12 relative z-50">
-			{#if $isSingleSelectionMode}
+			<FormSelect
+				formLabel="Scenario"
+				options={scenarioOptions}
+				selected={$singleSelectionData?.scenario || ''}
+				paddingX=""
+				staticDisplay={true}
+				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+				onchange={handleScenarioSelect}
+			/>
+
+			<FormSelect
+				formLabel="Pathway"
+				options={pathwayOptions}
+				selected={$singleSelectionData?.pathway || ''}
+				paddingX=""
+				staticDisplay={true}
+				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+				onchange={handlePathwaySelect}
+			/>
+		{/if}
+
+		<div class="flex gap-12">
+			{#if $isTechnologyViewSection || $isScenarioViewSection}
 				<FormSelect
-					formLabel="Plan"
-					options={planOptions}
-					selected={selectedModel}
+					formLabel="Region"
+					options={regionOptions}
+					selected={$selectedRegion}
 					paddingX=""
 					staticDisplay={true}
 					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={handlePlanSelect}
-				/>
-
-				<FormSelect
-					formLabel="Scenario"
-					options={scenarioOptions}
-					selected={$singleSelectionData?.scenario || ''}
-					paddingX=""
-					staticDisplay={true}
-					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={handleScenarioSelect}
-				/>
-
-				<FormSelect
-					formLabel="Pathway"
-					options={pathwayOptions}
-					selected={$singleSelectionData?.pathway || ''}
-					paddingX=""
-					staticDisplay={true}
-					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={handlePathwaySelect}
+					onchange={(option) => ($selectedRegion = option.value)}
 				/>
 			{/if}
 
-			<div class="flex gap-12">
-				{#if $isTechnologyViewSection || $isScenarioViewSection}
-					<FormSelect
-						formLabel="Region"
-						options={regionOptions}
-						selected={$selectedRegion}
-						paddingX=""
-						staticDisplay={true}
-						selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-						onchange={(option) => ($selectedRegion = option.value)}
-					/>
-				{/if}
+			<FormMultiSelect
+				options={dataTypeDisplayOptions}
+				selected={$selectedCharts}
+				label="Charts"
+				paddingX=""
+				staticDisplay={true}
+				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+				onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
+			/>
+		</div>
+	</section>
 
-				<FormMultiSelect
-					options={dataTypeDisplayOptions}
-					selected={$selectedCharts}
-					label="Charts"
-					paddingX=""
-					staticDisplay={true}
-					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
-				/>
-			</div>
-		</section>
-
-		{#snippet buttons()}
-			<div class="flex gap-3 text-base">
-				<Button
-					class="bg-dark-grey! text-white hover:bg-black! w-full"
-					onclick={() => (showMobileFilterOptions = false)}>Close</Button
-				>
-			</div>
-		{/snippet}
-	</Modal>
-{/if}
+	{#snippet buttons()}
+		<div class="flex gap-3 text-base">
+			<Button
+				class="bg-dark-grey! text-white hover:bg-black! w-full"
+				onclick={() => (showMobileFilterOptions = false)}>Close</Button
+			>
+		</div>
+	{/snippet}
+</Modal>
 
 <div
 	class="max-w-none flex gap-4 md:gap-8 justify-between px-8 pt-3 pb-3 border-b border-warm-grey"
@@ -337,6 +332,7 @@
 		<div class="md:hidden pl-4 ml-2 border-l border-warm-grey">
 			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 				<IconAdjustmentsHorizontal class="size-10" />
+				<span class="sr-only">Open filters</span>
 			</ButtonIcon>
 		</div>
 

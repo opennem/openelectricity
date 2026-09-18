@@ -54,6 +54,7 @@
  * @property {EmissionsMode} emissionsMode
  * @property {TrackerOverlay[]} overlays
  * @property {boolean} tablePanelOpen
+ * @property {string[]} tableColumns
  * @property {boolean} fullscreen
  */
 
@@ -114,12 +115,13 @@
 /**
  * Display settings and row-toggle callbacks shared by `FuelTechPanel` and
  * `FuelTechTable` — the panel forwards them to the table untouched. The
- * grouping and contribution basis are chosen in the page's options menu; the
+ * grouping and contribution basis are chosen in the fuel technology options dialog; the
  * table only displays them.
  * @typedef {Object} FuelTechTableControls
  * @property {'power' | 'energy'} [basis]
  * @property {SiPrefix} [displayPrefix] - Generation chart's selected unit prefix for the active basis
  * @property {string} [group]
+ * @property {string[]} [tableColumns]
  * @property {ContributionMode} [contributionMode]
  * @property {string[]} [shownCurtailment] - Curtailment series ids banded on the chart
  * @property {boolean} [showDemandLine]

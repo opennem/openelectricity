@@ -316,87 +316,82 @@
 	{@const px = showMobileFilterOptions ? '' : 'px-4'}
 	{@const py = 'py-3'}
 
-	{#if showMobileFilterOptions}
-		<Modal
-			maxWidthClass=""
-			class="fixed! bg-white top-0 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain rounded-none! my-0! pt-0 px-0 z-50"
-		>
-			<header
-				class="sticky top-0 z-50 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
-			>
-				<h3 class="mb-2">Filters</h3>
+	<Modal
+		bind:open={showMobileFilterOptions}
+		title="Filters"
+		titleLevel={3}
+		titleClass="m-0"
+		fullscreen
+	>
+		{#snippet header()}
+			<IconAdjustmentsHorizontal class="size-10" />
+		{/snippet}
 
-				<div class="mb-2">
-					<IconAdjustmentsHorizontal class="size-10" />
-				</div>
-			</header>
+		<div class="grid grid-cols-2 gap-20 px-10 pt-5 pb-0">
+			<div class="flex flex-col gap-6">
+				<FormSelect
+					options={availableFuelTechsOptions}
+					selected={fuelTech}
+					formLabel="Technology"
+					paddingX={px}
+					paddingY={py}
+					staticDisplay={true}
+					onchange={handleFuelTechChange}
+				/>
 
-			<div class="grid grid-cols-2 gap-20 px-10 pt-5 pb-0">
-				<div class="flex flex-col gap-6">
-					<FormSelect
-						options={availableFuelTechsOptions}
-						selected={fuelTech}
-						formLabel="Technology"
-						paddingX={px}
-						paddingY={py}
-						staticDisplay={true}
-						onchange={handleFuelTechChange}
-					/>
-
-					<FormSelect
-						options={availableAggregatesOptions}
-						selected={aggregate}
-						formLabel="Aggregate"
-						paddingX={px}
-						paddingY={py}
-						staticDisplay={true}
-						onchange={handleAggregateChange}
-					/>
-				</div>
-
-				<div class="flex flex-col gap-6">
-					<FormSelect
-						options={availableRegionsOptions}
-						selected={region}
-						formLabel="Region"
-						paddingX={px}
-						paddingY={py}
-						staticDisplay={true}
-						onchange={handleRegionChange}
-					/>
-
-					<FormSelect
-						options={availableMetricsOptions}
-						selected={metric}
-						formLabel="Metric"
-						paddingX={px}
-						paddingY={py}
-						staticDisplay={true}
-						onchange={handleMetricChange}
-					/>
-
-					<FormSelect
-						options={availablePeriodsOptions}
-						selected={period}
-						formLabel="Period"
-						paddingX={px}
-						paddingY={py}
-						staticDisplay={true}
-						onchange={handlePeriodChange}
-					/>
-				</div>
+				<FormSelect
+					options={availableAggregatesOptions}
+					selected={aggregate}
+					formLabel="Aggregate"
+					paddingX={px}
+					paddingY={py}
+					staticDisplay={true}
+					onchange={handleAggregateChange}
+				/>
 			</div>
 
-			{#snippet buttons()}
-				<div class="flex gap-3 text-base">
-					<Button
-						class="bg-dark-grey! text-white hover:bg-black! w-full"
-						onclick={() => (showMobileFilterOptions = false)}>Close</Button
-					>
-				</div>
-			{/snippet}
-		</Modal>
-	{/if}
+			<div class="flex flex-col gap-6">
+				<FormSelect
+					options={availableRegionsOptions}
+					selected={region}
+					formLabel="Region"
+					paddingX={px}
+					paddingY={py}
+					staticDisplay={true}
+					onchange={handleRegionChange}
+				/>
+
+				<FormSelect
+					options={availableMetricsOptions}
+					selected={metric}
+					formLabel="Metric"
+					paddingX={px}
+					paddingY={py}
+					staticDisplay={true}
+					onchange={handleMetricChange}
+				/>
+
+				<FormSelect
+					options={availablePeriodsOptions}
+					selected={period}
+					formLabel="Period"
+					paddingX={px}
+					paddingY={py}
+					staticDisplay={true}
+					onchange={handlePeriodChange}
+				/>
+			</div>
+		</div>
+
+		{#snippet buttons()}
+			<div class="flex gap-3 text-base">
+				<Button
+					class="bg-dark-grey! text-white hover:bg-black! w-full"
+					onclick={() => (showMobileFilterOptions = false)}>Close</Button
+				>
+			</div>
+		{/snippet}
+	</Modal>
 
 	<div class="text-sm flex justify-between gap-2 md:gap-6 items-center px-6 py-2 md:px-12">
 		<div class="flex gap-4 md:gap-6 items-center">
@@ -467,6 +462,7 @@
 		<div class="sm:hidden pl-8 ml-4 border-l border-warm-grey">
 			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 				<IconAdjustmentsHorizontal class="size-10" />
+				<span class="sr-only">Open filters</span>
 			</ButtonIcon>
 		</div>
 

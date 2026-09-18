@@ -284,3 +284,57 @@ test.describe('Scenarios Page', () => {
 		expect(hasFilteredRequests).toBe(true);
 	});
 });
+
+test('shared selects support keyboard dropdowns and mobile dialog filters', async ({
+	page
+}, testInfo) => {
+	await page.goto('/scenarios');
+	// Bits UI's Select trigger is a button that pops a listbox.
+	const region = page.getByRole('button', { name: 'NEM Regions', exact: true });
+	await expect(region).toBeVisible();
+	await region.click();
+	const listbox = page.getByRole('listbox');
+	const current = listbox.getByRole('option', { name: 'NEM Regions', exact: true });
+	const next = listbox.getByRole('option', { name: 'New South Wales', exact: true });
+	await expect(current).toHaveAttribute('aria-selected', 'true');
+	await page.keyboard.press('ArrowDown');
+	// Moving the highlight does not commit a selection.
+	await expect(next).toHaveAttribute('data-highlighted', '');
+	await expect(current).toHaveAttribute('aria-selected', 'true');
+	await expect(region).toHaveText(/NEM Regions/);
+	await page.keyboard.press('Enter');
+	await expect(listbox).toHaveCount(0);
+	const selectedRegion = page.getByRole('button', { name: 'New South Wales', exact: true });
+	await expect(selectedRegion).toBeFocused();
+	// Space commits and closes like Enter; Escape leaves the selection alone.
+	await selectedRegion.click();
+	await page.keyboard.press('ArrowUp');
+	await page.keyboard.press('Space');
+	await expect(page.getByRole('listbox')).toHaveCount(0);
+	await expect(region).toBeFocused();
+	await region.click();
+	await page.keyboard.press('ArrowDown');
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('listbox')).toHaveCount(0);
+	await expect(region).toBeFocused();
+
+	await page.setViewportSize({ width: 390, height: 640 });
+	const trigger = page.getByRole('button', { name: 'Open filters', exact: true });
+	await trigger.click();
+	const dialog = page.getByRole('dialog', { name: 'Filters', exact: true });
+	await expect(dialog).toBeVisible();
+	await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+	await expect(dialog.getByRole('radiogroup', { name: 'Plan', exact: true })).toBeVisible();
+	const regions = dialog.getByRole('radiogroup', { name: 'Region', exact: true });
+	await regions.getByRole('radio', { name: 'Victoria', exact: true }).click();
+	await expect(regions.getByRole('radio', { name: 'Victoria', exact: true })).toBeChecked();
+	await expect(dialog).toBeVisible();
+	await page.screenshot({ path: testInfo.outputPath('scenario-mobile-dialog.png') });
+	await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+	await expect(dialog).not.toBeVisible();
+	await expect(trigger).toBeFocused();
+	await trigger.click();
+	await page.keyboard.press('Escape');
+	await expect(dialog).not.toBeVisible();
+	await expect(trigger).toBeFocused();
+});

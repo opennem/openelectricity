@@ -19,6 +19,7 @@
  * - `emissions` — `volume` when the emissions card shows volume (intensity is the default)
  * - `overlay`   — comma-separated generation-chart overlays (demand,
  *                 renewables, curtailment-solar, curtailment-wind)
+ * - `columns`   — visible table value columns, comma-separated; empty hides all
  * - `table`     — `0` when the fuel-tech panel is closed
  * - `fullscreen`— `false` opts out of the fullscreen chrome
  */
@@ -32,6 +33,7 @@ import {
 	isValidBucketFilter
 } from '$lib/components/charts/v2/bucket-filter.js';
 import { GROUP_OPTIONS, getGroup } from '$lib/components/charts/network/groups.js';
+import { DEFAULT_TABLE_COLUMNS, normaliseTableColumns } from './table-columns.js';
 import { TRACKER_OVERLAYS } from './tracker-overlays.js';
 import {
 	applyRegionComparison,
@@ -143,6 +145,7 @@ export function normaliseTrackerState(value) {
 		emissionsMode: normaliseEmissionsMode(value.emissionsMode),
 		overlays: normaliseTrackerOverlays(value.overlays),
 		tablePanelOpen: value.tablePanelOpen !== false,
+		tableColumns: normaliseTableColumns(value.tableColumns),
 		fullscreen: value.fullscreen !== false
 	};
 }
@@ -179,6 +182,7 @@ export function parseTrackerUrl(params, context) {
 		emissionsMode: params.get('emissions'),
 		overlays: (params.get('overlay') ?? '').split(','),
 		tablePanelOpen: params.get('table') !== '0',
+		tableColumns: params.has('columns') ? params.get('columns')?.split(',') : undefined,
 		fullscreen: params.get('fullscreen') !== 'false'
 	});
 }
@@ -235,6 +239,8 @@ export function applyTrackerUrl(url, state) {
 	set('emissions', next.emissionsMode === 'volume' ? 'volume' : null);
 	set('overlay', next.overlays.length ? next.overlays.join(',') : null);
 	set('table', next.tablePanelOpen ? null : '0');
+	if (next.tableColumns.length === DEFAULT_TABLE_COLUMNS.length) params.delete('columns');
+	else params.set('columns', next.tableColumns.join(','));
 
 	return url;
 }

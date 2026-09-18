@@ -1,6 +1,6 @@
 <script>
 	import CheckboxTree from './CheckboxTree.svelte';
-	import FormCheckbox from '$lib/components/form-elements/Checkbox2.svelte';
+	import FormCheckbox from '$lib/components/form-elements/Checkbox.svelte';
 
 	/**
 	 * @typedef {{ value: string, label: string, children?: TreeNode[] }} TreeNode

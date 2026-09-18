@@ -1,5 +1,5 @@
 <script>
-	import Checkbox from '$lib/components/form-elements/CheckboxNew.svelte';
+	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 	import { formatFyTickX } from '$lib/utils/formatters';
 
 	/**

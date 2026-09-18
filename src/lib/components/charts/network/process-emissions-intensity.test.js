@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
 	processEmissionsIntensity,
+	selectIntensityComponents,
 	deriveIntensityDisplayRows
 } from './process-emissions-intensity.js';
 
@@ -156,5 +157,77 @@ describe('deriveIntensityDisplayRows', () => {
 		const derived = deriveIntensityDisplayRows(rows);
 		expect(derived[0].intensity).toBeNull();
 		expect(derived[1].intensity).toBeNull();
+	});
+});
+
+describe('cached intensity selection', () => {
+	it.each(['power', 'energy'])(
+		'filters both %s components without reprocessing the response',
+		(basis) => {
+			const response = {
+				data: [
+					metricEntry('emissions', [
+						{
+							fueltech: 'coal_black',
+							values: [
+								[T0, 100],
+								[T1, null]
+							]
+						},
+						{
+							fueltech: 'wind',
+							values: [
+								[T0, 0],
+								[T1, 0]
+							]
+						}
+					]),
+					metricEntry(basis, [
+						{
+							fueltech: 'coal_black',
+							values: [
+								[T0, 100],
+								[T1, 100]
+							]
+						},
+						{
+							fueltech: 'wind',
+							values: [
+								[T0, 200],
+								[T1, null]
+							]
+						}
+					])
+				]
+			};
+			const config = { intervalHours: 0.5, groupMap: { coal: ['coal_black'], wind: ['wind'] } };
+			const cached = processEmissionsIntensity(response, { ...config, retainGroups: true });
+			if (!cached) throw new Error('Expected grouped components');
+			const original = structuredClone(cached);
+			for (const excludedGroups of [[], ['coal'], ['wind'], []]) {
+				const selected = selectIntensityComponents(cached, excludedGroups);
+				const expected = processEmissionsIntensity(response, { ...config, excludedGroups });
+				expect(selected).toEqual(expected);
+			}
+			expect(
+				deriveIntensityDisplayRows(selectIntensityComponents(cached, ['coal', 'wind']).data).map(
+					(row) => row.intensity
+				)
+			).toEqual([null, null]);
+			expect(cached).toEqual(original);
+		}
+	);
+
+	it('passes ungrouped components through unfiltered', () => {
+		const response = {
+			data: [
+				metricEntry('emissions', [{ fueltech: 'coal_black', values: [[T0, 100]] }]),
+				metricEntry('power', [{ fueltech: 'coal_black', values: [[T0, 200]] }])
+			]
+		};
+		const cached = processEmissionsIntensity(response, { intervalHours: 0.5, retainGroups: true });
+		if (!cached) throw new Error('Expected components');
+		expect(cached.seriesNames).toEqual(['emissions', 'energy_mwh']);
+		expect(selectIntensityComponents(cached, ['coal']).data).toEqual(cached.data);
 	});
 });

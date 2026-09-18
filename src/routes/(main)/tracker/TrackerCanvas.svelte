@@ -1,4 +1,5 @@
 <script>
+	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
 	import { onMount, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { clickoutside } from '@svelte-put/clickoutside';
@@ -31,6 +32,7 @@
 	import WindowMetrics from './WindowMetrics.svelte';
 	import { comparisonBuckets } from './comparison.js';
 	import { createTrackerPrefetchPlan } from './tracker-prefetch.js';
+	import { createLoadingNotice } from './tracker-loading.svelte.js';
 	import { resolvePriceMode } from './tracker-model.js';
 	import {
 		CURTAILMENT_SERIES,
@@ -142,7 +144,8 @@
 		ready: () => data.ready('generation'),
 		hidden: () => hiddenSeries,
 		contribution: () => contributionMode,
-		ianaTimeZone: () => ianaTimeZone
+		ianaTimeZone: () => ianaTimeZone,
+		inspectTime: () => hoverTime
 	});
 	const metrics = createTrackerMetrics({
 		session: untrack(() => session),
@@ -163,6 +166,12 @@
 	let displayedTable = $derived(table.accepted);
 	let tableValuesPending = $derived(table.valuesPending);
 	let displayedRows = $derived(table.displayedRows);
+	let inspectedTable = $derived(table.inspection);
+	let tablePeriod = $derived(
+		inspectedTable
+			? getTimeFormatPolicy(range.displayInterval, ianaTimeZone).formatTooltip(inspectedTable.time)
+			: 'Visible window'
+	);
 	const EMPTY_OVERLAYS = /** @type {any[]} */ ([]);
 	const PREFETCH_PLAN = createTrackerPrefetchPlan();
 
@@ -171,7 +180,7 @@
 	let chartsHoldFrame = $derived(releasedKey !== switchKey || range.rangeSwitchPending);
 	// One loading treatment for the selected window, including table/overlay feeds.
 	// Accepted snapshots keep background cache warming from dimming the whole tracker.
-	let trackerLoading = $derived(
+	let pendingData = $derived(
 		!session.gestureActive &&
 			(chartsHoldFrame ||
 				(!data.current('generation') && !data.state('generation').error) ||
@@ -179,7 +188,9 @@
 				(!data.current('emissions') && !data.state('emissions').error) ||
 				providers.pending)
 	);
-	/** The navigation and every data surface share this loading lifecycle. */
+	const loadingNotice = createLoadingNotice(() => pendingData);
+	let trackerLoading = $derived(loadingNotice.active);
+	/** The navigation and every data surface share this visual loading lifecycle. */
 	export function isLoading() {
 		return trackerLoading;
 	}
@@ -390,7 +401,7 @@
 			dateStart,
 			dateEnd,
 			showContainer: false,
-			tooltipMode: 'floating',
+			tooltipMode: 'strip',
 			onhoverchange: handleHoverChange,
 			onviewportsettle: session.settleViewport,
 			panZoomMode: 'tap-to-engage',
@@ -443,6 +454,8 @@
 	<FuelTechOptions
 		{group}
 		{contributionMode}
+		tableColumns={session.selection.tableColumns}
+		oncolumnschange={(value) => session.select('tableColumns', value)}
 		ongroupchange={(value) => session.select('group', value)}
 		oncontributionchange={(value) => session.select('contributionMode', value)}
 	/>
@@ -764,7 +777,10 @@
 				loading={trackerLoading}
 				options={fuelTechOptions}
 				bind:closeButton={tablePanel.closer}
-				rows={displayedRows}
+				rows={inspectedTable?.rows ?? displayedRows}
+				periodLabel={tablePeriod}
+				inspecting={!!inspectedTable}
+				tableColumns={session.selection.tableColumns}
 				valuesPending={tableValuesPending}
 				error={data.state('generation').error ?? providers.error}
 				onretry={() => {
@@ -777,9 +793,9 @@
 				group={displayedTable?.group ?? group}
 				contributionMode={displayedTable?.contributionMode ?? contributionMode}
 				hiddenCount={hiddenSeries.length}
-				curtailmentRows={displayedTable?.curtailmentRows ?? []}
+				curtailmentRows={inspectedTable?.curtailmentRows ?? displayedTable?.curtailmentRows ?? []}
 				shownCurtailment={shownCurtailmentIds}
-				overlaySummary={displayedTable?.overlaySummary ?? null}
+				overlaySummary={inspectedTable?.overlaySummary ?? displayedTable?.overlaySummary ?? null}
 				{showDemandLine}
 				{showRenewablesLine}
 				ontoggle={toggleSeries}

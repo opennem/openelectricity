@@ -12,7 +12,7 @@
 	import Button from '$lib/components/form-elements/Button.svelte';
 	import Button2 from '$lib/components/form-elements/Button2.svelte';
 	import Toggle from '$lib/components/form-elements/Toggle.svelte';
-	import CheckboxNew from '$lib/components/form-elements/CheckboxNew.svelte';
+	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
 	import { Button as ShadButton } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -738,11 +738,13 @@
 		</div>
 
 		<h3 class="subhead-primary mb-4">Form controls</h3>
-		<div class="{STAGE} flex flex-wrap items-center gap-10 mb-10">
+		<div class="{STAGE} flex flex-wrap items-center gap-10 mb-10 text-sm">
 			<Toggle checked={true} />
 			<Toggle checked={false} />
-			<CheckboxNew name="ds-check-on" label="Solar (Rooftop)" checked={true} />
-			<CheckboxNew name="ds-check-off" label="Imports" />
+			<Checkbox name="ds-check-on" label="Solar (Rooftop)" checked={true} />
+			<Checkbox name="ds-check-off" label="Imports" />
+			<Checkbox name="ds-check-mixed" label="Mixed selection" indeterminate />
+			<Checkbox name="ds-check-disabled" label="Disabled option" disabled />
 			<RadioBigButton
 				name="ds-radio"
 				label="By technology"

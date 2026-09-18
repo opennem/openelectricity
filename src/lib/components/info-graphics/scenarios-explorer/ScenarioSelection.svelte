@@ -1,7 +1,7 @@
 <script>
 	import { getContext, onMount } from 'svelte';
 	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
-	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
+	import RadioIndicator from '$lib/components/form-elements/RadioIndicator.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
 	import { scenarioLabels, scenarioDescriptions } from './descriptions';
@@ -220,13 +220,7 @@
 									class="flex justify-between items-start text-sm font-semibold text-dark-grey gap-3"
 								>
 									<span>{scenario}</span>
-									<RadioBigButton
-										radioOnly={true}
-										name="peak_low"
-										label={scenario}
-										value="12"
-										checked={focusScenarioId === id}
-									/>
+									<RadioIndicator checked={focusScenarioId === id} class="mt-[3px]" />
 								</div>
 							{:else}
 								<Checkbox

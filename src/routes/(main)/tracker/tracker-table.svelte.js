@@ -1,3 +1,6 @@
+import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
+import { indexOfTime } from '$lib/components/charts/v2/binary-search.js';
+import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
 import {
 	applyBucketFilter,
 	bucketFilterPredicate,
@@ -35,6 +38,7 @@ import {
  * generation: () => import('./types.js').GenerationSnapshot | null,
  * queryKey: () => string, ready: () => boolean,
  * hidden: () => string[], contribution: () => import('./types.js').ContributionMode,
+ * inspectTime?: () => number | undefined,
  * ianaTimeZone: () => string}} opts - `generation` is the accepted generation
  *   snapshot, `queryKey`/`ready` its identity and readiness */
 export function createTrackerTable(opts) {
@@ -203,7 +207,73 @@ export function createTrackerTable(opts) {
 		accepted?.rows.map((row) => ({ ...row, hidden: hiddenSeries.includes(row.id) })) ?? null
 	);
 
+	/** Inspection never replaces the accepted window totals used by metrics and
+	 * exports. Every feed is sampled at the same display bucket; missing samples
+	 * remain empty rather than borrowing a neighbouring observation. */
+	let inspection = $derived.by(() => {
+		const time = opts.inspectTime?.();
+		if (
+			time === undefined ||
+			!tablePanelOpen ||
+			valuesPending ||
+			opts.session.gestureActive ||
+			!generationDataset
+		)
+			return null;
+		if (time < viewWindow.start || time > viewWindow.end) return null;
+		/** @param {Array<Record<string, any>>} rows */
+		const atTime = (rows) => {
+			const row = rows[indexOfTime(/** @type {{time: number}[]} */ (rows), time)];
+			return row && isObservationRow(row) ? [row] : [];
+		};
+		const generationRows = atTime(generationDataset.data);
+		/** @param {HeadlessSeriesProvider} provider @param {typeof displayRowOpts} options */
+		const sample = (provider, options) =>
+			atTime(provider.getDisplayRows(tableWindow.start, tableWindow.end, options));
+		const totals = { ...displayRowOpts, method: /** @type {const} */ ('sum') };
+		const marketRows = sample(marketData, displayRowOpts);
+		const basis = range.activeMetric;
+		const hours = getIntervalHours(range.displayInterval, time, ianaTimeZone);
+		const contribution = {
+			generationRows,
+			seriesNames: generationDataset.seriesNames,
+			basis,
+			hours,
+			mode: contributionMode,
+			demandRows: marketRows,
+			demandBasis: basis,
+			loadSeriesIds
+		};
+		return {
+			time,
+			rows: buildFuelTechTableRows({
+				generationData: { ...generationDataset, data: generationRows },
+				mvRows: sample(mvData, totals),
+				emissionsRows: sample(emissionsData, totals),
+				...contribution,
+				hiddenSeries
+			}),
+			curtailmentRows: computeCurtailmentRows({
+				rows: sample(curtailmentData, displayRowOpts),
+				series: [...CURTAILMENT_SERIES].reverse(),
+				basis,
+				hours,
+				denominatorMWh: contributionDenominatorMWh(contribution)
+			}),
+			overlaySummary: computeOverlaySummary({
+				demandRows: sample(demandData, displayRowOpts),
+				marketRows,
+				shareRows: sample(shareData, shareRowOpts),
+				basis,
+				hours
+			})
+		};
+	});
+
 	return {
+		get inspection() {
+			return inspection;
+		},
 		get rows() {
 			return tableRows;
 		},

@@ -1,7 +1,5 @@
 <script>
-	import { createBubbler, preventDefault } from 'svelte/legacy';
-
-	const bubble = createBubbler();
+	import { preventDefault } from 'svelte/legacy';
 
 	/**
 	 * @typedef {Object} Props
@@ -10,7 +8,6 @@
 	 * @property {string} [label]
 	 * @property {string} [value]
 	 * @property {boolean} [checked]
-	 * @property {boolean} [radioOnly]
 	 */
 
 	/** @type {Props & { [key: string]: any }} */
@@ -20,60 +17,32 @@
 		label = '',
 		value = '',
 		checked = false,
-		radioOnly = false,
 		...rest
 	} = $props();
 </script>
 
-{#if radioOnly}
-	<label class="radio-only" for="">
-		<input class="hidden" type="radio" {value} {name} {checked} onchange={bubble('change')} />
-
-		<div
-			class="w-[15px] h-[15px] p-[2px] border rounded-full"
-			class:border-mid-grey={checked}
-			class:border-mid-warm-grey={!checked}
-		>
-			{#if checked}
-				<span class="block w-[9px] h-[9px] relative bg-dark-grey rounded-full"></span>
-			{/if}
-		</div>
-	</label>
-{:else}
-	<label class={`label ${rest.class}`}>
-		<input
-			class="hidden"
-			type="radio"
-			{value}
-			{name}
-			{checked}
-			onchange={preventDefault(
-				/** @type {(event: Event, ...args: unknown[]) => void} */ (changeHandler)
-			)}
-		/>
-		<span
-			class="rounded-md border-solid border-[0.05rem] border-mid-warm-grey p-4 font-sans text-sm"
-		>
-			{label}
-		</span>
-	</label>
-{/if}
+<label class={`label relative ${rest.class ?? ''}`}>
+	<input
+		class="peer absolute inset-0 size-full cursor-pointer opacity-0"
+		type="radio"
+		{value}
+		{name}
+		{checked}
+		onchange={preventDefault(
+			/** @type {(event: Event, ...args: unknown[]) => void} */ (changeHandler)
+		)}
+	/>
+	<span
+		class="rounded-md border-solid border-[0.05rem] border-mid-warm-grey p-4 font-sans text-sm peer-checked:border-dark-grey peer-checked:bg-light-warm-grey peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-dark-grey"
+	>
+		{label}
+	</span>
+</label>
 
 <style lang="postcss">
 	.label {
 		cursor: pointer;
 		display: flex;
 		align-items: center;
-	}
-	.label input[type='radio']:checked + span {
-		border-color: theme(colors.dark-grey);
-		background-color: theme(colors.light-warm-grey);
-	}
-
-	.radio-only {
-		display: flex;
-		align-items: center;
-	}
-	.label input[type='radio'] + span {
 	}
 </style>

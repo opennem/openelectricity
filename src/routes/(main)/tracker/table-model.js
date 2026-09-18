@@ -13,9 +13,9 @@
  */
 
 import {
-	averagePower,
+	averagePower as windowAveragePower,
 	meanSeries,
-	sumAsEnergy
+	sumAsEnergy as windowSumAsEnergy
 } from '$lib/components/charts/network/network-metrics-calc.js';
 import {
 	DEMAND_GROSS_SERIES_ID,
@@ -34,6 +34,24 @@ import {
 /** Below this magnitude (MWh) a window's energy is noise, not a denominator. */
 const ENERGY_EPSILON_MWH = 1e-6;
 
+/** Single-bucket inspection supplies its duration explicitly: one row has no
+ * neighbouring timestamp from which the window helpers can infer a cadence.
+ * @param {Array<Record<string, any>>} rows @param {string[]} keys
+ * @param {'power' | 'energy'} basis @param {number} [hours] */
+function sumAsEnergy(rows, keys, basis, hours) {
+	return hours === undefined || basis === 'energy'
+		? windowSumAsEnergy(rows, keys, basis)
+		: windowSumAsEnergy(rows, keys, 'energy') * hours;
+}
+
+/** @param {Array<Record<string, any>>} rows @param {string} key
+ * @param {'power' | 'energy'} basis @param {number} [hours] */
+function averagePower(rows, key, basis, hours) {
+	if (hours === undefined || basis === 'power') return windowAveragePower(rows, key, basis);
+	const mean = meanSeries(rows, key);
+	return mean === null || hours <= 0 ? null : mean / hours;
+}
+
 /**
  * Whether a series has at least one finite value in the window — distinguishes
  * "settled at $0" from "not settled at all" (e.g. rooftop solar has no market
@@ -51,9 +69,10 @@ function hasFiniteValue(rows, key) {
  * @param {Array<Record<string, any>>} rows
  * @param {string} key
  * @param {'power' | 'energy'} basis
+ * @param {number} [hours]
  */
-function windowEnergy(rows, key, basis) {
-	return hasFiniteValue(rows, key) ? sumAsEnergy(rows, [key], basis) : null;
+function windowEnergy(rows, key, basis, hours) {
+	return hasFiniteValue(rows, key) ? sumAsEnergy(rows, [key], basis, hours) : null;
 }
 
 /**
@@ -61,11 +80,12 @@ function windowEnergy(rows, key, basis) {
  * @param {Array<Record<string, any>>} generationRows
  * @param {string[]} seriesNames
  * @param {'power' | 'energy'} basis
+ * @param {number} [hours]
  * @returns {Record<string, number | null>}
  */
-export function computeAvPowerMW(generationRows, seriesNames, basis) {
+export function computeAvPowerMW(generationRows, seriesNames, basis, hours) {
 	return Object.fromEntries(
-		seriesNames.map((name) => [name, averagePower(generationRows, name, basis)])
+		seriesNames.map((name) => [name, averagePower(generationRows, name, basis, hours)])
 	);
 }
 
@@ -75,11 +95,12 @@ export function computeAvPowerMW(generationRows, seriesNames, basis) {
  * @param {Array<Record<string, any>>} generationRows
  * @param {string[]} seriesNames
  * @param {'power' | 'energy'} basis
+ * @param {number} [hours]
  * @returns {Record<string, number | null>}
  */
-export function computeEnergyMWh(generationRows, seriesNames, basis) {
+export function computeEnergyMWh(generationRows, seriesNames, basis, hours) {
 	return Object.fromEntries(
-		seriesNames.map((name) => [name, windowEnergy(generationRows, name, basis)])
+		seriesNames.map((name) => [name, windowEnergy(generationRows, name, basis, hours)])
 	);
 }
 
@@ -92,15 +113,16 @@ export function computeEnergyMWh(generationRows, seriesNames, basis) {
  *   mvRows: Array<Record<string, any>>,
  *   generationRows: Array<Record<string, any>>,
  *   seriesNames: string[],
+ *   hours?: number,
  *   basis: 'power' | 'energy'
  * }} input
  * @returns {Record<string, number | null>}
  */
-export function computeVWPrices({ mvRows, generationRows, seriesNames, basis }) {
+export function computeVWPrices({ mvRows, generationRows, seriesNames, basis, hours }) {
 	return Object.fromEntries(
 		seriesNames.map((name) => {
 			if (!hasFiniteValue(mvRows, name)) return [name, null];
-			const energyMWh = sumAsEnergy(generationRows, [name], basis);
+			const energyMWh = sumAsEnergy(generationRows, [name], basis, hours);
 			if (Math.abs(energyMWh) < ENERGY_EPSILON_MWH) return [name, null];
 			return [name, sumAsEnergy(mvRows, [name], 'energy') / energyMWh];
 		})
@@ -119,6 +141,7 @@ export function computeVWPrices({ mvRows, generationRows, seriesNames, basis }) 
  *   emissionsRows: Array<Record<string, any>>,
  *   generationRows: Array<Record<string, any>>,
  *   seriesNames: string[],
+ *   hours?: number,
  *   basis: 'power' | 'energy',
  *   loadSeriesIds: string[]
  * }} input
@@ -129,6 +152,7 @@ export function computeEmissions({
 	generationRows,
 	seriesNames,
 	basis,
+	hours,
 	loadSeriesIds
 }) {
 	/** @type {Record<string, number | null>} */
@@ -142,7 +166,7 @@ export function computeEmissions({
 			continue;
 		}
 		const tonnes = sumAsEnergy(emissionsRows, [name], 'energy');
-		const energyMWh = sumAsEnergy(generationRows, [name], basis);
+		const energyMWh = sumAsEnergy(generationRows, [name], basis, hours);
 		volumeT[name] = tonnes;
 		intensityKgPerMWh[name] = energyMWh > ENERGY_EPSILON_MWH ? (tonnes / energyMWh) * 1000 : null;
 	}
@@ -157,6 +181,7 @@ export function computeEmissions({
  * @param {{
  *   generationRows: Array<Record<string, any>>,
  *   seriesNames: string[],
+ *   hours?: number,
  *   basis: 'power' | 'energy',
  *   mode: ContributionMode,
  *   demandRows: Array<Record<string, any>>,
@@ -169,14 +194,16 @@ export function contributionDenominatorMWh({
 	generationRows,
 	seriesNames,
 	basis,
+	hours,
 	mode,
 	demandRows,
 	demandBasis,
 	loadSeriesIds
 }) {
-	if (mode === 'demand') return sumAsEnergy(demandRows, [DEMAND_GROSS_SERIES_ID], demandBasis);
+	if (mode === 'demand')
+		return sumAsEnergy(demandRows, [DEMAND_GROSS_SERIES_ID], demandBasis, hours);
 	const sourceKeys = contributionSeries(seriesNames, loadSeriesIds, 'generation');
-	return sumAsEnergy(generationRows, sourceKeys, basis);
+	return sumAsEnergy(generationRows, sourceKeys, basis, hours);
 }
 
 /**
@@ -195,6 +222,7 @@ export function contributionDenominatorMWh({
  * @param {{
  *   generationRows: Array<Record<string, any>>,
  *   seriesNames: string[],
+ *   hours?: number,
  *   basis: 'power' | 'energy',
  *   mode: ContributionMode,
  *   demandRows: Array<Record<string, any>>,
@@ -207,6 +235,7 @@ export function computeContribution({
 	generationRows,
 	seriesNames,
 	basis,
+	hours,
 	mode,
 	demandRows,
 	demandBasis,
@@ -218,6 +247,7 @@ export function computeContribution({
 		generationRows,
 		seriesNames,
 		basis,
+		hours,
 		mode,
 		demandRows,
 		demandBasis,
@@ -230,7 +260,7 @@ export function computeContribution({
 			return [
 				name,
 				contributionPercent(
-					sumAsEnergy(generationRows, [name], basis),
+					sumAsEnergy(generationRows, [name], basis, hours),
 					denominatorMWh,
 					ENERGY_EPSILON_MWH
 				)
@@ -256,6 +286,7 @@ export function computeContribution({
  *   mvRows: Array<Record<string, any>>,
  *   emissionsRows: Array<Record<string, any>>,
  *   demandRows: Array<Record<string, any>>,
+ *   hours?: number,
  *   basis: 'power' | 'energy',
  *   demandBasis: 'power' | 'energy',
  *   mode: ContributionMode,
@@ -270,6 +301,7 @@ export function buildFuelTechTableRows({
 	emissionsRows,
 	demandRows,
 	basis,
+	hours,
 	demandBasis,
 	mode,
 	hiddenSeries,
@@ -282,20 +314,22 @@ export function buildFuelTechTableRows({
 		seriesColours,
 		groupFuelTechs
 	} = generationData;
-	const avPower = computeAvPowerMW(generationRows, seriesNames, basis);
-	const energy = computeEnergyMWh(generationRows, seriesNames, basis);
-	const vwPrices = computeVWPrices({ mvRows, generationRows, seriesNames, basis });
+	const avPower = computeAvPowerMW(generationRows, seriesNames, basis, hours);
+	const energy = computeEnergyMWh(generationRows, seriesNames, basis, hours);
+	const vwPrices = computeVWPrices({ mvRows, generationRows, seriesNames, basis, hours });
 	const emissions = computeEmissions({
 		emissionsRows,
 		generationRows,
 		seriesNames,
 		basis,
+		hours,
 		loadSeriesIds
 	});
 	const contribution = computeContribution({
 		generationRows,
 		seriesNames,
 		basis,
+		hours,
 		mode,
 		demandRows,
 		demandBasis,
@@ -330,18 +364,19 @@ export function buildFuelTechTableRows({
  * @param {{
  *   rows: Array<Record<string, any>>,
  *   series: Array<{ id: string, label: string }>,
+ *   hours?: number,
  *   basis: 'power' | 'energy',
  *   denominatorMWh: number
  * }} input
  * @returns {CurtailmentTableRow[]}
  */
-export function computeCurtailmentRows({ rows, series, basis, denominatorMWh }) {
+export function computeCurtailmentRows({ rows, series, basis, denominatorMWh, hours }) {
 	/** @type {CurtailmentTableRow[]} */
 	const out = [];
 	for (const { id, label } of series) {
-		const av = averagePower(rows, id, basis);
+		const av = averagePower(rows, id, basis, hours);
 		if (av === null) continue;
-		const energyMWh = sumAsEnergy(rows, [id], basis);
+		const energyMWh = sumAsEnergy(rows, [id], basis, hours);
 		out.push({
 			id,
 			label,
@@ -364,16 +399,17 @@ export function computeCurtailmentRows({ rows, series, basis, denominatorMWh }) 
  *   demandRows: Array<Record<string, any>>,
  *   marketRows: Array<Record<string, any>>,
  *   shareRows: Array<Record<string, any>>,
+ *   hours?: number,
  *   basis: 'power' | 'energy'
  * }} input
  * @returns {OverlaySummary}
  */
-export function computeOverlaySummary({ demandRows, marketRows, shareRows, basis }) {
+export function computeOverlaySummary({ demandRows, marketRows, shareRows, basis, hours }) {
 	return {
-		demandEnergyMWh: windowEnergy(demandRows, 'demand', basis),
-		demandAvMW: averagePower(demandRows, 'demand', basis),
-		renewablesEnergyMWh: windowEnergy(marketRows, RENEWABLES_SERIES_ID, basis),
-		renewablesAvMW: averagePower(marketRows, RENEWABLES_SERIES_ID, basis),
+		demandEnergyMWh: windowEnergy(demandRows, 'demand', basis, hours),
+		demandAvMW: averagePower(demandRows, 'demand', basis, hours),
+		renewablesEnergyMWh: windowEnergy(marketRows, RENEWABLES_SERIES_ID, basis, hours),
+		renewablesAvMW: averagePower(marketRows, RENEWABLES_SERIES_ID, basis, hours),
 		renewablesSharePct: meanSeries(shareRows, 'renewable_share')
 	};
 }

@@ -31,8 +31,9 @@ async function percentageView(page) {
 async function contributionBasis(page, label) {
 	const trigger = page.getByRole('button', { name: 'Fuel technology options', exact: true });
 	await trigger.click();
-	await page.getByRole('menu').getByRole('menuitemradio', { name: label, exact: true }).click();
-	await expect(page.getByRole('menu', { name: 'Fuel technology options' })).toBeHidden();
+	await page.getByRole('dialog').getByRole('radio', { name: label, exact: true }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
+	await expect(page.getByRole('dialog', { name: 'Fuel technology options' })).toBeHidden();
 	await expect(trigger).toBeFocused();
 }
 
@@ -64,13 +65,13 @@ async function hoverGeneration(page) {
 		const bounds = /** @type {SVGPathElement} */ (path).ownerSVGElement.getBoundingClientRect();
 		return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
 	});
-	const tooltip = generation.getByTestId('chart-floating-tooltip');
+	const tooltip = generation.getByTestId('chart-tooltip-strip');
 	// Local basis changes can publish after the first pointer event and clear
 	// its old hover. Re-enter through real pointer input until publication settles.
 	await expect
 		.poll(async () => {
 			await page.mouse.move(box.x + box.width / 2, box.y + Math.max(1, box.height / 2));
-			return tooltip.isVisible();
+			return (await tooltip.textContent()).trim().length > 0;
 		})
 		.toBe(true);
 	return tooltip;
@@ -358,9 +359,7 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await expect(
 		page.locator('[data-tooltip-content]').filter({ hasText: 'Maximum net power' })
 	).toBeVisible();
-	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
-		'2 Aug'
-	);
+	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
 	expect(api.requests.length).toBe(requests);
 	await maximum.click();
 	await page.mouse.move(0, 0);
@@ -372,18 +371,12 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await expect(minimum.getByText('Min', { exact: true })).toHaveCSS('color', 'rgb(106, 106, 106)');
 	await expect(page.getByTestId('metrics-generation').locator('svg')).toHaveCount(0);
 	await expect(maximum).toHaveCSS('border-left-width', '1px');
-	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
-		'2 Aug'
-	);
-	await expect(card(page, 'Market').getByTestId('chart-floating-tooltip')).toContainText('2 Aug');
+	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
+	await expect(card(page, 'Market').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
 	await minimum.hover();
-	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
-		'1 Aug'
-	);
+	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('1 Aug');
 	await page.mouse.move(0, 0);
-	await expect(card(page, 'Generation').getByTestId('chart-floating-tooltip')).toContainText(
-		'2 Aug'
-	);
+	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
 	await minimum.click();
 	await expect(minimum).toHaveAttribute('aria-pressed', 'true');
 	await expect(maximum).toHaveAttribute('aria-pressed', 'false');
@@ -457,7 +450,8 @@ test('tracker slides one nav logo in place of the date range and overlays charts
 	});
 	// Grouping stays usable during a range refresh; the newest selection wins.
 	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-	await page.getByRole('menuitemradio', { name: 'Detailed', exact: true }).click();
+	await page.getByRole('radio', { name: 'Detailed', exact: true }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 	await expect(page).toHaveURL(/group=detailed/);
 	await expect(loader).toBeVisible();
 	await expect(loadingStates).toHaveCount(1);
@@ -616,104 +610,85 @@ test('panel controls share generous targets, directional icons and keyboard focu
 	await page.screenshot({ path: testInfo.outputPath('panels-mobile.png') });
 });
 
-test('fuel technology options move with the panel, support keyboard selection and fit mobile', async ({
+test('fuel technology options modal controls grouping, contribution and columns across history and mobile', async ({
 	page
 }, testInfo) => {
 	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1');
 	await chartsSettled(page);
 	const trigger = page.getByRole('button', { name: 'Fuel technology options', exact: true });
-	await expect(
-		page
-			.locator('#tracker-table-panel')
-			.getByRole('button', { name: 'Fuel technology options', exact: true })
-	).toBeVisible();
-	const target = await trigger.boundingBox();
-	expect(target.width).toBe(40);
-	expect(target.height).toBe(40);
-	await expect(trigger).toHaveCSS('color', 'rgb(106, 106, 106)');
-	await expect(trigger.locator('svg')).toHaveCSS('width', '16px');
-	await expect(trigger.locator('svg')).toHaveCSS('height', '16px');
-	await expect(trigger.locator('svg')).toHaveAttribute('stroke-width', '1.5');
-	await openOptions(page);
-	const menuStyle = (element) => {
-		const style = getComputedStyle(element);
-		return ['fontFamily', 'fontSize', 'fontWeight', 'padding', 'gap', 'color', 'borderRadius'].map(
-			(key) => style[key]
-		);
-	};
-	const navRowStyle = await page
-		.getByRole('menu')
-		.getByRole('button', { name: 'Generation', exact: true })
-		.evaluate(menuStyle);
-	const navHeadingStyle = await page
-		.getByRole('menu')
-		.getByText('Download as CSV', { exact: true })
-		.evaluate(menuStyle);
-	await expect(page.getByRole('menu').getByRole('menuitemradio')).toHaveCount(0);
-	await expect(page.getByRole('menu')).not.toContainText('Fuel tech grouping');
-	await expect(page.getByRole('menu')).not.toContainText('Contribution');
-	await openOptions(page);
+	const dialog = page.getByRole('dialog', { name: 'Fuel technology options' });
 	await trigger.press('Enter');
-	const menu = page.getByRole('menu', { name: 'Fuel technology options' });
-	await expect(menu.getByRole('menuitemradio')).toHaveCount(8);
-	await expect(menu.getByRole('menuitemradio', { name: /^% / })).toHaveText([
-		'% demand',
-		'% generation'
-	]);
-	expect(
-		await menu.getByRole('menuitemradio', { name: 'Detailed', exact: true }).evaluate(menuStyle)
-	).toEqual(navRowStyle);
-	expect(await menu.getByText('Fuel tech grouping', { exact: true }).evaluate(menuStyle)).toEqual(
-		navHeadingStyle
-	);
-	await expect(
-		menu.getByRole('menuitemradio', { name: 'Simplified', exact: true })
-	).toHaveAttribute('aria-checked', 'true');
-	await expect(menu.getByRole('menuitemradio', { name: '% demand', exact: true })).toHaveAttribute(
+	await expect(dialog.getByRole('radio')).toHaveCount(8);
+	await expect(dialog.getByRole('checkbox')).toHaveCount(6);
+	await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+	await dialog.getByRole('button', { name: 'Close fuel technology options' }).focus();
+	await page.keyboard.press('Shift+Tab');
+	await expect(dialog.getByRole('button', { name: 'Done', exact: true })).toBeFocused();
+	await expect(dialog.getByRole('radio', { name: 'Simplified', exact: true })).toHaveAttribute(
 		'aria-checked',
 		'true'
+	);
+	await expect(dialog.getByRole('radio', { name: '% demand', exact: true })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await expect(dialog.getByRole('radio', { name: 'Detailed', exact: true })).toHaveAttribute(
+		'aria-checked',
+		'false'
 	);
 	await page.screenshot({ path: testInfo.outputPath('fuel-options-desktop.png') });
-	await page.keyboard.press('Home');
-	await expect(menu.getByRole('menuitemradio', { name: 'Detailed', exact: true })).toBeFocused();
-	await page.keyboard.press('Enter');
-	await expect(menu).toBeHidden();
-	await expect(trigger).toBeFocused();
+	await dialog.getByRole('radio', { name: 'Simplified', exact: true }).focus();
+	await page.keyboard.press('ArrowUp');
+	await expect(dialog.getByRole('radio', { name: 'Detailed', exact: true })).toBeChecked();
 	await expect(page).toHaveURL(/group=detailed/);
-	await expect(page.getByRole('columnheader', { name: /Technology/ })).toContainText('Detailed');
-	await trigger.click();
-	await menu.getByRole('menuitemradio', { name: '% generation', exact: true }).click();
+	await dialog.getByRole('radio', { name: '% generation', exact: true }).click();
+	await dialog.getByRole('checkbox', { name: 'Energy', exact: true }).focus();
+	await page.keyboard.press('Space');
+	await expect(dialog.getByRole('checkbox', { name: 'Energy', exact: true })).not.toBeChecked();
+	await dialog.getByRole('checkbox', { name: 'Intensity', exact: true }).uncheck();
+	await expect(dialog).toBeVisible();
+	await dialog.getByRole('button', { name: 'Done', exact: true }).click();
 	await expect(trigger).toBeFocused();
-	await expect(page).toHaveURL(/contribution=generation/);
-	await page.getByRole('button', { name: 'Hide fuel tech table', exact: true }).click();
-	await expect(page.locator('#tracker-table-panel')).toHaveCount(0);
-	await trigger.click();
-	await expect(menu.getByRole('menuitemradio', { name: 'Detailed', exact: true })).toHaveAttribute(
-		'aria-checked',
-		'true'
+	const table = page.getByRole('table', { name: 'Fuel technology values' });
+	await expect(table.getByRole('columnheader', { name: /^Energy/ })).toHaveCount(0);
+	await expect(table.getByRole('columnheader', { name: /^Intensity/ })).toHaveCount(0);
+	await expect(table.getByRole('columnheader', { name: /^Technology/ })).toContainText('Detailed');
+	await expect(table.getByRole('columnheader', { name: /^Contribution/ })).toContainText(
+		'% generation'
 	);
-	await expect(
-		menu.getByRole('menuitemradio', { name: '% generation', exact: true })
-	).toHaveAttribute('aria-checked', 'true');
-	await page.keyboard.press('Escape');
-	await expect(trigger).toBeFocused();
-	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goBack();
+	await expect(table.getByRole('columnheader', { name: /^Intensity/ })).toBeVisible();
+	await page.goForward();
+	await expect(table.getByRole('columnheader', { name: /^Intensity/ })).toHaveCount(0);
+	await page.reload();
+	await chartsSettled(page);
+	await expect(table.getByRole('columnheader', { name: /^Energy/ })).toHaveCount(0);
 	await trigger.click();
-	const bounds = await menu.boundingBox();
-	expect(bounds.x).toBeGreaterThanOrEqual(0);
-	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
-	expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
-	await page.screenshot({ path: testInfo.outputPath('fuel-options-mobile.png') });
+	for (const checkbox of await dialog.getByRole('checkbox').all()) await checkbox.uncheck();
+	await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+	await expect(table.getByRole('columnheader', { name: /^Av / })).toHaveCount(0);
+	await expect(table.locator('[colspan="0"]')).toHaveCount(0);
+	await trigger.click();
+	await page.locator('[data-dialog-overlay]').click({ position: { x: 5, y: 5 } });
+	await expect(dialog).not.toBeVisible();
+	await expect(trigger).toBeFocused();
+	await page.getByRole('button', { name: 'Hide fuel tech table', exact: true }).click();
+	await trigger.click();
+	await dialog.getByRole('button', { name: 'Show all columns' }).click();
 	await page.keyboard.press('Escape');
 	await expect(trigger).toBeFocused();
 	await page.setViewportSize({ width: 390, height: 480 });
 	await trigger.click();
-	const shortBounds = await menu.boundingBox();
-	expect(shortBounds.y).toBeGreaterThanOrEqual(0);
-	expect(shortBounds.y + shortBounds.height).toBeLessThanOrEqual(480);
-	await menu.getByRole('menuitemradio', { name: '% demand', exact: true }).click();
-	await expect(menu).toBeHidden();
+	const bounds = await dialog.boundingBox();
+	expect(bounds.x).toBeGreaterThanOrEqual(0);
+	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+	expect(bounds.y + bounds.height).toBeLessThanOrEqual(480);
+	await dialog.getByRole('checkbox', { name: 'Intensity', exact: true }).uncheck();
+	await page.screenshot({ path: testInfo.outputPath('fuel-options-mobile.png') });
+	await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+	await expect(trigger).toBeFocused();
+	await expectNoHorizontalScroll(page);
 });
 
 test('window metrics follow range and market modes without applying timeline transforms', async ({
@@ -1208,7 +1183,8 @@ test('comparison uses raw energy despite timeline transforms and follows visibil
 	await panel.getByRole('button', { name: 'Download comparison CSV' }).click();
 	expect(await readFile(await (await csvDownload).path(), 'utf8')).toContain('Change B − A (MWh)');
 	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-	await page.getByRole('menuitemradio', { name: 'Detailed', exact: true }).click();
+	await page.getByRole('radio', { name: 'Detailed', exact: true }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 	await expect(panel.getByRole('rowheader', { name: 'Coal (Black)', exact: true })).toBeVisible();
 	await expect(panel.getByRole('rowheader', { name: 'Wind', exact: true })).toBeVisible();
 	await expect(panel.getByRole('combobox', { name: 'Date A', exact: true })).toHaveValue(String(a));
@@ -1326,7 +1302,8 @@ test('average-day stack includes every technology and persists beside price with
 	await page.getByRole('combobox', { name: 'View', exact: true }).selectOption('daily');
 	await expect(stack.locator('path.path-area')).toHaveCount(4);
 	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-	await page.getByRole('menuitemradio', { name: 'Detailed', exact: true }).click();
+	await page.getByRole('radio', { name: 'Detailed', exact: true }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 	await expect(stack).toContainText('Detailed');
 	await expect(stack.getByRole('button', { name: 'Coal (Black)', exact: true })).toHaveAttribute(
 		'aria-pressed',
@@ -1445,10 +1422,12 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 	await page.goBack();
 	await expect(page.getByRole('button', { name: 'Time of day', exact: true })).toBeVisible();
 	await expect(page).toHaveURL(original);
-	await expect(page.getByRole('combobox', { name: 'View', exact: true })).toHaveValue('daily');
+	await expect(page.getByRole('combobox', { name: 'View', exact: true }).first()).toHaveValue(
+		'daily'
+	);
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(page.getByRole('combobox', { name: 'Window', exact: true })).toBeVisible();
+	await expect(page.getByRole('combobox', { name: 'Window', exact: true }).first()).toBeVisible();
 	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('time-of-day-mobile.png'), fullPage: true });
 	await page.setViewportSize({ width: 1440, height: 1000 });
@@ -1553,7 +1532,8 @@ test('analytical history restores grouping visibility and transform without echo
 	await percentageView(page);
 	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
 	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-	await page.getByRole('menuitemradio', { name: 'Detailed', exact: true }).click();
+	await page.getByRole('radio', { name: 'Detailed', exact: true }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 	await expect.poll(() => new URL(page.url()).searchParams.get('hidden')).toBeNull();
 	await expect(page.getByRole('columnheader', { name: /Technology/ })).toContainText('Detailed');
 	expect(await page.evaluate(() => history.length)).toBe(initialHistory + 3);
@@ -1606,129 +1586,47 @@ test('solo selections are atomic and plain same-route links reset analytical sta
 	).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('generation tooltip shows interval percentages beside absolute values and follows the contribution basis', async ({
+test('timeline tooltip stays above the chart and table inspection follows contribution basis', async ({
 	page
 }, testInfo) => {
 	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?region=nsw1&contribution=generation&table=1');
-	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	await chartsSettled(page);
+	const generation = card(page, 'Generation');
+	const wind = page.getByTestId('fuel-tech-row').filter({ hasText: 'Wind' }).first();
 	let tooltip = await hoverGeneration(page);
-	const tooltipRow = (label) => tooltip.getByText(label, { exact: true }).locator('xpath=../..');
-	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MW');
-	await expect(tooltip.getByTestId('tooltip-percentage-heading')).toContainText('% of generation');
-	await expect(tooltipRow('Wind').getByTestId('tooltip-value')).toHaveText('200');
-	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('66.7');
-	await expect(tooltipRow('Coal').getByTestId('tooltip-percentage')).toHaveText('33.3');
-	await expect(tooltipRow('Imports').getByTestId('tooltip-percentage')).toHaveText('—');
-	await expect(tooltipRow('Battery (Charging)').getByTestId('tooltip-percentage')).toHaveText('—');
-	await expect(card(page, 'Market').getByTestId('tooltip-percentage')).toHaveCount(0);
-	await page.screenshot({
-		path: testInfo.outputPath('generation-tooltip-percentages.png'),
-		animations: 'disabled'
-	});
-	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
-	tooltip = await hoverGeneration(page);
-	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('66.7');
+	await expect(tooltip).toContainText('MW');
+	await expect(wind.locator('td').nth(3)).toHaveText('66.7%');
+	await expect(page.getByTestId('chart-floating-tooltip')).toHaveCount(0);
+	const plot = await generation.locator('.stratum-chart-area').boundingBox();
+	const strip = await tooltip.boundingBox();
+	expect(strip.y + strip.height).toBeLessThanOrEqual(plot.y);
+	await page.screenshot({ path: testInfo.outputPath('timeline-tooltip-strip.png') });
 	await contributionBasis(page, '% demand');
-	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
 	tooltip = await hoverGeneration(page);
-	await expect(tooltip.getByTestId('tooltip-percentage-heading')).toContainText(
-		'% of gross demand'
-	);
-	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('200');
-	await expect(tooltipRow('Imports').getByTestId('tooltip-percentage')).toHaveText('300');
-	await page.getByRole('button', { name: '30D', exact: true }).click();
-	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
-	tooltip = await hoverGeneration(page);
-	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MWh');
-	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('200');
+	await expect(wind.locator('td').nth(3)).toHaveText('200.0%');
+	await page.mouse.move(0, 0);
+	await expect(tooltip).toHaveText('');
+	await expect(page.getByTestId('table-period')).toHaveText('Visible window');
 	await page.getByRole('button', { name: 'Hide fuel tech table', exact: true }).click();
 	await page.setViewportSize({ width: 390, height: 844 });
 	tooltip = await hoverGeneration(page);
-	await expect(tooltipRow('Wind').getByTestId('tooltip-percentage')).toHaveText('200');
-	const bounds = await tooltip.boundingBox();
-	expect(bounds.x).toBeGreaterThanOrEqual(0);
-	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
-	await page.screenshot({
-		path: testInfo.outputPath('generation-tooltip-percentages-mobile.png'),
-		animations: 'disabled'
-	});
+	await expect(tooltip).toContainText('MW');
+	await expectNoHorizontalScroll(page);
+	await page.screenshot({ path: testInfo.outputPath('timeline-tooltip-strip-mobile.png') });
 });
 
-test('renewables and curtailment tooltips pair amounts and percentages with the table closed', async ({
-	page
-}, testInfo) => {
-	const source = await trackerFixture(page, { contributions: true });
-	await page.goto(
-		'/tracker?region=nsw1&contribution=generation&table=0&hidden=coal&overlay=demand,renewables,curtailment-solar,curtailment-wind'
-	);
-	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
-	let tooltip = await hoverGeneration(page);
-	const row = (label) => tooltip.getByText(label, { exact: true }).locator('xpath=../..');
-	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MW');
-	await expect(row('Renewables').getByTestId('tooltip-value')).toHaveText('100');
-	await expect(row('Renewables').getByTestId('tooltip-percentage')).toHaveText('25.0');
-	await expect(row('Demand')).toHaveCSS('border-top-width', '1px');
-	await expect(row('Renewables')).toHaveCSS('border-top-width', '0px');
-	for (const label of ['Curtailment (Solar)', 'Curtailment (Wind)']) {
-		await expect(row(label).getByTestId('tooltip-value')).toHaveText('100');
-		await expect(row(label).getByTestId('tooltip-percentage')).toHaveText('33.3');
-	}
-	expect(source.requests).toContain('renewables');
-	expect(source.requests).not.toContain('market_value');
-	await page.screenshot({
-		path: testInfo.outputPath('overlay-tooltip-percentages.png'),
-		animations: 'disabled'
-	});
-	await contributionBasis(page, '% demand');
-	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
-	tooltip = await hoverGeneration(page);
-	await expect(row('Renewables').getByTestId('tooltip-percentage')).toHaveText('25.0');
-	await expect(row('Curtailment (Solar)').getByTestId('tooltip-percentage')).toHaveText('100');
-	await page.getByRole('button', { name: '30D', exact: true }).click();
-	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
-	tooltip = await hoverGeneration(page);
-	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MWh');
-	await expect(row('Renewables').getByTestId('tooltip-value')).toHaveText('100');
-	await expect(row('Renewables').getByTestId('tooltip-percentage')).toHaveText('25.0');
-	await expect(row('Curtailment (Wind)').getByTestId('tooltip-value')).toHaveText('100');
-	await expect(row('Curtailment (Wind)').getByTestId('tooltip-percentage')).toHaveText('100');
-	await page.setViewportSize({ width: 390, height: 844 });
-	tooltip = await hoverGeneration(page);
-	const bounds = await tooltip.boundingBox();
-	expect(bounds.x).toBeGreaterThanOrEqual(0);
-	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
-	await page.screenshot({
-		path: testInfo.outputPath('overlay-tooltip-percentages-mobile.png'),
-		animations: 'disabled'
-	});
-	await percentageView(page);
-	tooltip = await hoverGeneration(page);
-	await expect(tooltip.getByTestId('tooltip-percentage-heading')).toHaveCount(0);
-	await expect(row('Renewables (% of gross demand)').getByTestId('tooltip-value')).toHaveText(
-		'25.0'
-	);
-	await expect(row('Curtailment (Wind)').getByTestId('tooltip-value')).toHaveText('100');
-});
-
-test('generation tooltip retains its unit and percentage headings in line mode', async ({
-	page
-}) => {
+test('timeline strip follows keyboard inspection in line mode', async ({ page }) => {
 	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?region=nsw1&table=0');
 	const generation = card(page, 'Generation');
-	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
+	await chartsSettled(page);
 	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
 	await generation.getByRole('tab', { name: 'Line', exact: true }).click();
 	await generation.getByRole('heading', { name: 'Generation', exact: true }).click();
 	await page.getByTestId('metric-generation-min').focus();
-	const tooltip = generation.getByTestId('chart-floating-tooltip');
-	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MW');
-	await expect(tooltip.getByTestId('tooltip-percentage-heading')).toContainText(
-		'% of gross demand'
-	);
-	await expect(tooltip.getByTestId('tooltip-percentage')).toHaveCount(4);
-	await expect(tooltip.getByTestId('tooltip-percentage')).toContainText(['200', '100', '300', '—']);
+	await expect(generation.getByTestId('chart-tooltip-strip')).not.toHaveText('');
+	await expect(page.getByTestId('chart-floating-tooltip')).toHaveCount(0);
 });
 
 test('percentage shares stay stable when hiding series and exports keep raw units', async ({
@@ -1759,12 +1657,7 @@ test('percentage shares stay stable when hiding series and exports keep raw unit
 	await generation.getByRole('tab', { name: 'Absolute', exact: true }).click();
 	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
 	tooltip = await hoverGeneration(page);
-	await expect(tooltip).toContainText('Imports');
 	await expect(tooltip).toContainText('MW');
-	await expect(tooltip.getByTestId('tooltip-unit')).toHaveText('MW');
-	for (const value of await tooltip.getByTestId('tooltip-value').allTextContents()) {
-		expect(value).not.toContain('MW');
-	}
 });
 
 test('demand percentage data loads with the table closed and overlays share its units', async ({
@@ -1786,10 +1679,7 @@ test('demand percentage data loads with the table closed and overlays share its 
 	await expect(page.getByTestId('tracker-loading')).toBeHidden();
 	await expect(generation.getByText('% of gross demand', { exact: true })).toBeVisible();
 	const tooltip = await hoverGeneration(page);
-	await expect(tooltip).toContainText('200');
-	await expect(tooltip).toContainText('Imports');
-	await expect(tooltip).toContainText('Demand');
-	await expect(tooltip).toContainText('Curtailment');
+	await expect(tooltip).toContainText('%');
 	await expect(tooltip).not.toContainText('MW');
 	await expect(generation.locator('path.overlay-line')).toHaveCount(1);
 	await expect(generation.locator('path.overlay-area')).toHaveCount(1);
@@ -2014,19 +1904,47 @@ test('same-route links reset selection and phone/tablet layouts remain usable', 
 	await expect(page.getByRole('button', { name: 'NEM Regions', exact: true })).toBeVisible();
 });
 
-test('repeated grouping changes reuse responses and measure table calculations', async ({
+test('frontend options reuse cached responses without flashing loading overlays', async ({
 	page
 }, testInfo) => {
 	const source = await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1&table=1');
 	await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
-	await page.evaluate(() => performance.clearMeasures());
+	await chartsSettled(page);
+	await page.evaluate(() => {
+		performance.clearMeasures();
+		document.documentElement.dataset.loadingFlashes = '0';
+		new MutationObserver((records) => {
+			const activations = records.filter(
+				(record) =>
+					record.oldValue === 'false' &&
+					record.target.getAttribute('data-testid') === 'tracker-loading-overlay'
+			);
+			document.documentElement.dataset.loadingFlashes = String(
+				Number(document.documentElement.dataset.loadingFlashes) + activations.length
+			);
+		}).observe(document.body, {
+			subtree: true,
+			attributes: true,
+			attributeFilter: ['data-active'],
+			attributeOldValue: true
+		});
+	});
 	for (const label of ['Detailed', 'Simplified', 'Detailed', 'Simplified']) {
 		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-		await page.getByRole('menuitemradio', { name: label, exact: true }).click();
+		await page.getByRole('radio', { name: label, exact: true }).click();
+		await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 		await expect(page.getByRole('columnheader', { name: /Technology/ })).toContainText(label);
 		await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 	}
+	await contributionBasis(page, '% generation');
+	await percentageView(page);
+	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
+	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
+	await page.getByRole('dialog').getByRole('checkbox', { name: 'Energy', exact: true }).uncheck();
+	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
+	await chartsSettled(page);
+	await expect(page.locator('html')).toHaveAttribute('data-loading-flashes', '0');
 	const durations = await page.evaluate(() =>
 		performance.getEntriesByName('canvas:table-rows').map((entry) => entry.duration)
 	);
@@ -2088,3 +2006,88 @@ test('calendar-filtered rolling data exports only the selected months', async ({
 	for (const line of dates) expect(line).toMatch(/^\d{4}-01-/);
 	expect(content).toContain('(MWh)');
 });
+
+test('timeline chart hover updates table values and restores window totals on exit', async ({
+	page
+}) => {
+	await trackerFixture(page, { comparisonGrowth: true, contributions: true });
+	const start = Date.parse('2026-08-01T00:00:00+10:00');
+	await page.goto(`/tracker?region=nsw1&start=${start}&end=${start + 2 * 86_400_000}&interval=30m`);
+	await chartsSettled(page);
+	const coal = page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first();
+	const original = await coal.textContent();
+	const period = page.getByTestId('table-period');
+	await expect(period).toHaveText('Visible window');
+	for (const name of ['Generation', 'Market', 'Emissions']) {
+		const chart = card(page, name);
+		await chart.scrollIntoViewIfNeeded();
+		const box = await chart.locator('.stratum-chart-area').boundingBox();
+		await page.mouse.move(box.x + box.width * 0.25, box.y + box.height * 0.5);
+		await expect(chart.getByTestId('chart-tooltip-strip')).toBeVisible();
+		await expect(period).not.toHaveText('Visible window');
+		await expect(coal.locator('td').nth(2)).toHaveText('100');
+		await expect(coal).not.toHaveText(original);
+		await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.5);
+		await expect(coal.locator('td').nth(2)).toHaveText('200');
+		await page.mouse.move(0, 0);
+		await expect(period).toHaveText('Visible window');
+		await expect(coal).toHaveText(original);
+	}
+});
+
+for (const interval of ['30m', '1d']) {
+	test(`first table toggle recalculates intensity without a fetch at ${interval}`, async ({
+		page
+	}) => {
+		const source = await trackerFixture(page, { distinctEmissions: true });
+		const start = Date.parse('2026-08-01T00:00:00+10:00');
+		await page.goto(
+			`/tracker?region=nsw1&start=${start}&end=${start + 2 * 86_400_000}&interval=${interval}`
+		);
+		await chartsSettled(page);
+		const emissions = card(page, 'Emissions');
+		const value = emissions.getByTestId('chart-tooltip-strip').locator('strong').first();
+		await emissions.locator('.stratum-chart-area').hover();
+		await expect(value).toBeVisible();
+		const original = await value.textContent();
+		// A row click must use loaded components even if the HTTP response LRU
+		// no longer contains the response and a replacement fetch cannot finish.
+		await page.evaluate(async () => {
+			const { clearCompletedResponses } =
+				await import('/src/lib/components/charts/v2/ChartDataManager.svelte.js');
+			clearCompletedResponses();
+			document.documentElement.dataset.loadingFlashes = '0';
+			new MutationObserver((records) => {
+				const activated = records.filter(
+					(record) =>
+						record.oldValue === 'false' &&
+						record.target.getAttribute('data-testid') === 'tracker-loading-overlay'
+				);
+				document.documentElement.dataset.loadingFlashes = String(
+					Number(document.documentElement.dataset.loadingFlashes) + activated.length
+				);
+			}).observe(document.body, {
+				subtree: true,
+				attributes: true,
+				attributeFilter: ['data-active'],
+				attributeOldValue: true
+			});
+		});
+		source.hold('emissions_intensity');
+		const requests = source.requests.filter((metric) => metric === 'emissions_intensity').length;
+		const coal = page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first();
+		await coal.click();
+		await expect(coal).toHaveAttribute('aria-pressed', 'false');
+		await emissions.locator('.stratum-chart-area').hover();
+		await expect(value).not.toHaveText(original);
+		await expect(value).toHaveText(/^0(?:\.0+)?\s+kgCO₂e\/MWh$/);
+		await coal.click();
+		await emissions.locator('.stratum-chart-area').hover();
+		await expect(value).toHaveText(original);
+		await expect(page.locator('html')).toHaveAttribute('data-loading-flashes', '0');
+		expect(source.requests.filter((metric) => metric === 'emissions_intensity')).toHaveLength(
+			requests
+		);
+		source.release();
+	});
+}

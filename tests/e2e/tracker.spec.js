@@ -155,14 +155,16 @@ test.describe('Tracker smoke tests', () => {
 			.toBeGreaterThan(1);
 	});
 
-	test('enabled generation overlays appear in the floating tooltip', async ({ page }) => {
+	test('generation hover uses the strip above the chart with overlays enabled', async ({
+		page
+	}) => {
 		await page.goto(
 			'/tracker?region=nsw1&table=0&overlay=demand,renewables,curtailment-solar,curtailment-wind'
 		);
 		await waitForHydration(page);
 
 		const generationCard = card(page, 'Generation');
-		const tooltip = generationCard.getByTestId('chart-floating-tooltip');
+		const tooltip = generationCard.getByTestId('chart-tooltip-strip');
 		const areas = generationCard.locator('path.path-area');
 		await expect(areas.first()).toBeVisible({ timeout: 30000 });
 		let tooltipVisible = false;
@@ -172,7 +174,7 @@ test.describe('Tracker smoke tests', () => {
 			for (const x of [0.25, 0.5, 0.75]) {
 				for (const y of [0.25, 0.5, 0.75]) {
 					await page.mouse.move(box.x + box.width * x, box.y + box.height * y);
-					if (await tooltip.isVisible()) {
+					if ((await tooltip.textContent()).trim()) {
 						tooltipVisible = true;
 						break;
 					}
@@ -182,10 +184,7 @@ test.describe('Tracker smoke tests', () => {
 		}
 		expect(tooltipVisible).toBe(true);
 		await expect(tooltip).toBeVisible({ timeout: 10000 });
-		for (const label of ['Demand', 'Renewables', 'Curtailment (Solar)', 'Curtailment (Wind)']) {
-			await expect(tooltip.getByText(label, { exact: true })).toBeVisible();
-		}
-		await expect(tooltip).toContainText('%');
+		await expect(generationCard.getByTestId('chart-floating-tooltip')).toHaveCount(0);
 		await expect(tooltip).toContainText('MW');
 	});
 
@@ -277,7 +276,7 @@ test.describe('Tracker smoke tests', () => {
 });
 
 test.describe('Tracker options menu', () => {
-	test('grouping and contribution basis are chosen from the fuel-tech panel menu', async ({
+	test('grouping and contribution basis are chosen from the fuel-tech panel modal', async ({
 		page
 	}) => {
 		await page.goto('/tracker?table=1');
@@ -287,19 +286,21 @@ test.describe('Tracker options menu', () => {
 		await expect(techHeader).toContainText('Simplified');
 
 		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-		const menu = page.getByRole('menu');
-		await expect(menu.getByRole('menuitemradio', { name: 'Simplified' })).toHaveAttribute(
+		const menu = page.getByRole('dialog', { name: 'Fuel technology options' });
+		await expect(menu.getByRole('radio', { name: 'Simplified' })).toHaveAttribute(
 			'aria-checked',
 			'true'
 		);
-		await menu.getByRole('menuitemradio', { name: 'Detailed' }).click();
+		await menu.getByRole('radio', { name: 'Detailed' }).click();
+		await menu.getByRole('button', { name: 'Done', exact: true }).click();
 		await expect(page).toHaveURL(/group=detailed/);
 		await expect(techHeader).toContainText('Detailed');
 
 		const contributionHeader = page.getByRole('columnheader', { name: /Contribution/ });
 		await expect(contributionHeader).toContainText('% demand');
 		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-		await menu.getByRole('menuitemradio', { name: '% generation' }).click();
+		await menu.getByRole('radio', { name: '% generation' }).click();
+		await menu.getByRole('button', { name: 'Done', exact: true }).click();
 		await expect(contributionHeader).toContainText('% generation');
 		await expect
 			.poll(() => new URL(page.url()).searchParams.get('contribution'))

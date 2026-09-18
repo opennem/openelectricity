@@ -101,8 +101,8 @@ importers:
         specifier: ^7946.0.16
         version: 7946.0.16
       bits-ui:
-        specifier: ^2.17.2
-        version: 2.18.1(@internationalized/date@3.12.1)(@sveltejs/kit@2.64.0(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.56.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)))(svelte@5.56.3)(typescript@5.9.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)))(svelte@5.56.3)
+        specifier: ^2.19.2
+        version: 2.19.2(@internationalized/date@3.12.1)(@sveltejs/kit@2.64.0(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.56.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)))(svelte@5.56.3)(typescript@5.9.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)))(svelte@5.56.3)
       chroma-js:
         specifier: ^3.2.0
         version: 3.2.0
@@ -2049,8 +2049,8 @@ packages:
   binary-search-bounds@2.0.5:
     resolution: {integrity: sha512-H0ea4Fd3lS1+sTEB2TgcLoK21lLhwEJzlQv3IN47pJS976Gx4zoWe0ak3q+uYh60ppQxg9F16Ri4tS1sfD4+jA==}
 
-  bits-ui@2.18.1:
-    resolution: {integrity: sha512-KkemzKFH4T3gt3H+P86JcnAWExjByv/6vlwjm/BoCwTPHu03yiCdxbghdJLvFReQTe0acCAiRcKfmixxD6XvlA==}
+  bits-ui@2.19.2:
+    resolution: {integrity: sha512-W9upilTmLTIWjuVAD6Ta7XoS6gxRflmCQnXamj+WN1eYxZecghqGENpuSMAKQmVENMLXhh85BZb04LCrBd2+Ng==}
     engines: {node: '>=20'}
     peerDependencies:
       '@internationalized/date': ^3.8.1
@@ -5944,7 +5944,7 @@ snapshots:
 
   binary-search-bounds@2.0.5: {}
 
-  bits-ui@2.18.1(@internationalized/date@3.12.1)(@sveltejs/kit@2.64.0(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.56.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)))(svelte@5.56.3)(typescript@5.9.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)))(svelte@5.56.3):
+  bits-ui@2.19.2(@internationalized/date@3.12.1)(@sveltejs/kit@2.64.0(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.56.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)))(svelte@5.56.3)(typescript@5.9.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)))(svelte@5.56.3):
     dependencies:
       '@floating-ui/core': 1.7.5
       '@floating-ui/dom': 1.7.6

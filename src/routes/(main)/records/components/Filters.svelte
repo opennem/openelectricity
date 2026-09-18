@@ -1,6 +1,5 @@
 <script>
 	import { getContext } from 'svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
@@ -111,79 +110,74 @@
 	});
 </script>
 
-{#if showMobileFilterOptions}
-	<Modal
-		maxWidthClass=""
-		class="fixed! bg-white top-0 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain rounded-none! my-0! pt-0 px-0 z-50"
-	>
-		<header
-			class="sticky top-0 z-50 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
-		>
-			<h3 class="mb-2">Filters</h3>
+<Modal
+	bind:open={showMobileFilterOptions}
+	title="Filters"
+	titleLevel={3}
+	titleClass="m-0"
+	fullscreen
+>
+	{#snippet header()}
+		<IconAdjustmentsHorizontal class="size-10" />
+	{/snippet}
 
-			<div class="mb-2">
-				<IconAdjustmentsHorizontal class="size-10" />
-			</div>
-		</header>
+	<section class="p-10 pb-0 w-full flex gap-5">
+		<FormMultiSelect
+			options={regionOptions}
+			selected={$selectedRegions}
+			label="Region"
+			paddingX=""
+			staticDisplay={true}
+			onchange={(value, isMetaPressed) => handleRegionChange(value, isMetaPressed)}
+		/>
+		<FormMultiSelect
+			options={fuelTechOptions}
+			selected={$selectedFuelTechs}
+			label="Technology"
+			paddingX=""
+			staticDisplay={true}
+			onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
+		/>
+	</section>
 
-		<section class="p-10 pb-0 w-full flex gap-5">
-			<FormMultiSelect
-				options={regionOptions}
-				selected={$selectedRegions}
-				label="Region"
-				paddingX=""
-				staticDisplay={true}
-				onchange={(value, isMetaPressed) => handleRegionChange(value, isMetaPressed)}
-			/>
-			<FormMultiSelect
-				options={fuelTechOptions}
-				selected={$selectedFuelTechs}
-				label="Technology"
-				paddingX=""
-				staticDisplay={true}
-				onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
-			/>
-		</section>
+	<section class="p-10 w-full flex gap-5">
+		<FormMultiSelect
+			options={milestoneTypeOptions}
+			selected={$selectedMetrics}
+			label="Metric"
+			paddingX=""
+			staticDisplay={true}
+			onchange={(value, isMetaPressed) => handleMetricChange(value, isMetaPressed)}
+		/>
 
-		<section class="p-10 w-full flex gap-5">
-			<FormMultiSelect
-				options={milestoneTypeOptions}
-				selected={$selectedMetrics}
-				label="Metric"
-				paddingX=""
-				staticDisplay={true}
-				onchange={(value, isMetaPressed) => handleMetricChange(value, isMetaPressed)}
-			/>
+		<FormMultiSelect
+			options={periodOptions}
+			selected={$selectedPeriods}
+			label="Period"
+			paddingX=""
+			staticDisplay={true}
+			onchange={(value, isMetaPressed) => handlePeriodChange(value, isMetaPressed)}
+		/>
+	</section>
 
-			<FormMultiSelect
-				options={periodOptions}
-				selected={$selectedPeriods}
-				label="Period"
-				paddingX=""
-				staticDisplay={true}
-				onchange={(value, isMetaPressed) => handlePeriodChange(value, isMetaPressed)}
-			/>
-		</section>
+	<section class="px-10 pb-10 w-full flex gap-5">
+		<SignificanceFilter
+			value={$selectedSignificance}
+			paddingX=""
+			staticDisplay={true}
+			onchange={(value) => ($selectedSignificance = value)}
+		/>
+	</section>
 
-		<section class="px-10 pb-10 w-full flex gap-5">
-			<SignificanceFilter
-				value={$selectedSignificance}
-				paddingX=""
-				staticDisplay={true}
-				onchange={(value) => ($selectedSignificance = value)}
-			/>
-		</section>
-
-		{#snippet buttons()}
-			<div class="flex gap-3">
-				<Button
-					class="bg-dark-grey! text-white hover:bg-black! w-full"
-					onclick={() => (showMobileFilterOptions = false)}>Close</Button
-				>
-			</div>
-		{/snippet}
-	</Modal>
-{/if}
+	{#snippet buttons()}
+		<div class="flex gap-3">
+			<Button
+				class="bg-dark-grey! text-white hover:bg-black! w-full"
+				onclick={() => (showMobileFilterOptions = false)}>Close</Button
+			>
+		</div>
+	{/snippet}
+</Modal>
 
 <div class="container">
 	<div class="flex justify-end md:justify-between items-center">
@@ -248,6 +242,7 @@
 		<div class="md:hidden pl-8 ml-4 border-l border-warm-grey">
 			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 				<IconAdjustmentsHorizontal class="size-10" />
+				<span class="sr-only">Open filters</span>
 			</ButtonIcon>
 		</div>
 	</div>

@@ -35,6 +35,7 @@
 	import { interpolateRooftopPower } from './rooftop-interpolation.js';
 	import {
 		processEmissionsIntensity,
+		selectIntensityComponents,
 		deriveIntensityDisplayRows,
 		INTENSITY_SERIES_ID
 	} from './process-emissions-intensity.js';
@@ -238,7 +239,6 @@
 
 	let groupConfig = $derived(getGroup(group));
 	let loadGroupsToInvert = $derived(loadGroupsFor(groupConfig));
-	let intensityFilterKey = $derived([...excludedFuelTechGroups].sort().join(','));
 
 	/**
 	 * Build a processor for the requested metric and native interval.
@@ -254,7 +254,7 @@
 					intervalHours: getIntervalHours(targetInterval),
 					networkTimezone: tz,
 					groupMap: groupConfig.fuelTechs,
-					excludedGroups: excludedFuelTechGroups
+					retainGroups: true
 				});
 		}
 		if (panelKind === 'market') {
@@ -310,15 +310,10 @@
 	// Chart host — shared manager lifecycle, viewport + pan/zoom recipe
 	// ============================================
 
-	// Fuel-tech panels are group-dependent, and intensity additionally depends
-	// on the table filters. Changing either swaps in a processor with the exact
-	// same identity as the visible series set.
+	// Visibility only filters cached intensity components; it must not create
+	// another manager (and refetch after the HTTP response cache expires).
 	let seriesKey = $derived(
-		panelKind === 'intensity'
-			? `${group}:${intensityFilterKey}`
-			: panelKind === 'generation' || panelKind === 'market-value' || panelKind === 'emissions'
-				? group
-				: ''
+		['intensity', 'generation', 'market-value', 'emissions'].includes(panelKind) ? group : ''
 	);
 
 	const host = createChartHost({
@@ -371,10 +366,16 @@
 	});
 
 	let dataManager = $derived(host.dataManager);
+	let selectedCache = $derived.by(() => {
+		const source = dataManager?.processedCache;
+		return source && panelKind === 'intensity'
+			? selectIntensityComponents(source, excludedFuelTechGroups)
+			: source;
+	});
 	// Derived once per cache revision, independently of viewport/hover changes.
 	// The original cache remains the source for summaries, comparisons and CSV/XLSX.
 	let displayCache = $derived.by(() => {
-		const source = dataManager?.processedCache;
+		const source = selectedCache;
 		return source &&
 			interpolateRooftop &&
 			metric === 'power' &&
@@ -805,9 +806,8 @@
 		});
 	});
 
-	// Debounced visible-data callback for the external table
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let tableDebounceTimer = null;
+	// Publish settled visible data immediately. Gestures already gate this effect;
+	// another debounce makes cached presentation changes look like network loads.
 	$effect(() => {
 		const start = viewStart;
 		const end = viewEnd;
@@ -817,16 +817,15 @@
 		const currentBucketFilter = bucketFilter;
 		const sums = sumsForDisplay;
 		const manager = dataManager;
-		const _cache = manager?.processedCache;
+		const source = selectedCache;
 		const callback = onvisibledata;
 		const queryKey = currentQueryKey;
 		const state = getQueryState();
 
-		if (tableDebounceTimer) clearTimeout(tableDebounceTimer);
 		// Build the table snapshot once, after the gesture settles.
 		if (inGesture) return;
 		if (!callback || !manager || state.pending || state.error) return;
-		if (!manager.processedCache || !manager.seriesMeta) {
+		if (!source || !manager.seriesMeta) {
 			untrack(() =>
 				callback({
 					queryKey,
@@ -841,10 +840,10 @@
 			);
 			return;
 		}
-		const meta = manager.seriesMeta;
-		tableDebounceTimer = setTimeout(() => {
+		const meta = source;
+		untrack(() => {
 			// Usually a memo hit. Read colours here to avoid cloning them on each effect run.
-			const rows = visibleAggregation(manager.processedCache, {
+			const rows = visibleAggregation(source, {
 				viewStart: start,
 				viewEnd: end,
 				apiInterval: currentInterval,
@@ -859,7 +858,7 @@
 				currentDisplayInterval === currentInterval && !currentBucketFilter
 					? rows
 					: applyBucketFilter(
-							nativeVisibleAggregation(manager.processedCache, {
+							nativeVisibleAggregation(source, {
 								viewStart: start,
 								viewEnd: end,
 								apiInterval: currentInterval,
@@ -886,11 +885,7 @@
 				seriesColours: { ...meta.seriesColours },
 				groupFuelTechs: meta.groupFuelTechs
 			});
-		}, 300);
-
-		return () => {
-			if (tableDebounceTimer) clearTimeout(tableDebounceTimer);
-		};
+		});
 	});
 
 	// Cache nighttime bands by network-local day; the plot clips them to the viewport.

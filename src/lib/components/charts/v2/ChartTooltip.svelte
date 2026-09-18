@@ -2,7 +2,7 @@
 	/**
 	 * Chart Tooltip Component (strip variant)
 	 *
-	 * Renders a fixed 21px strip above the chart showing the active row's
+	 * Renders a fixed strip above the chart (two lines in narrow cards) showing the active row's
 	 * date, the single hovered series value, and an optional total. Shares
 	 * derivation logic with `ChartTooltipFloating.svelte` via
 	 * `tooltip-derivations.js`.
@@ -42,9 +42,9 @@
 	let formattedDate = $derived(getFormattedX(chart, activeData));
 </script>
 
-<div class="h-[21px] {className}">
+<div data-testid="chart-tooltip-strip" class="tooltip-container {className}">
 	{#if activeData}
-		<div class="h-full flex items-center {contentClass} text-xs">
+		<div class="tooltip-row {contentClass} text-xs">
 			<!-- Date -->
 			{#if formattedDate}
 				<span class="px-3 py-1 font-light bg-white/40">
@@ -53,13 +53,13 @@
 			{/if}
 
 			{#if value !== undefined || chart.chartTooltips.showTotal}
-				<div class="bg-light-warm-grey px-4 py-1 flex gap-4 items-center">
+				<div class="tooltip-values bg-light-warm-grey px-2 py-1 flex gap-3 items-center">
 					<!-- Selected series value -->
 					{#if value !== undefined && valueKey}
-						<div class="flex items-center gap-2">
+						<div class="flex min-w-0 items-center gap-2">
 							<span class="w-2.5 h-2.5 rounded-sm" style="background-color: {activeColour}"></span>
-							<span class="text-mid-grey">{activeLabel}</span>
-							<strong class="font-semibold">
+							<span class="truncate text-mid-grey">{activeLabel}</span>
+							<strong class="shrink-0 font-semibold">
 								{formattedValue}
 								{chart.tooltipUnit}
 							</strong>
@@ -68,9 +68,9 @@
 
 					<!-- Total -->
 					{#if chart.chartTooltips.showTotal}
-						<span class="flex items-center gap-2">
+						<span class="flex min-w-0 items-center gap-2">
 							<span class="text-mid-grey">Total</span>
-							<strong class="font-semibold">
+							<strong class="shrink-0 font-semibold">
 								{formattedTotal}
 								{chart.tooltipUnit}
 							</strong>
@@ -80,8 +80,31 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="h-full flex items-center {contentClass} text-xs text-mid-grey">
+		<div class="tooltip-row {contentClass} text-xs text-mid-grey">
 			{defaultText}
 		</div>
 	{/if}
 </div>
+
+<style>
+	.tooltip-container {
+		container-type: inline-size;
+	}
+	.tooltip-row {
+		display: flex;
+		align-items: center;
+		height: 21px;
+		white-space: nowrap;
+	}
+	.tooltip-values {
+		max-width: 100%;
+	}
+	@container (max-width: 460px) {
+		.tooltip-row {
+			height: 42px;
+			flex-direction: column;
+			align-items: flex-end;
+			justify-content: center;
+		}
+	}
+</style>

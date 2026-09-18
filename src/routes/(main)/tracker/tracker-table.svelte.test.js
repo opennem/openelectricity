@@ -18,6 +18,7 @@ function harness() {
 	const providers = makeProviders({ marketData });
 	const state = $state({
 		ready: true,
+		inspectTime: /** @type {number | undefined} */ (undefined),
 		hidden: /** @type {string[]} */ ([]),
 		snapshot: makeSnapshot({
 			queryKey: 'q1',
@@ -44,6 +45,7 @@ function harness() {
 		ready: () => state.ready,
 		hidden: () => state.hidden,
 		contribution: () => session.selection.contributionMode,
+		inspectTime: () => state.inspectTime,
 		ianaTimeZone: () => session.ianaTimeZone
 	});
 	return { session, state, table, marketData };
@@ -98,6 +100,50 @@ describe('tracker table owner', () => {
 			state.hidden = ['coal'];
 			flushSync();
 			expect(table.displayedRows?.map((row) => row.hidden)).toEqual([true, false]);
+		});
+		stop();
+	});
+});
+
+describe('table inspection', () => {
+	it('samples the shared time without changing accepted totals, and clears on exit or loading', () => {
+		const stop = $effect.root(() => {
+			const { state, table, marketData, session } = harness();
+			flushSync();
+			const totals = table.accepted;
+			const time = session.window.start;
+			marketData.rows = [{ time, demand_gross: 200 }];
+			state.inspectTime = time;
+			flushSync();
+			expect(table.inspection?.rows[0]).toMatchObject({
+				avPowerMW: 100,
+				energyMWh: 50,
+				contributionPct: 50
+			});
+			expect(table.inspection?.rows[1]).toMatchObject({
+				avPowerMW: 10,
+				energyMWh: 5,
+				isLoad: true
+			});
+			expect(table.inspection?.rows[0].vwPrice).toBeNull();
+			expect(table.displayedRows?.[0].avPowerMW).toBe(110);
+			const accepted = table.accepted;
+			state.inspectTime = session.window.end;
+			flushSync();
+			expect(table.inspection?.rows[0].avPowerMW).toBe(120);
+			expect(table.inspection?.rows[0].contributionPct).toBeNull();
+			expect(table.accepted).toBe(accepted);
+			state.inspectTime = time + 1;
+			flushSync();
+			expect(table.inspection?.rows[0].avPowerMW).toBeNull();
+			state.inspectTime = undefined;
+			flushSync();
+			expect(table.inspection).toBeNull();
+			state.inspectTime = time;
+			marketData.isPending = true;
+			flushSync();
+			expect(table.inspection).toBeNull();
+			expect(totals?.rows[0].avPowerMW).toBe(110);
 		});
 		stop();
 	});

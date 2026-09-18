@@ -375,3 +375,43 @@ describe('computeOverlaySummary', () => {
 		});
 	});
 });
+
+describe('single displayed interval', () => {
+	it.each([
+		['power', 0.5, 100, 50],
+		['energy', 29 * 24, 696, 696],
+		['energy', 365.25 * 24, 8766, 8766]
+	])('preserves ratios and duration for %s buckets', (basis, hours, value, energy) => {
+		const rows = buildFuelTechTableRows({
+			generationData: {
+				data: [{ time: 0, coal: value, pumps: -value / 10 }],
+				seriesNames: ['coal', 'pumps'],
+				seriesLabels: {},
+				seriesColours: {}
+			},
+			mvRows: [{ time: 0, coal: energy * 30, pumps: -energy * 3 }],
+			emissionsRows: [{ time: 0, coal: energy * 0.9 }],
+			demandRows: [{ time: 0, [DEMAND_GROSS_SERIES_ID]: value * 2 }],
+			basis,
+			demandBasis: basis,
+			hours,
+			mode: 'demand',
+			hiddenSeries: [],
+			loadSeriesIds: ['pumps']
+		});
+		expect(rows[1]).toMatchObject({
+			energyMWh: energy,
+			avPowerMW: energy / hours,
+			vwPrice: 30,
+			contributionPct: 50,
+			emissionsT: energy * 0.9,
+			intensityKgPerMWh: 900
+		});
+		expect(rows[0].vwPrice).toBeCloseTo(30);
+		expect(rows[0]).toMatchObject({
+			isLoad: true,
+			contributionPct: null,
+			emissionsT: null
+		});
+	});
+});

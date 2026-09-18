@@ -6,6 +6,7 @@
 		pinnedTableEdge,
 		tableValueCell
 	} from './table-styles.js';
+	import { TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import { getGroup } from '$lib/components/charts/network/groups.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs.js';
@@ -45,7 +46,7 @@
 	 * @property {boolean} active - Drawn on the charts
 	 * @property {(exclusive: boolean) => void} activate - ⌘/Ctrl solos the row
 	 * @property {Swatch} swatch
-	 * @property {string[]} cells - One formatted value per `VALUE_COLUMNS` entry
+	 * @property {string[]} cells - One formatted value per `TABLE_COLUMNS` entry
 	 * @property {string[]} [breakdown] - Tooltip lines listing the folded fuel techs
 	 * @property {boolean} [dimmed] - Fade the whole row while toggled off
 	 * @property {boolean} [summary] - Bold summary treatment for the overlay rows
@@ -55,19 +56,18 @@
 
 	/**
 	 * FuelTechTable — the tracker's fuel-tech breakdown table. Technology plus
-	 * six value columns: energy, average power, contribution share, volume-weighted
-	 * price, window emissions and emissions intensity, split into Sources/Loads
+	 * six selectable value columns: energy, average power, contribution share,
+	 * volume-weighted price, emissions and emissions intensity, split into Sources/Loads
 	 * sections in top-down stack order, followed by curtailment and the
 	 * Demand/Renewables summary rows. Every row toggles its series on the
-	 * charts; values are window aggregates computed upstream in
+	 * charts; values are window aggregates or the inspected interval, computed upstream in
 	 * `table-model.js`, so hidden rows keep their numbers. Outside the Detailed
 	 * grouping, hovering a row's technology label lists the underlying fuel
 	 * techs folded into that group. The grouping and contribution basis are
-	 * chosen in the page's options menu; the headers echo them as sub-labels.
+	 * chosen in the options dialog; the headers echo them as sub-labels.
 	 *
 	 * In narrow panels, Technology pins left while the value columns scroll
-	 * horizontally and snap into place. A CSS container query switches to the
-	 * full-width layout when all columns fit.
+	 * horizontally and snap into place. The table fills the panel when its visible columns fit.
 	 *
 	 * @type {import('./types.js').FuelTechTableControls & {
 	 *   rows: FuelTechTableRow[],
@@ -83,6 +83,7 @@
 		displayPrefix = 'M',
 		group = DEFAULT_GROUP,
 		contributionMode = 'demand',
+		tableColumns = DEFAULT_TABLE_COLUMNS,
 		curtailmentRows = [],
 		shownCurtailment = [],
 		overlaySummary = null,
@@ -94,21 +95,11 @@
 		onrenewableslinetoggle
 	} = $props();
 
-	// Value columns and their narrow-panel widths. The container-query breakpoint
-	// (760px, spelt out in the `@min-[760px]:` classes below) is the sum of the
-	// narrow widths: Technology 160 + 6 × 100 — equal to the natural table
-	// width, so the table stops scrolling once all columns fit.
-	// The value widths also hold in the wide layout, where Technology takes
-	// whatever remains.
-	const VALUE_COLUMNS = [
-		{ key: 'energy', label: 'Energy', widthClass: 'w-[100px]' },
-		{ key: 'power', label: 'Av power', widthClass: 'w-[100px]' },
-		{ key: 'contribution', label: 'Contribution', widthClass: 'w-[100px]' },
-		{ key: 'price', label: 'Av price', widthClass: 'w-[100px]' },
-		{ key: 'emissions', label: 'Emissions', widthClass: 'w-[100px]' },
-		{ key: 'intensity', label: 'Intensity', widthClass: 'w-[100px]' }
-	];
-	const LAST_COLUMN = VALUE_COLUMNS.length - 1;
+	let visibleColumns = $derived(
+		TABLE_COLUMNS.map((column, index) => ({ ...column, index })).filter((column) =>
+			tableColumns.includes(column.key)
+		)
+	);
 	let scrollLeft = $state(0);
 
 	/** Av power follows the chart's MW/GW choice while the chart shows power,
@@ -331,8 +322,9 @@
 				</div>
 			{/if}
 		</td>
-		{#each row.cells as cell, index (index)}
-			<td class={tableValueCell(cell, index === LAST_COLUMN, cellPad)}>{cell}</td>
+		{#each visibleColumns as column, index (column.key)}
+			{@const cell = row.cells[column.index]}
+			<td class={tableValueCell(cell, index === visibleColumns.length - 1, cellPad)}>{cell}</td>
 		{/each}
 	</tr>
 {/snippet}
@@ -346,7 +338,10 @@
 				>
 					<span class="ml-2">{label}</span>
 				</th>
-				<th class="border-b border-warm-grey" colspan={VALUE_COLUMNS.length}></th>
+				{#if visibleColumns.length}<th
+						class="border-b border-warm-grey"
+						colspan={visibleColumns.length}
+					></th>{/if}
 			</tr>
 		</thead>
 		<tbody>
@@ -361,32 +356,34 @@
 	<span class="font-mono text-xxs font-light text-mid-grey">{unit}</span>
 {/snippet}
 
-<!-- Container-query root. `--tech-w` feeds both the pinned column's width and
-     the scroller's snap padding so the two can never drift apart. -->
-<div class="@container [--tech-w:160px]">
+<!-- The minimum width follows the selected columns; Technology stays pinned. -->
+<div class="[--tech-w:160px]">
 	<!-- Horizontal scroller. Snap padding reserves the pinned column, so a
-	     snapped value column lands flush against it. Wide containers drop the
-	     overflow, which also makes the sticky cells inert. -->
+	     snapped value column lands flush against it. The table expands to fill wider panels. -->
 	<div
 		onscroll={(event) => (scrollLeft = event.currentTarget.scrollLeft)}
-		class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--tech-w) scroll-smooth motion-reduce:scroll-auto @min-[760px]:overflow-x-visible @min-[760px]:snap-none"
+		class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--tech-w) scroll-smooth motion-reduce:scroll-auto"
 	>
 		<!-- border-separate: sticky cells paint over collapsed borders, so the
 		     rules live on the cells instead of the row groups. -->
-		<table class="w-full table-fixed border-separate border-spacing-0 select-none">
+		<table
+			aria-label="Fuel technology values"
+			style:min-width={`${160 + visibleColumns.length * 100}px`}
+			class="w-full table-fixed border-separate border-spacing-0 select-none"
+		>
 			<thead class="bg-light-warm-grey">
 				<tr>
 					<th
-						class="{pinnedEdgeClass} w-(--tech-w) bg-light-warm-grey px-2 text-left text-sm @min-[760px]:w-auto {TABLE_HEADER_CELL}"
+						class="{pinnedEdgeClass} bg-light-warm-grey px-2 text-left text-sm {TABLE_HEADER_CELL}"
 					>
 						<div class="ml-2 flex flex-col items-start">
 							<span class="text-xs text-dark-grey">Technology</span>
 							{@render unitLine(groupLabel)}
 						</div>
 					</th>
-					{#each VALUE_COLUMNS as column, index (column.key)}
+					{#each visibleColumns as column, index (column.key)}
 						<th
-							class="{column.widthClass} snap-start text-right {index === LAST_COLUMN
+							class="w-[100px] snap-start text-right {index === visibleColumns.length - 1
 								? 'pr-3 pl-2'
 								: 'px-2'} {TABLE_HEADER_CELL}"
 						>

@@ -181,24 +181,25 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow.
   promotes its default from MWh to GWh when the largest visible positive
   stack reaches six digits in MWh, while an explicit unit choice remains
   pinned until the power/energy basis changes. The selected prefix drives the
-  chart header, y-axis and floating tooltip values together. The current open
+  chart header, y-axis and hover-strip values together. The current open
   energy bucket (hour/day/week/month and coarser calendar grains) is hatched
   until that interval is complete.
-- **Grouping menu** mirrors the legacy explore tool: Detailed, Simplified,
+- **Fuel technology options modal** offers Detailed, Simplified,
   Coal/Gas/Renewables, Flexibility, Renewables/Fossils, VRE/Residual
   (`groups.js` registry). It lives in the Fuel technologies panel header's
-  options (sliders) menu, next to contribution basis (% generation ⇄ % demand).
-  Both sections use labelled radio groups with tinted, bold selected rows; the table
-  headers echo current choices as muted sub-labels. The same menu stays in the
+  options (sliders) dialog, next to contribution basis (% generation ⇄ % demand)
+  and checkboxes for the six table value columns. Technology is always shown;
+  Show all columns restores the defaults. Radio and checkbox choices apply immediately
+  and persist in the URL/history (`columns` is a comma-separated list, empty hides
+  all value columns, and omitted shows all). The table headers echo the grouping and
+  contribution choices as muted sub-labels. The same trigger stays in the
   collapsed table rail, allowing chart configuration without table-provider
-  fetches. Time of day has a grouping-only menu in the top nav. Global page
+  fetches. Time of day has a grouping-only dialog in the top nav. Global page
   options now contain only page actions (exports, link, fullscreen and docs).
-  `FuelTechOptions` uses the installed Bits UI menu primitives for keyboard
-  navigation, typeahead, Escape/outside dismissal, focus restoration, portalling
-  and viewport-bounded scrolling, composed with the same `OptionsMenuItem`,
-  `OptionsMenuHeading` and `OptionsMenuDivider` components as the top-nav menu.
-  Typography, spacing, icon gutters, row highlights and menu chrome follow that
-  existing design rather than a separate panel-specific style.
+  `FuelTechOptions` composes the app’s shared `Modal` (Bits UI Dialog), `Select`
+  in its expanded radio-list mode, `Checkbox` and button components. The dialog
+  supplies focus containment, Escape dismissal and focus restoration.
+  The dialog scrolls within the viewport; Done and the close button dismiss it.
   Its trigger matches the panel controls' 40px
   target with a smaller 16px muted-grey sliders icon. Choices still use the session's URL/history
   path; they affect linked charts, not just the table.
@@ -225,11 +226,17 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow.
   that extends past 100% in 20-point steps for exporting regions) over the
   generation chart via `ChartStore.overlayLines`. These four overlay toggles
   are URL-owned so direct and copied links reproduce them. When enabled, each
-  also appears in the generation chart's floating tooltip: demand follows the
+  is available in the table’s interval inspection: demand follows the
   selected generation unit, and curtailment/renewables show amounts and shares.
   A divider separates curtailment from the Demand and Renewables rows.
-  Below a 760px panel width (a CSS container query) the Technology
-  column pins left and the value columns scroll horizontally with snap points. Av power follows the chart's
+  Hovering any timeline chart (or inspecting it with the keyboard) shows that
+  displayed interval across every table section, with its timestamp above the rows.
+  Leaving inspection restores the accepted window totals. Feeds match the exact
+  timestamp; missing values stay unavailable. Single intervals use their explicit
+  duration for energy and average power. Window totals and exports remain separate
+  from inspection, and exports retain every column regardless of table visibility.
+  When the selected columns exceed the panel width, Technology pins left and
+  the value columns scroll horizontally with snap points. Av power follows the chart's
   MW/GW choice while the chart shows power and stays in MW otherwise; Energy
   sizes its own prefix from the table's largest value, stepping MWh → GWh →
   TWh only at five digits (`energyDisplayPrefix`).
@@ -550,7 +557,7 @@ interpolation caption, because the image captures the displayed chart.
 - Individual NEM region generation responses merge the official import/export
   flow metrics into the fuel-tech series. Imports render as a positive source;
   exports render below zero as a load. They therefore appear consistently in
-  the generation stack, grouping menu, table and floating tooltip. Whole NEM,
+  the generation stack, grouping options, table and hover strip. Whole NEM,
   All Regions and WA do not add regional flows.
 - Providers request the same buffered windows as the charts
   (`fetch-window.js`), so overlapping URLs collapse in the broker — in
@@ -589,11 +596,20 @@ interpolation caption, because the image captures the displayed chart.
   stays visible beside the scrollable controls at smaller widths. Chart bodies
   and the table share a fading white overlay with a soft sweeping highlight.
   Headers and metrics remain clear, and range/grouping controls remain usable.
-  All loading visuals clear after the selected chart snapshots and enabled
+  Loading visuals appear only after 200 ms of sustained pending data, so cached
+  frontend updates do not flash the overlay. Settled chart snapshots publish
+  immediately: the previous extra 300 ms table debounce was redundant with the
+  gesture guard. Readiness/export validation stays immediate and independent of
+  the visual delay. All loading visuals clear after the selected chart snapshots and enabled
   table/overlay feeds settle. Reduced-motion preferences disable the slide,
   pulse and sweep. Individual chart indicators are suppressed. Background chart
   cache warming and active pan/zoom gestures do not trigger these visuals.
   Failed and empty feeds settle into their existing messages.
+- Emissions intensity retains per-group emissions and energy components in its
+  loaded cache. Table row visibility filters those components locally, before
+  display aggregation and ratio calculation. The first toggle therefore needs
+  neither another data manager nor an HTTP-cache hit; snapshots and exports keep
+  their visibility-specific identity and receive the selected component totals.
 - During pan/zoom gestures the charts freeze their y-domains and render
   padded whole-bucket slices with stable identity (`display-aggregation.js`),
   so per-frame work is path regeneration only; the table, overlays, URL and
@@ -613,16 +629,12 @@ interpolation caption, because the image captures the displayed chart.
 Gross demand is the default contribution basis and appears first in the menu,
 followed by generation. Explicit links for either basis remain supported.
 
-The generation tooltip adds a `%` column beside absolute power or energy values.
-It uses the selected contribution basis for the hovered interval; excluded
-technologies and unavailable denominators show a dash. Other chart tooltips keep
-their existing columns, and Proportion view uses its single percentage column.
-Curtailment rows also pair their power/energy values with the selected contribution
-basis. The Renewables row pairs the official renewable-generation amount with
-the overlay's independent gross-demand percentage. Each value joins at the exact
-hovered timestamp; a missing amount or percentage leaves only that cell unavailable.
-The renewables amount feed loads whenever its absolute tooltip is enabled, even
-with the table closed.
+Timeline charts use the shared fixed tooltip strip above each chart, showing the
+interval, hovered series and total where applicable. Narrow cards reserve two
+lines, keeping the plot stable on hover. The table provides the complete series
+breakdown and contribution percentages at the same timestamp; leaving inspection
+restores the window totals. Time of day and Compare regions retain their existing
+tooltip presentations.
 
 The generation chart's **Proportion** view uses the same basis selected in
 **Fuel technology options → Contribution** as the table, including from the
@@ -633,7 +645,8 @@ changes visibility, not the denominator. Excluded technologies are omitted from
 the percentage plot and tooltip; their absolute values remain available.
 
 Chart percentages describe each displayed interval, calculated after aggregation
-or rolling sums. Table contributions summarise the selected window, using native
+or rolling sums. Table contributions follow the hovered interval during inspection; otherwise they
+summarise the selected window, using native
 rows where rolling or filtered display rows would double-count. They therefore
 need not equal the percentage at any one chart timestamp.
 
