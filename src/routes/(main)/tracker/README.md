@@ -300,7 +300,8 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   selected generation unit, and curtailment/renewables show amounts and shares.
   A divider separates curtailment from the Demand and Renewables rows.
   Hovering any timeline chart (or inspecting it with the keyboard) shows that
-  displayed interval across every table section, with its timestamp above the rows.
+  displayed interval across every table section, and the filter bar's range
+  label switches to the inspected timestamp for as long as inspection lasts.
   Leaving inspection restores the accepted window totals. Feeds match the exact
   timestamp; missing values stay unavailable. Single intervals use their explicit
   duration for energy and average power. Window totals and exports remain separate

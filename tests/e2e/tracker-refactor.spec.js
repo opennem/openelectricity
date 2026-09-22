@@ -1607,7 +1607,10 @@ test('timeline tooltip stays above the chart and table inspection follows contri
 	await expect(wind.locator('td').nth(3)).toHaveText('200.0%');
 	await page.mouse.move(0, 0);
 	await expect(tooltip).toHaveText('');
-	await expect(page.getByTestId('table-period')).toHaveText('Visible window');
+	await expect(page.getByTestId('tracker-range-status')).toHaveAttribute(
+		'data-inspecting',
+		'false'
+	);
 	await page.getByRole('button', { name: 'Hide fuel tech table', exact: true }).click();
 	await page.setViewportSize({ width: 390, height: 844 });
 	tooltip = await hoverGeneration(page);
@@ -2016,21 +2019,25 @@ test('timeline chart hover updates table values and restores window totals on ex
 	await chartsSettled(page);
 	const coal = page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first();
 	const original = await coal.textContent();
-	const period = page.getByTestId('table-period');
-	await expect(period).toHaveText('Visible window');
+	const rangeStatus = page.getByTestId('tracker-range-status');
+	const rangeLabel = page.getByTestId('tracker-range-label');
+	await expect(rangeStatus).toHaveAttribute('data-inspecting', 'false');
+	const rangeText = await rangeLabel.textContent();
 	for (const name of ['Generation', 'Market', 'Emissions']) {
 		const chart = card(page, name);
 		await chart.scrollIntoViewIfNeeded();
 		const box = await chart.locator('.stratum-chart-area').boundingBox();
 		await page.mouse.move(box.x + box.width * 0.25, box.y + box.height * 0.5);
 		await expect(chart.getByTestId('chart-tooltip-strip')).toBeVisible();
-		await expect(period).not.toHaveText('Visible window');
+		await expect(rangeStatus).toHaveAttribute('data-inspecting', 'true');
+		await expect(rangeLabel).not.toHaveText(rangeText);
 		await expect(coal.locator('td').nth(2)).toHaveText('100');
 		await expect(coal).not.toHaveText(original);
 		await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.5);
 		await expect(coal.locator('td').nth(2)).toHaveText('200');
 		await page.mouse.move(0, 0);
-		await expect(period).toHaveText('Visible window');
+		await expect(rangeStatus).toHaveAttribute('data-inspecting', 'false');
+		await expect(rangeLabel).toHaveText(rangeText);
 		await expect(coal).toHaveText(original);
 	}
 });

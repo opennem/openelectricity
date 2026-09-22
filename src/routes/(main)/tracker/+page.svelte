@@ -386,7 +386,11 @@
 						</div>
 					</div>
 					{#if timeline}
-						<RangeStatus label={session.rangeLabel} loading={trackerLoading} />
+						<RangeStatus
+							label={session.rangeLabel}
+							inspectLabel={canvas?.getInspectLabel()}
+							loading={trackerLoading}
+						/>
 					{/if}
 				{/snippet}
 

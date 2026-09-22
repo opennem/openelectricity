@@ -15,8 +15,6 @@
 	 *
 	 * @type {import('./types.js').FuelTechTableControls & {
 	 *   rows: FuelTechTableRow[] | null,
-	 *   periodLabel?: string,
-	 *   inspecting?: boolean,
 	 *   valuesPending?: boolean,
 	 *   loading?: boolean,
 	 *   error?: string | null,
@@ -33,8 +31,6 @@
 	 */
 	let {
 		rows = null,
-		periodLabel = 'Visible window',
-		inspecting = false,
 		valuesPending = false,
 		loading = false,
 		error = null,
@@ -71,14 +67,6 @@
 		{@render options?.()}
 	</TrackerPanelHeader>
 
-	<div
-		data-testid="table-period"
-		class="border-b border-warm-grey px-4 py-2 text-xs {inspecting
-			? 'bg-light-warm-grey text-dark-grey'
-			: 'text-mid-grey'}"
-	>
-		{periodLabel}
-	</div>
 	{#if error}
 		<div
 			class="flex items-center justify-between gap-2 border-b border-warm-grey px-4 py-2 text-xs"

@@ -167,11 +167,6 @@
 	let tableValuesPending = $derived(table.valuesPending);
 	let displayedRows = $derived(table.displayedRows);
 	let inspectedTable = $derived(table.inspection);
-	let tablePeriod = $derived(
-		inspectedTable
-			? getTimeFormatPolicy(range.displayInterval, ianaTimeZone).formatTooltip(inspectedTable.time)
-			: 'Visible window'
-	);
 	const EMPTY_OVERLAYS = /** @type {any[]} */ ([]);
 	const PREFETCH_PLAN = createTrackerPrefetchPlan();
 
@@ -249,6 +244,19 @@
 	let hoverTime = $derived(
 		previewTime ?? (metricsOpen ? metricsPanel?.getSelectedTime() : undefined)
 	);
+	/** The hovered or keyboard-inspected period, formatted at the display grain.
+	 *  The page shows it in place of the range label while inspection lasts. */
+	let inspectLabel = $derived(
+		hoverTime !== undefined &&
+			!session.gestureActive &&
+			hoverTime >= viewWindow.start &&
+			hoverTime <= viewWindow.end
+			? getTimeFormatPolicy(range.displayInterval, ianaTimeZone).formatTooltip(hoverTime)
+			: undefined
+	);
+	export function getInspectLabel() {
+		return inspectLabel;
+	}
 	// Metrics pane: pixel width, remembered locally. Desktop widths leave room
 	// for the chart column and the fuel-tech table; small screens overlay.
 	const METRICS_MIN_PX = 224;
@@ -778,8 +786,6 @@
 				options={fuelTechOptions}
 				bind:closeButton={tablePanel.closer}
 				rows={inspectedTable?.rows ?? displayedRows}
-				periodLabel={tablePeriod}
-				inspecting={!!inspectedTable}
 				tableColumns={session.selection.tableColumns}
 				valuesPending={tableValuesPending}
 				error={data.state('generation').error ?? providers.error}

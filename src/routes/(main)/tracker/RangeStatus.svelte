@@ -1,13 +1,20 @@
 <script>
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 
-	/** @type {{ label: string, loading: boolean }} */
-	let { label, loading } = $props();
+	/**
+	 * RangeStatus — the top-nav readout for the timeline view: the selected
+	 * range label, replaced by the hovered or keyboard-inspected period while
+	 * a chart is being inspected, and by the loader while data updates.
+	 *
+	 * @type {{ label: string, inspectLabel?: string, loading: boolean }}
+	 */
+	let { label, inspectLabel = undefined, loading } = $props();
 </script>
 
 <div
 	class="range-status relative h-[36px] w-0 shrink-0 overflow-hidden lg:w-auto lg:min-w-[36px]"
 	data-loading={loading}
+	data-inspecting={inspectLabel !== undefined}
 	data-testid="tracker-range-status"
 >
 	<span
@@ -15,7 +22,7 @@
 		aria-hidden={loading}
 		data-testid="tracker-range-label"
 	>
-		{label}
+		{inspectLabel ?? label}
 	</span>
 	<div
 		class="range-loader pointer-events-none absolute inset-0 flex items-center justify-end"
