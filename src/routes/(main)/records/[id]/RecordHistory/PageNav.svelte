@@ -250,7 +250,11 @@
 		if (option.value === 'power' && recordPeriod !== 'interval') {
 			recordPeriod = 'interval';
 		}
-		if (option.value !== 'power' && recordPeriod === 'interval') {
+		if (
+			option.value !== 'power' &&
+			option.value !== 'renewable_proportion' &&
+			recordPeriod === 'interval'
+		) {
 			recordPeriod = 'day';
 		}
 		goToRecord({
@@ -267,7 +271,11 @@
 	 */
 	function handlePeriodChange(option) {
 		let recordMetric = metric;
-		if (option.value === 'interval' && recordMetric !== 'power') {
+		if (
+			option.value === 'interval' &&
+			recordMetric !== 'power' &&
+			recordMetric !== 'renewable_proportion'
+		) {
 			recordMetric = 'power';
 		}
 		if (option.value !== 'interval' && recordMetric === 'power') {
@@ -300,6 +308,11 @@
 	 * @param {{region: string |null, fuelTech: string |null, metric: string |null, period: string |null, aggregate: string |null}} param0
 	 */
 	function goToRecord({ region, fuelTech, metric, period, aggregate }) {
+		// The records API exposes this metric under a different record ID segment.
+		if (metric === 'renewable_proportion') {
+			fuelTech = 'renewables';
+			metric = 'proportion';
+		}
 		// const findRegion = regions.find((r) => r.value === region);
 		let fuelTechId = fuelTech ? `.${fuelTech}` : '';
 		console.log(`/records/${region}${fuelTechId}.${metric}.${period}.${aggregate}`);

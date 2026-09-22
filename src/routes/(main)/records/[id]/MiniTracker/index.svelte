@@ -7,7 +7,8 @@
 	import LensChart from '$lib/components/charts/LensChart.svelte';
 	import nighttimes from '$lib/utils/nighttimes';
 	import init from './helpers/init';
-	import { apiIntervalMap, chartOptions } from './helpers/config';
+	import { chartOptions } from './helpers/config';
+	import { getFetchPath } from './helpers/fetch-path.js';
 	import xTickValueFormatters from './helpers/xtick-value-formatters';
 
 	let { record, timeZone, displayPrefix, chartHeight } = $props();
@@ -67,20 +68,10 @@
 	 */
 	async function fetchData(record) {
 		if (!browser || !record?.date) return;
-		let apiInterval = apiIntervalMap[record.period];
 		let isIntervalPeriod = record.period === 'interval';
 		let isWem = record.network_id === 'WEM';
-		let isNetworkRegion = record.network_region;
-		let fuelTechId = record.fueltech_id;
-		let primaryGrouping = isNetworkRegion ? 'network_region' : 'network';
-		let isDemand = fuelTechId === 'demand';
-		let demandMetric = isIntervalPeriod ? 'demand' : 'demand_energy';
-		let isFossilsOrRenewables = fuelTechId === 'fossils' || fuelTechId === 'renewables';
-		let secondaryGroupingStr = fuelTechId
-			? isFossilsOrRenewables
-				? 'renewable'
-				: 'fueltech_group'
-			: undefined;
+		let isRenewableProportion = record.metric === 'renewable_proportion';
+		let fuelTechId = isRenewableProportion ? 'renewables' : record.fueltech_id;
 
 		let { dateStart, dateEnd, withTime } = getDateRange(record.date, record.period);
 		let dateStartFormatted = plainDateTime(dateStart, timeZone, withTime);
@@ -88,19 +79,7 @@
 
 		let res;
 
-		let oePath = `/api/openelectricity?dataType=${isDemand ? 'market' : 'network'}&networkId=${record.network_id}&metric=${isDemand ? demandMetric : record.metric}&interval=${apiInterval}&dateStart=${dateStartFormatted}&dateEnd=${dateEndFormatted}&primaryGrouping=${primaryGrouping}`;
-
-		if (secondaryGroupingStr) {
-			oePath += `&secondaryGrouping=${secondaryGroupingStr}`;
-		}
-
-		if (fuelTechId && !isFossilsOrRenewables) {
-			oePath += `&fueltechGroup=${fuelTechId}`;
-		}
-
-		if (isNetworkRegion) {
-			oePath += `&networkRegion=${record.network_region}`;
-		}
+		let oePath = getFetchPath(record, dateStartFormatted, dateEndFormatted);
 
 		try {
 			// chartCxt.seriesData = [];
@@ -122,7 +101,7 @@
 			let results = data[0].results;
 			let result = results[0];
 
-			if (fuelTechId && result) {
+			if (fuelTechId && result && !isRenewableProportion) {
 				if (fuelTechId === 'fossils') {
 					result = results.find((/** @type {any} */ d) => !d.columns.renewable);
 				} else if (fuelTechId === 'renewables') {
@@ -152,7 +131,7 @@
 			chartCxt.timeZone = timeZone;
 			chartCxt.seriesData = timeSeries;
 			chartCxt.seriesNames = ['value'];
-			chartCxt.seriesColours = { value: fuelTechColourMap[record.fueltech_id || 'demand'] };
+			chartCxt.seriesColours = { value: fuelTechColourMap[fuelTechId || 'demand'] };
 			chartCxt.seriesLabels = { value: '' };
 			chartCxt.focusTime = record.time;
 			chartCxt.chartTooltips.valueKey = 'value';

@@ -14,6 +14,7 @@
 	import fetchRecord from './RecordHistory/helpers/fetch';
 	import process from './RecordHistory/helpers/process';
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
+	import { chartOptions } from './MiniTracker/helpers/config';
 	import dateTimeQuery from '../page-data-options/date-time-query';
 	import { showToast } from '$lib/stores/toast';
 	import { backOr } from '$lib/utils/back-navigation.js';
@@ -106,22 +107,9 @@
 		];
 		chartCxt.chartOptions.setLineChart();
 
-		// TODO: refactor this bit into a config object
-		if (record.metric === 'power') {
-			chartCxt.chartOptions.prefix = 'M';
-			chartCxt.chartOptions.displayPrefix = 'M';
-			chartCxt.chartOptions.allowedPrefixes = ['M', 'G'];
-			chartCxt.chartOptions.baseUnit = 'W';
-		} else if (record.metric === 'energy') {
-			chartCxt.chartOptions.prefix = 'M';
-			chartCxt.chartOptions.displayPrefix = 'M';
-			chartCxt.chartOptions.allowedPrefixes = ['M', 'G'];
-			chartCxt.chartOptions.baseUnit = 'Wh';
-		} else if (record.metric === 'emissions') {
-			chartCxt.chartOptions.prefix = '';
-			chartCxt.chartOptions.displayPrefix = 'k';
-			chartCxt.chartOptions.allowedPrefixes = ['', 'k'];
-			chartCxt.chartOptions.baseUnit = 'tCO2e';
+		const options = chartOptions[record.metric];
+		if (options) {
+			Object.assign(chartCxt.chartOptions, options);
 		}
 
 		dateBrushCxt.seriesData = seriesData;

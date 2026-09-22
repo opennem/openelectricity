@@ -8,7 +8,7 @@ export let apiIntervalMap = Object.freeze({
 	year: '1y'
 });
 
-/** @type {Record<string, {prefix: string, displayPrefix: string, allowedPrefixes: string[], baseUnit: string}>} */
+/** @type {Record<string, {prefix: SiPrefix, displayPrefix: SiPrefix, allowedPrefixes: SiPrefix[], baseUnit: string}>} */
 export let chartOptions = Object.freeze({
 	power: {
 		prefix: 'M',
@@ -27,6 +27,12 @@ export let chartOptions = Object.freeze({
 		displayPrefix: 'k',
 		allowedPrefixes: ['', 'k'],
 		baseUnit: 'tCO2e'
+	},
+	renewable_proportion: {
+		prefix: '',
+		displayPrefix: '',
+		allowedPrefixes: [''],
+		baseUnit: '%'
 	},
 	market_value: {
 		prefix: '',
