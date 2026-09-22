@@ -407,6 +407,20 @@
 			"name": "Banimboola"
 		}
 	},
+	"BARANDUDA": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 400,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Baranduda"
+		}
+	},
 	"BARCALDN": {
 		"v": 1,
 		"photo": "https://cdn.sanity.io/images/bjedimft/production/9b39e5ac4f44e17ba1fe91c9109a4cf73a0d6576-1100x619.jpg",
@@ -1560,7 +1574,7 @@
 			],
 			"dominant": "hydro",
 			"capacity": 37.5,
-			"status": "commissioning",
+			"status": "operating",
 			"region": "VIC",
 			"name": "Clover"
 		}
