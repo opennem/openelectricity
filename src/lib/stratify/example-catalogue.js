@@ -1,3 +1,4 @@
+import { fuelTechColourMap } from '$lib/theme/openelectricity';
 import { CHART_TYPES } from './chart-types.js';
 
 /**
@@ -260,7 +261,7 @@ export const builtInExamples = [
 			description: 'Illustrative annual renewable electricity generation.',
 			dataSource: 'Open Electricity illustrative data',
 			yLabel: 'Generation (GWh)',
-			userSeriesColours: { renewables: '#2c7629' },
+			userSeriesColours: { renewables: fuelTechColourMap.renewables },
 			csvText: `Year,Renewables
 2018-01-01,42000
 2019-01-01,47800
@@ -419,7 +420,7 @@ Q4 2025,84,73,80`
 			title: 'Largest illustrative wind farms',
 			dataSource: 'Open Electricity illustrative data',
 			xLabel: 'Capacity (MW)',
-			userSeriesColours: { capacity_mw: '#2c7629' },
+			userSeriesColours: { capacity_mw: fuelTechColourMap.wind },
 			csvText: `Facility,Capacity (MW)
 Southern Plains Wind Farm,1450
 Golden Ridge Renewable Energy Hub,1180
@@ -456,7 +457,10 @@ Riverina Wind Energy Centre,710`
 			title: 'Generation by broad source',
 			dataSource: 'Open Electricity illustrative data',
 			xLabel: 'Generation (GWh)',
-			userSeriesColours: { renewables: '#2c7629', fossil_fuels: '#5b4636' },
+			userSeriesColours: {
+				renewables: fuelTechColourMap.renewables,
+				fossil_fuels: fuelTechColourMap.fossil_fuels
+			},
 			csvText: `Region,Renewables,Fossil fuels
 New South Wales,11200,18500
 Victoria,10400,9200
