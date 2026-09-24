@@ -259,9 +259,12 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   (`groups.js` registry). It lives in the Fuel technologies panel header's
   options (sliders) dialog, next to contribution basis (% generation ⇄ % demand)
   and checkboxes for the six table value columns. Technology is always shown;
-  Show all columns restores the defaults. Radio and checkbox choices apply immediately
-  and persist in the URL/history (`columns` is a comma-separated list, empty hides
-  all value columns, and omitted shows all). The table headers echo the grouping and
+  Energy, Av power and Contribution show by default; Show all columns adds Av price,
+  Emissions and Intensity. Choices apply immediately. Grouping and
+  contribution persist in the URL/history; table columns are a personal preference
+  in localStorage (`tracker-table-columns`, restored after mount) so shared links
+  never change the recipient's columns, and the retired `columns` param is dropped
+  from old links. The table headers echo the grouping and
   contribution choices as muted sub-labels. The same trigger stays in the
   collapsed table rail, allowing chart configuration without table-provider
   fetches. Time of day has a grouping-only dialog in the top nav. Global page

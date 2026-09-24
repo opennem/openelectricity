@@ -270,7 +270,7 @@
 <section
 	aria-label="Region comparison"
 	class="flex min-h-0 flex-1 flex-col"
-	data-png-context={`Compare regions · ${caption}`}
+	data-png-context={`Compare · ${caption}`}
 >
 	<span class="sr-only" role="status"
 		>{source.pending

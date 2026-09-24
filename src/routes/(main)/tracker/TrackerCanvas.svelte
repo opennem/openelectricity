@@ -42,6 +42,7 @@
 	} from './tracker-overlays.js';
 	import { formatTrackerPercentageValue } from './table-format.js';
 	import { createTrackerProviders } from './tracker-providers.svelte.js';
+	import { createTableColumnsPreference } from './table-columns.svelte.js';
 	import { createTrackerTable } from './tracker-table.svelte.js';
 	import { createTrackerData } from './tracker-data.svelte.js';
 	import { createTrackerMetrics } from './tracker-metrics.svelte.js';
@@ -59,6 +60,7 @@
 	const range = untrack(() => session.range);
 	let region = $derived(session.selection.region);
 	let group = $derived(session.selection.group);
+	const tableColumns = createTableColumnsPreference();
 	let contributionMode = $derived(session.selection.contributionMode);
 	let priceMode = $derived(session.selection.priceMode);
 	let emissionsMode = $derived(session.selection.emissionsMode);
@@ -462,8 +464,8 @@
 	<FuelTechOptions
 		{group}
 		{contributionMode}
-		tableColumns={session.selection.tableColumns}
-		oncolumnschange={(value) => session.select('tableColumns', value)}
+		tableColumns={tableColumns.value}
+		oncolumnschange={(value) => (tableColumns.value = value)}
 		ongroupchange={(value) => session.select('group', value)}
 		oncontributionchange={(value) => session.select('contributionMode', value)}
 	/>
@@ -786,7 +788,7 @@
 				options={fuelTechOptions}
 				bind:closeButton={tablePanel.closer}
 				rows={inspectedTable?.rows ?? displayedRows}
-				tableColumns={session.selection.tableColumns}
+				tableColumns={tableColumns.value}
 				valuesPending={tableValuesPending}
 				error={data.state('generation').error ?? providers.error}
 				onretry={() => {

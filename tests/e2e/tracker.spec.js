@@ -329,6 +329,16 @@ test.describe('Tracker table horizontal scrolling', () => {
 	const columnStrip = (/** @type {import('@playwright/test').Page} */ page) =>
 		page.getByRole('group', { name: 'Table columns' });
 
+	// Price, emissions and intensity are opt-in; these layouts need all six columns.
+	test.beforeEach(async ({ page }) => {
+		await page.addInitScript(() =>
+			localStorage.setItem(
+				'tracker-table-columns',
+				JSON.stringify(['energy', 'power', 'contribution', 'price', 'emissions', 'intensity'])
+			)
+		);
+	});
+
 	/** Right edge of a locator's box. @param {import('@playwright/test').Locator} locator */
 	async function rightEdge(locator) {
 		const box = await locator.boundingBox();

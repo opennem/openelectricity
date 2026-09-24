@@ -124,7 +124,7 @@ export function profileDataset(profile, window, context) {
 	const { label, unit, region, timeZone } = context;
 	return {
 		key: 'profile',
-		title: 'Time of day',
+		title: 'Profile',
 		columns: [
 			{ key: 'region', header: 'Region', type: 'string' },
 			{ key: 'timeZone', header: 'Network time', type: 'string' },

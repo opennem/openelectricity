@@ -646,23 +646,32 @@ test('fuel technology options modal controls grouping, contribution and columns 
 	await dialog.getByRole('checkbox', { name: 'Energy', exact: true }).focus();
 	await page.keyboard.press('Space');
 	await expect(dialog.getByRole('checkbox', { name: 'Energy', exact: true })).not.toBeChecked();
-	await dialog.getByRole('checkbox', { name: 'Intensity', exact: true }).uncheck();
+	// Price, emissions and intensity are opt-in.
+	for (const name of ['Av price', 'Emissions', 'Intensity'])
+		await expect(dialog.getByRole('checkbox', { name, exact: true })).not.toBeChecked();
+	await dialog.getByRole('checkbox', { name: 'Intensity', exact: true }).check();
 	await expect(dialog).toBeVisible();
 	await dialog.getByRole('button', { name: 'Done', exact: true }).click();
 	await expect(trigger).toBeFocused();
 	const table = page.getByRole('table', { name: 'Fuel technology values' });
 	await expect(table.getByRole('columnheader', { name: /^Energy/ })).toHaveCount(0);
-	await expect(table.getByRole('columnheader', { name: /^Intensity/ })).toHaveCount(0);
+	await expect(table.getByRole('columnheader', { name: /^Intensity/ })).toBeVisible();
+	await expect(table.getByRole('columnheader', { name: /^Av price/ })).toHaveCount(0);
 	await expect(table.getByRole('columnheader', { name: /^Technology/ })).toContainText('Detailed');
 	await expect(table.getByRole('columnheader', { name: /^Contribution/ })).toContainText(
 		'% generation'
 	);
+	// Columns are a localStorage preference: history leaves them alone and reloads keep them.
 	await page.goBack();
+	await expect(table.getByRole('columnheader', { name: /^Contribution/ })).toContainText(
+		'% demand'
+	);
 	await expect(table.getByRole('columnheader', { name: /^Intensity/ })).toBeVisible();
+	await expect(table.getByRole('columnheader', { name: /^Energy/ })).toHaveCount(0);
 	await page.goForward();
-	await expect(table.getByRole('columnheader', { name: /^Intensity/ })).toHaveCount(0);
 	await page.reload();
 	await chartsSettled(page);
+	await expect(table.getByRole('columnheader', { name: /^Intensity/ })).toBeVisible();
 	await expect(table.getByRole('columnheader', { name: /^Energy/ })).toHaveCount(0);
 	await trigger.click();
 	for (const checkbox of await dialog.getByRole('checkbox').all()) await checkbox.uncheck();
@@ -1318,7 +1327,7 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 }) => {
 	const api = await trackerFixture(page);
 	await page.goto('/tracker?region=wem&view=average&profile-end=2026-08-31&profile-series=wind');
-	const profile = page.getByRole('region', { name: 'Time-of-day analysis' });
+	const profile = page.getByRole('region', { name: 'Profile analysis' });
 	await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await expect(
 		page
@@ -1420,7 +1429,7 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 	await expect(card(page, 'Generation')).toBeVisible();
 	expect(new URL(page.url()).search).toBe('');
 	await page.goBack();
-	await expect(page.getByRole('button', { name: 'Time of day', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Profile', exact: true })).toBeVisible();
 	await expect(page).toHaveURL(original);
 	await expect(page.getByRole('combobox', { name: 'View', exact: true }).first()).toHaveValue(
 		'daily'
@@ -1446,14 +1455,14 @@ test('time-of-day failures and empty results remain explicit; switching metric c
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await page.getByRole('combobox', { name: 'Metric', exact: true }).selectOption('price');
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeDisabled();
-	await expect(page.getByRole('status')).toContainText('Loading time-of-day');
+	await expect(page.getByRole('status')).toContainText('Loading profile');
 	api.release();
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await trackerFixture(page, { empty: 'power' });
 	await page.getByRole('combobox', { name: 'Metric', exact: true }).selectOption('power');
 	// Use a new window so the successful response cache cannot satisfy it.
 	await page.getByLabel('Last day', { exact: true }).fill('2026-07-31');
-	await expect(page.getByRole('status')).toContainText('No time-of-day data');
+	await expect(page.getByRole('status')).toContainText('No profile data');
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeDisabled();
 });
 
@@ -1904,7 +1913,9 @@ test('same-route links reset selection and phone/tablet layouts remain usable', 
 	}
 	await page.getByRole('link', { name: 'Tracker', exact: true }).click();
 	await expect(page).not.toHaveURL(/region=nsw1/);
-	await expect(page.getByRole('button', { name: 'NEM Regions', exact: true })).toBeVisible();
+	await expect(
+		page.getByRole('button', { name: 'National Electricity Market', exact: true })
+	).toBeVisible();
 });
 
 test('frontend options reuse cached responses without flashing loading overlays', async ({

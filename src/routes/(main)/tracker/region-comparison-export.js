@@ -66,7 +66,7 @@ export function comparisonFileName(state, viewport, extension) {
 export function comparisonWorkbook(dataset, url, state) {
 	return [
 		summaryToSheet([
-			['View', 'Compare regions'],
+			['View', 'Compare'],
 			[
 				'Charts',
 				state.charts

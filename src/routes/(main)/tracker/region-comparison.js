@@ -10,6 +10,7 @@ import {
 	comparisonMetricValue
 } from './comparison-metrics.js';
 import { allRegionsOption, regionOptions } from '$lib/regions.js';
+import { withTrackerLabel } from './tracker-regions.js';
 import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
 import { contributionSeries } from '$lib/components/charts/network/contribution.js';
@@ -21,10 +22,10 @@ export const COMPARISON_REGIONS = [
 	...regionOptions
 		.filter((region) => region.value !== '_all')
 		.map((region) => ({
-			...region,
+			...withTrackerLabel(region),
 			shortLabel: region.value === 'wem' ? 'WA (WEM)' : region.shortLabel
 		})),
-	regionOptions[0],
+	withTrackerLabel(regionOptions[0]),
 	{ ...allRegionsOption, label: 'All Regions (NEM + WEM)', shortLabel: 'All Regions' }
 ];
 /** The shortest comparison window — one full year of periods. */

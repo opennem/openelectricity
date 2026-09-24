@@ -54,7 +54,6 @@
  * @property {EmissionsMode} emissionsMode
  * @property {TrackerOverlay[]} overlays
  * @property {boolean} tablePanelOpen
- * @property {string[]} tableColumns
  * @property {boolean} fullscreen
  */
 

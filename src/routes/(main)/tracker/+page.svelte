@@ -86,8 +86,8 @@
 	let timeline = $derived(view === 'timeline');
 	const viewOptions = [
 		{ value: 'timeline', label: 'Timeline' },
-		{ value: 'average', label: 'Time of day' },
-		{ value: 'regions', label: 'Compare regions' }
+		{ value: 'average', label: 'Profile' },
+		{ value: 'regions', label: 'Compare' }
 	];
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	let profileCanvas = $state.raw(/** @type {TimeOfDay | undefined} */ (undefined));
@@ -311,6 +311,8 @@
 								buttons={viewOptions}
 								selected={view}
 								compact
+								rounded="rounded-lg"
+								darkSelected
 								onchange={(option) => session.selectView(option.value)}
 								aria-label="Analysis view"
 							/>

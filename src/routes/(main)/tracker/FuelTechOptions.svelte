@@ -8,7 +8,7 @@
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import { getGroup, GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
 	import { CONTRIBUTION_OPTIONS, contributionLabel } from './tracker-model.js';
-	import { TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
+	import { TABLE_COLUMNS, ALL_TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
 
 	/** @type {{group: string, ongroupchange: (value: string) => void,
 	 * contributionMode?: import('./types.js').ContributionMode,
@@ -88,7 +88,7 @@
 						/>
 					{/each}
 				</div>
-				<Button2 class="mt-4 text-sm" onclick={() => oncolumnschange?.([...DEFAULT_TABLE_COLUMNS])}>
+				<Button2 class="mt-4 text-sm" onclick={() => oncolumnschange?.([...ALL_TABLE_COLUMNS])}>
 					Show all columns
 				</Button2>
 			</fieldset>

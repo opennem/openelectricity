@@ -163,14 +163,14 @@
 
 <section
 	class="overflow-auto p-3 sm:p-5"
-	aria-label="Time-of-day analysis"
+	aria-label="Profile analysis"
 	aria-busy={pending}
 	data-png-context={`${regionLabel} · ${window.dates[0]} to ${window.lastDate} · UTC${zone} · ${group.label}`}
 >
 	<div class="mx-auto max-w-[1400px] rounded-lg border border-warm-grey bg-white p-4 sm:p-6">
 		<div class="flex flex-wrap items-end gap-4">
 			<div class="mr-auto">
-				<h1 class="mb-0 text-xl font-bold leading-tight">Time of day</h1>
+				<h1 class="mb-0 text-xl font-bold leading-tight">Profile</h1>
 				<p class="mt-1 text-sm text-mid-grey">
 					{regionLabel} · {window.dates[0]} to {window.lastDate} · UTC{zone}
 				</p>
@@ -192,11 +192,9 @@
 				<button class="control mt-3" onclick={retry}>Retry profile</button>
 			</div>
 		{:else if pending}
-			<p role="status" class="py-20 text-center">Loading time-of-day data…</p>
+			<p role="status" class="py-20 text-center">Loading profile data…</p>
 		{:else if !available}
-			<p role="status" class="py-20 text-center">
-				No time-of-day data available for this selection.
-			</p>
+			<p role="status" class="py-20 text-center">No profile data available for this selection.</p>
 		{:else}
 			<ProfileChart
 				rows={chartRows}

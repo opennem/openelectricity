@@ -10,7 +10,7 @@ import {
 describe('PNG snapshot capture', () => {
 	/** @param {string} inner */
 	const mount = (inner) => {
-		document.body.innerHTML = `<main><section data-png-context="Compare regions" data-tracker-png='{"id":"regions-share","label":"Renewables","ready":true,"caption":"Monthly"}'>${inner}</section></main>`;
+		document.body.innerHTML = `<main><section data-png-context="Compare" data-tracker-png='{"id":"regions-share","label":"Renewables","ready":true,"caption":"Monthly"}'>${inner}</section></main>`;
 		for (const canvas of Array.from(document.querySelectorAll('canvas')))
 			canvas.toDataURL = () => 'data:image/png;base64,AA==';
 		for (const element of Array.from(
@@ -36,7 +36,7 @@ describe('PNG snapshot capture', () => {
 		);
 		expect(snapshot.charts).toHaveLength(1);
 		expect(snapshot.charts[0].ready).toBe(true);
-		expect(snapshot.charts[0].caption).toBe('Compare regions · Monthly');
+		expect(snapshot.charts[0].caption).toBe('Compare · Monthly');
 		expect(snapshot.charts[0].svg).toContain('<rect');
 		expect(snapshot.charts[0].svg).not.toContain('data-png-exclude');
 		expect(snapshot.charts[0].width).toBe(300);

@@ -321,17 +321,10 @@ describe('tracker URLs', () => {
 });
 
 describe('table column links', () => {
-	it('round-trips defaults, a subset and an explicitly empty selection', () => {
-		for (const columns of [undefined, ['energy', 'price'], []]) {
-			const { url, parsed } = roundTrip({ tableColumns: columns });
-			expect(parsed.tableColumns).toEqual(
-				columns ?? ['energy', 'power', 'contribution', 'price', 'emissions', 'intensity']
-			);
-			expect(url.searchParams.has('columns')).toBe(columns !== undefined);
-		}
-	});
-	it('removes invalid and duplicate columns while preserving table order', () => {
-		const { parsed } = roundTrip({ tableColumns: ['price', 'bogus', 'energy', 'price'] });
-		expect(parsed.tableColumns).toEqual(['energy', 'price']);
+	it('drops the retired columns param', () => {
+		const url = new URL('https://example.test/tracker?columns=energy,price&unknown=1');
+		applyTrackerUrl(url, parseTrackerUrl(url.searchParams, context));
+		expect(url.searchParams.has('columns')).toBe(false);
+		expect(url.searchParams.get('unknown')).toBe('1');
 	});
 });

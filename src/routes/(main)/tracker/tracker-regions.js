@@ -9,11 +9,40 @@
  * `regionsOnly` derivations, none of which can handle a two-network scope.
  */
 
-import { regionOptionsWithAu } from '$lib/regions.js';
+import { regionLabel as sharedRegionLabel, regionOptionsWithAu } from '$lib/regions.js';
 
-export { hasSpotPrice, regionLabel } from '$lib/regions.js';
+export { hasSpotPrice } from '$lib/regions.js';
 
-export const TRACKER_REGION_OPTIONS = regionOptionsWithAu;
+/**
+ * Tracker display names that differ from the shared labels (the scenarios and
+ * records filters keep "NEM Regions" / "Western Australia").
+ * @type {Record<string, string>}
+ */
+const TRACKER_LABELS = {
+	_all: 'National Electricity Market',
+	wem: 'Western Australia (SWIS)'
+};
+
+/**
+ * A shared region option with its tracker display name applied.
+ * @template {{ value: string, label: string }} T
+ * @param {T} option
+ * @returns {T}
+ */
+export function withTrackerLabel(option) {
+	const label = TRACKER_LABELS[option.value];
+	return label ? { ...option, label } : option;
+}
+
+export const TRACKER_REGION_OPTIONS = regionOptionsWithAu.map(withTrackerLabel);
+
+/**
+ * Tracker display label for a region value, falling back to the value itself.
+ * @param {string} value
+ */
+export function regionLabel(value) {
+	return sharedRegionLabel(value, TRACKER_REGION_OPTIONS);
+}
 
 /** Every selectable scope value — the URL validation list. */
 export const TRACKER_REGION_VALUES = TRACKER_REGION_OPTIONS.map((option) => option.value);

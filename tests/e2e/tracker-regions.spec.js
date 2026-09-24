@@ -75,9 +75,9 @@ test('regional toggles, national sums, failure isolation and retry', async ({ pa
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions&compare-interval=1M&compare-charts=intensity,generation');
 	await expect(
-		page.getByRole('button', { name: 'Retry Western Australia', exact: true })
+		page.getByRole('button', { name: 'Retry Western Australia (SWIS)', exact: true })
 	).toBeVisible();
-	await page.getByRole('button', { name: 'Compare Western Australia', exact: true }).click();
+	await page.getByRole('button', { name: 'Compare Western Australia (SWIS)', exact: true }).click();
 	await regionsReady(page);
 	await page.getByRole('button', { name: 'Compare All Regions (NEM + WEM)', exact: true }).click();
 	await expect(
@@ -104,7 +104,7 @@ test('view clicks reset query settings while history restores each view and its 
 	const nav = page.getByTestId('tracker-top-nav');
 	await expect(nav.getByRole('button', { name: 'Monthly', exact: true })).toBeVisible();
 	await expect(nav.getByRole('separator')).toHaveCount(1);
-	await nav.getByRole('button', { name: 'Time of day', exact: true }).click();
+	await nav.getByRole('button', { name: 'Profile', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker\?view=average$/);
 	await expect(nav.getByRole('combobox', { name: 'View', exact: true })).toHaveValue('average');
 	await nav.getByRole('combobox', { name: 'Window', exact: true }).selectOption('28');
@@ -121,7 +121,7 @@ test('view clicks reset query settings while history restores each view and its 
 	await expect(nav.getByRole('button', { name: 'Monthly', exact: true })).toBeVisible();
 	await page.goForward();
 	await expect(nav.getByRole('combobox', { name: 'Window', exact: true })).toHaveValue('7');
-	await nav.getByRole('button', { name: 'Compare regions', exact: true }).click();
+	await nav.getByRole('button', { name: 'Compare', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker\?view=regions$/);
 	await regionsReady(page);
 	await expect(nav.getByRole('button', { name: '12-month rolling', exact: true })).toBeVisible();
@@ -169,14 +169,14 @@ test('late responses cannot restore a deselected region; interval and zoom choic
 	const data = await regionsFixture(page, { hold: 'wem' });
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker?view=regions');
-	await expect(regionRow(page, 'Western Australia')).toContainText('…');
-	await page.getByRole('button', { name: 'Compare Western Australia', exact: true }).click();
+	await expect(regionRow(page, 'Western Australia (SWIS)')).toContainText('…');
+	await page.getByRole('button', { name: 'Compare Western Australia (SWIS)', exact: true }).click();
 	await regionsReady(page);
 	data.release();
 	await expect(
-		page.getByRole('button', { name: 'Compare Western Australia', exact: true })
+		page.getByRole('button', { name: 'Compare Western Australia (SWIS)', exact: true })
 	).toHaveAttribute('aria-pressed', 'false');
-	await expect(regionRow(page, 'Western Australia')).toContainText('—');
+	await expect(regionRow(page, 'Western Australia (SWIS)')).toContainText('—');
 	await page.getByRole('button', { name: '12-month rolling', exact: true }).click();
 	await page.getByRole('option', { name: 'Financial year', exact: true }).click();
 	await expect(page).toHaveURL(/compare-interval=fy/);
