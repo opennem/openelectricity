@@ -81,13 +81,13 @@
 	let tablePanelOpen = $derived(session.selection.tablePanelOpen);
 	let bucketFilter = $derived(session.selection.bucketFilter);
 	let view = $derived(session.view);
-	let comparingRegions = $derived(view === 'regions');
-	let timeOfDay = $derived(view === 'average');
+	let comparingRegions = $derived(view === 'compare');
+	let timeOfDay = $derived(view === 'profile');
 	let timeline = $derived(view === 'timeline');
 	const viewOptions = [
 		{ value: 'timeline', label: 'Timeline' },
-		{ value: 'average', label: 'Profile' },
-		{ value: 'regions', label: 'Compare' }
+		{ value: 'profile', label: 'Profile' },
+		{ value: 'compare', label: 'Compare' }
 	];
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	let profileCanvas = $state.raw(/** @type {TimeOfDay | undefined} */ (undefined));

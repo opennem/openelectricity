@@ -15,10 +15,10 @@ describe('Tracker navigation', () => {
 		session.select('profileView', 'daily');
 		session.select('profileDays', 28);
 		const previous = session.selection;
-		session.selectView('regions');
+		session.selectView('compare');
 		expect(session.selection).toMatchObject({
 			...parseTrackerUrl(new URLSearchParams(), { nowMs }),
-			compareRegions: true
+			view: 'compare'
 		});
 		expect(session.following).toBe(false);
 		expect(changed).toHaveBeenLastCalledWith('push', true);
@@ -27,8 +27,8 @@ describe('Tracker navigation', () => {
 			interval: '1M',
 			charts: ['price']
 		});
-		session.selectView('average');
-		expect(session.selection.profileView).toBe('average');
+		session.selectView('profile');
+		expect(session.selection).toMatchObject({ view: 'profile', profileView: 'average' });
 		expect(session.selection.profileDays).toBe(7);
 		expect(session.selection.regionComparison.interval).toBe('12mr');
 		session.selectView('timeline');
@@ -53,8 +53,8 @@ describe('Tracker navigation', () => {
 			{ ...parseTrackerUrl(url.searchParams, { nowMs }), nowMs },
 			(mode, resetQuery) => navigation.write(session.selection, mode, resetQuery)
 		);
-		session.selectView('regions');
-		expect(url.search).toBe('?view=regions');
+		session.selectView('compare');
+		expect(url.search).toBe('?view=compare');
 		session.selectView('timeline');
 		expect(url.search).toBe('');
 		const restored = navigation.read(previous, nowMs);
@@ -103,10 +103,10 @@ describe('Tracker navigation', () => {
 		session.tick(nowMs + 60_000);
 		expect(session.window.end).toBe(nowMs);
 		session.gestureActive = false;
-		session.select('profileView', 'average');
+		session.select('view', 'profile');
 		session.tick(nowMs + 60_000);
 		expect(session.window.end).toBe(nowMs);
-		session.select('profileView', 'timeline');
+		session.select('view', 'timeline');
 		vi.useFakeTimers();
 		vi.setSystemTime(nowMs);
 		session.selectRange(-1);

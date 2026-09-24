@@ -31,14 +31,16 @@
  *         | { kind: 'custom', startMs: number, endMs: number, intervalId: string }} TrackerRange
  */
 
+/** @typedef {'timeline' | 'profile' | 'compare'} TrackerView */
+
 /**
  * Navigation state carried by the URL (plus `nowMs`, added by the page load).
  * @typedef {Object} TrackerUrlState
  * @property {string} region
  * @property {string} group - Fuel-tech grouping value
- * @property {boolean} compareRegions
+ * @property {TrackerView} view - Analysis view shown by the nav switcher
  * @property {import('./region-comparison.js').RegionComparisonSelection} regionComparison
- * @property {'timeline' | 'average' | 'daily'} profileView
+ * @property {'average' | 'daily'} profileView - The Profile view's display
  * @property {7 | 14 | 28} profileDays
  * @property {'power' | 'price'} profileMetric
  * @property {string} profileSeries

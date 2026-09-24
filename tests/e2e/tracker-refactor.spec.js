@@ -991,7 +991,7 @@ test('PNG prevents held-frame export and freezes readiness until reopened', asyn
 test('PNG captures average-day charts and fits a narrow screen', async ({ page }, testInfo) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?view=average&profile-end=2026-08-31&profile-series=wind');
+	await page.goto('/tracker?view=profile&profile-end=2026-08-31&profile-series=wind');
 	await expect(page.locator('[data-tracker-png]')).toHaveCount(2);
 	const dialog = await openPng(page);
 	await expect(dialog.getByRole('checkbox')).toHaveCount(2);
@@ -1203,7 +1203,9 @@ test('Stratum profiles support hover, keyboard pinning, legend filtering and bou
 	page
 }, testInfo) => {
 	const api = await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?view=daily&profile-end=2026-08-31&profile-series=wind');
+	await page.goto(
+		'/tracker?view=profile&profile-view=daily&profile-end=2026-08-31&profile-series=wind'
+	);
 	const stack = page.getByRole('region', {
 		name: 'Average day fuel technology stack',
 		exact: true
@@ -1281,7 +1283,7 @@ test('average-day stack includes every technology and persists beside price with
 	page
 }, testInfo) => {
 	const api = await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?view=average&profile-end=2026-08-31&hidden=coal&profile-series=wind');
+	await page.goto('/tracker?view=profile&profile-end=2026-08-31&hidden=coal&profile-series=wind');
 	const stack = page.getByRole('region', {
 		name: 'Average day fuel technology stack',
 		exact: true
@@ -1326,7 +1328,7 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 	page
 }) => {
 	const api = await trackerFixture(page);
-	await page.goto('/tracker?region=wem&view=average&profile-end=2026-08-31&profile-series=wind');
+	await page.goto('/tracker?region=wem&view=profile&profile-end=2026-08-31&profile-series=wind');
 	const profile = page.getByRole('region', { name: 'Profile analysis' });
 	await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await expect(
@@ -1385,7 +1387,8 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 	expect(csv).toContain('Average (MW),Days available');
 	expect(csv).toContain('AWST (UTC+08:00),Coal,00:00,100,28,100,6');
 	const url = await copyTrackerLink(page);
-	expect(new URL(url).searchParams.get('view')).toBe('daily');
+	expect(new URL(url).searchParams.get('view')).toBe('profile');
+	expect(new URL(url).searchParams.get('profile-view')).toBe('daily');
 	await page.goto(url);
 	await expect(
 		page.getByTestId('tracker-top-nav').getByRole('combobox', { name: 'Window', exact: true })
@@ -1420,7 +1423,7 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 }, testInfo) => {
 	await trackerFixture(page);
 	await page.goto(
-		'/tracker?view=daily&profile-end=2026-08-31&profile-days=14&range=30d&interval=1h&hidden=coal&transform=proportion'
+		'/tracker?view=profile&profile-view=daily&profile-end=2026-08-31&profile-days=14&range=30d&interval=1h&hidden=coal&transform=proportion'
 	);
 	const original = page.url();
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
@@ -1447,7 +1450,7 @@ test('time-of-day failures and empty results remain explicit; switching metric c
 	page
 }) => {
 	const api = await trackerFixture(page, { fail: 'power', hold: 'price' });
-	await page.goto('/tracker?view=average&profile-end=2026-08-31');
+	await page.goto('/tracker?view=profile&profile-end=2026-08-31');
 	await expect(page.getByRole('alert')).toContainText('Fixture failure');
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeDisabled();
 	api.recover();

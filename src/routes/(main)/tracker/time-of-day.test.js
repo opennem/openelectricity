@@ -150,10 +150,11 @@ describe('time-of-day aggregation', () => {
 describe('time-of-day URLs', () => {
 	it('round-trips analysis without changing the timeline selection', () => {
 		const params = new URLSearchParams(
-			'region=wem&view=daily&profile-days=28&profile-metric=price&profile-series=wind&profile-end=2026-08-31&range=30d&hidden=coal'
+			'region=wem&view=profile&profile-view=daily&profile-days=28&profile-metric=price&profile-series=wind&profile-end=2026-08-31&range=30d&hidden=coal'
 		);
 		const state = parseTrackerUrl(params, { nowMs });
 		expect(state).toMatchObject({
+			view: 'profile',
 			profileView: 'daily',
 			profileDays: 28,
 			profileMetric: 'price',
@@ -172,7 +173,8 @@ describe('time-of-day URLs', () => {
 			{ nowMs }
 		);
 		expect(state).toMatchObject({
-			profileView: 'timeline',
+			view: 'timeline',
+			profileView: 'average',
 			profileDays: 7,
 			profileMetric: 'power',
 			profileSeries: '',

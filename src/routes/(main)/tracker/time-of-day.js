@@ -9,9 +9,9 @@ const SLOT = 30 * 60_000;
 /** The earliest last day a profile accepts — complete 5-minute days exist from here. */
 export const PROFILE_MIN_DATE = '1999-01-01';
 
-/** @param {unknown} value @returns {'timeline' | 'average' | 'daily'} */
+/** @param {unknown} value @returns {'average' | 'daily'} */
 export function normaliseProfileView(value) {
-	return value === 'average' || value === 'daily' ? value : 'timeline';
+	return value === 'daily' ? 'daily' : 'average';
 }
 
 /** @param {unknown} value @returns {7 | 14 | 28} */

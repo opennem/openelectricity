@@ -10,8 +10,8 @@ The canonical tracker page — the planned replacement for the legacy
 
 ### Region comparison
 
-The scenarios-style view switch offers Timeline, Time of day and **Compare
-regions** (`view=regions`). Comparison offers 14 selectable Stratum charts covering
+The scenarios-style view switch offers Timeline, Profile and **Compare**
+(`view=compare`). Comparison offers 14 selectable Stratum charts covering
 21 metrics: carbon
 intensity; renewable, solar + wind, solar, wind, gas and coal generation and
 proportions; net imports proportion; solar, wind, hydro, gas and coal market
@@ -155,9 +155,8 @@ Comparison settings are independent of Timeline: `compare-display`
 the default), `compare-regions` (an empty value intentionally selects none), `compare-renewables`,
 `compare-charts` (empty selects none), `compare-basis`, `compare-start` / `compare-end`, and `compare-table`. Defaults are
 omitted. Explicit view switches reset all query settings to that view's defaults
-(`view=average` or `view=regions`; Timeline has no view parameter). Back/Forward
-and direct links restore the full historical selection. Legacy `profile-view`
-links remain readable. Explicit filter changes push history; settled gestures
+(`view=profile` or `view=compare`; Timeline has no view parameter). Back/Forward
+and direct links restore the full historical selection. Explicit filter changes push history; settled gestures
 replace it. The top nav holds all three views' filters with uniform spacing and
 a divider after the switcher. The outgoing controls slide left, then the incoming
 controls slide right into place; reduced-motion users get an immediate change. CSV/XLSX export
@@ -470,7 +469,8 @@ disposed on changes or close. CSV/XLSX semantics remain unchanged.
 
 ## URL schema
 
-Time-of-day selections: `view=average|daily` (default timeline),
+Profile selections: `view=profile` (Timeline is the default),
+`profile-view=daily` (default average day),
 `profile-days=14|28` (default 7), `profile-metric=price` (default power),
 `profile-series=<group-id>` (default first available), and
 `profile-end=YYYY-MM-DD` (inclusive last day; default yesterday in network time).

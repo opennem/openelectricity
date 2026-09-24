@@ -7,16 +7,6 @@ import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 import { DEFAULT_RANGE_DAYS, normaliseRange, customRangeDates } from './tracker-model.js';
 import { normaliseTrackerState, parseTrackerUrl } from './tracker-url.js';
 
-/** @typedef {'timeline' | 'average' | 'regions'} TrackerView */
-
-/** The analysis view a selection describes — the value the nav's view switch shows.
- * @param {import('./types.js').TrackerUrlState} selection
- * @returns {TrackerView} */
-export function trackerView(selection) {
-	if (selection.compareRegions) return 'regions';
-	return selection.profileView === 'timeline' ? 'timeline' : 'average';
-}
-
 /** Per-page selection and range ownership. Browser history is an injected side effect.
  * @param {import('./types.js').TrackerUrlState & {nowMs: number}} initial
  * @param {(mode: 'push' | 'replace', resetQuery?: boolean) => void} onchange
@@ -30,7 +20,7 @@ export function createTrackerSession(initial, onchange) {
 	let clockMs = $state(initial.nowMs);
 	let anchorEnd = $state(initial.nowMs);
 	let anchorStart = $derived(anchorEnd - DEFAULT_RANGE_DAYS * 86_400_000);
-	let view = $derived(trackerView(selection));
+	let view = $derived(selection.view);
 	/** Network offset ('+10:00' | '+08:00') and its IANA name for the selected scope. */
 	let timeZone = $derived(regionToNetwork(selection.region).timeZone);
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
@@ -185,13 +175,12 @@ export function createTrackerSession(initial, onchange) {
 			if (history) onchange(history);
 		},
 		/** Explicit view switches start with defaults; restore() preserves history.
-		 * @param {string} next */
+		 * @param {string} next - A `TrackerView`; unknown values fall back to Timeline */
 		selectView(next) {
 			if (next === view) return;
 			anchorEnd = clockMs = Date.now();
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- transient parameters for parsing defaults
-			const params = new URLSearchParams();
-			if (next !== 'timeline') params.set('view', next === 'regions' ? 'regions' : 'average');
+			const params = new URLSearchParams({ view: next });
 			selection = parseTrackerUrl(params, { nowMs: clockMs });
 			applyRange(selection.range);
 			onchange('push', true);

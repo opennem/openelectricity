@@ -346,15 +346,20 @@ describe('region comparison navigation and export', () => {
 			'tracker-regions-1d-2024-12-15-to-2025-12-14.csv'
 		);
 	});
-	it('preserves legacy view, range and comparison state through shared navigation', () => {
-		const original = parseTrackerUrl(new URLSearchParams('view=daily&range=30d'), { nowMs: start });
+	it('preserves the profile display, range and comparison state through shared navigation', () => {
+		const original = parseTrackerUrl(
+			new URLSearchParams('view=profile&profile-view=daily&range=30d'),
+			{
+				nowMs: start
+			}
+		);
 		const state = {
 			...original,
-			compareRegions: true,
+			view: /** @type {const} */ ('compare'),
 			regionComparison: normaliseRegionComparison({ interval: '1M' })
 		};
 		const url = applyTrackerUrl(new URL('https://example.com/tracker'), state);
-		expect(url.searchParams.get('view')).toBe('regions');
+		expect(url.searchParams.get('view')).toBe('compare');
 		const restored = parseTrackerUrl(url.searchParams, { nowMs: start });
 		expect(restored.range).toEqual(original.range);
 		expect(restored.profileView).toBe('daily');
@@ -372,7 +377,7 @@ describe('region comparison navigation and export', () => {
 		expect(csv).toContain('Carbon intensity (kgCO2e/MWh)');
 		expect(csv).toContain('gross demand (%)');
 		expect(csv).toContain('Jan 2024,New South Wales,,150');
-		const sheets = comparisonWorkbook(dataset, 'https://example.com/tracker?view=regions', state);
+		const sheets = comparisonWorkbook(dataset, 'https://example.com/tracker?view=compare', state);
 		expect(sheets).toHaveLength(2);
 		expect(sheets[1].data[1][3]).toEqual({ value: 150, type: Number });
 	});

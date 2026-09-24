@@ -199,10 +199,10 @@ describe('tracker URLs', () => {
 		expect(parsed.range).toEqual({ kind: 'preset', days: 365, intervalId: '1M' });
 	});
 
-	it('round-trips the comparison display and daily interval with the regions view', () => {
-		const params = new URLSearchParams('view=regions&compare-display=stripes&compare-interval=1d');
+	it('round-trips the comparison display and daily interval with the compare view', () => {
+		const params = new URLSearchParams('view=compare&compare-display=stripes&compare-interval=1d');
 		const parsed = parseTrackerUrl(params, context);
-		expect(parsed.compareRegions).toBe(true);
+		expect(parsed.view).toBe('compare');
 		expect(parsed.regionComparison.display).toBe('stripes');
 		expect(parsed.regionComparison.interval).toBe('1d');
 		const url = applyTrackerUrl(new URL('https://example.test/tracker'), parsed);
@@ -210,9 +210,27 @@ describe('tracker URLs', () => {
 		expect(url.searchParams.get('compare-interval')).toBe('1d');
 		const charts = applyTrackerUrl(
 			new URL('https://example.test/tracker'),
-			parseTrackerUrl(new URLSearchParams('view=regions'), context)
+			parseTrackerUrl(new URLSearchParams('view=compare'), context)
 		);
 		expect(charts.searchParams.has('compare-display')).toBe(false);
+	});
+
+	it('round-trips view=profile|compare and the daily profile display', () => {
+		const cases = [
+			['', 'timeline', 'average', ''],
+			['view=profile', 'profile', 'average', 'view=profile'],
+			['view=profile&profile-view=daily', 'profile', 'daily', 'view=profile&profile-view=daily'],
+			['view=compare', 'compare', 'average', 'view=compare'],
+			['view=compare&profile-view=daily', 'compare', 'daily', 'view=compare&profile-view=daily'],
+			['view=regions', 'timeline', 'average', ''],
+			['view=broken', 'timeline', 'average', '']
+		];
+		for (const [query, view, profileView, canonical] of cases) {
+			const parsed = parseTrackerUrl(new URLSearchParams(query), context);
+			expect(parsed).toMatchObject({ view, profileView });
+			const url = applyTrackerUrl(new URL('https://example.test/tracker'), parsed);
+			expect(url.searchParams.toString()).toBe(canonical);
+		}
 	});
 
 	it('materialises copied links without mutating the source URL', () => {

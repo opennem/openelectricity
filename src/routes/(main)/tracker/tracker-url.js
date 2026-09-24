@@ -5,6 +5,8 @@
  * excluded from browser history.
  *
  * Schema (defaults omitted so the canonical URL stays clean):
+ * - `view`      — `profile` or `compare`; Timeline has no view parameter
+ * - `profile-view` — `daily` for the Profile view's daily display (default average)
  * - `region`    — tracker scope, default `_all` (NEM)
  * - `range` | `start`+`end`, `interval` — via the shared facility range params
  * - `group`     — fuel-tech grouping, default `simple` (Simplified)
@@ -21,7 +23,7 @@
  *                 renewables, curtailment-solar, curtailment-wind)
  * - `table`     — `0` when the fuel-tech panel is closed
  * - `fullscreen`— `false` opts out of the fullscreen chrome
- * - `compare-*` — Compare regions (`view=regions`) controls, see
+ * - `compare-*` — Compare (`view=compare`) controls, see
  *                 `region-comparison.js`: `compare-display=stripes` for the
  *                 stripes display, `compare-interval` (`1d` is the daily
  *                 one-year window), `compare-regions`, `compare-charts`,
@@ -58,8 +60,17 @@ import {
 /** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
 /** @typedef {import('./types.js').TrackerRange} TrackerRange */
 /** @typedef {import('./types.js').TrackerUrlState} TrackerUrlState */
+/** @typedef {import('./types.js').TrackerView} TrackerView */
 
 const GROUP_VALUES = GROUP_OPTIONS.map((option) => option.value);
+
+/** Every analysis view; Timeline is the default. */
+export const TRACKER_VIEWS = /** @type {const} */ (['timeline', 'profile', 'compare']);
+
+/** @param {unknown} value @returns {TrackerView} */
+export function normaliseTrackerView(value) {
+	return TRACKER_VIEWS.find((view) => view === value) ?? 'timeline';
+}
 
 /** @param {unknown} value @param {string} group @returns {string[]} */
 export function normaliseHiddenSeries(value, group) {
@@ -123,7 +134,7 @@ export function normaliseTrackerState(value) {
 	return {
 		region,
 		group,
-		compareRegions: !!value.compareRegions,
+		view: normaliseTrackerView(value.view),
 		regionComparison: normaliseRegionComparison(
 			/** @type {Partial<import('./region-comparison.js').RegionComparisonSelection> | undefined} */ (
 				value.regionComparison ?? undefined
@@ -158,14 +169,12 @@ export function normaliseTrackerState(value) {
  * @returns {TrackerUrlState}
  */
 export function parseTrackerUrl(params, context) {
-	const compareRegions = params.get('view') === 'regions';
 	return normaliseTrackerState({
 		region: params.get('region') || DEFAULT_REGION,
 		group: params.get('group') || DEFAULT_GROUP,
-		compareRegions,
+		view: params.get('view'),
 		regionComparison: parseRegionComparison(params),
-		// Legacy `profile-view` links stay readable while comparing regions.
-		profileView: compareRegions ? params.get('profile-view') : params.get('view'),
+		profileView: params.get('profile-view'),
 		profileDays: params.get('profile-days'),
 		profileMetric: params.get('profile-metric'),
 		profileSeries: params.get('profile-series') ?? '',
@@ -206,14 +215,8 @@ export function applyTrackerUrl(url, state) {
 		const time = next.comparison?.[side];
 		set(`compare-${side}`, time == null ? null : String(time));
 	}
-	set(
-		'view',
-		next.compareRegions ? 'regions' : next.profileView === 'timeline' ? null : next.profileView
-	);
-	set(
-		'profile-view',
-		next.compareRegions && next.profileView !== 'timeline' ? next.profileView : null
-	);
+	set('view', next.view === 'timeline' ? null : next.view);
+	set('profile-view', next.profileView === 'daily' ? 'daily' : null);
 	set('profile-days', next.profileDays === 7 ? null : String(next.profileDays));
 	set('profile-metric', next.profileMetric === 'price' ? 'price' : null);
 	set('profile-series', next.profileSeries || null);
