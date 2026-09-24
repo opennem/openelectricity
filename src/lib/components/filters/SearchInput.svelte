@@ -7,6 +7,7 @@
 	 *   class?: string,
 	 *   compact?: boolean,
 	 *   rounded?: string,
+	 *   pill?: boolean,
 	 *   showShortcutHint?: boolean,
 	 *   onchange: (value: string) => void
 	 * }}
@@ -20,6 +21,8 @@
 		/** Tailwind radius class for the input (the mobile nav passes rounded-lg
 		 *  to match the desktop filter pills). */
 		rounded = 'rounded-full',
+		/** Match the height of the FilterPill triggers it sits beside. */
+		pill = false,
 		showShortcutHint = false,
 		onchange
 	} = $props();
@@ -81,8 +84,10 @@
 		onblur={() => (isFocused = false)}
 		{placeholder}
 		class="{rounded} border border-warm-grey bg-white transition-colors hover:border-dark-grey focus:border-red focus:ring-0 focus:outline-none w-full {compact
-			? 'px-4 py-2 text-base tablet:text-xs'
-			: 'px-5 py-4 text-base'}"
+			? `px-4 text-base tablet:text-xs ${pill ? 'py-3' : 'py-2'}`
+			: pill
+				? 'px-5 py-3 text-base tablet:text-sm'
+				: 'px-5 py-4 text-base'}"
 	/>
 	{#if showKbd}
 		<kbd

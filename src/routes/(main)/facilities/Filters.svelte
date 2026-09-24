@@ -428,7 +428,7 @@
 			{/if}
 
 			<!-- View Switcher -->
-			<div class={isFullscreen ? 'pl-3' : ''}>
+			<div class="shrink-0">
 				<SwitchWithIcons
 					buttons={VIEW_OPTIONS}
 					selected={selectedView}
@@ -439,30 +439,14 @@
 				/>
 			</div>
 
-			<!-- Search -->
 			<div
-				class="relative flex items-center border-l border-warm-grey {isFullscreen
-					? 'ml-3 pl-7'
-					: 'ml-6 pl-10'}"
-			>
-				<SearchInput
-					bind:this={desktopSearchRef}
-					value={searchTerm}
-					onchange={(value) => onsearchchange?.(value)}
-					showShortcutHint={showShortcuts}
-					compact={isFullscreen}
-					class="w-[200px]"
-				/>
-			</div>
+				class="h-8 shrink-0 border-l border-warm-grey"
+				role="separator"
+				aria-orientation="vertical"
+			></div>
 
-			<!-- Filter Dropdowns (pushed right via ml-auto). The left padding
-		     mirrors the gap on the other side of the cluster (bar gap-4 + options
-		     menu ml-4, or ml-2 in fullscreen) so the dividers sit evenly. -->
-			<div
-				class="filter-bar-scroll justify-start items-center gap-2 flex border-l border-warm-grey overflow-x-auto min-w-0 ml-auto {isFullscreen
-					? 'pl-6'
-					: 'pl-8'}"
-			>
+			<!-- Filter Dropdowns — scroll sideways when the bar is too narrow. -->
+			<div class="filter-bar-scroll flex min-w-0 items-center gap-4 overflow-x-auto py-0.5">
 				<FilterDropdown
 					label="Region"
 					options={regionFilterOptions}
@@ -524,6 +508,24 @@
 					onclear={() => onyearrangechange?.([yearMin, yearMax])}
 				/>
 			</div>
+
+			<div
+				class="h-8 shrink-0 border-l border-warm-grey"
+				role="separator"
+				aria-orientation="vertical"
+			></div>
+
+			<!-- Search -->
+			<SearchInput
+				bind:this={desktopSearchRef}
+				value={searchTerm}
+				onchange={(value) => onsearchchange?.(value)}
+				showShortcutHint={showShortcuts}
+				compact={isFullscreen}
+				rounded="rounded-lg"
+				pill
+				class="w-[200px] shrink-0"
+			/>
 		{/snippet}
 
 		{#snippet options()}
