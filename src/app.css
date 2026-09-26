@@ -296,6 +296,10 @@
 	body {
 		@apply bg-background text-foreground;
 	}
+	/* Keyboard keys are always monospaced, wherever a <kbd> appears. */
+	kbd {
+		@apply font-mono;
+	}
 
 	h1,
 	h2,

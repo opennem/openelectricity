@@ -48,7 +48,7 @@
 						<span class="text-sm text-mid-grey">{shortcut.label}</span>
 						{#if shortcut.keys.length === 1}
 							<kbd
-								class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
+								class="text-xs text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
 								>{shortcut.keys[0]}</kbd
 							>
 						{:else}
@@ -58,7 +58,7 @@
 										<span class="text-xs text-mid-grey">+</span>
 									{/if}
 									<kbd
-										class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
+										class="text-xs text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
 										>{key}</kbd
 									>
 								{/each}

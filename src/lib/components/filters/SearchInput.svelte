@@ -91,7 +91,7 @@
 	/>
 	{#if showKbd}
 		<kbd
-			class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
+			class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
 			>/</kbd
 		>
 	{/if}

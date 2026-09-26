@@ -174,25 +174,25 @@
 				<span class="hidden sm:inline-flex items-center gap-3 text-mid-grey">
 					<span class="inline-flex items-center gap-1">
 						<kbd
-							class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
+							class="text-[10px] text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
 							>↑</kbd
 						>
 						<kbd
-							class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
+							class="text-[10px] text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
 							>↓</kbd
 						>
 						navigate
 					</span>
 					<span class="inline-flex items-center gap-1">
 						<kbd
-							class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
+							class="text-[10px] text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
 							>⏎</kbd
 						>
 						select
 					</span>
 					<span class="inline-flex items-center gap-1">
 						<kbd
-							class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
+							class="text-[10px] text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
 							>esc</kbd
 						>
 						close

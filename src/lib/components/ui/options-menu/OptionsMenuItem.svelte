@@ -53,7 +53,7 @@
 					<span class="text-[10px] text-mid-grey">+</span>
 				{/if}
 				<kbd
-					class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
+					class="text-[10px] text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
 					>{key}</kbd
 				>
 			{/each}
