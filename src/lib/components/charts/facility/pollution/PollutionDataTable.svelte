@@ -1,6 +1,6 @@
 <script>
 	import { CATEGORY_META } from './pollution-constants.js';
-	import Sparkline from './Sparkline.svelte';
+	import Sparkline from '$lib/components/charts/Sparkline.svelte';
 
 	/** @type {{ data: import('./transform-pollution.js').PollutionData }} */
 	let { data } = $props();

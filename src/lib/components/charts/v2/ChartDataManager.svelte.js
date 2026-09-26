@@ -244,11 +244,13 @@ export function clearInFlightFetches() {
  * @param {string} url
  * @param {AbortSignal} [signal]
  * @param {'low'} [priority] - Low priority for background prefetches
+ * @param {boolean} [bypassCache] - A reader-forced refresh: skip the completed-response
+ *   LRU and the browser's cached copy, still sharing an in-flight request
  * @returns {Promise<any>}
  */
-function sharedFetch(url, signal, priority) {
+function sharedFetch(url, signal, priority, bypassCache = false) {
 	const requestKey = canonicalChartRequestKey(url);
-	const cached = getCachedResponse(requestKey);
+	const cached = bypassCache ? undefined : getCachedResponse(requestKey);
 	if (cached !== undefined) {
 		recordSharedFetch('responseCacheReuse', requestKey);
 		return Promise.resolve(cached);
@@ -264,7 +266,11 @@ function sharedFetch(url, signal, priority) {
 				controller,
 				refCount: 0
 			});
-		created.promise = fetchChartResponse(url, { signal: controller.signal, priority })
+		created.promise = fetchChartResponse(url, {
+			signal: controller.signal,
+			priority,
+			cache: bypassCache ? 'no-cache' : undefined
+		})
 			.then((response) => {
 				storeCachedResponse(requestKey, response);
 				return response;
@@ -415,6 +421,8 @@ export default class ChartDataManager {
 	// Debounce timer
 	/** @type {ReturnType<typeof setTimeout> | null} */ #fetchTimer = null;
 	/** @type {{start: number, end: number, priority?: 'low'} | null} */ #pendingFetch = null;
+	/** One-shot: the next gap fetches bypass response caches (a forced refresh). */
+	#bypassCache = false;
 
 	// In-flight batches by `${start}-${end}` key — dedups duplicate requests and
 	// lets cancelStaleFetches()/dispose() abort batches that are no longer needed.
@@ -586,10 +594,13 @@ export default class ChartDataManager {
 
 	/** Make the recent tail eligible for the next ordinary gap request. Keep the
 	 * displayed rows and historical coverage; late observations may fill a span
-	 * previously confirmed empty. Only live-follow owners call this.
-	 * @param {number} start */
-	invalidateTail(start) {
+	 * previously confirmed empty. With `force`, that request also bypasses the
+	 * completed-response LRU and the browser cache so the reader gets a fresh
+	 * server answer. Only refresh owners call this.
+	 * @param {number} start @param {{ force?: boolean }} [options] */
+	invalidateTail(start, { force = false } = {}) {
 		if (!Number.isFinite(start)) return;
+		if (force) this.#bypassCache = true;
 		if (this.#cacheEnd !== null) this.#cacheEnd = Math.min(this.#cacheEnd, start);
 		this.#emptyRanges = this.#emptyRanges
 			.filter((range) => range.start < start)
@@ -646,6 +657,8 @@ export default class ChartDataManager {
 		if (!pending) return;
 		this.#pendingFetch = null;
 		const priority = pending.priority;
+		const bypassCache = this.#bypassCache;
+		this.#bypassCache = false;
 
 		// Clamp the requested window to where data can exist BEFORE computing
 		// gaps/batches. Callers add wide prefetch buffers (3× the viewport for
@@ -690,7 +703,13 @@ export default class ChartDataManager {
 			this.loadingRanges = [...this.loadingRanges, batch];
 
 			try {
-				const data = await this.#fetchFromApi(batch.start, batch.end, controller.signal, priority);
+				const data = await this.#fetchFromApi(
+					batch.start,
+					batch.end,
+					controller.signal,
+					priority,
+					bypassCache
+				);
 				// dispose()/clearCache() while awaiting retired this generation —
 				// drop the result instead of merging into dead/reset state.
 				if (gen !== this.#generation) return;
@@ -867,9 +886,10 @@ export default class ChartDataManager {
 	 * @param {number} endMs
 	 * @param {AbortSignal} [signal]
 	 * @param {'low'} [priority] - Background-prefetch priority
+	 * @param {boolean} [bypassCache] - Skip response caches (forced refresh)
 	 * @returns {Promise<any|null>}
 	 */
-	async #fetchFromApi(startMs, endMs, signal, priority) {
+	async #fetchFromApi(startMs, endMs, signal, priority, bypassCache = false) {
 		// Validate metric/interval compatibility — 5m only supports power and market_value
 		if (this.interval === '5m' && this.metric === 'energy') {
 			console.warn(
@@ -921,7 +941,7 @@ export default class ChartDataManager {
 			date_end: dateEnd
 		});
 
-		return sharedFetch(this.buildFetchUrl(params), signal, priority);
+		return sharedFetch(this.buildFetchUrl(params), signal, priority, bypassCache);
 	}
 
 	/**

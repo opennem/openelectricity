@@ -1091,6 +1091,31 @@ describe('ChartDataManager', () => {
 			expect(url.searchParams.get('date_end')).toBe('2026-02-08T01:00:00');
 			manager.dispose();
 		});
+		it('bypasses response caches once when the tail is invalidated with force', async () => {
+			const fetchSpy = vi
+				.fn()
+				.mockResolvedValue({ ok: true, json: async () => ({ response: { data: [] } }) });
+			vi.stubGlobal('fetch', fetchSpy);
+			const manager = createManager();
+			const start = Date.parse('2026-02-08T00:00:00+10:00');
+			const end = start + 3_600_000;
+			manager.requestRange(start, end);
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy.mock.calls[0][1].cache).toBeUndefined();
+			// A reader's refresh revalidates with the server instead of taking a cached copy.
+			manager.invalidateTail(end - 600_000, { force: true });
+			manager.requestRange(start, end);
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+			expect(fetchSpy.mock.calls[1][1].cache).toBe('no-cache');
+			// The bypass is one-shot: an ordinary tail revisit is served from the
+			// completed-response LRU the forced fetch just filled, with no network call.
+			manager.invalidateTail(end - 600_000);
+			manager.requestRange(start, end);
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+			manager.dispose();
+		});
 		it('keeps displayed rows while revisiting cached live buckets', async () => {
 			const startISO = '2026-02-08T00:00:00+10:00';
 			const manager = createManager();

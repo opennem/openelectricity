@@ -342,42 +342,63 @@ on demand so it stays off the page bundle. Filenames:
 
 ## Window metrics
 
-The timeline has a resizable left metrics pane, reusing the shared `MetricCard`
-presentation from `/facility/[code]`. Metrics use two columns: minimum on the left and maximum on the right, with
-independent panel scrolling. The shared pane/resize controls support dragging, arrow keys, Home/End
-and pointer cancellation; width is remembered locally when storage is available.
-The divider sits in the page-background gap outside the white metrics content,
-matching the fuel-tech table divider on the right.
-Both panels use `PanelToggle`: mirrored open/collapse icons, explicit 16px icons
-inside 40px buttons (the app uses a 10px rem base), matching 48px headers/rails,
-muted grey icons with a lighter 1.5 stroke (also used by the sliders options icon)
-that remain grey on hover, background hover/pressed treatments,
-labelled controls and visible keyboard focus. Closing
-returns focus to the opener; reopening focuses the collapse control. The metrics
-header stays visible while scrolling its values. Resize dividers also show focus.
+The timeline shows its window metrics in a ticker strip (`WindowMetrics.svelte`)
+between the navigation and the charts: a white band with a light bottom border,
+always visible, that scrolls sideways when the items overflow. The scrollbar is
+hidden and the band's edges fade to hint at the overflow; there is no
+scroll-snap. The fuel-tech table on the right keeps its docked panel, toggle
+and resize divider; the strip has no resizing, but it can be hidden: press `M`
+(a bare key, ignored while typing) or choose Hide/Show metrics in the Options
+menu, and it slides shut or open (no motion under `prefers-reduced-motion`).
+Like the table columns, that choice is a personal display preference kept in
+localStorage (`tracker-metrics-visible`), never in the URL, and the demand and
+renewables feeds it needs load only while it is shown.
 
-Desktop widths are bounded to leave space for the charts and fuel-tech table.
-Below 1024px the pane starts closed and opens over the left edge without shrinking
-the charts. The close button (or Escape on small screens) returns focus to the
-opener. Pane visibility is local UI state, not part of the shared URL.
+Each item is a single line reading "label unit · ↓ minimum · ↑ maximum": the
+metric label in 10px uppercase Space Grotesk, semibold and the values'
+dark grey (only Renewables has a label tooltip, with its description and a link
+to the methodology page), its unit in small mono text beside it (`$/MWh`, `tCO₂e`; dollar values
+also lead with `$`, the renewables share writes `%` on the values, and net
+power, net energy, demand and curtailment put `MW`/`MWh` after each value
+instead),
+then the window minimum and maximum as 14px
+monospaced tabular values, each marked with a bold down-to-line or up-to-line
+icon in the site red. Each value's tooltip is just its time, "Min: 19 Sept, 11:30 pm", in the
+interval policy's short form: "19 Sept, 11:30 pm" or
+"19 Sept", with the year only outside the current network-local year, since
+the navigation's range readout already fixes the year. When an extreme ties, the time is the
+earliest. A partial window (typically only the newest bucket still filling in)
+is not flagged. Items are sized to
+their content, divided by light borders including one after the last item. A
+value slides in from the left when it appears or changes (no motion under
+`prefers-reduced-motion`).
 
-It shows minimum and maximum
-net power/energy, the selected market measure (spot price, volume-weighted price
-or market value), regional operational demand and renewables share (%). Emissions volume is also shown
-when Volume is selected; emissions-intensity extrema are omitted.
-Each metric has one label spanning both cells, with a tooltip explaining the measure.
-Each cell has an app tooltip such as “Minimum spot price”, with no separate
-Minimum/Maximum header row. Compact Min/Max tags sit on the right, aligned with
-the value line, while values and dates sit on the left. Tags use a primary-colour
-fill when selected.
-Metric labels use the default font, 14px semibold dark-grey text and a pale
-background, without icons.
-Sections sit flush with light-grey bottom borders and matching borders beneath each label.
-Label rows have equal vertical padding.
-Value cells fit their content, with matching heights within each row; values,
-units and timestamps wrap without clipping. Generation's plot defaults to 320px high; saved resized
-heights still take precedence.
-Hover, focus or select a metric to highlight its interval on the synced charts.
+It shows, in order, minimum and maximum net power, regional operational
+demand, renewables share (%), the selected market measure (spot price,
+volume-weighted price or market value), emissions volume (tCO₂e per bucket)
+and emissions intensity (kgCO₂e/MWh, the ratio of sums per display bucket
+exactly as the intensity chart draws it), then solar and wind curtailment
+(the official regional series, in the window's basis, from the same provider
+as the curtailment overlays). The emissions pair reads one
+headless `emissions_intensity` components feed (`providers.intensityData`),
+collapsed to the visible technologies, so both show whichever mode the
+Emissions chart is in; the feed shares the chart's request when the chart
+shows intensity, and retries from the strip. On daily and longer
+grains, where a bucket holds MWh, a Net energy pair leads the strip and net
+power reads each bucket's average MW (MWh ÷ bucket length, from
+`getIntervalHours`). Sub-daily grains show power only: a 5- or 30-minute
+bucket's energy is its power rescaled, so it would land on the same buckets.
+
+Each value is a button with an app tooltip such as "Minimum spot price".
+Hover or focus it to highlight its interval on the synced charts; click to
+pin it (a dark-grey fill with white text), click again to clear. The pin is
+the one focus time the three charts share: pinning an extreme moves the
+charts' focus line to its time, pinning a time on a plot (click or Enter)
+moves the strip's pressed state to whichever extremes fall on that time, and
+clearing either clears both. Hovering only previews. Loading shows
+placeholders; a failed demand or renewables feed shows "Unavailable" with an
+inline retry, while failed charts retry from their cards. Generation's plot
+defaults to 320px high; saved resized heights still take precedence.
 
 `window-metrics.js` calculates extrema from accepted, query-matching **display
 buckets**, not native-cadence peaks or sums of overlapping rolling periods.
@@ -390,16 +411,17 @@ generation is the signed sum of selected technologies, including imports and
 negative loads; it is not gross demand. Hidden technologies are excluded from
 net generation, market value and emissions. Regional price stays regional;
 demand also stays regional. Volume-weighted price reuses the chart's ratio-of-components
-helper after display aggregation. Energy extrema are MWh per displayed bucket,
-not instantaneous MW. Generation and demand units follow the chart's selected prefix.
+helper after display aggregation. Net power, net energy and demand units
+follow the chart's selected prefix.
 
 All selected members of a summed bucket must be finite; missing members never
 become zero. Partial input reports how many returned display intervals have
 complete selected-series values, not guaranteed upstream/native-cadence coverage.
 Zero and negative observations are valid. Loading, failed, empty or stale data
 show placeholders rather than an old value under a new range label. The section
-uses accepted chart snapshots and existing demand/renewables providers, enabled
-while the metrics pane is open even if the table and overlays are closed. Renewables
+uses accepted chart snapshots and the demand, renewables and emissions-components
+providers, enabled while the strip is shown even if the table and overlays are
+closed. Renewables
 uses the official regional share series, or the ratio of renewable generation to
 gross demand window sums for rolling intervals, matching the chart line. Technology
 visibility does not change this share. Both use shared display aggregation/calendar
@@ -407,28 +429,36 @@ filters, loading/error guards and the request broker, with individual retry cont
 Time-of-day remains a separate profile view. PNG export still captures charts,
 not the metrics grid; existing CSV/XLSX exports are unchanged.
 
-## Freshness and live follow
+## Freshness and refresh
 
-Relative timeline presets follow the latest data automatically. Custom dates and
-settled pan/zoom gestures pause at the displayed bounds, selecting the date-picker
-state in the navigation. Selecting a preset resumes following its latest window;
-there is no separate Live control. Pausing serialises exact `start`/`end` bounds,
-so copy/reload and Back/Forward preserve the choice without a second live-state
-URL flag. Ambient ticks never write browser history.
+The timeline never polls. Relative presets define a window ending "now", but
+the page only moves that edge and fetches new readings when the reader asks:
+tapping the range readout in the top nav (it is a button whose tooltip says
+when the data last finished loading), the `R` key, or "Refresh data" in the
+Options menu. A refresh
+makes every connected chart and provider revisit its two newest native buckets
+for late observations and open-bucket revisions — bypassing the completed-
+response LRU and the browser's cached copy (`fetch` with `cache: 'no-cache'`),
+so the server answers afresh — and advances a following window to now; custom dates and settled pan/zoom gestures keep their bounds
+(All retains its historical floor while its right edge grows). Active gestures
+defer it, the readout and menu row are disabled while loading, and a refresh
+never writes browser history. In-flight request deduplication, server caching
+and retry limits remain in force.
 
-While the tab is visible, the page clock ticks once a minute. An idle, connected
-timeline advances all enabled charts/providers together; busy requests and active
-gestures are not interrupted. All retains its historical floor while its right
-edge grows. Two recent native buckets are made eligible for normal gap fetching
-to revisit late observations and open-bucket revisions, without discarding old
-rows or fetching full history again. Existing request deduplication, completed-
-response caching, server caching and retry limits remain in force: a minute tick
-does not promise a new upstream reading every minute.
+Pausing serialises exact `start`/`end` bounds, so copy/reload and Back/Forward
+preserve the choice without a second live-state URL flag; selecting a preset
+resumes following its latest window. Time-of-day analysis has nothing to
+refresh.
 
-Hidden tabs suspend the live timer and queued speculative prefetch work. Existing
-in-flight requests may complete; returning to the tab performs one catch-up tick,
-not a replay of missed ticks. Paused timelines and time-of-day analysis never
-advance automatically. Timers/listeners are disposed on navigation.
+The tracker's single-key shortcuts (`tracker-shortcuts.js`, bare keys ignored
+while typing) are `R` refresh, `M` show/hide metrics, `F` full screen (desktop
+only) and `?` for the shortcuts modal shared with /facilities; the Options menu
+badges the same keys.
+
+While the tab is visible a minute clock keeps the freshness labels current; it
+fetches nothing. Hidden tabs suspend it and queued speculative prefetch work;
+returning performs one catch-up tick. Timers/listeners are disposed on
+navigation.
 
 Timeline card headers show exceptional states only: `Data delayed`,
 `Update unavailable` or `No readings`. Routine latest-reading and updating labels

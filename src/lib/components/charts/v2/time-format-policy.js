@@ -4,6 +4,10 @@
  * Given a display interval and the network's IANA timezone, the policy yields:
  * - `formatTooltip` — the full, standalone label for one data point (tooltip
  *   headers, bar band keys). Always renders something readable.
+ * - `formatShort` — the compact label for one point where surrounding UI
+ *   already fixes the year (the metrics strip under the range readout):
+ *   "19 Sept, 11:30 pm", "19 Sept", "16 — 22 June". The year is appended only
+ *   outside the current network-local year.
  * - `bucketTick` — an explicit per-bucket axis labeller for coarse calendar
  *   buckets that don't align to the Jan/month gridlines the axis inference
  *   assumes, or `null` to let gridline inference own tick placement.
@@ -13,6 +17,8 @@ import {
 	RANGE_SEPARATOR,
 	formatBucketLabel,
 	formatDateRange,
+	formatDayMonth,
+	formatDayMonthTime,
 	formatDayMonthYear,
 	formatDayMonthYearTime,
 	formatMonthYear,
@@ -47,6 +53,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /**
  * @typedef {Object} TimeFormatPolicy
  * @property {(d: Date | number) => string} formatTooltip - Standalone label for one point
+ * @property {(d: Date | number) => string} formatShort - Compact label for one point;
+ *           the year only when it isn't the current one
  * @property {((d: Date | number) => string) | null} bucketTick - Per-bucket axis label,
  *           or null to defer to gridline inference
  */
@@ -62,8 +70,10 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
 	if (rollingBase) {
 		// Distinguish a rolling point from a single base-grain bucket.
 		const label = rollingBaseLabel(rollingBase, ianaTimeZone);
+		const formatTooltip = (/** @type {Date | number} */ d) => `12 months to ${label(d)}`;
 		return {
-			formatTooltip: (d) => `12 months to ${label(d)}`,
+			formatTooltip,
+			formatShort: formatTooltip,
 			bucketTick: rollingBase === '1M' ? null : label
 		};
 	}
@@ -79,34 +89,48 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
 							ianaTimeZone,
 							/** @type {'quarter' | 'season' | 'half' | 'fy'} */ (displayInterval)
 						);
-		return { formatTooltip: label, bucketTick: label };
+		return { formatTooltip: label, formatShort: label, bucketTick: label };
 	}
 
 	if (displayInterval === '7d') {
 		// A week bucket reads as its inclusive range, with the year so the
 		// label stands alone: "16 — 22 June 2025". Exact arithmetic — the
 		// network zones don't observe DST.
+		/** @param {Date | number} d @param {{ alwaysYear?: boolean, yearIfNotCurrent?: boolean }} opts */
+		const week = (d, opts) => {
+			const start = d instanceof Date ? d : new Date(d);
+			if (Number.isNaN(start.getTime())) return '';
+			const end = new Date(start.getTime() + 6 * DAY_MS);
+			return formatDateRange(start, end, ianaTimeZone, opts);
+		};
 		return {
-			formatTooltip: (d) => {
-				const start = d instanceof Date ? d : new Date(d);
-				if (Number.isNaN(start.getTime())) return '';
-				const end = new Date(start.getTime() + 6 * DAY_MS);
-				return formatDateRange(start, end, ianaTimeZone, { alwaysYear: true });
-			},
+			formatTooltip: (d) => week(d, { alwaysYear: true }),
+			formatShort: (d) => week(d, { yearIfNotCurrent: true }),
 			bucketTick: null
 		};
 	}
 
 	if (displayInterval === '1M' || displayInterval === '3M') {
-		return { formatTooltip: (d) => formatMonthYear(d, ianaTimeZone), bucketTick: null };
+		const label = (/** @type {Date | number} */ d) => formatMonthYear(d, ianaTimeZone);
+		return { formatTooltip: label, formatShort: label, bucketTick: null };
 	}
 
 	if (displayInterval === '5m' || displayInterval === '30m' || displayInterval === '1h') {
-		return { formatTooltip: (d) => formatDayMonthYearTime(d, ianaTimeZone), bucketTick: null };
+		return {
+			formatTooltip: (d) => formatDayMonthYearTime(d, ianaTimeZone),
+			formatShort: (d) => formatDayMonthTime(d, ianaTimeZone),
+			bucketTick: null
+		};
 	}
 
 	// Daily (1d) and anything unknown: full date, no time.
-	return { formatTooltip: (d) => formatDayMonthYear(d, ianaTimeZone), bucketTick: null };
+	return {
+		formatTooltip: (d) => formatDayMonthYear(d, ianaTimeZone),
+		// formatDayMonth echoes invalid input for axis ticks; a point label stays blank.
+		formatShort: (d) =>
+			formatDayMonthYear(d, ianaTimeZone) ? formatDayMonth(d, ianaTimeZone) : '',
+		bucketTick: null
+	};
 }
 
 /**

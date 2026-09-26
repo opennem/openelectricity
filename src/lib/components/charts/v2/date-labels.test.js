@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { appendHistoricalYear, formatDateRange, formatDayMonth } from './date-labels.js';
+import {
+	appendHistoricalYear,
+	formatDateRange,
+	formatDayMonth,
+	formatDayMonthTime
+} from './date-labels.js';
 
 const TZ = 'Australia/Brisbane';
 
@@ -7,6 +12,9 @@ const TZ = 'Australia/Brisbane';
 function local(/** @type {string} */ date) {
 	return new Date(`${date}T12:00:00+10:00`);
 }
+
+/** Normalise narrow/non-breaking spaces so assertions are ICU-version-safe. */
+const clean = (/** @type {string} */ s) => s.replace(/[\u202f\u00a0]/g, ' ');
 
 describe('conditional axis years', () => {
 	it('keeps current-year day/month labels compact', () => {
@@ -24,6 +32,22 @@ describe('conditional axis years', () => {
 		expect(appendHistoricalYear(local('2026-01-21'), '2:00 pm', TZ, local('2026-09-01'))).toBe(
 			'2:00 pm'
 		);
+	});
+
+	it('keeps current-year day/month/time labels compact', () => {
+		expect(clean(formatDayMonthTime(local('2026-09-19'), TZ, local('2026-09-26')))).toBe(
+			'19 Sept, 12:00 pm'
+		);
+		expect(clean(formatDayMonthTime(local('2026-06-01'), TZ, local('2026-09-26')))).toBe(
+			'1 June, 12:00 pm'
+		);
+	});
+
+	it('adds the full year to historical day/month/time labels', () => {
+		expect(clean(formatDayMonthTime(local('2025-09-18'), TZ, local('2026-09-26')))).toBe(
+			'18 Sept 2025, 12:00 pm'
+		);
+		expect(formatDayMonthTime(new Date('nope'), TZ)).toBe('');
 	});
 
 	it('compares calendar years in the chart timezone at New Year', () => {

@@ -46,7 +46,7 @@ const LIVE_EDGE_TOLERANCE_MS = 10 * 60 * 1000;
  * @typedef {Object} RangeControlChart
  * @property {(startMs: number, endMs: number) => void} setViewport
  * @property {() => void} [reconcileFetches]
- * @property {(startMs: number) => void} [invalidateTail]
+ * @property {(startMs: number, options?: { force?: boolean }) => void} [invalidateTail]
  */
 
 /**

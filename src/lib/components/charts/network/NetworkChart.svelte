@@ -97,6 +97,11 @@
 	 * @property {(rows: TimeSeriesData[], names: string[]) => import('../v2/ChartStore.svelte.js').ProportionContext} [createProportionContext] - Optional display-grain percentage calculation
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
+	 * @property {number | undefined} [focusTime] - Controlled focus (pinned) time, for a
+	 *   parent that shares one focus across charts and other surfaces; pair with `onfocuschange`
+	 * @property {((time: number | undefined) => void)} [onfocuschange] - The reader
+	 *   pinned a time by clicking or pressing Enter on the plot, or cleared it. When
+	 *   given, the chart no longer pins locally: it reports and follows `focusTime`
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange]
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once
 	 *   when a pan/zoom gesture comes to rest — parents apply grain switches here
@@ -158,7 +163,9 @@
 		ondatatransformchange,
 		createProportionContext,
 		hoverTime = undefined,
+		focusTime = undefined,
 		onhoverchange,
+		onfocuschange,
 		onviewportchange,
 		onviewportsettle,
 		gestureActive = false,
@@ -958,9 +965,18 @@
 		else chartStore.setHover(t);
 	});
 
+	$effect(() => {
+		if (!onfocuschange || !chartStore) return;
+		if (chartStore.focusTime !== focusTime) chartStore.setFocus(focusTime);
+	});
+
 	/** @param {number} time */
 	function handleFocus(time) {
 		if (isPanning) return;
+		if (onfocuschange) {
+			onfocuschange(focusTime === time ? undefined : time);
+			return;
+		}
 		chartStore?.toggleFocus(time);
 	}
 
@@ -983,8 +999,9 @@
 		host.reconcileFetches();
 	}
 	/** @param {number} start */
-	export function invalidateTail(start) {
-		dataManager?.invalidateTail(start);
+	/** @param {number} start @param {{ force?: boolean }} [options] - `force` bypasses response caches */
+	export function invalidateTail(start, options) {
+		dataManager?.invalidateTail(start, options);
 	}
 
 	/** Whether the current grain is loaded and idle, including cache-only switches. */

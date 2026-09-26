@@ -2,6 +2,10 @@ import { createNetworkMarketData } from '$lib/components/charts/network/network-
 import { createNetworkFuelTechSeries } from '$lib/components/charts/network/network-fueltech-series.svelte.js';
 import { createMarketSeriesProvider } from '$lib/components/charts/network/network-series-provider.svelte.js';
 import { isRollingInterval } from '$lib/components/charts/facility/range-interval-config.js';
+import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
+import { getGroup } from '$lib/components/charts/network/groups.js';
+import { createHeadlessSeriesProvider } from '$lib/components/charts/network/headless-series-provider.svelte.js';
+import { processEmissionsIntensity } from '$lib/components/charts/network/process-emissions-intensity.js';
 import { rollingShareRows, ROLLING_LEAD_MS } from './tracker-chart-overlays.js';
 
 /** @typedef {import('$lib/components/charts/network/headless-series-provider.svelte.js').DisplayRowOptions} DisplayRowOptions */
@@ -66,7 +70,7 @@ export function createTrackerProviders(opts) {
 		metricKey: () => (range.activeMetric === 'energy' ? 'curtailment_energy' : 'curtailment'),
 		interval: () => range.activeInterval,
 		timeZone: () => timeZone,
-		enabled: () => tablePanelOpen || shownCurtailment.length > 0
+		enabled: () => tablePanelOpen || shownCurtailment.length > 0 || !!opts.needsWindowMetrics?.()
 	});
 	const shareData = createMarketSeriesProvider({
 		region: () => region,
@@ -77,7 +81,42 @@ export function createTrackerProviders(opts) {
 			tablePanelOpen || ((showRenewablesLine || !!opts.needsWindowMetrics?.()) && !isRollingDisplay)
 	});
 
-	const all = [marketData, mvData, emissionsData, demandData, curtailmentData, shareData];
+	// Per-group emissions and energy components for the metrics strip: one feed
+	// gives both emissions volume and intensity whatever the chart is showing,
+	// processed exactly like the intensity chart so it shares its request.
+	const intensityData = createHeadlessSeriesProvider({
+		region: () => region,
+		interval: () => range.activeInterval,
+		timeZone: () => timeZone,
+		enabled: () => !!opts.needsWindowMetrics?.(),
+		spec: () => {
+			const interval = range.activeInterval;
+			const tz = timeZone;
+			const groupConfig = getGroup(group);
+			return {
+				cacheScope: 'emissions-intensity-metrics',
+				metric: 'emissions_intensity',
+				seriesKey: group,
+				processResponse: (resp) =>
+					processEmissionsIntensity(resp, {
+						intervalHours: getIntervalHours(interval),
+						networkTimezone: tz,
+						groupMap: groupConfig.fuelTechs,
+						retainGroups: true
+					})
+			};
+		}
+	});
+
+	const all = [
+		marketData,
+		mvData,
+		emissionsData,
+		demandData,
+		curtailmentData,
+		shareData,
+		intensityData
+	];
 	return {
 		marketData,
 		mvData,
@@ -85,6 +124,7 @@ export function createTrackerProviders(opts) {
 		demandData,
 		curtailmentData,
 		shareData,
+		intensityData,
 		all,
 		get pending() {
 			return all.some((provider) => provider.isPending);

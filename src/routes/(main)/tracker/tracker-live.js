@@ -1,10 +1,11 @@
 import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
 import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
 
-/** Polling is foreground-only. Returning to the tab performs one catch-up tick,
- * not a replay of the ticks missed while hidden. Existing requests may finish.
+/** A foreground-only minute clock for the freshness labels — it never fetches;
+ * data moves only when the reader refreshes. Returning to the tab performs one
+ * catch-up tick, not a replay of the ticks missed while hidden.
  * @param {{tick: () => void, document: Pick<Document, 'hidden' | 'addEventListener' | 'removeEventListener'>}} options */
-export function startTrackerLive({ tick, document }) {
+export function startTrackerClock({ tick, document }) {
 	/** @type {ReturnType<typeof setInterval> | undefined} */
 	let timer;
 	function sync() {

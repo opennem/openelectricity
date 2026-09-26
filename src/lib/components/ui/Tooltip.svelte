@@ -11,7 +11,8 @@
 	 *   sideOffset?: number,
 	 *   delayDuration?: number,
 	 *   class?: string,
-	 *   learnMoreHref?: string
+	 *   learnMoreHref?: string,
+	 *   linkLabel?: string
 	 * }}
 	 */
 	let {
@@ -23,7 +24,8 @@
 		sideOffset = 4,
 		delayDuration = 100,
 		class: className = '',
-		learnMoreHref
+		learnMoreHref,
+		linkLabel = 'Learn more →'
 	} = $props();
 </script>
 
@@ -59,7 +61,7 @@
 							rel="noopener noreferrer"
 							class="block mt-1.5 underline text-white visited:text-white hover:opacity-80"
 						>
-							Learn more →
+							{linkLabel}
 						</a>
 					{/if}
 				</div>

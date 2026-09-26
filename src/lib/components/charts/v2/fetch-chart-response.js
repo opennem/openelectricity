@@ -43,12 +43,13 @@ async function responseError(response) {
 /** Fetch and decode one shared chart request. Authentication, validation and
  * rate-limit errors are surfaced immediately, not retried in a burst.
  * @param {string} url
- * @param {{ signal: AbortSignal, priority?: 'low' }} options
+ * @param {{ signal: AbortSignal, priority?: 'low', cache?: RequestCache }} options - `cache`
+ *   'no-cache' revalidates with the server, skipping the browser's max-age copy
  * @returns {Promise<any>} */
-export async function fetchChartResponse(url, { signal, priority }) {
+export async function fetchChartResponse(url, { signal, priority, cache }) {
 	for (let attempt = 0; ; attempt++) {
 		if (signal.aborted) throw abortError(signal);
-		const response = await fetch(url, { signal, priority });
+		const response = await fetch(url, { signal, priority, cache });
 		if (response.ok) return (await response.json()).response;
 		const error = await responseError(response);
 		if (attempt > 0 || priority === 'low' || !RETRYABLE_STATUS.has(response.status)) throw error;

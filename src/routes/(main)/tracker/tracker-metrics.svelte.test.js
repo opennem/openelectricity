@@ -45,7 +45,6 @@ function harness() {
 		table: /** @type {any} */ (table),
 		hidden: () => [],
 		priceMetric: () => 'price',
-		emissionsMetric: () => 'emissions_intensity',
 		holdFrame: () => state.holdFrame
 	});
 	return { session, state, metrics, demandData, shareData, snapshot };

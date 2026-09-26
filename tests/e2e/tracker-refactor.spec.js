@@ -5,7 +5,9 @@ import {
 	card,
 	download,
 	expectNoHorizontalScroll,
+	navPill,
 	openOptions,
+	pickNavOption,
 	trackerFixture,
 	trackerReady
 } from './helpers/tracker.js';
@@ -175,8 +177,6 @@ for (const group of ['detailed', 'simple']) {
 		expect(line).not.toContain(group === 'detailed' ? '310' : '510');
 		await expect(solarRow.locator('td')).toHaveText(cells);
 		await page.screenshot({ path: testInfo.outputPath('rooftop-interpolation.png') });
-		const closeMetrics = page.getByRole('button', { name: 'Hide metrics', exact: true });
-		if (await closeMetrics.isVisible()) await closeMetrics.click();
 		await page.setViewportSize({ width: 390, height: 844 });
 		await note.scrollIntoViewIfNeeded();
 		await expect(note).toBeVisible();
@@ -197,7 +197,7 @@ for (const group of ['detailed', 'simple']) {
 	});
 }
 
-test('live follow advances, pauses on zoom and resumes through presets and history', async ({
+test('refresh advances a following window, pauses on zoom and resumes through presets and history', async ({
 	page
 }, testInfo) => {
 	const source = await trackerFixture(page, { comparisonGrowth: true });
@@ -208,7 +208,10 @@ test('live follow advances, pauses on zoom and resumes through presets and histo
 	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
 	const first = source.urls.length;
 	const history = await page.evaluate(() => window.history.length);
-	await page.clock.fastForward(65_000);
+	// Nothing polls: minutes pass without a request.
+	await page.clock.fastForward(125_000);
+	expect(source.urls.length).toBe(first);
+	await page.keyboard.press('r');
 	await expect.poll(() => source.urls.length).toBeGreaterThan(first);
 	await chartsSettled(page);
 	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
@@ -219,7 +222,9 @@ test('live follow advances, pauses on zoom and resumes through presets and histo
 	await expect(
 		page.getByTestId('reading-freshness').filter({ hasText: 'Latest in view' })
 	).toHaveCount(0);
-	await page.clock.fastForward(120_000);
+	// A refresh on a paused window revisits its newest buckets but keeps its bounds.
+	await page.keyboard.press('r');
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
 	expect(page.url()).toBe(paused);
 	await page.getByRole('button', { name: '3D', exact: true }).click();
 	await expect(page).not.toHaveURL(/start=|end=/);
@@ -238,7 +243,7 @@ test('live follow advances, pauses on zoom and resumes through presets and histo
 	await page.screenshot({ path: testInfo.outputPath('tracker-live-mobile.png') });
 });
 
-test('live freshness keeps failed and empty feeds explicit and recovers on the next tick', async ({
+test('freshness keeps failed and empty feeds explicit and recovers on refresh', async ({
 	page
 }) => {
 	const source = await trackerFixture(page, {
@@ -256,7 +261,7 @@ test('live freshness keeps failed and empty feeds explicit and recovers on the n
 	);
 	await expect(card(page, 'Generation').getByTestId('reading-freshness')).toHaveCount(0);
 	source.recover();
-	await page.clock.fastForward(65_000);
+	await page.keyboard.press('r');
 	await expect(card(page, 'Market').getByTestId('reading-freshness')).toHaveCount(0);
 	await expect(card(page, 'Emissions').getByTestId('reading-freshness')).toContainText(
 		'No readings'
@@ -278,43 +283,56 @@ test('freshness flags delayed readings but not a deliberately historical view', 
 	await expect(card(page, 'Generation').getByTestId('reading-freshness')).toHaveCount(0);
 });
 
-test('live ticks stop while hidden and catch up once when visible without moving paused windows', async ({
+test('data refreshes only on demand: the range readout button, the options menu and the shortcuts modal', async ({
 	page
 }) => {
+	// The range readout (and its refresh button) only renders from the lg breakpoint.
+	await page.setViewportSize({ width: 1600, height: 900 });
 	const source = await trackerFixture(page, { comparisonGrowth: true });
 	await page.clock.install({ time: new Date() });
 	await page.goto('/tracker?region=nsw1&table=0');
 	await chartsSettled(page);
-	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
-	// Let initial requests settle before testing the foreground-only live loop.
-	await page.clock.fastForward(10_000);
-	await page.evaluate(() => {
-		Object.defineProperty(document, 'hidden', { configurable: true, value: true });
-		document.dispatchEvent(new Event('visibilitychange'));
-	});
 	const before = source.urls.length;
 	await page.clock.fastForward(300_000);
 	expect(source.urls.length).toBe(before);
-	await page.evaluate(() => {
-		Object.defineProperty(document, 'hidden', { configurable: true, value: false });
-		document.dispatchEvent(new Event('visibilitychange'));
-	});
+	// The range readout is the refresh button: hovering says when data last updated.
+	const readout = page.getByTestId('tracker-range-label');
+	await readout.hover();
+	await expect(page.locator('[data-tooltip-content]')).toContainText('Updated');
+	await expect(page.locator('[data-tooltip-content]')).toContainText('Tap to refresh (R)');
+	await readout.click();
 	await expect.poll(() => source.urls.length).toBeGreaterThan(before);
 	await chartsSettled(page);
-	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
-	await pauseByZoom(page, true);
-	await expect(
-		page.getByTestId('reading-freshness').filter({ hasText: 'Latest in view' })
-	).toHaveCount(0);
-	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
-	const paused = page.url();
-	const count = source.urls.length;
-	await page.clock.fastForward(300_000);
-	expect(source.urls.length).toBe(count);
-	expect(page.url()).toBe(paused);
+	const afterButton = source.urls.length;
+	const menu = await openOptions(page);
+	await menu.getByRole('button', { name: /^Refresh data/ }).click();
+	await expect.poll(() => source.urls.length).toBeGreaterThan(afterButton);
+	await chartsSettled(page);
+	// The shortcuts modal lists the tracker's keys and closes on Escape.
+	await page.keyboard.press('?');
+	const modal = page.getByRole('heading', { name: 'Keyboard shortcuts' });
+	await expect(modal).toBeVisible();
+	const panel = modal.locator('..').locator('..');
+	await expect(panel).toContainText('Refresh data');
+	await expect(panel).toContainText('Show or hide metrics');
+	await expect(panel).toContainText('Enter / exit full screen');
+	await expect(panel.locator('kbd', { hasText: /^R$/ })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(modal).toHaveCount(0);
+	// Typing in a field never refreshes.
+	const typed = source.urls.length;
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Choose a custom date range' }).click();
+	const field = page.getByRole('textbox').first();
+	if (await field.count()) {
+		await field.focus();
+		await page.keyboard.press('r');
+		expect(source.urls.length).toBe(typed);
+	}
+	await page.keyboard.press('Escape');
 });
 
-test('window metrics use facility cards, signed displayed values and keyboard chart highlighting', async ({
+test('window metrics strip shows signed displayed extremes with keyboard chart highlighting', async ({
 	page
 }, testInfo) => {
 	const api = await trackerFixture(page, { contributions: true, comparisonGrowth: true });
@@ -326,72 +344,104 @@ test('window metrics use facility cards, signed displayed values and keyboard ch
 	await expect(minimum).toBeEnabled();
 	await expect(minimum).toContainText('200');
 	await expect(maximum).toContainText('400');
-	await expect(minimum).toContainText('1 Aug 2026');
-	await expect(maximum).toContainText('2 Aug 2026');
+	// Times live in the value tooltips, in the short form without the current year.
+	await expect(minimum).not.toContainText('Aug');
+	await minimum.hover();
+	await expect(page.locator('[data-tooltip-content]')).toContainText('Min: 1 Aug,');
+	await expect(page.locator('[data-tooltip-content]')).not.toContainText('2026');
+	await page.mouse.move(0, 0);
 	await expect(metrics).not.toContainText('UTC+10:00');
-	await expect(metrics.locator('button[data-testid]')).toHaveCount(8);
+	await expect(metrics.locator('button[data-testid]')).toHaveCount(16);
 	await expect(metrics.getByText('Minimum', { exact: true })).toHaveCount(0);
 	await expect(metrics.getByText('Maximum', { exact: true })).toHaveCount(0);
 	await expect(
 		page.getByTestId('metrics-generation').getByText('Net power', { exact: true })
 	).toHaveCount(1);
 	await expect(minimum).not.toContainText('Net power');
-	for (const cell of [minimum, maximum]) {
-		const fits = await cell.evaluate(
-			(el) => el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth
-		);
-		expect(fits).toBe(true);
-	}
+	// Sub-daily buckets are power only; energy would just rescale them.
+	await expect(page.getByTestId('metrics-energy')).toHaveCount(0);
+	// The strip sits between the navigation and the charts.
+	const strip = await metrics.boundingBox();
+	const nav = await page.getByTestId('tracker-top-nav').boundingBox();
+	const chart = await card(page, 'Generation').boundingBox();
+	expect(strip.y).toBeGreaterThanOrEqual(nav.y + nav.height);
+	expect(chart.y).toBeGreaterThanOrEqual(strip.y + strip.height);
+	expect((await minimum.boundingBox()).x).toBeLessThan((await maximum.boundingBox()).x);
+	expect(await metrics.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
 	await expect(minimum).not.toHaveAttribute('title');
+	// Only Renewables explains itself: its label tooltip links to the methodology.
 	await page.getByTestId('metrics-generation').getByText('Net power', { exact: true }).hover();
-	await expect(page.locator('[data-tooltip-content]')).toContainText(
-		'Selected technologies, including imports and subtracting loads.'
-	);
+	await expect(page.locator('[data-tooltip-content]')).toHaveCount(0);
+	await page.getByTestId('metrics-renewables').getByText('Renewables', { exact: true }).hover();
+	await expect(page.locator('[data-tooltip-content]')).toContainText('Renewable share');
+	await expect(
+		page
+			.locator('[data-tooltip-content]')
+			.getByRole('link', { name: 'How renewable energy is calculated' })
+	).toBeVisible();
 	await page.mouse.move(0, 0);
-	await page.getByTestId('metrics-generation').getByText('Net power', { exact: true }).focus();
-	await expect(page.locator('[data-tooltip-content]')).toBeVisible();
 	await page.getByTestId('metric-market-min').hover();
 	await expect(
-		page.locator('[data-tooltip-content]').filter({ hasText: 'Minimum spot price' })
+		page.locator('[data-tooltip-content]').filter({ hasText: 'Min: 1 Aug,' })
 	).toBeVisible();
 	const requests = api.requests.length;
 	await maximum.focus();
 	await expect(
-		page.locator('[data-tooltip-content]').filter({ hasText: 'Maximum net power' })
+		page.locator('[data-tooltip-content]').filter({ hasText: 'Max: 2 Aug,' })
 	).toBeVisible();
 	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
 	expect(api.requests.length).toBe(requests);
 	await maximum.click();
 	await page.mouse.move(0, 0);
 	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
-	await expect(maximum.getByText('Max', { exact: true })).toHaveCSS(
-		'background-color',
-		'oklch(0.205 0 0)'
-	);
-	await expect(minimum.getByText('Min', { exact: true })).toHaveCSS('color', 'rgb(106, 106, 106)');
-	await expect(page.getByTestId('metrics-generation').locator('svg')).toHaveCount(0);
-	await expect(maximum).toHaveCSS('border-left-width', '1px');
+	await expect(page.getByTestId('metrics-generation').getByRole('img')).toHaveCount(0);
+	await expect(page.getByTestId('metrics-generation-unit')).toHaveText('MW');
 	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
 	await expect(card(page, 'Market').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
 	await minimum.hover();
 	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('1 Aug');
 	await page.mouse.move(0, 0);
 	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
+	// Hovering the chart leaves the pin alone; clicking to focus a time clears it.
+	const plot = await card(page, 'Generation').locator('.stratum-chart-area').boundingBox();
+	await page.mouse.move(plot.x + plot.width * 0.25, plot.y + plot.height * 0.5);
+	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('1 Aug');
+	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
+	// The first tap engages pan/zoom; the next pins the hovered time, which replaces the strip's pin.
+	await page.mouse.click(plot.x + plot.width * 0.25, plot.y + plot.height * 0.5);
+	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
+	await page.mouse.click(plot.x + plot.width * 0.25, plot.y + plot.height * 0.5);
+	await expect(maximum).toHaveAttribute('aria-pressed', 'false');
+	await expect(minimum).toHaveAttribute('aria-pressed', 'false');
+	// Pinning an extreme moves the charts' focus to its time; the plot's pin is gone.
+	await maximum.click();
+	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
+	await page.mouse.move(0, 0);
+	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
+	await maximum.click();
+	await expect(maximum).toHaveAttribute('aria-pressed', 'false');
+	await page.keyboard.press('Escape');
 	await minimum.click();
 	await expect(minimum).toHaveAttribute('aria-pressed', 'true');
 	await expect(maximum).toHaveAttribute('aria-pressed', 'false');
 	await minimum.press('Enter');
 	await expect(minimum).toHaveAttribute('aria-pressed', 'false');
-	await expect(minimum.getByText('Min', { exact: true })).toHaveCSS('color', 'rgb(106, 106, 106)');
 	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
 	await expect(minimum).toContainText('100');
 	await expect(maximum).toContainText('200');
 	await metrics.scrollIntoViewIfNeeded();
 	await expect(page.getByTestId('metric-demand-min')).toContainText('100');
 	await expect(page.getByTestId('metric-demand-max')).toContainText('200');
-	await expect(page.getByTestId('metric-emissions-min')).toHaveCount(0);
+	// Emissions volume and intensity come from one components feed, whatever the chart shows.
+	await expect(page.getByTestId('metric-emissions-min')).toBeEnabled();
+	await expect(page.getByTestId('metrics-emissions-unit')).toHaveText('tCO₂e');
+	await expect(page.getByTestId('metric-intensity-min')).toBeEnabled();
+	await expect(page.getByTestId('metrics-intensity-unit')).toHaveText('kgCO₂e/MWh');
+	await expect(page.getByTestId('metric-curtailment_solar-min')).toBeEnabled();
+	await expect(page.getByTestId('metrics-curtailment_wind-unit')).toHaveText('MW');
 	await expect(page.getByTestId('metric-renewables-min')).toContainText('25');
 	await expect(page.getByTestId('metric-renewables-max')).toContainText('%');
+	await expect(page.getByTestId('metrics-renewables-unit')).toHaveCount(0);
 	await page.screenshot({ path: testInfo.outputPath('window-metrics-desktop.png') });
 });
 
@@ -417,13 +467,12 @@ test('tracker slides one nav logo in place of the date range and overlays charts
 		await expect(overlay).toHaveCSS('pointer-events', 'none');
 		await expect(overlay).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.65)');
 	}
-	await expect(page.getByTestId('metrics-pane').getByTestId('tracker-loading-overlay')).toHaveCount(
-		0
-	);
+	const metrics = page.getByRole('region', { name: 'Window metrics' });
+	await expect(metrics.getByTestId('tracker-loading-overlay')).toHaveCount(0);
 	await expect(
 		page.locator('[data-testid="chart-loading"], [data-testid="table-loading"]')
 	).toHaveCount(0);
-	await expect(page.getByTestId('metrics-pane')).not.toContainText('Updating…');
+	await expect(metrics).not.toContainText('Updating…');
 	await page.screenshot({
 		path: testInfo.outputPath('shared-loading-initial.png'),
 		animations: 'disabled'
@@ -562,50 +611,38 @@ test('panel controls share generous targets, directional icons and keyboard focu
 	await trackerFixture(page);
 	await page.goto('/tracker?region=nsw1');
 	await chartsSettled(page);
-	const hideMetrics = page.getByRole('button', { name: 'Hide metrics', exact: true });
 	const hideTable = page.getByRole('button', { name: 'Hide fuel tech table', exact: true });
-	const showMetrics = page.getByRole('button', { name: 'Show metrics', exact: true });
 	const showTable = page.getByRole('button', { name: 'Show fuel tech table', exact: true });
-	for (const button of [hideMetrics, hideTable]) {
-		const bounds = await button.boundingBox();
-		expect(bounds.width).toBe(40);
-		expect(bounds.height).toBe(40);
-		expect((await button.locator('svg').boundingBox()).width).toBe(20);
-		await expect(button.locator('svg')).toHaveAttribute('stroke-width', '1.5');
-		await expect(button).toHaveAttribute('aria-expanded', 'true');
-		await expect(button).toHaveCSS('color', 'rgb(106, 106, 106)');
-	}
-	expect((await hideMetrics.boundingBox()).y).toBe((await hideTable.boundingBox()).y);
-	await expect(hideMetrics.locator('svg')).toHaveClass(/lucide-panel-left-close/);
+	await expect(page.getByRole('button', { name: /metrics/i })).toHaveCount(0);
+	const bounds = await hideTable.boundingBox();
+	expect(bounds.width).toBe(40);
+	expect(bounds.height).toBe(40);
+	expect((await hideTable.locator('svg').boundingBox()).width).toBe(20);
+	await expect(hideTable.locator('svg')).toHaveAttribute('stroke-width', '1.5');
+	await expect(hideTable).toHaveAttribute('aria-expanded', 'true');
+	await expect(hideTable).toHaveCSS('color', 'rgb(106, 106, 106)');
 	await expect(hideTable.locator('svg')).toHaveClass(/lucide-panel-right-close/);
-	await hideMetrics.hover();
-	await expect(hideMetrics).toHaveCSS('color', 'rgb(106, 106, 106)');
+	await hideTable.hover();
+	await expect(hideTable).toHaveCSS('color', 'rgb(106, 106, 106)');
 	await page.screenshot({ path: testInfo.outputPath('panels-open.png') });
-	await hideMetrics.press('Enter');
-	await expect(showMetrics).toBeFocused();
 	await hideTable.press('Enter');
 	await expect(showTable).toBeFocused();
-	for (const button of [showMetrics, showTable]) {
-		const bounds = await button.boundingBox();
-		expect(bounds.width).toBe(40);
-		expect(bounds.height).toBe(40);
-		await expect(button).toHaveAttribute('aria-expanded', 'false');
-		await expect(button.locator('svg')).toHaveCSS('width', '20px');
-		await expect(button.locator('svg')).toHaveAttribute('stroke-width', '1.5');
-		await expect(button).toHaveCSS('color', 'rgb(106, 106, 106)');
-	}
-	await expect(showMetrics.locator('svg')).toHaveClass(/lucide-panel-left-open/);
+	const collapsed = await showTable.boundingBox();
+	expect(collapsed.width).toBe(40);
+	expect(collapsed.height).toBe(40);
+	await expect(showTable).toHaveAttribute('aria-expanded', 'false');
+	await expect(showTable.locator('svg')).toHaveCSS('width', '20px');
+	await expect(showTable.locator('svg')).toHaveAttribute('stroke-width', '1.5');
+	await expect(showTable).toHaveCSS('color', 'rgb(106, 106, 106)');
 	await expect(showTable.locator('svg')).toHaveClass(/lucide-panel-right-open/);
 	await expect(showTable).toHaveCSS('outline-style', 'solid');
 	await page.screenshot({ path: testInfo.outputPath('panels-collapsed.png') });
 	await showTable.press('Enter');
 	await expect(hideTable).toBeFocused();
-	await showMetrics.press('Enter');
-	await expect(hideMetrics).toBeFocused();
-	await expect(hideMetrics).toHaveCSS('outline-style', 'solid');
+	await expect(hideTable).toHaveCSS('outline-style', 'solid');
 	await hideTable.click();
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(hideMetrics).toBeVisible();
+	await expect(showTable).toBeVisible();
 	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('panels-mobile.png') });
 });
@@ -709,7 +746,7 @@ test('window metrics follow range and market modes without applying timeline tra
 		`/tracker?start=${start}&end=${start + 2 * 86_400_000}&interval=30m&table=0&transform=proportion`
 	);
 	await expect(page.getByTestId('metric-generation-min')).toContainText('200');
-	await expect(page.getByTestId('metric-generation-min')).toContainText('MW');
+	await expect(page.getByTestId('metrics-generation-unit')).toHaveText('MW');
 	await expect(page.getByTestId('metric-demand-min')).toContainText('100');
 	await expect(page.getByTestId('metric-demand-max')).toContainText('200');
 	await card(page, 'Market').getByRole('tab', { name: 'Market value', exact: true }).click();
@@ -717,20 +754,23 @@ test('window metrics follow range and market modes without applying timeline tra
 	await expect(page.getByTestId('metrics-market')).toContainText('Market value');
 	await card(page, 'Emissions').getByRole('tab', { name: 'Volume', exact: true }).click();
 	await expect(page.getByTestId('metric-emissions-max')).toBeEnabled();
-	await expect(page.getByTestId('metric-emissions-max')).toContainText('tCO₂e');
+	await expect(page.getByTestId('metrics-emissions-unit')).toHaveText('tCO₂e');
 	await page.goto(
 		`/tracker?start=${start + 86_400_000}&end=${Date.parse('2026-09-01T00:00:00+10:00')}&interval=1d&table=0`
 	);
 	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
-	await expect(page.getByTestId('metrics-generation')).toContainText('Net energy');
-	await expect(page.getByTestId('metric-generation-min')).toContainText('400');
-	await expect(page.getByTestId('metric-generation-min')).toContainText('MWh');
-	await expect(page.getByTestId('metric-demand-min')).toContainText('MWh');
+	// Daily buckets hold MWh: net energy appears and net power reads their average MW.
+	await expect(page.getByTestId('metrics-generation')).toContainText('Net power');
+	await expect(page.getByTestId('metric-energy-min')).toContainText('400');
+	await expect(page.getByTestId('metrics-energy-unit')).toHaveText('MWh');
+	await expect(page.getByTestId('metric-generation-min')).toContainText('17');
+	await expect(page.getByTestId('metrics-generation-unit')).toHaveText('MW');
+	await expect(page.getByTestId('metrics-demand-unit')).toHaveText('MWh');
 	await expect(page.getByTestId('metric-demand-min')).toContainText('200');
 });
 
 test('window metrics never show held, failed or empty data as current', async ({ page }) => {
-	const api = await trackerFixture(page, { hold: 'price', empty: 'emissions' });
+	const api = await trackerFixture(page, { hold: 'price', empty: 'emissions_intensity' });
 	await page.goto('/tracker?region=nsw1&table=0&emissions=volume');
 	await expect.poll(() => api.requests.includes('power')).toBe(true);
 	const price = page.getByTestId('metric-market-min');
@@ -760,121 +800,57 @@ test('demand metrics wait for their feed and recover with the table and overlay 
 	await expect(demand).toContainText('100');
 });
 
-test('window metrics fit mobile in WEM', async ({ page }, testInfo) => {
+test('the metrics strip hides and shows with the M key and the options menu, and remembers it', async ({
+	page
+}) => {
+	await trackerFixture(page);
+	await page.goto('/tracker?region=nsw1&table=0');
+	await chartsSettled(page);
+	const strip = page.getByRole('region', { name: 'Window metrics' });
+	await expect(strip).toBeVisible();
+	await page.keyboard.press('m');
+	await expect(strip).toHaveCount(0);
+	await page.keyboard.press('M');
+	await expect(strip).toBeVisible();
+	await openOptions(page);
+	await page.getByRole('button', { name: /^Hide metrics/ }).click();
+	await expect(strip).toHaveCount(0);
+	await page.reload();
+	// The strip stays hidden after a reload, so settle on the page's loader instead.
+	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
+	await expect(strip).toHaveCount(0);
+	await openOptions(page);
+	await expect(page.getByRole('button', { name: /^Hide metrics/ })).toHaveCount(0);
+	await page.getByRole('button', { name: /^Show metrics/ }).click();
+	await expect(strip).toBeVisible();
+	await page.getByRole('button', { name: 'Profile', exact: true }).click();
+	await expect(strip).toHaveCount(0);
+	await page.keyboard.press('m');
+	await page.getByRole('button', { name: 'Timeline', exact: true }).click();
+	await expect(strip).toBeVisible();
+});
+
+test('window metrics strip scrolls sideways on mobile in WEM', async ({ page }, testInfo) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker?region=wem&table=0');
-	await expect(page.getByRole('region', { name: 'Window metrics' })).toHaveCount(0);
-	const chartWidth = (await card(page, 'Generation').boundingBox()).width;
-	await page.getByRole('button', { name: 'Show metrics', exact: true }).click();
-	await expect(page.getByRole('button', { name: 'Hide metrics', exact: true })).toBeFocused();
-	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
 	const metrics = page.getByRole('region', { name: 'Window metrics' });
+	await expect(metrics).toBeVisible();
+	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
 	await expect(metrics).not.toContainText('UTC+08:00');
+	await expect(page.getByRole('button', { name: /metrics/i })).toHaveCount(0);
 	const bounds = await metrics.boundingBox();
 	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+	const scroller = metrics.locator('.ticker-scroll');
+	expect(await scroller.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
 	await expectNoHorizontalScroll(page);
-	await page.screenshot({ path: testInfo.outputPath('window-metrics-mobile.png') });
-	const resize = page.getByRole('separator', { name: 'Resize metrics panel' });
-	await resize.press('End');
-	await expect(resize).toHaveAttribute('aria-valuenow', '334');
-	await expectNoHorizontalScroll(page);
-	expect((await card(page, 'Generation').boundingBox()).width).toBe(chartWidth);
-	await page.getByRole('button', { name: 'Hide metrics', exact: true }).click();
-	await expect(page.getByRole('button', { name: 'Show metrics', exact: true })).toBeFocused();
-	await page.getByRole('button', { name: 'Show metrics', exact: true }).click();
-	await page.keyboard.press('Escape');
-	await expect(page.getByRole('region', { name: 'Window metrics' })).toHaveCount(0);
-});
-
-test('metrics pane stays left with minimum and maximum columns, resizes without fetching and remembers its width', async ({
-	page
-}) => {
-	const api = await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1');
-	await trackerReady(page);
-	await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
-	const pane = page.getByTestId('metrics-pane');
-	const handle = page.getByRole('separator', { name: 'Resize metrics panel' });
-	const bounds = await pane.boundingBox();
 	const chart = await card(page, 'Generation').boundingBox();
-	expect(bounds.x + bounds.width).toBeLessThanOrEqual(chart.x);
-	const divider = await handle.boundingBox();
-	const metrics = await page.getByRole('region', { name: 'Window metrics' }).boundingBox();
-	expect(metrics.x + metrics.width).toBeLessThanOrEqual(divider.x);
-	expect(await pane.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
-		'rgba(0, 0, 0, 0)'
-	);
-	expect(await handle.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
-		'rgba(0, 0, 0, 0)'
-	);
-	const cells = await pane.locator('button[data-testid]').evaluateAll((buttons) =>
-		buttons.map((button) => {
-			const rect = button.getBoundingClientRect();
-			return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
-		})
-	);
-	for (let i = 0; i < cells.length; i += 2) {
-		expect(cells[i].x).toBe(cells[0].x);
-		expect(cells[i + 1].x).toBeGreaterThan(cells[i].x);
-		expect(cells[i + 1].y).toBe(cells[i].y);
-		expect(cells[i + 1].width).toBeCloseTo(cells[i].width, 0);
-		if (i > 0) expect(cells[i].y).toBeGreaterThanOrEqual(cells[i - 2].y + cells[i - 2].height);
-	}
-	const requests = api.requests.length;
-	const value = await page.getByTestId('metric-generation-min').textContent();
-	const grip = await handle.boundingBox();
-	await page.mouse.move(grip.x + grip.width / 2, grip.y + 80);
-	await page.mouse.down();
-	await page.mouse.move(grip.x + grip.width / 2 + 60, grip.y + 80);
-	await page.mouse.up();
-	await expect(handle).toHaveAttribute('aria-valuenow', '316');
-	await handle.press('ArrowRight');
-	await expect(handle).toHaveAttribute('aria-valuenow', '326');
-	await expect(page.getByTestId('metric-generation-min')).toHaveText(value);
-	expect(api.requests.length).toBe(requests);
-	await page.reload();
-	await expect(handle).toHaveAttribute('aria-valuenow', '326');
-	await handle.press('End');
-	await expect(handle).toHaveAttribute('aria-valuenow', '400');
-	await page.getByRole('separator', { name: 'Resize table panel' }).press('End');
-	expect((await card(page, 'Generation').boundingBox()).width).toBeGreaterThanOrEqual(340);
-	await handle.press('Home');
-	await handle.press('ArrowLeft');
-	await expect(handle).toHaveAttribute('aria-valuenow', '224');
-	await handle.dispatchEvent('pointerdown', { pointerId: 7, button: 0, clientX: 224 });
-	await page.evaluate(() => {
-		window.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 7 }));
-		window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7, clientX: 500 }));
-	});
-	await expect(handle).toHaveAttribute('aria-valuenow', '224');
-});
-
-test('metrics resizing survives unavailable storage and narrower desktop widths', async ({
-	page
-}) => {
-	await page.addInitScript(() => {
-		for (const method of ['getItem', 'setItem']) {
-			const original = Storage.prototype[method];
-			Storage.prototype[method] = function (key, ...args) {
-				if (key === 'tracker-metrics-width') throw new Error('Storage unavailable');
-				return original.call(this, key, ...args);
-			};
-		}
-	});
-	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1');
-	await trackerReady(page);
-	const handle = page.getByRole('separator', { name: 'Resize metrics panel' });
-	await expect(handle).toHaveAttribute('aria-valuemax', '400');
-	await handle.press('End');
-	await expect(handle).toHaveAttribute('aria-valuenow', '400');
-	await page.setViewportSize({ width: 1024, height: 768 });
-	await expect(handle).toHaveAttribute('aria-valuenow', '328');
+	expect(chart.y).toBeGreaterThanOrEqual(bounds.y + bounds.height);
+	expect(chart.x + chart.width).toBeLessThanOrEqual(390);
+	await page.screenshot({ path: testInfo.outputPath('window-metrics-mobile.png') });
+	await scroller.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+	await expect(page.getByTestId('metric-curtailment_wind-max')).toBeInViewport();
 	await expectNoHorizontalScroll(page);
-	await page.getByRole('button', { name: 'Hide metrics', exact: true }).click();
-	await page.getByRole('button', { name: 'Show metrics', exact: true }).click();
-	await expect(handle).toHaveAttribute('aria-valuenow', '328');
 });
 
 test('window metrics recover from a failed chart without presenting an old value', async ({
@@ -1301,7 +1277,7 @@ test('average-day stack includes every technology and persists beside price with
 	await expect(row).toContainText('100 (7)');
 	await expect(row).toContainText('-400 (7)');
 	expect(api.requests.filter((metric) => metric === 'power')).toHaveLength(1);
-	await page.getByRole('combobox', { name: 'Metric', exact: true }).selectOption('price');
+	await pickNavOption(page, 'Metric', 'Power', 'Spot price');
 	await expect(page.getByRole('heading', { name: /Spot price/ })).toBeVisible();
 	await expect(
 		page
@@ -1310,11 +1286,9 @@ test('average-day stack includes every technology and persists beside price with
 	).not.toHaveAttribute('d', /C/);
 	await expect(stack.locator('.stratum-chart')).toBeVisible();
 	expect(api.requests.filter((metric) => metric === 'power')).toHaveLength(1);
-	await page.getByRole('combobox', { name: 'View', exact: true }).selectOption('daily');
+	await pickNavOption(page, 'View', 'Average day', 'Daily overlay');
 	await expect(stack.locator('path.path-area')).toHaveCount(4);
-	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-	await page.getByRole('radio', { name: 'Detailed', exact: true }).click();
-	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
+	await pickNavOption(page, 'Fuel tech grouping', 'Simplified', 'Detailed');
 	await expect(stack).toContainText('Detailed');
 	await expect(stack.getByRole('button', { name: 'Coal (Black)', exact: true })).toHaveAttribute(
 		'aria-pressed',
@@ -1331,33 +1305,23 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 	await page.goto('/tracker?region=wem&view=profile&profile-end=2026-08-31&profile-series=wind');
 	const profile = page.getByRole('region', { name: 'Profile analysis' });
 	await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await expect(
-		page
-			.getByTestId('tracker-top-nav')
-			.getByRole('combobox', { name: 'Fuel technology', exact: true })
-	).toHaveValue('wind');
+	await expect(navPill(page, 'Wind')).toBeVisible();
 	await expect(profile).toContainText('2026-08-25 to 2026-08-31 · UTC+08:00');
 	expect(api.requests).toEqual(['power']);
-	await page
-		.getByTestId('tracker-top-nav')
-		.getByRole('combobox', { name: 'View', exact: true })
-		.selectOption('daily');
+	await pickNavOption(page, 'View', 'Average day', 'Daily overlay');
 	await expect(profile.getByRole('button', { name: '2026-08-31', exact: true })).toBeVisible();
-	await page
-		.getByTestId('tracker-top-nav')
-		.getByRole('combobox', { name: 'Fuel technology', exact: true })
-		.selectOption('coal');
+	await pickNavOption(page, 'Fuel technology', 'Wind', 'Coal');
 	await profile.getByRole('button', { name: '2026-08-31', exact: true }).click();
 	await expect(profile.getByRole('button', { name: '2026-08-31', exact: true })).toHaveAttribute(
 		'aria-pressed',
 		'false'
 	);
 	expect(api.requests).toEqual(['power']);
-	for (const days of [14, 28]) {
-		await page
-			.getByTestId('tracker-top-nav')
-			.getByRole('combobox', { name: 'Window', exact: true })
-			.selectOption(String(days));
+	for (const [from, days] of [
+		[7, 14],
+		[14, 28]
+	]) {
+		await pickNavOption(page, 'Window', `${from} days`, `${days} days`);
 		await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 		await expect(profile.getByRole('button', { name: /2026-\d\d-\d\d/, exact: true })).toHaveCount(
 			days
@@ -1390,32 +1354,15 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 	expect(new URL(url).searchParams.get('view')).toBe('profile');
 	expect(new URL(url).searchParams.get('profile-view')).toBe('daily');
 	await page.goto(url);
-	await expect(
-		page.getByTestId('tracker-top-nav').getByRole('combobox', { name: 'Window', exact: true })
-	).toHaveValue('28');
-	await expect(
-		page.getByTestId('tracker-top-nav').getByRole('combobox', { name: 'View', exact: true })
-	).toHaveValue('daily');
-	await expect(
-		page
-			.getByTestId('tracker-top-nav')
-			.getByRole('combobox', { name: 'Fuel technology', exact: true })
-	).toHaveValue('coal');
+	await expect(navPill(page, '28 days')).toBeVisible();
+	await expect(navPill(page, 'Daily overlay')).toBeVisible();
+	await expect(navPill(page, 'Coal')).toBeVisible();
 	await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await page
-		.getByTestId('tracker-top-nav')
-		.getByRole('combobox', { name: 'Metric', exact: true })
-		.selectOption('price');
+	await pickNavOption(page, 'Metric', 'Power', 'Spot price');
 	await expect(profile.getByRole('heading', { name: /Spot price/ })).toBeVisible();
 	await page.goBack();
-	await expect(
-		page.getByTestId('tracker-top-nav').getByRole('combobox', { name: 'Metric', exact: true })
-	).toHaveValue('power');
-	await expect(
-		page
-			.getByTestId('tracker-top-nav')
-			.getByRole('combobox', { name: 'Fuel technology', exact: true })
-	).toHaveValue('coal');
+	await expect(navPill(page, 'Power')).toBeVisible();
+	await expect(navPill(page, 'Coal')).toBeVisible();
 });
 
 test('time-of-day switches reset settings, restore history and fit narrow screens', async ({
@@ -1434,12 +1381,10 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 	await page.goBack();
 	await expect(page.getByRole('button', { name: 'Profile', exact: true })).toBeVisible();
 	await expect(page).toHaveURL(original);
-	await expect(page.getByRole('combobox', { name: 'View', exact: true }).first()).toHaveValue(
-		'daily'
-	);
+	await expect(navPill(page, 'Daily overlay')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(page.getByRole('combobox', { name: 'Window', exact: true }).first()).toBeVisible();
+	await expect(navPill(page, '14 days')).toBeVisible();
 	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('time-of-day-mobile.png'), fullPage: true });
 	await page.setViewportSize({ width: 1440, height: 1000 });
@@ -1456,13 +1401,13 @@ test('time-of-day failures and empty results remain explicit; switching metric c
 	api.recover();
 	await page.getByRole('button', { name: 'Retry profile' }).click();
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await page.getByRole('combobox', { name: 'Metric', exact: true }).selectOption('price');
+	await pickNavOption(page, 'Metric', 'Power', 'Spot price');
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeDisabled();
 	await expect(page.getByRole('status')).toContainText('Loading profile');
 	api.release();
 	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
 	await trackerFixture(page, { empty: 'power' });
-	await page.getByRole('combobox', { name: 'Metric', exact: true }).selectOption('power');
+	await pickNavOption(page, 'Metric', 'Spot price', 'Power');
 	// Use a new window so the successful response cache cannot satisfy it.
 	await page.getByLabel('Last day', { exact: true }).fill('2026-07-31');
 	await expect(page.getByRole('status')).toContainText('No profile data');
@@ -1751,7 +1696,8 @@ test('a failed metric retries in place and only required providers load', async 
 	expect(source.requests.filter((metric) => metric === 'price').length).toBeGreaterThanOrEqual(2);
 	expect(source.requests).toContain('renewables');
 	expect(source.requests).not.toContain('market_value');
-	expect(source.requests).not.toContain('curtailment');
+	// The metrics strip needs the curtailment pair even with the table and overlays closed.
+	expect(source.requests).toContain('curtailment');
 });
 
 test('a transient date-range data failure recovers without a manual retry', async ({ page }) => {

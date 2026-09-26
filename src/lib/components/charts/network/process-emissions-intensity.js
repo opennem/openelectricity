@@ -130,7 +130,7 @@ export function processEmissionsIntensity(response, config) {
 
 /** Collapse cached per-group components for a visibility selection, without
  * changing the data manager or consulting the HTTP response cache.
- * @param {NonNullable<ReturnType<typeof processEmissionsIntensity>>} source
+ * @param {Pick<NonNullable<ReturnType<typeof processEmissionsIntensity>>, 'seriesNames' | 'data'>} source
  * @param {string[]} excludedGroups
  */
 export function selectIntensityComponents(source, excludedGroups) {

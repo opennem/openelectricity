@@ -69,7 +69,7 @@ describe('Tracker navigation', () => {
 		const disconnect = session.connect(() => [chart]);
 		await Promise.resolve();
 		const original = { ...session.window };
-		session.tick(nowMs + 60_000);
+		session.refresh(nowMs + 60_000);
 		expect(session.window).toEqual({ start: original.start + 60_000, end: original.end + 60_000 });
 		expect(changed).not.toHaveBeenCalled();
 		expect(session.following).toBe(true);
@@ -82,7 +82,7 @@ describe('Tracker navigation', () => {
 			startMs: paused.start,
 			endMs: paused.end
 		});
-		session.tick(nowMs + 600_000);
+		session.refresh(nowMs + 600_000);
 		expect(session.window).toEqual(paused);
 		const clock = vi.spyOn(Date, 'now').mockReturnValue(nowMs + 600_000);
 		session.selectRange(3);
@@ -91,26 +91,26 @@ describe('Tracker navigation', () => {
 		expect(session.window.end).toBe(nowMs + 600_000);
 		expect(changed.mock.calls).toEqual([['replace'], ['push']]);
 		disconnect();
-		session.tick(nowMs + 700_000);
+		session.refresh(nowMs + 700_000);
 		expect(session.window.end).toBe(nowMs + 600_000);
 	});
 	it('does not advance busy, gesturing or time-of-day charts; All keeps its floor', () => {
 		const session = createTrackerSession(initial, () => {});
 		session.connect(() => []);
-		session.tick(nowMs + 60_000, false);
+		session.refresh(nowMs + 60_000, { ready: false });
 		expect(session.window.end).toBe(nowMs);
 		session.gestureActive = true;
-		session.tick(nowMs + 60_000);
+		session.refresh(nowMs + 60_000);
 		expect(session.window.end).toBe(nowMs);
 		session.gestureActive = false;
 		session.select('view', 'profile');
-		session.tick(nowMs + 60_000);
+		session.refresh(nowMs + 60_000);
 		expect(session.window.end).toBe(nowMs);
 		session.select('view', 'timeline');
 		vi.useFakeTimers();
 		vi.setSystemTime(nowMs);
 		session.selectRange(-1);
-		session.tick(nowMs + 60_000);
+		session.refresh(nowMs + 60_000);
 		expect(session.window).toEqual({ start: Date.UTC(1998, 11, 1), end: nowMs + 60_000 });
 		vi.useRealTimers();
 	});
@@ -224,7 +224,7 @@ describe('Tracker navigation', () => {
 			session.moveViewport(moved, null);
 			session.settleViewport(moved);
 			expect(session.following).toBe(false);
-			session.tick(nowMs + 86_400_000);
+			session.refresh(nowMs + 86_400_000);
 			expect(session.window).toEqual(moved);
 			expect(session.selection.range).toMatchObject({
 				kind: 'custom',

@@ -98,13 +98,14 @@ export function makeSnapshot(overrides = {}) {
 /**
  * A headless provider stand-in: rows are returned as given, status is settable.
  * Reactive, so deriveds under test recompute when a test flips its state.
- * @param {{ rows?: any[], pending?: boolean, error?: string | null }} [state]
+ * @param {{ rows?: any[], pending?: boolean, error?: string | null, seriesMeta?: any }} [state]
  */
 export function makeProvider(state = {}) {
 	const provider = $state({
 		rows: state.rows ?? [],
 		isPending: state.pending ?? false,
 		error: state.error ?? null,
+		seriesMeta: state.seriesMeta ?? null,
 		reconciled: 0,
 		/** @param {number} start @param {number} end */
 		getVisibleRows(start, end) {
@@ -125,7 +126,7 @@ export function makeProvider(state = {}) {
 
 /**
  * The tracker's provider set, every member a settable stand-in.
- * @param {Partial<Record<'marketData' | 'mvData' | 'emissionsData' | 'demandData' | 'curtailmentData' | 'shareData', ReturnType<typeof makeProvider>>>} [members]
+ * @param {Partial<Record<'marketData' | 'mvData' | 'emissionsData' | 'demandData' | 'curtailmentData' | 'shareData' | 'intensityData', ReturnType<typeof makeProvider>>>} [members]
  */
 export function makeProviders(members = {}) {
 	const set = {
@@ -134,7 +135,8 @@ export function makeProviders(members = {}) {
 		emissionsData: members.emissionsData ?? makeProvider(),
 		demandData: members.demandData ?? makeProvider(),
 		curtailmentData: members.curtailmentData ?? makeProvider(),
-		shareData: members.shareData ?? makeProvider()
+		shareData: members.shareData ?? makeProvider(),
+		intensityData: members.intensityData ?? makeProvider()
 	};
 	const all = Object.values(set);
 	return {

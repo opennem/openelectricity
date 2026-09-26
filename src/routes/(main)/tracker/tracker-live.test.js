@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { latestReading, readingStatus, startTrackerLive } from './tracker-live.js';
+import { latestReading, readingStatus, startTrackerClock } from './tracker-live.js';
 
 afterEach(() => vi.useRealTimers());
 
-describe('Tracker live clock', () => {
+describe('Tracker freshness clock', () => {
 	it('ticks once a minute in the foreground, catches up once, and disposes', () => {
 		vi.useFakeTimers();
 		const document = Object.assign(new EventTarget(), { hidden: false });
 		const tick = vi.fn();
-		const stop = startTrackerLive({ document, tick });
+		const stop = startTrackerClock({ document, tick });
 		expect(tick).toHaveBeenCalledTimes(1);
 		vi.advanceTimersByTime(60_000);
 		expect(tick).toHaveBeenCalledTimes(2);
@@ -28,7 +28,7 @@ describe('Tracker live clock', () => {
 		vi.useFakeTimers();
 		const document = Object.assign(new EventTarget(), { hidden: true });
 		const tick = vi.fn();
-		const stop = startTrackerLive({ document, tick });
+		const stop = startTrackerClock({ document, tick });
 		vi.advanceTimersByTime(60_000);
 		expect(tick).not.toHaveBeenCalled();
 		stop();

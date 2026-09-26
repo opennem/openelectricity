@@ -79,7 +79,7 @@ describe('tracker providers', () => {
 		stop();
 	});
 
-	it('loads the gross-demand pair only when a percentage basis or the metrics pane needs it', async () => {
+	it('loads the gross-demand pair only when a percentage basis or the metrics strip needs it', async () => {
 		const api = stubNetworkFetch();
 		const { flags, stop } = harness('table=0');
 		await settle();
@@ -89,7 +89,13 @@ describe('tracker providers', () => {
 		expect(api.metrics).toEqual(['renewables']);
 		flags.windowMetrics = true;
 		await settle();
-		expect([...api.metrics].sort()).toEqual(['demand', 'renewable_share', 'renewables']);
+		expect([...api.metrics].sort()).toEqual([
+			'curtailment',
+			'demand',
+			'emissions_intensity',
+			'renewable_share',
+			'renewables'
+		]);
 		stop();
 	});
 

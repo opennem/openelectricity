@@ -18,6 +18,9 @@
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import { OptionsMenuDivider, OptionsMenuItem } from '$lib/components/ui/options-menu';
+	import { createMetricsVisibilityPreference } from './metrics-visibility.svelte.js';
+	import { TRACKER_SHORTCUTS, shortcutFor } from './tracker-shortcuts.js';
+	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import {
 		FullscreenContainer,
 		FullscreenFilterBar,
@@ -28,6 +31,7 @@
 	import { ChartRangeBar } from '$lib/components/charts/v2';
 	import { BELOW_TABLET_QUERY, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
 	import { MIN_DATE } from '$lib/utils/date-range.js';
+	import { formatDayMonthTime } from '$lib/components/charts/v2/date-labels.js';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
 	import { downloadXlsx } from '$lib/utils/download-xlsx.js';
 	import { TRACKER_REGION_TREE } from './tracker-regions.js';
@@ -54,7 +58,7 @@
 	import { createTrackerSession } from './tracker-session.svelte.js';
 	import { createTrackerNavigation } from './tracker-navigation.js';
 	import { copiedTrackerUrl } from './tracker-url.js';
-	import { startTrackerLive } from './tracker-live.js';
+	import { startTrackerClock } from './tracker-live.js';
 
 	/** @typedef {import('./types.js').TrackerRange} TrackerRange */
 	/** @typedef {import('./types.js').ExportDatasetKey} ExportDatasetKey */
@@ -90,6 +94,28 @@
 		{ value: 'compare', label: 'Compare' }
 	];
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	const metricsVisible = createMetricsVisibilityPreference();
+	const belowTablet = new MediaQuery(BELOW_TABLET_QUERY);
+	let showShortcuts = $state(false);
+	/** When the tracker last finished loading — the readout's tooltip reports it. */
+	let updatedMs = $state(/** @type {number | undefined} */ (undefined));
+	let wasLoading = false;
+	// A timestamp of an event (loading finished), so an effect, not a derivation.
+	$effect(() => {
+		const loading = trackerLoading;
+		if (wasLoading && !loading) updatedMs = Date.now();
+		wasLoading = loading;
+	});
+	let updatedLabel = $derived(
+		updatedMs === undefined ? undefined : formatDayMonthTime(updatedMs, session.ianaTimeZone)
+	);
+	/** The reader asked: fetch fresh data now, bypassing response caches. The
+	 * newest buckets are revisited and a following window advances; only an
+	 * active gesture defers it. */
+	function refreshData() {
+		const now = Date.now();
+		if (session.refresh(now, { force: true })) updatedMs = now;
+	}
 	let profileCanvas = $state.raw(/** @type {TimeOfDay | undefined} */ (undefined));
 	let regionCanvas = $state.raw(/** @type {RegionComparison | undefined} */ (undefined));
 	let notice = $state('');
@@ -264,14 +290,38 @@
 		if (!params.has('table') && window.matchMedia(BELOW_TABLET_QUERY).matches) {
 			session.select('tablePanelOpen', false, null);
 		}
-		return startTrackerLive({
-			document,
-			tick: () => session.tick(Date.now(), canvas?.isLiveReady() ?? false)
-		});
+		// A minute clock keeps the freshness labels honest; it never fetches.
+		return startTrackerClock({ document, tick: () => session.setClock(Date.now()) });
 	});
 </script>
 
-<svelte:window onpopstate={restoreCurrentUrl} />
+<svelte:window
+	onpopstate={restoreCurrentUrl}
+	onkeydown={(event) => {
+		if (event.key === 'Escape') {
+			if (showShortcuts) {
+				event.preventDefault();
+				showShortcuts = false;
+			}
+			return;
+		}
+		const action = shortcutFor(event);
+		if (!action) return;
+		if (action === 'shortcuts') {
+			showShortcuts = !showShortcuts;
+			return;
+		}
+		showShortcuts = false;
+		if (action === 'fullscreen') {
+			if (!belowTablet.current) toggleFullscreenMode(isFullscreen);
+			return;
+		}
+		if (!timeline) return;
+		event.preventDefault();
+		if (action === 'metrics') metricsVisible.toggle();
+		else refreshData();
+	}}
+/>
 
 <Meta
 	title="Tracker"
@@ -392,6 +442,8 @@
 							label={session.rangeLabel}
 							inspectLabel={canvas?.getInspectLabel()}
 							loading={trackerLoading}
+							{updatedLabel}
+							onrefresh={refreshData}
 						/>
 					{/if}
 				{/snippet}
@@ -406,6 +458,7 @@
 						downloadXlsxDisabled={workbookDisabled}
 						ondownloaditem={(key) => handleDownloadItem(/** @type {ExportDatasetKey} */ (key))}
 						ondownloadxlsx={downloadWorkbook}
+						onshowshortcuts={() => (showShortcuts = !showShortcuts)}
 					>
 						{#snippet extraSections({ close })}
 							<OptionsMenuItem
@@ -414,6 +467,23 @@
 									openPngExport();
 								}}>Export PNG</OptionsMenuItem
 							>
+							{#if timeline}
+								<OptionsMenuItem
+									kbd="R"
+									disabled={trackerLoading}
+									onclick={() => {
+										close();
+										refreshData();
+									}}>Refresh data</OptionsMenuItem
+								>
+								<OptionsMenuItem
+									kbd="M"
+									onclick={() => {
+										close();
+										metricsVisible.toggle();
+									}}>{metricsVisible.value ? 'Hide metrics' : 'Show metrics'}</OptionsMenuItem
+								>
+							{/if}
 							<OptionsMenuDivider />
 						{/snippet}
 					</PageOptionsMenu>
@@ -449,7 +519,7 @@
 					{:else if timeOfDay}
 						<TimeOfDay bind:this={profileCanvas} {session} />
 					{:else}
-						<TrackerCanvas bind:this={canvas} {session} />
+						<TrackerCanvas bind:this={canvas} {session} showMetrics={metricsVisible.value} />
 					{/if}
 				</main>
 			</div>
@@ -466,3 +536,13 @@
 {#if pngSnapshot}
 	<PngExport snapshot={pngSnapshot} onclose={() => (pngSnapshot = null)} />
 {/if}
+
+<ShortcutsToast
+	visible={showShortcuts}
+	ondismiss={() => (showShortcuts = false)}
+	shortcuts={TRACKER_SHORTCUTS.filter(
+		(shortcut) =>
+			(timeline || (shortcut.id !== 'refresh' && shortcut.id !== 'metrics')) &&
+			(!belowTablet.current || shortcut.id !== 'fullscreen')
+	).map(({ label, keys }) => ({ label, keys }))}
+/>

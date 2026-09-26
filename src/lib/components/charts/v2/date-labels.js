@@ -136,6 +136,31 @@ export function formatDayMonthYearTime(d, ianaTimeZone) {
 }
 
 /**
+ * "21 Jan, 2:30 pm" in the current network-local year; "21 Jan 2025, 2:30 pm"
+ * otherwise — a compact point label for surfaces where surrounding context
+ * (a range readout) already fixes the year.
+ *
+ * @param {Date | number | any} d
+ * @param {string} ianaTimeZone
+ * @param {Date | number} [referenceDate]
+ * @returns {string}
+ */
+export function formatDayMonthTime(d, ianaTimeZone, referenceDate = new Date()) {
+	const date = toDate(d);
+	if (!date) return '';
+	if (!isCurrentLocalYear(date, ianaTimeZone, referenceDate)) {
+		return formatDayMonthYearTime(date, ianaTimeZone);
+	}
+	return cachedFormatter('dmt', ianaTimeZone, {
+		day: 'numeric',
+		month: 'short',
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: true
+	}).format(date);
+}
+
+/**
  * "Jun 2025".
  *
  * @param {Date | number | any} d

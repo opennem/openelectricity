@@ -2,6 +2,7 @@
 	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
 	import { onMount, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
+	import { slide } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import PanelRail from './PanelRail.svelte';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
@@ -51,8 +52,9 @@
 	/** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
 	/** @typedef {import('./types.js').GenerationSnapshot} GenerationSnapshot */
 	/** @typedef {import('./types.js').TrackerExportContext} TrackerExportContext */
-	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>}} */
-	let { session } = $props();
+	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>,
+	 * showMetrics?: boolean}} */
+	let { session, showMetrics = true } = $props();
 	let pageVisible = $state(true);
 	onMount(() => {
 		pageVisible = !document.hidden;
@@ -88,7 +90,9 @@
 	let showContributions = $derived(session.selection.generationTransform === 'proportion');
 	let needsContributionDemand = $derived(contributionMode === 'demand');
 	let previewTime = $state(/** @type {number | undefined} */ (undefined));
-	let metricsPanel = $state.raw(/** @type {WindowMetrics | undefined} */ (undefined));
+	/** The one pinned time the charts and the metrics strip share: a click on a
+	 * plot or on a strip extreme sets it, and either surface clears it. */
+	let focusTime = $state(/** @type {number | undefined} */ (undefined));
 	let panZoomEngaged = $state(false);
 	let hiddenSeries = $derived(session.selection.hiddenSeries);
 	let regionHasSpotPrice = $derived(hasSpotPrice(region));
@@ -128,7 +132,7 @@
 		range,
 		timeZone: () => timeZone,
 		needsContributionDemand: () => needsContributionDemand,
-		needsWindowMetrics: () => metricsOpen
+		needsWindowMetrics: () => showMetrics
 	});
 	const { marketData, demandData, curtailmentData } = providers;
 	const data = createTrackerData({
@@ -156,7 +160,6 @@
 		table,
 		hidden: () => hiddenSeries,
 		priceMetric: () => priceMetric,
-		emissionsMetric: () => emissionsMetric,
 		holdFrame: () => chartsHoldFrame
 	});
 	function openComparison() {
@@ -239,13 +242,9 @@
 	const PANEL_MIN_PX = 320;
 	// Reserve a usable chart column, including its padding and table divider.
 	const CHART_SPACE_PX = 376;
-	const PANEL_RAIL_PX = 48;
 	const wideLayout = new MediaQuery('(min-width: 1024px)', true);
-	let metricsOpenOverride = $state(/** @type {boolean | null} */ (null));
-	let metricsOpen = $derived(metricsOpenOverride ?? wideLayout.current);
-	let hoverTime = $derived(
-		previewTime ?? (metricsOpen ? metricsPanel?.getSelectedTime() : undefined)
-	);
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	let hoverTime = $derived(previewTime ?? focusTime);
 	/** The hovered or keyboard-inspected period, formatted at the display grain.
 	 *  The page shows it in place of the range label while inspection lasts. */
 	let inspectLabel = $derived(
@@ -259,43 +258,13 @@
 	export function getInspectLabel() {
 		return inspectLabel;
 	}
-	// Metrics pane: pixel width, remembered locally. Desktop widths leave room
-	// for the chart column and the fuel-tech table; small screens overlay.
-	const METRICS_MIN_PX = 224;
-	let metricsMax = $derived(
-		Math.max(
-			METRICS_MIN_PX,
-			Math.min(
-				400,
-				containerWidth -
-					(wideLayout.current
-						? (tablePanelOpen ? PANEL_MIN_PX : PANEL_RAIL_PX) + CHART_SPACE_PX
-						: 56)
-			)
-		)
-	);
-	let metricsPane = $state(/** @type {HTMLDivElement | undefined} */ (undefined));
-	const metricsDock = createDockedPanel({
-		initial: 256,
-		min: () => METRICS_MIN_PX,
-		max: () => metricsMax,
-		storageKey: 'tracker-metrics-width',
-		setOpen: (open) => {
-			if (!open) handleHoverChange(undefined);
-			metricsOpenOverride = open;
-		},
-		focusOnOpen: () => metricsPane?.querySelector('button')
-	});
-	let metricsReserved = $derived(
-		metricsOpen && wideLayout.current ? metricsDock.size : PANEL_RAIL_PX
-	);
 	// Fuel-tech table: a percentage of the container, bounded so the charts
 	// keep a usable column. Its open state lives in the URL.
 	let panelBounds = $derived(
 		percentPanelBounds({
 			containerWidth,
 			minPx: PANEL_MIN_PX,
-			reservedPx: metricsReserved + CHART_SPACE_PX,
+			reservedPx: CHART_SPACE_PX,
 			maxPct: 80,
 			wide: wideLayout.current,
 			narrowMaxPct: 80
@@ -393,13 +362,14 @@
 	/** Everything the three timeline charts share: scope, grain, hover and
 	 *  gesture wiring, the held-frame veil and idle prefetch. Each card adds
 	 *  its metric, chart kind, transforms and its own viewport/data callbacks.
-	 *  `hoverTime` is passed separately: it reads the metrics pane's selection,
-	 *  and the pane's inputs read the charts' query state, so folding it into
-	 *  one spread object would make that derivation reference itself. */
+	 *  `hoverTime` is passed separately: it reads the shared focus time,
+	 *  and the strip's inputs read the charts' query state, so folding it into
+	 *  one spread object would make that derivation reference itself.
+	 */
 	let sharedChartProps = $derived(
 		/** @type {Pick<import('svelte').ComponentProps<typeof NetworkChart>,
 		 * 'region' | 'bucketFilter' | 'interval' | 'displayInterval' | 'group' | 'timeZone' |
-		 * 'dateStart' | 'dateEnd' | 'showContainer' | 'tooltipMode' | 'onhoverchange' |
+		 * 'dateStart' | 'dateEnd' | 'showContainer' | 'tooltipMode' | 'onhoverchange' | 'focusTime' | 'onfocuschange' |
 		 * 'onviewportsettle' | 'panZoomMode' | 'gestureActive' | 'ongesturechange' |
 		 * 'showLoadingIndicator' | 'holdFrame' | 'prefetchPlan'>} */ ({
 			region,
@@ -413,6 +383,8 @@
 			showContainer: false,
 			tooltipMode: 'strip',
 			onhoverchange: handleHoverChange,
+			focusTime,
+			onfocuschange: (time) => (focusTime = time),
 			onviewportsettle: session.settleViewport,
 			panZoomMode: 'tap-to-engage',
 			gestureActive: session.gestureActive,
@@ -487,88 +459,41 @@
 {#snippet marketFreshness()}{@render freshness('market')}{/snippet}
 {#snippet emissionsFreshness()}{@render freshness('emissions')}{/snippet}
 
-<svelte:window
-	onkeydown={(event) => {
-		if (event.key === 'Escape' && metricsOpen && !wideLayout.current) metricsDock.close();
-	}}
-/>
 <svelte:document
 	onvisibilitychange={() => {
 		pageVisible = !document.hidden;
 	}}
 />
 
+<!-- The page mounts the canvas in a flex column: the strip sits above the charts row
+     and slides open or shut with the page's metrics preference. -->
+{#if showMetrics}
+	<div class="shrink-0" transition:slide={{ duration: reducedMotion.current ? 0 : 200 }}>
+		<WindowMetrics
+			{focusTime}
+			onfocuschange={(time) => (focusTime = time)}
+			input={metrics.input}
+			status={metrics.status}
+			onretry={metrics.retry}
+			interval={range.displayInterval}
+			zone={timeZone}
+			generationPrefix={generationDisplayPrefix}
+			onhighlight={handleHoverChange}
+		/>
+	</div>
+{/if}
 <div
 	class="relative flex min-h-0 flex-1 flex-row"
 	bind:clientWidth={containerWidth}
 	data-png-context={`${regionLabel(region)} · ${rangeLabel} · ${intervalBadge} · UTC${timeZone} · ${getGroup(group).label}${imageFilterLabel ? ` · ${imageFilterLabel}` : ''}`}
 >
-	{#if metricsOpen}
-		<div
-			bind:this={metricsPane}
-			id="tracker-metrics-panel"
-			class="z-30 flex shrink-0 {wideLayout.current
-				? 'relative'
-				: 'absolute inset-y-0 left-0 shadow-xl'}"
-			style:width={`${metricsDock.size}px`}
-			data-testid="metrics-pane"
-		>
-			<ResizablePanel
-				open
-				direction="right"
-				onclose={metricsDock.close}
-				defaultSize={100}
-				showDragHandle={false}
-				externalResizing={metricsDock.dragging}
-				class="flex min-w-0 flex-1 bg-white"
-			>
-				{#snippet header()}<span class="hidden"></span>{/snippet}
-				<WindowMetrics
-					bind:this={metricsPanel}
-					input={metrics.input}
-					status={metrics.status}
-					onretry={metrics.retry}
-					interval={range.displayInterval}
-					zone={timeZone}
-					generationPrefix={generationDisplayPrefix}
-					onhighlight={handleHoverChange}
-					onclose={metricsDock.close}
-				/>
-			</ResizablePanel>
-			<DragHandle
-				axis="x"
-				onstart={metricsDock.start}
-				onkeydown={metricsDock.keydown}
-				tabindex={0}
-				aria-valuemin={METRICS_MIN_PX}
-				aria-valuemax={metricsMax}
-				aria-valuenow={Math.round(metricsDock.size)}
-				active={metricsDock.dragging}
-				alwaysShowGrip
-				class="w-4 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
-				role="separator"
-				aria-orientation="vertical"
-				aria-label="Resize metrics panel"
-				title="Drag to resize metrics, or use the arrow keys"
-			/>
-		</div>
-	{/if}
-	{#if !metricsOpen || !wideLayout.current}
-		<PanelRail
-			side="left"
-			label="Show metrics"
-			controls="tracker-metrics-panel"
-			onopen={metricsDock.open}
-			bind:opener={metricsDock.opener}
-		/>
-	{/if}
 	<!-- No space-y: each card's full-gap drag handle is the spacer between cards.
-	     Side padding yields to an open docked pane's drag handle — the handle
-	     IS the page-background gap between the white columns. -->
+	     Right padding yields to the open table's drag handle — the handle IS
+	     the page-background gap between the white columns. -->
 	<div
-		class="min-w-0 flex-1 overflow-y-auto py-4 md:py-6 {metricsOpen && wideLayout.current
+		class="min-w-0 flex-1 overflow-y-auto py-4 pl-4 md:py-6 md:pl-6 {tablePanelOpen
 			? ''
-			: 'pl-4 md:pl-6'} {tablePanelOpen ? '' : 'pr-4 md:pr-6'}"
+			: 'pr-4 md:pr-6'}"
 		use:clickoutside={{ event: 'pointerdown', options: true }}
 		onclickoutside={() => (panZoomEngaged = false)}
 	>

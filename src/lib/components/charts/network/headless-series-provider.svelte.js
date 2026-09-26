@@ -54,7 +54,8 @@ import {
  * @property {(startMs: number, endMs: number, opts: DisplayRowOptions) => any[]} getDisplayRows -
  *   Rows aggregated to the display interval — the grain the charts render, so
  *   overlays and summaries track the central Interval control
- * @property {(startMs: number) => void} invalidateTail - Revisit recent native buckets on the next live request
+ * @property {(startMs: number, options?: { force?: boolean }) => void} invalidateTail - Revisit
+ *   recent native buckets on the next request; `force` also bypasses response caches
  * @property {boolean} isPending - Loading state; disabled providers are never pending
  * @property {string | null} error - Failure in the requested viewport, if any
  * @property {import('$lib/components/charts/v2/ChartDataManager.svelte.js').default['seriesMeta'] | null} seriesMeta -
@@ -139,8 +140,8 @@ export function createHeadlessSeriesProvider(opts) {
 
 	return {
 		/** @param {number} start */
-		invalidateTail(start) {
-			if (isEnabled()) manager?.invalidateTail(start);
+		invalidateTail(start, options) {
+			if (isEnabled()) manager?.invalidateTail(start, options);
 		},
 		setViewport(startMs, endMs) {
 			lastWindow = { start: startMs, end: endMs };

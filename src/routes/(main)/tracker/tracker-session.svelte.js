@@ -103,26 +103,37 @@ export function createTrackerSession(initial, onchange) {
 		get following() {
 			return following;
 		},
-		/** Advance only relative timeline windows; no history entries for ambient ticks.
-		 * @param {number} nowMs @param {boolean} [ready] */
-		tick(nowMs, ready = true) {
+		/** Move the freshness clock without touching data.
+		 * @param {number} nowMs */
+		setClock(nowMs) {
 			clockMs = nowMs;
-			if (!connected || !ready || gestureActive || !following) return;
-			if (nowMs <= anchorEnd) return;
-			// Revisit two native buckets for late observations and open-bucket
-			// revisions. Normal request deduplication, HTTP caching and retries apply.
+		},
+		/** The reader asked for fresh data. Every connected chart revisits its two
+		 * newest native buckets for late observations and open-bucket revisions, and
+		 * a following timeline also advances to now; paused windows keep their bounds.
+		 * Never mid-gesture, never a history entry. A plain refresh waits for busy
+		 * requests; a `force`d one (the reader's tap or key) goes ahead and bypasses
+		 * response caches so the server answers afresh.
+		 * @param {number} nowMs @param {{ ready?: boolean, force?: boolean }} [options]
+		 * @returns {boolean} whether it ran */
+		refresh(nowMs, { ready = true, force = false } = {}) {
+			clockMs = nowMs;
+			if (!connected || (!ready && !force) || gestureActive || view !== 'timeline') return false;
 			const tailStart = Math.max(
 				window.start,
 				window.end -
 					2 * getIntervalHours(range.activeInterval, window.end, ianaTimeZone) * 3_600_000
 			);
-			for (const chart of charts()) chart?.invalidateTail?.(tailStart);
-			// All grows at the right edge; never slide the historical data floor.
-			range.advanceLiveEdge(nowMs, {
-				preserveStart: selection.range.kind === 'preset' && selection.range.days === -1
-			});
-			anchorEnd = nowMs;
+			for (const chart of charts()) chart?.invalidateTail?.(tailStart, { force });
+			if (following && nowMs > anchorEnd) {
+				// All grows at the right edge; never slide the historical data floor.
+				range.advanceLiveEdge(nowMs, {
+					preserveStart: selection.range.kind === 'preset' && selection.range.days === -1
+				});
+				anchorEnd = nowMs;
+			}
 			settleWindow();
+			return true;
 		},
 		get selection() {
 			return selection;

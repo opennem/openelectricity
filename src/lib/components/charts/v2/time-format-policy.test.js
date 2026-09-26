@@ -109,6 +109,52 @@ describe('getTimeFormatPolicy — tooltip labels', () => {
 	});
 });
 
+describe('getTimeFormatPolicy — short labels', () => {
+	it('drops the year from sub-daily points in the current network-local year', () => {
+		const now = new Date();
+		const t = Date.UTC(now.getUTCFullYear(), 0, 21, 4, 30);
+		for (const di of ['5m', '30m', '1h']) {
+			expect(clean(getTimeFormatPolicy(di, NEM).formatShort(t))).toBe('21 Jan, 2:30 pm');
+			expect(clean(getTimeFormatPolicy(di, WEM).formatShort(t))).toBe('21 Jan, 12:30 pm');
+		}
+		expect(clean(getTimeFormatPolicy('5m', NEM).formatShort(Date.UTC(2021, 0, 21, 4, 30)))).toBe(
+			'21 Jan 2021, 2:30 pm'
+		);
+	});
+
+	it('keeps daily and weekly points to dates, with the year only when historical', () => {
+		const year = new Date().getUTCFullYear();
+		expect(getTimeFormatPolicy('1d', NEM).formatShort(localMidnight(10, year, 0, 21))).toBe(
+			'21 Jan'
+		);
+		expect(getTimeFormatPolicy('1d', NEM).formatShort(localMidnight(10, 2021, 0, 21))).toBe(
+			'21 Jan 2021'
+		);
+		expect(getTimeFormatPolicy('7d', NEM).formatShort(localMidnight(10, year, 5, 16))).toBe(
+			'16 — 22 June'
+		);
+		expect(getTimeFormatPolicy('7d', NEM).formatShort(localMidnight(10, 2021, 5, 16))).toBe(
+			'16 — 22 June 2021'
+		);
+	});
+
+	it('matches the tooltip for months, coarse buckets and rolling points', () => {
+		const t = localMidnight(10, 2025, 6);
+		for (const di of ['1M', '3M', ...COARSE_BUCKET_INTERVALS]) {
+			const policy = getTimeFormatPolicy(di, NEM);
+			expect(policy.formatShort(t)).toBe(policy.formatTooltip(t));
+		}
+		const rolling = getTimeFormatPolicy('12mr', NEM);
+		expect(rolling.formatShort(t)).toBe(rolling.formatTooltip(t));
+	});
+
+	it('returns empty string for invalid dates', () => {
+		for (const di of ['5m', '1d', '7d', '1M', 'quarter', 'fy', '1y', 'unknown']) {
+			expect(getTimeFormatPolicy(di, NEM).formatShort(new Date('nope'))).toBe('');
+		}
+	});
+});
+
 describe('getTimeFormatPolicy — bucket ticks', () => {
 	it('provides an explicit axis labeller for coarse buckets (incl. yearly)', () => {
 		for (const di of COARSE_BUCKET_INTERVALS) {

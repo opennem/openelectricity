@@ -6,7 +6,7 @@
 	import { CATEGORY_META } from './pollution-constants.js';
 	import { formatPollutantMass, formatPollutantMassParts } from './format-pollutant-mass.js';
 	import { computePollutantTrend } from './pollutant-trend.js';
-	import Sparkline from './Sparkline.svelte';
+	import Sparkline from '$lib/components/charts/Sparkline.svelte';
 
 	/**
 	 * Row-based pollution tables for /facility/[code]. Each NPI category
