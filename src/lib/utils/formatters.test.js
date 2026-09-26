@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatFyTickX, formatCapacity, formatPrice } from './formatters.js';
+import { formatFyTickX, formatCapacity, formatPrice, formatWithUnit } from './formatters.js';
 
 describe('formatPrice', () => {
 	it('always shows cents', () => {
@@ -54,5 +54,28 @@ describe('formatFyTickX', () => {
 
 	it('returns FY50 for Date("2050-01-01")', () => {
 		expect(formatFyTickX(new Date('2050-01-01'))).toBe('FY50');
+	});
+});
+
+describe('formatWithUnit', () => {
+	it('leads dollar units with $ and folds SI prefixes into a suffix', () => {
+		expect(formatWithUnit('85.30', '$/MWh')).toBe('$85.30');
+		expect(formatWithUnit('-60.25', '$/MWh')).toBe('$-60.25');
+		expect(formatWithUnit('1.2', 'M$')).toBe('$1.2M');
+		expect(formatWithUnit('350', 'k$')).toBe('$350k');
+		expect(formatWithUnit('1,234', '$')).toBe('$1,234');
+	});
+	it('keeps $ on dollar values even when the unit is shown elsewhere', () => {
+		expect(formatWithUnit('85.30', '$/MWh', { unitShown: true })).toBe('$85.30');
+		expect(formatWithUnit('12', 'MW', { unitShown: true })).toBe('12');
+	});
+	it('passes through values a formatter already prefixed with $', () => {
+		expect(formatWithUnit('$1.2M', 'M$')).toBe('$1.2M');
+	});
+	it('trails other units after the separator and leaves empty values alone', () => {
+		expect(formatWithUnit('12', 'MW')).toBe('12 MW');
+		expect(formatWithUnit('12', 'MW', { separator: ' ' })).toBe('12 MW');
+		expect(formatWithUnit('', '$/MWh')).toBe('');
+		expect(formatWithUnit('12', '')).toBe('12');
 	});
 });

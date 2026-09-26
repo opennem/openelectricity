@@ -20,6 +20,8 @@
 	 *   badge?: number | string | null,
 	 *   active?: boolean,
 	 *   compact?: boolean,
+	 *   disabled?: boolean,
+	 *   panelClass?: string,
 	 *   onopenchange?: (open: boolean) => void,
 	 *   onapply?: () => void,
 	 *   footerLeft?: import('svelte').Snippet,
@@ -31,6 +33,9 @@
 		badge = null,
 		active = false,
 		compact = false,
+		disabled = false,
+		/** Extra panel classes, e.g. a min width. The panel fits its content by default. */
+		panelClass = '',
 		onopenchange,
 		onapply,
 		footerLeft,
@@ -76,16 +81,17 @@
 		{active}
 		open={showPanel}
 		{compact}
+		{disabled}
 		bind:el={triggerEl}
 		onclick={() => setOpen(!showPanel)}
 	/>
 
-	{#if showPanel}
+	{#if showPanel && !disabled}
 		<div
 			bind:this={panelEl}
 			use:portal
 			use:dropdownPosition={{ trigger: triggerEl }}
-			class="fixed z-50 bg-white border border-mid-warm-grey rounded-lg shadow-md min-w-[280px] max-w-[340px] flex flex-col overflow-hidden"
+			class="fixed z-50 bg-white border border-mid-warm-grey rounded-lg shadow-md max-w-[340px] flex flex-col overflow-hidden {panelClass}"
 			transition:fly={{ y: -5, duration: 150 }}
 		>
 			{@render children(() => setOpen(false))}

@@ -8,7 +8,7 @@
 	 * @property {boolean} [compact]
 	 * @property {string} [rounded] - Tailwind radius class for the container, thumb and buttons
 	 * @property {boolean} [darkSelected] - Thumb uses a dark fill (matches active filter pills)
-	 * @property {string} [trackClass] - Fill + border colour classes for the track (default: light grey chip; pass white for placement on a recessed tray)
+	 * @property {string} [trackClass] - Fill + border colour classes for the track (default: white chip with the filter pills' subtle border)
 	 * @property {(option: {value: string, element: HTMLButtonElement}) => void} [onchange]
 	 */
 
@@ -19,7 +19,7 @@
 		compact = false,
 		rounded = 'rounded-xl',
 		darkSelected = false,
-		trackClass = 'bg-light-warm-grey border-mid-warm-grey',
+		trackClass = 'bg-white border-warm-grey',
 		class: className = '',
 		onchange,
 		...rest

@@ -27,6 +27,27 @@ export function formatPrice(v) {
 	return '$' + priceFmt.format(v);
 }
 
+/** A dollar display unit, optionally SI-scaled or per-quantity: `$`, `M$`, `$/MWh`. */
+const DOLLAR_UNIT = /^([kMGT]?)\$(?:\/.+)?$/;
+
+/**
+ * Join a formatted number to its display unit. Dollar units lead with `$`,
+ * any SI prefix becoming a suffix — "$85.30" ($/MWh), "$1.2M" (M$) — even when
+ * the unit is shown elsewhere (`unitShown`), since the `$` belongs to the
+ * number. Values a formatter already gave a `$` pass through unchanged. Other
+ * units trail after `separator` unless shown elsewhere: "12 MW".
+ * @param {string} value - Formatted number; empty stays empty
+ * @param {string | null | undefined} unit
+ * @param {{ unitShown?: boolean, separator?: string }} [options]
+ * @returns {string}
+ */
+export function formatWithUnit(value, unit, { unitShown = false, separator = ' ' } = {}) {
+	if (!value || !unit) return value;
+	const dollar = DOLLAR_UNIT.exec(unit);
+	if (dollar) return value.includes('$') ? value : `$${value}${dollar[1]}`;
+	return unitShown ? value : `${value}${separator}${unit}`;
+}
+
 /**
  * Format a capacity value (MW / MWh): one decimal below 10, whole numbers at or
  * above. Shared by the facility unit list, table and detail views.

@@ -21,6 +21,7 @@
 	 *   the card within the slot.
 	 */
 
+	import { formatWithUnit } from '$lib/utils/formatters.js';
 	import {
 		getActiveData,
 		getValueKey,
@@ -63,7 +64,7 @@
 				<span class="text-mid-grey font-light" aria-hidden="true">—</span>
 			{/if}
 			<strong class="font-semibold text-dark-grey tabular-nums">
-				{formattedValue}{displayUnit ? ` ${displayUnit}` : ''}
+				{formatWithUnit(formattedValue, displayUnit)}
 			</strong>
 		</div>
 	{:else if defaultText}

@@ -10,7 +10,7 @@
  * (so every metric reflects the chart's current date range).
  */
 
-import { getNumberFormat, formatCapacity } from '$lib/utils/formatters';
+import { getNumberFormat, formatCapacity, formatPrice } from '$lib/utils/formatters';
 
 const fmt0 = getNumberFormat(0);
 const fmt1 = getNumberFormat(1);
@@ -87,7 +87,7 @@ export const METRICS = {
 		description:
 			'Volume-weighted average price: market value divided by energy generated over the visible range.',
 		compute: (c) =>
-			c.hasSummary ? { value: fmt2.format(c.avgPrice), unit: '$/MWh' } : { value: '--' }
+			c.hasSummary ? { value: formatPrice(c.avgPrice) } : { value: '--' }
 	},
 	co2: {
 		label: 'CO₂ Emissions',

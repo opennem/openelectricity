@@ -82,6 +82,7 @@
 	badge={badgeCount || null}
 	active={defaults ? !atDefault : selectedCount > 0}
 	{compact}
+	panelClass="min-w-[280px]"
 	onopenchange={(open) => {
 		if (open) {
 			draft = [...selected];

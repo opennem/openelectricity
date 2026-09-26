@@ -9,6 +9,16 @@ const SLOT = 30 * 60_000;
 /** The earliest last day a profile accepts — complete 5-minute days exist from here. */
 export const PROFILE_MIN_DATE = '1999-01-01';
 
+export const PROFILE_VIEW_OPTIONS = [
+	{ value: 'average', label: 'Average day' },
+	{ value: 'daily', label: 'Daily overlay' }
+];
+
+export const PROFILE_DAY_OPTIONS = [7, 14, 28].map((days) => ({
+	value: String(days),
+	label: `${days} days`
+}));
+
 /** @param {unknown} value @returns {'average' | 'daily'} */
 export function normaliseProfileView(value) {
 	return value === 'daily' ? 'daily' : 'average';

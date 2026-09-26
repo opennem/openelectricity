@@ -35,7 +35,7 @@
 	);
 </script>
 
-<FilterPanel label={pillLabel} active={isFiltered} {compact}>
+<FilterPanel label={pillLabel} active={isFiltered} {compact} panelClass="min-w-[280px]">
 	{#snippet footerLeft()}
 		<button
 			type="button"

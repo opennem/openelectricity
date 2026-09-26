@@ -44,7 +44,7 @@ describe('NETWORK_METRICS', () => {
 		expect(NETWORK_METRICS.renewables.compute(ctx)).toMatchObject({ value: '41.2', unit: '%' });
 		expect(NETWORK_METRICS.fossils.compute(ctx)).toMatchObject({ value: '55.7', unit: '%' });
 		expect(NETWORK_METRICS.demand.compute(ctx)).toMatchObject({ value: '23,457', unit: 'MW' });
-		expect(NETWORK_METRICS.avgPrice.compute(ctx)).toMatchObject({ value: '87.65', unit: '$/MWh' });
+		expect(NETWORK_METRICS.avgPrice.compute(ctx)).toEqual({ value: '$87.65' });
 		expect(NETWORK_METRICS.generation.compute(ctx)).toMatchObject({
 			value: '123,457',
 			unit: 'MWh'

@@ -10,11 +10,10 @@
  * fossil from a real fueltech sum — so the two needn't sum to 100%.
  */
 
-import { getNumberFormat } from '$lib/utils/formatters';
+import { formatPrice, getNumberFormat } from '$lib/utils/formatters';
 
 const fmt0 = getNumberFormat(0);
 const fmt1 = getNumberFormat(1);
-const fmt2 = getNumberFormat(2);
 
 /** @typedef {import('./network-metrics-calc.js').NetworkMetricsContext} NetworkMetricsContext */
 /** @typedef {import('$lib/components/charts/facility/metrics/metric-definitions.js').MetricResult} MetricResult */
@@ -72,7 +71,7 @@ export const NETWORK_METRICS = {
 		description:
 			'Time-weighted average spot price over the visible range — a plain average of the price intervals, not volume-weighted.',
 		compute: (c) =>
-			c.avgPrice != null ? { value: fmt2.format(c.avgPrice), unit: '$/MWh' } : { value: '--' }
+			c.avgPrice != null ? { value: formatPrice(c.avgPrice) } : { value: '--' }
 	},
 	generation: {
 		label: 'Total Generation',

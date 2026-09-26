@@ -3,6 +3,7 @@
 	import { Popover, Select } from 'bits-ui';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
+	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import { portal } from '$lib/actions/portal.js';
 	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
@@ -69,7 +70,8 @@
 
 	const rangePresets = RANGE_PRESETS;
 
-	const chipRestClass = 'border-mid-warm-grey bg-white';
+	// Matches FilterPill's inactive pill.
+	const chipRestClass = 'border-warm-grey bg-white';
 
 	const selectTriggerClass = `inline-flex items-center gap-1.5 rounded-lg border ${chipRestClass} pl-4 pr-3 py-2.5 text-xs font-medium text-dark-grey transition-colors hover:border-dark-grey data-[state=open]:border-dark-grey data-[state=open]:bg-dark-grey data-[state=open]:text-white cursor-pointer`;
 
@@ -85,10 +87,18 @@
 			? getIntervalsForRange(preset.id, tierOptions).options
 			: getIntervalOptionsForDays(customDays ?? 0, tierOptions).options;
 	});
+	// While rolling, grains without a rolling variant are dimmed.
 	let intervalOptions = $derived(
 		intervalOptionIds
 			.filter((id) => !isRollingInterval(id))
-			.map((id) => ({ value: id, label: getIntervalSpec(id)?.label ?? id }))
+			.map((id) => {
+				const rollingTarget = rollingIntervalFor(id);
+				return {
+					value: id,
+					label: getIntervalSpec(id)?.label ?? id,
+					disabled: rollingActive && !(rollingTarget && intervalOptionIds.includes(rollingTarget))
+				};
+			})
 	);
 
 	let currentIntervalLabel = $derived(getIntervalSpec(displayInterval)?.label ?? displayInterval);
@@ -121,9 +131,10 @@
 	);
 	let bucketFilterOptions = $derived(bucketFilterOptionsFor(bucketFilterKindFor(displayInterval)));
 	let bucketFilterVisible = $derived(showBucketFilter && inAllTier && !!bucketFilterOptions);
-	let currentBucketFilterLabel = $derived(
-		bucketFilterOptions?.find((option) => option.id === bucketFilter)?.label ?? 'All'
-	);
+	let bucketFilterSelectOptions = $derived([
+		{ value: 'all', label: 'All', divider: true },
+		...(bucketFilterOptions ?? []).map((option) => ({ value: option.id, label: option.label }))
+	]);
 
 	// Panning or zooming also leaves a concrete custom range.
 	let isCustomActive = $derived(selectedRange == null && startDate != null && endDate != null);
@@ -268,107 +279,59 @@
 	</Select.Root>
 {/snippet}
 
+{#snippet rollingToggle()}
+	<!-- A switch keeps the rolling window independent of the base grain. -->
+	<button
+		type="button"
+		role="switch"
+		aria-checked={rollingActive}
+		disabled={!rollingActive && !rollingAvailable}
+		onclick={toggleRolling}
+		class="w-full flex items-center gap-5 px-2 py-2 rounded-md cursor-pointer outline-none transition-colors hover:bg-warm-grey disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent {rollingActive
+			? 'text-black'
+			: 'text-mid-grey'}"
+	>
+		<span class="flex-1 text-left whitespace-nowrap">12-mth rolling sum</span>
+		<span
+			class="relative h-4 w-7 shrink-0 rounded-full transition-colors {rollingActive
+				? 'bg-dark-grey'
+				: 'bg-mid-warm-grey'}"
+		>
+			<span
+				class="absolute top-0.5 size-3 rounded-full bg-white transition-all {rollingActive
+					? 'left-3.5'
+					: 'left-0.5'}"
+			></span>
+		</span>
+	</button>
+{/snippet}
+
 {#snippet intervalControl()}
 	{#if showIntervalDropdown}
-		<Select.Root
-			type="single"
-			value={baseInterval}
-			onValueChange={handleBaseIntervalChange}
-			items={intervalOptions}
-		>
-			<Select.Trigger class={selectTriggerClass}>
-				{currentIntervalLabel}
-				<ChevronDown size={14} />
-			</Select.Trigger>
-			<Select.Content
-				sideOffset={4}
-				class="z-50 border border-warm-grey bg-white shadow-lg rounded-lg p-1"
-			>
-				{#each intervalOptions as option (option.value)}
-					{@const rollingTarget = rollingIntervalFor(option.value)}
-					{@const dimmed =
-						rollingActive && !(rollingTarget && intervalOptionIds.includes(rollingTarget))}
-					<Select.Item
-						value={option.value}
-						label={option.label}
-						disabled={dimmed}
-						class={menuItemClass}
-					>
-						{#snippet children({ selected })}
-							{@render radioRow(option.label, selected)}
-						{/snippet}
-					</Select.Item>
-				{/each}
-
-				{#if rollingSupported}
-					<!-- A switch keeps the rolling window independent of the base grain. -->
-					<div class="my-1 h-px bg-warm-grey" role="separator"></div>
-					<button
-						type="button"
-						role="switch"
-						aria-checked={rollingActive}
-						disabled={!rollingActive && !rollingAvailable}
-						onclick={toggleRolling}
-						class="w-full flex items-center gap-6 px-3 py-1.5 text-xs rounded-md cursor-pointer outline-none transition-colors hover:bg-warm-grey disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent {rollingActive
-							? 'text-black'
-							: 'text-mid-grey'}"
-					>
-						<span class="flex-1 text-left">12-mth rolling sum</span>
-						<span
-							class="relative h-4 w-7 shrink-0 rounded-full transition-colors {rollingActive
-								? 'bg-dark-grey'
-								: 'bg-mid-warm-grey'}"
-						>
-							<span
-								class="absolute top-0.5 size-3 rounded-full bg-white transition-all {rollingActive
-									? 'left-3.5'
-									: 'left-0.5'}"
-							></span>
-						</span>
-					</button>
-				{/if}
-			</Select.Content>
-		</Select.Root>
+		<FilterSelect
+			selected={baseInterval}
+			options={intervalOptions}
+			listLabel="Interval"
+			compact
+			footer={rollingSupported ? rollingToggle : undefined}
+			onchange={handleBaseIntervalChange}
+		/>
 	{:else}
 		{@render intervalBadge()}
 	{/if}
 {/snippet}
 
 {#snippet bucketFilterControl()}
-	{#if bucketFilterVisible && bucketFilterOptions}
+	{#if bucketFilterVisible}
 		<!-- Compare the same calendar period across years. -->
-		<Select.Root
-			type="single"
-			value={bucketFilter ?? 'all'}
-			onValueChange={(v) => onbucketfilterchange?.(v === 'all' ? null : v)}
-			items={[
-				{ value: 'all', label: 'All' },
-				...bucketFilterOptions.map((option) => ({ value: option.id, label: option.label }))
-			]}
-		>
-			<Select.Trigger class={selectTriggerClass}>
-				{currentBucketFilterLabel}
-				<ChevronDown size={14} />
-			</Select.Trigger>
-			<Select.Content
-				sideOffset={4}
-				class="z-50 border border-warm-grey bg-white shadow-lg rounded-lg p-1"
-			>
-				<Select.Item value="all" label="All" class={menuItemClass}>
-					{#snippet children({ selected })}
-						{@render radioRow('All', selected)}
-					{/snippet}
-				</Select.Item>
-				<div class="my-1 h-px bg-warm-grey" role="separator"></div>
-				{#each bucketFilterOptions as option (option.id)}
-					<Select.Item value={option.id} label={option.label} class={menuItemClass}>
-						{#snippet children({ selected })}
-							{@render radioRow(option.label, selected)}
-						{/snippet}
-					</Select.Item>
-				{/each}
-			</Select.Content>
-		</Select.Root>
+		<FilterSelect
+			selected={bucketFilter ?? 'all'}
+			options={bucketFilterSelectOptions}
+			listLabel="Calendar period"
+			defaultValue="all"
+			compact
+			onchange={(value) => onbucketfilterchange?.(value === 'all' ? null : value)}
+		/>
 	{/if}
 {/snippet}
 
@@ -387,7 +350,6 @@
 			compact
 			rounded="rounded-lg"
 			darkSelected
-			trackClass={chipRestClass}
 			class={pending ? 'animate-pulse' : ''}
 			aria-busy={pending}
 			onchange={handleSwitchChange}

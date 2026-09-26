@@ -1,8 +1,9 @@
 <script>
-	import FuelTechOptions from './FuelTechOptions.svelte';
+	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import ProfileChart from './ProfileChart.svelte';
 	import { individualProfileRows } from './profile-chart.js';
-	import { getGroup } from '$lib/components/charts/network/groups.js';
+	import { getGroup, GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+	import { DEFAULT_GROUP } from './tracker-model.js';
 	import { createProfileData } from './profile-data.svelte.js';
 	import AverageDayStack from './AverageDayStack.svelte';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
@@ -11,13 +12,19 @@
 	import {
 		buildDailyProfile,
 		normaliseProfileDays,
+		normaliseProfileView,
 		profileWindow,
 		profileDataset,
-		PROFILE_MIN_DATE
+		PROFILE_DAY_OPTIONS,
+		PROFILE_MIN_DATE,
+		PROFILE_VIEW_OPTIONS
 	} from './time-of-day.js';
 
 	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>}} */
 	let { session } = $props();
+	/** Nav controls beside the FilterSelect pills share FilterPill's compact box. */
+	const NAV_CONTROL =
+		'rounded-lg border border-warm-grey bg-white px-4 py-2.5 text-xs font-medium whitespace-nowrap text-dark-grey';
 	let selection = $derived(session.selection);
 	let region = $derived(selection.region);
 	let groupId = $derived(selection.group);
@@ -48,6 +55,21 @@
 	let label = $derived(
 		meta?.seriesLabels[series] ?? group.labels[series] ?? (price ? 'Spot price' : 'Generation')
 	);
+	let metricOptions = $derived([
+		{ value: 'power', label: 'Power' },
+		...(hasSpotPrice(region) ? [{ value: 'price', label: 'Spot price' }] : [])
+	]);
+	/** The loaded series, plus a linked series this window lacks. */
+	let seriesOptions = $derived.by(() => {
+		const options = (meta?.seriesNames ?? []).map((name) => ({
+			value: name,
+			label: meta?.seriesLabels[name] ?? name
+		}));
+		const linked = selection.profileSeries;
+		if (linked && !meta?.seriesNames.includes(linked))
+			options.unshift({ value: linked, label: `${group.labels[linked]} (unavailable)` });
+		return options.length ? options : [{ value: '', label: 'Fuel technology' }];
+	});
 	let regionLabel = $derived(regionLabelFor(region));
 	let profile = $derived(buildDailyProfile(source.rows, series, window));
 	let available = $derived(profile.some((row) => row.average !== null));
@@ -90,31 +112,35 @@
 </script>
 
 {#snippet controls()}
-	<FuelTechOptions group={groupId} ongroupchange={(value) => session.select('group', value)} />
-	<label
-		><span class="sr-only">View</span>
-		<select
-			value={selection.profileView}
-			onchange={(event) =>
-				session.select('profileView', event.currentTarget.value === 'daily' ? 'daily' : 'average')}
-		>
-			<option value="average">Average day</option><option value="daily">Daily overlay</option>
-		</select>
-	</label>
-	<label
-		><span class="sr-only">Window</span>
-		<select
-			value={selection.profileDays}
-			onchange={(event) =>
-				session.select('profileDays', normaliseProfileDays(event.currentTarget.value))}
-		>
-			{#each [7, 14, 28] as days (days)}<option value={days}>{days} days</option>{/each}
-		</select>
-	</label>
+	<FilterSelect
+		selected={groupId}
+		options={GROUP_OPTIONS}
+		listLabel="Fuel tech grouping"
+		defaultValue={DEFAULT_GROUP}
+		compact
+		onchange={(value) => session.select('group', value)}
+	/>
+	<FilterSelect
+		selected={selection.profileView}
+		options={PROFILE_VIEW_OPTIONS}
+		listLabel="View"
+		defaultValue="average"
+		compact
+		onchange={(value) => session.select('profileView', normaliseProfileView(value))}
+	/>
+	<FilterSelect
+		selected={String(days)}
+		options={PROFILE_DAY_OPTIONS}
+		listLabel="Window"
+		defaultValue="7"
+		compact
+		onchange={(value) => session.select('profileDays', normaliseProfileDays(value))}
+	/>
 	<label
 		><span class="sr-only">Last day</span>
 		<input
 			type="date"
+			class={NAV_CONTROL}
 			min={PROFILE_MIN_DATE}
 			max={window.maxDate}
 			value={window.lastDate}
@@ -124,40 +150,27 @@
 			}}
 		/>
 	</label>
-	{#if selection.profileEnd}<button class="control" onclick={() => session.select('profileEnd', '')}
-			>Latest complete days</button
+	{#if selection.profileEnd}<button
+			class="cursor-pointer {NAV_CONTROL}"
+			onclick={() => session.select('profileEnd', '')}>Latest complete days</button
 		>{/if}
-	<label
-		><span class="sr-only">Metric</span>
-		<select
-			value={selection.profileMetric}
-			onchange={(event) =>
-				session.select('profileMetric', event.currentTarget.value === 'price' ? 'price' : 'power')}
-		>
-			<option value="power">Power</option><option
-				value="price"
-				disabled={!hasSpotPrice(selection.region)}>Spot price</option
-			>
-		</select>
-	</label>
+	<FilterSelect
+		selected={selection.profileMetric}
+		options={metricOptions}
+		listLabel="Metric"
+		defaultValue="power"
+		compact
+		onchange={(value) => session.select('profileMetric', value === 'price' ? 'price' : 'power')}
+	/>
 	{#if !price}
-		<label
-			><span class="sr-only">Fuel technology</span>
-			<select
-				value={series}
-				disabled={pending || !meta}
-				onchange={(event) => session.select('profileSeries', event.currentTarget.value)}
-			>
-				{#if selection.profileSeries && !meta?.seriesNames.includes(selection.profileSeries)}
-					<option value={selection.profileSeries}
-						>{group.labels[selection.profileSeries]} (unavailable)</option
-					>
-				{/if}
-				{#each meta?.seriesNames ?? [] as name (name)}<option value={name}
-						>{meta?.seriesLabels[name] ?? name}</option
-					>{/each}
-			</select>
-		</label>
+		<FilterSelect
+			selected={series}
+			options={seriesOptions}
+			listLabel="Fuel technology"
+			compact
+			disabled={pending || !meta}
+			onchange={(value) => session.select('profileSeries', value)}
+		/>
 	{/if}
 {/snippet}
 
@@ -247,8 +260,6 @@
 		gap: 0.3rem;
 		font-size: var(--text-xs);
 	}
-	select,
-	input,
 	.control {
 		border: 1px solid var(--color-warm-grey, #ddd);
 		border-radius: 0.6rem;

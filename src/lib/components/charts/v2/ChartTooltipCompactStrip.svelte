@@ -17,6 +17,7 @@
 	 * for the value (matching how the y-axis ticks render).
 	 */
 
+	import { formatWithUnit } from '$lib/utils/formatters.js';
 	import {
 		getActiveData,
 		getValueKey,
@@ -49,7 +50,7 @@
 		<div class="h-full flex items-center justify-between text-xs px-3 py-1">
 			<span class="text-mid-grey">{formattedDate}</span>
 			<strong class="font-semibold text-dark-grey">
-				{formattedValue}{displayUnit ? ` ${displayUnit}` : ''}
+				{formatWithUnit(formattedValue, displayUnit)}
 			</strong>
 		</div>
 	{:else}

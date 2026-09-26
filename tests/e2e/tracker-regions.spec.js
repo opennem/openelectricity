@@ -6,7 +6,9 @@ import {
 	download,
 	expectNoHorizontalScroll,
 	hydrated,
+	navPill,
 	openOptions,
+	pickNavOption,
 	regionRow,
 	regionsFixture,
 	regionsReady,
@@ -106,21 +108,21 @@ test('view clicks reset query settings while history restores each view and its 
 	await expect(nav.getByRole('separator')).toHaveCount(1);
 	await nav.getByRole('button', { name: 'Profile', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker\?view=profile$/);
-	await expect(nav.getByRole('combobox', { name: 'View', exact: true })).toHaveValue('average');
-	await nav.getByRole('combobox', { name: 'Window', exact: true }).selectOption('28');
-	await nav.getByRole('combobox', { name: 'View', exact: true }).selectOption('daily');
+	await expect(navPill(page, 'Average day')).toBeVisible();
+	await pickNavOption(page, 'Window', '7 days', '28 days');
+	await pickNavOption(page, 'View', 'Average day', 'Daily overlay');
 	await nav.getByRole('button', { name: 'Timeline', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker$/);
 	await page.goBack();
-	await expect(nav.getByRole('combobox', { name: 'View', exact: true })).toHaveValue('daily');
-	await expect(nav.getByRole('combobox', { name: 'Window', exact: true })).toHaveValue('28');
+	await expect(navPill(page, 'Daily overlay')).toBeVisible();
+	await expect(navPill(page, '28 days')).toBeVisible();
 	await page.goBack();
 	await page.goBack();
 	await page.goBack();
 	await expect(page).toHaveURL(original);
 	await expect(nav.getByRole('button', { name: 'Monthly', exact: true })).toBeVisible();
 	await page.goForward();
-	await expect(nav.getByRole('combobox', { name: 'Window', exact: true })).toHaveValue('7');
+	await expect(navPill(page, '7 days')).toBeVisible();
 	await nav.getByRole('button', { name: 'Compare', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker\?view=compare$/);
 	await regionsReady(page);

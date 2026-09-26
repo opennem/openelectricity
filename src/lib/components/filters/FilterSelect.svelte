@@ -10,13 +10,15 @@
 	 * the facilities pills.
 	 *
 	 * Options may have one level of independently selectable `children`.
-	 * `divider: true` adds a separator after the option.
+	 * `divider: true` adds a separator after the option; `disabled: true`
+	 * shows it dimmed and unselectable. A `footer` snippet renders below the
+	 * list for controls that modify the choice rather than being one.
 	 *
 	 * The generalisation of the tracker's RegionDropdown — use this for any
 	 * pick-one control that should look like the Region pill.
 	 */
 
-	/** @typedef {{ value: string, label: string }} SelectOption */
+	/** @typedef {{ value: string, label: string, disabled?: boolean }} SelectOption */
 
 	/**
 	 * @type {{
@@ -25,10 +27,21 @@
 	 *   listLabel: string,
 	 *   defaultValue?: string | null,
 	 *   compact?: boolean,
+	 *   disabled?: boolean,
+	 *   footer?: import('svelte').Snippet<[() => void]>,
 	 *   onchange?: (value: string) => void
 	 * }}
 	 */
-	let { selected, options, listLabel, defaultValue = null, compact = false, onchange } = $props();
+	let {
+		selected,
+		options,
+		listLabel,
+		defaultValue = null,
+		compact = false,
+		disabled = false,
+		footer,
+		onchange
+	} = $props();
 
 	let flatOptions = $derived(options.flatMap((o) => [o, ...(o.children ?? [])]));
 	let selectedOption = $derived(flatOptions.find((o) => o.value === selected) ?? options[0]);
@@ -49,7 +62,8 @@
 		type="button"
 		role="option"
 		aria-selected={isSelected}
-		class="w-full flex items-center gap-3 rounded-md {isSelected
+		disabled={option.disabled}
+		class="w-full flex items-center gap-5 rounded-md disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent {isSelected
 			? 'text-black'
 			: 'text-mid-grey'} hover:bg-warm-grey cursor-pointer px-2 py-2"
 		onclick={() => handleSelect(option.value, close)}
@@ -70,6 +84,7 @@
 	label={selectedOption.label}
 	active={defaultValue !== null && selected !== defaultValue}
 	{compact}
+	{disabled}
 >
 	{#snippet children(close)}
 		<ul class="flex flex-col text-sm px-2 py-2" role="listbox" aria-label={listLabel}>
@@ -91,5 +106,8 @@
 				</li>
 			{/each}
 		</ul>
+		{#if footer}
+			<div class="border-t border-warm-grey px-2 py-2 text-sm">{@render footer(close)}</div>
+		{/if}
 	{/snippet}
 </FilterPanel>

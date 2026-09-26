@@ -51,7 +51,7 @@
 </script>
 
 <div
-	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 min-h-[46.5px] {paddingX} {isFullscreen
+	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 min-h-[46.5px] shadow-lg/5 {paddingX} {isFullscreen
 		? `tablet:py-3 tablet:px-4 ${bgClass}`
 		: ''}"
 >

@@ -12,6 +12,7 @@
 	 * chart area, with boundary-aware flipping near the edges.
 	 */
 
+	import { formatWithUnit } from '$lib/utils/formatters.js';
 	import {
 		getActiveData,
 		getTotalForRow,
@@ -242,7 +243,10 @@
 								: 'font-medium text-dark-grey'}"
 						>
 							{#if row.formattedValue}
-								{row.formattedValue}{#if !unitInHeading && displayUnit}&nbsp;{displayUnit}{/if}
+								{formatWithUnit(row.formattedValue, displayUnit, {
+									unitShown: unitInHeading,
+									separator: '\u00a0'
+								})}
 							{:else}
 								—
 							{/if}
@@ -289,7 +293,10 @@
 								class="text-right font-mono tabular-nums font-medium text-dark-grey"
 							>
 								{#if row.formattedValue}
-									{row.formattedValue}{#if !unitInHeading && row.unit}&nbsp;{row.unit}{/if}
+									{formatWithUnit(row.formattedValue, row.unit, {
+										unitShown: unitInHeading,
+										separator: '\u00a0'
+									})}
 								{:else}
 									—
 								{/if}
@@ -317,7 +324,10 @@
 						data-testid="tooltip-value"
 						class="text-right font-mono font-semibold text-dark-grey tabular-nums"
 					>
-						{#if formattedTotal}{formattedTotal}{#if !unitInHeading && displayUnit}&nbsp;{displayUnit}{/if}{:else}—{/if}
+						{#if formattedTotal}{formatWithUnit(formattedTotal, displayUnit, {
+								unitShown: unitInHeading,
+								separator: '\u00a0'
+							})}{:else}—{/if}
 					</span>
 				</div>
 			{/if}

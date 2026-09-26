@@ -306,6 +306,31 @@ export const card = (page, title) =>
 	page.getByRole('heading', { name: title, exact: true }).locator('xpath=ancestor::section[1]');
 
 /**
+ * A `FilterSelect` pill in the tracker nav. Its accessible name is the
+ * selected option's label, e.g. `navPill(page, 'Average day')`.
+ * @param {Page} page
+ * @param {string} label
+ */
+export const navPill = (page, label) =>
+	page.getByTestId('tracker-top-nav').getByRole('button', { name: label, exact: true });
+
+/**
+ * Choose an option from a nav `FilterSelect`: open the pill showing `current`,
+ * then pick `next` from the listbox named `listLabel`.
+ * @param {Page} page
+ * @param {string} listLabel
+ * @param {string} current
+ * @param {string} next
+ */
+export async function pickNavOption(page, listLabel, current, next) {
+	await navPill(page, current).click();
+	await page
+		.getByRole('listbox', { name: listLabel, exact: true })
+		.getByRole('option', { name: next, exact: true })
+		.click();
+}
+
+/**
  * The regions comparison values table.
  * @param {Page} page
  */
