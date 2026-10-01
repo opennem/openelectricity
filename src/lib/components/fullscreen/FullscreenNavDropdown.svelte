@@ -12,9 +12,12 @@
 	/**
 	 * `light` renders the logo mark in white (for dark backdrops, e.g. the
 	 * mobile floating nav over a dark/satellite map).
-	 * @type {{ light?: boolean }}
+	 *
+	 * `label` merges the page name into the trigger ("logo Tracker"), replacing
+	 * a separate page-name link.
+	 * @type {{ light?: boolean, label?: string }}
 	 */
-	let { light = false } = $props();
+	let { light = false, label } = $props();
 
 	// Unlike the header Nav, this dropdown renders `dropdownOnly` items too —
 	// that's where in-development entries (e.g. the new Tracker) surface.
@@ -59,7 +62,9 @@
 		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
 		if (!isOpen) {
-			if (e.key.toLowerCase() === TOGGLE_KEY) {
+			// Pages can mount a CSS-hidden instance (e.g. /facilities' mobile
+			// floating nav on desktop); only the rendered trigger takes the shortcut.
+			if (e.key.toLowerCase() === TOGGLE_KEY && triggerRef?.getClientRects().length) {
 				e.preventDefault();
 				openMenu();
 			}
@@ -99,8 +104,9 @@
 <div class="relative shrink-0">
 	<button
 		bind:this={triggerRef}
+		type="button"
 		onclick={toggleMenu}
-		class="flex items-center px-2 py-1 rounded-lg transition-colors cursor-pointer {light
+		class="flex items-center gap-2 px-2 py-1 rounded-lg transition-colors cursor-pointer {light
 			? 'hover:bg-white/20'
 			: 'hover:bg-warm-grey'}"
 		title="Open navigation menu (g)"
@@ -112,6 +118,9 @@
 			alt="Open Electricity"
 			class="h-8 w-auto {light ? 'brightness-0 invert' : ''}"
 		/>
+		{#if label}
+			<span class="text-sm lg:text-base font-semibold text-dark-grey">{label}</span>
+		{/if}
 	</button>
 
 	{#if isOpen}

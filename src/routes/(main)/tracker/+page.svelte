@@ -343,13 +343,7 @@
 			>
 				{#snippet stable()}
 					{#if isFullscreen}
-						<FullscreenNavDropdown />
-						<a
-							href={resolve('/(main)/tracker')}
-							class="rounded-lg px-2 py-1 text-sm font-semibold text-dark-grey no-underline hover:bg-warm-grey hover:no-underline lg:text-base"
-						>
-							Tracker
-						</a>
+						<FullscreenNavDropdown label="Tracker" />
 					{/if}
 				{/snippet}
 

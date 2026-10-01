@@ -66,14 +66,16 @@
 
 	{#snippet stable()}
 		{#if isFullscreen}
-			<FullscreenNavDropdown />
+			<FullscreenNavDropdown label="Facilities" />
+		{:else}
+			<!-- Windowed pages keep the site header, so this stays a plain crumb. -->
+			<a
+				href={windowedHref('/facilities?view=list', true)}
+				class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
+			>
+				Facilities
+			</a>
 		{/if}
-		<a
-			href={windowedHref('/facilities?view=list', !isFullscreen)}
-			class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
-		>
-			Facilities
-		</a>
 	{/snippet}
 
 	{#snippet rest()}

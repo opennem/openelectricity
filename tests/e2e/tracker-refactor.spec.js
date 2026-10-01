@@ -1514,9 +1514,7 @@ test('analytical history restores grouping visibility and transform without echo
 	expect(await page.evaluate(() => history.length)).toBe(initialHistory + 3);
 });
 
-test('solo selections are atomic and plain same-route links reset analytical state', async ({
-	page
-}) => {
+test('solo selections are atomic', async ({ page }) => {
 	await trackerFixture(page);
 	await page.goto(
 		'/tracker?region=nsw1&table=1&hidden=coal&contribution=generation&transform=proportion'
@@ -1532,15 +1530,6 @@ test('solo selections are atomic and plain same-route links reset analytical sta
 	expect(await page.evaluate(() => history.length)).toBe(historyBefore + 1);
 	await page.goBack();
 	await expect.poll(() => new URL(page.url()).searchParams.get('hidden')).toBe('coal');
-	await page.getByRole('link', { name: 'Tracker', exact: true }).click();
-	await expect(page).not.toHaveURL(/hidden=|contribution=|transform=/);
-	await trackerReady(page);
-	await expect(
-		card(page, 'Generation').getByText('% of gross demand', { exact: true })
-	).toBeHidden();
-	await expect(
-		page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first()
-	).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('timeline tooltip stays above the chart and table inspection follows contribution basis', async ({
@@ -1846,9 +1835,7 @@ test('reopening the table waits for its providers before enabling its export', a
 	expect(await readFile(await (await saved).path(), 'utf8')).toContain('Demand,summary,');
 });
 
-test('same-route links reset selection and phone/tablet layouts remain usable', async ({
-	page
-}, testInfo) => {
+test('phone/tablet layouts remain usable', async ({ page }, testInfo) => {
 	await trackerFixture(page);
 	for (const width of [390, 820, 1440]) {
 		await page.setViewportSize({ width, height: 900 });
@@ -1860,11 +1847,6 @@ test('same-route links reset selection and phone/tablet layouts remain usable', 
 		await expectNoHorizontalScroll(page);
 		await page.screenshot({ path: testInfo.outputPath(`tracker-${width}.png`) });
 	}
-	await page.getByRole('link', { name: 'Tracker', exact: true }).click();
-	await expect(page).not.toHaveURL(/region=nsw1/);
-	await expect(
-		page.getByRole('button', { name: 'National Electricity Market', exact: true })
-	).toBeVisible();
 });
 
 test('frontend options reuse cached responses without flashing loading overlays', async ({

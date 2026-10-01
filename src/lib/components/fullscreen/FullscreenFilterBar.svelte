@@ -9,12 +9,13 @@
 	 *
 	 *   - `filter-bar-back`       → back button, only on /facility/[code].
 	 *     Unpaired: slides in from the left on entry, back out on exit.
-	 *   - `{stableName}`          → logo + first crumb. The two facilities
+	 *   - `{stableName}`          → the logo + page-name menu trigger
+	 *     (`FullscreenNavDropdown` with a `label`). The two facilities
 	 *     routes share the default `filter-bar-stable`, so it pairs: the
 	 *     group's position animates (slides sideways to make room for the
 	 *     back button) and the images don't cross-fade. Pages whose stable
 	 *     content ISN'T pixel-identical to that pair (e.g. /tracker's
-	 *     "logo + Tracker") pass their own `stableName` — unpaired regions
+	 *     "logo Tracker") pass their own `stableName` — unpaired regions
 	 *     get the default cross-fade instead of rendering both texts stacked.
 	 *   - `filter-bar-rest-{key}` → page-specific middle content. Unpaired
 	 *     so it slides without zooming.

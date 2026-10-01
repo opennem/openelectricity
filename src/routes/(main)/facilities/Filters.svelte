@@ -412,13 +412,7 @@
 	<FullscreenFilterBar {isFullscreen} routeKey="list" paddingX="px-8">
 		{#snippet stable()}
 			{#if isFullscreen}
-				<FullscreenNavDropdown />
-				<a
-					href="/facilities?view=list"
-					class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
-				>
-					Facilities
-				</a>
+				<FullscreenNavDropdown label="Facilities" />
 			{/if}
 		{/snippet}
 
