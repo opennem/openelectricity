@@ -4,8 +4,10 @@ import {
 	PROFILE_DAY_END,
 	profileClock,
 	profileTicks,
-	individualProfileRows,
+	profileRows,
+	dailyProfileRows,
 	stackedProfileRows,
+	averageProfileRows,
 	clampProfileViewport
 } from './profile-chart.js';
 import { buildDailyProfile, buildAverageDayStack, profileWindow } from './time-of-day.js';
@@ -14,18 +16,12 @@ describe('Stratum profile adapter', () => {
 	const window = profileWindow(Date.parse('2026-09-07T00:00Z'), '+10:00', 7);
 	it('maps half-hours to a synthetic day without changing values or missing readings', () => {
 		const profile = buildDailyProfile([{ time: window.start, wind: 0 }], 'wind', window);
-		const rows = individualProfileRows(profile, window.dates, true);
-		expect(rows[0]).toMatchObject({
-			time: PROFILE_DAY_START,
-			average: 0,
-			[window.dates[0]]: 0,
-			[window.dates[1]]: null
-		});
+		const rows = profileRows(profile, 'wind');
+		expect(rows[0]).toMatchObject({ time: PROFILE_DAY_START, wind: 0 });
 		expect(rows[47].time).toBe(PROFILE_DAY_END - 1_800_000);
-		expect(rows[1].average).toBeNull();
-		expect(individualProfileRows(profile, window.dates, false)[0]).not.toHaveProperty(
-			window.dates[0]
-		);
+		expect(rows[1].wind).toBeNull();
+		const daily = dailyProfileRows(profile, window.dates);
+		expect(daily[0]).toMatchObject({ average: 0, [window.dates[0]]: 0, [window.dates[1]]: null });
 	});
 	it('passes signed values to Stratum, not cumulative stack bounds, and preserves whole-stack gaps', () => {
 		const stack = buildAverageDayStack(
@@ -40,6 +36,9 @@ describe('Stratum profile adapter', () => {
 		expect(rows[0]).toMatchObject({ wind: 100, load: -10 });
 		expect(rows[1]).toMatchObject({ wind: null, load: null });
 		expect(stackedProfileRows([])).toEqual([]);
+		// The table reads each technology's own averages through the stack gap.
+		expect(averageProfileRows(stack)[1]).toMatchObject({ wind: 200, load: null });
+		expect(averageProfileRows([])).toEqual([]);
 	});
 	it('formats clock time only, including the 24:00 boundary', () => {
 		expect(profileClock(PROFILE_DAY_START)).toBe('00:00');

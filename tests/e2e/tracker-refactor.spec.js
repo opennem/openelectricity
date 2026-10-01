@@ -886,6 +886,7 @@ test('the metrics strip hides and shows with the M key and the options menu, and
 	await expect(strip).toBeVisible();
 	await page.getByRole('button', { name: 'Profile', exact: true }).click();
 	await expect(strip).toHaveCount(0);
+	await expect(card(page, 'Average over last 7 full days')).toBeVisible();
 	await page.keyboard.press('m');
 	await page.getByRole('button', { name: 'Timeline', exact: true }).click();
 	await expect(strip).toBeVisible();
@@ -1028,7 +1029,8 @@ test('PNG prevents held-frame export and freezes readiness until reopened', asyn
 test('PNG captures average-day charts and fits a narrow screen', async ({ page }, testInfo) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?view=profile&profile-end=2026-08-31&profile-series=wind');
+	await page.goto('/tracker?view=profile&profile-end=2026-08-31');
+	// Stacked exports both of its charts: the stacked area and the radial bars.
 	await expect(page.locator('[data-tracker-png]')).toHaveCount(2);
 	const dialog = await openPng(page);
 	await expect(dialog.getByRole('checkbox')).toHaveCount(2);
@@ -1236,17 +1238,13 @@ test('comparison uses raw energy despite timeline transforms and follows visibil
 	await expect(panel.getByRole('combobox', { name: 'Date A', exact: true })).toHaveValue(String(a));
 });
 
-test('Stratum profiles support hover, keyboard pinning, legend filtering and bounded zoom without fetching', async ({
+test('Stratum profiles support hover, keyboard pinning, table filtering and bounded zoom without fetching', async ({
 	page
 }, testInfo) => {
 	const api = await trackerFixture(page, { contributions: true });
-	await page.goto(
-		'/tracker?view=profile&profile-view=daily&profile-end=2026-08-31&profile-series=wind'
-	);
-	const stack = page.getByRole('region', {
-		name: 'Average day fuel technology stack',
-		exact: true
-	});
+	await page.goto('/tracker?view=profile&profile-end=2026-08-31');
+	const stack = card(page, 'Average over 7 full days');
+	const table = page.locator('#tracker-table-panel');
 	await expect(stack.locator('path.path-area')).toHaveCount(4);
 	await expect(stack.locator('path.path-area').first()).toHaveAttribute('d', /C/);
 	// At midnight each layer starts at the previous layer's signed cumulative
@@ -1262,26 +1260,31 @@ test('Stratum profiles support hover, keyboard pinning, legend filtering and bou
 	);
 	for (let i = 1; i < edges.length; i++) expect(edges[i].start).toBeCloseTo(edges[i - 1].end, 2);
 	const area = stack.locator('.stratum-chart-area');
+	const tooltip = stack.getByTestId('chart-tooltip-strip');
+	const readout = page.getByTestId('tracker-range-label');
+	await expect(readout).toHaveText(/25.*31 Aug 2026/);
 	await area.hover({ position: { x: 200, y: 120 } });
-	await expect(stack.getByTestId('chart-floating-tooltip')).toBeVisible();
-	await expect(stack.getByTestId('chart-floating-tooltip')).toContainText('UTC+10:00');
-	await expect(stack.getByTestId('chart-floating-tooltip')).not.toContainText('2000');
+	await expect(tooltip).toContainText(/\d\d:\d\d–\d\d:\d\d/);
+	await expect(tooltip).not.toContainText('UTC');
+	await expect(tooltip).not.toContainText('2000');
 	await page.mouse.move(0, 0);
-	const inspect = stack.getByRole('button', { name: 'Inspect values' });
-	await inspect.click();
+	const inspect = stack.getByRole('button', { name: /^Inspect / });
+	await inspect.focus();
 	await inspect.press('ArrowRight');
-	await expect(stack.getByTestId('chart-floating-tooltip')).toContainText('00:30–01:00');
+	await expect(tooltip).toContainText('00:30–01:00');
+	// The readout and the table follow the inspected half-hour.
+	await expect(readout).toHaveText('00:30–01:00');
 	await inspect.press('Enter');
 	await page.mouse.move(0, 0);
-	await expect(stack.getByTestId('chart-floating-tooltip')).toBeVisible();
+	await expect(tooltip).toContainText('00:30–01:00');
 	await inspect.press('Escape');
-	await expect(stack.getByTestId('chart-floating-tooltip')).toBeHidden();
-	await stack.getByRole('button', { name: 'Coal', exact: true }).click();
+	await expect(tooltip).not.toContainText('00:30–01:00');
+	await expect(readout).toHaveText(/25.*31 Aug 2026/);
+	const coal = table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' });
+	await coal.click();
 	await expect(stack.locator('path.path-area')).toHaveCount(3);
-	await expect(stack.getByRole('button', { name: 'Coal', exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'false'
-	);
+	await expect(coal).toHaveAttribute('aria-pressed', 'false');
+	await expect(page).toHaveURL(/hidden=coal/);
 	await stack.getByRole('button', { name: 'Zoom in', exact: true }).click();
 	await expect(stack.getByRole('button', { name: 'Zoom out', exact: true })).toBeEnabled();
 	await stack.getByRole('button', { name: 'Enable pan and zoom', exact: true }).click();
@@ -1292,9 +1295,10 @@ test('Stratum profiles support hover, keyboard pinning, legend filtering and bou
 	await page.mouse.move(bounds.x + 650, bounds.y + 120, { steps: 8 });
 	await page.mouse.up();
 	await expect(stack.locator('.x-axis .tick text').first()).toHaveText('00:00');
-	await stack.getByRole('button', { name: 'Reset day view' }).click();
+	await stack.getByRole('button', { name: 'Disable pan and zoom', exact: true }).click();
+	await stack.getByRole('button', { name: 'Zoom out', exact: true }).click();
 	await expect(stack.getByRole('button', { name: 'Zoom out', exact: true })).toBeDisabled();
-	const resize = stack.getByRole('separator', { name: 'Resize chart height' });
+	const resize = page.getByRole('separator', { name: 'Resize chart height' }).first();
 	const grip = await resize.boundingBox();
 	const beforeHeight = (await area.boundingBox()).height;
 	await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
@@ -1302,14 +1306,210 @@ test('Stratum profiles support hover, keyboard pinning, legend filtering and bou
 	await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2 + 50, { steps: 5 });
 	await page.mouse.up();
 	await expect.poll(async () => (await area.boundingBox()).height).toBeGreaterThan(beforeHeight);
-	const individual = page.getByRole('group', { name: 'Wind interactive chart', exact: true });
-	await expect(individual.locator('.stratum-chart')).toBeVisible();
-	await expect(individual.locator('path.path-line')).toHaveCount(8);
-	await expect(individual.locator('path.path-line').first()).toHaveAttribute('d', /C/);
-	await individual.scrollIntoViewIfNeeded();
-	await individual.locator('.stratum-chart-area').hover({ position: { x: 200, y: 120 } });
-	await expect(individual.getByTestId('chart-floating-tooltip')).toContainText('Average');
-	expect(api.requests).toEqual(['power']);
+	// Breakdown swaps the stack for the stacked view's chart per technology, two
+	// columns wide, minus those the table hides (coal, above), then spot price.
+	// Hovering one inspects that slot in the table and the readout, up to the last.
+	const charts = page.getByRole('group', { name: /interactive chart$/ });
+	await page.getByRole('button', { name: 'Breakdown', exact: true }).click();
+	await expect(page).toHaveURL(/profile-display=breakdown/);
+	await expect(charts).toHaveCount(4);
+	await expect(charts.last()).toHaveAccessibleName('Spot price interactive chart');
+	await expect(card(page, 'Market')).toContainText('Spot price');
+	await expect(navPill(page, 'Fuel technologies')).toHaveCount(0);
+	const [left, right] = await Promise.all([
+		charts.nth(0).boundingBox(),
+		charts.nth(1).boundingBox()
+	]);
+	expect(right.x).toBeGreaterThan(left.x + left.width);
+	expect(Math.abs(right.y - left.y)).toBeLessThan(2);
+	// Percentile bands by default: the 10–90% and 25–75% spread (an invisible
+	// base and four bands) with a dark median. The strip reads the slot's
+	// average; the table swaps its columns for each technology's percentiles.
+	await expect(navPill(page, 'Percentile bands')).toBeVisible();
+	await expect(page).not.toHaveURL(/profile-style/);
+	await expect(charts.first().locator('path.path-area')).toHaveCount(5);
+	await expect(charts.first().locator('path.overlay-line')).toHaveCount(1);
+	await expect(charts.first().locator('path.overlay-line')).toHaveAttribute('stroke', '#222222');
+	await expect(charts.last().locator('path.overlay-line')).toHaveCount(1);
+	const bandArea = charts.first().locator('.stratum-chart-area');
+	await bandArea.scrollIntoViewIfNeeded();
+	await bandArea.hover({ position: { x: 200, y: 100 } });
+	const strip = charts.first().getByTestId('chart-tooltip-strip');
+	await expect(strip).toContainText('Average');
+	await expect(strip).not.toContainText('Median');
+	// Every breakdown chart follows the hovered slot.
+	const slot = (await strip.innerText()).match(/\d\d:\d\d–\d\d:\d\d/)?.[0];
+	expect(slot).toBeTruthy();
+	await expect(charts.nth(1).getByTestId('chart-tooltip-strip')).toContainText(
+		/** @type {string} */ (slot)
+	);
+	await expect(charts.last().getByTestId('chart-tooltip-strip')).toContainText(
+		/** @type {string} */ (slot)
+	);
+	const headers = table.getByRole('columnheader');
+	for (const name of ['10%', '25%', 'Median', '75%', '90%'])
+		await expect(headers.filter({ hasText: name })).toHaveCount(1);
+	await expect(headers.filter({ hasText: 'Energy' })).toHaveCount(0);
+	// Charging (a constant −400 MW load) reads as its 400 MW magnitude.
+	await expect(table.getByTestId('fuel-tech-row').filter({ hasText: 'Charging' })).toContainText(
+		'400'
+	);
+	await page.mouse.move(0, 0);
+	const seriesArea = charts.first().locator('.stratum-chart-area');
+	await seriesArea.scrollIntoViewIfNeeded();
+	const series = await seriesArea.boundingBox();
+	await page.mouse.move(series.x + series.width - 2, series.y + series.height / 2);
+	await expect(readout).toHaveText('23:30–24:00');
+	await page.mouse.move(0, 0);
+	// The table's row toggles show and hide the charts.
+	const wind = table.getByTestId('fuel-tech-row').filter({ hasText: 'Wind' });
+	await wind.click();
+	await expect(charts).toHaveCount(3);
+	await expect(page.getByRole('heading', { name: 'Wind', exact: true })).toHaveCount(0);
+	await coal.click();
+	await expect(charts).toHaveCount(4);
+	await expect(page.getByRole('heading', { name: 'Coal', exact: true })).toBeVisible();
+	// Spot price loads only for the breakdown.
+	expect([...api.requests].sort()).toEqual(['power', 'price', 'renewables']);
+	// "Show today" (off by default) adds the current day so far as a thicker
+	// OE red line, fetched only once shown.
+	const showToday = page.getByRole('switch', { name: 'Show today' });
+	await expect(showToday).toHaveAttribute('aria-checked', 'false');
+	await showToday.click();
+	await expect(page).toHaveURL(/profile-today=1/);
+	const todayLine = charts.first().locator('path.overlay-line[stroke="#C74523"]');
+	await expect(todayLine).toHaveCount(1);
+	await expect(todayLine).toHaveAttribute('stroke-width', '2.5');
+	await expect(charts.last().locator('path.overlay-line[stroke="#C74523"]')).toHaveCount(1);
+	// Multi-line: the average area with the 7 days, the dark average and today.
+	await pickNavOption(page, 'Style', 'Percentile bands', 'Multi-line');
+	await expect(page).toHaveURL(/profile-style=lines/);
+	await expect(charts).toHaveCount(4);
+	await expect(charts.first().locator('path.path-area')).toHaveCount(1);
+	await expect(charts.first().locator('path.overlay-line')).toHaveCount(9);
+	await expect(charts.first().locator('path.overlay-line[stroke="#222222"]')).toHaveCount(1);
+	await expect(charts.last().locator('path.overlay-line')).toHaveCount(9);
+	await expect(table.getByRole('columnheader').filter({ hasText: 'Energy' })).toHaveCount(1);
+	// The Style list groups its options under Linear and Radial subheaders.
+	await navPill(page, 'Multi-line').click();
+	const styles = page.getByRole('listbox', { name: 'Style', exact: true });
+	await expect(styles.getByRole('group', { name: 'Linear' }).getByRole('option')).toHaveText([
+		'Percentile bands',
+		'Multi-line',
+		'Ridgeline'
+	]);
+	await expect(styles.getByRole('group', { name: 'Radial' }).getByRole('option')).toHaveText([
+		'Bars',
+		'Heatmap'
+	]);
+	// Radial bars: each series' hourly averages around a 24-hour dial.
+	await styles.getByRole('option', { name: 'Bars', exact: true }).click();
+	await expect(page).toHaveURL(/profile-style=radial/);
+	await expect(charts).toHaveCount(0);
+	const clocks = page.getByRole('img', { name: /average by hour of day$/ });
+	await expect(clocks).toHaveCount(4);
+	await expect(clocks.first().locator('path[fill="transparent"] title')).toHaveCount(24);
+	await expect(clocks.first().locator('path[stroke="#C74523"]')).toHaveCount(1);
+	// The whole hour sector takes the hover, even inside the hub where no bar is:
+	// just right of straight up is 12:00–13:00 (noon at the top, clockwise).
+	const dial = await clocks.first().boundingBox();
+	await page.mouse.move(dial.x + dial.width / 2 + 3, dial.y + dial.height / 2 - 20);
+	await expect(page.getByTestId('dial-readout').first()).toContainText('12:00–13:00');
+	await expect(clocks.first().getByTestId('radial-hover')).toHaveCount(1);
+	// The hovered hour drives the table and the range readout too.
+	await expect(readout).toHaveText('12:00–13:00');
+	await expect(table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' })).toContainText('100');
+	// The dials share the hovered hour.
+	await expect(page.getByTestId('dial-readout').nth(1)).toContainText('12:00–13:00');
+	// Loads read as positive on the dial: charging's 400 MW grows outward.
+	const charging = page.getByRole('img', { name: /Charging.* average by hour of day$/ });
+	await expect(charging.locator('path[fill="transparent"] title').first()).toHaveText(
+		'00:00–01:00: 400 MW'
+	);
+	// Ridgeline: one offset curve per day, today at the front in OE red, on the
+	// shared breakdown hover.
+	await pickNavOption(page, 'Style', 'Radial bars', 'Ridgeline');
+	await expect(page).toHaveURL(/profile-style=ridgeline/);
+	const ridgelines = page.getByRole('img', { name: /one curve per day$/ });
+	await expect(ridgelines).toHaveCount(4);
+	await expect(ridgelines.first().locator('path')).toHaveCount(8);
+	await expect(ridgelines.first().locator('path[stroke="#C74523"]')).toHaveCount(1);
+	const ridgeBox = await ridgelines.first().boundingBox();
+	await page.mouse.move(ridgeBox.x + ridgeBox.width / 2, ridgeBox.y + ridgeBox.height / 2);
+	await expect(readout).toHaveText(/^\d\d:\d\d–\d\d:\d\d$/);
+	const ridgeSlot = await readout.innerText();
+	await expect(page.getByTestId('chart-tooltip-strip').nth(1)).toContainText(ridgeSlot);
+	await expect(page.getByTestId('chart-tooltip-strip').first()).toContainText('Average');
+	await page.mouse.move(0, 0);
+	// The table shows each technology's average and every day.
+	const ridgeHeaders = table.getByRole('columnheader');
+	await expect(ridgeHeaders.filter({ hasText: 'Average' })).toHaveCount(1);
+	await expect(ridgeHeaders.filter({ hasText: /^\d{1,2} Aug/ })).toHaveCount(7);
+	await expect(ridgeHeaders.filter({ hasText: 'Energy' })).toHaveCount(0);
+	// Hovering a day's ridge scrolls the table to that day's column and marks it:
+	// just above 31 Aug's baseline (the last day, before today's ridge).
+	const lastBaseline = await ridgelines.first().locator('line').nth(6).boundingBox();
+	await page.mouse.move(lastBaseline.x + lastBaseline.width / 2, lastBaseline.y - 3);
+	const lastDay = table.locator('th[data-column="2026-08-31"]');
+	await expect(lastDay).toHaveClass(/bg-warm-grey/);
+	await expect(lastDay).toBeInViewport();
+	// That day's ridge is highlighted on every ridgeline.
+	await expect(ridgelines.first().locator('path[data-active]')).toHaveCount(1);
+	await expect(ridgelines.nth(1).locator('path[data-active]')).toHaveCount(1);
+	await page.mouse.move(0, 0);
+	await expect(lastDay).not.toHaveClass(/bg-warm-grey/);
+	await expect(ridgelines.first().locator('path[data-active]')).toHaveCount(0);
+	// Radial heatmap: each ring a day on the 24-hour dial (cells on a canvas),
+	// sharing the slot hover and the day's table column with the other cards.
+	await pickNavOption(page, 'Style', 'Ridgeline', 'Heatmap');
+	await expect(page).toHaveURL(/profile-style=heatmap/);
+	const heatmaps = page.getByRole('img', { name: /each ring is a day/ });
+	await expect(heatmaps).toHaveCount(4);
+	await expect(page.locator('[data-chart-area] canvas[data-png-layer]')).toHaveCount(4);
+	// The heatmap has no today ring: its toggle is disabled and shows off,
+	// while the URL keeps the choice for the other styles.
+	await expect(showToday).toBeDisabled();
+	await expect(showToday).toHaveAttribute('aria-checked', 'false');
+	await expect(page).toHaveURL(/profile-today=1/);
+	await expect(heatmaps.first().locator('circle[stroke="#C74523"]')).toHaveCount(0);
+	// Heatmap cards are mini cards, titled with an h6 like the scenarios' mini
+	// charts.
+	await expect(page.locator('h6').filter({ hasText: /^Coal$/ })).toBeVisible();
+	// Enlarge opens a card in the lightbox; ← / → step through the cards, and
+	// Escape closes it.
+	await page.getByRole('button', { name: 'Enlarge Coal', exact: true }).click();
+	const lightbox = page.getByRole('dialog');
+	await expect(lightbox.getByRole('heading', { name: 'Coal', exact: true })).toBeVisible();
+	await expect(lightbox).toContainText('1 / 4');
+	await expect(lightbox.getByRole('img', { name: /each ring is a day/ })).toHaveCount(1);
+	await page.keyboard.press('ArrowRight');
+	await expect(lightbox.getByRole('heading', { name: 'Imports', exact: true })).toBeVisible();
+	await lightbox.getByRole('button', { name: 'Previous chart' }).click();
+	await page.keyboard.press('ArrowLeft');
+	await expect(lightbox).toContainText('4 / 4');
+	await page.keyboard.press('Escape');
+	await expect(lightbox).toHaveCount(0);
+	const heat = await heatmaps.first().boundingBox();
+	// Just right of straight up, in the outer ring (the latest day): 12:00–12:30.
+	await page.mouse.move(heat.x + heat.width / 2 + 3, heat.y + 52);
+	await expect(readout).toHaveText('12:00–12:30');
+	await expect(table.locator('th[data-column="2026-08-31"]')).toHaveClass(/bg-warm-grey/);
+	await expect(page.getByTestId('dial-readout').nth(1)).toContainText('12:00–12:30');
+	// The innermost ring is the oldest day, and its column comes into view.
+	// Mid-way through the innermost of its seven rings, from the dial's
+	// geometry: a 48px margin and a hub at 22% of the radius.
+	const outer = heat.width / 2 - 48;
+	const firstRing = 0.22 * outer + (0.78 * outer) / 7 / 2;
+	await page.mouse.move(heat.x + heat.width / 2 + 3, heat.y + heat.height / 2 - firstRing);
+	await expect(table.locator('th[data-column="2026-08-25"]')).toHaveClass(/bg-warm-grey/);
+	await page.mouse.move(0, 0);
+	await pickNavOption(page, 'Style', 'Radial heatmap', 'Percentile bands');
+	await expect(page).not.toHaveURL(/profile-style/);
+	await expect(showToday).toBeEnabled();
+	await expect(showToday).toHaveAttribute('aria-checked', 'true');
+	await page.getByRole('button', { name: 'Stacked', exact: true }).click();
+	await expect(showToday).toHaveCount(0);
+	await expect(charts).toHaveCount(1);
 	await page.screenshot({
 		path: testInfo.outputPath('stratum-profile-interaction.png'),
 		fullPage: true
@@ -1320,73 +1520,138 @@ test('average-day stack includes every technology and persists beside price with
 	page
 }, testInfo) => {
 	const api = await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?view=profile&profile-end=2026-08-31&hidden=coal&profile-series=wind');
-	const stack = page.getByRole('region', {
-		name: 'Average day fuel technology stack',
-		exact: true
-	});
+	await page.goto('/tracker?view=profile&profile-end=2026-08-31&hidden=coal');
+	const stack = card(page, 'Average over 7 full days');
+	const table = page.locator('#tracker-table-panel');
 	await expect(stack.locator('.stratum-chart')).toBeVisible();
+	// Profile shares Timeline's URL-owned visibility: the linked hidden source
+	// stays out of the stack but keeps its row and values in the table.
+	await expect(stack.locator('path.path-area')).toHaveCount(3);
+	const coal = table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' });
+	await expect(coal).toHaveAttribute('aria-pressed', 'false');
+	await expect(coal).toContainText('100');
+	await expect(table.getByTestId('fuel-tech-row')).toHaveCount(4);
+	// Contribution defaults to a share of the average day's gross demand (100 MW
+	// in the fixture), and its header switches to source generation (coal 100 of
+	// 300 MW).
+	const contribution = table.getByRole('columnheader', { name: /^Contribution/ });
+	await expect(contribution).toContainText('demand');
+	await expect(coal).toContainText('100.0%');
+	await contribution.getByRole('button').click();
+	await expect(contribution).toContainText('generation');
+	await expect(page).toHaveURL(/contribution=generation/);
+	await expect(coal).toContainText('33.3%');
+	await contribution.getByRole('button').click();
+	await expect(contribution).toContainText('demand');
+	await table.getByRole('button', { name: 'Show all', exact: true }).click();
 	await expect(stack.locator('path.path-area')).toHaveCount(4);
-	await expect(stack.getByRole('button', { name: 'Coal', exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
-	await stack.getByText('All-technology averages and coverage', { exact: true }).click();
-	const row = stack
-		.getByRole('row')
-		.filter({ has: page.getByRole('rowheader', { name: '00:00', exact: true }) });
-	await expect(row).toContainText('100 (7)');
-	await expect(row).toContainText('-400 (7)');
 	expect(api.requests.filter((metric) => metric === 'power')).toHaveLength(1);
-	await pickNavOption(page, 'Metric', 'Power', 'Spot price');
-	await expect(page.getByRole('heading', { name: /Spot price/ })).toBeVisible();
+	// The breakdown and its options stay out of the stacked display.
+	await expect(navPill(page, 'Fuel technologies')).toHaveCount(0);
+	await expect(navPill(page, 'Power')).toHaveCount(0);
+	await expect(navPill(page, 'Simplified')).toHaveCount(0);
+	await table
+		.getByRole('columnheader', { name: /^Technology/ })
+		.getByRole('button')
+		.click();
+	await page
+		.getByRole('listbox', { name: 'Fuel tech grouping' })
+		.getByRole('option', { name: 'Detailed', exact: true })
+		.click();
+	await expect(table.getByRole('columnheader', { name: /Detailed/ })).toBeVisible();
 	await expect(
-		page
-			.getByRole('group', { name: 'Spot price interactive chart', exact: true })
-			.locator('path.path-line')
-	).not.toHaveAttribute('d', /C/);
-	await expect(stack.locator('.stratum-chart')).toBeVisible();
-	expect(api.requests.filter((metric) => metric === 'power')).toHaveLength(1);
-	await pickNavOption(page, 'View', 'Average day', 'Daily overlay');
-	await expect(stack.locator('path.path-area')).toHaveCount(4);
-	await pickNavOption(page, 'Fuel tech grouping', 'Simplified', 'Detailed');
-	await expect(stack).toContainText('Detailed');
-	await expect(stack.getByRole('button', { name: 'Coal (Black)', exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
-	await stack.getByText('All-technology averages and coverage', { exact: true }).click();
+		table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal (Black)' })
+	).toHaveAttribute('aria-pressed', 'true');
+	// With the table closed, its rail keeps the grouping reachable.
+	await page.getByRole('button', { name: 'Hide fuel tech table' }).click();
+	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
+	await expect(page.getByRole('dialog', { name: 'Fuel technology options' })).toBeVisible();
+	await page.keyboard.press('Escape');
 	await page.screenshot({ path: testInfo.outputPath('average-day-stack.png'), fullPage: true });
 });
 
-test('time-of-day profiles keep requests bounded and reproduce selections, coverage and CSV', async ({
+test('Stacked shows the stacked area beside radial bars that stack every visible technology by hour', async ({
+	page
+}) => {
+	const api = await trackerFixture(page, { contributions: true });
+	await page.goto('/tracker?view=profile&profile-end=2026-08-31');
+	const table = page.locator('#tracker-table-panel');
+	const readout = page.getByTestId('tracker-range-label');
+	// Both stacked charts show side by side, with no stacked style to pick.
+	await expect(card(page, 'Average over 7 full days').locator('path.path-area')).toHaveCount(4);
+	await expect(navPill(page, 'Stacked area')).toHaveCount(0);
+	const stack = card(page, 'Average by hour');
+	const clock = stack.getByRole('img', { name: /average by hour of day$/ });
+	await expect(clock).toHaveCount(1);
+	// One slice per technology per hour, sources outward and loads inward.
+	const slices = clock.locator(
+		'path[fill]:not([fill="transparent"]):not([data-testid="dial-night"])'
+	);
+	await expect(slices).toHaveCount(4 * 24);
+	// Each hour's title reads the net total across the layers.
+	await expect(clock.locator('path[fill="transparent"] title').first()).toHaveText(
+		'00:00–01:00: 200 MW'
+	);
+	// Noon sits at the top, and the window's average night is shaded behind,
+	// from sunset round to sunrise at the NEM capitals.
+	await expect(clock.getByTestId('dial-tick')).toHaveCount(4);
+	// The stacked radial bars sit beside the area chart, with no enlarge mode.
+	await expect(stack.getByRole('button', { name: /^Enlarge / })).toHaveCount(0);
+	await expect(clock.getByTestId('dial-night').locator('title')).toHaveText(
+		/^Night 1[78]:\d\d–0[67]:\d\d, average sunset to sunrise at the NEM capitals$/
+	);
+	// The table's last footnote says where the night comes from.
+	await expect(table.locator('footer li').last()).toHaveText(
+		/^Night shading: .* a plain average of Sydney, Brisbane, Melbourne, Adelaide and Hobart, in market time \(AEST all year\)\.$/
+	);
+	const dial = await clock.boundingBox();
+	await page.mouse.move(dial.x + dial.width / 2 + 3, dial.y + dial.height / 2 - 20);
+	await expect(stack.getByTestId('dial-readout')).toContainText('12:00–13:00');
+	await expect(stack.getByTestId('dial-readout')).toContainText('MW net');
+	await expect(readout).toHaveText('12:00–13:00');
+	await expect(table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' })).toContainText('100');
+	await page.mouse.move(0, 0);
+	await expect(readout).toHaveText(/25.*31 Aug 2026/);
+	// Table row toggles take a technology out of the dial.
+	await table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).click();
+	await expect(slices).toHaveCount(3 * 24);
+	await expect(clock.locator('path[fill="transparent"] title').first()).toHaveText(
+		'00:00–01:00: 100 MW'
+	);
+	// The toggle hides it from the stacked area too, and one power request
+	// serves both charts.
+	await expect(card(page, 'Average over 7 full days').locator('path.path-area')).toHaveCount(3);
+	expect(api.requests.filter((metric) => metric === 'power')).toHaveLength(1);
+	// An old link with the retired stacked style still opens both charts.
+	await page.goto('/tracker?view=profile&profile-end=2026-08-31&profile-stack=radial');
+	await expect(card(page, 'Average by hour').getByRole('img')).toHaveCount(1);
+	await expect(card(page, 'Average over 7 full days').locator('path.path-area')).toHaveCount(4);
+});
+
+test('time-of-day profiles keep requests bounded and reproduce selections and CSV', async ({
 	page
 }) => {
 	const api = await trackerFixture(page);
-	await page.goto('/tracker?region=wem&view=profile&profile-end=2026-08-31&profile-series=wind');
-	const profile = page.getByRole('region', { name: 'Profile analysis' });
-	await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await expect(navPill(page, 'Wind')).toBeVisible();
-	await expect(profile).toContainText('2026-08-25 to 2026-08-31 · UTC+08:00');
-	expect(api.requests).toEqual(['power']);
-	await pickNavOption(page, 'View', 'Average day', 'Daily overlay');
-	await expect(profile.getByRole('button', { name: '2026-08-31', exact: true })).toBeVisible();
-	await pickNavOption(page, 'Fuel technology', 'Wind', 'Coal');
-	await profile.getByRole('button', { name: '2026-08-31', exact: true }).click();
-	await expect(profile.getByRole('button', { name: '2026-08-31', exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'false'
+	await page.goto(
+		'/tracker?region=wem&view=profile&profile-display=breakdown&profile-end=2026-08-31'
 	);
-	expect(api.requests).toEqual(['power']);
+	// The WEM fixture has coal and wind: a chart each, then spot price.
+	const charts = page.getByRole('group', { name: /interactive chart$/ });
+	await expect(charts).toHaveCount(3);
+	await expect(page.getByTestId('tracker-range-label')).toHaveText(/25.*31 Aug 2026/);
+	expect([...api.requests].sort()).toEqual(['power', 'price', 'renewables']);
 	for (const [from, days] of [
 		[7, 14],
 		[14, 28]
 	]) {
 		await pickNavOption(page, 'Window', `${from} days`, `${days} days`);
-		await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-		await expect(profile.getByRole('button', { name: /2026-\d\d-\d\d/, exact: true })).toHaveCount(
-			days
+		await expect(navPill(page, `${days} days`)).toBeVisible();
+		// The wider window's missing earlier days have loaded.
+		await expect(page.getByRole('region', { name: 'Profile analysis' })).toHaveAttribute(
+			'aria-busy',
+			'false'
 		);
+		await expect(charts.first().locator('path.path-area')).toHaveCount(5);
 	}
 	// Every request stays inside the selected complete days: widening the window
 	// fetches only the missing earlier days, never a speculative buffer.
@@ -1400,30 +1665,36 @@ test('time-of-day profiles keep requests bounded and reproduce selections, cover
 		expect(end).toBeLessThanOrEqual(windowEnd);
 		expect(start).toBeGreaterThanOrEqual(windowEnd - 28 * 86_400_000);
 	}
-	await profile.getByText('Profile data and coverage', { exact: true }).click();
-	await expect(
-		profile
-			.getByRole('row')
-			.filter({ has: page.getByRole('rowheader', { name: '00:00', exact: true }) })
-	).toContainText('28/28');
-	const saved = page.waitForEvent('download');
-	await profile.getByRole('button', { name: 'Download profile CSV' }).click();
-	const csv = await readFile(await (await saved).path(), 'utf8');
-	expect(csv).toContain('Average (MW),Days available');
-	expect(csv).toContain('AWST (UTC+08:00),Coal,00:00,100,28,100,6');
+	// 5-minute slots re-average the same native readings: no new request.
+	const fetched = api.requests.length;
+	await pickNavOption(page, 'Interval', '30 min', '5 min');
+	await expect(page).toHaveURL(/profile-interval=5m/);
+	expect(api.requests).toHaveLength(fetched);
+	const csv = await readFile(await (await download(page, 'Profile')).path(), 'utf8');
+	expect(csv.trim().split(/\r?\n/)).toHaveLength(289);
+	expect(csv).toContain(',00:05,');
+	// Each series' average and day count, then every day's value; spot price last.
+	expect(csv).toMatch(/average \(MW\),[^,]+ days,[^,]+ 2026-08-04 \(MW\)/);
+	expect(csv).toContain('Spot price average ($/MWh),Spot price days,Spot price 2026-08-04 ($/MWh)');
+	expect(csv).toMatch(/AWST \(UTC\+08:00\),00:00,(100|200),28,/);
+	// The last day uses the app's date picker; its calendar's reset returns to
+	// the latest complete days.
+	await page.getByRole('button', { name: 'Open calendar' }).click();
+	const calendar = page.locator('[data-calendar-root]');
+	await expect(calendar).toHaveAttribute('aria-label', /Last day/);
+	const latest = page.getByRole('button', { name: 'Latest complete days' });
+	await expect(latest).toBeEnabled();
+	await latest.click();
+	await expect(calendar).toHaveCount(0);
+	await expect(page).not.toHaveURL(/profile-end/);
+	await page.goBack();
+	await expect(page).toHaveURL(/profile-end=2026-08-31/);
 	const url = await copyTrackerLink(page);
 	expect(new URL(url).searchParams.get('view')).toBe('profile');
-	expect(new URL(url).searchParams.get('profile-view')).toBe('daily');
+	expect(new URL(url).searchParams.get('profile-days')).toBe('28');
 	await page.goto(url);
 	await expect(navPill(page, '28 days')).toBeVisible();
-	await expect(navPill(page, 'Daily overlay')).toBeVisible();
-	await expect(navPill(page, 'Coal')).toBeVisible();
-	await expect(profile.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await pickNavOption(page, 'Metric', 'Power', 'Spot price');
-	await expect(profile.getByRole('heading', { name: /Spot price/ })).toBeVisible();
-	await page.goBack();
-	await expect(navPill(page, 'Power')).toBeVisible();
-	await expect(navPill(page, 'Coal')).toBeVisible();
+	await expect(charts).toHaveCount(3);
 });
 
 test('time-of-day switches reset settings, restore history and fit narrow screens', async ({
@@ -1431,10 +1702,11 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 }, testInfo) => {
 	await trackerFixture(page);
 	await page.goto(
-		'/tracker?view=profile&profile-view=daily&profile-end=2026-08-31&profile-days=14&range=30d&interval=1h&hidden=coal&transform=proportion'
+		'/tracker?view=profile&profile-end=2026-08-31&profile-days=14&range=30d&interval=1h&hidden=coal&transform=proportion'
 	);
 	const original = page.url();
-	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
+	const stack = card(page, 'Average over 14 full days').locator('.stratum-chart');
+	await expect(stack).toBeVisible();
 	await page.getByRole('button', { name: 'Timeline', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Timeline', exact: true })).toBeVisible();
 	await expect(card(page, 'Generation')).toBeVisible();
@@ -1442,8 +1714,8 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 	await page.goBack();
 	await expect(page.getByRole('button', { name: 'Profile', exact: true })).toBeVisible();
 	await expect(page).toHaveURL(original);
-	await expect(navPill(page, 'Daily overlay')).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
+	await expect(navPill(page, '14 days')).toBeVisible();
+	await expect(stack).toBeVisible();
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(navPill(page, '14 days')).toBeVisible();
 	await expectNoHorizontalScroll(page);
@@ -1452,27 +1724,48 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 	await page.screenshot({ path: testInfo.outputPath('time-of-day-desktop.png'), fullPage: true });
 });
 
-test('time-of-day failures and empty results remain explicit; switching metric cannot export stale data', async ({
+/** Pick the Profile's last day in the app's date picker: open its calendar,
+ * step back a month and choose the day.
+ * @param {import('@playwright/test').Page} page @param {string} date */
+async function pickProfileLastDay(page, date) {
+	await page.getByRole('button', { name: 'Open calendar' }).click();
+	const calendar = page.locator('[data-calendar-root]');
+	await calendar.getByRole('button', { name: /previous/i }).click();
+	await calendar.locator(`[data-bits-day][data-value="${date}"]`).click();
+	await expect(calendar).toHaveCount(0);
+}
+
+/** The options menu offers only the profile CSV in Profile, enabled once it can export.
+ * @param {import('@playwright/test').Page} page @param {boolean} enabled */
+async function expectProfileDownload(page, enabled) {
+	const menu = await openOptions(page);
+	const item = menu.getByRole('button', { name: 'Profile', exact: true });
+	await (enabled ? expect(item).toBeEnabled() : expect(item).toBeDisabled());
+	await expect(menu.getByRole('button', { name: /workbook/ })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Options', exact: true }).click();
+	await expect(menu).toBeHidden();
+}
+
+test('time-of-day failures and empty results remain explicit and never export a pending series', async ({
 	page
 }) => {
-	const api = await trackerFixture(page, { fail: 'power', hold: 'price' });
-	await page.goto('/tracker?view=profile&profile-end=2026-08-31');
+	const api = await trackerFixture(page, { fail: 'power' });
+	await page.goto('/tracker?view=profile&profile-display=breakdown&profile-end=2026-08-31');
 	await expect(page.getByRole('alert')).toContainText('Fixture failure');
-	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeDisabled();
+	await expectProfileDownload(page, false);
 	api.recover();
 	await page.getByRole('button', { name: 'Retry profile' }).click();
-	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
-	await pickNavOption(page, 'Metric', 'Power', 'Spot price');
-	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeDisabled();
-	await expect(page.getByRole('status')).toContainText('Loading profile');
-	api.release();
-	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeEnabled();
+	await expect(page.getByRole('alert')).toHaveCount(0);
+	await expect(page.getByRole('group', { name: /interactive chart$/ }).first()).toBeVisible();
+	await expectProfileDownload(page, true);
 	await trackerFixture(page, { empty: 'power' });
-	await pickNavOption(page, 'Metric', 'Spot price', 'Power');
 	// Use a new window so the successful response cache cannot satisfy it.
-	await page.getByLabel('Last day', { exact: true }).fill('2026-07-31');
-	await expect(page.getByRole('status')).toContainText('No profile data');
-	await expect(page.getByRole('button', { name: 'Download profile CSV' })).toBeDisabled();
+	await pickProfileLastDay(page, '2026-07-31');
+	// No technology has data in this window; spot price still charts and exports.
+	await expect(page.getByRole('group', { name: /interactive chart$/ }).last()).toHaveAccessibleName(
+		'Spot price interactive chart'
+	);
+	await expectProfileDownload(page, true);
 });
 
 test('copied analytical links restore hidden sources, contribution, transforms and emissions exclusions', async ({

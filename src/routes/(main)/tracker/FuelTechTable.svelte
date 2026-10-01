@@ -51,7 +51,8 @@
 	 * @property {boolean} active - Drawn on the charts
 	 * @property {(exclusive: boolean) => void} activate - ⌘/Ctrl solos the row
 	 * @property {Swatch} swatch
-	 * @property {string[]} cells - One formatted value per `TABLE_COLUMNS` entry
+	 * @property {string[]} cells - One formatted value per column: each
+	 *   `TABLE_COLUMNS` entry, or each `powerColumns` entry when given
 	 * @property {string[]} [breakdown] - Tooltip lines listing the folded fuel techs
 	 * @property {boolean} [dimmed] - Fade the whole row while toggled off
 	 * @property {boolean} [summary] - Bold summary treatment for the overlay rows
@@ -75,6 +76,10 @@
 	 * single unit, so its header is static. The options dialog offers the
 	 * grouping and basis too.
 	 *
+	 * A view can replace the window columns with its own average-power columns
+	 * (`powerColumns`, filled from each row's `powerValues` in the Av power
+	 * unit): the Profile's percentile range, or the ridgeline's days.
+	 *
 	 * In narrow panels, Technology pins left while the value columns scroll
 	 * horizontally and snap into place. The table fills the panel when its visible columns fit.
 	 *
@@ -93,6 +98,9 @@
 		group = DEFAULT_GROUP,
 		contributionMode = 'demand',
 		tableColumns = DEFAULT_TABLE_COLUMNS,
+		powerColumns = undefined,
+		focusColumn = undefined,
+		notes = [],
 		tableUnits = {},
 		curtailmentRows = [],
 		shownCurtailment = [],
@@ -109,6 +117,21 @@
 	} = $props();
 
 	let scrollLeft = $state(0);
+	let scroller = $state(/** @type {HTMLDivElement | undefined} */ (undefined));
+	// Bring a focused column (a hovered ridgeline day) into view beside the
+	// pinned Technology column: a DOM side effect, so an effect. The scroller's
+	// own snapping and `scroll-smooth` (off under reduced motion) do the rest.
+	$effect(() => {
+		const key = focusColumn;
+		if (!key || !scroller) return;
+		const header = scroller.querySelector(`th[data-column="${CSS.escape(key)}"]`);
+		const pinned = scroller.querySelector('th');
+		if (!(header instanceof HTMLElement) || !(pinned instanceof HTMLElement)) return;
+		const left = header.offsetLeft - pinned.offsetWidth;
+		const right = header.offsetLeft + header.offsetWidth;
+		if (left < scroller.scrollLeft || right > scroller.scrollLeft + scroller.clientWidth)
+			scroller.scrollTo({ left });
+	});
 
 	/** The prefix each scalable column renders in: the header's choice, else
 	 *  its default. Av power follows the chart's MW/GW choice while the chart
@@ -154,13 +177,19 @@
 		};
 	}
 
+	/** The viewer-selectable window columns `tableColumns` picks from, or a
+	 *  view's own average-power columns, which share Av power's unit and cycle. */
 	let visibleColumns = $derived(
-		TABLE_COLUMNS.map((column, index) => ({
-			...column,
-			index,
-			...columnHeader(column.key)
-		})).filter((column) => tableColumns.includes(column.key))
+		powerColumns
+			? powerColumns.map((column, index) => ({ ...column, index, ...columnHeader('power') }))
+			: TABLE_COLUMNS.map((column, index) => ({
+					...column,
+					index,
+					...columnHeader(column.key)
+				})).filter((column) => tableColumns.includes(column.key))
 	);
+	/** Cells for a row the view's own columns have no value for. */
+	let emptyCells = $derived((powerColumns ?? TABLE_COLUMNS).map(() => EMPTY_CELL));
 	let showRooftopNote = $derived(
 		rooftopInterpolation && rows.some((row) => row.fuelTechs.includes('solar_rooftop'))
 	);
@@ -188,14 +217,18 @@
 			active: !row.hidden,
 			activate: (exclusive) => ontoggle?.(row.id, exclusive),
 			swatch: { kind: 'solid', colour: row.colour },
-			cells: [
-				formatTableEnergy(row.energyMWh, prefixes.energy),
-				formatTablePower(row.avPowerMW, prefixes.power),
-				formatTablePercentage(row.contributionPct),
-				formatTablePrice(row.vwPrice),
-				formatTableEmissions(row.emissionsT, prefixes.emissions),
-				formatTableIntensity(row.intensityKgPerMWh, prefixes.intensity)
-			],
+			cells: powerColumns
+				? powerColumns.map(({ key }) =>
+						formatTablePower(row.powerValues?.[key] ?? null, prefixes.power)
+					)
+				: [
+						formatTableEnergy(row.energyMWh, prefixes.energy),
+						formatTablePower(row.avPowerMW, prefixes.power),
+						formatTablePercentage(row.contributionPct),
+						formatTablePrice(row.vwPrice),
+						formatTableEmissions(row.emissionsT, prefixes.emissions),
+						formatTableIntensity(row.intensityKgPerMWh, prefixes.intensity)
+					],
 			breakdown: underlyingFuelTechs(row),
 			interpolated: rooftopInterpolation && row.fuelTechs.includes('solar_rooftop'),
 			dimmed: row.hidden,
@@ -211,14 +244,16 @@
 			active: shownCurtailment.includes(row.id),
 			activate: (exclusive) => oncurtailmenttoggle?.(row.id, exclusive),
 			swatch: { kind: 'hatch', colour: CURTAILMENT_COLOURS[row.id] ?? '#888' },
-			cells: [
-				formatTableEnergy(row.energyMWh, prefixes.energy),
-				formatTablePower(row.avPowerMW, prefixes.power),
-				formatTablePercentage(row.contributionPct),
-				EMPTY_CELL,
-				EMPTY_CELL,
-				EMPTY_CELL
-			]
+			cells: powerColumns
+				? emptyCells
+				: [
+						formatTableEnergy(row.energyMWh, prefixes.energy),
+						formatTablePower(row.avPowerMW, prefixes.power),
+						formatTablePercentage(row.contributionPct),
+						EMPTY_CELL,
+						EMPTY_CELL,
+						EMPTY_CELL
+					]
 		};
 	}
 
@@ -239,14 +274,16 @@
 			active,
 			activate: (exclusive) => ontogglerow?.(exclusive),
 			swatch: { kind: 'line', colour },
-			cells: [
-				formatTableEnergy(energyMWh, prefixes.energy),
-				formatTablePower(avPowerMW, prefixes.power),
-				formatTablePercentage(sharePct),
-				EMPTY_CELL,
-				EMPTY_CELL,
-				EMPTY_CELL
-			],
+			cells: powerColumns
+				? emptyCells
+				: [
+						formatTableEnergy(energyMWh, prefixes.energy),
+						formatTablePower(avPowerMW, prefixes.power),
+						formatTablePercentage(sharePct),
+						EMPTY_CELL,
+						EMPTY_CELL,
+						EMPTY_CELL
+					],
 			summary: true
 		};
 	}
@@ -377,7 +414,14 @@
 		</td>
 		{#each visibleColumns as column, index (column.key)}
 			{@const cell = row.cells[column.index]}
-			<td class={tableValueCell(cell, index === visibleColumns.length - 1, cellPad)}>{cell}</td>
+			<td
+				class="{tableValueCell(cell, index === visibleColumns.length - 1, cellPad)} {column.key ===
+				focusColumn
+					? 'bg-light-warm-grey'
+					: ''}"
+			>
+				{cell}
+			</td>
 		{/each}
 	</tr>
 {/snippet}
@@ -419,6 +463,7 @@
 	<!-- Horizontal scroller. Snap padding reserves the pinned column, so a
 	     snapped value column lands flush against it. The table expands to fill wider panels. -->
 	<div
+		bind:this={scroller}
 		onscroll={(event) => (scrollLeft = event.currentTarget.scrollLeft)}
 		class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--tech-w) scroll-smooth motion-reduce:scroll-auto"
 	>
@@ -466,9 +511,11 @@
 					</th>
 					{#each visibleColumns as column, index (column.key)}
 						<th
-							class="w-[100px] snap-start text-right {index === visibleColumns.length - 1
+							data-column={column.key}
+							class="w-[100px] snap-start text-right transition-colors {index ===
+							visibleColumns.length - 1
 								? 'pr-3 pl-2'
-								: 'px-2'} {TABLE_HEADER_CELL}"
+								: 'px-2'} {column.key === focusColumn ? 'bg-warm-grey' : ''} {TABLE_HEADER_CELL}"
 						>
 							{#if column.cycle}
 								<button
@@ -524,6 +571,9 @@
 				{/if}
 			</li>
 			<li>Emissions intensity: each technology's emissions divided by its generation.</li>
+			{#each notes as note (note)}
+				<li>{note}</li>
+			{/each}
 		</ul>
 	</footer>
 </div>

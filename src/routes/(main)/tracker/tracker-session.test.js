@@ -12,7 +12,6 @@ describe('Tracker navigation', () => {
 		const session = createTrackerSession(initial, changed);
 		session.connect(() => []);
 		session.select('region', 'wem');
-		session.select('profileView', 'daily');
 		session.select('profileDays', 28);
 		const previous = session.selection;
 		session.selectView('compare');
@@ -28,8 +27,7 @@ describe('Tracker navigation', () => {
 			charts: ['price']
 		});
 		session.selectView('profile');
-		expect(session.selection).toMatchObject({ view: 'profile', profileView: 'average' });
-		expect(session.selection.profileDays).toBe(7);
+		expect(session.selection).toMatchObject({ view: 'profile', profileDays: 7 });
 		expect(session.selection.regionComparison.interval).toBe('12mr');
 		session.selectView('timeline');
 		expect(session.following).toBe(true);
@@ -134,22 +132,16 @@ describe('Tracker navigation', () => {
 		const session = createTrackerSession(initial, changed);
 		const before = session.selection.range;
 		const applyRange = vi.spyOn(session.range, 'handleRangeSelect');
-		session.select('profileView', 'daily');
 		session.select('profileDays', 28);
-		session.select('profileMetric', 'price');
-		session.select('profileSeries', 'wind');
+		session.select('profileEnd', '2026-08-31');
 		const selected = session.selection;
 		session.select('region', 'au');
-		expect(session.selection.profileMetric).toBe('power');
 		session.select('group', 'rvf');
-		expect(session.selection.profileSeries).toBe('');
 		changed.mockClear();
 		session.restore(selected);
 		expect(session.selection).toMatchObject({
-			profileView: 'daily',
 			profileDays: 28,
-			profileMetric: 'price',
-			profileSeries: 'wind',
+			profileEnd: '2026-08-31',
 			range: before
 		});
 		expect(changed).not.toHaveBeenCalled();

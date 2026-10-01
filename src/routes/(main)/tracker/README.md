@@ -182,22 +182,159 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   using `tracker-url.js` for parsing/serialisation. SvelteKit shallow history
   updates the address bar without updating `page.url`, so Back/Forward uses
   `popstate`; ordinary same-route links are observed through `page.url`.
+- **`TrackerSplitLayout.svelte`** — every view's shell: a scrolling chart
+  column beside the resizable docked table panel, or the rail that reopens
+  it. Each view passes its panel bounds (`FUEL_TECH_SPLIT` for Timeline and
+  Profile; Compare's regions table remembers its width and overlays the charts
+  below 1024px) and renders its panel through a snippet that receives the
+  docked-panel controller for the close/open focus hand-off.
 - **`TrackerCanvas.svelte`** — three mounted timeline chart cards and the table
   layout, with shared hover/gesture state and series selection.
 - **`TimeOfDay.svelte`** / **`time-of-day.js`** — a separate bounded profile view
-  and pure network-local window, aggregation and CSV helpers. Timeline and profile
-  canvases are mutually exclusive; explicit view changes reset selections and
-  browser history restores them.
-- **`AverageDayStack.svelte`** — all-technology average-day stacked area above
-  the individual profiles, including while viewing daily overlays or spot price.
+  and pure network-local window, aggregation, table and CSV helpers. Timeline and
+  profile canvases are mutually exclusive; explicit view changes reset selections
+  and browser history restores them. It mirrors Timeline's layout: chart cards
+  beside the fuel-tech table on the right (`averageDayTableRows`). A **Stacked
+  / Breakdown** switch at the start of the top-nav filters chooses the cards:
+  one stack of every technology, titled for its window ("Average over last 28
+  full days", or "Average over 28 full days" once a last day is picked), or a
+  chart per technology, two columns wide, then spot price. Stacked shows
+  the stacked area chart and stacked **Radial bars** ("Average by hour")
+  side by side: every visible technology's hourly average stacked around the
+  dial (sources outward, loads inward from the zero ring), read out as the
+  hour's net. The radial bars have no enlarge mode there; the retired
+  `profile-stack` style parameter is dropped from old links.
   **`profile-data.svelte.js`** shares the bounded source lifecycle on the
   headless provider core (`exactWindow`, so the selected days are fetched with
-  no speculative buffer): one power source serves both stack and individual
-  power, with price enabled on demand, and each source exposes `rows`, `meta`,
-  `pending`, `error` and `retry()`.
-- **`ProfileChart.svelte`** / **`profile-chart.js`** — adapt profile rows to the
-  existing StratumChart, sharing its rendering, tooltips, options and gestures.
-  Clock-only axes and bounded viewports keep the synthetic chart date invisible.
+  no speculative buffer): one power source serves the stack, the table and the
+  technology cards, price and gross demand load on demand, and each source
+  exposes `rows`, `meta`, `pending`, `error` and `retry()`. Each source input is
+  derived on its own and the window is keyed by its bounds, so a new interval
+  or an unrelated selection change never rebuilds a manager or refetches.
+- **`ProfileChart.svelte`** / **`profile-chart.js`** — the profile chart on the
+  existing StratumChart (rendering, tooltip strip, options bar, zoom/pan and
+  `ChartCard` resizing), plus the pure row adapters. Clock-only axes and bounded
+  viewports keep the synthetic chart date invisible. Stacked draws the
+  all-technology average-day stack. Breakdown draws one card per technology,
+  in table order and two columns wide from `md` (the fuel-tech table's row
+  toggles show and hide them through the same `hidden` as the stack), then a
+  **Market** card charting regional spot price ($/MWh, stepped, in neutral grey
+  so the red today line reads) where the region has one: each with its
+  average area, lightened to
+  35% opacity, with every day as a thin line in the series colour and the
+  average as a dark (`#222222`) line on top (Stratum overlay lines). The
+  breakdown's optional **Show today** toggle (`profile-today=1`, off by
+  default) adds the current, incomplete network-local day so far as a thicker
+  (2.5px) OE red line (`OE_RED`, `#C74523`) ending at the latest reading. Today
+  is fetched by its own bounded sources (network midnight to the page's clock)
+  only while the line is shown, and never joins the average, stack, table or
+  CSV. The radial heatmap has no today ring: there the toggle is disabled and
+  shows off (Toggle's `disabled`), and today isn't fetched, while the URL keeps
+  the choice for the other styles. The breakdown's charts share one hover (`ProfileChart`'s
+  `onhoverchange` / `syncHoverTime`), as Timeline's cards do, and the radial
+  clocks share the hovered hour (`RadialClock`'s bindable `active`). Hovering or
+  pinning any card drives the table and the range readout.
+  A top-nav **Style** dropdown (`profile-style`) switches the breakdown between
+  **Percentile bands** (the default), that **Multi-line** view and
+  **Ridgeline** under a Linear subheader, and **Bars** and **Heatmap** under
+  Radial (FilterSelect's `group`; the pill reads "Radial bars" / "Radial
+  heatmap" through `selectedLabel`, and the URL keeps `radial` / `heatmap`). Percentile bands show each slot's 10–90% and 25–75% spread across
+  the window's days (drawn as an invisible 10th-percentile base plus four
+  stacked bands) with a dark median line and today; the strip (`ProfileChart`'s
+  `readout`) shows the slot's average rather than a band thickness. The
+  fuel-tech table swaps its window columns for the percentile range
+  (`PERCENTILE_TABLE_COLUMNS`: 10%, 25%, Median, 75%, 90%, in the Av power
+  unit, through `FuelTechTable`'s generic `powerColumns` / row `powerValues`;
+  the ridgeline uses the same mechanism for an Average column plus one per
+  date — each day's value in the inspected slot, else each day's average
+  power): across the inspected slot's days, or, without one, across each day's
+  average power (`profileRange`). Loads read as magnitudes, so their order
+  flips (their 10% is minus the raw 90%). The
+  percentiles (`profilePercentiles`) take, for each time-of-day slot, one value
+  per day — that day's mean of its 5-minute readings in the slot, days without
+  a reading left out — sort them and interpolate linearly between neighbours
+  (d3 `quantileSorted`, the same as Excel's `PERCENTILE.INC`): percentile p
+  sits at position (n − 1) × p in the sorted list. With 7 days the 10th
+  percentile is 0.6 of the way from the lowest day to the second lowest and the
+  median is the middle day; 28 days give smoother bands. They describe how the
+  slot varies from day to day, not within the slot, and today never joins them.
+- **`Ridgeline.svelte`** — one offset curve per day for comparing day shapes:
+  the oldest at the top, each later day in front of and overlapping the one
+  above (an opaque tint hides the ridges behind, and each casts a very subtle
+  shadow up onto the one behind it for depth), on one
+  shared amplitude scale over the whole synthetic day; today, when shown, is
+  the front ridge outlined in OE red. Each ridge gets at least 18px between
+  baselines, so longer windows grow the chart past the card's height (7 days
+  keep it, 14 days reach about 300px, 28 days about 550px with every date
+  labelled). Loads read positive, as in the radial
+  clock; spot price steps. Hover joins the shared breakdown hover (and so the
+  table and range readout) and the strip reads the slot's average and today.
+  The day whose ridge is under the pointer (`onhoverday`: each ridge owns the
+  band just above its baseline) becomes the table's `focusColumn`, which
+  scrolls that date's column in beside the pinned Technology column and
+  highlights it. The same day's ridge is highlighted on every ridgeline card
+  (`activeDay`): a stronger tint, a thicker outline and a bold label.
+  Custom SVG (d3-shape) because Stratum has no offset baselines; PNG export
+  captures it like the radial clock.
+- **`dial.js`** / **`DialNight.svelte`** / **`DialFace.svelte`** / **`daylight.js`**
+  — the 24-hour dials' shared face. Noon sits at the top and midnight at the
+  bottom, running clockwise (`dialAngle`), so day fills the upper half like the
+  sun's path. `DialNight` shades the window's average night (sunset round to
+  sunrise) behind the data, and `DialFace` draws the 00/06/12/18 ticks and
+  labels in a `DIAL_MARGIN` around the dial, each label anchored by its inner
+  edge so all four sit the same gap from the dial. `averageDaylight` (low-precision NOAA solar
+  equations, no dependency) averages each day's sunrise and sunset at the
+  region's capital — or across the capitals for the NEM and All Regions — as
+  hours on the network clock. Market time never shifts for daylight saving, so
+  South Australia's night sits visibly later. The heatmap's cells fill its
+  dial, so there `DialNight` is an `overlay`: a translucent dark wash above
+  the cells (which read through it), never taking the pointer. While a dial
+  shows, `daylightNote` adds the
+  table's last footnote (FuelTechTable's `notes`), naming the capitals and the
+  market clock behind the shading.
+- **`ChartLightbox.svelte`** — enlarges one radial chart over the page like a
+  photo lightbox (on the shared `Modal`). Each radial card's header gets an
+  Enlarge button (ChartCard's `onexpand`). Previous / Next or ← / → step
+  through the breakdown's radial cards, wrapping at the ends; the stacked dial
+  opens alone. TimeOfDay's `dial` snippet draws the same chart for a card and
+  the lightbox, on the same hover state, so the readout and table follow it.
+  Heatmap cards are `mini` ChartCards, styled like the scenarios' mini charts:
+  an h6 title on the left over a header rule, and an unpadded body (the
+  heatmap pads its dial, so its readout band runs edge to edge).
+- **`RadialHeatmap.svelte`** — each ring is a day on a 24-hour dial (noon at
+  the top, clockwise; the oldest day innermost, the latest outermost). Each cell is a slot shaded from near-white to the series
+  colour; missing readings stay blank. Cells paint to a canvas (thousands at
+  5-minute slots, too many for SVG paths); the dial, labels and hover outline
+  are SVG above it, both PNG-exportable. Hover shares the breakdown's slot and
+  day (`onhoverday`), so siblings outline the same
+  cell, a one-line readout on a light band flush to the card's edges (day and
+  slot on the left, a step smaller; value and unit on the right, dollars as
+  "$43.17/MWh" via `dial.js`'s `dialValue`) follows it, and the table scrolls to the
+  day's column (the ridgeline's Average-and-dates columns). Square cards in the
+  radial clock's flowing grid; loads read positive.
+- **`RadialClock.svelte`** — a series' average by hour (`hourlyProfile`)
+  around a 24-hour dial, square at its card's width (radial cards flow in as
+  many ≥240px columns as fit, without the shared drag-to-resize height), noon at the top running clockwise, night shaded behind: slices grow from
+  a baseline ring (inward for negative hours, such as negative prices; the
+  grouping's loads — charging, pumping — are flipped positive so they grow
+  outward), today's hourly averages draw as
+  an OE red radial line, and hovering anywhere in an hour's sector — centre to
+  just past the dial, through invisible gap-free hit areas, however short the
+  bar — shades that sector in warm grey behind the bars and reads out the
+  hour, value (with "net" when stacked) and today's value on the heatmap's
+  band (`DialReadout`, shared by both radial charts). Radial bar cards are
+  `mini` ChartCards like the heatmap's, the stacked dial included. The
+  hovered hour also drives the table
+  and the range readout: `averageDayTableRows` inspects a time range (an
+  inspected chart slot, or the hour's two or twelve slots), so the table shows
+  that hour's average power. Values also sit in each slice's `<title>` and a
+  visually hidden table; the SVG carries `data-png-layer` inside a
+  `data-chart-area` root, so PNG export captures it. Custom SVG (d3-shape)
+  because Stratum has no radial chart. With several `layers` (the Stacked
+  display's radial style) each hour stacks them in order, positives outward
+  and negatives inward, the hub and titles read the net total and the hidden
+  table gains a column per layer; the breakdown passes a single layer. The hub is a
+  third of the radius.
 - **`DateComparison.svelte`** / **`comparison.js`** — compare two accepted
   generation display buckets using Stratum's categorical bars, a signed-value
   table and CSV. No separate fetch or data manager. Rows carry `isLoad` by the
@@ -268,7 +405,7 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   Technology header opens the grouping list (the shared `FilterSelect`
   through a custom `trigger`), and the Contribution header toggles its basis. The same trigger stays in the
   collapsed table rail, allowing chart configuration without table-provider
-  fetches. Time of day has a grouping-only dialog in the top nav. Global page
+  fetches. Profile changes its grouping and contribution basis the same way (Technology and Contribution headers, or the options dialog — without table columns — in the panel header and rail); its top nav has no grouping control. Global page
   options now contain only page actions (exports, link, fullscreen and docs).
   `FuelTechOptions` composes the app’s shared `Modal` (Bits UI Dialog), `Select`
   in its expanded radio-list mode, `Checkbox` and button components. The dialog
@@ -507,55 +644,81 @@ disposed on changes or close. CSV/XLSX semantics remain unchanged.
 ## URL schema
 
 Profile selections: `view=profile` (Timeline is the default),
-`profile-view=daily` (default average day),
-`profile-days=14|28` (default 7), `profile-metric=price` (default power),
-`profile-series=<group-id>` (default first available), and
+`profile-display=breakdown` (default stacked), `profile-style=lines|radial|ridgeline|heatmap` (the breakdown's style; default
+percentile bands), `profile-today=1` (the
+breakdown's current-day line; default off), `profile-interval=5m`
+(default 30-minute slots), `profile-days=14|28` (default 7), and
 `profile-end=YYYY-MM-DD` (inclusive last day; default yesterday in network time).
 Copied links and Back/Forward retain these separately from the timeline range.
-All-Australia has no spot-price series and normalises that metric to power.
-Changing grouping validates the chosen series against the new group. A requested
-technology absent from the response stays unavailable instead of showing another.
+Profile also honours the shared `hidden` (technologies left out of the stack
+and the breakdown),
+`contribution` and `table=0` (fuel-tech panel closed) parameters.
+The retired `profile-metric`, `profile-view`, `profile-series` and `profile-stack` parameters
+are dropped from old links.
 
 ### Time-of-day semantics
 
-Use the navigation **Analysis view** dropdown (the same `FilterSelect` component
-as Region) to select **Time of day**, then **Average day** or **Daily overlay**. Choose a fuel
-technology (using the top nav's fuel technology options) or regional spot price, a 7/14/28-day
-window and an optional historical last day. Future dates clamp to yesterday;
+Use the navigation **Analysis view** switch to select **Profile**, then
+**Stacked** or **Breakdown**, a 7/14/28-day window "to" an optional
+historical last day (one phrase: "7 days to 30/09/2026"), then a 5- or
+30-minute **Interval**, in the top nav. The last day uses the app's `DatePicker` (`$lib/components/ui/date-picker`, built on bits-ui's
+DatePicker: a typeable input whose calendar opens in its own popover); its
+border darkens for a past day and its calendar footer offers **Latest complete
+days**. Breakdown adds
+**Style** and **Show today** to the top nav, and its charts follow the fuel-tech
+table's row toggles. Future dates clamp to yesterday;
 days use fixed network offsets (NEM/Australia UTC+10, WEM UTC+08), not civil DST.
 The overview stacks all returned fuel technologies in the selected grouping,
 using the standard group colours/order and the main chart's cumulative stack:
 negative power pulls the stack down rather than forming an independent negative
-stack. Average power uses smooth curves. It is independent of the selected individual technology and
-timeline visibility. Each technology uses the same daily averaging as its
-individual profile. If any technology's half-hour average is missing, that whole
-stacked half-hour is a gap rather than a partial total. The expandable overview
-table retains each technology's available averages and day counts, even where
-the stack cannot be drawn. It remains visible beside spot-price analysis, with
-its own loading/error/retry state.
-Half-hour slots average available 5-minute readings within each day, then average
-those daily values with equal day weights. Nulls/non-finite readings remain gaps;
+stack. Average power uses smooth curves. Each technology uses the same daily averaging as its
+technology card. If any technology's slot average is missing, that whole
+stacked slot is a gap rather than a partial total. It has its own
+loading/error/retry state.
+
+The fuel-tech table on the right replaces the legend. It reuses Timeline's
+`FuelTechPanel`, fed by `averageDayTableRows` (a thin wrapper over
+`buildFuelTechTableRows`): each technology's average power, its energy over the
+average day (MWh) and its contribution, from that technology's own half-hour
+averages, so a technology missing from some slots still reports the slots it
+has. Contribution follows Timeline's URL-owned basis (`contribution`): a share of
+the average day's gross demand (the default; regional `demand_gross` for the
+same complete days via `createProfileDemand`, averaged like any profile and
+fetched only while the table shows it) or of source generation. While the stack
+or a card is hovered or pinned, the table shows that slot and the top nav's range readout (the selected days, e.g.
+"25 – 31 Aug 2026") shows its clock range. Row clicks show/hide technologies in
+the stack (Ctrl/⌘-click solos, hiding the last row restores all) through the
+same URL-owned `hidden` selection as Timeline; the Technology header changes the
+grouping and the value headers cycle units.
+Each slot (30 minutes, or 5 for the native readings) averages the available
+5-minute readings within each day, then averages those daily values with equal
+day weights. Nulls/non-finite readings remain gaps;
 zero and negative values are retained. Partial coverage is explicit in the table
-and CSV. Price is time-weighted, not volume-weighted. Power uses absolute MW and
+and CSV. Power uses absolute MW and
 negative charging/pumping; timeline visibility, contribution and transforms do
-not apply. All profiles use the existing StratumChart. Power curves are smooth;
-spot price remains stepped. The average is a dark line among daily overlays.
-Legend buttons show/hide series; Ctrl/⌘-click solos/restores them. Hover and pinning,
-keyboard inspection, bounded pan/zoom (one hour to 24 hours), unit/curve options
-and resizing use the shared chart conventions. Legend and viewport changes are
-local display state and do not alter aggregation, coverage tables or CSV.
+not apply. All profiles use the existing StratumChart on smooth power curves.
+The average is a dark line among the breakdown's days. Charts use Timeline's
+tooltip strip (the table holds the full breakdown). Hover and
+pinning, keyboard inspection (a focus-only Inspect values control), bounded
+pan/zoom (one hour to 24 hours), unit/curve options and `ChartCard` resizing use
+the shared chart conventions. Viewport changes are local display state and do
+not alter aggregation or CSV.
 
 The documented browser caller is `TimeOfDay.svelte` via `profile-data.svelte.js`, using the existing
 `ChartDataManager` and `/api/network/data` (`metric=power|price`, `interval=5m`).
 Each source requests only the selected complete days, with no speculative widening or
 cross-grain prefetch; at most 28 days per source/selection. Widening the window
 fetches only the missing earlier days (the provider's cache is gap-aware). Power stays mounted
-for the overview; price is fetched only when selected. Scope/window changes dispose
+for every chart and the table; gross demand and today load only when shown. Scope/window changes dispose
 the prior consumer, and identity checks prevent stale displays/exports. Shared
 response caching, deduplication and bounded retry/error handling remain in use.
-View, technology, legend and chart-interaction changes do not refetch. Profile CSV contains
-the average, every daily value, available-day counts and per-day native sample
-counts in base units; timeline CSV/XLSX actions are disabled in this view.
+View, interval, series (once loaded), visibility and chart-interaction changes do
+not refetch. The options menu's downloads follow the view: in Profile it offers a
+single **Profile** CSV of the shown display (`profileDataset`: a row per slot
+with each series' average and available-day count, in base units — every
+technology when Stacked; the shown technologies and spot price, plus every
+day's value, when Breakdown) and no workbook. PNG export offers the stack, or
+each breakdown card. Spot price loads only in Breakdown.
 
 ### Timeline selections
 
@@ -744,8 +907,8 @@ Timeline charts use the shared fixed tooltip strip above each chart, showing the
 interval, hovered series and total where applicable. Narrow cards reserve two
 lines, keeping the plot stable on hover. The table provides the complete series
 breakdown and contribution percentages at the same timestamp; leaving inspection
-restores the window totals. Time of day and Compare regions retain their existing
-tooltip presentations.
+restores the window totals. Profile's average-day stack shares the strip; its
+individual profile and Compare regions keep floating tooltips.
 
 The generation chart's **Proportion** view uses the same basis selected in
 **Fuel technology options → Contribution** as the table, including from the

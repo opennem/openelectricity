@@ -20,30 +20,49 @@ function chartRow(minute, values) {
 	return { ...values, time, date: new Date(time) };
 }
 
-/** @param {ReturnType<typeof import('./time-of-day.js').buildDailyProfile>} profile
- * @param {string[]} dates @param {boolean} daily */
-export function individualProfileRows(profile, dates, daily) {
+/** One profile as chart rows: its `average`, plus every day's value keyed by date.
+ * @param {ReturnType<typeof import('./time-of-day.js').buildDailyProfile>} profile
+ * @param {string[]} dates */
+export function dailyProfileRows(profile, dates) {
 	return profile.map((row) =>
 		chartRow(row.minute, {
-			...(daily ? Object.fromEntries(dates.map((date, i) => [date, row.values[i]])) : {}),
+			...Object.fromEntries(dates.map((date, i) => [date, row.values[i]])),
 			average: row.average
 		})
 	);
 }
 
-/** @param {ReturnType<typeof import('./time-of-day.js').buildAverageDayStack>} layers */
-export function stackedProfileRows(layers) {
+/** One profile's averages as chart rows keyed by `key`.
+ * @param {ReturnType<typeof import('./time-of-day.js').buildDailyProfile>} profile
+ * @param {string} key */
+export function profileRows(profile, key) {
+	return profile.map((row) => chartRow(row.minute, { [key]: row.average }));
+}
+
+/** @typedef {ReturnType<typeof import('./time-of-day.js').buildAverageDayStack>} ProfileLayers */
+
+/** One chart row per half-hour slot, valued per technology by `value`.
+ * @param {ProfileLayers} layers
+ * @param {(point: ProfileLayers[number]['points'][number]) => number | null} value */
+function layerRows(layers, value) {
 	return (layers[0]?.points ?? []).map((point, i) =>
 		chartRow(
 			point.minute,
-			Object.fromEntries(
-				layers.map((layer) => [
-					layer.name,
-					layer.points[i].y0 === null ? null : layer.points[i].value
-				])
-			)
+			Object.fromEntries(layers.map((layer) => [layer.name, value(layer.points[i])]))
 		)
 	);
+}
+
+/** The drawn stack: a slot any technology is missing from is a gap for all.
+ * @param {ProfileLayers} layers */
+export function stackedProfileRows(layers) {
+	return layerRows(layers, (point) => (point.y0 === null ? null : point.value));
+}
+
+/** Each technology's own average, whether or not the stack can be drawn.
+ * @param {ProfileLayers} layers */
+export function averageProfileRows(layers) {
+	return layerRows(layers, (point) => point.value);
 }
 
 /** @param {number} start @param {number} end */

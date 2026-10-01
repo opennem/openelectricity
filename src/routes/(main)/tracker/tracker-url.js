@@ -6,7 +6,12 @@
  *
  * Schema (defaults omitted so the canonical URL stays clean):
  * - `view`      — `profile` or `compare`; Timeline has no view parameter
- * - `profile-view` — `daily` for the Profile view's daily display (default average)
+ * - `profile-display` — `breakdown` for the Profile's per-series cards (default stacked)
+ * - `profile-style` — `lines` (multi-line), `radial` (radial clock),
+ *                 `ridgeline` or `heatmap` (radial heatmap) for the breakdown;
+ *                 default percentile bands
+ * - `profile-today` — `1` adds the current day's line to the breakdown charts
+ * - `profile-interval` — `5m` for 5-minute Profile slots (default 30-minute)
  * - `region`    — tracker scope, default `_all` (NEM)
  * - `range` | `start`+`end`, `interval` — via the shared facility range params
  * - `group`     — fuel-tech grouping, default `simple` (Simplified)
@@ -45,7 +50,13 @@ import {
 	normaliseRegionComparison,
 	parseRegionComparison
 } from './region-comparison.js';
-import { normaliseProfileView, normaliseProfileDays, normaliseProfileEnd } from './time-of-day.js';
+import {
+	normaliseProfileDays,
+	normaliseProfileDisplay,
+	normaliseProfileEnd,
+	normaliseProfileInterval,
+	normaliseProfileStyle
+} from './time-of-day.js';
 import { hasSpotPrice, TRACKER_REGION_VALUES } from './tracker-regions.js';
 import { normaliseComparison } from './comparison.js';
 import {
@@ -114,9 +125,8 @@ export function validBucketFilterFor(filter, range) {
 /**
  * Every invariant the navigation state must satisfy, applied in one place so
  * parsing a URL, serialising one and the per-page session cannot disagree:
- * unknown regions/groups fall back to the defaults, hidden series and the
- * profile series must belong to the selected grouping, the profile metric
- * needs a spot price, and the calendar filter needs the All tier.
+ * unknown regions/groups fall back to the defaults, hidden series must belong
+ * to the selected grouping, and the calendar filter needs the All tier.
  * @param {{ [K in keyof TrackerUrlState]?: unknown }} value
  * @returns {TrackerUrlState}
  */
@@ -130,7 +140,6 @@ export function normaliseTrackerState(value) {
 			? value.group
 			: DEFAULT_GROUP;
 	const range = normaliseRange(value.range);
-	const profileSeries = typeof value.profileSeries === 'string' ? value.profileSeries : '';
 	return {
 		region,
 		group,
@@ -140,10 +149,11 @@ export function normaliseTrackerState(value) {
 				value.regionComparison ?? undefined
 			)
 		),
-		profileView: normaliseProfileView(value.profileView),
+		profileDisplay: normaliseProfileDisplay(value.profileDisplay),
+		profileStyle: normaliseProfileStyle(value.profileStyle),
+		profileInterval: normaliseProfileInterval(value.profileInterval),
+		profileToday: value.profileToday === true || value.profileToday === '1',
 		profileDays: normaliseProfileDays(value.profileDays),
-		profileMetric: value.profileMetric === 'price' && hasSpotPrice(region) ? 'price' : 'power',
-		profileSeries: getGroup(group).order.includes(profileSeries) ? profileSeries : '',
 		profileEnd: normaliseProfileEnd(value.profileEnd),
 		comparison: normaliseComparison(value.comparison),
 		hiddenSeries: normaliseHiddenSeries(value.hiddenSeries, group),
@@ -174,10 +184,11 @@ export function parseTrackerUrl(params, context) {
 		group: params.get('group') || DEFAULT_GROUP,
 		view: params.get('view'),
 		regionComparison: parseRegionComparison(params),
-		profileView: params.get('profile-view'),
+		profileDisplay: params.get('profile-display'),
+		profileStyle: params.get('profile-style'),
+		profileInterval: params.get('profile-interval'),
+		profileToday: params.get('profile-today'),
 		profileDays: params.get('profile-days'),
-		profileMetric: params.get('profile-metric'),
-		profileSeries: params.get('profile-series') ?? '',
 		profileEnd: params.get('profile-end'),
 		comparison:
 			params.get('compare') === '1'
@@ -216,10 +227,11 @@ export function applyTrackerUrl(url, state) {
 		set(`compare-${side}`, time == null ? null : String(time));
 	}
 	set('view', next.view === 'timeline' ? null : next.view);
-	set('profile-view', next.profileView === 'daily' ? 'daily' : null);
+	set('profile-display', next.profileDisplay === 'breakdown' ? 'breakdown' : null);
+	set('profile-style', next.profileStyle === 'bands' ? null : next.profileStyle);
+	set('profile-interval', next.profileInterval === '5m' ? '5m' : null);
+	set('profile-today', next.profileToday ? '1' : null);
 	set('profile-days', next.profileDays === 7 ? null : String(next.profileDays));
-	set('profile-metric', next.profileMetric === 'price' ? 'price' : null);
-	set('profile-series', next.profileSeries || null);
 	set('profile-end', next.profileEnd || null);
 	set('region', next.region === DEFAULT_REGION ? null : next.region);
 	set('group', next.group === DEFAULT_GROUP ? null : next.group);
@@ -245,6 +257,11 @@ export function applyTrackerUrl(url, state) {
 	set('table', next.tablePanelOpen ? null : '0');
 	// Table columns are a localStorage preference now; drop the retired param.
 	params.delete('columns');
+	// The breakdown draws every technology, every day, with no spot price, and
+	// Stacked shows its area and radial bars side by side; drop the retired
+	// metric, view, series and stacked-style choices.
+	for (const retired of ['profile-metric', 'profile-view', 'profile-series', 'profile-stack'])
+		params.delete(retired);
 
 	return url;
 }

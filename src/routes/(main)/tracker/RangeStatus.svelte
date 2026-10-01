@@ -4,14 +4,15 @@
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 
 	/**
-	 * RangeStatus — the top-nav readout for the timeline view: the selected
-	 * range label, replaced by the hovered or keyboard-inspected period while
-	 * a chart is being inspected, and by the loader while data updates. The
-	 * readout is a button: hovering it says when the data last updated, and
-	 * tapping it refreshes (the timeline fetches nothing on its own).
+	 * RangeStatus — the top-nav readout for the timeline and profile views:
+	 * the selected range label, replaced by the hovered or keyboard-inspected
+	 * period while a chart is being inspected, and by the loader while data
+	 * updates. With `onrefresh` the readout is a button: hovering it says when
+	 * the data last updated, and tapping it refreshes (the timeline fetches
+	 * nothing on its own). Without it, the readout is a plain label.
 	 *
 	 * @type {{ label: string, inspectLabel?: string, loading: boolean,
-	 *   updatedLabel?: string, onrefresh: () => void }}
+	 *   updatedLabel?: string, onrefresh?: () => void }}
 	 */
 	let { label, inspectLabel = undefined, loading, updatedLabel = undefined, onrefresh } = $props();
 </script>
@@ -22,24 +23,32 @@
 	data-inspecting={inspectLabel !== undefined}
 	data-testid="tracker-range-status"
 >
-	<Tooltip
-		lines={[...(updatedLabel ? [`Updated ${updatedLabel}`] : []), 'Tap to refresh (R)']}
-		side="bottom"
-	>
-		{#snippet trigger({ props })}
-			<button
-				{...mergeProps(props, { onclick: onrefresh })}
-				type="button"
-				class="range-label hidden h-full items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey lg:flex"
-				disabled={loading}
-				aria-hidden={loading}
-				aria-label="Refresh data"
-				data-testid="tracker-range-label"
-			>
-				{inspectLabel ?? label}
-			</button>
-		{/snippet}
-	</Tooltip>
+	{#if onrefresh}
+		<Tooltip
+			lines={[...(updatedLabel ? [`Updated ${updatedLabel}`] : []), 'Tap to refresh (R)']}
+			side="bottom"
+		>
+			{#snippet trigger({ props })}
+				<button
+					{...mergeProps(props, { onclick: onrefresh })}
+					type="button"
+					class="range-label hidden h-full items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey lg:flex"
+					disabled={loading}
+					aria-hidden={loading}
+					aria-label="Refresh data"
+					data-testid="tracker-range-label"
+				>
+					{inspectLabel ?? label}
+				</button>
+			{/snippet}
+		</Tooltip>
+	{:else}
+		<span
+			class="range-label hidden h-full items-center whitespace-nowrap px-4 text-sm font-bold text-dark-grey lg:flex"
+			aria-hidden={loading}
+			data-testid="tracker-range-label">{inspectLabel ?? label}</span
+		>
+	{/if}
 	<div
 		class="range-loader pointer-events-none absolute inset-0 flex items-center justify-end"
 		role={loading ? 'status' : undefined}

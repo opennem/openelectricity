@@ -137,7 +137,10 @@
 	}
 	/** @type {TrackerCanvas | undefined} */
 	let canvas = $state.raw(undefined);
-	let trackerLoading = $derived.by(() => timeline && (!canvas || canvas.isLoading()));
+	/** The active canvas's loading lifecycle, which the range readout follows. */
+	let trackerLoading = $derived.by(() =>
+		timeline ? !canvas || canvas.isLoading() : timeOfDay && !!profileCanvas?.isLoading()
+	);
 	const rangeControl = session.range;
 	let isFullscreen = $derived(building ? true : session.selection.fullscreen);
 	let navRange = $derived({
@@ -150,25 +153,36 @@
 	});
 	/** The current selection as a shareable address — copied links and export provenance. */
 	const shareUrl = () => copiedTrackerUrl(new URL(window.location.href), session.selection);
-	let downloadItems = $derived(
-		comparingRegions
-			? [
-					{
-						key: 'regions',
-						label: 'Region comparison',
-						disabled: !regionCanvas?.exportDataset()?.rows.length
-					}
-				]
-			: trackerDownloadItems({ tablePanelOpen }).map((item) => ({
-					...item,
-					disabled: timeOfDay || !canvas || canvas.getExportContext(item.key).pending
-				}))
-	);
-	let workbookDisabled = $derived.by(() =>
-		comparingRegions
-			? !regionCanvas?.exportDataset()?.rows.length
-			: timeOfDay || !canvas || canvas.getExportContext('xlsx').pending
-	);
+	/**
+	 * The options menu's downloads, tailored to the view: Timeline's datasets
+	 * and workbook, the region comparison and its workbook, or the profile CSV.
+	 * @type {{ items: Array<{ key: string, label: string, disabled: boolean }>,
+	 *   workbook: boolean, workbookDisabled: boolean }}
+	 */
+	let downloads = $derived.by(() => {
+		if (comparingRegions) {
+			const empty = !regionCanvas?.exportDataset()?.rows.length;
+			return {
+				items: [{ key: 'regions', label: 'Region comparison', disabled: empty }],
+				workbook: true,
+				workbookDisabled: empty
+			};
+		}
+		if (timeOfDay)
+			return {
+				items: [{ key: 'profile', label: 'Profile', disabled: !profileCanvas?.canExport() }],
+				workbook: false,
+				workbookDisabled: true
+			};
+		return {
+			items: trackerDownloadItems({ tablePanelOpen }).map((item) => ({
+				...item,
+				disabled: !canvas || canvas.getExportContext(item.key).pending
+			})),
+			workbook: true,
+			workbookDisabled: !canvas || canvas.getExportContext('xlsx').pending
+		};
+	});
 	/** @param {string} value */
 	const handleRegionChange = (value) => session.select('region', value);
 	/** @param {string | null} value */
@@ -223,6 +237,13 @@
 
 	/** @param {string} key */
 	function handleDownloadItem(key) {
+		if (timeOfDay) {
+			const profile = profileCanvas;
+			const dataset = profile?.exportDataset();
+			if (profile && dataset)
+				downloadCsv(datasetToCsv(dataset, session.timeZone), profile.exportFileName());
+			return;
+		}
 		if (comparingRegions) {
 			const regions = regionCanvas;
 			const dataset = regions?.exportDataset();
@@ -440,6 +461,12 @@
 							{updatedLabel}
 							onrefresh={refreshData}
 						/>
+					{:else if timeOfDay}
+						<RangeStatus
+							label={profileCanvas?.getRangeLabel() ?? ''}
+							inspectLabel={profileCanvas?.getInspectLabel()}
+							loading={trackerLoading}
+						/>
 					{/if}
 				{/snippet}
 
@@ -449,10 +476,10 @@
 						onfullscreenchange={() => toggleFullscreenMode(isFullscreen)}
 						oncopylink={copyLink}
 						showCopyLink
-						{downloadItems}
-						downloadXlsxDisabled={workbookDisabled}
-						ondownloaditem={(key) => handleDownloadItem(/** @type {ExportDatasetKey} */ (key))}
-						ondownloadxlsx={downloadWorkbook}
+						downloadItems={downloads.items}
+						downloadXlsxDisabled={downloads.workbookDisabled}
+						ondownloaditem={handleDownloadItem}
+						ondownloadxlsx={downloads.workbook ? downloadWorkbook : undefined}
 						onshowshortcuts={() => (showShortcuts = !showShortcuts)}
 					>
 						{#snippet extraSections({ close })}

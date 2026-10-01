@@ -19,11 +19,10 @@ async function settle(ms = 200) {
 	flushSync();
 }
 
-/** @param {Partial<{days: number, metric: 'power' | 'price', enabled: boolean}>} [overrides] */
+/** @param {Partial<{days: number, enabled: boolean}>} [overrides] */
 function harness(overrides = {}) {
 	const state = $state({
 		days: overrides.days ?? 7,
-		metric: overrides.metric ?? /** @type {'power' | 'price'} */ ('power'),
 		enabled: overrides.enabled ?? true
 	});
 	/** @type {ReturnType<typeof createProfileData>} */
@@ -31,7 +30,6 @@ function harness(overrides = {}) {
 	const stop = $effect.root(() => {
 		source = createProfileData(() => ({
 			region: 'nsw1',
-			metric: state.metric,
 			zone,
 			group: getGroup('simple'),
 			window: profileWindow(nowMs, zone, state.days),
@@ -102,13 +100,13 @@ describe('profile data source', () => {
 
 	it('does not fetch while disabled and fetches its window once enabled', async () => {
 		const api = stubNetworkFetch();
-		const { state, source, stop } = harness({ metric: 'price', enabled: false });
+		const { state, source, stop } = harness({ enabled: false });
 		await settle();
 		expect(api.urls).toHaveLength(0);
 		expect(source.pending).toBe(false);
 		state.enabled = true;
 		await settle();
-		expect(api.metrics).toEqual(['price']);
+		expect(api.metrics).toEqual(['power']);
 		stop();
 	});
 

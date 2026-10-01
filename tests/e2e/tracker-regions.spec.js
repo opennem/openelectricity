@@ -108,13 +108,12 @@ test('view clicks reset query settings while history restores each view and its 
 	await expect(nav.getByRole('separator')).toHaveCount(1);
 	await nav.getByRole('button', { name: 'Profile', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker\?view=profile$/);
-	await expect(navPill(page, 'Average day')).toBeVisible();
 	await pickNavOption(page, 'Window', '7 days', '28 days');
-	await pickNavOption(page, 'View', 'Average day', 'Daily overlay');
+	await nav.getByRole('button', { name: 'Breakdown', exact: true }).click();
 	await nav.getByRole('button', { name: 'Timeline', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker$/);
 	await page.goBack();
-	await expect(navPill(page, 'Daily overlay')).toBeVisible();
+	await expect(page).toHaveURL(/profile-display=breakdown/);
 	await expect(navPill(page, '28 days')).toBeVisible();
 	await page.goBack();
 	await page.goBack();

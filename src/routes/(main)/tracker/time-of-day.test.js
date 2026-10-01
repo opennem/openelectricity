@@ -1,14 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
 	buildDailyProfile,
+	averageDayTableRows,
+	hourlyProfile,
+	profilePercentiles,
+	profileRange,
+	dailyAverages,
+	formatProfileDay,
 	buildAverageDayStack,
 	normaliseProfileDays,
 	normaliseProfileEnd,
 	profileDataset,
-	profileWindow
+	profileWindow,
+	todayWindow
 } from './time-of-day.js';
 import { datasetToCsv } from './tracker-export.js';
 import { applyTrackerUrl, parseTrackerUrl } from './tracker-url.js';
+import { PROFILE_DAY_START, PROFILE_SLOT_MS } from './profile-chart.js';
 
 const nowMs = Date.parse('2026-09-06T15:00:00Z');
 const day = 86_400_000;
@@ -50,11 +58,189 @@ describe('average-day fuel technology stack', () => {
 			y1: 60
 		});
 	});
+	it('profiles the current, incomplete day only up to its latest reading', () => {
+		const current = todayWindow(window);
+		expect(window.today).toBe('2026-09-07');
+		expect(current).toMatchObject({
+			start: window.end,
+			end: window.end + day,
+			dates: ['2026-09-07'],
+			slots: 48
+		});
+		const profile = buildDailyProfile(
+			[
+				{ time: current.start, wind: 40 },
+				{ time: current.start + 1_800_000, wind: 60 }
+			],
+			'wind',
+			current
+		);
+		expect(profile[0]).toMatchObject({ average: 40, days: 1 });
+		expect(profile[1]).toMatchObject({ average: 60, days: 1 });
+		expect(profile[2].average).toBeNull();
+		// A picked historical last day leaves today unchanged.
+		expect(profileWindow(nowMs, '+10:00', 7, '2026-08-31').todayStart).toBe(window.end);
+	});
+	it('averages 5-minute slots when the interval asks for them', () => {
+		const fine = profileWindow(nowMs, '+10:00', 7, '', '5m');
+		expect(fine).toMatchObject({ slotMs: 300_000, slots: 288 });
+		const rows = [
+			{ time: fine.start + 300_000, wind: 10 },
+			{ time: fine.start + 600_000, wind: 30 }
+		];
+		const profile = buildDailyProfile(rows, 'wind', fine);
+		expect(profile).toHaveLength(288);
+		expect(profile[1]).toMatchObject({ minute: 5, label: '00:05', average: 10, days: 1 });
+		expect(profile[2]).toMatchObject({ label: '00:10', average: 30 });
+		// The same readings share one half-hour by default.
+		expect(buildDailyProfile(rows, 'wind', window)[0].average).toBe(20);
+		expect(buildAverageDayStack(rows, ['wind'], fine)[0].points).toHaveLength(288);
+	});
 	it('handles empty responses without fabricated generation', () => {
 		expect(buildAverageDayStack([], [], window)).toEqual([]);
 		expect(
 			buildAverageDayStack([], ['wind'], window)[0].points.every((point) => point.y1 === null)
 		).toBe(true);
+	});
+});
+
+describe('average-day fuel technology table', () => {
+	const window = profileWindow(nowMs, '+10:00', 7);
+	const names = ['coal', 'wind', 'charging'];
+	// One complete day: wind is missing from the 00:30 slot only.
+	const rows = Array.from({ length: 48 }, (_, slot) => ({
+		time: window.start + slot * PROFILE_SLOT_MS,
+		coal: 100,
+		...(slot === 1 ? {} : { wind: 50 }),
+		charging: -20
+	}));
+	const layers = buildAverageDayStack(rows, names, window);
+	const meta = {
+		seriesNames: names,
+		seriesLabels: { coal: 'Coal', wind: 'Wind', charging: 'Charging' },
+		seriesColours: { coal: '#000', wind: '#0f0', charging: '#00f' }
+	};
+	const table = (
+		/** @type {{hidden?: string[], time?: number, span?: number, mode?: 'demand' | 'generation',
+		 * demand?: ReturnType<typeof buildDailyProfile> | null}} */ options = {}
+	) =>
+		averageDayTableRows({
+			layers,
+			meta,
+			loadSeriesIds: ['charging'],
+			hidden: options.hidden ?? [],
+			mode: options.mode ?? 'generation',
+			demand: options.demand,
+			slotMs: PROFILE_SLOT_MS,
+			range:
+				options.time === undefined
+					? undefined
+					: { start: options.time, end: options.time + (options.span ?? PROFILE_SLOT_MS) }
+		});
+
+	it('summarises the average day in stack order, through slots the stack cannot draw', () => {
+		const [charging, wind, coal] = table();
+		expect(coal).toMatchObject({ id: 'coal', label: 'Coal', avPowerMW: 100, energyMWh: 2400 });
+		expect(wind).toMatchObject({ avPowerMW: 50, energyMWh: 1175 });
+		expect(coal.contributionPct).toBeCloseTo((2400 / 3575) * 100);
+		expect(charging).toMatchObject({ isLoad: true, avPowerMW: 20, contributionPct: null });
+		expect(coal).toMatchObject({ vwPrice: null, emissionsT: null, intensityKgPerMWh: null });
+	});
+	it('reports one inspected half-hour, leaving a missing technology unavailable', () => {
+		const [, wind, coal] = table({ time: PROFILE_DAY_START + PROFILE_SLOT_MS });
+		expect(coal).toMatchObject({ avPowerMW: 100, energyMWh: 50, contributionPct: 100 });
+		expect(wind).toMatchObject({ avPowerMW: null, energyMWh: null, contributionPct: null });
+	});
+	it("covers a radial clock's whole hour: both of its half-hours", () => {
+		// 00:00 has every technology; 00:30 lacks wind.
+		const [, wind, coal] = table({ time: PROFILE_DAY_START, span: 3_600_000 });
+		expect(coal).toMatchObject({ avPowerMW: 100, energyMWh: 100 });
+		expect(wind).toMatchObject({ avPowerMW: 50, energyMWh: 25 });
+	});
+	it('flags hidden technologies without changing their values', () => {
+		const [, wind] = table({ hidden: ['wind'] });
+		expect(wind).toMatchObject({ hidden: true, avPowerMW: 50 });
+	});
+	it("shares the average day's gross demand, or reports no share without it", () => {
+		const demand = buildDailyProfile(
+			rows.map((row) => ({ time: row.time, demand_gross: 200 })),
+			'demand_gross',
+			window
+		);
+		const [charging, wind, coal] = table({ mode: 'demand', demand });
+		expect(coal.contributionPct).toBeCloseTo(50);
+		expect(wind.contributionPct).toBeCloseTo((1175 / 4800) * 100);
+		expect(charging.contributionPct).toBeNull();
+		const [, , inspected] = table({ mode: 'demand', demand, time: PROFILE_DAY_START });
+		expect(inspected.contributionPct).toBeCloseTo(50);
+		expect(table({ mode: 'demand', demand: null })[2].contributionPct).toBeNull();
+	});
+});
+
+describe('breakdown styles', () => {
+	const window = profileWindow(nowMs, '+10:00', 7);
+	// Day d reads 10 × (d + 1) at 00:00 and nothing at 00:30.
+	const rows = window.dates.map((_, d) => ({ time: window.start + d * day, wind: 10 * (d + 1) }));
+	const profile = buildDailyProfile(rows, 'wind', window);
+	it('summarises each slot by percentiles of its days', () => {
+		const [first, second] = profilePercentiles(profile);
+		expect(first).toMatchObject({ label: '00:00', p50: 40, p25: 25, p75: 55 });
+		expect(first.p10).toBeCloseTo(16);
+		expect(first.p90).toBeCloseTo(64);
+		expect(second).toMatchObject({ p10: null, p50: null, p90: null });
+	});
+	it("ranges a series across one slot's days, or across each day's average", () => {
+		// The 00:00 slot: 10, 20 … 70 across the seven days.
+		expect(profileRange(profile, 0)).toMatchObject({ p25: 25, p50: 40, p75: 55 });
+		expect(profileRange(profile, 30)).toEqual({
+			p10: null,
+			p25: null,
+			p50: null,
+			p75: null,
+			p90: null
+		});
+		// Each day has only the 00:00 reading, so its average is that value.
+		expect(profileRange(profile).p50).toBe(40);
+		const twoSlots = buildDailyProfile(
+			[
+				{ time: window.start, wind: 10 },
+				{ time: window.start + 1_800_000, wind: 30 },
+				{ time: window.start + day, wind: 50 }
+			],
+			'wind',
+			window
+		);
+		// Day one averages 20 and day two 50; the other days are empty.
+		expect(profileRange(twoSlots)).toMatchObject({ p50: 35, p10: 23 });
+	});
+	it('averages each day and labels it briefly', () => {
+		const twoSlots = buildDailyProfile(
+			[
+				{ time: window.start, wind: 10 },
+				{ time: window.start + 1_800_000, wind: 30 }
+			],
+			'wind',
+			window
+		);
+		expect(dailyAverages(twoSlots)).toEqual([20, null, null, null, null, null, null]);
+		expect(formatProfileDay('2026-09-24')).toBe('24 Sept');
+	});
+	it('averages the available slots of each hour', () => {
+		const hours = hourlyProfile(profile);
+		expect(hours).toHaveLength(24);
+		// 00:00 averages 40 and 00:30 is empty, so the hour reads 40.
+		expect(hours[0]).toMatchObject({ hour: 0, label: '00:00', average: 40 });
+		expect(hours[1].average).toBeNull();
+		const fine = profileWindow(nowMs, '+10:00', 7, '', '5m');
+		const fiveMinute = buildDailyProfile(
+			[
+				{ time: fine.start + 13 * 3_600_000, wind: 10 },
+				{ time: fine.start + 13 * 3_600_000 + 300_000, wind: 30 }
+			],
+			'wind',
+			fine
+		);
+		expect(hourlyProfile(fiveMinute)[13].average).toBe(20);
 	});
 });
 
@@ -132,33 +318,55 @@ describe('time-of-day aggregation', () => {
 		const profile = buildDailyProfile([{ time: window.start, other: 100 }], 'power', window);
 		expect(profile.every((row) => row.average === null && row.days === 0)).toBe(true);
 	});
-	it('exports values, network time and native coverage without zero-filling blanks', () => {
-		const profile = buildDailyProfile([{ time: window.start, power: 0 }], 'power', window);
-		const dataset = profileDataset(profile, window, {
-			label: 'Wind, offshore',
-			unit: 'MW',
+	it('exports each picked series, every day in multi-line, without zero-filling blanks', () => {
+		const coal = buildDailyProfile([{ time: window.start, coal: 100 }], 'coal', window);
+		const price = buildDailyProfile([{ time: window.start, price: 50 }], 'price', window);
+		const series = [
+			{ label: 'Coal, black', unit: 'MW', profile: coal },
+			{ label: 'Spot price', unit: '$/MWh', profile: price }
+		];
+		const average = datasetToCsv(
+			profileDataset({
+				series,
+				dates: window.dates,
+				daily: false,
+				region: 'NEM',
+				timeZone: '+10:00'
+			}),
+			'+10:00'
+		);
+		expect(average.split('\n')).toHaveLength(49);
+		expect(average.split('\n')[0]).toBe(
+			'Region,Network time,Time of day,"Coal, black average (MW)","Coal, black days",Spot price average ($/MWh),Spot price days'
+		);
+		expect(average).toContain('NEM,AEST (UTC+10:00),00:00,100,1,50,1');
+		expect(average).toContain('NEM,AEST (UTC+10:00),00:30,,0,,0');
+		const daily = profileDataset({
+			series,
+			dates: window.dates,
+			daily: true,
 			region: 'NEM',
 			timeZone: '+10:00'
 		});
-		const csv = datasetToCsv(dataset, '+10:00');
-		expect(csv.split('\n')).toHaveLength(49);
-		expect(csv).toContain('Average (MW),Days available');
-		expect(csv).toContain('NEM,AEST (UTC+10:00),"Wind, offshore",00:00,0,1,0,1,,0');
+		expect(daily.columns).toHaveLength(3 + 2 * (2 + window.dates.length));
+		expect(daily.columns[5].header).toBe(`Coal, black ${window.dates[0]} (MW)`);
+		expect(daily.rows[0]).toMatchObject({ '0:average': 100, '0:0': 100, '0:1': null });
 	});
 });
 
 describe('time-of-day URLs', () => {
 	it('round-trips analysis without changing the timeline selection', () => {
 		const params = new URLSearchParams(
-			'region=wem&view=profile&profile-view=daily&profile-days=28&profile-metric=price&profile-series=wind&profile-end=2026-08-31&range=30d&hidden=coal'
+			'region=wem&view=profile&profile-display=breakdown&profile-style=lines&profile-today=1&profile-interval=5m&profile-days=28&profile-end=2026-08-31&range=30d&hidden=coal'
 		);
 		const state = parseTrackerUrl(params, { nowMs });
 		expect(state).toMatchObject({
 			view: 'profile',
-			profileView: 'daily',
+			profileDisplay: 'breakdown',
+			profileStyle: 'lines',
+			profileInterval: '5m',
+			profileToday: true,
 			profileDays: 28,
-			profileMetric: 'price',
-			profileSeries: 'wind',
 			profileEnd: '2026-08-31',
 			hiddenSeries: ['coal']
 		});
@@ -174,14 +382,15 @@ describe('time-of-day URLs', () => {
 		);
 		expect(state).toMatchObject({
 			view: 'timeline',
-			profileView: 'average',
+			profileDisplay: 'stacked',
+			profileStyle: 'bands',
+			profileInterval: '30m',
+			profileToday: false,
 			profileDays: 7,
-			profileMetric: 'power',
-			profileSeries: '',
 			profileEnd: ''
 		});
 		const url = applyTrackerUrl(
-			new URL('https://example.test/tracker?view=broken&profile-days=999'),
+			new URL('https://example.test/tracker?view=broken&profile-days=999&profile-metric=price'),
 			state
 		);
 		expect(url.search).toBe('?region=au');

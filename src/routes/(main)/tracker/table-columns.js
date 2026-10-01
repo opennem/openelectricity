@@ -8,6 +8,16 @@ export const TABLE_COLUMNS = [
 	{ key: 'intensity', label: 'Intensity' }
 ];
 export const ALL_TABLE_COLUMNS = TABLE_COLUMNS.map((column) => column.key);
+/** The percentile range the Profile's percentile bands show as `powerColumns`
+ * in place of the window columns. Not a viewer choice, so it stays out of
+ * `ALL_TABLE_COLUMNS`. */
+export const PERCENTILE_TABLE_COLUMNS = [
+	{ key: 'p10', label: '10%' },
+	{ key: 'p25', label: '25%' },
+	{ key: 'p50', label: 'Median' },
+	{ key: 'p75', label: '75%' },
+	{ key: 'p90', label: '90%' }
+];
 /** Shown until the viewer chooses otherwise; price, emissions and intensity are opt-in. */
 export const DEFAULT_TABLE_COLUMNS = ['energy', 'power', 'contribution'];
 

@@ -2,56 +2,104 @@
 	import { onDestroy, untrack } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
+	import { getFormattedX, getFormattedY } from '$lib/components/charts/v2/tooltip-derivations.js';
 	import {
 		PROFILE_DAY_START,
 		PROFILE_DAY_END,
-		PROFILE_SLOT_MS,
 		profileClock,
 		profileTicks,
 		clampProfileViewport
 	} from './profile-chart.js';
 
-	/** @type {{rows: any[], names: string[], labels: Record<string,string>, colours: Record<string,string>, title: string, zone: string, stacked?: boolean, price?: boolean}} */
-	let { rows, names, labels, colours, title, zone, stacked = false, price = false } = $props();
+	/** A profile on the synthetic day, as the stacked view draws it: the
+	 * all-technology average-day stack, or (Breakdown → Multi-line) one series'
+	 * average area with its days, dark average and today as `overlays` lines.
+	 * `title` heads the chart's options bar (the metric, as in Timeline's cards);
+	 * `label` names the chart for assistive technology (its card's subject).
+	 * `price` (fixed for the instance) switches units to $/MWh on a stepped curve.
+	 * `readout` replaces the tooltip strip's single hovered value with the
+	 * listed values of the inspected row (the percentile bands' real levels,
+	 * rather than the stacked band thicknesses).
+	 * `onhoverchange` reports this chart's hover (undefined when it ends) and
+	 * `syncHoverTime` mirrors the shared hover onto it, so sibling charts track
+	 * one slot, as Timeline's cards do.
+	 * @type {{rows: any[], names: string[], labels: Record<string,string>, colours: Record<string,string>,
+	 * title: string, label: string, heightPx: number, slotMs: number, hiddenSeriesNames?: string[],
+	 * overlays?: Array<{id: string, colour: string, strokeWidth?: number, label?: string}>,
+	 * price?: boolean, engaged?: boolean,
+	 * readout?: (row: Record<string, any>) => Array<{label: string, value: number | null, colour: string}>,
+	 * syncHoverTime?: number, onhoverchange?: (time: number | undefined) => void}} */
+	let {
+		rows,
+		names,
+		labels,
+		colours,
+		title,
+		label,
+		heightPx,
+		slotMs,
+		hiddenSeriesNames = [],
+		overlays = [],
+		price = false,
+		readout = undefined,
+		syncHoverTime = undefined,
+		onhoverchange = undefined,
+		engaged = $bindable(false)
+	} = $props();
 	let viewport = $state.raw({ start: PROFILE_DAY_START, end: PROFILE_DAY_END });
-	let engaged = $state(false);
-	// Units and chart type are constructor options, so the store is rebuilt
-	// only when the metric or stacking changes. Everything else syncs into the
-	// same store, keeping the user's resized height, legend and pinned slot
-	// when the technology or window changes.
-	let chart = $derived.by(() => {
-		const next = new ChartStore({
-			key: Symbol('time-of-day'),
-			title: untrack(() => title),
-			prefix: price ? '' : 'M',
-			displayPrefix: price ? '' : 'M',
-			allowedPrefixes: price ? [] : ['M', 'G'],
-			baseUnit: price ? '$/MWh' : 'W',
-			timeZone: 'UTC',
-			chartType: stacked ? 'stacked-area' : 'line',
-			hideDataOptions: true,
-			hideChartTypeOptions: true
-		});
-		// Match the main generation chart: negative power pulls the cumulative
-		// stack down. Average power uses its smooth curve, price remains stepped.
-		next.useDivergingStack = false;
-		next.chartOptions.selectedCurveType = price ? 'step' : 'smooth';
-		next.chartStyles.chartHeightPx = 300;
-		next.chartStyles.snapTicks = true;
-		next.chartStyles.chartPadding = { top: 12, bottom: 28, left: 0, right: 0 };
-		next.chartTooltips.showTotal = false;
-		next.maximumFractionDigits = 1;
-		next.formatTickX = profileClock;
-		return next;
+	const inspectionHintId = $props.id();
+	// One store for the component's life; data, labels and the window sync into
+	// it, keeping the user's unit choice and pinned slot across changes.
+	const isPrice = untrack(() => price);
+	const chart = new ChartStore({
+		key: Symbol('time-of-day'),
+		title: untrack(() => title),
+		prefix: isPrice ? '' : 'M',
+		displayPrefix: isPrice ? '' : 'M',
+		allowedPrefixes: isPrice ? [] : ['M', 'G'],
+		baseUnit: isPrice ? '$/MWh' : 'W',
+		timeZone: 'UTC',
+		chartType: 'stacked-area',
+		hideDataOptions: true,
+		hideChartTypeOptions: true
 	});
+	// Match the main generation chart: negative power pulls the cumulative
+	// stack down, on a smooth average-power curve; price stays stepped.
+	chart.useDivergingStack = false;
+	chart.chartOptions.selectedCurveType = isPrice ? 'step' : 'smooth';
+	chart.chartStyles.snapTicks = true;
+	chart.chartStyles.chartPadding = { top: 12, bottom: 28, left: 0, right: 0 };
+	chart.chartTooltips.showTotal = false;
+	chart.maximumFractionDigits = 1;
+	chart.formatTickX = profileClock;
 	$effect(() => {
 		chart.title = title;
 		chart.seriesData = rows;
 		chart.seriesNames = names;
 		chart.seriesLabels = labels;
 		chart.seriesColours = colours;
-		chart.formatTooltipX = (date) =>
-			`${profileClock(date)}–${profileClock(Number(date) + PROFILE_SLOT_MS)} · UTC${zone}`;
+		chart.hiddenSeriesNames = hiddenSeriesNames;
+		chart.overlayLines = overlays.map(({ id, colour, strokeWidth, label: name }) => ({
+			id,
+			data: rows,
+			valueKey: id,
+			colour,
+			strokeWidth,
+			label: name ?? id
+		}));
+		chart.formatTooltipX = (date) => `${profileClock(date)}–${profileClock(Number(date) + slotMs)}`;
+	});
+	// Mirror the shared hover from sibling charts onto this one. Its own hover is
+	// already set by the interaction layer, so the echo is a no-op.
+	$effect(() => {
+		const time = syncHoverTime;
+		if (!onhoverchange || untrack(() => chart.hoverTime) === time) return;
+		if (time === undefined) chart.clearHover();
+		else chart.setHover(time);
+	});
+	// The card owns the height, so resizing keeps the store and its pinned slot.
+	$effect(() => {
+		chart.chartStyles.chartHeightPx = heightPx;
 	});
 	// Adapt the bounded profile viewport to Stratum's interval-start step domain.
 	$effect(() => {
@@ -72,11 +120,13 @@
 		onGestureStart: () => chart.clearHover()
 	});
 	onDestroy(gestures.dispose);
-	function reset() {
-		engaged = false;
-		viewport = { start: PROFILE_DAY_START, end: PROFILE_DAY_END };
-		chart.clearFocus();
-		chart.clearHover();
+	/** The hovered or pinned half-hour, for the fuel-tech table and range readout. */
+	export function getInspectTime() {
+		return /** @type {number | undefined} */ (chart.hoverTime ?? chart.focusTime);
+	}
+	/** The visible clock window, captioning PNG exports. */
+	export function getCaption() {
+		return `${profileClock(viewport.start)}–${profileClock(viewport.end)}`;
 	}
 	/** @param {KeyboardEvent} event */
 	function inspectKey(event) {
@@ -86,10 +136,7 @@
 			event.preventDefault();
 			const time = Math.max(
 				viewport.start,
-				Math.min(
-					viewport.end - PROFILE_SLOT_MS,
-					current + (event.key === 'ArrowRight' ? PROFILE_SLOT_MS : -PROFILE_SLOT_MS)
-				)
+				Math.min(viewport.end - slotMs, current + (event.key === 'ArrowRight' ? slotMs : -slotMs))
 			);
 			chart.setHover(time);
 		} else if (event.key === 'Enter' || event.key === ' ') {
@@ -102,26 +149,41 @@
 	}
 </script>
 
-<div
-	role="group"
-	aria-label={`${title} interactive chart`}
-	class="mt-3"
-	data-tracker-png={JSON.stringify({
-		id: stacked ? 'profile-stack' : 'profile',
-		label: title,
-		ready: true,
-		caption: `${profileClock(viewport.start)}–${profileClock(viewport.end)}`
-	})}
->
+{#snippet readoutStrip()}
+	{@const row = chart.hoverData ?? chart.focusData}
+	<div data-testid="chart-tooltip-strip" class="readout">
+		{#if row && readout}
+			<span class="bg-white/40 px-3 py-1 font-light">{getFormattedX(chart, row)}</span>
+			<span class="flex flex-wrap items-center justify-end gap-x-3 bg-light-warm-grey px-2 py-1">
+				{#each readout(row) as item (item.label)}
+					<span class="flex items-center gap-1.5 whitespace-nowrap">
+						<span class="size-2.5 rounded-sm" style:background-color={item.colour}></span>
+						<span class="text-mid-grey">{item.label}</span>
+						<strong class="font-semibold"
+							>{item.value === null
+								? '—'
+								: `${getFormattedY(chart, item.value)} ${chart.tooltipUnit}`}</strong
+						>
+					</span>
+				{/each}
+			</span>
+		{/if}
+	</div>
+{/snippet}
+
+<!-- The breakdown lives in the fuel-tech table, so the stack takes Timeline's strip. -->
+<div role="group" aria-label={`${label} interactive chart`} class="relative">
 	<StratumChart
 		{chart}
-		tooltipMode="floating"
+		onhover={(time) => onhoverchange?.(time)}
+		onhoverend={() => onhoverchange?.(undefined)}
+		tooltipMode="strip"
+		tooltip={readout ? readoutStrip : undefined}
 		enablePan
 		panZoomMode="tap-to-engage"
 		bind:engaged
 		viewDomain={[viewport.start, viewport.end]}
 		zoomMode="static"
-		resizable
 		onpanstart={gestures.handlePanStart}
 		onpan={gestures.handlePan}
 		onpanend={gestures.handlePanEnd}
@@ -131,26 +193,26 @@
 		isAtMinZoom={viewport.end - viewport.start <= 3_600_000}
 		isAtMaxZoom={viewport.end - viewport.start >= 86_400_000}
 	/>
-</div>
-<div class="mt-2 flex flex-wrap items-center gap-2 text-xs" aria-label={`${title} legend`}>
-	{#each names as name (name)}
-		<button
-			class="flex items-center gap-2 rounded border border-warm-grey px-2 py-1.5 aria-pressed:font-semibold"
-			aria-pressed={!chart.hiddenSeriesNames.includes(name)}
-			onclick={(event) => chart.toggleSeriesVisibility(name, event.metaKey || event.ctrlKey)}
-		>
-			<span class="size-3 rounded-sm" style:background={colours[name]}></span>{labels[name] ?? name}
-		</button>
-	{/each}
 	<button
-		class="ml-auto rounded border border-warm-grey px-2 py-1.5"
+		type="button"
+		class="sr-only focus:not-sr-only focus:absolute focus:bottom-2 focus:left-2 focus:z-30 rounded border border-mid-warm-grey bg-white px-3 py-2 text-xs focus:outline focus:outline-dark-grey"
 		onkeydown={inspectKey}
-		onclick={() => chart.setHover(viewport.start)}>Inspect values</button
+		onclick={() => chart.setHover(viewport.start)}
+		aria-label={`Inspect ${label.toLowerCase()} values`}
+		aria-describedby={inspectionHintId}>Inspect values</button
 	>
-	<button class="rounded border border-warm-grey px-2 py-1.5" onclick={reset}>Reset day view</button
+	<span id={inspectionHintId} class="sr-only"
+		>Use left and right arrows to inspect a time slot, Enter to pin it, and Escape to clear it.</span
 	>
 </div>
-<p class="mt-2 text-xs text-mid-grey">
-	Hover to inspect; click to pin. Focus “Inspect values” and use arrow keys to inspect, Enter to
-	pin, Escape to clear. Click legend items to show/hide; Ctrl/⌘-click to solo.
-</p>
+
+<style>
+	/* Two lines' height always, so a wrapping readout never shifts the plot. */
+	.readout {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		min-height: 42px;
+		font-size: var(--text-xs);
+	}
+</style>

@@ -4,7 +4,6 @@
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
 	import Stripes from '$lib/icons/Stripes.svelte';
-	import { clickoutside } from '@svelte-put/clickoutside';
 	import { untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { MediaQuery } from 'svelte/reactivity';
@@ -21,10 +20,6 @@
 		comparisonUnit,
 		formatComparisonValue
 	} from './comparison-metrics.js';
-	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
-	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
-	import { createDockedPanel } from '$lib/components/ui/panel/docked-panel.svelte.js';
-	import { percentPanelBounds } from '$lib/components/ui/panel/panel-bounds.js';
 	import ChartCard from './ChartCard.svelte';
 	import { splitTableLabel } from './table-format.js';
 	import {
@@ -36,7 +31,7 @@
 		tableValueCell
 	} from './table-styles.js';
 	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
-	import PanelRail from './PanelRail.svelte';
+	import TrackerSplitLayout from './TrackerSplitLayout.svelte';
 	import RegionComparisonChart from './RegionComparisonChart.svelte';
 	import { CONTRIBUTION_OPTIONS } from './tracker-model.js';
 	import { createRegionComparisonData } from './region-comparison-data.svelte.js';
@@ -129,7 +124,6 @@
 	let tableScrollLeft = $state(0);
 	let panZoomEngaged = $state(false);
 	let pinnedEdgeClass = $derived(pinnedTableEdge(tableScrollLeft));
-	let containerWidth = $state(0);
 	const desktop = new MediaQuery('(min-width: 1024px)');
 	let panelOpen = $derived(selection.table ?? desktop.current);
 	/** @param {Partial<import('./region-comparison.js').RegionComparisonSelection>} change @param {'push'|'replace'|null} [history] */
@@ -138,29 +132,17 @@
 		session.select('regionComparison', { ...selection, ...change }, history);
 	}
 	// Regions table: a percentage of the container, remembered locally; small
-	// screens overlay it at a fixed width instead.
-	const PANEL_MIN_PX = 360;
-	let panelBounds = $derived(
-		percentPanelBounds({
-			containerWidth,
-			minPx: PANEL_MIN_PX,
-			reservedPx: PANEL_MIN_PX,
-			maxPct: 65,
-			wide: desktop.current,
-			narrowMaxPct: 94
-		})
-	);
-	const panel = createDockedPanel({
+	// screens overlay it instead.
+	/** @type {import('./types.js').TrackerSplitConfig} */
+	const REGIONS_SPLIT = {
 		initial: 38,
-		min: () => panelBounds.min,
-		max: () => panelBounds.max,
+		minPx: 360,
+		reservedPx: 360,
+		maxPct: 65,
+		narrowMaxPct: 94,
 		storageKey: 'tracker-comparison-panel-width',
-		scale: () => (containerWidth ? 100 / containerWidth : 0),
-		inverted: true,
-		step: 2,
-		setOpen: (open) => select({ table: open })
-	});
-	let panelSize = $derived(desktop.current ? panel.size : 94);
+		narrowOverlay: true
+	};
 	/** @param {number} start @param {number} end @param {boolean} settled */
 	function moveViewport(start, end, settled) {
 		select(clampComparisonViewport(start, end, chartBounds, interval), settled ? 'replace' : null);
@@ -210,12 +192,6 @@
 		return controls;
 	}
 </script>
-
-<svelte:window
-	onkeydown={(event) => {
-		if (event.key === 'Escape' && !desktop.current && panelOpen) panel.close();
-	}}
-/>
 
 {#snippet controls()}
 	<SwitchWithIcons
@@ -277,349 +253,308 @@
 			? 'Loading regional data…'
 			: `Complete periods · ${daily ? 'daily' : 'monthly'} source data`}</span
 	>
-	<div bind:clientWidth={containerWidth} class="relative flex min-h-0 flex-1 overflow-hidden">
-		<!-- The docked panel's drag handle provides the right gutter, as in Timeline. -->
-		<div
-			class="min-w-0 flex-1 overflow-y-auto py-3 pl-3 sm:py-5 sm:pl-5 {panelOpen && desktop.current
-				? ''
-				: 'pr-3 sm:pr-5'}"
-			use:clickoutside={{ event: 'pointerdown', options: true }}
-			onclickoutside={() => (panZoomEngaged = false)}
-		>
-			{#if !regions.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
-					Select a region in the Regions panel to compare.
-				</p>{/if}
-			{#if regions.length && !source.pending && !regions.some((id) => source.data[id]?.length || source.status[id].error)}<p
-					role="status"
-					class="mb-4 rounded-lg bg-white p-4 text-sm"
-				>
-					No completed regional data available for this selection.
-				</p>{/if}
-			{#each regions.filter((id) => source.status[id].error) as id (id)}
-				<div
-					role="alert"
-					class="mb-3 flex items-center justify-between gap-3 rounded-lg border border-warm-grey bg-white p-4 text-xs"
-				>
-					<span
-						>{COMPARISON_REGIONS.find((r) => r.value === id)?.label}: {source.status[id]
-							.error}</span
-					>
-					<button
-						class="rounded border border-mid-warm-grey px-3 py-2"
-						onclick={() => source.retry(id)}
-						>Retry {COMPARISON_REGIONS.find((r) => r.value === id)?.label}</button
-					>
-				</div>
-			{/each}
-			{#if !metrics.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
-					No charts selected. Use Charts to show comparisons.
-				</p>{/if}
-			{#key selection.display}
-				<div in:fade={{ duration: reducedMotion.current ? 0 : 160 }}>
-					{#each metrics as metric (comparisonChartId(metric.id))}
-						{@const cardReady =
-							!source.pending &&
-							regions.some((id) =>
-								source.data[id]?.some((row) =>
-									Number.isFinite(comparisonMetricValue(row, metric.id, basis))
-								)
-							)}
-						{@const scale = stripes ? stripeScale(metric.id, basis, visibleMax(metric)) : null}
-						<ChartCard
-							title={metric.label}
-							defaultHeightPx={320}
-							heightStorageKey={scale
-								? ''
-								: `tracker-comparison-${comparisonChartId(metric.id)}-height`}
-							loading={source.pending && !regions.some((id) => source.data[id]?.length)}
-							engaged={scale ? false : panZoomEngaged}
-							png={{
-								id: `regions-${metric.id}`,
-								label: metric.label,
-								ready: cardReady,
-								caption:
-									metric.id === 'price_real'
-										? `${caption} · ${cpi.reference} dollars · ABS CPI`
-										: caption
-							}}
-						>
-							{#snippet actions()}
-								{#if scale}
-									<div
-										class="flex items-center gap-2 font-mono text-xxs text-mid-grey"
-										role="img"
-										aria-label={`Colour scale from ${scale.labels[0]} to ${scale.labels[scale.labels.length - 1]} ${scale.unit}; grey means no data`}
-										data-testid="stripes-legend"
-									>
-										<span>{scale.labels[0]}</span>
-										{#if scale.kind === 'swatch'}
-											<span class="flex h-2 overflow-hidden rounded-sm">
-												{#each scale.colours as colour, index (colour)}
-													<span
-														class="block h-2 w-3"
-														style:background-color={colour}
-														title={scale.labels[index]}
-													></span>
-												{/each}
-											</span>
-										{:else}
-											<span
-												class="block h-2 w-24 rounded-sm"
-												style:background={stripeGradient(scale)}
-											></span>
-										{/if}
-										<span>{scale.labels[scale.labels.length - 1]}</span>
-										<span class="text-mid-warm-grey">{scale.unit}</span>
-									</div>
-								{/if}
-								{#if metric.fuel && (metric.kind === 'energy' || metric.kind === 'share')}
-									<SwitchTabs
-										buttons={[
-											{ label: 'Proportion', value: comparisonChartId(metric.id) },
-											{
-												label: 'Generation',
-												value:
-													metric.fuel === 'renewables' ? 'generation' : `${metric.fuel}_generation`
-											}
-										]}
-										selected={metric.id}
-										onChange={(id) =>
-											select({
-												charts: selection.charts.map((current) =>
-													current === metric.id ? id : current
-												)
-											})}
-									/>
-								{/if}
-								{#if comparisonChartId(metric.id) === 'price_real'}
-									<Toggle
-										label="Inflation adjusted"
-										checked={metric.id === 'price_real'}
-										onclick={() =>
-											select({
-												charts: selection.charts.map((current) =>
-													current === metric.id
-														? metric.id === 'price_real'
-															? 'price'
-															: 'price_real'
-														: current
-												)
-											})}
-									/>
-								{/if}
-								{#if metric.id === 'price_real'}
-									<span class="text-xs text-mid-grey">{cpi.reference} dollars</span>
-								{/if}
-							{/snippet}
-							{#snippet children(height)}
-								{#if scale}
-									<RegionStripes
-										data={source.data}
-										{regions}
-										metric={metric.id}
-										{basis}
-										{interval}
-										{viewport}
-										bounds={chartBounds}
-										{scale}
-										{hover}
-										{focus}
-										onhover={(time) => {
-											hover = time;
-										}}
-										onfocus={(time) => {
-											focus = time;
-										}}
-										onviewport={moveViewport}
-									/>
-								{:else}
-									<RegionComparisonChart
-										data={source.data}
-										{regions}
-										metric={metric.id}
-										{basis}
-										{interval}
-										{viewport}
-										bounds={chartBounds}
-										{height}
-										bind:engaged={panZoomEngaged}
-										{hover}
-										{focus}
-										onhover={(time) => {
-											hover = time;
-										}}
-										onfocus={(time) => {
-											focus = time;
-										}}
-										onviewport={moveViewport}
-									/>
-								{/if}
-							{/snippet}
-						</ChartCard>
-					{/each}
-				</div>
-			{/key}
-			<p class="px-2 text-xs leading-relaxed text-mid-grey">
-				Ratios use period totals. Renewable generation excludes storage discharge. Net imports are
-				imports minus exports, as a share of gross demand. Market values are weighted by generation.
-				Demand shares can exceed 100% in exporting regions. WA covers the WEM. Hover or use the
-				arrow keys to inspect a period; press Enter to pin it.
-				{#if stripes}
-					Stripes use fixed colour scales so a shade means the same in every region and year;
-					generation scales to the visible maximum and grey marks periods without data.
-				{/if}
-				{#if daily}
-					The daily view shows one year at a time: drag or scroll the stripes, click a month, or use
-					the year controls to move through history.
-				{/if}
-			</p>
-			{#if selection.charts.includes('price_real')}
-				<p class="px-2 pt-2 text-xs text-mid-grey" role="status">
-					Inflation adjusted using <a
-						href={cpi.source}
-						target="_blank"
-						rel="noreferrer"
-						class="underline">ABS All Groups CPI</a
-					>, in {cpi.reference} dollars. Each month uses its quarter’s CPI; later periods remain blank
-					until CPI is published.
-				</p>
-			{/if}
-		</div>
-		{#if panelOpen}
-			{#if desktop.current}
-				<DragHandle
-					axis="x"
-					onstart={panel.start}
-					onkeydown={panel.keydown}
-					tabindex={0}
-					role="separator"
-					aria-orientation="vertical"
-					aria-label="Resize regions panel"
-					aria-valuemin={panelBounds.min}
-					aria-valuemax={panelBounds.max}
-					aria-valuenow={Math.round(panelSize)}
-					active={panel.dragging}
-					alwaysShowGrip
-					class="w-4"
-				/>
-			{/if}
-			<ResizablePanel
-				open
-				direction="left"
-				defaultSize={panelSize}
-				containerSize={containerWidth}
-				showDragHandle={false}
-				externalResizing={panel.dragging}
-				onclose={panel.close}
-				class={`z-20 flex shrink-0 border-l border-warm-grey bg-white ${desktop.current ? 'relative' : 'absolute inset-y-0 right-0 shadow-xl'}`}
+	<TrackerSplitLayout
+		config={REGIONS_SPLIT}
+		open={panelOpen}
+		onopenchange={(table) => select({ table })}
+		controls="tracker-regions-panel"
+		resizeLabel="Resize regions panel"
+		railLabel="Show regions table"
+		bind:engaged={panZoomEngaged}
+	>
+		{#if !regions.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
+				Select a region in the Regions panel to compare.
+			</p>{/if}
+		{#if regions.length && !source.pending && !regions.some((id) => source.data[id]?.length || source.status[id].error)}<p
+				role="status"
+				class="mb-4 rounded-lg bg-white p-4 text-sm"
 			>
-				{#snippet header()}
-					<TrackerPanelHeader
-						id="tracker-regions-panel"
-						side="right"
-						title="Regions"
-						label="Hide regions table"
-						controls="tracker-regions-panel"
-						onclose={panel.close}
-						bind:closeButton={panel.closer}
-					/>
-				{/snippet}
-				<div class="border-b border-warm-grey px-4 py-3 text-xs text-mid-grey" role="status">
-					{period == null ? 'No common completed period' : comparisonPeriod(period, interval)}
-					{#if focus != null}<button
-							class="ml-2 underline"
-							onclick={() => {
-								focus = hover = null;
-							}}>Clear pinned period</button
-						>{/if}
-				</div>
-				<div class="[--region-w:240px]">
-					<div
-						onscroll={(event) => (tableScrollLeft = event.currentTarget.scrollLeft)}
-						class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--region-w) scroll-smooth motion-reduce:scroll-auto"
+				No completed regional data available for this selection.
+			</p>{/if}
+		{#each regions.filter((id) => source.status[id].error) as id (id)}
+			<div
+				role="alert"
+				class="mb-3 flex items-center justify-between gap-3 rounded-lg border border-warm-grey bg-white p-4 text-xs"
+			>
+				<span
+					>{COMPARISON_REGIONS.find((r) => r.value === id)?.label}: {source.status[id].error}</span
+				>
+				<button
+					class="rounded border border-mid-warm-grey px-3 py-2"
+					onclick={() => source.retry(id)}
+					>Retry {COMPARISON_REGIONS.find((r) => r.value === id)?.label}</button
+				>
+			</div>
+		{/each}
+		{#if !metrics.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
+				No charts selected. Use Charts to show comparisons.
+			</p>{/if}
+		{#key selection.display}
+			<div in:fade={{ duration: reducedMotion.current ? 0 : 160 }}>
+				{#each metrics as metric (comparisonChartId(metric.id))}
+					{@const cardReady =
+						!source.pending &&
+						regions.some((id) =>
+							source.data[id]?.some((row) =>
+								Number.isFinite(comparisonMetricValue(row, metric.id, basis))
+							)
+						)}
+					{@const scale = stripes ? stripeScale(metric.id, basis, visibleMax(metric)) : null}
+					<ChartCard
+						title={metric.label}
+						defaultHeightPx={320}
+						heightStorageKey={scale
+							? ''
+							: `tracker-comparison-${comparisonChartId(metric.id)}-height`}
+						loading={source.pending && !regions.some((id) => source.data[id]?.length)}
+						engaged={scale ? false : panZoomEngaged}
+						png={{
+							id: `regions-${metric.id}`,
+							label: metric.label,
+							ready: cardReady,
+							caption:
+								metric.id === 'price_real'
+									? `${caption} · ${cpi.reference} dollars · ABS CPI`
+									: caption
+						}}
 					>
-						<table
-							style:min-width={`${240 + metrics.length * 100}px`}
-							class="w-full table-fixed border-separate border-spacing-0 select-none"
-							aria-label="Region comparison values"
-						>
-							<thead class="bg-light-warm-grey">
-								<tr>
+						{#snippet actions()}
+							{#if scale}
+								<div
+									class="flex items-center gap-2 font-mono text-xxs text-mid-grey"
+									role="img"
+									aria-label={`Colour scale from ${scale.labels[0]} to ${scale.labels[scale.labels.length - 1]} ${scale.unit}; grey means no data`}
+									data-testid="stripes-legend"
+								>
+									<span>{scale.labels[0]}</span>
+									{#if scale.kind === 'swatch'}
+										<span class="flex h-2 overflow-hidden rounded-sm">
+											{#each scale.colours as colour, index (colour)}
+												<span
+													class="block h-2 w-3"
+													style:background-color={colour}
+													title={scale.labels[index]}
+												></span>
+											{/each}
+										</span>
+									{:else}
+										<span class="block h-2 w-24 rounded-sm" style:background={stripeGradient(scale)}
+										></span>
+									{/if}
+									<span>{scale.labels[scale.labels.length - 1]}</span>
+									<span class="text-mid-warm-grey">{scale.unit}</span>
+								</div>
+							{/if}
+							{#if metric.fuel && (metric.kind === 'energy' || metric.kind === 'share')}
+								<SwitchTabs
+									buttons={[
+										{ label: 'Proportion', value: comparisonChartId(metric.id) },
+										{
+											label: 'Generation',
+											value:
+												metric.fuel === 'renewables' ? 'generation' : `${metric.fuel}_generation`
+										}
+									]}
+									selected={metric.id}
+									onChange={(id) =>
+										select({
+											charts: selection.charts.map((current) =>
+												current === metric.id ? id : current
+											)
+										})}
+								/>
+							{/if}
+							{#if comparisonChartId(metric.id) === 'price_real'}
+								<Toggle
+									label="Inflation adjusted"
+									checked={metric.id === 'price_real'}
+									onclick={() =>
+										select({
+											charts: selection.charts.map((current) =>
+												current === metric.id
+													? metric.id === 'price_real'
+														? 'price'
+														: 'price_real'
+													: current
+											)
+										})}
+								/>
+							{/if}
+							{#if metric.id === 'price_real'}
+								<span class="text-xs text-mid-grey">{cpi.reference} dollars</span>
+							{/if}
+						{/snippet}
+						{#snippet children(height)}
+							{#if scale}
+								<RegionStripes
+									data={source.data}
+									{regions}
+									metric={metric.id}
+									{basis}
+									{interval}
+									{viewport}
+									bounds={chartBounds}
+									{scale}
+									{hover}
+									{focus}
+									onhover={(time) => {
+										hover = time;
+									}}
+									onfocus={(time) => {
+										focus = time;
+									}}
+									onviewport={moveViewport}
+								/>
+							{:else}
+								<RegionComparisonChart
+									data={source.data}
+									{regions}
+									metric={metric.id}
+									{basis}
+									{interval}
+									{viewport}
+									bounds={chartBounds}
+									{height}
+									bind:engaged={panZoomEngaged}
+									{hover}
+									{focus}
+									onhover={(time) => {
+										hover = time;
+									}}
+									onfocus={(time) => {
+										focus = time;
+									}}
+									onviewport={moveViewport}
+								/>
+							{/if}
+						{/snippet}
+					</ChartCard>
+				{/each}
+			</div>
+		{/key}
+		<p class="px-2 text-xs leading-relaxed text-mid-grey">
+			Ratios use period totals. Renewable generation excludes storage discharge. Net imports are
+			imports minus exports, as a share of gross demand. Market values are weighted by generation.
+			Demand shares can exceed 100% in exporting regions. WA covers the WEM. Hover or use the arrow
+			keys to inspect a period; press Enter to pin it.
+			{#if stripes}
+				Stripes use fixed colour scales so a shade means the same in every region and year;
+				generation scales to the visible maximum and grey marks periods without data.
+			{/if}
+			{#if daily}
+				The daily view shows one year at a time: drag or scroll the stripes, click a month, or use
+				the year controls to move through history.
+			{/if}
+		</p>
+		{#if selection.charts.includes('price_real')}
+			<p class="px-2 pt-2 text-xs text-mid-grey" role="status">
+				Inflation adjusted using <a
+					href={cpi.source}
+					target="_blank"
+					rel="noreferrer"
+					class="underline">ABS All Groups CPI</a
+				>, in {cpi.reference} dollars. Each month uses its quarter’s CPI; later periods remain blank until
+				CPI is published.
+			</p>
+		{/if}
+
+		{#snippet panelHeader(/** @type {import('./types.js').TrackerDock} */ dock)}
+			<TrackerPanelHeader
+				id="tracker-regions-panel"
+				side="right"
+				title="Regions"
+				label="Hide regions table"
+				controls="tracker-regions-panel"
+				onclose={dock.close}
+				bind:closeButton={dock.closer}
+			/>
+		{/snippet}
+		{#snippet panel()}
+			<div class="border-b border-warm-grey px-4 py-3 text-xs text-mid-grey" role="status">
+				{period == null ? 'No common completed period' : comparisonPeriod(period, interval)}
+				{#if focus != null}<button
+						class="ml-2 underline"
+						onclick={() => {
+							focus = hover = null;
+						}}>Clear pinned period</button
+					>{/if}
+			</div>
+			<div class="[--region-w:240px]">
+				<div
+					onscroll={(event) => (tableScrollLeft = event.currentTarget.scrollLeft)}
+					class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--region-w) scroll-smooth motion-reduce:scroll-auto"
+				>
+					<table
+						style:min-width={`${240 + metrics.length * 100}px`}
+						class="w-full table-fixed border-separate border-spacing-0 select-none"
+						aria-label="Region comparison values"
+					>
+						<thead class="bg-light-warm-grey">
+							<tr>
+								<th
+									scope="col"
+									class="{pinnedEdgeClass} w-(--region-w) bg-light-warm-grey px-2 text-left text-sm {TABLE_HEADER_CELL}"
+								>
+									<div class="ml-2 flex flex-col items-start">
+										<span class="text-xs text-dark-grey">Region</span>
+									</div>
+								</th>
+								{#each metrics.map( (metric) => ({ label: metric.shortLabel, unit: comparisonUnit(metric.id, basis) }) ) as column, index (index)}
 									<th
 										scope="col"
-										class="{pinnedEdgeClass} w-(--region-w) bg-light-warm-grey px-2 text-left text-sm {TABLE_HEADER_CELL}"
+										class="w-[100px] snap-start text-right {index === metrics.length - 1
+											? 'pr-3 pl-2'
+											: 'px-2'} {TABLE_HEADER_CELL}"
 									>
-										<div class="ml-2 flex flex-col items-start">
-											<span class="text-xs text-dark-grey">Region</span>
+										<div class="flex flex-col items-end">
+											<span class="text-xs">{column.label}</span>
+											<span class="font-mono text-xxs font-light text-mid-grey">{column.unit}</span>
 										</div>
 									</th>
-									{#each metrics.map( (metric) => ({ label: metric.shortLabel, unit: comparisonUnit(metric.id, basis) }) ) as column, index (index)}
-										<th
-											scope="col"
-											class="w-[100px] snap-start text-right {index === metrics.length - 1
-												? 'pr-3 pl-2'
-												: 'px-2'} {TABLE_HEADER_CELL}"
+								{/each}
+							</tr>
+						</thead>
+						<tbody>
+							{#each COMPARISON_REGIONS as region (region.value)}
+								{@const selected = regions.includes(region.value)}
+								{@const label = splitTableLabel(region.label)}
+								{@const row = source.data[region.value]?.find((row) => row.time === period)}
+								<tr class="{TABLE_ROW} {selected ? '' : 'opacity-50'}">
+									<th
+										scope="row"
+										class="{pinnedEdgeClass} bg-white text-left font-normal group-hover:bg-light-warm-grey"
+									>
+										<button
+											type="button"
+											aria-pressed={selected}
+											aria-label={`Compare ${region.label}`}
+											title={region.label}
+											onclick={(event) =>
+												toggleRegion(region.value, event.metaKey || event.ctrlKey)}
+											class="flex w-full items-center gap-2.5 py-1.5 pl-4 pr-2 text-left"
 										>
-											<div class="flex flex-col items-end">
-												<span class="text-xs">{column.label}</span>
-												<span class="font-mono text-xxs font-light text-mid-grey"
-													>{column.unit}</span
-												>
-											</div>
-										</th>
+											<span
+												class={selected ? TABLE_SWATCH : TABLE_EMPTY_SWATCH}
+												style:background-color={selected ? region.colour : undefined}
+												style:border-color={selected ? region.colour : undefined}
+											></span>
+											<span class="min-w-0 truncate text-dark-grey"
+												>{label.main} <span class="text-mid-grey">{label.sub}</span></span
+											>
+										</button>
+									</th>
+									{#each metrics.map((metric) => {
+										const value = comparisonMetricValue(row, metric.id, basis);
+										return source.status[region.value]?.pending && !row ? '…' : formatComparisonValue(value, metric.id);
+									}) as cell, index (index)}
+										<td class={tableValueCell(cell, index === metrics.length - 1)}>{cell}</td>
 									{/each}
 								</tr>
-							</thead>
-							<tbody>
-								{#each COMPARISON_REGIONS as region (region.value)}
-									{@const selected = regions.includes(region.value)}
-									{@const label = splitTableLabel(region.label)}
-									{@const row = source.data[region.value]?.find((row) => row.time === period)}
-									<tr class="{TABLE_ROW} {selected ? '' : 'opacity-50'}">
-										<th
-											scope="row"
-											class="{pinnedEdgeClass} bg-white text-left font-normal group-hover:bg-light-warm-grey"
-										>
-											<button
-												type="button"
-												aria-pressed={selected}
-												aria-label={`Compare ${region.label}`}
-												title={region.label}
-												onclick={(event) =>
-													toggleRegion(region.value, event.metaKey || event.ctrlKey)}
-												class="flex w-full items-center gap-2.5 py-1.5 pl-4 pr-2 text-left"
-											>
-												<span
-													class={selected ? TABLE_SWATCH : TABLE_EMPTY_SWATCH}
-													style:background-color={selected ? region.colour : undefined}
-													style:border-color={selected ? region.colour : undefined}
-												></span>
-												<span class="min-w-0 truncate text-dark-grey"
-													>{label.main} <span class="text-mid-grey">{label.sub}</span></span
-												>
-											</button>
-										</th>
-										{#each metrics.map((metric) => {
-											const value = comparisonMetricValue(row, metric.id, basis);
-											return source.status[region.value]?.pending && !row ? '…' : formatComparisonValue(value, metric.id);
-										}) as cell, index (index)}
-											<td class={tableValueCell(cell, index === metrics.length - 1)}>{cell}</td>
-										{/each}
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
+							{/each}
+						</tbody>
+					</table>
 				</div>
-			</ResizablePanel>
-		{:else}
-			<PanelRail
-				side="right"
-				label="Show regions table"
-				controls="tracker-regions-panel"
-				onopen={panel.open}
-				bind:opener={panel.opener}
-			/>
-		{/if}
-	</div>
+			</div>
+		{/snippet}
+	</TrackerSplitLayout>
 </section>

@@ -3,14 +3,9 @@
 	import { onMount, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { slide } from 'svelte/transition';
-	import { clickoutside } from '@svelte-put/clickoutside';
-	import PanelRail from './PanelRail.svelte';
-	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
-	import { createDockedPanel } from '$lib/components/ui/panel/docked-panel.svelte.js';
-	import { percentPanelBounds } from '$lib/components/ui/panel/panel-bounds.js';
+	import TrackerSplitLayout, { FUEL_TECH_SPLIT } from './TrackerSplitLayout.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
-	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
 	import { rangeSlugFor } from '$lib/components/charts/facility/range-params.js';
 	import {
 		getIntervalSpec,
@@ -241,11 +236,6 @@
 	/** @param {GenerationSnapshot} value */
 	const handleEmissionsData = (value) => data.publish('emissions', value);
 
-	let containerWidth = $state(0);
-	const PANEL_MIN_PX = 320;
-	// Reserve a usable chart column, including its padding and table divider.
-	const CHART_SPACE_PX = 376;
-	const wideLayout = new MediaQuery('(min-width: 1024px)', true);
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	let hoverTime = $derived(previewTime ?? focusTime);
 	/** The hovered or keyboard-inspected period, formatted at the display grain.
@@ -261,27 +251,6 @@
 	export function getInspectLabel() {
 		return inspectLabel;
 	}
-	// Fuel-tech table: a percentage of the container, bounded so the charts
-	// keep a usable column. Its open state lives in the URL.
-	let panelBounds = $derived(
-		percentPanelBounds({
-			containerWidth,
-			minPx: PANEL_MIN_PX,
-			reservedPx: CHART_SPACE_PX,
-			maxPct: 80,
-			wide: wideLayout.current,
-			narrowMaxPct: 80
-		})
-	);
-	const tablePanel = createDockedPanel({
-		initial: 30,
-		min: () => panelBounds.min,
-		max: () => panelBounds.max,
-		scale: () => (containerWidth ? 100 / containerWidth : 0),
-		inverted: true,
-		step: 2,
-		setOpen: onpaneltoggle
-	});
 	onMount(() =>
 		session.connect(() => [generationChart, priceChart, emissionsChart, ...providers.all])
 	);
@@ -485,277 +454,229 @@
 		/>
 	</div>
 {/if}
-<div
-	class="relative flex min-h-0 flex-1 flex-row"
-	bind:clientWidth={containerWidth}
-	data-png-context={`${regionLabel(region)} · ${rangeLabel} · ${intervalBadge} · UTC${timeZone} · ${getGroup(group).label}${imageFilterLabel ? ` · ${imageFilterLabel}` : ''}`}
+<TrackerSplitLayout
+	config={FUEL_TECH_SPLIT}
+	open={tablePanelOpen}
+	onopenchange={onpaneltoggle}
+	controls="tracker-table-panel"
+	resizeLabel="Resize table panel"
+	railLabel="Show fuel tech table"
+	bind:engaged={panZoomEngaged}
+	pngContext={`${regionLabel(region)} · ${rangeLabel} · ${intervalBadge} · UTC${timeZone} · ${getGroup(group).label}${imageFilterLabel ? ` · ${imageFilterLabel}` : ''}`}
 >
-	<!-- No space-y: each card's full-gap drag handle is the spacer between cards.
-	     Right padding yields to the open table's drag handle — the handle IS
-	     the page-background gap between the white columns. -->
-	<div
-		class="min-w-0 flex-1 overflow-y-auto py-4 pl-4 md:py-6 md:pl-6 {tablePanelOpen
-			? ''
-			: 'pr-4 md:pr-6'}"
-		use:clickoutside={{ event: 'pointerdown', options: true }}
-		onclickoutside={() => (panZoomEngaged = false)}
+	<ChartCard
+		title="Generation"
+		loading={trackerLoading}
+		status={generationFreshness}
+		png={{
+			id: 'generation',
+			label: 'Generation',
+			caption:
+				range.displayInterval === '5m' &&
+				Object.values(data.current('generation')?.groupFuelTechs ?? {}).some((codes) =>
+					codes.includes('solar_rooftop')
+				)
+					? 'Rooftop solar: 5-minute chart values interpolated between reported half-hour values'
+					: '',
+			ready:
+				data.ready('generation') &&
+				!chartsHoldFrame &&
+				!session.gestureActive &&
+				imageProvidersReady
+		}}
+		engaged={panZoomEngaged}
+		heightStorageKey="tracker-chart-height-generation"
+		defaultHeightPx={320}
 	>
-		<ChartCard
-			title="Generation"
-			loading={trackerLoading}
-			status={generationFreshness}
-			png={{
-				id: 'generation',
-				label: 'Generation',
-				caption:
-					range.displayInterval === '5m' &&
-					Object.values(data.current('generation')?.groupFuelTechs ?? {}).some((codes) =>
-						codes.includes('solar_rooftop')
-					)
-						? 'Rooftop solar: 5-minute chart values interpolated between reported half-hour values'
-						: '',
-				ready:
-					data.ready('generation') &&
-					!chartsHoldFrame &&
-					!session.gestureActive &&
-					imageProvidersReady
-			}}
-			engaged={panZoomEngaged}
-			heightStorageKey="tracker-chart-height-generation"
-			defaultHeightPx={320}
-		>
-			{#snippet actions()}
-				<button
-					class="text-xs underline"
-					aria-expanded={!!comparison}
-					onclick={() => (comparison ? session.select('comparison', null) : openComparison())}
-					>Compare dates</button
-				>
-			{/snippet}
-			{#snippet children(heightPx)}
-				{#if showContributions || (needsContributionDemand && marketData.error)}
-					<p class="px-3 py-1 text-xs text-mid-grey" role="status">
-						{#if needsContributionDemand && marketData.error}
-							Gross-demand percentages unavailable.
-							<button class="underline" onclick={() => marketData.reconcileFetches()}
-								>Retry percentage data</button
-							>
-						{:else}
-							Shares per interval; the table summarises the selected window. Change the basis in
-							Fuel technology options → Contribution.
-						{/if}
-					</p>
-				{/if}
-				<NetworkChart
-					bind:this={generationChart}
-					{...sharedChartProps}
-					{hoverTime}
-					metric={range.activeMetric}
-					chartKind="stacked"
-					nightShading
-					title={energyMetric ? 'Energy' : 'Power'}
-					chartHeightPx={heightPx}
-					generationUnitOptions
-					interpolateRooftop
-					dataTransform={session.selection.generationTransform}
-					ondatatransformchange={(value) => session.select('generationTransform', value)}
-					createProportionContext={chartContributionContext}
-					{overlayLines}
-					{overlayAreas}
-					hiddenSeriesNames={hiddenSeries}
-					onviewportchange={(next) => session.moveViewport(next, generationChart)}
-					onvisibledata={handleGenerationData}
-					bind:panZoomEngaged
-				/>
-			{/snippet}
-		</ChartCard>
-
-		{#if comparison}
-			<DateComparison
-				{group}
-				snapshot={data.ready('generation') ? data.current('generation') : null}
-				selection={comparison}
-				hidden={hiddenSeries}
-				pending={!data.state('generation').error && !data.ready('generation')}
-				error={data.state('generation').error}
-				{region}
-				zone={timeZone}
-				interval={range.displayInterval}
-				energy={energyMetric}
-				prefix={generationDisplayPrefix}
-				onchange={(value) => session.select('comparison', value)}
+		{#snippet actions()}
+			<button
+				class="text-xs underline"
+				aria-expanded={!!comparison}
+				onclick={() => (comparison ? session.select('comparison', null) : openComparison())}
+				>Compare dates</button
+			>
+		{/snippet}
+		{#snippet children(heightPx)}
+			{#if showContributions || (needsContributionDemand && marketData.error)}
+				<p class="px-3 py-1 text-xs text-mid-grey" role="status">
+					{#if needsContributionDemand && marketData.error}
+						Gross-demand percentages unavailable.
+						<button class="underline" onclick={() => marketData.reconcileFetches()}
+							>Retry percentage data</button
+						>
+					{:else}
+						Shares per interval; the table summarises the selected window. Change the basis in Fuel
+						technology options → Contribution.
+					{/if}
+				</p>
+			{/if}
+			<NetworkChart
+				bind:this={generationChart}
+				{...sharedChartProps}
+				{hoverTime}
+				metric={range.activeMetric}
+				chartKind="stacked"
+				nightShading
+				title={energyMetric ? 'Energy' : 'Power'}
+				chartHeightPx={heightPx}
+				generationUnitOptions
+				interpolateRooftop
+				dataTransform={session.selection.generationTransform}
+				ondatatransformchange={(value) => session.select('generationTransform', value)}
+				createProportionContext={chartContributionContext}
+				{overlayLines}
+				{overlayAreas}
+				hiddenSeriesNames={hiddenSeries}
+				onviewportchange={(next) => session.moveViewport(next, generationChart)}
+				onvisibledata={handleGenerationData}
+				bind:panZoomEngaged
 			/>
-		{/if}
+		{/snippet}
+	</ChartCard>
 
-		<ChartCard
-			title="Market"
-			loading={trackerLoading}
-			status={marketFreshness}
-			png={{
-				id: 'market',
-				label: 'Market',
-				ready: data.ready('market') && !chartsHoldFrame && !session.gestureActive
-			}}
-			engaged={panZoomEngaged}
-			heightStorageKey="tracker-chart-height-price"
-		>
-			{#snippet actions()}
-				{#if regionHasSpotPrice}
-					<SwitchTabs
-						buttons={[
-							{ label: 'Price', value: 'price' },
-							{ label: 'Market value', value: 'market_value' }
-						]}
-						selected={priceMode}
-						onChange={(value) =>
-							onpricemodechange?.(/** @type {import('./types.js').PriceMode} */ (value))}
-					/>
-				{:else}
-					<span class="text-xs text-mid-grey"> No national spot price — showing market value </span>
-				{/if}
-			{/snippet}
-			{#snippet children(heightPx)}
-				<NetworkChart
-					bind:this={priceChart}
-					{...sharedChartProps}
-					{hoverTime}
-					metric={priceMetric}
-					chartKind={priceIsMarketValue ? 'stacked' : 'line'}
-					title={priceIsMarketValue
-						? 'Market value'
-						: isRollingDisplay
-							? 'Volume-weighted price'
-							: 'Spot price'}
-					chartHeightPx={heightPx}
-					hiddenSeriesNames={priceIsMarketValue ? hiddenSeries : []}
-					dataTransform={priceIsMarketValue ? session.selection.marketValueTransform : 'absolute'}
-					ondatatransformchange={(value) => session.select('marketValueTransform', value)}
-					onviewportchange={(next) => session.moveViewport(next, priceChart)}
-					onvisibledata={handlePriceData}
-					bind:panZoomEngaged
-				/>
-			{/snippet}
-		</ChartCard>
+	{#if comparison}
+		<DateComparison
+			{group}
+			snapshot={data.ready('generation') ? data.current('generation') : null}
+			selection={comparison}
+			hidden={hiddenSeries}
+			pending={!data.state('generation').error && !data.ready('generation')}
+			error={data.state('generation').error}
+			{region}
+			zone={timeZone}
+			interval={range.displayInterval}
+			energy={energyMetric}
+			prefix={generationDisplayPrefix}
+			onchange={(value) => session.select('comparison', value)}
+		/>
+	{/if}
 
-		<ChartCard
-			title="Emissions"
-			loading={trackerLoading}
-			status={emissionsFreshness}
-			png={{
-				id: 'emissions',
-				label: 'Emissions',
-				ready: data.ready('emissions') && !chartsHoldFrame && !session.gestureActive
-			}}
-			engaged={panZoomEngaged}
-			heightStorageKey="tracker-chart-height-emissions"
-		>
-			{#snippet actions()}
+	<ChartCard
+		title="Market"
+		loading={trackerLoading}
+		status={marketFreshness}
+		png={{
+			id: 'market',
+			label: 'Market',
+			ready: data.ready('market') && !chartsHoldFrame && !session.gestureActive
+		}}
+		engaged={panZoomEngaged}
+		heightStorageKey="tracker-chart-height-price"
+	>
+		{#snippet actions()}
+			{#if regionHasSpotPrice}
 				<SwitchTabs
 					buttons={[
-						{ label: 'Intensity', value: 'intensity' },
-						{ label: 'Volume', value: 'volume' }
+						{ label: 'Price', value: 'price' },
+						{ label: 'Market value', value: 'market_value' }
 					]}
-					selected={emissionsMode}
+					selected={priceMode}
 					onChange={(value) =>
-						onemissionsmodechange?.(/** @type {import('./types.js').EmissionsMode} */ (value))}
+						onpricemodechange?.(/** @type {import('./types.js').PriceMode} */ (value))}
 				/>
-			{/snippet}
-			{#snippet children(heightPx)}
-				<NetworkChart
-					bind:this={emissionsChart}
-					{...sharedChartProps}
-					{hoverTime}
-					metric={emissionsMetric}
-					chartKind={emissionsIsIntensity ? 'line' : 'stacked'}
-					title={emissionsIsIntensity ? 'Intensity' : 'Volume'}
-					chartHeightPx={heightPx}
-					hiddenSeriesNames={emissionsIsIntensity ? [] : hiddenSeries}
-					excludedFuelTechGroups={emissionsIsIntensity ? hiddenSeries : []}
-					onviewportchange={(next) => session.moveViewport(next, emissionsChart)}
-					onvisibledata={handleEmissionsData}
-					bind:panZoomEngaged
-				/>
-			{/snippet}
-		</ChartCard>
-	</div>
-
-	{#if tablePanelOpen}
-		<!-- Panel divider — sits in the gap between the columns, outside the
-		     panel container, matching the chart cards' handles. -->
-		<!-- w-4: same gap length as the chart cards' h-4 drag handles. -->
-		<DragHandle
-			axis="x"
-			onstart={tablePanel.start}
-			onkeydown={tablePanel.keydown}
-			tabindex={0}
-			aria-valuemin={panelBounds.min}
-			aria-valuemax={panelBounds.max}
-			aria-valuenow={Math.round(tablePanel.size)}
-			active={tablePanel.dragging}
-			alwaysShowGrip
-			class="w-4 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
-			role="separator"
-			aria-orientation="vertical"
-			aria-label="Resize table panel"
-			title="Drag to resize the table, or use the arrow keys"
-		/>
-		<ResizablePanel
-			open
-			direction="left"
-			defaultSize={tablePanel.size}
-			minSize={PANEL_MIN_PX}
-			containerSize={containerWidth}
-			showDragHandle={false}
-			externalResizing={tablePanel.dragging}
-			onclose={tablePanel.close}
-			class="z-20 flex bg-white"
-		>
-			{#snippet header()}<span class="hidden"></span>{/snippet}
-			<FuelTechPanel
-				loading={trackerLoading}
-				options={fuelTechOptions}
-				bind:closeButton={tablePanel.closer}
-				rows={inspectedTable?.rows ?? displayedRows}
-				tableColumns={tableColumns.value}
-				valuesPending={tableValuesPending}
-				error={data.state('generation').error ?? providers.error}
-				onretry={() => {
-					generationChart?.reconcileFetches();
-					providers.retry();
-				}}
-				basis={displayedTable?.basis ?? range.activeMetric}
-				rooftopInterpolation={range.displayInterval === '5m'}
-				displayPrefix={generationDisplayPrefix}
-				{tableUnits}
-				onunitchange={(key, prefix) => (tableUnits = { ...tableUnits, [key]: prefix })}
-				group={displayedTable?.group ?? group}
-				ongroupchange={(value) => session.select('group', value)}
-				oncontributionchange={(value) => session.select('contributionMode', value)}
-				contributionMode={displayedTable?.contributionMode ?? contributionMode}
-				hiddenCount={hiddenSeries.length}
-				curtailmentRows={inspectedTable?.curtailmentRows ?? displayedTable?.curtailmentRows ?? []}
-				shownCurtailment={shownCurtailmentIds}
-				overlaySummary={inspectedTable?.overlaySummary ?? displayedTable?.overlaySummary ?? null}
-				{showDemandLine}
-				{showRenewablesLine}
-				ontoggle={toggleSeries}
-				oncurtailmenttoggle={toggleCurtailment}
-				ondemandlinetoggle={(exclusive) => toggleOverlay('demand', exclusive)}
-				onrenewableslinetoggle={(exclusive) => toggleOverlay('renewables', exclusive)}
-				onshowall={showAllSeries}
-				onclose={tablePanel.close}
+			{:else}
+				<span class="text-xs text-mid-grey"> No national spot price — showing market value </span>
+			{/if}
+		{/snippet}
+		{#snippet children(heightPx)}
+			<NetworkChart
+				bind:this={priceChart}
+				{...sharedChartProps}
+				{hoverTime}
+				metric={priceMetric}
+				chartKind={priceIsMarketValue ? 'stacked' : 'line'}
+				title={priceIsMarketValue
+					? 'Market value'
+					: isRollingDisplay
+						? 'Volume-weighted price'
+						: 'Spot price'}
+				chartHeightPx={heightPx}
+				hiddenSeriesNames={priceIsMarketValue ? hiddenSeries : []}
+				dataTransform={priceIsMarketValue ? session.selection.marketValueTransform : 'absolute'}
+				ondatatransformchange={(value) => session.select('marketValueTransform', value)}
+				onviewportchange={(next) => session.moveViewport(next, priceChart)}
+				onvisibledata={handlePriceData}
+				bind:panZoomEngaged
 			/>
-		</ResizablePanel>
-	{:else}
-		<!-- Keep the reopen action at the panel edge. -->
-		<PanelRail
-			side="right"
-			label="Show fuel tech table"
-			controls="tracker-table-panel"
-			onopen={tablePanel.open}
-			bind:opener={tablePanel.opener}
-		>
-			{@render fuelTechOptions()}
-		</PanelRail>
-	{/if}
-</div>
+		{/snippet}
+	</ChartCard>
+
+	<ChartCard
+		title="Emissions"
+		loading={trackerLoading}
+		status={emissionsFreshness}
+		png={{
+			id: 'emissions',
+			label: 'Emissions',
+			ready: data.ready('emissions') && !chartsHoldFrame && !session.gestureActive
+		}}
+		engaged={panZoomEngaged}
+		heightStorageKey="tracker-chart-height-emissions"
+	>
+		{#snippet actions()}
+			<SwitchTabs
+				buttons={[
+					{ label: 'Intensity', value: 'intensity' },
+					{ label: 'Volume', value: 'volume' }
+				]}
+				selected={emissionsMode}
+				onChange={(value) =>
+					onemissionsmodechange?.(/** @type {import('./types.js').EmissionsMode} */ (value))}
+			/>
+		{/snippet}
+		{#snippet children(heightPx)}
+			<NetworkChart
+				bind:this={emissionsChart}
+				{...sharedChartProps}
+				{hoverTime}
+				metric={emissionsMetric}
+				chartKind={emissionsIsIntensity ? 'line' : 'stacked'}
+				title={emissionsIsIntensity ? 'Intensity' : 'Volume'}
+				chartHeightPx={heightPx}
+				hiddenSeriesNames={emissionsIsIntensity ? [] : hiddenSeries}
+				excludedFuelTechGroups={emissionsIsIntensity ? hiddenSeries : []}
+				onviewportchange={(next) => session.moveViewport(next, emissionsChart)}
+				onvisibledata={handleEmissionsData}
+				bind:panZoomEngaged
+			/>
+		{/snippet}
+	</ChartCard>
+
+	{#snippet panel(/** @type {import('./types.js').TrackerDock} */ dock)}
+		<FuelTechPanel
+			loading={trackerLoading}
+			options={fuelTechOptions}
+			bind:closeButton={dock.closer}
+			rows={inspectedTable?.rows ?? displayedRows}
+			tableColumns={tableColumns.value}
+			valuesPending={tableValuesPending}
+			error={data.state('generation').error ?? providers.error}
+			onretry={() => {
+				generationChart?.reconcileFetches();
+				providers.retry();
+			}}
+			basis={displayedTable?.basis ?? range.activeMetric}
+			rooftopInterpolation={range.displayInterval === '5m'}
+			displayPrefix={generationDisplayPrefix}
+			{tableUnits}
+			onunitchange={(key, prefix) => (tableUnits = { ...tableUnits, [key]: prefix })}
+			group={displayedTable?.group ?? group}
+			ongroupchange={(value) => session.select('group', value)}
+			oncontributionchange={(value) => session.select('contributionMode', value)}
+			contributionMode={displayedTable?.contributionMode ?? contributionMode}
+			hiddenCount={hiddenSeries.length}
+			curtailmentRows={inspectedTable?.curtailmentRows ?? displayedTable?.curtailmentRows ?? []}
+			shownCurtailment={shownCurtailmentIds}
+			overlaySummary={inspectedTable?.overlaySummary ?? displayedTable?.overlaySummary ?? null}
+			{showDemandLine}
+			{showRenewablesLine}
+			ontoggle={toggleSeries}
+			oncurtailmenttoggle={toggleCurtailment}
+			ondemandlinetoggle={(exclusive) => toggleOverlay('demand', exclusive)}
+			onrenewableslinetoggle={(exclusive) => toggleOverlay('renewables', exclusive)}
+			onshowall={showAllSeries}
+			onclose={dock.close}
+		/>
+	{/snippet}
+	{#snippet rail()}{@render fuelTechOptions()}{/snippet}
+</TrackerSplitLayout>

@@ -346,9 +346,9 @@ describe('region comparison navigation and export', () => {
 			'tracker-regions-1d-2024-12-15-to-2025-12-14.csv'
 		);
 	});
-	it('preserves the profile display, range and comparison state through shared navigation', () => {
+	it('preserves the profile window, range and comparison state through shared navigation', () => {
 		const original = parseTrackerUrl(
-			new URLSearchParams('view=profile&profile-view=daily&range=30d'),
+			new URLSearchParams('view=profile&profile-days=14&range=30d'),
 			{
 				nowMs: start
 			}
@@ -362,7 +362,7 @@ describe('region comparison navigation and export', () => {
 		expect(url.searchParams.get('view')).toBe('compare');
 		const restored = parseTrackerUrl(url.searchParams, { nowMs: start });
 		expect(restored.range).toEqual(original.range);
-		expect(restored.profileView).toBe('daily');
+		expect(restored.profileDays).toBe(14);
 		expect(restored.regionComparison?.interval).toBe('1M');
 	});
 	it('exports period, region, base units and the chosen denominator with blank missing values', () => {

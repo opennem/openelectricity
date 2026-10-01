@@ -1,5 +1,6 @@
 import { untrack } from 'svelte';
 import { createHeadlessSeriesProvider } from '$lib/components/charts/network/headless-series-provider.svelte.js';
+import { createNetworkMarketData } from '$lib/components/charts/network/network-market-data.svelte.js';
 import { loadGroupsFor } from '$lib/components/charts/network/groups.js';
 import { processNetworkData } from '$lib/components/charts/network/process-network-data.js';
 import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
@@ -9,23 +10,29 @@ import { getFuelTechColour } from '$lib/components/charts/colours.js';
  * One bounded profile source on the shared headless provider: the same
  * request broker, cache and retry lifecycle as every other tracker feed, but
  * fetching exactly the selected complete days — never a speculative buffer.
- * Power stays enabled while inspecting price, so the all-technology overview
- * shares the existing request.
+ * One power source serves the stack, the breakdown and the table, so they
+ * share one request; regional spot price is a second source, for the
+ * breakdown's last chart.
  *
  * Must be called during component init — it registers `$effect`s.
- * @param {() => {region: string, metric: 'power' | 'price', zone: string,
+ * @param {() => {region: string, metric?: 'power' | 'price', zone: string,
  * group: ReturnType<typeof import('$lib/components/charts/network/groups.js').getGroup>,
  * window: {start: number, end: number}, enabled?: boolean}} options */
 export function createProfileData(options) {
-	let config = $derived(options());
+	// Each input derived on its own: a new window (or interval) must not
+	// rebuild the spec, which would replace the manager and refetch.
+	let region = $derived(options().region);
+	let metric = $derived(options().metric ?? 'power');
+	let zone = $derived(options().zone);
+	let group = $derived(options().group);
+	let enabled = $derived(options().enabled !== false);
 	const provider = createHeadlessSeriesProvider({
-		region: () => config.region,
+		region: () => region,
 		interval: () => '5m',
-		timeZone: () => config.zone,
-		enabled: () => config.enabled !== false,
+		timeZone: () => zone,
+		enabled: () => enabled,
 		exactWindow: true,
 		spec: () => {
-			const { metric, zone, group } = config;
 			return {
 				cacheScope: `time-of-day-${metric}`,
 				metric,
@@ -44,12 +51,48 @@ export function createProfileData(options) {
 			};
 		}
 	});
+	return boundedSource(provider, () => options().window);
+}
+
+/**
+ * Regional gross demand for the same complete days, on the shared market
+ * provider (`demand_gross`, MW) — the denominator for the profile table's
+ * share of demand. Fetched only while that basis is shown.
+ *
+ * Must be called during component init — it registers `$effect`s.
+ * @param {() => {region: string, zone: string, window: {start: number, end: number},
+ * enabled?: boolean}} options */
+export function createProfileDemand(options) {
+	let region = $derived(options().region);
+	let zone = $derived(options().zone);
+	let enabled = $derived(options().enabled !== false);
+	const provider = createNetworkMarketData({
+		region: () => region,
+		basis: () => 'power',
+		interval: () => '5m',
+		timeZone: () => zone,
+		enabled: () => enabled,
+		exactWindow: true
+	});
+	return boundedSource(provider, () => options().window);
+}
+
+/**
+ * Serve a headless provider's rows for exactly the selected window.
+ * @param {ReturnType<typeof createHeadlessSeriesProvider>} provider
+ * @param {() => {start: number, end: number}} getWindow */
+function boundedSource(provider, getWindow) {
+	// Bounds as numbers, so a re-derived window with the same days never
+	// re-requests its viewport.
+	let start = $derived(getWindow().start);
+	let end = $derived(getWindow().end);
+	let window = $derived({ start, end });
 	// The window the provider has actually been asked for. Until the effect
 	// below catches up with a new selection, the source reports pending rather
 	// than serving the previous window's rows under the new label.
 	let requested = $state.raw({ start: 0, end: 0 });
 	$effect(() => {
-		const { start, end } = config.window;
+		const { start, end } = window;
 		// Untracked: the manager's request path reads its own cache state, and
 		// tracking it here would re-request the window every time a response
 		// landed (fetching the uncovered tail again and again).
@@ -59,14 +102,12 @@ export function createProfileData(options) {
 	let error = $derived(provider.error);
 	let pending = $derived(
 		!error &&
-			(provider.isPending ||
-				requested.start !== config.window.start ||
-				requested.end !== config.window.end)
+			(provider.isPending || requested.start !== window.start || requested.end !== window.end)
 	);
 	return {
 		/** Native 5-minute rows inside the selected window. */
 		get rows() {
-			return provider.getVisibleRows(config.window.start, config.window.end);
+			return provider.getVisibleRows(window.start, window.end);
 		},
 		get meta() {
 			return provider.seriesMeta;

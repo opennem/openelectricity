@@ -17,8 +17,11 @@ export const TRACKER_OVERLAYS = /** @type {const} */ ([
 	'curtailment-wind'
 ]);
 
+/** OpenElectricity red (Tailwind `red`). */
+export const OE_RED = '#C74523';
+
 /** OE red for the operational demand line. */
-export const DEMAND_LINE_COLOUR = '#C74523';
+export const DEMAND_LINE_COLOUR = OE_RED;
 export const RENEWABLES_LINE_COLOUR = getFuelTechColour('renewables');
 
 /**

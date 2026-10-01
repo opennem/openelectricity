@@ -40,10 +40,11 @@
  * @property {string} group - Fuel-tech grouping value
  * @property {TrackerView} view - Analysis view shown by the nav switcher
  * @property {import('./region-comparison.js').RegionComparisonSelection} regionComparison
- * @property {'average' | 'daily'} profileView - The Profile view's display
+ * @property {'lines' | 'bands' | 'radial' | 'ridgeline' | 'heatmap'} profileStyle - Breakdown: multi-line, percentile bands, radial clock, ridgeline or radial heatmap
+ * @property {'stacked' | 'breakdown'} profileDisplay - Profile: all-technology stack or per-series cards
+ * @property {boolean} profileToday - Breakdown charts add the current, incomplete day
+ * @property {'5m' | '30m'} profileInterval - Profile time-of-day slot length
  * @property {7 | 14 | 28} profileDays
- * @property {'power' | 'price'} profileMetric
- * @property {string} profileSeries
  * @property {string} profileEnd - Last complete local day, or empty for relative yesterday
  * @property {import('./comparison.js').Comparison | null} comparison - Exact displayed interval starts, or null when closed
  * @property {string[]} hiddenSeries - Hidden group IDs, validated against the grouping
@@ -90,6 +91,8 @@
  * @property {number | null} emissionsT - Window emissions, tCO₂e
  * @property {number | null} intensityKgPerMWh - Σ emissions ÷ Σ energy, kgCO₂e/MWh
  * @property {string[]} fuelTechs - Member fuel-tech codes present in the dataset
+ * @property {Record<string, number | null>} [powerValues] - Average power (MW) by
+ *   `powerColumns` key, when a view supplies its own columns
  */
 
 /**
@@ -123,6 +126,11 @@
  * @property {SiPrefix} [displayPrefix] - Generation chart's selected unit prefix for the active basis
  * @property {string} [group]
  * @property {string[]} [tableColumns]
+ * @property {Array<{key: string, label: string}>} [powerColumns] - A view's own
+ *   average-power columns in place of the window columns, filled from each row's `powerValues`
+ * @property {string} [focusColumn] - Column key to scroll into view and highlight
+ *   (the ridgeline's hovered day)
+ * @property {string[]} [notes] - A view's own footnotes, listed last under the table
  * @property {import('./table-units.js').TableUnits} [tableUnits] - Header-chosen unit prefixes; absent columns use their defaults
  * @property {ContributionMode} [contributionMode]
  * @property {string[]} [shownCurtailment] - Curtailment series ids banded on the chart
@@ -202,6 +210,71 @@
  * @property {boolean} pending - Charts are mid-switch; the held frame is stale
  * @property {string} sourceUrl
  * @property {number} generatedAtMs
+ */
+
+/**
+ * A docked side panel's controller — size, resize handlers, open/close and
+ * the focus hand-off between its close control and the rail's opener.
+ * @typedef {ReturnType<typeof import('$lib/components/ui/panel/docked-panel.svelte.js').createDockedPanel>} TrackerDock
+ */
+
+/**
+ * `TrackerSplitLayout` panel bounds, as percentages of the container.
+ * @typedef {Object} TrackerSplitConfig
+ * @property {number} initial - Default width, percent of the container
+ * @property {number} minPx - The panel never shrinks below this
+ * @property {number} reservedPx - Chart column kept free on wide layouts
+ * @property {number} maxPct
+ * @property {number} narrowMaxPct - Maximum width below the wide breakpoint
+ * @property {string} [storageKey] - Remember the chosen width locally
+ * @property {boolean} [narrowOverlay] - Below the wide breakpoint, overlay
+ *   the charts at `narrowMaxPct` (Escape closes) instead of docking beside them
+ */
+
+/**
+ * One Breakdown card: a profile series on the synthetic day, in the chosen
+ * style — `chart` (multi-line or percentile bands, on the full `ProfileChart`),
+ * `radial` (the hourly `RadialClock`) or `ridgeline` (`Ridgeline`).
+ * @typedef {Object} ProfileCard
+ * @property {string} key
+ * @property {string} label
+ * @property {string} unit
+ * @property {boolean} price - Spot price ($/MWh, stepped) rather than a technology
+ * @property {{
+ *   rows: TimeSeriesData[],
+ *   names: string[],
+ *   colours: Record<string, string>,
+ *   labels: Record<string, string>,
+ *   overlays: Array<{id: string, colour: string, strokeWidth?: number, label?: string}>,
+ *   readout?: (row: Record<string, any>) => Array<{label: string, value: number | null, colour: string}>
+ * }} [chart] - Stacked areas (`names`) with `overlays` lines, each plotting its row key
+ * @property {{
+ *   hours: ProfileHour[],
+ *   today: ProfileHour[] | null,
+ *   colour: string
+ * }} [radial]
+ * @property {{
+ *   days: Array<{date: string, values: Array<number | null>}>,
+ *   today: Array<number | null> | null,
+ *   average: Array<number | null>,
+ *   colour: string
+ * }} [ridgeline] - One offset curve per day
+ * @property {{
+ *   days: Array<{date: string, values: Array<number | null>}>,
+ *   colour: string
+ * }} [heatmap] - One ring per day on a 24-hour dial
+ */
+
+/**
+ * One hour of a profile's averages (`hourlyProfile`), for the radial clock.
+ * @typedef {{hour: number, label: string, average: number | null}} ProfileHour
+ */
+
+/**
+ * Average sunrise and sunset over a profile window, as hours on the network
+ * clock, and the place they describe (a capital, or the capitals averaged)
+ * with the capitals behind it.
+ * @typedef {{sunrise: number, sunset: number, place: string, capitals: string[]}} Daylight
  */
 
 export {};

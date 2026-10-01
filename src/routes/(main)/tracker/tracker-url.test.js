@@ -215,19 +215,22 @@ describe('tracker URLs', () => {
 		expect(charts.searchParams.has('compare-display')).toBe(false);
 	});
 
-	it('round-trips view=profile|compare and the daily profile display', () => {
+	it('round-trips view=profile|compare and drops the retired profile view, metric and series', () => {
 		const cases = [
-			['', 'timeline', 'average', ''],
-			['view=profile', 'profile', 'average', 'view=profile'],
-			['view=profile&profile-view=daily', 'profile', 'daily', 'view=profile&profile-view=daily'],
-			['view=compare', 'compare', 'average', 'view=compare'],
-			['view=compare&profile-view=daily', 'compare', 'daily', 'view=compare&profile-view=daily'],
-			['view=regions', 'timeline', 'average', ''],
-			['view=broken', 'timeline', 'average', '']
+			['', 'timeline', ''],
+			['view=profile', 'profile', 'view=profile'],
+			['view=profile&profile-view=daily', 'profile', 'view=profile'],
+			['view=profile&profile-metric=price', 'profile', 'view=profile'],
+			['view=profile&profile-series=coal,price', 'profile', 'view=profile'],
+			['view=profile&profile-style=ridgeline', 'profile', 'view=profile&profile-style=ridgeline'],
+			['view=profile&profile-style=bands', 'profile', 'view=profile'],
+			['view=compare', 'compare', 'view=compare'],
+			['view=regions', 'timeline', ''],
+			['view=broken', 'timeline', '']
 		];
-		for (const [query, view, profileView, canonical] of cases) {
+		for (const [query, view, canonical] of cases) {
 			const parsed = parseTrackerUrl(new URLSearchParams(query), context);
-			expect(parsed).toMatchObject({ view, profileView });
+			expect(parsed).toMatchObject({ view });
 			const url = applyTrackerUrl(new URL('https://example.test/tracker'), parsed);
 			expect(url.searchParams.toString()).toBe(canonical);
 		}

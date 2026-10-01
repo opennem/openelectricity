@@ -4,10 +4,11 @@
 	 * @property {boolean} [checked]
 	 * @property {string} [label]
 	 * @property {(event: MouseEvent) => void} [onclick]
+	 * @property {boolean} [disabled] - Greyed out and inert (the option doesn't apply)
 	 */
 
 	/** @type {Props} */
-	let { checked = false, label = 'Table', onclick } = $props();
+	let { checked = false, label = 'Table', onclick, disabled = false } = $props();
 	const id = $props.id();
 
 	let background = $derived(checked ? 'bg-dark-grey' : 'bg-warm-grey');
@@ -20,15 +21,21 @@
 	);
 </script>
 
-<label for={id} class="flex gap-6 justify-center items-center">
+<label
+	for={id}
+	class="flex gap-6 justify-center items-center {disabled ? 'cursor-not-allowed opacity-40' : ''}"
+>
 	<span class="font-space text-sm">{label}</span>
 
 	<!-- Enabled: "bg-indigo-600", Not Enabled: "bg-gray-200" -->
 	<button
 		{onclick}
 		{id}
+		{disabled}
 		type="button"
-		class="{background} relative inline-flex h-10 w-16 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-red focus:ring-offset-2"
+		class="{background} relative inline-flex h-10 w-16 shrink-0 {disabled
+			? 'cursor-not-allowed'
+			: 'cursor-pointer'} items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-red focus:ring-offset-2"
 		role="switch"
 		aria-checked={checked}
 		name="toggle"
