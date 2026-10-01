@@ -12,7 +12,8 @@
 	 * Options may have one level of independently selectable `children`.
 	 * `divider: true` adds a separator after the option; `disabled: true`
 	 * shows it dimmed and unselectable. A `footer` snippet renders below the
-	 * list for controls that modify the choice rather than being one.
+	 * list for controls that modify the choice rather than being one. A
+	 * `trigger` snippet replaces the pill (see FilterPanel).
 	 *
 	 * The generalisation of the tracker's RegionDropdown — use this for any
 	 * pick-one control that should look like the Region pill.
@@ -29,6 +30,7 @@
 	 *   compact?: boolean,
 	 *   disabled?: boolean,
 	 *   footer?: import('svelte').Snippet<[() => void]>,
+	 *   trigger?: import('svelte').Snippet<[{ open: boolean, toggle: () => void }]>,
 	 *   onchange?: (value: string) => void
 	 * }}
 	 */
@@ -40,6 +42,7 @@
 		compact = false,
 		disabled = false,
 		footer,
+		trigger,
 		onchange
 	} = $props();
 
@@ -85,6 +88,7 @@
 	active={defaultValue !== null && selected !== defaultValue}
 	{compact}
 	{disabled}
+	{trigger}
 >
 	{#snippet children(close)}
 		<ul class="flex flex-col text-sm px-2 py-2" role="listbox" aria-label={listLabel}>

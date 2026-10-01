@@ -100,7 +100,7 @@ describe('energy formatting', () => {
 });
 
 describe('emissions formatting', () => {
-	it('formats plain tonnes with the power precision rule, never scaling to kt/Mt', () => {
+	it('formats plain tonnes by default with the power precision rule', () => {
 		expect(formatTableEmissions(7.25)).toBe('7.3');
 		expect(formatTableEmissions(300)).toBe('300');
 		expect(formatTableEmissions(8_500)).toBe('8,500');
@@ -108,10 +108,24 @@ describe('emissions formatting', () => {
 		expect(formatTableEmissions(null)).toBe(EMPTY_CELL);
 	});
 
-	it('formats intensity with one decimal below ten', () => {
+	it('scales emissions to kt and Mt', () => {
+		expect(formatTableEmissions(8_500, 'k')).toBe('8.5');
+		expect(formatTableEmissions(1_234_567, 'k')).toBe('1,235');
+		expect(formatTableEmissions(1_234_567, 'M')).toBe('1.2');
+		expect(formatTableEmissions(null, 'M')).toBe(EMPTY_CELL);
+	});
+
+	it('formats intensity in kg with one decimal below ten', () => {
 		expect(formatTableIntensity(0)).toBe('0.0');
 		expect(formatTableIntensity(7.25)).toBe('7.3');
 		expect(formatTableIntensity(812.4)).toBe('812');
 		expect(formatTableIntensity(null)).toBe(EMPTY_CELL);
+	});
+
+	it('formats intensity in tonnes with two decimals', () => {
+		expect(formatTableIntensity(812.4, 'M')).toBe('0.81');
+		expect(formatTableIntensity(1_050, 'M')).toBe('1.05');
+		expect(formatTableIntensity(0, 'M')).toBe('0.00');
+		expect(formatTableIntensity(null, 'M')).toBe(EMPTY_CELL);
 	});
 });

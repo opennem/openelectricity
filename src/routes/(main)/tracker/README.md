@@ -264,7 +264,9 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   in localStorage (`tracker-table-columns`, restored after mount) so shared links
   never change the recipient's columns, and the retired `columns` param is dropped
   from old links. The table headers echo the grouping and
-  contribution choices as muted sub-labels. The same trigger stays in the
+  contribution choices as muted sub-labels and change them in place: the
+  Technology header opens the grouping list (the shared `FilterSelect`
+  through a custom `trigger`), and the Contribution header toggles its basis. The same trigger stays in the
   collapsed table rail, allowing chart configuration without table-provider
   fetches. Time of day has a grouping-only dialog in the top nav. Global page
   options now contain only page actions (exports, link, fullscreen and docs).
@@ -281,9 +283,8 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
 - **Fuel-tech table** (`FuelTechPanel` + `FuelTechTable` in a `ResizablePanel`)
   — window energy (MWh/GWh/TWh), Av power (MW/GW), contribution (% of source
   generation ⇄ % of gross demand),
-  volume-weighted price ($/MWh), window emissions (tCO₂e, always in
-  plain tonnes) and emissions intensity (kgCO₂e/MWh, Σ tonnes ÷ Σ
-  energy) per group, computed in `table-model.js` from: the generation chart's
+  volume-weighted price ($/MWh), window emissions (tCO₂e) and emissions
+  intensity (kgCO₂e/MWh, Σ tonnes ÷ Σ energy) per group, computed in `table-model.js` from: the generation chart's
   `onvisibledata` snapshot, the headless `createNetworkFuelTechSeries`
   providers for `market_value` and `emissions`, and the market pair's
   `demand_gross`. Loads report no emissions. Ratios are ratios of window sums (each side normalised to
@@ -312,7 +313,13 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   the value columns scroll horizontally with snap points. Av power follows the chart's
   MW/GW choice while the chart shows power and stays in MW otherwise; Energy
   sizes its own prefix from the table's largest value, stepping MWh → GWh →
-  TWh only at five digits (`energyDisplayPrefix`).
+  TWh only at five digits (`energyDisplayPrefix`); emissions start in plain
+  tonnes and intensity in kgCO₂e/MWh. Clicking a value header steps its unit
+  through its SI set and wraps (`table-units.js`): Energy MWh → GWh → TWh,
+  Av power MW → GW, Emissions t → kt → Mt, Intensity kg → t per MWh (two
+  decimals in tonnes). Av price has one unit, so its header is static. A
+  header choice pins that column until the page reloads; it is session state,
+  not URL or localStorage, because the defaults follow the window's scale.
 - **Data export** (`tracker-export.js`) — the options (⋮) menu's "Download as
   CSV" rows (Generation, Market, Emissions, and the Fuel tech table while its
   panel is open) and a single "Download as XLSX" workbook (a Summary sheet —

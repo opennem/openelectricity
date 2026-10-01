@@ -84,26 +84,36 @@ export function formatTablePrice(value) {
 }
 
 /**
- * Format a window emissions total in plain tonnes (tCO₂e) — never scaled to
- * kt/Mt, so rows read directly against the chart's tonnes — with the same
- * precision rule as power: one decimal strictly inside (-10, 10).
+ * Format a window emissions total (tonnes) in the selected display prefix —
+ * plain tonnes by default, so rows read directly against the chart — with the
+ * same precision rule as power: one decimal strictly inside (-10, 10).
  *
  * @param {number | null | undefined} valueT
+ * @param {SiPrefix} [displayPrefix] - '' t, 'k' kt, 'M' Mt
  * @returns {string}
  */
-export function formatTableEmissions(valueT) {
-	return formatGenerationUnitValue(valueT, '', '');
+export function formatTableEmissions(valueT, displayPrefix = '') {
+	return formatGenerationUnitValue(valueT, '', displayPrefix);
 }
 
 /**
- * Format an emissions intensity (kgCO₂e/MWh) — one decimal below 10, whole
- * numbers otherwise.
+ * Format an emissions intensity given in kgCO₂e/MWh. In kg it keeps one
+ * decimal below 10 and whole numbers otherwise; in tonnes ('M', i.e. Mg)
+ * values sit around 1, so it always shows two decimals.
  *
- * @param {number | null | undefined} value
+ * @param {number | null | undefined} valueKg
+ * @param {SiPrefix} [displayPrefix] - 'k' kgCO₂e/MWh, 'M' tCO₂e/MWh
  * @returns {string}
  */
-export function formatTableIntensity(value) {
-	return formatGenerationUnitValue(value, '', '');
+export function formatTableIntensity(valueKg, displayPrefix = 'k') {
+	if (displayPrefix === 'k') return formatGenerationUnitValue(valueKg, 'k', 'k');
+	if (valueKg == null || !Number.isFinite(valueKg)) return EMPTY_CELL;
+	return formatSI(valueKg, {
+		fromPrefix: 'k',
+		toPrefix: displayPrefix,
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2
+	});
 }
 
 /**

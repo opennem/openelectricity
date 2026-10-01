@@ -737,6 +737,58 @@ test('fuel technology options modal controls grouping, contribution and columns 
 	await expectNoHorizontalScroll(page);
 });
 
+test('table headers change grouping, contribution basis and units in place', async ({ page }) => {
+	await trackerFixture(page);
+	await page.addInitScript(() =>
+		localStorage.setItem(
+			'tracker-table-columns',
+			JSON.stringify(['energy', 'power', 'contribution', 'price', 'emissions', 'intensity'])
+		)
+	);
+	await page.goto('/tracker?region=nsw1');
+	await chartsSettled(page);
+	const table = page.getByRole('table', { name: 'Fuel technology values' });
+	const header = (/** @type {RegExp} */ name) => table.getByRole('columnheader', { name });
+
+	// Technology opens the grouping list; a pick applies and closes it.
+	await header(/^Technology/)
+		.getByRole('button')
+		.click();
+	const groupings = page.getByRole('listbox', { name: 'Fuel tech grouping' });
+	await groupings.getByRole('option', { name: 'Detailed', exact: true }).click();
+	await expect(groupings).toHaveCount(0);
+	await expect(page).toHaveURL(/group=detailed/);
+	await expect(header(/^Technology/)).toContainText('Detailed');
+
+	// Contribution toggles its basis through the URL-owned selection.
+	await header(/^Contribution/)
+		.getByRole('button')
+		.click();
+	await expect(page).toHaveURL(/contribution=generation/);
+	await expect(header(/^Contribution/)).toContainText('% generation');
+
+	// Value columns step through their SI prefixes and wrap.
+	const energy = header(/^Energy/).getByRole('button');
+	const start = (await energy.textContent())?.match(/[MGT]Wh/)?.[0];
+	const cycle = ['MWh', 'GWh', 'TWh'];
+	for (let step = 1; step <= 3; step++) {
+		await energy.click();
+		await expect(energy).toContainText(cycle[(cycle.indexOf(String(start)) + step) % 3]);
+	}
+	for (const unit of ['ktCO₂e', 'MtCO₂e', 'tCO₂e']) {
+		await header(/^Emissions/)
+			.getByRole('button')
+			.click();
+		await expect(header(/^Emissions/)).toContainText(unit);
+	}
+	await header(/^Intensity/)
+		.getByRole('button')
+		.click();
+	await expect(header(/^Intensity/)).toContainText('tCO₂e/MWh');
+	await expect(header(/^Intensity/)).not.toContainText('kg');
+	await expect(header(/^Av price/).getByRole('button')).toHaveCount(0);
+});
+
 test('window metrics follow range and market modes without applying timeline transforms', async ({
 	page
 }) => {

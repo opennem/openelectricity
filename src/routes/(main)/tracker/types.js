@@ -116,18 +116,22 @@
 /**
  * Display settings and row-toggle callbacks shared by `FuelTechPanel` and
  * `FuelTechTable` — the panel forwards them to the table untouched. The
- * grouping and contribution basis are chosen in the fuel technology options dialog; the
- * table only displays them.
+ * grouping and contribution basis are chosen in the fuel technology options
+ * dialog or from the table headers, which also cycle the value units.
  * @typedef {Object} FuelTechTableControls
  * @property {'power' | 'energy'} [basis]
  * @property {SiPrefix} [displayPrefix] - Generation chart's selected unit prefix for the active basis
  * @property {string} [group]
  * @property {string[]} [tableColumns]
+ * @property {import('./table-units.js').TableUnits} [tableUnits] - Header-chosen unit prefixes; absent columns use their defaults
  * @property {ContributionMode} [contributionMode]
  * @property {string[]} [shownCurtailment] - Curtailment series ids banded on the chart
  * @property {boolean} [showDemandLine]
  * @property {boolean} [showRenewablesLine]
  * @property {(series: string, exclusive?: boolean) => void} [ontoggle]
+ * @property {(group: string) => void} [ongroupchange] - Technology header grouping menu
+ * @property {(mode: ContributionMode) => void} [oncontributionchange] - Contribution header cycle
+ * @property {(key: import('./table-units.js').TableUnitKey, prefix: SiPrefix) => void} [onunitchange] - Value header unit cycle
  * @property {(id: string, exclusive?: boolean) => void} [oncurtailmenttoggle]
  * @property {(exclusive?: boolean) => void} [ondemandlinetoggle]
  * @property {(exclusive?: boolean) => void} [onrenewableslinetoggle]

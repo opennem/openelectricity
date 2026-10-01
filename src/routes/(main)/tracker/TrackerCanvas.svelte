@@ -63,6 +63,9 @@
 	let region = $derived(session.selection.region);
 	let group = $derived(session.selection.group);
 	const tableColumns = createTableColumnsPreference();
+	/** Units picked from the table headers. Session-only: the defaults size
+	 * energy to the window, so a pinned unit shouldn't outlive the visit. */
+	let tableUnits = $state.raw(/** @type {import('./table-units.js').TableUnits} */ ({}));
 	let contributionMode = $derived(session.selection.contributionMode);
 	let priceMode = $derived(session.selection.priceMode);
 	let emissionsMode = $derived(session.selection.emissionsMode);
@@ -723,7 +726,11 @@
 				basis={displayedTable?.basis ?? range.activeMetric}
 				rooftopInterpolation={range.displayInterval === '5m'}
 				displayPrefix={generationDisplayPrefix}
+				{tableUnits}
+				onunitchange={(key, prefix) => (tableUnits = { ...tableUnits, [key]: prefix })}
 				group={displayedTable?.group ?? group}
+				ongroupchange={(value) => session.select('group', value)}
+				oncontributionchange={(value) => session.select('contributionMode', value)}
 				contributionMode={displayedTable?.contributionMode ?? contributionMode}
 				hiddenCount={hiddenSeries.length}
 				curtailmentRows={inspectedTable?.curtailmentRows ?? displayedTable?.curtailmentRows ?? []}

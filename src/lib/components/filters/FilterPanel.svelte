@@ -15,6 +15,10 @@
 	 * immediate-apply consumers (e.g. the explorer's single-select
 	 * RegionDropdown) skip it and instead call the `close` function handed to
 	 * the `children` snippet when a pick lands.
+	 *
+	 * `trigger` replaces the pill with the caller's own button (e.g. a table
+	 * header); it receives the open state and the toggle. Its wrapper anchors
+	 * the panel and counts as inside for outside-click dismissal.
 	 * @type {{
 	 *   label: string,
 	 *   badge?: number | string | null,
@@ -25,6 +29,7 @@
 	 *   onopenchange?: (open: boolean) => void,
 	 *   onapply?: () => void,
 	 *   footerLeft?: import('svelte').Snippet,
+	 *   trigger?: import('svelte').Snippet<[{ open: boolean, toggle: () => void }]>,
 	 *   children: import('svelte').Snippet<[() => void]>
 	 * }}
 	 */
@@ -39,6 +44,7 @@
 		onopenchange,
 		onapply,
 		footerLeft,
+		trigger,
 		children
 	} = $props();
 
@@ -75,16 +81,22 @@
 <svelte:document onclick={handleDocumentClick} />
 
 <div class="relative">
-	<FilterPill
-		{label}
-		{badge}
-		{active}
-		open={showPanel}
-		{compact}
-		{disabled}
-		bind:el={triggerEl}
-		onclick={() => setOpen(!showPanel)}
-	/>
+	{#if trigger}
+		<div bind:this={triggerEl}>
+			{@render trigger({ open: showPanel, toggle: () => setOpen(!showPanel) })}
+		</div>
+	{:else}
+		<FilterPill
+			{label}
+			{badge}
+			{active}
+			open={showPanel}
+			{compact}
+			{disabled}
+			bind:el={triggerEl}
+			onclick={() => setOpen(!showPanel)}
+		/>
+	{/if}
 
 	{#if showPanel && !disabled}
 		<div

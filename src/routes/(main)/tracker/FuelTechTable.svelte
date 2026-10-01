@@ -7,10 +7,13 @@
 		tableValueCell
 	} from './table-styles.js';
 	import { TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
+	import { ChevronDown } from '@lucide/svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
-	import { getGroup } from '$lib/components/charts/network/groups.js';
+	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
+	import { getGroup, GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs.js';
-	import { DEFAULT_GROUP, contributionLabel } from './tracker-model.js';
+	import { CONTRIBUTION_OPTIONS, DEFAULT_GROUP, contributionLabel } from './tracker-model.js';
+	import { TABLE_UNIT_CYCLES, nextTableUnitPrefix } from './table-units.js';
 	import {
 		CURTAILMENT_COLOURS,
 		DEMAND_LINE_COLOUR,
@@ -31,6 +34,8 @@
 	/** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
 	/** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */
 	/** @typedef {import('./types.js').OverlaySummary} OverlaySummary */
+	/** @typedef {import('./types.js').ContributionMode} ContributionMode */
+	/** @typedef {import('./table-units.js').TableUnitKey} TableUnitKey */
 
 	/**
 	 * Row indicator: a solid fuel-tech square, a hatched curtailment square or
@@ -63,8 +68,12 @@
 	 * charts; values are window aggregates or the inspected interval, computed upstream in
 	 * `table-model.js`, so hidden rows keep their numbers. Outside the Detailed
 	 * grouping, hovering a row's technology label lists the underlying fuel
-	 * techs folded into that group. The grouping and contribution basis are
-	 * chosen in the options dialog; the headers echo them as sub-labels.
+	 * techs folded into that group. The headers echo the grouping, contribution
+	 * basis and units as sub-labels and change them in place: Technology opens
+	 * the grouping menu, Contribution toggles its basis, and the scalable value
+	 * columns step through their SI prefixes (`table-units.js`). Price has a
+	 * single unit, so its header is static. The options dialog offers the
+	 * grouping and basis too.
 	 *
 	 * In narrow panels, Technology pins left while the value columns scroll
 	 * horizontally and snap into place. The table fills the panel when its visible columns fit.
@@ -84,35 +93,74 @@
 		group = DEFAULT_GROUP,
 		contributionMode = 'demand',
 		tableColumns = DEFAULT_TABLE_COLUMNS,
+		tableUnits = {},
 		curtailmentRows = [],
 		shownCurtailment = [],
 		overlaySummary = null,
 		showDemandLine = false,
 		showRenewablesLine = false,
 		ontoggle,
+		ongroupchange,
+		oncontributionchange,
+		onunitchange,
 		oncurtailmenttoggle,
 		ondemandlinetoggle,
 		onrenewableslinetoggle
 	} = $props();
 
-	let visibleColumns = $derived(
-		TABLE_COLUMNS.map((column, index) => ({ ...column, index })).filter((column) =>
-			tableColumns.includes(column.key)
-		)
-	);
 	let scrollLeft = $state(0);
 
-	/** Av power follows the chart's MW/GW choice while the chart shows power,
-	 *  and stays in MW otherwise. Energy always sizes its own prefix from the
-	 *  table's largest value, independently of the chart's selected prefix. */
-	let powerPrefix = $derived(basis === 'power' ? displayPrefix : 'M');
-	let energyPrefix = $derived(
-		energyDisplayPrefix(Math.max(0, ...rows.map((row) => row.energyMWh ?? 0)))
-	);
-	let powerUnit = $derived(`${powerPrefix}W`);
-	let energyUnit = $derived(`${energyPrefix}Wh`);
+	/** The prefix each scalable column renders in: the header's choice, else
+	 *  its default. Av power follows the chart's MW/GW choice while the chart
+	 *  shows power, and stays in MW otherwise. Energy sizes its own prefix from
+	 *  the table's largest value, independently of the chart's selected prefix.
+	 *  @type {Record<TableUnitKey, SiPrefix>} */
+	let prefixes = $derived({
+		energy:
+			tableUnits.energy ??
+			energyDisplayPrefix(Math.max(0, ...rows.map((row) => row.energyMWh ?? 0))),
+		power: tableUnits.power ?? (basis === 'power' ? displayPrefix : 'M'),
+		emissions: tableUnits.emissions ?? '',
+		intensity: tableUnits.intensity ?? 'k'
+	});
 	let groupLabel = $derived(getGroup(group).label);
-	let contributionUnit = $derived(contributionLabel(contributionMode));
+
+	/**
+	 * A value column's header sub-label and, when the header cycles, the label
+	 * it moves to and how. Without the matching callback the header is static.
+	 * @param {string} key
+	 * @returns {{ unit: string, nextUnit?: string, cycle?: () => void }}
+	 */
+	function columnHeader(key) {
+		if (key === 'price') return { unit: '$/MWh' };
+		if (key === 'contribution') {
+			const index = CONTRIBUTION_OPTIONS.findIndex((option) => option.value === contributionMode);
+			const next = /** @type {ContributionMode} */ (
+				CONTRIBUTION_OPTIONS[(index + 1) % CONTRIBUTION_OPTIONS.length].value
+			);
+			return {
+				unit: contributionLabel(contributionMode),
+				nextUnit: contributionLabel(next),
+				cycle: oncontributionchange && (() => oncontributionchange(next))
+			};
+		}
+		const unitKey = /** @type {TableUnitKey} */ (key);
+		const { label } = TABLE_UNIT_CYCLES[unitKey];
+		const next = nextTableUnitPrefix(unitKey, prefixes[unitKey]);
+		return {
+			unit: label(prefixes[unitKey]),
+			nextUnit: label(next),
+			cycle: onunitchange && (() => onunitchange(unitKey, next))
+		};
+	}
+
+	let visibleColumns = $derived(
+		TABLE_COLUMNS.map((column, index) => ({
+			...column,
+			index,
+			...columnHeader(column.key)
+		})).filter((column) => tableColumns.includes(column.key))
+	);
 	let showRooftopNote = $derived(
 		rooftopInterpolation && rows.some((row) => row.fuelTechs.includes('solar_rooftop'))
 	);
@@ -141,12 +189,12 @@
 			activate: (exclusive) => ontoggle?.(row.id, exclusive),
 			swatch: { kind: 'solid', colour: row.colour },
 			cells: [
-				formatTableEnergy(row.energyMWh, energyPrefix),
-				formatTablePower(row.avPowerMW, powerPrefix),
+				formatTableEnergy(row.energyMWh, prefixes.energy),
+				formatTablePower(row.avPowerMW, prefixes.power),
 				formatTablePercentage(row.contributionPct),
 				formatTablePrice(row.vwPrice),
-				formatTableEmissions(row.emissionsT),
-				formatTableIntensity(row.intensityKgPerMWh)
+				formatTableEmissions(row.emissionsT, prefixes.emissions),
+				formatTableIntensity(row.intensityKgPerMWh, prefixes.intensity)
 			],
 			breakdown: underlyingFuelTechs(row),
 			interpolated: rooftopInterpolation && row.fuelTechs.includes('solar_rooftop'),
@@ -164,8 +212,8 @@
 			activate: (exclusive) => oncurtailmenttoggle?.(row.id, exclusive),
 			swatch: { kind: 'hatch', colour: CURTAILMENT_COLOURS[row.id] ?? '#888' },
 			cells: [
-				formatTableEnergy(row.energyMWh, energyPrefix),
-				formatTablePower(row.avPowerMW, powerPrefix),
+				formatTableEnergy(row.energyMWh, prefixes.energy),
+				formatTablePower(row.avPowerMW, prefixes.power),
 				formatTablePercentage(row.contributionPct),
 				EMPTY_CELL,
 				EMPTY_CELL,
@@ -192,8 +240,8 @@
 			activate: (exclusive) => ontogglerow?.(exclusive),
 			swatch: { kind: 'line', colour },
 			cells: [
-				formatTableEnergy(energyMWh, energyPrefix),
-				formatTablePower(avPowerMW, powerPrefix),
+				formatTableEnergy(energyMWh, prefixes.energy),
+				formatTablePower(avPowerMW, prefixes.power),
 				formatTablePercentage(sharePct),
 				EMPTY_CELL,
 				EMPTY_CELL,
@@ -261,6 +309,11 @@
 	// continuous band down the column. The sticky cell is positioned, so the
 	// strip anchors to it and paints above the value cells sliding under.
 	let pinnedEdgeClass = $derived(pinnedTableEdge(scrollLeft));
+
+	/** Header controls keep their text where the static labels sit: the
+	 *  negative margins cancel the hover padding. */
+	const HEADER_BUTTON =
+		'-my-1 inline-flex cursor-pointer rounded-md px-1.5 py-1 transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:outline-dark-grey motion-reduce:transition-none';
 	let stickyLabelCell = $derived(`${pinnedEdgeClass} bg-white group-hover:bg-light-warm-grey`);
 </script>
 
@@ -356,6 +409,11 @@
 	<span class="font-mono text-xxs font-light text-mid-grey">{unit}</span>
 {/snippet}
 
+{#snippet technologyHeading()}
+	<span class="text-xs text-dark-grey">Technology</span>
+	{@render unitLine(groupLabel)}
+{/snippet}
+
 <!-- The minimum width follows the selected columns; Technology stays pinned. -->
 <div class="[--tech-w:160px]">
 	<!-- Horizontal scroller. Snap padding reserves the pinned column, so a
@@ -376,10 +434,35 @@
 					<th
 						class="{pinnedEdgeClass} bg-light-warm-grey px-2 text-left text-sm {TABLE_HEADER_CELL}"
 					>
-						<div class="ml-2 flex flex-col items-start">
-							<span class="text-xs text-dark-grey">Technology</span>
-							{@render unitLine(groupLabel)}
-						</div>
+						{#if ongroupchange}
+							<FilterSelect
+								selected={group}
+								options={GROUP_OPTIONS}
+								listLabel="Fuel tech grouping"
+								onchange={ongroupchange}
+							>
+								{#snippet trigger({ open, toggle })}
+									<button
+										type="button"
+										onclick={toggle}
+										aria-haspopup="listbox"
+										aria-expanded={open}
+										title="Change fuel tech grouping"
+										class="{HEADER_BUTTON} ml-0.5 items-start gap-1"
+									>
+										<span class="flex flex-col items-start">{@render technologyHeading()}</span>
+										<ChevronDown
+											class="mt-0.5 size-3 text-mid-grey transition-transform motion-reduce:transition-none {open
+												? 'rotate-180'
+												: ''}"
+											aria-hidden="true"
+										/>
+									</button>
+								{/snippet}
+							</FilterSelect>
+						{:else}
+							<div class="ml-2 flex flex-col items-start">{@render technologyHeading()}</div>
+						{/if}
 					</th>
 					{#each visibleColumns as column, index (column.key)}
 						<th
@@ -387,22 +470,22 @@
 								? 'pr-3 pl-2'
 								: 'px-2'} {TABLE_HEADER_CELL}"
 						>
-							<div class="flex flex-col items-end">
-								<span class="text-xs">{column.label}</span>
-								{#if column.key === 'contribution'}
-									{@render unitLine(contributionUnit)}
-								{:else if column.key === 'energy'}
-									{@render unitLine(energyUnit)}
-								{:else if column.key === 'power'}
-									{@render unitLine(powerUnit)}
-								{:else if column.key === 'price'}
-									{@render unitLine('$/MWh')}
-								{:else if column.key === 'emissions'}
-									{@render unitLine('tCO₂e')}
-								{:else}
-									{@render unitLine('kgCO₂e/MWh')}
-								{/if}
-							</div>
+							{#if column.cycle}
+								<button
+									type="button"
+									onclick={column.cycle}
+									title={`Show ${column.nextUnit}`}
+									class="{HEADER_BUTTON} -mr-1.5 flex-col items-end"
+								>
+									<span class="text-xs">{column.label}</span>
+									{@render unitLine(column.unit)}
+								</button>
+							{:else}
+								<div class="flex flex-col items-end">
+									<span class="text-xs">{column.label}</span>
+									{@render unitLine(column.unit)}
+								</div>
+							{/if}
 						</th>
 					{/each}
 				</tr>
