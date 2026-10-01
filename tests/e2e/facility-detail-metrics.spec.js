@@ -1,115 +1,93 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Facility Detail Metrics', () => {
-	test('coal facility shows coal-specific metrics', async ({ page }) => {
-		const errors = [];
-		page.on('pageerror', (error) => errors.push(error.message));
+/**
+ * Open a facility's detail pane on /facilities and wait for its unit cards.
+ * Collects uncaught page errors so each test can assert none occurred.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} code
+ */
+async function openFacility(page, code) {
+	/** @type {string[]} */
+	const errors = [];
+	page.on('pageerror', (error) => errors.push(error.message));
 
-		await page.goto('/facilities?facility=BAYSW');
+	await page.goto(`/facilities?facility=${code}`);
+	const cards = page.getByTestId('facility-unit-cards');
+	await expect(cards).toBeVisible({ timeout: 30000 });
 
-		// Wait for the metrics component to render
-		const metrics = page.locator('[data-testid="facility-unit-metrics"]');
-		await expect(metrics).toBeVisible({ timeout: 30000 });
+	return { cards, errors };
+}
 
-		// Should have a coal fuel tech group
-		const coalGroup = page.locator('[data-testid="fuel-tech-group-coal"]');
-		await expect(coalGroup).toBeVisible();
+/**
+ * Unit group cards whose fuel tech starts with `prefix` (e.g. `gas` matches
+ * `gas_ccgt`).
+ * @param {import('@playwright/test').Locator} cards
+ * @param {string} prefix
+ */
+function unitGroup(cards, prefix) {
+	return cards.locator(`[data-testid="facility-unit-group"][data-fueltech^="${prefix}"]`);
+}
 
-		// Should show coal-specific elements
-		await expect(coalGroup.getByText(/Black Coal|Brown Coal/)).toBeVisible();
-		await expect(coalGroup.getByText(/Capacity Factor/)).toBeVisible();
+test.describe('Facility detail unit cards', () => {
+	test('coal facility shows its coal units, unit count and capacity', async ({ page }) => {
+		// Bayswater
+		const { cards, errors } = await openFacility(page, 'BAYSW');
 
-		// Should not have JS errors
+		const coal = unitGroup(cards, 'coal_').first();
+		await expect(coal).toBeVisible();
+		await expect(coal.getByText(/Coal/).first()).toBeVisible();
+		await expect(coal.getByText(/^\d+ units$/)).toBeVisible();
+		await expect(coal.getByText('Capacity', { exact: true })).toBeVisible();
+		await expect(coal.getByText('MW', { exact: true })).toBeVisible();
+
 		expect(errors).toEqual([]);
 	});
 
-	test('wind facility shows wind metrics', async ({ page }) => {
-		const errors = [];
-		page.on('pageerror', (error) => errors.push(error.message));
-
+	test('wind facility shows a wind group', async ({ page }) => {
 		// Macarthur Wind Farm
-		await page.goto('/facilities?facility=MACARTH1');
+		const { cards, errors } = await openFacility(page, 'MACARTH');
 
-		const metrics = page.locator('[data-testid="facility-unit-metrics"]');
-		await expect(metrics).toBeVisible({ timeout: 30000 });
-
-		const windGroup = page.locator('[data-testid="fuel-tech-group-wind"]');
-		await expect(windGroup).toBeVisible();
-
-		await expect(windGroup.getByText(/Capacity Factor|Peak Output/)).toBeVisible();
+		await expect(unitGroup(cards, 'wind').first()).toBeVisible();
 
 		expect(errors).toEqual([]);
 	});
 
-	test('battery facility shows storage metrics', async ({ page }) => {
-		const errors = [];
-		page.on('pageerror', (error) => errors.push(error.message));
-
+	test('battery facility shows storage', async ({ page }) => {
 		// Hornsdale Power Reserve
-		await page.goto('/facilities?facility=HPRG1');
+		const { cards, errors } = await openFacility(page, 'HORNSDPR');
 
-		const metrics = page.locator('[data-testid="facility-unit-metrics"]');
-		await expect(metrics).toBeVisible({ timeout: 30000 });
-
-		const batteryGroup = page.locator('[data-testid="fuel-tech-group-battery"]');
-		await expect(batteryGroup).toBeVisible();
-
-		expect(errors).toEqual([]);
-	});
-
-	test('gas facility shows gas subtype', async ({ page }) => {
-		const errors = [];
-		page.on('pageerror', (error) => errors.push(error.message));
-
-		// Tallawarra (CCGT)
-		await page.goto('/facilities?facility=TALLWA1');
-
-		const metrics = page.locator('[data-testid="facility-unit-metrics"]');
-		await expect(metrics).toBeVisible({ timeout: 30000 });
-
-		const gasGroup = page.locator('[data-testid="fuel-tech-group-gas"]');
-		await expect(gasGroup).toBeVisible();
+		const battery = unitGroup(cards, 'battery').first();
+		await expect(battery).toBeVisible();
+		await expect(battery.getByText('Storage', { exact: true })).toBeVisible();
+		await expect(battery.getByText('MWh', { exact: true })).toBeVisible();
 
 		expect(errors).toEqual([]);
 	});
 
-	test('detail panel loads without JS errors for various fuel techs', async ({ page }) => {
-		const errors = [];
-		page.on('pageerror', (error) => errors.push(error.message));
+	test('gas facility shows its gas subtype', async ({ page }) => {
+		// Tallawarra
+		const { cards, errors } = await openFacility(page, 'TALLAWAR');
 
-		// Load any facility
-		await page.goto('/facilities?facility=BAYSW');
-
-		const metrics = page.locator('[data-testid="facility-unit-metrics"]');
-		await expect(metrics).toBeVisible({ timeout: 30000 });
-
-		// Chart should still render
-		await expect(page.locator('.layercake-container')).toBeVisible({ timeout: 30000 });
+		await expect(unitGroup(cards, 'gas_').first()).toBeVisible();
 
 		expect(errors).toEqual([]);
 	});
 
-	test('metrics show capacity and unit count per group', async ({ page }) => {
-		await page.goto('/facilities?facility=BAYSW');
+	test('detail pane renders its charts alongside the unit cards', async ({ page }) => {
+		const { errors } = await openFacility(page, 'BAYSW');
 
-		const metrics = page.locator('[data-testid="facility-unit-metrics"]');
-		await expect(metrics).toBeVisible({ timeout: 30000 });
+		await expect(page.locator('.layercake-container').first()).toBeVisible({ timeout: 30000 });
 
-		// Should show MW capacity value
-		await expect(metrics.getByText(/MW/)).toBeVisible();
-
-		// Should show unit count
-		await expect(metrics.getByText(/unit/)).toBeVisible();
+		expect(errors).toEqual([]);
 	});
 
-	test('detail panel handles facility with no power data gracefully', async ({ page }) => {
+	test('facilities page loads committed facilities without errors', async ({ page }) => {
+		/** @type {string[]} */
 		const errors = [];
 		page.on('pageerror', (error) => errors.push(error.message));
 
-		// Load facilities page - committed facilities may not have power data
+		// Committed facilities may not have power data.
 		await page.goto('/facilities?statuses=committed');
-
-		// Page should load without errors
 		await expect(page.locator('body')).not.toBeEmpty();
 
 		expect(errors).toEqual([]);

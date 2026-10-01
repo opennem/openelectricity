@@ -26,13 +26,20 @@
 	let offset = $derived(facility?.network_id === 'WEM' ? '+08:00' : '+10:00');
 </script>
 
-<div class="grid grid-cols-1 gap-3 {singleColumn ? '' : 'min-[420px]:grid-cols-2'}">
+<div
+	class="grid grid-cols-1 gap-3 {singleColumn ? '' : 'min-[420px]:grid-cols-2'}"
+	data-testid="facility-unit-cards"
+>
 	{#each unitGroups as group (group.fueltech_id + '|||' + group.status_id)}
 		{@const capacity = group.totalCapacity}
 		{@const firstUnit = group.units[0]}
 		{@const commissioning = group.status_id === 'commissioning'}
 
-		<div class="rounded-lg border border-warm-grey bg-white px-3 py-3 relative">
+		<div
+			class="rounded-lg border border-warm-grey bg-white px-3 py-3 relative"
+			data-testid="facility-unit-group"
+			data-fueltech={group.fueltech_id}
+		>
 			<!-- Status dot -->
 			<div class="absolute top-3 right-3">
 				<Tooltip text={group.status_id} class="capitalize cursor-default">
