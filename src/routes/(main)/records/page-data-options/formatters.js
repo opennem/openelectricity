@@ -1,5 +1,3 @@
-import { getNumberFormat } from '$lib/utils/formatters';
-
 /**
  * @type {Object<string, string>}
  */
@@ -28,24 +26,4 @@ const formatStrings = {
 	financial_year: 'yyyy'
 };
 
-/**
- * @param {FuelTechCode} fuelTech
- */
-function getMaximumFractionDigits(fuelTech) {
-	return fuelTech === 'renewables' ? 1 : 0;
-}
-
-/**
- *
- * @param {number} value
- * @param {FuelTechCode} fuelTech
- * @returns
- */
-function formatRecordValue(value, fuelTech) {
-	if (value === null || value === undefined || isNaN(value)) {
-		return '—';
-	}
-	return getNumberFormat(0).format(value);
-}
-
-export { formatStrings, formatStringsLong, formatRecordValue };
+export { formatStrings, formatStringsLong };

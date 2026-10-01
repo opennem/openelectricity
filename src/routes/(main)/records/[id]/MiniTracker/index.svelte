@@ -5,6 +5,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { plainDateTime } from '$lib/utils/date-parser';
 	import LensChart from '$lib/components/charts/LensChart.svelte';
+	import { applyRecordValueFormat } from '$lib/records/format-value.js';
 	import nighttimes from '$lib/utils/nighttimes';
 	import init from './helpers/init';
 	import { chartOptions } from './helpers/config';
@@ -124,6 +125,7 @@
 			// chartCxt.chartOptions.displayPrefix = chartOptions[record.metric].displayPrefix;
 			chartCxt.chartOptions.allowedPrefixes = chartOptions[record.metric].allowedPrefixes;
 			chartCxt.chartOptions.baseUnit = chartOptions[record.metric].baseUnit;
+			applyRecordValueFormat(chartCxt, record.value_unit);
 
 			chartCxt.xTicks = xTickValueFormatters[record.period].ticks;
 			chartCxt.formatTickX = xTickValueFormatters[record.period].formatTick;

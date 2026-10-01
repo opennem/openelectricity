@@ -4,6 +4,7 @@
 	import nighttimes from '$lib/utils/nighttimes';
 	import LensChart from '$lib/components/charts/LensChart.svelte';
 	import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
+	import { applyRecordValueFormat } from '$lib/records/format-value.js';
 	import { chartOptions } from '../../../../(main)/records/[id]/MiniTracker/helpers/config';
 	import xTickValueFormatters from '../../../../(main)/records/[id]/MiniTracker/helpers/xtick-value-formatters';
 
@@ -21,6 +22,7 @@
 			chartCxt.chartOptions.displayPrefix = chartOptions[dataMetric].displayPrefix;
 			chartCxt.chartOptions.allowedPrefixes = chartOptions[dataMetric].allowedPrefixes;
 			chartCxt.chartOptions.baseUnit = chartOptions[dataMetric].baseUnit;
+			applyRecordValueFormat(chartCxt, record.value_unit);
 
 			chartCxt.xTicks = xTickValueFormatters[record.period].ticks;
 			chartCxt.formatTickX = xTickValueFormatters[record.period].formatTick;

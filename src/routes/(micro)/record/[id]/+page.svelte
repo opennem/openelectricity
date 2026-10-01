@@ -1,6 +1,6 @@
 <script>
 	import { regionsWithLabels } from '$lib/regions';
-	import { getNumberFormat } from '$lib/utils/formatters';
+	import { formatRecordValue } from '$lib/records/format-value.js';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../../../(main)/records/page-data-options/record-description';
 	import { xTickValueFormatters } from '../../../(main)/records/[id]/RecordHistory/helpers/config';
@@ -75,7 +75,7 @@
 								{recordSetOnDate}
 							</span>
 							<div class="text-5xl leading-5xl font-semibold">
-								{getNumberFormat(0).format(focusRecord.value)}
+								{formatRecordValue(focusRecord.value, currentRecord.value_unit)}
 								<small class="text-xl font-mono text-mid-grey">
 									{currentRecord.value_unit}
 								</small>

@@ -18,6 +18,7 @@
 	import dateTimeQuery from '../page-data-options/date-time-query';
 	import { showToast } from '$lib/stores/toast';
 	import { backOr } from '$lib/utils/back-navigation.js';
+	import { applyRecordValueFormat } from '$lib/records/format-value.js';
 	/** @type {{ data: any }} */
 	let { data } = $props();
 	let { period, recordIds, focusTime } = $derived(data);
@@ -111,6 +112,7 @@
 		if (options) {
 			Object.assign(chartCxt.chartOptions, options);
 		}
+		applyRecordValueFormat(chartCxt, record.value_unit);
 
 		dateBrushCxt.seriesData = seriesData;
 		dateBrushCxt.seriesNames = ['value'];

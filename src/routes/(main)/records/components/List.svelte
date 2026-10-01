@@ -1,6 +1,6 @@
 <script>
 	import { regionsWithLabels } from '$lib/regions';
-	import { formatRecordValue } from '../page-data-options/formatters';
+	import { formatRecordValue } from '$lib/records/format-value.js';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import { regions } from '../page-data-options/filters';
@@ -145,7 +145,7 @@
 										<li class="text-sm text-mid-grey flex items-center justify-between">
 											<div>
 												<span class="font-mono text-base text-dark-grey">
-													{formatRecordValue(record.value, record.fueltech_id)}
+													{formatRecordValue(record.value, record.value_unit)}
 												</span>
 												<span class="text-xs font-mono">{record.value_unit}</span>
 											</div>
@@ -210,7 +210,7 @@
 										<li class="text-sm text-mid-grey flex items-center justify-between">
 											<div>
 												<span class="font-mono text-base text-dark-grey">
-													{formatRecordValue(record.value, record.fueltech_id)}
+													{formatRecordValue(record.value, record.value_unit)}
 												</span>
 												<span class="text-xs font-mono">{record.value_unit}</span>
 											</div>
@@ -280,7 +280,7 @@
 															class:text-base={i === 0}
 															class:text-dark-grey={i === 0}
 														>
-															{formatRecordValue(record.value, record.fueltech_id)}
+															{formatRecordValue(record.value, record.value_unit)}
 														</span>
 														{#if i === 0}
 															<span class="text-xs font-mono">{record.value_unit}</span>

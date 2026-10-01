@@ -1,5 +1,5 @@
 <script>
-	import { formatRecordValue } from '../page-data-options/formatters';
+	import { formatRecordValue } from '$lib/records/format-value.js';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import { xTickValueFormatters } from '../[id]/RecordHistory/helpers/config';
@@ -71,7 +71,7 @@
 				</td>
 
 				<td class="px-2 py-2 text-right font-mono text-xs">
-					{formatRecordValue(record.value, record.fueltech_id)}
+					{formatRecordValue(record.value, record.value_unit)}
 				</td>
 
 				<td class="px-2 py-2 font-mono text-xxs">

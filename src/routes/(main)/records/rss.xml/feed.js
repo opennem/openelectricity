@@ -2,7 +2,7 @@ import { parseISO } from 'date-fns';
 import { escapeXml } from '$lib/seo/xml.js';
 import { stripDateTimezone } from '$lib/utils/date-format.js';
 import generateDescription from '../page-data-options/record-description.js';
-import { formatRecordValue } from '../page-data-options/formatters.js';
+import { formatRecordValue } from '$lib/records/format-value.js';
 
 /** @typedef {import('$lib/types/record.types').MilestoneRecord} MilestoneRecord */
 
@@ -39,7 +39,7 @@ export function recordTitle(record) {
 	const value =
 		record.value === null || record.value === undefined
 			? ''
-			: `: ${formatRecordValue(record.value, /** @type {*} */ (record.fueltech_id))}${
+			: `: ${formatRecordValue(record.value, record.value_unit)}${
 					record.value_unit ? ` ${record.value_unit}` : ''
 				}`;
 	return `${description}${value} (${region})`;

@@ -1,7 +1,7 @@
 <script>
 	import { parseISO } from 'date-fns';
 	import { browser } from '$app/environment';
-	import { formatRecordValue } from '../page-data-options/formatters';
+	import { formatRecordValue } from '$lib/records/format-value.js';
 	import getRelativeTime from '../page-data-options/relative-time';
 	import recordDescription from '../page-data-options/record-description';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
@@ -114,7 +114,7 @@
 							recordData.metric,
 							fuelTech
 						)}
-						value={formatRecordValue(recordData.value, /** @type {FuelTechCode} */ (fuelTech))}
+						value={formatRecordValue(recordData.value, recordData.unit)}
 						unit={recordData.unit}
 						timeLabel={formatDate(recordData.interval)}
 					/>

@@ -132,6 +132,16 @@ export default class ChartStore {
 	/** @type {number} */
 	maximumFractionDigits = $state(0);
 
+	/** Pads values to a fixed precision when set to `maximumFractionDigits` (e.g. "54.0"). */
+	minimumFractionDigits = $state(0);
+
+	#valueFormat = $derived(
+		new Intl.NumberFormat('en-AU', {
+			minimumFractionDigits: Math.min(this.minimumFractionDigits, this.maximumFractionDigits),
+			maximumFractionDigits: this.maximumFractionDigits
+		})
+	);
+
 	/** @type {Function} */
 	convertValue = $derived((/** @type {number} */ d) => {
 		const formatter = getNumberFormat(0, false);
@@ -142,7 +152,7 @@ export default class ChartStore {
 	/** @type {Function} */
 	convertAndFormatValue = $derived((/** @type {number} */ d) => {
 		const converted = convert(this.chartOptions.prefix, this.chartOptions.displayPrefix, d);
-		return isNaN(converted) ? '—' : getNumberFormat(this.maximumFractionDigits).format(converted);
+		return isNaN(converted) ? '—' : this.#valueFormat.format(converted);
 	});
 
 	seriesScaledData = $derived.by(() => {
@@ -314,7 +324,7 @@ export default class ChartStore {
 	}
 
 	formatValue(/** @type {number} */ d) {
-		return getNumberFormat(this.maximumFractionDigits).format(d);
+		return this.#valueFormat.format(d);
 	}
 
 	/**
