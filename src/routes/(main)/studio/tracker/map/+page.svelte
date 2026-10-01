@@ -38,7 +38,8 @@
 		FullscreenContainer,
 		FullscreenFooter,
 		FullscreenFilterBar,
-		FullscreenNavDropdown
+		FullscreenNavDropdown,
+		pageShortcuts
 	} from '$lib/components/fullscreen';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
@@ -670,9 +671,5 @@
 <ShortcutsToast
 	visible={showShortcutsToast}
 	ondismiss={() => (showShortcutsToast = false)}
-	shortcuts={[
-		{ label: 'Toggle navigation menu', keys: ['G'] },
-		...(belowTablet.current ? [] : [{ label: 'Enter / exit full screen', keys: ['F'] }]),
-		{ label: 'Show shortcuts', keys: ['?'] }
-	]}
+	shortcuts={pageShortcuts([], { navMenu: true, fullscreen: !belowTablet.current })}
 />

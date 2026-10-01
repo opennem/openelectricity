@@ -4,14 +4,19 @@
  * keydown handler, the Options menu badges and the shortcuts modal.
  */
 
+import {
+	FULLSCREEN_SHORTCUT,
+	SHOW_SHORTCUTS_SHORTCUT
+} from '$lib/components/fullscreen/shortcuts.js';
+
 /** @typedef {'refresh' | 'metrics' | 'fullscreen' | 'shortcuts'} TrackerShortcut */
 
 /** @type {Array<{id: TrackerShortcut, key: string, keys: string[], label: string}>} */
 export const TRACKER_SHORTCUTS = [
 	{ id: 'refresh', key: 'r', keys: ['R'], label: 'Refresh data' },
 	{ id: 'metrics', key: 'm', keys: ['M'], label: 'Show or hide metrics' },
-	{ id: 'fullscreen', key: 'f', keys: ['F'], label: 'Enter / exit full screen' },
-	{ id: 'shortcuts', key: '?', keys: ['?'], label: 'Show shortcuts' }
+	{ id: 'fullscreen', key: 'f', ...FULLSCREEN_SHORTCUT },
+	{ id: 'shortcuts', key: '?', ...SHOW_SHORTCUTS_SHORTCUT }
 ];
 
 /** @param {EventTarget | null} target */

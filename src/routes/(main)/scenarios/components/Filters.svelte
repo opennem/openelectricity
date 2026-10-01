@@ -35,6 +35,7 @@
 		getDefaultScenario
 	} from '../page-data-options/grouped-options';
 	import OptionsMenu from './OptionsMenu.svelte';
+	import { FullscreenNavDropdown } from '$lib/components/fullscreen';
 
 	/**
 	 * @type {{
@@ -293,13 +294,7 @@
 >
 	<div class="w-full flex items-center justify-between md:justify-start gap-4">
 		{#if isFullscreen}
-			<button
-				onclick={() => onfullscreenchange?.()}
-				class="flex items-center cursor-pointer"
-				title="Exit full screen"
-			>
-				<img src="/logo-mark.png" alt="Open Electricity" class="h-10 w-auto" />
-			</button>
+			<FullscreenNavDropdown label="Scenarios" />
 		{/if}
 
 		<div class="sm:hidden">

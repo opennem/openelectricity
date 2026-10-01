@@ -316,9 +316,18 @@ test('data refreshes only on demand: the range readout button, the options menu 
 	await expect(panel).toContainText('Refresh data');
 	await expect(panel).toContainText('Show or hide metrics');
 	await expect(panel).toContainText('Enter / exit full screen');
+	await expect(panel).toContainText('Toggle navigation menu');
 	await expect(panel.locator('kbd', { hasText: /^R$/ })).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(modal).toHaveCount(0);
+	// G toggles the navigation menu; Shift+G is left to pages.
+	const navMenu = page.getByRole('menu');
+	await page.keyboard.press('g');
+	await expect(navMenu).toHaveCount(1);
+	await page.keyboard.press('g');
+	await expect(navMenu).toHaveCount(0);
+	await page.keyboard.press('Shift+G');
+	await expect(navMenu).toHaveCount(0);
 	// Typing in a field never refreshes.
 	const typed = source.urls.length;
 	await page.keyboard.press('Escape');

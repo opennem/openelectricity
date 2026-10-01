@@ -18,6 +18,7 @@
 	import FullscreenNavDropdown from '$lib/components/fullscreen/FullscreenNavDropdown.svelte';
 	import OptionsMenu from '$lib/components/ui/options-menu/OptionsMenu.svelte';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
+	import { pageShortcuts } from '$lib/components/fullscreen/shortcuts.js';
 	import { ChartRangeBar } from '$lib/components/charts/v2';
 	import Select from '$lib/components/form-elements/Select.svelte';
 	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
@@ -503,9 +504,5 @@
 <ShortcutsToast
 	visible={showShortcutsToast}
 	ondismiss={() => (showShortcutsToast = false)}
-	shortcuts={[
-		{ label: 'Enter / exit full screen', keys: ['F'] },
-		{ label: 'Toggle navigation menu', keys: ['G'] },
-		{ label: 'Show shortcuts', keys: ['?'] }
-	]}
+	shortcuts={pageShortcuts([], { navMenu: true, fullscreen: true })}
 />

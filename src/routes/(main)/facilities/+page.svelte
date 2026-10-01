@@ -56,7 +56,8 @@
 	import {
 		FullscreenLayout,
 		FullscreenContainer,
-		FullscreenFooter
+		FullscreenFooter,
+		pageShortcuts
 	} from '$lib/components/fullscreen';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
@@ -1226,8 +1227,8 @@
 			return;
 		}
 
-		// 'G' key toggles golf courses (easter egg)
-		if (e.key === 'g' || e.key === 'G') {
+		// Shift+G toggles golf courses (easter egg); bare G is the nav menu.
+		if (e.key === 'G' && e.shiftKey) {
 			// Don't trigger if typing in an input
 			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 			golfUnlocked = true;
@@ -2018,16 +2019,15 @@
 <ShortcutsToast
 	visible={showShortcutsToast}
 	ondismiss={() => (showShortcutsToast = false)}
-	shortcuts={[
-		{ label: 'Search', keys: ['/'] },
-		{ label: 'Previous / next facility', keys: ['↑', '↓'] },
-		{ label: 'Toggle navigation menu', keys: ['G'] },
-		...(belowTablet.current
-			? []
-			: [
-					{ label: 'Enter / exit full screen', keys: ['F'] },
-					{ label: 'Browser full screen', keys: ['Shift', 'F'] }
-				]),
-		{ label: 'Show shortcuts', keys: ['?'] }
-	]}
+	shortcuts={pageShortcuts(
+		[
+			{ label: 'Search', keys: ['/'] },
+			{ label: 'Previous / next facility', keys: ['↑', '↓'] }
+		],
+		{
+			navMenu: isFullscreen,
+			fullscreen: !belowTablet.current,
+			fullscreenRelated: [{ label: 'Browser full screen', keys: ['Shift', 'F'] }]
+		}
+	)}
 />

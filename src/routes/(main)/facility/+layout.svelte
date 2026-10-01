@@ -8,7 +8,8 @@
 	import {
 		FullscreenLayout,
 		FullscreenContainer,
-		FullscreenFooter
+		FullscreenFooter,
+		pageShortcuts
 	} from '$lib/components/fullscreen';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
@@ -315,11 +316,11 @@
 <ShortcutsToast
 	visible={showShortcutsToast}
 	ondismiss={() => (showShortcutsToast = false)}
-	shortcuts={[
-		{ label: 'Toggle facility list', keys: [isMac ? '⌘' : 'Ctrl', 'K'] },
-		{ label: 'Search facilities', keys: ['/'] },
-		{ label: 'Toggle navigation menu', keys: ['G'] },
-		...(belowTablet.current ? [] : [{ label: 'Enter / exit full screen', keys: ['F'] }]),
-		{ label: 'Show shortcuts', keys: ['?'] }
-	]}
+	shortcuts={pageShortcuts(
+		[
+			{ label: 'Toggle facility list', keys: [isMac ? '⌘' : 'Ctrl', 'K'] },
+			{ label: 'Search facilities', keys: ['/'] }
+		],
+		{ navMenu: isFullscreen, fullscreen: !belowTablet.current }
+	)}
 />

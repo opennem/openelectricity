@@ -6,8 +6,7 @@
 	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 	import { dataTrackerLink, parsedFeatureFlags } from '$lib/stores/app';
 	import { getNavItems } from '$lib/components/nav/nav-items.js';
-
-	const TOGGLE_KEY = 'g';
+	import { NAV_MENU_KEY } from './shortcuts.js';
 
 	/**
 	 * `light` renders the logo mark in white (for dark backdrops, e.g. the
@@ -61,15 +60,19 @@
 		if (e.metaKey || e.ctrlKey || e.altKey) return;
 		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-		if (!isOpen) {
-			// Pages can mount a CSS-hidden instance (e.g. /facilities' mobile
-			// floating nav on desktop); only the rendered trigger takes the shortcut.
-			if (e.key.toLowerCase() === TOGGLE_KEY && triggerRef?.getClientRects().length) {
-				e.preventDefault();
-				openMenu();
-			}
+		// Bare key only: Shift+G stays free for pages (the /facilities golf toggle).
+		// Pages can mount a CSS-hidden instance (e.g. /facilities' mobile floating
+		// nav on desktop); only the rendered trigger takes the shortcut.
+		if (
+			e.key.toLowerCase() === NAV_MENU_KEY &&
+			!e.shiftKey &&
+			(isOpen || triggerRef?.getClientRects().length)
+		) {
+			e.preventDefault();
+			toggleMenu();
 			return;
 		}
+		if (!isOpen) return;
 
 		if (e.key === 'Escape') {
 			e.preventDefault();

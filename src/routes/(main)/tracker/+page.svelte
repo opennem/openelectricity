@@ -26,7 +26,8 @@
 		FullscreenFilterBar,
 		FullscreenFooter,
 		FullscreenLayout,
-		FullscreenNavDropdown
+		FullscreenNavDropdown,
+		pageShortcuts
 	} from '$lib/components/fullscreen';
 	import { ChartRangeBar } from '$lib/components/charts/v2';
 	import { BELOW_TABLET_QUERY, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
@@ -534,9 +535,12 @@
 <ShortcutsToast
 	visible={showShortcuts}
 	ondismiss={() => (showShortcuts = false)}
-	shortcuts={TRACKER_SHORTCUTS.filter(
-		(shortcut) =>
-			(timeline || (shortcut.id !== 'refresh' && shortcut.id !== 'metrics')) &&
-			(!belowTablet.current || shortcut.id !== 'fullscreen')
-	).map(({ label, keys }) => ({ label, keys }))}
+	shortcuts={pageShortcuts(
+		timeline
+			? TRACKER_SHORTCUTS.filter(({ id }) => id === 'refresh' || id === 'metrics').map(
+					({ label, keys }) => ({ label, keys })
+				)
+			: [],
+		{ navMenu: isFullscreen, fullscreen: !belowTablet.current }
+	)}
 />

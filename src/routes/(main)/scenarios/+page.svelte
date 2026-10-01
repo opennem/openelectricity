@@ -19,6 +19,7 @@
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
+	import { pageShortcuts } from '$lib/components/fullscreen';
 	import ScenarioChart from './components/ScenarioChart.svelte';
 	import TableTechnology from './components/TableTechnology.svelte';
 	import TableScenario from './components/TableScenario.svelte';
@@ -150,7 +151,7 @@
 		}
 
 		// Esc: close the shortcuts toast. (Fullscreen exit is NOT bound to Esc —
-		// use the logo mark, options menu, or F shortcut.)
+		// use the options menu or F shortcut.)
 		if (e.key === 'Escape') {
 			if (showShortcutsToast) {
 				showShortcutsToast = false;
@@ -824,8 +825,5 @@
 <ShortcutsToast
 	visible={showShortcutsToast}
 	ondismiss={() => (showShortcutsToast = false)}
-	shortcuts={[
-		{ label: 'Enter / exit full screen', keys: ['F'] },
-		{ label: 'Show shortcuts', keys: ['?'] }
-	]}
+	shortcuts={pageShortcuts([], { navMenu: isFullscreen, fullscreen: true })}
 />
