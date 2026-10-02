@@ -23,14 +23,14 @@ export function normaliseProfileDisplay(value) {
 	return value === 'breakdown' ? 'breakdown' : 'stacked';
 }
 
-/** How the breakdown draws each series' days. */
-export const PROFILE_STYLE_OPTIONS = [
-	{ value: 'bands', label: 'Percentile bands', group: 'Linear' },
-	{ value: 'lines', label: 'Multi-line', group: 'Linear' },
-	{ value: 'ridgeline', label: 'Ridgeline', group: 'Linear' },
-	{ value: 'radial', label: 'Bars', selectedLabel: 'Radial bars', group: 'Radial' },
-	{ value: 'heatmap', label: 'Heatmap', selectedLabel: 'Radial heatmap', group: 'Radial' }
-];
+/** How the breakdown draws each series' days: the linear styles, then the radial. */
+export const PROFILE_STYLE_OPTIONS = /** @type {const} */ ([
+	{ value: 'bands', label: 'Percentile bands' },
+	{ value: 'lines', label: 'Multi-line' },
+	{ value: 'ridgeline', label: 'Ridgeline' },
+	{ value: 'radial', label: 'Radial bars' },
+	{ value: 'heatmap', label: 'Radial heatmap' }
+]);
 
 /** Percentile bands unless a link asks for another style.
  * @param {unknown} value @returns {'lines' | 'bands' | 'radial' | 'ridgeline' | 'heatmap'} */

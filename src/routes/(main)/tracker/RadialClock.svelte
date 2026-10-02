@@ -2,10 +2,11 @@
 	import { arc as d3Arc, lineRadial } from 'd3-shape';
 	import { scaleLinear } from 'd3-scale';
 	import { OE_RED } from './tracker-overlays.js';
-	import { dialAngle, dialValueText } from './dial.js';
+	import { dialAngle, dialValue, meanOfHours } from './dial.js';
 	import DialReadout from './DialReadout.svelte';
 	import DialFace, { dialMargin } from './DialFace.svelte';
 	import DialNight from './DialNight.svelte';
+	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
 
 	/**
 	 * RadialClock — averages by hour around a 24-hour dial: noon at the top,
@@ -15,10 +16,16 @@
 	 * With several `layers` (the Stacked display) each hour stacks them in
 	 * order, positives outward and negatives inward, and the readout gives the
 	 * hour's net total. An optional `today` series (one layer only) draws
-	 * today's hourly averages as an OE red radial line. Hovering an hour reads
+	 * today's hourly averages as an OE red radial line, and the hovered hour's
+	 * today value centred below the dial. While nothing is hovered, the readout
+	 * and the today line show the average across the hours ("Av."). Hovering an hour reads
 	 * it out on the heatmap's band (`DialReadout`); the hovered hour (`active`)
-	 * is bindable, so sibling dials and the table share it. Every value also sits in the
-	 * hour's `<title>` and a visually hidden table. The SVG carries
+	 * is bindable, so sibling dials and the table share it. So is the layer
+	 * under the pointer (`activeLayer`, picked by the pointer's radius within
+	 * the hour): its slices stay solid while the other layers' fade, so a
+	 * sibling chart's hovered series reads here too. Every value also sits in a
+	 * visually hidden table; the hour sectors carry no `<title>`, so hovering
+	 * shows no browser tooltip. The SVG carries
 	 * `data-png-layer` so PNG export captures it.
 	 *
 	 * @type {{
@@ -28,7 +35,8 @@
 	 *   label: string,
 	 *   daylight?: import('./types.js').Daylight | null,
 	 *   large?: boolean,
-	 *   active?: number | null
+	 *   active?: number | null,
+	 *   activeLayer?: string | null
 	 * }}
 	 */
 	let {
@@ -38,7 +46,8 @@
 		label,
 		daylight = null,
 		large = false,
-		active = $bindable(null)
+		active = $bindable(null),
+		activeLayer = $bindable(null)
 	} = $props();
 
 	/** @param {number} value */
@@ -108,26 +117,58 @@
 					.defined((/** @type {any} */ d) => d.average !== null)(/** @type {any} */ (today))
 			: null
 	);
+	/** Pick the layer whose slice in `hour` lies under the pointer, from its
+	 * distance to the dial's centre; none in the hub or past the bars.
+	 * @param {PointerEvent} event @param {number} hour */
+	function pickLayer(event, hour) {
+		const svg = /** @type {SVGElement} */ (event.currentTarget).ownerSVGElement;
+		if (!svg) return;
+		const box = svg.getBoundingClientRect();
+		const r =
+			Math.hypot(
+				event.clientX - box.left - box.width / 2,
+				event.clientY - box.top - box.height / 2
+			) *
+			(size / box.width);
+		const segment = stacks[hour].find(({ from, to }) => {
+			const [low, high] = [radius(Math.min(from, to)), radius(Math.max(from, to))];
+			return from !== to && r >= low && r <= high;
+		});
+		activeLayer = segment?.key ?? null;
+	}
+	/** @param {number} hour @param {string} key */
+	const sliceOpacity = (hour, key) =>
+		(active === null || active === hour ? 1 : 0.45) *
+		(activeLayer === null || activeLayer === key ? 1 : 0.4);
 	let activeHour = $derived(active === null ? null : hours[active]);
-	let activeToday = $derived(active === null ? null : (today?.[active] ?? null));
+	/** While nothing is hovered, the readout and today line show averages
+	 * across the hours ("Av."): the day's hourly mean, and today's so far. */
+	let average = $derived(meanOfHours(hours));
+	let todayValue = $derived(
+		active === null ? (today ? meanOfHours(today) : null) : (today?.[active]?.average ?? null)
+	);
 </script>
 
 <div class="relative">
 	<DialReadout
-		label={activeHour ? `${activeHour.label}–${hourLabel(activeHour.hour + 1)}` : null}
-		value={activeHour?.average ?? null}
+		label={activeHour
+			? `${activeHour.label}–${hourLabel(activeHour.hour + 1)}`
+			: average === null
+				? null
+				: 'Av.'}
+		value={activeHour ? activeHour.average : average}
 		{unit}
 		note={layers.length > 1 ? 'net' : ''}
-		today={activeToday?.average ?? null}
 		{large}
 	/>
 	<!-- The dial pads itself, so the readout band runs flush to the card's
 	     edges; at most `--dial-max` wide (the lightbox's viewport cap) and
-	     pulled up into the dial margin's slack above 12:00, as on the heatmap. -->
+	     pulled up a little into the dial margin's slack above 12:00, leaving
+	     more air under the band than the heatmap does. -->
 	<div class="px-6">
 		<div
 			bind:clientWidth={width}
-			class="mx-auto flex max-w-(--dial-max) justify-center {large ? '-mt-[26px]' : '-mt-[18px]'}"
+			class="mx-auto flex max-w-(--dial-max) justify-center {large ? '-mt-[10px]' : '-mt-[6px]'}"
 			style:height="{size}px"
 		>
 			<div data-chart-area class="relative" style:width="{size}px" style:height="{size}px">
@@ -155,6 +196,7 @@
 							})}
 							class="fill-mid-warm-grey/50"
 							pointer-events="none"
+							transition:hoverFade
 							data-testid="radial-hover"
 						/>
 					{/if}
@@ -163,7 +205,7 @@
 							<path
 								d={slice(hour, segment)}
 								fill={segment.colour}
-								opacity={active === null || active === hour ? 1 : 0.45}
+								opacity={sliceOpacity(hour, segment.key)}
 								pointer-events="none"
 							/>
 						{/each}
@@ -178,10 +220,20 @@
 							pointer-events="none"
 						/>
 					{/if}
-					<DialFace {outer} {large} />
+					<DialFace
+						{outer}
+						{large}
+						hover={active === null ? null : { hours: active, label: hourLabel(active) }}
+					/>
 					<!-- On top: invisible whole-hour sectors take the hover; leaving the
 			     dial (not moving between sectors) clears it. -->
-					<g role="presentation" onpointerleave={() => (active = null)}>
+					<g
+						role="presentation"
+						onpointerleave={() => {
+							active = null;
+							activeLayer = null;
+						}}
+					>
 						{#each hours as hour (hour.hour)}
 							<path
 								d={sector({
@@ -193,18 +245,32 @@
 								fill="transparent"
 								role="presentation"
 								onpointerenter={() => (active = hour.hour)}
-								><title
-									>{hour.label}–{hourLabel(hour.hour + 1)}: {hour.average === null
-										? 'no data'
-										: dialValueText(hour.average, unit)}</title
-								></path
-							>
+								onpointermove={(event) => pickLayer(event, hour.hour)}
+							></path>
 						{/each}
 					</g>
 				</svg>
 			</div>
 		</div>
 	</div>
+	<!-- Today's value for the hovered hour (its average while idle), centred
+	     below the dial in OE red;
+	     reserved while the today line shows, so the card never jumps, and
+	     tucked into the card's bottom padding so it doesn't add a full line. -->
+	{#if today}
+		<p
+			data-testid="dial-today"
+			class="text-center {large ? 'h-[24px] text-sm' : '-mb-3 h-[20px] text-xs'}"
+			style:color={OE_RED}
+		>
+			{#if todayValue !== null}
+				{@const shown = dialValue(todayValue, unit)}
+				{`Today${active === null ? ' Av.' : ''} `}<strong class="font-semibold"
+					>{shown.value}</strong
+				>{shown.unit.startsWith('/') ? shown.unit : ` ${shown.unit}`}
+			{/if}
+		</p>
+	{/if}
 	<table class="sr-only">
 		<caption>{label} average by hour ({unit})</caption>
 		{#if layers.length > 1}

@@ -306,13 +306,28 @@ export const card = (page, title) =>
 	page.getByRole('heading', { name: title, exact: true }).locator('xpath=ancestor::section[1]');
 
 /**
- * A `FilterSelect` pill in the tracker nav. Its accessible name is the
- * selected option's label, e.g. `navPill(page, 'Average day')`.
+ * A `FilterSelect` pill in the tracker's top nav or a view's options bar
+ * (the Profile breakdown's). Its accessible name is the selected option's
+ * label, e.g. `navPill(page, 'Average day')`.
  * @param {Page} page
  * @param {string} label
  */
 export const navPill = (page, label) =>
-	page.getByTestId('tracker-top-nav').getByRole('button', { name: label, exact: true });
+	page
+		.getByTestId('tracker-top-nav')
+		.or(page.getByRole('region', { name: 'Breakdown options', exact: true }))
+		.getByRole('button', { name: label, exact: true });
+
+/**
+ * A Profile breakdown style in the Breakdown options bar's icon switcher, by
+ * its name, e.g. `styleButton(page, 'Radial bars')`.
+ * @param {Page} page
+ * @param {string} name
+ */
+export const styleButton = (page, name) =>
+	page
+		.getByRole('region', { name: 'Breakdown options', exact: true })
+		.getByRole('button', { name, exact: true });
 
 /**
  * Choose an option from a nav `FilterSelect`: open the pill showing `current`,

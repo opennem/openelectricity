@@ -9,6 +9,7 @@
 	 */
 	import { getContext } from 'svelte';
 	import { computeStepBand } from './step-band.js';
+	import { hoverFade } from '../hover-fade.js';
 
 	const { xScale, yScale, height } = getContext('LayerCake');
 
@@ -60,6 +61,7 @@
 <!-- Hover highlight band -->
 {#if hoverBand && hoverBand.width > 0}
 	<rect
+		transition:hoverFade
 		x={hoverBand.x}
 		y={bandY}
 		width={hoverBand.width}
@@ -72,6 +74,7 @@
 <!-- Focus border band -->
 {#if focusBand && focusBand.width > 0}
 	<rect
+		transition:hoverFade
 		x={focusBand.x}
 		y={bandY}
 		width={focusBand.width}

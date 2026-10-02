@@ -1,9 +1,13 @@
 <script>
+	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	/**
 	 * Segmented switcher with a thumb that slides to the selected option.
 	 * The thumb is inset from the track via the container padding.
+	 * An option with a `tooltip` shows it in the app's `Tooltip` on hover, in
+	 * place of the browser's `title` (e.g. icon-only options naming themselves).
+	 * @typedef {{ label?: string, ariaLabel?: string, title?: string, tooltip?: string, value: string | number, icon?: *, size?: string }} Option
 	 * @typedef {Object} Props
-	 * @property {{ label?: string, ariaLabel?: string, title?: string, value: string | number, icon?: *, size?: string }[]} [buttons]
+	 * @property {Option[]} [buttons]
 	 * @property {string | number } [selected]
 	 * @property {boolean} [compact]
 	 * @property {string} [rounded] - Tailwind radius class for the container, thumb and buttons
@@ -95,31 +99,46 @@
 		></div>
 	{/if}
 
-	{#each buttons as { label, ariaLabel, title, value, icon, size } (value)}
-		<button
-			type="button"
-			bind:this={buttonEls[value]}
-			style:view-transition-name={transitionName && `${transitionName}-${value}`}
-			onclick={handleClick}
-			{value}
-			{title}
-			aria-label={ariaLabel ?? label}
-			aria-pressed={isSelected(value)}
-			class="relative z-10 flex w-full gap-3 md:w-auto items-center justify-center whitespace-nowrap cursor-pointer transition-colors duration-200 {rounded} {compact
-				? 'px-3 py-1.5 md:px-4 md:py-1.5'
-				: 'px-4 py-4 md:px-8 md:py-4'} {isSelected(value)
-				? darkSelected
-					? 'text-white'
-					: 'text-black'
-				: 'text-mid-grey hover:text-black'}"
-		>
-			{#if icon}
-				{@const SvelteComponent = icon}
-				<SvelteComponent class={size} />
-			{/if}
-			{#if label}
-				{label}
-			{/if}
-		</button>
+	{#each buttons as option (option.value)}
+		{#if option.tooltip}
+			<!-- The app's tooltip, not the browser's: the button is its trigger. -->
+			<Tooltip text={option.tooltip}>
+				{#snippet trigger({ props })}{@render optionButton(option, props)}{/snippet}
+			</Tooltip>
+		{:else}
+			{@render optionButton(option)}
+		{/if}
 	{/each}
 </div>
+
+{#snippet optionButton(
+	/** @type {Option} */ { label, ariaLabel, title, tooltip, value, icon, size },
+	/** @type {Record<string, unknown>} */ triggerProps = {}
+)}
+	<button
+		{...triggerProps}
+		type="button"
+		bind:this={buttonEls[value]}
+		style:view-transition-name={transitionName && `${transitionName}-${value}`}
+		onclick={handleClick}
+		{value}
+		title={tooltip ? undefined : title}
+		aria-label={ariaLabel ?? label}
+		aria-pressed={isSelected(value)}
+		class="relative z-10 flex w-full gap-3 md:w-auto items-center justify-center whitespace-nowrap cursor-pointer transition-colors duration-200 {rounded} {compact
+			? 'px-3 py-1.5 md:px-4 md:py-1.5'
+			: 'px-4 py-4 md:px-8 md:py-4'} {isSelected(value)
+			? darkSelected
+				? 'text-white'
+				: 'text-black'
+			: 'text-mid-grey hover:text-black'}"
+	>
+		{#if icon}
+			{@const SvelteComponent = icon}
+			<SvelteComponent class={size} />
+		{/if}
+		{#if label}
+			{label}
+		{/if}
+	</button>
+{/snippet}

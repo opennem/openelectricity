@@ -30,6 +30,7 @@
 	import HatchOverlay from './elements/HatchOverlay.svelte';
 	import { indexOfTime } from './binary-search.js';
 	import { perfSpan } from './perf.js';
+	import { hoverFade } from './hover-fade.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -334,40 +335,44 @@
 				{:else}
 					<!-- Continuous mode: vertical line + dots -->
 					{#if chart.hoverData}
-						<LineX
-							xValue={chart.hoverData}
-							yValue={styles.showHoverYLine ? chart.hoverData : undefined}
-							maxYValue={hoverMaxY}
-							strokeArray="none"
-						/>
-						{#if styles.showHoverDot}
-							<Dot
-								domains={chart.visibleSeriesNames}
-								value={chart.hoverData}
-								isStacked={true}
-								colour="#333"
-								r={4}
+						<g transition:hoverFade>
+							<LineX
+								xValue={chart.hoverData}
+								yValue={styles.showHoverYLine ? chart.hoverData : undefined}
+								maxYValue={hoverMaxY}
+								strokeArray="none"
 							/>
-						{/if}
+							{#if styles.showHoverDot}
+								<Dot
+									domains={chart.visibleSeriesNames}
+									value={chart.hoverData}
+									isStacked={true}
+									colour="#333"
+									r={4}
+								/>
+							{/if}
+						</g>
 					{/if}
 
 					{#if chart.focusData}
-						<LineX
-							xValue={chart.focusData}
-							yValue={styles.showFocusYLine ? chart.focusData : undefined}
-							maxYValue={focusMaxY}
-							strokeArray="none"
-							strokeColour={styles.focusYLineStrokeColour}
-						/>
-						{#if styles.showFocusDot}
-							<Dot
-								domains={chart.visibleSeriesNames}
-								value={chart.focusData}
-								isStacked={true}
-								colour={styles.focusYLineDotColour}
-								r={styles.focusYLineDotRadius}
+						<g transition:hoverFade>
+							<LineX
+								xValue={chart.focusData}
+								yValue={styles.showFocusYLine ? chart.focusData : undefined}
+								maxYValue={focusMaxY}
+								strokeArray="none"
+								strokeColour={styles.focusYLineStrokeColour}
 							/>
-						{/if}
+							{#if styles.showFocusDot}
+								<Dot
+									domains={chart.visibleSeriesNames}
+									value={chart.focusData}
+									isStacked={true}
+									colour={styles.focusYLineDotColour}
+									r={styles.focusYLineDotRadius}
+								/>
+							{/if}
+						</g>
 					{/if}
 				{/if}
 			</g>

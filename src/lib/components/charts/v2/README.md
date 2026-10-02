@@ -829,6 +829,16 @@ Wheel pan/zoom is a built-in default — it fires the same `onpan` / `onzoom` ca
 
 **StackedArea series hover**: The only SVG-level interaction kept. When the mouse is over a coloured `<path>`, StackedArea emits `onmousemove({ data, key })` which StratumChart uses to "upgrade" the basic time-hover with series highlighting (bold stroke on the hovered series).
 
+### Hover fades
+
+Hover marks fade in as the pointer arrives and out as it leaves (`hover-fade.js`
+`hoverFade`, 150ms, instant under reduced motion): the hover and focus lines
+and dots, and step mode's hover and focus bands. Only their appearance fades;
+a mark that follows the pointer stays mounted while it moves, so its position
+never lags. Series dimming stays instant: animating many shapes at once on every
+move would cost frames for little gain. Put `hoverFade` on the element whose own
+`{#if}` toggles, since Svelte transitions are local.
+
 ### Step Mode
 
 When `chart.chartOptions.selectedCurveType === 'step'`, StackedAreaChart renders with d3's `curveStepAfter` (value at T is drawn as a horizontal bar from T to T+I) and uses **StepHoverBand** instead of LineX/Dot for hover/focus indicators. This aligns with interval-start timestamps — a point at "1 June" visually spans all of June — and is suitable for daily / weekly / monthly energy data.

@@ -9,6 +9,7 @@
 
 <script>
 	import { dialAngle } from './dial.js';
+	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
 
 	/**
 	 * DialFace — the 24-hour dials' 00/06/12/18 hour ticks and labels just
@@ -18,9 +19,13 @@
 	 * whatever their width or height. `large` (the lightbox) sets 16px labels
 	 * with a longer tick and gap; fit it with `dialMargin(true)`.
 	 *
-	 * @type {{ outer: number, large?: boolean }}
+	 * `hover` marks the hovered hour or slot the same way, at its start (in
+	 * hours from midnight) in dark text, and hides any fixed label it would
+	 * crowd, so the time reads on the arc itself.
+	 *
+	 * @type {{ outer: number, large?: boolean, hover?: { hours: number, label: string } | null }}
 	 */
-	let { outer, large = false } = $props();
+	let { outer, large = false, hover = null } = $props();
 
 	let gap = $derived(large ? 14 : 10);
 	/** Tick length, out from the dial's edge and short of the label. */
@@ -33,9 +38,33 @@
 		{ hour: 0, anchor: 'middle', baseline: 'hanging' },
 		{ hour: 6, anchor: 'end', baseline: 'middle' }
 	];
+	/** Fixed labels nearer the hovered time than this (in hours) give way. */
+	const CROWDED_HOURS = 2;
+
+	/** The hovered mark's direction and inner-edge anchoring at any angle: a
+	 *  side's anchor applies once the direction leans that way. */
+	let hoverMark = $derived.by(() => {
+		if (!hover) return null;
+		const angle = dialAngle(hover.hours);
+		const x = Math.sin(angle);
+		const y = -Math.cos(angle);
+		const lean = 0.38;
+		return {
+			x,
+			y,
+			anchor: x > lean ? 'start' : x < -lean ? 'end' : 'middle',
+			baseline: y > lean ? 'hanging' : y < -lean ? 'auto' : 'middle'
+		};
+	});
+	/** @param {number} hour */
+	const crowded = (hour) => {
+		if (!hover) return false;
+		const apart = Math.abs(hover.hours - hour) % 24;
+		return Math.min(apart, 24 - apart) < CROWDED_HOURS;
+	};
 </script>
 
-{#each LABELS as { hour, anchor, baseline } (hour)}
+{#each LABELS.filter(({ hour }) => !crowded(hour)) as { hour, anchor, baseline } (hour)}
 	{@const x = Math.round(Math.sin(dialAngle(hour)))}
 	{@const y = -Math.round(Math.cos(dialAngle(hour)))}
 	<line
@@ -54,3 +83,25 @@
 		class="fill-mid-grey {large ? 'text-base' : 'text-xs'}">{String(hour).padStart(2, '0')}:00</text
 	>
 {/each}
+{#if hover && hoverMark}
+	{@const { x, y, anchor, baseline } = hoverMark}
+	<g transition:hoverFade>
+		<line
+			x1={x * outer}
+			y1={y * outer}
+			x2={x * (outer + tick)}
+			y2={y * (outer + tick)}
+			class="stroke-dark-grey"
+			pointer-events="none"
+		/>
+		<text
+			x={x * (outer + gap)}
+			y={y * (outer + gap)}
+			text-anchor={anchor}
+			dominant-baseline={baseline}
+			pointer-events="none"
+			data-testid="dial-hover-time"
+			class="fill-dark-grey font-medium {large ? 'text-base' : 'text-xs'}">{hover.label}</text
+		>
+	</g>
+{/if}

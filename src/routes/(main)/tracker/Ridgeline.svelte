@@ -5,6 +5,8 @@
 	import { PROFILE_DAY_END, PROFILE_DAY_START, profileClock } from './profile-chart.js';
 	import { OE_RED } from './tracker-overlays.js';
 	import { formatProfileDay } from './time-of-day.js';
+	import ProfileReadout from './ProfileReadout.svelte';
+	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
 
 	/**
 	 * Ridgeline — one offset curve per day for comparing the shapes of a
@@ -62,6 +64,9 @@
 	const TICKS = [0, 6, 12, 18, 24];
 	/** @param {number} value */
 	const format = (value) => value.toLocaleString('en-AU', { maximumFractionDigits: 1 });
+	/** A strip value in the chart's unit, or null for no value.
+	 * @param {number | null | undefined} value */
+	const valueText = (value) => (value == null ? null : `${format(value)} ${unit}`);
 
 	let width = $state(0);
 	let ridges = $derived([
@@ -96,17 +101,21 @@
 	);
 	/** @param {number} slot */
 	const slotTime = (slot) => PROFILE_DAY_START + slot * slotMs;
-	/** @param {Array<number | null>} values @param {number} index */
-	function ridgePath(values, index) {
+	/** A ridge's filled area, and the line along its top that carries its
+	 * outline, so the area's ends and baseline stay unstroked.
+	 * @param {Array<number | null>} values @param {number} index */
+	function ridgeShape(values, index) {
 		const base = baseline(index);
-		return (
-			d3Area()
-				.defined((/** @type {any} */ value) => value !== null)
-				.x((_, slot) => x(slotTime(slot)))
-				.y0(base)
-				.y1((/** @type {any} */ value) => base - (value / peak) * amplitude)
-				.curve(step ? curveStepAfter : curveMonotoneX)(/** @type {any} */ (values)) ?? ''
-		);
+		const area = d3Area()
+			.defined((/** @type {any} */ value) => value !== null)
+			.x((_, slot) => x(slotTime(slot)))
+			.y0(base)
+			.y1((/** @type {any} */ value) => base - (value / peak) * amplitude)
+			.curve(step ? curveStepAfter : curveMonotoneX);
+		return {
+			fill: area(/** @type {any} */ (values)) ?? '',
+			top: area.lineY1()(/** @type {any} */ (values)) ?? ''
+		};
 	}
 	/** An opaque tint of the series colour (`strength` of the way from white),
 	 * so each ridge hides the ones behind.
@@ -162,26 +171,19 @@
 </script>
 
 <div bind:clientWidth={width} class="relative">
-	<div
-		data-testid="chart-tooltip-strip"
-		class="flex h-[21px] items-center justify-end gap-2 whitespace-nowrap text-xs"
-	>
-		{#if hoverSlot !== undefined && hoverTime !== undefined}
-			<span class="bg-white/40 px-3 py-1 font-light"
-				>{profileClock(hoverTime)}–{profileClock(hoverTime + slotMs)}</span
-			>
-			<span class="flex items-center gap-2 bg-light-warm-grey px-2 py-1">
-				<span class="size-2.5 rounded-sm" style:background-color={colour}></span>
-				<span class="text-mid-grey">Average</span>
-				<strong class="font-semibold"
-					>{average[hoverSlot] == null ? '—' : `${format(average[hoverSlot] ?? 0)} ${unit}`}</strong
-				>
-				{#if today && today[hoverSlot] != null}
-					<span style:color={OE_RED}>Today {format(today[hoverSlot] ?? 0)}</span>
-				{/if}
-			</span>
-		{/if}
-	</div>
+	<ProfileReadout
+		time={hoverSlot !== undefined && hoverTime !== undefined
+			? `${profileClock(hoverTime)}–${profileClock(hoverTime + slotMs)}`
+			: null}
+		items={hoverSlot === undefined
+			? []
+			: [
+					...(today?.[hoverSlot] != null
+						? [{ label: 'Today', value: valueText(today[hoverSlot]), colour, today: true }]
+						: []),
+					{ label: 'Av.', value: valueText(average[hoverSlot]), colour }
+				]}
+	/>
 	<div data-chart-area class="relative">
 		<svg
 			data-png-layer
@@ -200,14 +202,20 @@
 			</defs>
 			{#each ridges as ridge, index (ridge.key)}
 				{@const active = ridge.key === (activeDay ?? ownDay)}
+				{@const shape = ridgeShape(ridge.values, index)}
 				<g>
 					<path
-						d={ridgePath(ridge.values, index)}
+						d={shape.fill}
 						fill={active ? activeTint : tint}
 						filter="url(#{shadowId})"
+						data-ridge={ridge.key}
+						data-active={active || undefined}
+					/>
+					<path
+						d={shape.top}
+						fill="none"
 						stroke={ridge.today ? OE_RED : colour}
 						stroke-width={ridge.today || active ? 2.25 : 1.25}
-						data-active={active || undefined}
 					/>
 					<line
 						x1={PAD.left}
@@ -234,6 +242,7 @@
 			{/each}
 			{#if hoverTime !== undefined}
 				<line
+					transition:hoverFade
 					x1={x(hoverTime)}
 					x2={x(hoverTime)}
 					y1={PAD.top}

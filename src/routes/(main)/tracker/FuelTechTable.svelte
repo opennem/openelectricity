@@ -8,7 +8,6 @@
 		tableValueCell
 	} from './table-styles.js';
 	import { TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
-	import { ChevronDown } from '@lucide/svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import { getGroup, GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
@@ -557,15 +556,9 @@
 										aria-haspopup="listbox"
 										aria-expanded={open}
 										title="Change fuel tech grouping"
-										class="{HEADER_BUTTON} ml-0.5 items-start gap-1"
+										class="{HEADER_BUTTON} ml-0.5 items-start"
 									>
 										<span class="flex flex-col items-start">{@render technologyHeading()}</span>
-										<ChevronDown
-											class="mt-0.5 size-3 text-mid-grey transition-transform motion-reduce:transition-none {open
-												? 'rotate-180'
-												: ''}"
-											aria-hidden="true"
-										/>
 									</button>
 								{/snippet}
 							</FilterSelect>

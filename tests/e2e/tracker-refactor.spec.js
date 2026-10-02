@@ -9,7 +9,8 @@ import {
 	openOptions,
 	pickNavOption,
 	trackerFixture,
-	trackerReady
+	trackerReady,
+	styleButton
 } from './helpers/tracker.js';
 
 async function openPng(page) {
@@ -1263,7 +1264,7 @@ test('timeline cards outline their table column and series highlight their row',
 	await expect(focusedColumns).toHaveCount(0);
 });
 
-test('stacked profile cards outline Av power and area series highlight their row', async ({
+test('stacked profile cards outline their table column and area series highlight their row', async ({
 	page
 }) => {
 	await trackerFixture(page);
@@ -1278,15 +1279,82 @@ test('stacked profile cards outline Av power and area series highlight their row
 	await areas.nth((await areas.count()) - 1).hover({ force: true });
 	await expect(focusedColumns).toHaveAttribute('data-column', 'power');
 	await expect(focusedRows).toHaveCount(1);
-	// The radial bars plot power too, by hour, with no series of their own.
+	// The radial bars read each hour's energy, with no series of their own.
 	const dial = card(page, 'Average by hour').getByRole('img', { name: /average by hour of day$/ });
 	const box = await dial.boundingBox();
 	if (!box) throw new Error('dial not laid out');
 	await page.mouse.move(box.x + box.width / 2 + 3, box.y + box.height / 2 - 20);
-	await expect(focusedColumns).toHaveAttribute('data-column', 'power');
+	await expect(focusedColumns).toHaveAttribute('data-column', 'energy');
 	await expect(focusedRows).toHaveCount(0);
 	await page.mouse.move(0, 0);
 	await expect(focusedColumns).toHaveCount(0);
+});
+
+test('breakdown linear charts pin a slot on click and share it, with no pan or zoom', async ({
+	page
+}) => {
+	await trackerFixture(page, { contributions: true });
+	await page.goto('/tracker/profile?profile-end=2026-08-31&profile-display=breakdown');
+	await page.locator('main[data-hydrated]').waitFor();
+	const areas = page.locator('.stratum-chart-area');
+	await expect(areas.first()).toBeVisible();
+	await expect(page.getByRole('button', { name: /pan and zoom/ })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: /^Zoom (in|out)$/ })).toHaveCount(0);
+	const strips = page.getByTestId('chart-tooltip-strip');
+	const readout = page.getByTestId('tracker-range-label');
+	// One click pins the slot on every card, the readout and the table.
+	const box = await areas.first().boundingBox();
+	if (!box) throw new Error('chart not laid out');
+	await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+	await page.mouse.move(0, 0);
+	await expect(readout).toHaveText(/^\d\d:\d\d–\d\d:\d\d$/);
+	const pinned = await readout.innerText();
+	const count = await strips.count();
+	for (let i = 0; i < count; i++) await expect(strips.nth(i)).toContainText(pinned);
+	// Clicking the pinned slot again releases it everywhere.
+	await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+	await page.mouse.move(0, 0);
+	await expect(readout).not.toHaveText(pinned);
+	await expect(strips.first()).toHaveText('');
+});
+
+test('stacked radial bars and area share the hovered series', async ({ page }) => {
+	await trackerFixture(page);
+	await page.goto('/tracker/profile?profile-end=2026-08-31');
+	await page.locator('main[data-hydrated]').waitFor();
+	const table = page.locator('#tracker-table-panel');
+	const focusedRows = table.locator('[data-testid="fuel-tech-row"][data-focused]');
+	const clock = card(page, 'Average by hour').getByRole('img', {
+		name: /average by hour of day$/
+	});
+	const slices = clock.locator(
+		'path[fill]:not([fill="transparent"]):not([data-testid="dial-night"])'
+	);
+	await expect(slices.first()).toBeVisible();
+	const layers = (await slices.count()) / 24;
+	// A slice of the 12:00 hour with some length to point at.
+	let target = -1;
+	for (let layer = 0; layer < layers && target < 0; layer++) {
+		const box = await slices.nth(12 * layers + layer).boundingBox();
+		if (box && box.height > 6) target = layer;
+	}
+	expect(target).toBeGreaterThanOrEqual(0);
+	const box = await slices.nth(12 * layers + target).boundingBox();
+	if (!box) throw new Error('slice not laid out');
+	// The dial's slice: its row highlights and the other layers fade.
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await expect(focusedRows).toHaveCount(1);
+	await expect(slices.nth(12 * layers + target)).toHaveAttribute('opacity', '1');
+	await expect(slices.nth(12 * layers + ((target + 1) % layers))).toHaveAttribute('opacity', '0.4');
+	await page.mouse.move(0, 0);
+	await expect(focusedRows).toHaveCount(0);
+	await expect(slices.nth(12 * layers + ((target + 1) % layers))).toHaveAttribute('opacity', '1');
+	// The area's series: the dial fades the other layers in every hour.
+	const areas = card(page, 'Average over 7 full days').locator('path.path-area');
+	await areas.nth((await areas.count()) - 1).hover({ force: true });
+	await expect(focusedRows).toHaveCount(1);
+	// The hour it syncs to on the dial shows the series alone at full strength.
+	await expect(clock.locator('path[opacity="0.4"]').first()).toBeVisible();
 });
 
 test('stacked profile area and radial bars share one hover', async ({ page }) => {
@@ -1407,7 +1475,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	// Percentile bands by default: the 10–90% and 25–75% spread (an invisible
 	// base and four bands) with a dark median. The strip reads the slot's
 	// average; the table swaps its columns for each technology's percentiles.
-	await expect(navPill(page, 'Percentile bands')).toBeVisible();
+	await expect(styleButton(page, 'Percentile bands')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page).not.toHaveURL(/profile-style/);
 	await expect(charts.first().locator('path.path-area')).toHaveCount(5);
 	await expect(charts.first().locator('path.overlay-line')).toHaveCount(1);
@@ -1417,7 +1485,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await bandArea.scrollIntoViewIfNeeded();
 	await bandArea.hover({ position: { x: 200, y: 100 } });
 	const strip = charts.first().getByTestId('chart-tooltip-strip');
-	await expect(strip).toContainText('Average');
+	await expect(strip).toContainText('Av.');
 	await expect(strip).not.toContainText('Median');
 	// Every breakdown chart follows the hovered slot.
 	const slot = (await strip.innerText()).match(/\d\d:\d\d–\d\d:\d\d/)?.[0];
@@ -1463,34 +1531,48 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await expect(todayLine).toHaveCount(1);
 	await expect(todayLine).toHaveAttribute('stroke-width', '2.5');
 	await expect(charts.last().locator('path.overlay-line[stroke="#C74523"]')).toHaveCount(1);
+	// The strip reads today's value, in OE red, before the slot's average.
+	await charts
+		.first()
+		.locator('.stratum-chart-area')
+		.hover({ position: { x: 8, y: 100 } });
+	const todayStrip = charts.first().getByTestId('chart-tooltip-strip');
+	await expect(todayStrip).toContainText(/Today.*Av\./);
+	await expect(todayStrip.locator('strong').first()).toHaveCSS('color', 'rgb(199, 69, 35)');
+	await page.mouse.move(0, 0);
 	// Multi-line: the average area with the 7 days, the dark average and today.
-	await pickNavOption(page, 'Style', 'Percentile bands', 'Multi-line');
+	await styleButton(page, 'Multi-line').click();
 	await expect(page).toHaveURL(/profile-style=lines/);
 	await expect(charts).toHaveCount(4);
 	await expect(charts.first().locator('path.path-area')).toHaveCount(1);
 	await expect(charts.first().locator('path.overlay-line')).toHaveCount(9);
 	await expect(charts.first().locator('path.overlay-line[stroke="#222222"]')).toHaveCount(1);
 	await expect(charts.last().locator('path.overlay-line')).toHaveCount(9);
-	await expect(table.getByRole('columnheader').filter({ hasText: 'Energy' })).toHaveCount(1);
-	// The Style list groups its options under Linear and Radial subheaders.
-	await navPill(page, 'Multi-line').click();
-	const styles = page.getByRole('listbox', { name: 'Style', exact: true });
-	await expect(styles.getByRole('group', { name: 'Linear' }).getByRole('option')).toHaveText([
-		'Percentile bands',
-		'Multi-line',
-		'Ridgeline'
-	]);
-	await expect(styles.getByRole('group', { name: 'Radial' }).getByRole('option')).toHaveText([
-		'Bars',
-		'Heatmap'
-	]);
+	// Its table reads the ridgeline's Average-and-dates columns, not Energy.
+	await expect(table.locator('th[data-column="average"]')).toHaveCount(1);
+	await expect(table.getByRole('columnheader').filter({ hasText: 'Energy' })).toHaveCount(0);
+	// The Breakdown options bar: Show today, a divider, then the style switcher's
+	// icons, linear styles before radial.
+	const breakdownOptions = page.getByRole('region', { name: 'Breakdown options', exact: true });
+	await expect(breakdownOptions.getByRole('separator')).toHaveCount(1);
+	expect(
+		await breakdownOptions
+			.getByRole('button')
+			.evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')))
+	).toEqual(['Percentile bands', 'Multi-line', 'Ridgeline', 'Radial bars', 'Radial heatmap']);
+	await expect(styleButton(page, 'Multi-line')).toHaveAttribute('aria-pressed', 'true');
+	// Each icon names its style in the app's tooltip, not the browser's title.
+	await expect(styleButton(page, 'Ridgeline')).not.toHaveAttribute('title');
+	await styleButton(page, 'Ridgeline').hover();
+	await expect(page.locator('[data-tooltip-content]')).toContainText('Ridgeline');
+	await page.mouse.move(0, 0);
 	// Radial bars: each series' hourly averages around a 24-hour dial.
-	await styles.getByRole('option', { name: 'Bars', exact: true }).click();
+	await styleButton(page, 'Radial bars').click();
 	await expect(page).toHaveURL(/profile-style=radial/);
 	await expect(charts).toHaveCount(0);
 	const clocks = page.getByRole('img', { name: /average by hour of day$/ });
 	await expect(clocks).toHaveCount(4);
-	await expect(clocks.first().locator('path[fill="transparent"] title')).toHaveCount(24);
+	await expect(clocks.first().locator('path[fill="transparent"]')).toHaveCount(24);
 	await expect(clocks.first().locator('path[stroke="#C74523"]')).toHaveCount(1);
 	// The whole hour sector takes the hover, even inside the hub where no bar is:
 	// just right of straight up is 12:00–13:00 (noon at the top, clockwise).
@@ -1498,6 +1580,28 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await page.mouse.move(dial.x + dial.width / 2 + 3, dial.y + dial.height / 2 - 20);
 	await expect(page.getByTestId('dial-readout').first()).toContainText('12:00–13:00');
 	await expect(clocks.first().getByTestId('radial-hover')).toHaveCount(1);
+	// The hovered hour's time reads on the arc, in place of the fixed noon label.
+	await expect(clocks.first().getByTestId('dial-hover-time')).toHaveText('12:00');
+	await expect(
+		clocks
+			.first()
+			.locator('text')
+			.filter({ hasText: /^12:00$/ })
+	).toHaveCount(1);
+	// Today's value sits centred below each dial, not in the readout band.
+	const dialToday = page.getByTestId('dial-today');
+	await expect(dialToday).toHaveCount(4);
+	await expect(page.getByTestId('dial-readout').first()).not.toContainText('Today');
+	await page.mouse.move(dial.x + dial.width / 2 - 3, dial.y + dial.height / 2 + 20);
+	await expect(page.getByTestId('dial-readout').first()).toContainText('00:00–01:00');
+	await expect(dialToday.first()).toHaveText(/^Today \S+ MW$/);
+	await expect(dialToday.first()).toHaveCSS('text-align', 'center');
+	// With nothing hovered, both read the average across the hours.
+	await page.mouse.move(0, 0);
+	await expect(page.getByTestId('dial-readout').first()).toContainText('Av.');
+	await expect(dialToday.first()).toHaveText(/^Today Av\. \S+ MW$/);
+	await expect(dialToday.first().locator('strong')).toHaveCSS('font-weight', '600');
+	await page.mouse.move(dial.x + dial.width / 2 + 3, dial.y + dial.height / 2 - 20);
 	// The hovered hour drives the table and the range readout too.
 	await expect(readout).toHaveText('12:00–13:00');
 	await expect(table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' })).toContainText('100');
@@ -1505,23 +1609,25 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await expect(page.getByTestId('dial-readout').nth(1)).toContainText('12:00–13:00');
 	// Loads read as positive on the dial: charging's 400 MW grows outward.
 	const charging = page.getByRole('img', { name: /Charging.* average by hour of day$/ });
-	await expect(charging.locator('path[fill="transparent"] title').first()).toHaveText(
-		'00:00–01:00: 400 MW'
-	);
+	await expect(charging).toHaveCount(1);
+	const chargingValues = page.getByRole('table', { name: /Charging.* average by hour \(MW\)$/ });
+	await expect(chargingValues.locator('tbody tr').first().locator('td').first()).toHaveText('400');
 	// Ridgeline: one offset curve per day, today at the front in OE red, on the
 	// shared breakdown hover.
-	await pickNavOption(page, 'Style', 'Radial bars', 'Ridgeline');
+	await styleButton(page, 'Ridgeline').click();
 	await expect(page).toHaveURL(/profile-style=ridgeline/);
 	const ridgelines = page.getByRole('img', { name: /one curve per day$/ });
 	await expect(ridgelines).toHaveCount(4);
-	await expect(ridgelines.first().locator('path')).toHaveCount(8);
+	await expect(ridgelines.first().locator('path[data-ridge]')).toHaveCount(8);
+	// Only each ridge's top carries the outline; its ends and baseline don't.
+	await expect(ridgelines.first().locator('path[data-ridge][stroke]')).toHaveCount(0);
 	await expect(ridgelines.first().locator('path[stroke="#C74523"]')).toHaveCount(1);
 	const ridgeBox = await ridgelines.first().boundingBox();
 	await page.mouse.move(ridgeBox.x + ridgeBox.width / 2, ridgeBox.y + ridgeBox.height / 2);
 	await expect(readout).toHaveText(/^\d\d:\d\d–\d\d:\d\d$/);
 	const ridgeSlot = await readout.innerText();
 	await expect(page.getByTestId('chart-tooltip-strip').nth(1)).toContainText(ridgeSlot);
-	await expect(page.getByTestId('chart-tooltip-strip').first()).toContainText('Average');
+	await expect(page.getByTestId('chart-tooltip-strip').first()).toContainText('Av.');
 	await page.mouse.move(0, 0);
 	// The table shows each technology's average and every day.
 	const ridgeHeaders = table.getByRole('columnheader');
@@ -1543,7 +1649,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await expect(ridgelines.first().locator('path[data-active]')).toHaveCount(0);
 	// Radial heatmap: each ring a day on the 24-hour dial (cells on a canvas),
 	// sharing the slot hover and the day's table column with the other cards.
-	await pickNavOption(page, 'Style', 'Ridgeline', 'Heatmap');
+	await styleButton(page, 'Radial heatmap').click();
 	await expect(page).toHaveURL(/profile-style=heatmap/);
 	const heatmaps = page.getByRole('img', { name: /each ring is a day/ });
 	await expect(heatmaps).toHaveCount(4);
@@ -1571,10 +1677,15 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await expect(lightbox).toContainText('4 / 4');
 	await page.keyboard.press('Escape');
 	await expect(lightbox).toHaveCount(0);
-	const heat = await heatmaps.first().boundingBox();
+	let heat = await heatmaps.first().boundingBox();
 	// Just right of straight up, in the outer ring (the latest day): 12:00–12:30.
-	await page.mouse.move(heat.x + heat.width / 2 + 3, heat.y + 52);
-	await expect(readout).toHaveText('12:00–12:30');
+	// Re-measure until the layout settles after the lightbox closes.
+	await expect(async () => {
+		heat = await heatmaps.first().boundingBox();
+		await page.mouse.move(heat.x + heat.width / 2 + 3, heat.y + 52);
+		await expect(readout).toHaveText('12:00–12:30', { timeout: 1000 });
+	}).toPass();
+	await expect(heatmaps.first().getByTestId('dial-hover-time')).toHaveText('12:00');
 	await expect(table.locator('th[data-column="2026-08-31"]')).toHaveClass(/bg-warm-grey/);
 	await expect(page.getByTestId('dial-readout').nth(1)).toContainText('12:00–12:30');
 	// The innermost ring is the oldest day, and its column comes into view.
@@ -1585,7 +1696,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await page.mouse.move(heat.x + heat.width / 2 + 3, heat.y + heat.height / 2 - firstRing);
 	await expect(table.locator('th[data-column="2026-08-25"]')).toHaveClass(/bg-warm-grey/);
 	await page.mouse.move(0, 0);
-	await pickNavOption(page, 'Style', 'Radial heatmap', 'Percentile bands');
+	await styleButton(page, 'Percentile bands').click();
 	await expect(page).not.toHaveURL(/profile-style/);
 	await expect(showToday).toBeEnabled();
 	await expect(showToday).toHaveAttribute('aria-checked', 'true');
@@ -1670,10 +1781,13 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 		'path[fill]:not([fill="transparent"]):not([data-testid="dial-night"])'
 	);
 	await expect(slices).toHaveCount(4 * 24);
-	// Each hour's title reads the net total across the layers.
-	await expect(clock.locator('path[fill="transparent"] title').first()).toHaveText(
-		'00:00–01:00: 200 MW'
-	);
+	// Each hour's net total across the layers reads as energy (in the dial's
+	// visually hidden table; hovering shows no browser tooltip).
+	await expect(clock.locator('title')).toHaveCount(1);
+	const stackValues = page.getByRole('table', { name: /average by hour \(MWh\)$/ });
+	const netAt = (/** @type {number} */ row) =>
+		stackValues.locator('tbody tr').nth(row).locator('td').first();
+	await expect(netAt(0)).toHaveText('200');
 	// Noon sits at the top, and the window's average night is shaded behind,
 	// from sunset round to sunrise at the NEM capitals.
 	await expect(clock.getByTestId('dial-tick')).toHaveCount(4);
@@ -1689,7 +1803,7 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	const dial = await clock.boundingBox();
 	await page.mouse.move(dial.x + dial.width / 2 + 3, dial.y + dial.height / 2 - 20);
 	await expect(stack.getByTestId('dial-readout')).toContainText('12:00–13:00');
-	await expect(stack.getByTestId('dial-readout')).toContainText('MW net');
+	await expect(stack.getByTestId('dial-readout')).toContainText('MWh net');
 	await expect(readout).toHaveText('12:00–13:00');
 	await expect(table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' })).toContainText('100');
 	await page.mouse.move(0, 0);
@@ -1697,9 +1811,7 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	// Table row toggles take a technology out of the dial.
 	await table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).click();
 	await expect(slices).toHaveCount(3 * 24);
-	await expect(clock.locator('path[fill="transparent"] title').first()).toHaveText(
-		'00:00–01:00: 100 MW'
-	);
+	await expect(netAt(0)).toHaveText('100');
 	// The toggle hides it from the stacked area too, and one power request
 	// serves both charts.
 	await expect(card(page, 'Average over 7 full days').locator('path.path-area')).toHaveCount(3);

@@ -6,6 +6,7 @@
 	import { dialAngle } from './dial.js';
 	import DialReadout from './DialReadout.svelte';
 	import DialFace, { dialMargin } from './DialFace.svelte';
+	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
 	import DialNight from './DialNight.svelte';
 
 	/**
@@ -210,9 +211,21 @@
 					<circle r={outer} fill="none" class="stroke-mid-warm-grey" />
 					<circle r={inner} fill="none" class="stroke-mid-grey" />
 					{#if outline}
-						<path d={outline} fill="none" class="stroke-dark-grey" stroke-width="1.5" />
+						<path
+							d={outline}
+							fill="none"
+							class="stroke-dark-grey"
+							stroke-width="1.5"
+							transition:hoverFade
+						/>
 					{/if}
-					<DialFace {outer} {large} />
+					<DialFace
+						{outer}
+						{large}
+						hover={hoverSlot === undefined
+							? null
+							: { hours: (hoverSlot * slotMs) / 3_600_000, label: profileClock(hoverStart) }}
+					/>
 				</svg>
 			</div>
 		</div>

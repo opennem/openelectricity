@@ -4,6 +4,7 @@
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { getFormattedX, getFormattedY } from '$lib/components/charts/v2/tooltip-derivations.js';
+	import ProfileReadout from './ProfileReadout.svelte';
 	import {
 		PROFILE_DAY_START,
 		PROFILE_DAY_END,
@@ -27,13 +28,19 @@
 	 * `onhoverkeychange` reports the series area or `hoverable` overlay line
 	 * under the pointer (undefined once it leaves), and `activeKey` emphasises
 	 * one, as sibling cards share it: other series fade, and an overlay thickens.
+	 * `panZoom` (default on) offers pan and zoom behind tap-to-engage; off, the
+	 * chart has neither, so a click pins a slot straight away.
+	 * `focusTime` and `onfocuschange` control the pinned slot, for sibling charts
+	 * that share one: a click or Enter reports the slot (or undefined, to unpin
+	 * it), and the chart follows `focusTime` rather than pinning locally.
 	 * @type {{rows: any[], names: string[], labels: Record<string,string>, colours: Record<string,string>,
 	 * title: string, label: string, heightPx: number, slotMs: number, hiddenSeriesNames?: string[],
 	 * overlays?: Array<{id: string, colour: string, strokeWidth?: number, label?: string, hoverable?: boolean}>,
 	 * price?: boolean, engaged?: boolean,
-	 * readout?: (row: Record<string, any>) => Array<{label: string, value: number | null, colour: string}>,
+	 * readout?: (row: Record<string, any>) => Array<{label: string, value: number | null, colour: string, today?: boolean}>,
 	 * syncHoverTime?: number, onhoverchange?: (time: number | undefined) => void,
-	 * activeKey?: string | null, onhoverkeychange?: (key: string | undefined) => void}} */
+	 * activeKey?: string | null, onhoverkeychange?: (key: string | undefined) => void,
+	 * panZoom?: boolean, focusTime?: number, onfocuschange?: (time: number | undefined) => void}} */
 	let {
 		rows,
 		names,
@@ -51,6 +58,9 @@
 		onhoverchange = undefined,
 		activeKey = null,
 		onhoverkeychange = undefined,
+		panZoom = true,
+		focusTime = undefined,
+		onfocuschange = undefined,
 		engaged = $bindable(false)
 	} = $props();
 	let viewport = $state.raw({ start: PROFILE_DAY_START, end: PROFILE_DAY_END });
@@ -148,6 +158,22 @@
 		onGestureStart: () => chart.clearHover()
 	});
 	onDestroy(gestures.dispose);
+	// A controlled pin follows the shared slot; the click that set it already
+	// pinned this chart, so the echo is a no-op.
+	$effect(() => {
+		if (!onfocuschange || chart.focusTime === focusTime) return;
+		if (focusTime === undefined) chart.clearFocus();
+		else chart.setFocus(focusTime);
+	});
+	/** Pin a slot, or unpin with undefined: reported when the pin is shared.
+	 * @param {number | undefined} time */
+	function pin(time) {
+		if (onfocuschange) onfocuschange(time);
+		else if (time === undefined) chart.clearFocus();
+		else chart.setFocus(time);
+	}
+	/** A click or Enter toggles the slot's pin. @param {number} time */
+	const togglePin = (time) => pin(chart.focusTime === time ? undefined : time);
 	/** The hovered or pinned half-hour, for the fuel-tech table and range readout. */
 	export function getInspectTime() {
 		return /** @type {number | undefined} */ (chart.hoverTime ?? chart.focusTime);
@@ -169,34 +195,26 @@
 			chart.setHover(time);
 		} else if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
-			chart.toggleFocus(current);
+			togglePin(current);
 		} else if (event.key === 'Escape') {
-			chart.clearFocus();
+			pin(undefined);
 			chart.clearHover();
 		}
 	}
 </script>
 
 {#snippet readoutStrip()}
-	{@const row = chart.hoverData ?? chart.focusData}
-	<div data-testid="chart-tooltip-strip" class="readout">
-		{#if row && readout}
-			<span class="bg-white/40 px-3 py-1 font-light">{getFormattedX(chart, row)}</span>
-			<span class="flex flex-wrap items-center justify-end gap-x-3 bg-light-warm-grey px-2 py-1">
-				{#each readout(row) as item (item.label)}
-					<span class="flex items-center gap-1.5 whitespace-nowrap">
-						<span class="size-2.5 rounded-sm" style:background-color={item.colour}></span>
-						<span class="text-mid-grey">{item.label}</span>
-						<strong class="font-semibold"
-							>{item.value === null
-								? '—'
-								: `${getFormattedY(chart, item.value)} ${chart.tooltipUnit}`}</strong
-						>
-					</span>
-				{/each}
-			</span>
-		{/if}
-	</div>
+	{@const row = readout ? (chart.hoverData ?? chart.focusData) : undefined}
+	<ProfileReadout
+		time={row ? getFormattedX(chart, row) : null}
+		items={row && readout
+			? readout(row).map((item) => ({
+					...item,
+					value:
+						item.value === null ? null : `${getFormattedY(chart, item.value)} ${chart.tooltipUnit}`
+				}))
+			: []}
+	/>
 {/snippet}
 
 <!-- The breakdown lives in the fuel-tech table, so the stack takes Timeline's strip. -->
@@ -215,11 +233,12 @@
 		}}
 		tooltipMode="strip"
 		tooltip={readout ? readoutStrip : undefined}
-		enablePan
+		onfocus={togglePin}
+		enablePan={panZoom}
 		panZoomMode="tap-to-engage"
 		bind:engaged
 		viewDomain={[viewport.start, viewport.end]}
-		zoomMode="static"
+		zoomMode={panZoom ? 'static' : 'none'}
 		onpanstart={gestures.handlePanStart}
 		onpan={gestures.handlePan}
 		onpanend={gestures.handlePanEnd}
@@ -241,14 +260,3 @@
 		>Use left and right arrows to inspect a time slot, Enter to pin it, and Escape to clear it.</span
 	>
 </div>
-
-<style>
-	/* Two lines' height always, so a wrapping readout never shifts the plot. */
-	.readout {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		min-height: 42px;
-		font-size: var(--text-xs);
-	}
-</style>

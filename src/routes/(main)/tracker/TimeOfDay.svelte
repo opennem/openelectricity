@@ -2,7 +2,14 @@
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import { DatePicker } from '$lib/components/ui/date-picker';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
+	import ChartArea from '@lucide/svelte/icons/chart-area';
+	import ChartSpline from '@lucide/svelte/icons/chart-spline';
+	import Waves from '@lucide/svelte/icons/waves';
+	import CircleDashed from '@lucide/svelte/icons/circle-dashed';
+	import Target from '@lucide/svelte/icons/target';
 	import Toggle from '$lib/components/form-elements/Toggle.svelte';
+	import { MediaQuery } from 'svelte/reactivity';
+	import { slide } from 'svelte/transition';
 	import { color as d3Colour } from 'd3-color';
 	import { formatDateRange } from '$lib/components/charts/v2/date-labels.js';
 	import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
@@ -74,6 +81,25 @@
 	/** Stacked: every technology's average day in one stack. Breakdown: a chart
 	 * per visible technology, two columns wide, then spot price. */
 	let breakdown = $derived(selection.profileDisplay === 'breakdown');
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	/** The breakdown's style switcher: each style as an icon, named by its
+	 * label for assistive technology and the hover tooltip. Bands fill around a
+	 * line, the multi-line overlays curves, the ridgeline offsets them, radial
+	 * bars ring the dial and the heatmap's rings are days. */
+	const STYLE_ICONS = {
+		bands: ChartArea,
+		lines: ChartSpline,
+		ridgeline: Waves,
+		radial: CircleDashed,
+		heatmap: Target
+	};
+	const STYLE_BUTTONS = PROFILE_STYLE_OPTIONS.map(({ value, label }) => ({
+		value,
+		icon: STYLE_ICONS[value],
+		size: 'size-[16px]',
+		ariaLabel: label,
+		tooltip: label
+	}));
 	/** Stacked: the stacked area, or every technology stacked on a radial clock. */
 	const powerData = createProfileData(() => ({ region, zone, group, window }));
 	// Regional spot price: the breakdown's last chart, where the region has one.
@@ -215,10 +241,17 @@
 			: []
 	);
 	const TODAY_OVERLAY = { id: 'today', colour: OE_RED, strokeWidth: 2.5, label: 'Today' };
+	/** The linear charts' strip values, as on the dials: today's (when shown and
+	 * reported for the slot) in OE red, then the slot's average.
+	 * @param {Record<string, any>} row @param {string} colour */
+	const todayAndAverage = (row, colour) => [
+		...(row.today != null ? [{ label: 'Today', value: row.today, colour, today: true }] : []),
+		{ label: 'Av.', value: row.average ?? null, colour }
+	];
 	/** Multi-line: the lightened average area with every day, the dark average
 	 * and, optionally, today in thicker OE red over it. Each day's line and the
-	 * average take the hover, naming the table column it focuses; a hovered
-	 * day's label and colour let the strip read it.
+	 * average take the hover, naming the table column it focuses. The strip
+	 * reads today and the slot's average, then a hovered day.
 	 * @param {(typeof picked)[number]} series */
 	function linesChart({ colour, profile, today: todayProfile }) {
 		return {
@@ -244,13 +277,19 @@
 					hoverable: true
 				},
 				...(todayProfile ? [TODAY_OVERLAY] : [])
+			],
+			readout: (/** @type {Record<string, any>} */ row) => [
+				...todayAndAverage(row, colour),
+				...(chartPart && window.dates.includes(chartPart)
+					? [{ label: formatProfileDay(chartPart), value: row[chartPart] ?? null, colour }]
+					: [])
 			]
 		};
 	}
 	/** Percentile bands: the days' 10–90% and 25–75% spread as stacked bands
 	 * (an invisible 10th-percentile base, then each band's thickness), the
 	 * median as a dark line and, optionally, today in OE red. The strip reads
-	 * the slot's average.
+	 * today and the slot's average.
 	 * @param {(typeof picked)[number]} series */
 	function bandsChart({ colour, profile, today: todayProfile }) {
 		const outer = fade(colour, 0.3);
@@ -285,11 +324,9 @@
 				{ id: 'p50', colour: AVERAGE_LINE, strokeWidth: 2, label: 'Median', hoverable: true },
 				...(todayProfile ? [TODAY_OVERLAY] : [])
 			],
-			// The strip reads the slot's average, not the stacked band thicknesses;
-			// the table holds the percentile range.
-			readout: (/** @type {Record<string, any>} */ row) => [
-				{ label: 'Average', value: row.average, colour }
-			]
+			// The strip reads today and the slot's average, not the stacked band
+			// thicknesses; the table holds the percentile range.
+			readout: (/** @type {Record<string, any>} */ row) => todayAndAverage(row, colour)
 		};
 	}
 	/** A load (charging, pumping): its power is negative. @param {string} key */
@@ -370,6 +407,16 @@
 	/** The slot (charts) or hour (radial clocks) hovered on any breakdown
 	 * card; every card mirrors it, as Timeline's cards share one hover. */
 	let breakdownHover = $state(/** @type {number | undefined} */ (undefined));
+	/** The slot pinned on any breakdown chart (a click, or Enter), shared by
+	 * every card as the hover is; the linear breakdown charts have no pan or
+	 * zoom, so a click pins straight away. Snapped to the current slot length,
+	 * so a 5-minute pin lands on its half-hour after an interval change. */
+	let pinnedSlot = $state(/** @type {number | undefined} */ (undefined));
+	let breakdownPin = $derived(
+		pinnedSlot === undefined
+			? undefined
+			: pinnedSlot - ((pinnedSlot - PROFILE_DAY_START) % window.slotMs)
+	);
 	/** A breakdown radial card's hovered hour; every radial card mirrors it. */
 	let radialHour = $state(/** @type {number | null} */ (null));
 	/** Stacked: the hover shared by the stacked area and the radial bars — a
@@ -397,11 +444,12 @@
 		stackHover === undefined ? null : Math.floor((stackHover.start - PROFILE_DAY_START) / HOUR_MS)
 	);
 	/** The card under the pointer. Breakdown: the table highlights its
-	 * technology's row. Stacked: the table outlines Av power, which both stacked
-	 * charts plot, and `stackSeries` (the area's series under the pointer)
-	 * picks the row, as on Timeline. */
+	 * technology's row. Stacked: the table outlines the column the card plots
+	 * (Energy for the radial bars, Av power for the area), and `stackSeries`
+	 * (the series under the pointer on either chart) picks the row, as on
+	 * Timeline, and stands out on both charts. */
 	let hoveredCard = $state(/** @type {string | null} */ (null));
-	let stackSeries = $state(/** @type {string | undefined} */ (undefined));
+	let stackSeries = $state(/** @type {string | null} */ (null));
 	/** @param {string} key @param {boolean} hovered */
 	function hoverCard(key, hovered) {
 		if (hovered) hoveredCard = key;
@@ -609,28 +657,9 @@
 		compact
 		rounded="rounded-lg"
 		darkSelected
-		trackClass="border-mid-warm-grey bg-white"
 		aria-label="Profile display"
 		onchange={(option) => session.select('profileDisplay', normaliseProfileDisplay(option.value))}
 	/>
-	{#if breakdown}
-		<FilterSelect
-			selected={style}
-			options={PROFILE_STYLE_OPTIONS}
-			listLabel="Style"
-			defaultValue="bands"
-			compact
-			onchange={(value) => session.select('profileStyle', normaliseProfileStyle(value))}
-		/>
-		<div class="shrink-0 whitespace-nowrap">
-			<Toggle
-				label="Show today"
-				checked={showToday}
-				disabled={!todayApplies}
-				onclick={() => session.select('profileToday', !selection.profileToday)}
-			/>
-		</div>
-	{/if}
 	<!-- The window and its last day read as one phrase: "7 days to 30/09/2026". -->
 	<div class="flex shrink-0 items-center gap-2">
 		<FilterSelect
@@ -711,13 +740,16 @@
      both draw the same chart on the same hover state. -->
 {#snippet dial(/** @type {string} */ key, large = false)}
 	{#if key === STACK_DIAL}
+		<!-- Read as energy: an hour's average MW is its MWh, the same figure the
+		     table's Energy column gives for that hour. -->
 		<RadialClock
 			{daylight}
 			{large}
 			layers={stackLayers}
-			unit="MW"
+			unit="MWh"
 			label={windowTitle}
 			bind:active={() => stackHour, hoverStackHour}
+			bind:activeLayer={stackSeries}
 		/>
 	{:else}
 		{@const card = cards.find((candidate) => candidate.key === key)}
@@ -756,6 +788,40 @@
 	{/if}
 {/snippet}
 
+<!-- Breakdown's own options sit in a bar under the top nav, as Timeline's
+     metrics strip does, sliding open or shut with the display. -->
+{#if breakdown}
+	<div class="shrink-0" transition:slide={{ duration: reducedMotion.current ? 0 : 200 }}>
+		<section
+			aria-label="Breakdown options"
+			class="flex items-center gap-4 overflow-x-auto border-b border-warm-grey bg-white px-8 py-2"
+		>
+			<div class="shrink-0 whitespace-nowrap">
+				<Toggle
+					compact
+					label="Show today"
+					checked={showToday}
+					disabled={!todayApplies}
+					onclick={() => session.select('profileToday', !selection.profileToday)}
+				/>
+			</div>
+			<div
+				class="h-8 shrink-0 border-l border-warm-grey"
+				role="separator"
+				aria-orientation="vertical"
+			></div>
+			<Switch
+				buttons={STYLE_BUTTONS}
+				selected={style}
+				compact
+				rounded="rounded-lg"
+				darkSelected
+				aria-label="Style"
+				onchange={(option) => session.select('profileStyle', normaliseProfileStyle(option.value))}
+			/>
+		</section>
+	</div>
+{/if}
 <section aria-label="Profile analysis" aria-busy={gridPending} class="flex min-h-0 flex-1 flex-col">
 	<TrackerSplitLayout
 		config={FUEL_TECH_SPLIT}
@@ -835,8 +901,8 @@
 								slotMs={window.slotMs}
 								syncHoverTime={stackHover?.start}
 								onhoverchange={hoverStackSlot}
-								activeKey={stackSeries ?? null}
-								onhoverkeychange={(key) => (stackSeries = key)}
+								activeKey={stackSeries}
+								onhoverkeychange={(key) => (stackSeries = key ?? null)}
 							/>
 						{/if}
 					{/snippet}
@@ -905,7 +971,9 @@
 										() => seriesCharts[card.key] ?? null,
 										(chart) => (seriesCharts = { ...seriesCharts, [card.key]: chart })
 									}
-									bind:engaged={panZoomEngaged}
+									panZoom={false}
+									focusTime={breakdownPin}
+									onfocuschange={(time) => (pinnedSlot = time)}
 									rows={card.chart.rows}
 									names={card.chart.names}
 									labels={card.chart.labels}
@@ -958,10 +1026,12 @@
 				notes={tableNotes}
 				focusColumns={breakdown
 					? profileFocusColumns(style, chartPart)
-					: hoveredCard
-						? ['power']
-						: []}
-				focusRow={breakdown ? (hoveredCard ?? undefined) : stackSeries}
+					: hoveredCard === 'stack-radial'
+						? ['energy']
+						: hoveredCard
+							? ['power']
+							: []}
+				focusRow={(breakdown ? hoveredCard : stackSeries) ?? undefined}
 				{contributionMode}
 				oncontributionchange={selectContribution}
 				{tableUnits}

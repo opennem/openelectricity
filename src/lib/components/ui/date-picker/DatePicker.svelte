@@ -11,7 +11,9 @@
 	 * input whose calendar button opens the month grid in its own popover,
 	 * styled in the app's tokens. Picking a day closes the popover; a date
 	 * outside the bounds is never reported. `footer` renders under the
-	 * calendar (e.g. a reset action).
+	 * calendar (e.g. a reset action). The input matches a compact filter pill
+	 * (`FilterPill`): the same padding and height, with the calendar icon where
+	 * the pill's chevron sits.
 	 *
 	 * @typedef {Object} Props
 	 * @property {string | null} [date] - Selected date in YYYY-MM-DD format
@@ -91,7 +93,7 @@
 			{label}
 		</DatePicker.Label>
 		<DatePicker.Input
-			class="flex select-none items-center whitespace-nowrap rounded-lg border bg-white py-1 pl-3 pr-1 text-xs font-medium text-dark-grey transition-colors focus-within:border-dark-grey hover:border-dark-grey {active ||
+			class="flex select-none items-center whitespace-nowrap rounded-lg border bg-white py-2.5 pl-4 pr-3 text-xs font-medium text-dark-grey transition-colors focus-within:border-dark-grey hover:border-dark-grey {active ||
 			open
 				? 'border-dark-grey'
 				: 'border-warm-grey'}"
@@ -113,7 +115,7 @@
 				{/each}
 				<DatePicker.Trigger
 					aria-label="Open calendar"
-					class="ml-1 inline-flex size-7 items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey"
+					class="ml-1.5 inline-flex items-center justify-center rounded text-mid-grey transition-colors hover:text-dark-grey"
 				>
 					<CalendarIcon class="size-3.5" />
 				</DatePicker.Trigger>

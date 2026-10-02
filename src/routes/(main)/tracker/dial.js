@@ -37,13 +37,10 @@ export function dialValue(value, unit) {
 	return { value: formatWithUnit(number, unit), unit: dialUnit(unit) };
 }
 
-/** A dial value and its unit as one string: "12.3 MW", "$85.30/MWh".
- * @param {number} value
- * @param {string} unit */
-export function dialValueText(value, unit) {
-	const shown = dialValue(value, unit);
-	if (!shown.unit) return shown.value;
-	return shown.unit.startsWith('/')
-		? `${shown.value}${shown.unit}`
-		: `${shown.value} ${shown.unit}`;
+/** The mean of the hours that have a value — the dial's "Av." while nothing
+ * is hovered — or null when none has one.
+ * @param {ReadonlyArray<{average: number | null}>} hours */
+export function meanOfHours(hours) {
+	const values = hours.map(({ average }) => average).filter((value) => value !== null);
+	return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 }

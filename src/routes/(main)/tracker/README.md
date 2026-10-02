@@ -208,7 +208,12 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   it. Each view passes its panel bounds (`FUEL_TECH_SPLIT` for Timeline and
   Profile; Compare's regions table remembers its width and overlays the charts
   below 1024px) and renders its panel through a snippet that receives the
-  docked-panel controller for the close/open focus hand-off.
+  docked-panel controller for the close/open focus hand-off. Opening and
+  closing slide the panel in from and out to the right edge: its column (the
+  drag handle and panel) eases its width, so the charts give way smoothly,
+  while the panel keeps its full width and is clipped (`overflow: clip`, which
+  the focus hand-off can't scroll). A closing panel is inert while it slides
+  away, and reopening mid-slide reverses it live; reduced motion skips it.
 - **`TrackerCanvas.svelte`** — three mounted timeline chart cards and the table
   layout, with shared hover/gesture state and series selection.
 - **`TimeOfDay.svelte`** / **`time-of-day.js`** — a separate bounded profile view
@@ -254,7 +259,11 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   the choice for the other styles. The breakdown's charts share one hover (`ProfileChart`'s
   `onhoverchange` / `syncHoverTime`), as Timeline's cards do, and the radial
   clocks share the hovered hour (`RadialClock`'s bindable `active`). Hovering or
-  pinning any card drives the table and the range readout. Whatever the style,
+  pinning any card drives the table and the range readout. The linear
+  breakdown charts (bands and multi-line) have no pan or zoom, so a click pins
+  a slot straight away; the pin is shared by every card (TimeOfDay's
+  `pinnedSlot`, through `ProfileChart`'s controlled `focusTime` /
+  `onfocuschange`), and a second click, or Esc, releases it. Whatever the style,
   the card under the pointer gets a dark border (`ChartCard`'s `highlighted`;
   not the spot price card, which has no row) and highlights its technology's
   table row (`FuelTechTable`'s `focusRow`), as hovering the row itself would.
@@ -269,23 +278,35 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   bands mirror between chart and table (`profileChartPart`), since the table
   reads loads as magnitudes. Day and median lines take the pointer through
   Stratum's `hoverable` overlay lines (an invisible 8px hit stroke reporting
-  the line's id as the series hover key, as a stack path does); a hovered day
-  also reads in the multi-line strip.
+  the line's id as the series hover key, as a stack path does). Every linear
+  style's tooltip strip reads the same way (`ProfileReadout`): the slot's time
+  on the left, then today's value (with Show today on) in OE red and the
+  slot's average ("Av."), each a swatch, label and bold value; multi-line adds
+  a hovered day after them.
   Stacked shows the stacked radial bars, then the stacked area, sharing one
   hover (TimeOfDay's `stackHover`): an area slot marks its hour on the dial, a
   dial hour marks the start of that hour on the area, and the table and readout
   inspect the slot or the whole hour, whichever is under the pointer. As in the
   breakdown and on Timeline, a hovered card's border darkens and the table
-  outlines the column it plots (Av power for both stacked charts; on Timeline,
+  outlines the column it plots (Energy for the stacked radial bars, which read
+  each hour in MWh, and Av power for the stacked area; on Timeline,
   `chartTableColumn` maps Generation, Market and Emissions to theirs, while the
   table shows it), and a hovered stack series fades the others and highlights
-  its row (`NetworkChart`'s and `ProfileChart`'s `onhoverkeychange`). Cards
-  report the pointer through `ChartCard`'s `onhover`.
-  A top-nav **Style** dropdown (`profile-style`) switches the breakdown between
-  **Percentile bands** (the default), that **Multi-line** view and
-  **Ridgeline** under a Linear subheader, and **Bars** and **Heatmap** under
-  Radial (FilterSelect's `group`; the pill reads "Radial bars" / "Radial
-  heatmap" through `selectedLabel`, and the URL keeps `radial` / `heatmap`). Percentile bands show each slot's 10–90% and 25–75% spread across
+  its row (`NetworkChart`'s and `ProfileChart`'s `onhoverkeychange`). Stacked's
+  two charts share that series (TimeOfDay's `stackSeries`): the radial bars
+  pick the layer under the pointer from its radius within the hour
+  (`RadialClock`'s bindable `activeLayer`), and either chart's series stands
+  out on both. Cards report the pointer through `ChartCard`'s `onhover`.
+  The breakdown's own options sit in a **Breakdown options** bar under the
+  top nav, as Timeline's metrics strip does, sliding open and shut with the
+  display: the compact **Show today** toggle, a divider, then a **Style**
+  icon switcher (`profile-style`), which switches the breakdown between
+  **Percentile bands** (the default; a filled-area icon), that
+  **Multi-line** view (curves) and **Ridgeline** (waves), then **Radial
+  bars** (a dashed ring) and **Radial heatmap** (concentric rings). Each icon
+  carries its style's name as its accessible label and in the app's hover
+  tooltip (`SwitchWithIcons`' `tooltip`), and the
+  URL keeps `radial` / `heatmap`. Percentile bands show each slot's 10–90% and 25–75% spread across
   the window's days (drawn as an invisible 10th-percentile base plus four
   stacked bands) with a dark median line and today; the strip (`ProfileChart`'s
   `readout`) shows the slot's average rather than a band thickness. The
@@ -310,12 +331,14 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   above (an opaque tint hides the ridges behind, and each casts a very subtle
   shadow up onto the one behind it for depth), on one
   shared amplitude scale over the whole synthetic day; today, when shown, is
-  the front ridge outlined in OE red. Each ridge gets at least 18px between
+  the front ridge outlined in OE red. Only each ridge's top carries its
+  outline (a stroked top line over the unstroked fill), so its ends and
+  baseline have no dark edge. Each ridge gets at least 18px between
   baselines, so longer windows grow the chart past the card's height (7 days
   keep it, 14 days reach about 300px, 28 days about 550px with every date
   labelled). Loads read positive, as in the radial
   clock; spot price steps. Hover joins the shared breakdown hover (and so the
-  table and range readout) and the strip reads the slot's average and today.
+  table and range readout) and the strip reads today and the slot's average.
   The day whose ridge is under the pointer (`onhoverday`: each ridge owns the
   band just above its baseline) becomes the table's focused column, which
   scrolls that date's column in beside the pinned Technology column and
@@ -329,7 +352,9 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   sun's path. `DialNight` shades the window's average night (sunset round to
   sunrise) behind the data, and `DialFace` draws the 00/06/12/18 ticks and
   labels in a `DIAL_MARGIN` around the dial, each label anchored by its inner
-  edge so all four sit the same gap from the dial. `averageDaylight` (low-precision NOAA solar
+  edge so all four sit the same gap from the dial. On hover it marks the
+  hovered hour's (or heatmap slot's) start time on the arc the same way, in
+  dark text, and hides any fixed label within two hours of it. `averageDaylight` (low-precision NOAA solar
   equations, no dependency) averages each day's sunrise and sunset at the
   region's capital — or across the capitals for the NEM and All Regions — as
   hours on the network clock. Market time never shifts for daylight saving, so
@@ -368,14 +393,20 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   an OE red radial line, and hovering anywhere in an hour's sector — centre to
   just past the dial, through invisible gap-free hit areas, however short the
   bar — shades that sector in warm grey behind the bars and reads out the
-  hour, value (with "net" when stacked) and today's value on the heatmap's
-  band (`DialReadout`, shared by both radial charts). Radial bar cards are
+  hour and value (with "net" when stacked) on the heatmap's band
+  (`DialReadout`, shared by both radial charts). With Show today on, the
+  hovered hour's today value reads in OE red, centred below the dial (its
+  line is reserved while today shows, so the card never jumps). While nothing
+  is hovered, the band and the today line read the average across the hours
+  ("Av.", `meanOfHours`): the day's hourly mean (net when stacked) and today's
+  so far. Radial bar cards are
   `mini` ChartCards like the heatmap's, the stacked dial included. The
   hovered hour also drives the table
   and the range readout: `averageDayTableRows` inspects a time range (an
   inspected chart slot, or the hour's two or twelve slots), so the table shows
-  that hour's average power. Values also sit in each slice's `<title>` and a
-  visually hidden table; the SVG carries `data-png-layer` inside a
+  that hour's average power. Values also sit in a visually hidden table (the
+  hour sectors carry no `<title>`, so hovering shows no browser tooltip); the
+  SVG carries `data-png-layer` inside a
   `data-chart-area` root, so PNG export captures it. Custom SVG (d3-shape)
   because Stratum has no radial chart. With several `layers` (the Stacked
   display's radial style) each hour stacks them in order, positives outward
