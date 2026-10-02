@@ -143,7 +143,8 @@
 						<DialNight radius={outer + 8} {daylight} />
 					{/if}
 					<circle r={outer} fill="none" class="stroke-mid-warm-grey" stroke-dasharray="3 4" />
-					<!-- The hovered hour's sector, lightly shaded behind its bar. -->
+					<!-- The hovered hour's sector, shaded behind its bar: translucent, so
+					     it reads darker over the night shade as well as the day. -->
 					{#if active !== null}
 						<path
 							d={sector({
@@ -152,7 +153,7 @@
 								startAngle: dialAngle(active),
 								endAngle: dialAngle(active + 1)
 							})}
-							class="fill-warm-grey"
+							class="fill-mid-warm-grey/50"
 							pointer-events="none"
 							data-testid="radial-hover"
 						/>
