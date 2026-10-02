@@ -367,14 +367,26 @@
 		})
 	);
 
+	/** The chart datasets and table an export needs.
+	 * @param {import('./types.js').ExportDatasetKey | 'xlsx'} requested */
+	function exportNeeds(requested) {
+		const names = /** @type {const} */ (['generation', 'market', 'emissions']);
+		return {
+			required: requested === 'xlsx' ? names : names.filter((name) => name === requested),
+			needsTable: requested === 'table' || (requested === 'xlsx' && tablePanelOpen)
+		};
+	}
+	/** Whether an export is still waiting on data — cheap enough for menu state.
+	 * @param {import('./types.js').ExportDatasetKey | 'xlsx'} [requested] */
+	export function isExportPending(requested = 'xlsx') {
+		const { required, needsTable } = exportNeeds(requested);
+		return required.some((name) => !data.ready(name)) || (needsTable && tableValuesPending);
+	}
 	/** @param {import('./types.js').ExportDatasetKey | 'xlsx'} [requested]
 	 * @returns {Omit<TrackerExportContext, 'sourceUrl' | 'generatedAtMs'> & {error: boolean}} */
 	export function getExportContext(requested = 'xlsx') {
-		const names = /** @type {const} */ (['generation', 'market', 'emissions']);
-		const required = requested === 'xlsx' ? names : names.filter((name) => name === requested);
-		const needsTable = requested === 'table' || (requested === 'xlsx' && tablePanelOpen);
-		const pending =
-			required.some((name) => !data.ready(name)) || (needsTable && tableValuesPending);
+		const { required, needsTable } = exportNeeds(requested);
+		const pending = isExportPending(requested);
 		return {
 			region,
 			regionLabel: regionLabel(region),

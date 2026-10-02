@@ -4,8 +4,10 @@
  * engagement and panel width) is deliberately
  * excluded from browser history.
  *
+ * The analysis view is the route (`/tracker/timeline`, `/tracker/profile`,
+ * `/tracker/compare`), not a parameter.
+ *
  * Schema (defaults omitted so the canonical URL stays clean):
- * - `view`      — `profile` or `compare`; Timeline has no view parameter
  * - `profile-display` — `breakdown` for the Profile's per-series cards (default stacked)
  * - `profile-style` — `lines` (multi-line), `radial` (radial clock),
  *                 `ridgeline` or `heatmap` (radial heatmap) for the breakdown;
@@ -28,7 +30,7 @@
  *                 renewables, curtailment-solar, curtailment-wind)
  * - `table`     — `0` when the fuel-tech panel is closed
  * - `fullscreen`— `false` opts out of the fullscreen chrome
- * - `compare-*` — Compare (`view=compare`) controls, see
+ * - `compare-*` — Compare (`/tracker/compare`) controls, see
  *                 `region-comparison.js`: `compare-display=stripes` for the
  *                 stripes display, `compare-interval` (`1d` is the daily
  *                 one-year window), `compare-regions`, `compare-charts`,
@@ -71,16 +73,22 @@ import {
 /** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
 /** @typedef {import('./types.js').TrackerRange} TrackerRange */
 /** @typedef {import('./types.js').TrackerUrlState} TrackerUrlState */
-/** @typedef {import('./types.js').TrackerView} TrackerView */
 
 const GROUP_VALUES = GROUP_OPTIONS.map((option) => option.value);
 
-/** Every analysis view; Timeline is the default. */
-export const TRACKER_VIEWS = /** @type {const} */ (['timeline', 'profile', 'compare']);
+/** Every analysis view and its route id (for `resolve()`); Timeline is the default. */
+export const TRACKER_VIEWS = /** @type {const} */ ([
+	{ value: 'timeline', label: 'Timeline', route: '/(main)/tracker/timeline' },
+	{ value: 'profile', label: 'Profile', route: '/(main)/tracker/profile' },
+	{ value: 'compare', label: 'Compare', route: '/(main)/tracker/compare' }
+]);
 
-/** @param {unknown} value @returns {TrackerView} */
-export function normaliseTrackerView(value) {
-	return TRACKER_VIEWS.find((view) => view === value) ?? 'timeline';
+/** @typedef {(typeof TRACKER_VIEWS)[number]['value']} TrackerView */
+
+/** The view named by `value`, falling back to Timeline.
+ * @param {unknown} value */
+export function trackerView(value) {
+	return TRACKER_VIEWS.find((view) => view.value === value) ?? TRACKER_VIEWS[0];
 }
 
 /** @param {unknown} value @param {string} group @returns {string[]} */
@@ -143,7 +151,6 @@ export function normaliseTrackerState(value) {
 	return {
 		region,
 		group,
-		view: normaliseTrackerView(value.view),
 		regionComparison: normaliseRegionComparison(
 			/** @type {Partial<import('./region-comparison.js').RegionComparisonSelection> | undefined} */ (
 				value.regionComparison ?? undefined
@@ -182,7 +189,6 @@ export function parseTrackerUrl(params, context) {
 	return normaliseTrackerState({
 		region: params.get('region') || DEFAULT_REGION,
 		group: params.get('group') || DEFAULT_GROUP,
-		view: params.get('view'),
 		regionComparison: parseRegionComparison(params),
 		profileDisplay: params.get('profile-display'),
 		profileStyle: params.get('profile-style'),
@@ -226,7 +232,6 @@ export function applyTrackerUrl(url, state) {
 		const time = next.comparison?.[side];
 		set(`compare-${side}`, time == null ? null : String(time));
 	}
-	set('view', next.view === 'timeline' ? null : next.view);
 	set('profile-display', next.profileDisplay === 'breakdown' ? 'breakdown' : null);
 	set('profile-style', next.profileStyle === 'bands' ? null : next.profileStyle);
 	set('profile-interval', next.profileInterval === '5m' ? '5m' : null);
@@ -259,8 +264,15 @@ export function applyTrackerUrl(url, state) {
 	params.delete('columns');
 	// The breakdown draws every technology, every day, with no spot price, and
 	// Stacked shows its area and radial bars side by side; drop the retired
-	// metric, view, series and stacked-style choices.
-	for (const retired of ['profile-metric', 'profile-view', 'profile-series', 'profile-stack'])
+	// metric, view, series and stacked-style choices. The analysis view is the
+	// route now, so `view` is retired too.
+	for (const retired of [
+		'view',
+		'profile-metric',
+		'profile-view',
+		'profile-series',
+		'profile-stack'
+	])
 		params.delete(retired);
 
 	return url;

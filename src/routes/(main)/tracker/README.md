@@ -1,8 +1,10 @@
 # Tracker
 
 The canonical tracker page — the planned replacement for the legacy
-`explore.openelectricity.org.au`. Lives at `/tracker`, promoted from
-`/tracker/next`. The map/dashboard/explore concepts that informed it live on at
+`explore.openelectricity.org.au`. Each analysis view is its own route —
+`/tracker/timeline`, `/tracker/profile` and `/tracker/compare` — and `/tracker`
+redirects to Timeline (moving retired `?view=` links onto their route with the
+rest of the query intact). Promoted from `/tracker/next`. The map/dashboard/explore concepts that informed it live on at
 `/studio/tracker`, with their own copy of `tracker-regions.js` and a
 `RegionDropdown.svelte` wrapper.
 
@@ -11,7 +13,7 @@ The canonical tracker page — the planned replacement for the legacy
 ### Region comparison
 
 The scenarios-style view switch offers Timeline, Profile and **Compare**
-(`view=compare`). Comparison offers 14 selectable Stratum charts covering
+(`/tracker/compare`). Comparison offers 14 selectable Stratum charts covering
 21 metrics: carbon
 intensity; renewable, solar + wind, solar, wind, gas and coal generation and
 proportions; net imports proportion; solar, wind, hydro, gas and coal market
@@ -154,34 +156,53 @@ Comparison settings are independent of Timeline: `compare-display`
 (`stripes`), `compare-interval` (`1d`, `1M`, `1y`, `fy`; 12-month rolling is
 the default), `compare-regions` (an empty value intentionally selects none), `compare-renewables`,
 `compare-charts` (empty selects none), `compare-basis`, `compare-start` / `compare-end`, and `compare-table`. Defaults are
-omitted. Explicit view switches reset all query settings to that view's defaults
-(`view=profile` or `view=compare`; Timeline has no view parameter). Back/Forward
+omitted. Explicit view switches navigate to the bare view route, so every query
+setting starts at that view's defaults. Back/Forward
 and direct links restore the full historical selection. Explicit filter changes push history; settled gestures
 replace it. The top nav holds all three views' filters with uniform spacing and
-a divider after the switcher. The outgoing controls slide left, then the incoming
-controls slide right into place; reduced-motion users get an immediate change. CSV/XLSX export
+a divider after the switcher. Switching views is a route change, so the site's
+filter-bar view transition slides the incoming controls in from the left and
+the chart body cross-fades. The view switcher is named for the transition
+(`SwitchWithIcons` `transitionName`), so it holds still while its thumb slides
+to the new view. CSV/XLSX export
 the visible metrics for selected regions and visible periods, in base units with
 the percentage denominator stated. PNG uses the existing Stratum capture flow, extended to the stripes' own SVG.
 
 ### Timeline and profile composition
 
-- **`+page.svelte`** — page chrome, navigation menus, notices and download actions.
-  Its `<main>` gains `data-hydrated` once mounted: the server-rendered charts
-  already contain svgs, so automation waits for this marker before clicking
-  (a click on the SSR skeleton is lost).
+- **`+layout.js`** — parses the query into the initial selection with the
+  `nowMs` anchor the hydrating client reuses. **`+page.js`** redirects `/tracker` to a view route.
+- **`timeline/`, `profile/`, `compare/+page.svelte`** — one route per view
+  (`TRACKER_VIEWS` in `tracker-url.js` lists them with their labels and route
+  ids). Each composes `TrackerShell` around its canvas and owns what differs: its
+  filter-bar controls and range status, extra menu items, shortcuts and
+  downloads. Compare's `+page.server.js` loads the CPI series only there.
+- **`TrackerShell.svelte`** — the chrome every view shares: view switcher,
+  region select, options menu (copy link, PNG export, downloads), notices,
+  fullscreen and the shortcuts toast. Its `<main>` gains `data-hydrated` once
+  mounted: the server-rendered charts already contain svgs, so automation waits
+  for this marker before clicking (a click on the SSR skeleton is lost).
+- **`tracker-page.js`** — `createTrackerPage()` builds a view page's session
+  and wires it to browser history, the freshness clock and the below-tablet
+  table default.
 - **`tracker-session.svelte.js`** — one per-page owner of selection state and
-  the shared range controller. Explicit range/date/interval picks push history;
+  the shared range controller; each view route creates its own, so switching
+  views starts a fresh session. Explicit range/date/interval picks push history;
   settled pan/zoom replaces it. The canvas registers charts and providers here.
 - **`tracker-url.js`** — `normaliseTrackerState()` is the one place the
   selection's invariants live (valid region/group, hidden and profile series
   within the grouping, spot-price-gated profile metric, All-tier calendar
   filter); parsing, serialising and the session all pass through it. The
-  session also exposes `view`, `timeZone` and `ianaTimeZone` so components
+  session also exposes `timeZone` and `ianaTimeZone` so components
   do not re-derive them.
 - **`tracker-navigation.js`** — the sole URL writer and restoration adapter,
-  using `tracker-url.js` for parsing/serialisation. SvelteKit shallow history
-  updates the address bar without updating `page.url`, so Back/Forward uses
-  `popstate`; ordinary same-route links are observed through `page.url`.
+  using `tracker-url.js` for parsing/serialisation. Writes change only the
+  query of the path the page loaded, and reads ignore other routes' URLs and
+  our own writes. SvelteKit shallow history updates the address bar without a
+  navigation, so Back/Forward within a view arrives through `popstate` and
+  same-route links through `onNavigate`. Back/Forward onto another view's
+  shallow entry renders that entry's base URL (`page.url`), so the page
+  reconciles with the address bar once mounted.
 - **`TrackerSplitLayout.svelte`** — every view's shell: a scrolling chart
   column beside the resizable docked table panel, or the rail that reopens
   it. Each view passes its panel bounds (`FUEL_TECH_SPLIT` for Timeline and
@@ -659,7 +680,7 @@ disposed on changes or close. CSV/XLSX semantics remain unchanged.
 
 ## URL schema
 
-Profile selections: `view=profile` (Timeline is the default),
+Profile selections (on `/tracker/profile`):
 `profile-display=breakdown` (default stacked), `profile-style=lines|radial|ridgeline|heatmap` (the breakdown's style; default
 percentile bands), `profile-today=1` (the
 breakdown's current-day line; default off), `profile-interval=5m`

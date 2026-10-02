@@ -149,7 +149,7 @@ for (const group of ['detailed', 'simple']) {
 		});
 		const hidden = group === 'detailed' ? 'wind,solar_utility' : 'wind';
 		await page.goto(
-			`/tracker?start=${start}&end=${end}&interval=5m&group=${group}&hidden=${hidden}&table=1`
+			`/tracker/timeline?start=${start}&end=${end}&interval=5m&group=${group}&hidden=${hidden}&table=1`
 		);
 		const note = page.locator('#rooftop-interpolation-note');
 		await expect(note).toContainText('linearly interpolated');
@@ -189,7 +189,7 @@ for (const group of ['detailed', 'simple']) {
 		await expectNoHorizontalScroll(page);
 		await page.screenshot({ path: testInfo.outputPath('rooftop-interpolation-mobile.png') });
 		await page.goto(
-			`/tracker?start=${start}&end=${end}&interval=30m&group=${group}&hidden=${hidden}&table=1`
+			`/tracker/timeline?start=${start}&end=${end}&interval=30m&group=${group}&hidden=${hidden}&table=1`
 		);
 		await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
 		await expect(note).toHaveCount(0);
@@ -202,7 +202,7 @@ test('refresh advances a following window, pauses on zoom and resumes through pr
 }, testInfo) => {
 	const source = await trackerFixture(page, { comparisonGrowth: true });
 	await page.clock.install({ time: new Date() });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await expect(page.getByRole('switch', { name: 'Live' })).toHaveCount(0);
 	await chartsSettled(page);
 	await expect(page.getByTestId('reading-freshness')).toHaveCount(0);
@@ -252,7 +252,7 @@ test('freshness keeps failed and empty feeds explicit and recovers on refresh', 
 		empty: 'emissions_intensity'
 	});
 	await page.clock.install({ time: new Date() });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await expect(card(page, 'Market').getByTestId('reading-freshness')).toContainText(
 		'Update unavailable'
 	);
@@ -272,7 +272,7 @@ test('freshness flags delayed readings but not a deliberately historical view', 
 	page
 }) => {
 	await trackerFixture(page, { comparisonGrowth: true, latestAt: Date.now() - 3_600_000 });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await expect(card(page, 'Generation').getByTestId('reading-freshness')).toContainText(
 		'Data delayed'
 	);
@@ -290,7 +290,7 @@ test('data refreshes only on demand: the range readout button, the options menu 
 	await page.setViewportSize({ width: 1600, height: 900 });
 	const source = await trackerFixture(page, { comparisonGrowth: true });
 	await page.clock.install({ time: new Date() });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await chartsSettled(page);
 	const before = source.urls.length;
 	await page.clock.fastForward(300_000);
@@ -346,7 +346,7 @@ test('window metrics strip shows signed displayed extremes with keyboard chart h
 }, testInfo) => {
 	const api = await trackerFixture(page, { contributions: true, comparisonGrowth: true });
 	const start = Date.parse('2026-08-01T00:00:00+10:00');
-	await page.goto(`/tracker?start=${start}&end=${start + 2 * 86_400_000}&interval=30m`);
+	await page.goto(`/tracker/timeline?start=${start}&end=${start + 2 * 86_400_000}&interval=30m`);
 	const metrics = page.getByRole('region', { name: 'Window metrics' });
 	const minimum = page.getByTestId('metric-generation-min');
 	const maximum = page.getByTestId('metric-generation-max');
@@ -459,7 +459,7 @@ test('tracker slides one nav logo in place of the date range and overlays charts
 }, testInfo) => {
 	await page.setViewportSize({ width: 1600, height: 1000 });
 	const source = await trackerFixture(page, { hold: 'power' });
-	await page.goto('/tracker?region=nsw1&table=1');
+	await page.goto('/tracker/timeline?region=nsw1&table=1');
 	const loader = page.getByTestId('tracker-loading');
 	const loadingStates = page.getByRole('status', { name: /Loading|Updating/ });
 	await expect(loader).toBeVisible();
@@ -528,7 +528,7 @@ test('shared loading waits for table-only data after charts settle and fits mobi
 	page
 }, testInfo) => {
 	const source = await trackerFixture(page, { hold: 'market_value' });
-	await page.goto('/tracker?region=nsw1&table=1&emissions=volume');
+	await page.goto('/tracker/timeline?region=nsw1&table=1&emissions=volume');
 	const loader = page.getByTestId('tracker-loading');
 	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
 	await expect(page.getByTestId('metric-market-min')).toBeEnabled();
@@ -569,7 +569,7 @@ test('shared loading clears on a failed refresh and retained table values stay s
 	page
 }) => {
 	const source = await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1&table=1');
+	await page.goto('/tracker/timeline?region=nsw1&table=1');
 	const panel = page.locator('#tracker-table-panel');
 	await expect(panel.getByRole('table')).toBeVisible();
 	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
@@ -590,7 +590,7 @@ test('shared loading clears on a failed refresh and retained table values stay s
 
 test('table header contains Show all and columns scroll without a switcher', async ({ page }) => {
 	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1&table=1&hidden=coal');
+	await page.goto('/tracker/timeline?region=nsw1&table=1&hidden=coal');
 	const panel = page.locator('#tracker-table-panel');
 	const showAll = panel.getByRole('button', { name: 'Show all', exact: true });
 	const heading = panel.getByRole('heading', { name: 'Fuel technologies' });
@@ -618,7 +618,7 @@ test('panel controls share generous targets, directional icons and keyboard focu
 	page
 }, testInfo) => {
 	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1');
+	await page.goto('/tracker/timeline?region=nsw1');
 	await chartsSettled(page);
 	const hideTable = page.getByRole('button', { name: 'Hide fuel tech table', exact: true });
 	const showTable = page.getByRole('button', { name: 'Show fuel tech table', exact: true });
@@ -660,7 +660,7 @@ test('fuel technology options modal controls grouping, contribution and columns 
 	page
 }, testInfo) => {
 	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1');
+	await page.goto('/tracker/timeline?region=nsw1');
 	await chartsSettled(page);
 	const trigger = page.getByRole('button', { name: 'Fuel technology options', exact: true });
 	const dialog = page.getByRole('dialog', { name: 'Fuel technology options' });
@@ -754,7 +754,7 @@ test('table headers change grouping, contribution basis and units in place', asy
 			JSON.stringify(['energy', 'power', 'contribution', 'price', 'emissions', 'intensity'])
 		)
 	);
-	await page.goto('/tracker?region=nsw1');
+	await page.goto('/tracker/timeline?region=nsw1');
 	await chartsSettled(page);
 	const table = page.getByRole('table', { name: 'Fuel technology values' });
 	const header = (/** @type {RegExp} */ name) => table.getByRole('columnheader', { name });
@@ -804,7 +804,7 @@ test('window metrics follow range and market modes without applying timeline tra
 	await trackerFixture(page, { contributions: true, comparisonGrowth: true });
 	const start = Date.parse('2026-08-01T00:00:00+10:00');
 	await page.goto(
-		`/tracker?start=${start}&end=${start + 2 * 86_400_000}&interval=30m&table=0&transform=proportion`
+		`/tracker/timeline?start=${start}&end=${start + 2 * 86_400_000}&interval=30m&table=0&transform=proportion`
 	);
 	await expect(page.getByTestId('metric-generation-min')).toContainText('200');
 	await expect(page.getByTestId('metrics-generation-unit')).toHaveText('MW');
@@ -817,7 +817,7 @@ test('window metrics follow range and market modes without applying timeline tra
 	await expect(page.getByTestId('metric-emissions-max')).toBeEnabled();
 	await expect(page.getByTestId('metrics-emissions-unit')).toHaveText('tCO₂e');
 	await page.goto(
-		`/tracker?start=${start + 86_400_000}&end=${Date.parse('2026-09-01T00:00:00+10:00')}&interval=1d&table=0`
+		`/tracker/timeline?start=${start + 86_400_000}&end=${Date.parse('2026-09-01T00:00:00+10:00')}&interval=1d&table=0`
 	);
 	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
 	// Daily buckets hold MWh: net energy appears and net power reads their average MW.
@@ -832,7 +832,7 @@ test('window metrics follow range and market modes without applying timeline tra
 
 test('window metrics never show held, failed or empty data as current', async ({ page }) => {
 	const api = await trackerFixture(page, { hold: 'price', empty: 'emissions_intensity' });
-	await page.goto('/tracker?region=nsw1&table=0&emissions=volume');
+	await page.goto('/tracker/timeline?region=nsw1&table=0&emissions=volume');
 	await expect.poll(() => api.requests.includes('power')).toBe(true);
 	const price = page.getByTestId('metric-market-min');
 	await expect(price).toBeDisabled();
@@ -849,7 +849,7 @@ test('demand metrics wait for their feed and recover with the table and overlay 
 	page
 }) => {
 	const api = await trackerFixture(page, { fail: 'demand' });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	const demand = page.getByTestId('metric-demand-min');
 	await expect(page.getByRole('button', { name: 'Retry demand', exact: true })).toBeVisible();
 	await expect(demand).toBeDisabled();
@@ -865,7 +865,7 @@ test('the metrics strip hides and shows with the M key and the options menu, and
 	page
 }) => {
 	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await chartsSettled(page);
 	const strip = page.getByRole('region', { name: 'Window metrics' });
 	await expect(strip).toBeVisible();
@@ -895,7 +895,7 @@ test('the metrics strip hides and shows with the M key and the options menu, and
 test('window metrics strip scrolls sideways on mobile in WEM', async ({ page }, testInfo) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?region=wem&table=0');
+	await page.goto('/tracker/timeline?region=wem&table=0');
 	const metrics = page.getByRole('region', { name: 'Window metrics' });
 	await expect(metrics).toBeVisible();
 	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
@@ -919,7 +919,7 @@ test('window metrics recover from a failed chart without presenting an old value
 	page
 }) => {
 	const api = await trackerFixture(page, { fail: 'price' });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	const minimum = page.getByTestId('metric-market-min');
 	await expect(minimum).toContainText('Unavailable — retry the chart');
 	await expect(minimum).toBeDisabled();
@@ -934,7 +934,7 @@ test('PNG exports selected Stratum layers, legends and edited captions as the ex
 	page
 }, testInfo) => {
 	await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?region=nsw1&range=7d&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&range=7d&table=0');
 	await trackerReady(page);
 	await expect
 		.poll(() => card(page, 'Generation').getAttribute('data-tracker-png'))
@@ -1008,7 +1008,7 @@ test('PNG exports selected Stratum layers, legends and edited captions as the ex
 
 test('PNG prevents held-frame export and freezes readiness until reopened', async ({ page }) => {
 	const api = await trackerFixture(page, { hold: 'price' });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await expect.poll(() => api.requests.includes('power')).toBe(true);
 	const dialog = await openPng(page);
 	await expect(dialog.getByRole('checkbox', { name: /Market/ })).toBeDisabled();
@@ -1029,7 +1029,7 @@ test('PNG prevents held-frame export and freezes readiness until reopened', asyn
 test('PNG captures average-day charts and fits a narrow screen', async ({ page }, testInfo) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?view=profile&profile-end=2026-08-31');
+	await page.goto('/tracker/profile?profile-end=2026-08-31');
 	// Stacked exports both of its charts: the stacked area and the radial bars.
 	await expect(page.locator('[data-tracker-png]')).toHaveCount(2);
 	const dialog = await openPng(page);
@@ -1048,7 +1048,7 @@ test('PNG excludes confirmed empty charts while keeping ready charts selectable'
 	page
 }) => {
 	await trackerFixture(page, { empty: 'price' });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await expect(card(page, 'Market').getByText('No data for this range.')).toBeVisible();
 	await expect
 		.poll(() => card(page, 'Generation').getAttribute('data-tracker-png'))
@@ -1066,7 +1066,7 @@ test('PNG supports percentage overlays and comparisons without refetching and ca
 	const a = Date.parse('2026-08-01T00:00:00+10:00');
 	const b = a + 86_400_000;
 	await page.goto(
-		`/tracker?start=${a}&end=${b + 86_400_000}&interval=30m&table=0&transform=proportion&contribution=demand&overlay=demand`
+		`/tracker/timeline?start=${a}&end=${b + 86_400_000}&interval=30m&table=0&transform=proportion&contribution=demand&overlay=demand`
 	);
 	await expect
 		.poll(() => card(page, 'Generation').getAttribute('data-tracker-png'))
@@ -1110,7 +1110,7 @@ test('two-date comparison uses signed displayed values, Stratum bars, CSV and hi
 	const api = await trackerFixture(page, { contributions: true, comparisonGrowth: true });
 	const a = Date.parse('2026-08-01T00:00:00+10:00');
 	const b = a + 86_400_000;
-	await page.goto(`/tracker?start=${a}&end=${b + 86_400_000}&interval=30m&table=0`);
+	await page.goto(`/tracker/timeline?start=${a}&end=${b + 86_400_000}&interval=30m&table=0`);
 	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
 	await card(page, 'Generation')
 		.getByRole('button', { name: 'Compare dates', exact: true })
@@ -1186,7 +1186,7 @@ test('comparison rejects stale range dates and waits for failed or missing gener
 	const a = Date.parse('2026-08-01T00:00:00+08:00');
 	const b = a + 86_400_000;
 	await page.goto(
-		`/tracker?region=wem&start=${a}&end=${b + 86_400_000}&interval=30m&table=0&compare=1&compare-a=${a}&compare-b=${b}`
+		`/tracker/timeline?region=wem&start=${a}&end=${b + 86_400_000}&interval=30m&table=0&compare=1&compare-a=${a}&compare-b=${b}`
 	);
 	const panel = page.getByRole('region', { name: 'Two-date comparison' });
 	await expect(panel).toContainText('Comparison unavailable');
@@ -1217,7 +1217,7 @@ test('comparison uses raw energy despite timeline transforms and follows visibil
 	const a = Date.parse('2026-08-01T00:00:00+10:00');
 	const b = a + 86_400_000;
 	await page.goto(
-		`/tracker?start=${start}&end=${end}&interval=1d&table=0&transform=proportion&hidden=wind&compare=1&compare-a=${a}&compare-b=${b}`
+		`/tracker/timeline?start=${start}&end=${end}&interval=1d&table=0&transform=proportion&hidden=wind&compare=1&compare-a=${a}&compare-b=${b}`
 	);
 	const panel = page.getByRole('region', { name: 'Two-date comparison' });
 	await expect(panel.getByRole('combobox', { name: 'Date A', exact: true })).toBeEnabled();
@@ -1242,7 +1242,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	page
 }, testInfo) => {
 	const api = await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?view=profile&profile-end=2026-08-31');
+	await page.goto('/tracker/profile?profile-end=2026-08-31');
 	const stack = card(page, 'Average over 7 full days');
 	const table = page.locator('#tracker-table-panel');
 	await expect(stack.locator('path.path-area')).toHaveCount(4);
@@ -1520,7 +1520,7 @@ test('average-day stack includes every technology and persists beside price with
 	page
 }, testInfo) => {
 	const api = await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?view=profile&profile-end=2026-08-31&hidden=coal');
+	await page.goto('/tracker/profile?profile-end=2026-08-31&hidden=coal');
 	const stack = card(page, 'Average over 7 full days');
 	const table = page.locator('#tracker-table-panel');
 	await expect(stack.locator('.stratum-chart')).toBeVisible();
@@ -1574,7 +1574,7 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	page
 }) => {
 	const api = await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?view=profile&profile-end=2026-08-31');
+	await page.goto('/tracker/profile?profile-end=2026-08-31');
 	const table = page.locator('#tracker-table-panel');
 	const readout = page.getByTestId('tracker-range-label');
 	// Both stacked charts show side by side, with no stacked style to pick.
@@ -1623,7 +1623,7 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	await expect(card(page, 'Average over 7 full days').locator('path.path-area')).toHaveCount(3);
 	expect(api.requests.filter((metric) => metric === 'power')).toHaveLength(1);
 	// An old link with the retired stacked style still opens both charts.
-	await page.goto('/tracker?view=profile&profile-end=2026-08-31&profile-stack=radial');
+	await page.goto('/tracker/profile?profile-end=2026-08-31&profile-stack=radial');
 	await expect(card(page, 'Average by hour').getByRole('img')).toHaveCount(1);
 	await expect(card(page, 'Average over 7 full days').locator('path.path-area')).toHaveCount(4);
 });
@@ -1632,9 +1632,7 @@ test('time-of-day profiles keep requests bounded and reproduce selections and CS
 	page
 }) => {
 	const api = await trackerFixture(page);
-	await page.goto(
-		'/tracker?region=wem&view=profile&profile-display=breakdown&profile-end=2026-08-31'
-	);
+	await page.goto('/tracker/profile?region=wem&profile-display=breakdown&profile-end=2026-08-31');
 	// The WEM fixture has coal and wind: a chart each, then spot price.
 	const charts = page.getByRole('group', { name: /interactive chart$/ });
 	await expect(charts).toHaveCount(3);
@@ -1690,7 +1688,7 @@ test('time-of-day profiles keep requests bounded and reproduce selections and CS
 	await page.goBack();
 	await expect(page).toHaveURL(/profile-end=2026-08-31/);
 	const url = await copyTrackerLink(page);
-	expect(new URL(url).searchParams.get('view')).toBe('profile');
+	expect(new URL(url).pathname).toBe('/tracker/profile');
 	expect(new URL(url).searchParams.get('profile-days')).toBe('28');
 	await page.goto(url);
 	await expect(navPill(page, '28 days')).toBeVisible();
@@ -1702,7 +1700,7 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 }, testInfo) => {
 	await trackerFixture(page);
 	await page.goto(
-		'/tracker?view=profile&profile-end=2026-08-31&profile-days=14&range=30d&interval=1h&hidden=coal&transform=proportion'
+		'/tracker/profile?profile-end=2026-08-31&profile-days=14&range=30d&interval=1h&hidden=coal&transform=proportion'
 	);
 	const original = page.url();
 	const stack = card(page, 'Average over 14 full days').locator('.stratum-chart');
@@ -1750,7 +1748,7 @@ test('time-of-day failures and empty results remain explicit and never export a 
 	page
 }) => {
 	const api = await trackerFixture(page, { fail: 'power' });
-	await page.goto('/tracker?view=profile&profile-display=breakdown&profile-end=2026-08-31');
+	await page.goto('/tracker/profile?profile-display=breakdown&profile-end=2026-08-31');
 	await expect(page.getByRole('alert')).toContainText('Fixture failure');
 	await expectProfileDownload(page, false);
 	api.recover();
@@ -1773,7 +1771,7 @@ test('copied analytical links restore hidden sources, contribution, transforms a
 	context
 }) => {
 	await trackerFixture(page, { distinctEmissions: true });
-	await page.goto('/tracker?region=nsw1&table=1');
+	await page.goto('/tracker/timeline?region=nsw1&table=1');
 	await trackerReady(page);
 	const before = await readFile(await (await download(page, 'Emissions')).path(), 'utf8');
 	expect(before.split(/\r?\n/)[0].split(',')[1]).toBe('Emissions intensity (kgCO2e/MWh)');
@@ -1837,7 +1835,7 @@ test('analytical history restores grouping visibility and transform without echo
 	page
 }) => {
 	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1&table=1');
+	await page.goto('/tracker/timeline?region=nsw1&table=1');
 	await trackerReady(page);
 	const initialHistory = await page.evaluate(() => history.length);
 	await percentageView(page);
@@ -1871,7 +1869,7 @@ test('analytical history restores grouping visibility and transform without echo
 test('solo selections are atomic', async ({ page }) => {
 	await trackerFixture(page);
 	await page.goto(
-		'/tracker?region=nsw1&table=1&hidden=coal&contribution=generation&transform=proportion'
+		'/tracker/timeline?region=nsw1&table=1&hidden=coal&contribution=generation&transform=proportion'
 	);
 	await trackerReady(page);
 	const historyBefore = await page.evaluate(() => history.length);
@@ -1890,7 +1888,7 @@ test('timeline tooltip stays above the chart and table inspection follows contri
 	page
 }, testInfo) => {
 	await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?region=nsw1&contribution=generation&table=1');
+	await page.goto('/tracker/timeline?region=nsw1&contribution=generation&table=1');
 	await chartsSettled(page);
 	const generation = card(page, 'Generation');
 	const wind = page.getByTestId('fuel-tech-row').filter({ hasText: 'Wind' }).first();
@@ -1921,7 +1919,7 @@ test('timeline tooltip stays above the chart and table inspection follows contri
 
 test('timeline strip follows keyboard inspection in line mode', async ({ page }) => {
 	await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	const generation = card(page, 'Generation');
 	await chartsSettled(page);
 	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
@@ -1936,7 +1934,7 @@ test('percentage shares stay stable when hiding series and exports keep raw unit
 	page
 }) => {
 	await trackerFixture(page, { contributions: true });
-	await page.goto('/tracker?region=nsw1&contribution=generation');
+	await page.goto('/tracker/timeline?region=nsw1&contribution=generation');
 	await trackerReady(page);
 	const generation = await percentageView(page);
 	await expect(generation.getByText('% of generation', { exact: true })).toBeVisible();
@@ -1968,7 +1966,7 @@ test('demand percentage data loads with the table closed and overlays share its 
 }) => {
 	const source = await trackerFixture(page, { hold: 'renewables', contributions: true });
 	await page.goto(
-		'/tracker?region=nsw1&contribution=generation&table=0&overlay=demand,curtailment-solar'
+		'/tracker/timeline?region=nsw1&contribution=generation&table=0&overlay=demand,curtailment-solar'
 	);
 	await trackerReady(page);
 	const generation = await percentageView(page);
@@ -1993,7 +1991,7 @@ test('failed demand percentages stay unavailable and retry without reopening the
 	page
 }) => {
 	const source = await trackerFixture(page, { fail: 'renewables' });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await trackerReady(page);
 	const generation = await percentageView(page);
 	await expect(generation.getByText('Gross-demand percentages unavailable.')).toBeVisible();
@@ -2008,7 +2006,7 @@ test('failed demand percentages stay unavailable and retry without reopening the
 
 test('selected units survive pointer and keyboard resizing', async ({ page }) => {
 	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await chartsSettled(page);
 	const generation = card(page, 'Generation');
 	await generation.getByRole('button', { name: 'Toggle chart options' }).click();
@@ -2028,7 +2026,7 @@ test('selected units survive pointer and keyboard resizing', async ({ page }) =>
 
 test('a failed metric retries in place and only required providers load', async ({ page }) => {
 	const source = await trackerFixture(page, { fail: 'price' });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await expect(card(page, 'Market').getByRole('button', { name: 'Retry' })).toBeVisible();
 	await expect(card(page, 'Market')).toContainText('Fixture failure');
 	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
@@ -2045,7 +2043,7 @@ test('a failed metric retries in place and only required providers load', async 
 
 test('a transient date-range data failure recovers without a manual retry', async ({ page }) => {
 	const source = await trackerFixture(page, { failOnce: 'price' });
-	await page.goto('/tracker?region=sa1&range=30d&interval=1d&table=0');
+	await page.goto('/tracker/timeline?region=sa1&range=30d&interval=1d&table=0');
 	await trackerReady(page);
 	// Initialisation and gap fills can use other windows. Count only the failed
 	// URL, whose one retry is shared rather than duplicating the chart request.
@@ -2079,7 +2077,7 @@ test('idle warming stays near the selected range and other grains load only on d
 		};
 	});
 	const source = await trackerFixture(page);
-	await page.goto('/tracker?region=sa1&table=0');
+	await page.goto('/tracker/timeline?region=sa1&table=0');
 	await trackerReady(page);
 	await expect.poll(() => page.evaluate(() => window.flushTrackerIdle())).toBeGreaterThan(0);
 	await trackerReady(page);
@@ -2112,7 +2110,7 @@ test('idle warming stays near the selected range and other grains load only on d
 
 test('explicit ranges push history and back/forward restore the range', async ({ page }) => {
 	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await chartsSettled(page);
 	await page.getByRole('button', { name: '30D', exact: true }).click();
 	await expect(page).toHaveURL(/range=30d/);
@@ -2127,7 +2125,7 @@ test('CSV can export an independent ready dataset while a workbook waits for all
 	page
 }) => {
 	const source = await trackerFixture(page, { hold: 'price' });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	// The generation snapshot publishes independently of the held market response.
 	// A client request proves hydration without waiting on the held chart.
 	await expect.poll(() => source.requests.includes('power')).toBe(true);
@@ -2163,7 +2161,7 @@ test('confirmed empty data settles without a retry or an endless loading state',
 	page
 }) => {
 	await trackerFixture(page, { empty: 'price' });
-	await page.goto('/tracker?region=wem&table=0');
+	await page.goto('/tracker/timeline?region=wem&table=0');
 	await expect(card(page, 'Market').getByText('No data for this range.')).toBeVisible();
 	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
 	await expect(card(page, 'Market').getByRole('button', { name: 'Retry' })).toHaveCount(0);
@@ -2174,7 +2172,7 @@ test('confirmed empty data settles without a retry or an endless loading state',
 
 test('reopening the table waits for its providers before enabling its export', async ({ page }) => {
 	const source = await trackerFixture(page, { hold: 'market_value' });
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await trackerReady(page);
 	await page.getByRole('button', { name: 'Show fuel tech table' }).click();
 	await openOptions(page);
@@ -2193,7 +2191,7 @@ test('phone/tablet layouts remain usable', async ({ page }, testInfo) => {
 	await trackerFixture(page);
 	for (const width of [390, 820, 1440]) {
 		await page.setViewportSize({ width, height: 900 });
-		await page.goto('/tracker?region=nsw1');
+		await page.goto('/tracker/timeline?region=nsw1');
 		await trackerReady(page);
 		if (width === 390)
 			await expect(page.getByRole('button', { name: 'Show fuel tech table' })).toBeVisible();
@@ -2207,7 +2205,7 @@ test('frontend options reuse cached responses without flashing loading overlays'
 	page
 }, testInfo) => {
 	const source = await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1&table=1');
+	await page.goto('/tracker/timeline?region=nsw1&table=1');
 	await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
 	await chartsSettled(page);
 	await page.evaluate(() => {
@@ -2276,7 +2274,7 @@ test('resize bounds and pointer cancellation work when height storage is unavail
 		}
 	});
 	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await trackerReady(page);
 	const handle = page.getByRole('separator', { name: 'Resize chart height' }).first();
 	await handle.press('Home');
@@ -2296,7 +2294,7 @@ test('resize bounds and pointer cancellation work when height storage is unavail
 
 test('calendar-filtered rolling data exports only the selected months', async ({ page }) => {
 	await trackerFixture(page);
-	await page.goto('/tracker?region=nsw1&range=all&interval=12mr&filter=jan&table=0');
+	await page.goto('/tracker/timeline?region=nsw1&range=all&interval=12mr&filter=jan&table=0');
 	await trackerReady(page);
 	const csv = await download(page, 'Generation');
 	const content = await readFile(await csv.path(), 'utf8');
@@ -2311,7 +2309,9 @@ test('timeline chart hover updates table values and restores window totals on ex
 }) => {
 	await trackerFixture(page, { comparisonGrowth: true, contributions: true });
 	const start = Date.parse('2026-08-01T00:00:00+10:00');
-	await page.goto(`/tracker?region=nsw1&start=${start}&end=${start + 2 * 86_400_000}&interval=30m`);
+	await page.goto(
+		`/tracker/timeline?region=nsw1&start=${start}&end=${start + 2 * 86_400_000}&interval=30m`
+	);
 	await chartsSettled(page);
 	const coal = page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first();
 	const original = await coal.textContent();
@@ -2345,7 +2345,7 @@ for (const interval of ['30m', '1d']) {
 		const source = await trackerFixture(page, { distinctEmissions: true });
 		const start = Date.parse('2026-08-01T00:00:00+10:00');
 		await page.goto(
-			`/tracker?region=nsw1&start=${start}&end=${start + 2 * 86_400_000}&interval=${interval}`
+			`/tracker/timeline?region=nsw1&start=${start}&end=${start + 2 * 86_400_000}&interval=${interval}`
 		);
 		await chartsSettled(page);
 		const emissions = card(page, 'Emissions');

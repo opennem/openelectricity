@@ -9,6 +9,9 @@
 	 * @property {string} [rounded] - Tailwind radius class for the container, thumb and buttons
 	 * @property {boolean} [darkSelected] - Thumb uses a dark fill (matches active filter pills)
 	 * @property {string} [trackClass] - Fill + border colour classes for the track (default: white chip with the filter pills' subtle border)
+	 * @property {string} [transitionName] - Names the track, thumb and options for
+	 *   view transitions, so a switcher that remounts across a route change holds
+	 *   still while its thumb slides to the new option
 	 * @property {(option: {value: string, element: HTMLButtonElement}) => void} [onchange]
 	 */
 
@@ -20,6 +23,7 @@
 		rounded = 'rounded-xl',
 		darkSelected = false,
 		trackClass = 'bg-white border-warm-grey',
+		transitionName,
 		class: className = '',
 		onchange,
 		...rest
@@ -77,6 +81,7 @@
 
 <div
 	bind:this={containerEl}
+	style:view-transition-name={transitionName}
 	{...rest}
 	class={`relative flex md:inline-flex p-1 ${rounded} ${trackClass} border border-solid ${compact ? 'text-xs' : 'text-sm'} ${className}`}
 >
@@ -86,6 +91,7 @@
 				? 'bg-dark-grey border border-dark-grey'
 				: 'bg-white border border-black'}"
 			style="left: {thumbLeft}px; top: {thumbTop}px; width: {thumbWidth}px; height: {thumbHeight}px;"
+			style:view-transition-name={transitionName && `${transitionName}-thumb`}
 		></div>
 	{/if}
 
@@ -93,6 +99,7 @@
 		<button
 			type="button"
 			bind:this={buttonEls[value]}
+			style:view-transition-name={transitionName && `${transitionName}-${value}`}
 			onclick={handleClick}
 			{value}
 			{title}

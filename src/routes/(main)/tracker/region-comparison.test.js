@@ -347,19 +347,15 @@ describe('region comparison navigation and export', () => {
 		);
 	});
 	it('preserves the profile window, range and comparison state through shared navigation', () => {
-		const original = parseTrackerUrl(
-			new URLSearchParams('view=profile&profile-days=14&range=30d'),
-			{
-				nowMs: start
-			}
-		);
+		const original = parseTrackerUrl(new URLSearchParams('profile-days=14&range=30d'), {
+			nowMs: start
+		});
 		const state = {
 			...original,
-			view: /** @type {const} */ ('compare'),
 			regionComparison: normaliseRegionComparison({ interval: '1M' })
 		};
-		const url = applyTrackerUrl(new URL('https://example.com/tracker'), state);
-		expect(url.searchParams.get('view')).toBe('compare');
+		const url = applyTrackerUrl(new URL('https://example.com/tracker/compare'), state);
+		expect(url.searchParams.has('view')).toBe(false);
 		const restored = parseTrackerUrl(url.searchParams, { nowMs: start });
 		expect(restored.range).toEqual(original.range);
 		expect(restored.profileDays).toBe(14);

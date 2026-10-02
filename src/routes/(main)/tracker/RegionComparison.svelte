@@ -176,6 +176,10 @@
 				)
 			)
 	);
+	/** Whether any selected region has a value to export. */
+	export function canExport() {
+		return ready;
+	}
 	export function exportDataset() {
 		return ready ? comparisonExportDataset(source.data, selection, viewport, cpi.reference) : null;
 	}
@@ -184,9 +188,6 @@
 	}
 	export function getViewport() {
 		return viewport;
-	}
-	export function isLoading() {
-		return source.pending;
 	}
 	export function getControls() {
 		return controls;

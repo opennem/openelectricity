@@ -17,6 +17,9 @@ export default [
 			}
 		},
 		rules: {
+			// Disable navigation resolve rule - this app doesn't use a base path configuration
+			// so resolving navigation paths adds complexity without benefit
+			'svelte/no-navigation-without-resolve': 'off',
 			// Allow underscore-prefixed variables to be unused (common pattern for intentionally unused vars)
 			// Using 'warn' instead of 'error' to allow build to proceed with existing unused vars
 			'no-unused-vars': [
@@ -40,9 +43,6 @@ export default [
 			'svelte/no-at-html-tags': 'off',
 			// Disable strict Svelte 5 compile warnings that flag many pre-existing patterns
 			'svelte/valid-compile': ['error', { ignoreWarnings: true }],
-			// Disable navigation resolve rule - this app doesn't use a base path configuration
-			// so resolving navigation paths adds complexity without benefit
-			'svelte/no-navigation-without-resolve': 'off',
 			// Disable prefer-svelte-reactivity rule - using SvelteMap/SvelteURL/SvelteURLSearchParams
 			// requires significant refactoring and these built-ins work fine in current patterns
 			'svelte/prefer-svelte-reactivity': 'off',

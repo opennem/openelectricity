@@ -359,11 +359,10 @@ describe('time-of-day aggregation', () => {
 describe('time-of-day URLs', () => {
 	it('round-trips analysis without changing the timeline selection', () => {
 		const params = new URLSearchParams(
-			'region=wem&view=profile&profile-display=breakdown&profile-style=lines&profile-today=1&profile-interval=5m&profile-days=28&profile-end=2026-08-31&range=30d&hidden=coal'
+			'region=wem&profile-display=breakdown&profile-style=lines&profile-today=1&profile-interval=5m&profile-days=28&profile-end=2026-08-31&range=30d&hidden=coal'
 		);
 		const state = parseTrackerUrl(params, { nowMs });
 		expect(state).toMatchObject({
-			view: 'profile',
 			profileDisplay: 'breakdown',
 			profileStyle: 'lines',
 			profileInterval: '5m',
@@ -383,7 +382,6 @@ describe('time-of-day URLs', () => {
 			{ nowMs }
 		);
 		expect(state).toMatchObject({
-			view: 'timeline',
 			profileDisplay: 'stacked',
 			profileStyle: 'bands',
 			profileInterval: '30m',

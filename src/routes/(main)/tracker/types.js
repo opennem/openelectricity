@@ -31,14 +31,11 @@
  *         | { kind: 'custom', startMs: number, endMs: number, intervalId: string }} TrackerRange
  */
 
-/** @typedef {'timeline' | 'profile' | 'compare'} TrackerView */
-
 /**
  * Navigation state carried by the URL (plus `nowMs`, added by the page load).
  * @typedef {Object} TrackerUrlState
  * @property {string} region
  * @property {string} group - Fuel-tech grouping value
- * @property {TrackerView} view - Analysis view shown by the nav switcher
  * @property {import('./region-comparison.js').RegionComparisonSelection} regionComparison
  * @property {'lines' | 'bands' | 'radial' | 'ridgeline' | 'heatmap'} profileStyle - Breakdown: multi-line, percentile bands, radial clock, ridgeline or radial heatmap
  * @property {'stacked' | 'breakdown'} profileDisplay - Profile: all-technology stack or per-series cards

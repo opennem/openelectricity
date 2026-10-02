@@ -21,7 +21,7 @@ test('defaults, region colours, complete rolling values and synchronised keyboar
 	const errors = collectPageErrors(page);
 	const data = await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await regionsReady(page);
 	await expect(page.getByRole('heading', { name: 'Carbon intensity', exact: true })).toBeVisible();
 	await expect(
@@ -52,7 +52,7 @@ test('metric and percentage switches reuse requests, preserve URL state and expo
 }) => {
 	const data = await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await regionsReady(page);
 	const count = data.requests.length;
 	await expect(
@@ -75,7 +75,7 @@ test('metric and percentage switches reuse requests, preserve URL state and expo
 test('regional toggles, national sums, failure isolation and retry', async ({ page }) => {
 	const data = await regionsFixture(page, { fail: 'wem' });
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare&compare-interval=1M&compare-charts=intensity,generation');
+	await page.goto('/tracker/compare?compare-interval=1M&compare-charts=intensity,generation');
 	await expect(
 		page.getByRole('button', { name: 'Retry Western Australia (SWIS)', exact: true })
 	).toBeVisible();
@@ -94,24 +94,26 @@ test('regional toggles, national sums, failure isolation and retry', async ({ pa
 	).toHaveCount(0);
 });
 
-test('view clicks reset query settings while history restores each view and its top-nav filters', async ({
+test('view routes reset query settings while history restores each view and its top-nav filters', async ({
 	page
 }) => {
 	await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	const original =
-		'/tracker?view=compare&range=30d&compare-interval=1M&compare-charts=intensity&unknown=1';
+		'/tracker/compare?range=30d&compare-interval=1M&compare-charts=intensity&unknown=1';
 	await page.goto(original);
 	await regionsReady(page);
 	const nav = page.getByTestId('tracker-top-nav');
 	await expect(nav.getByRole('button', { name: 'Monthly', exact: true })).toBeVisible();
 	await expect(nav.getByRole('separator')).toHaveCount(1);
 	await nav.getByRole('button', { name: 'Profile', exact: true }).click();
-	await expect(page).toHaveURL(/\/tracker\?view=profile$/);
+	await expect(page).toHaveURL(/\/tracker\/profile$/);
 	await pickNavOption(page, 'Window', '7 days', '28 days');
 	await nav.getByRole('button', { name: 'Breakdown', exact: true }).click();
 	await nav.getByRole('button', { name: 'Timeline', exact: true }).click();
-	await expect(page).toHaveURL(/\/tracker$/);
+	await expect(page).toHaveURL(/\/tracker\/timeline$/);
+	// Views are routes: let the navigation finish before going back through it.
+	await expect(nav.locator('[data-view="timeline"]')).toBeVisible();
 	await page.goBack();
 	await expect(page).toHaveURL(/profile-display=breakdown/);
 	await expect(navPill(page, '28 days')).toBeVisible();
@@ -123,7 +125,7 @@ test('view clicks reset query settings while history restores each view and its 
 	await page.goForward();
 	await expect(navPill(page, '7 days')).toBeVisible();
 	await nav.getByRole('button', { name: 'Compare', exact: true }).click();
-	await expect(page).toHaveURL(/\/tracker\?view=compare$/);
+	await expect(page).toHaveURL(/\/tracker\/compare$/);
 	await regionsReady(page);
 	await expect(nav.getByRole('button', { name: '12-month rolling', exact: true })).toBeVisible();
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
@@ -134,7 +136,7 @@ test('view clicks reset query settings while history restores each view and its 
 test('mobile panel, keyboard dismissal and responsive chart layout', async ({ page }) => {
 	await regionsFixture(page);
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await expect(
 		page.getByText('Complete periods · monthly source data', { exact: true })
 	).toBeVisible();
@@ -151,7 +153,7 @@ test('mobile panel, keyboard dismissal and responsive chart layout', async ({ pa
 test('chart and region panel resizing and PNG export', async ({ page }) => {
 	await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await regionsReady(page);
 	const handle = page.getByRole('separator', { name: 'Resize regions panel' });
 	const before = Number(await handle.getAttribute('aria-valuenow'));
@@ -169,7 +171,7 @@ test('late responses cannot restore a deselected region; interval and zoom choic
 }) => {
 	const data = await regionsFixture(page, { hold: 'wem' });
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await expect(regionRow(page, 'Western Australia (SWIS)')).toContainText('…');
 	await page.getByRole('button', { name: 'Compare Western Australia (SWIS)', exact: true }).click();
 	await regionsReady(page);
@@ -195,7 +197,7 @@ test('empty results display a clear state and disable CSV and workbook exports',
 	page
 }) => {
 	await regionsFixture(page, { empty: true });
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await expect(
 		page.getByText('No completed regional data available for this selection.')
 	).toBeVisible();
@@ -211,7 +213,7 @@ test('live comparison renders regional history and exports a workbook', async ({
 	test.setTimeout(90000);
 	const errors = collectPageErrors(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await expect(
 		page.getByText('Complete periods · monthly source data', { exact: true })
 	).toBeVisible({ timeout: 60000 });
@@ -305,7 +307,7 @@ for (const [interval, expected] of [
 	test(`pointer inspection reaches the latest plotted point for ${interval}`, async ({ page }) => {
 		await regionsFixture(page);
 		await page.setViewportSize({ width: 1440, height: 1000 });
-		await page.goto(`/tracker?view=compare&compare-interval=${interval}`);
+		await page.goto(`/tracker/compare?compare-interval=${interval}`);
 		await regionsReady(page);
 		await inspectLatestPoints(page, expected);
 	});
@@ -316,7 +318,7 @@ test('two charts start visible and the multiselect controls charts, table and ex
 }) => {
 	const data = await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await regionsReady(page);
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 	const requests = data.requests.length;
@@ -398,7 +400,7 @@ test('comparison Y axis rescales on zoom and pan as an offscreen peak enters or 
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	// Monthly opens on the latest five years; the spike sits in 2020, so open on all history.
 	await page.goto(
-		`/tracker?view=compare&compare-charts=generation&compare-regions=nsw1&compare-interval=1M&compare-start=${Date.UTC(2020, 0)}&compare-end=${Date.UTC(2026, 8)}`
+		`/tracker/compare?compare-charts=generation&compare-regions=nsw1&compare-interval=1M&compare-start=${Date.UTC(2020, 0)}&compare-end=${Date.UTC(2026, 8)}`
 	);
 	const chart = page.getByRole('group', {
 		name: 'Renewables generation comparison chart',
@@ -431,7 +433,7 @@ test('comparison charts reuse timeline options, retain curve and units, and shar
 }) => {
 	await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare&compare-charts=intensity,generation');
+	await page.goto('/tracker/compare?compare-charts=intensity,generation');
 	await regionsReady(page);
 	const intensity = page.getByRole('group', {
 		name: 'Carbon intensity comparison chart',
@@ -501,7 +503,7 @@ test('fuel chart toggles share one picker entry and persist presentation through
 	page
 }) => {
 	const data = await regionsFixture(page);
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await regionsReady(page);
 	const requests = data.requests.length;
 	await page.getByRole('tab', { name: 'Generation', exact: true }).click();
@@ -543,7 +545,7 @@ test('stripes display shares hover and pinning with the table, exports PNG and r
 	const errors = collectPageErrors(page);
 	const data = await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare');
+	await page.goto('/tracker/compare');
 	await regionsReady(page);
 	const requests = data.requests.length;
 	await page.getByRole('button', { name: 'Stripes', exact: true }).click();
@@ -600,7 +602,7 @@ test('daily interval is a sliding one-year window fetched with a three-month buf
 	const errors = collectPageErrors(page);
 	const data = await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker?view=compare&compare-display=stripes&compare-interval=1d');
+	await page.goto('/tracker/compare?compare-display=stripes&compare-interval=1d');
 	await hydrated(page);
 	await expect(
 		page.getByText('Complete periods · daily source data', { exact: true })

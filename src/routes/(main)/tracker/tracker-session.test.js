@@ -7,58 +7,50 @@ const nowMs = new Date('2026-09-06T00:00:00Z').getTime();
 const initial = { ...parseTrackerUrl(new URLSearchParams(), { nowMs }), nowMs };
 
 describe('Tracker navigation', () => {
-	it('resets explicit view switches and restores full history without writing', () => {
+	it('restores full history without writing', () => {
 		const changed = vi.fn();
 		const session = createTrackerSession(initial, changed);
 		session.connect(() => []);
+		const previous = session.selection;
 		session.select('region', 'wem');
 		session.select('profileDays', 28);
-		const previous = session.selection;
-		session.selectView('compare');
-		expect(session.selection).toMatchObject({
-			...parseTrackerUrl(new URLSearchParams(), { nowMs }),
-			view: 'compare'
-		});
-		expect(session.following).toBe(false);
-		expect(changed).toHaveBeenLastCalledWith('push', true);
-		session.select('regionComparison', {
-			...session.selection.regionComparison,
-			interval: '1M',
-			charts: ['price']
-		});
-		session.selectView('profile');
-		expect(session.selection).toMatchObject({ view: 'profile', profileDays: 7 });
-		expect(session.selection.regionComparison.interval).toBe('12mr');
-		session.selectView('timeline');
-		expect(session.following).toBe(true);
 		changed.mockClear();
-		session.selectView('timeline');
-		expect(changed).not.toHaveBeenCalled();
 		session.restore(previous);
 		expect(session.selection).toEqual(previous);
 		expect(changed).not.toHaveBeenCalled();
 	});
-	it('clears the query on explicit switches but restores historical URLs', () => {
-		let url = new URL('https://example.com/tracker?region=wem&range=30d&unknown=1');
+	it('writes within its own route and ignores other routes and its own writes', () => {
+		let url = new URL('https://example.com/tracker/timeline?region=wem&range=30d&unknown=1');
 		const previous = new URL(url);
 		const navigation = createTrackerNavigation({
-			read: () => url,
+			read: () => new URL(url),
 			write: (next) => {
 				url = next;
 			}
 		});
 		const session = createTrackerSession(
 			{ ...parseTrackerUrl(url.searchParams, { nowMs }), nowMs },
-			(mode, resetQuery) => navigation.write(session.selection, mode, resetQuery)
+			(mode) => navigation.write(session.selection, mode)
 		);
-		session.selectView('compare');
-		expect(url.search).toBe('?view=compare');
-		session.selectView('timeline');
-		expect(url.search).toBe('');
+		session.select('region', 'nsw1');
+		expect(url.pathname).toBe('/tracker/timeline');
+		expect(url.searchParams.get('region')).toBe('nsw1');
+		expect(navigation.read(url, nowMs)).toBeNull();
+		expect(navigation.read(new URL('https://example.com/tracker/compare'), nowMs)).toBeNull();
 		const restored = navigation.read(previous, nowMs);
 		expect(restored?.region).toBe('wem');
 		if (restored) session.restore(restored);
 		expect(session.selection.range).toMatchObject({ kind: 'preset', days: 30 });
+	});
+	it('restores an address bar that is ahead of the loaded page URL', () => {
+		// Back onto another route's shallow entry loads its base URL only.
+		const address = new URL('https://example.com/tracker/profile?profile-days=28');
+		const navigation = createTrackerNavigation(
+			{ read: () => new URL(address), write: () => {} },
+			new URL('https://example.com/tracker/profile')
+		);
+		expect(navigation.read(address, nowMs)?.profileDays).toBe(28);
+		expect(navigation.read(address, nowMs)).toBeNull();
 	});
 	it('advances live presets without history, preserves span and pauses exact bounds', async () => {
 		const changed = vi.fn();
@@ -92,7 +84,7 @@ describe('Tracker navigation', () => {
 		session.refresh(nowMs + 700_000);
 		expect(session.window.end).toBe(nowMs + 600_000);
 	});
-	it('does not advance busy, gesturing or time-of-day charts; All keeps its floor', () => {
+	it('does not advance busy or gesturing charts; All keeps its floor', () => {
 		const session = createTrackerSession(initial, () => {});
 		session.connect(() => []);
 		session.refresh(nowMs + 60_000, { ready: false });
@@ -101,10 +93,6 @@ describe('Tracker navigation', () => {
 		session.refresh(nowMs + 60_000);
 		expect(session.window.end).toBe(nowMs);
 		session.gestureActive = false;
-		session.select('view', 'profile');
-		session.refresh(nowMs + 60_000);
-		expect(session.window.end).toBe(nowMs);
-		session.select('view', 'timeline');
 		vi.useFakeTimers();
 		vi.setSystemTime(nowMs);
 		session.selectRange(-1);
@@ -232,15 +220,15 @@ describe('Tracker navigation', () => {
 	});
 
 	it('reads external same-route navigation but ignores its own shallow writes', () => {
-		let url = new URL('https://example.com/tracker');
+		let url = new URL('https://example.com/tracker/timeline');
 		const write = vi.fn((next) => {
 			url = next;
 		});
-		const navigation = createTrackerNavigation({ read: () => url, write });
+		const navigation = createTrackerNavigation({ read: () => new URL(url), write });
 		navigation.write({ ...initial, region: 'wem' }, 'push');
 		expect(navigation.read(url, nowMs)).toBeNull();
 		expect(
-			navigation.read(new URL('https://example.com/tracker?range=30d'), nowMs)?.range
+			navigation.read(new URL('https://example.com/tracker/timeline?range=30d'), nowMs)?.range
 		).toMatchObject({ days: 30 });
 		expect(write).toHaveBeenCalledTimes(1);
 	});

@@ -35,6 +35,7 @@ test.describe('Tracker smoke tests', () => {
 
 		await page.goto('/tracker');
 
+		await expect(page).toHaveURL(/\/tracker\/timeline$/);
 		await expect(page.locator('body')).not.toBeEmpty();
 		await expect(page.getByRole('heading', { name: 'Generation' })).toBeVisible();
 		await expect(page.getByRole('columnheader', { name: /Technology/ })).toBeVisible({
@@ -51,7 +52,7 @@ test.describe('Tracker smoke tests', () => {
 		const errors = collectPageErrors(page);
 
 		// A single-price region so the Price⇄Market value toggle is present.
-		await page.goto('/tracker?region=nsw1');
+		await page.goto('/tracker/timeline?region=nsw1');
 		await expect(page.getByRole('heading', { name: 'Market', exact: true })).toBeVisible();
 		await waitForHydration(page);
 
@@ -67,7 +68,7 @@ test.describe('Tracker smoke tests', () => {
 	test('table panel toggles closed and back open', async ({ page }) => {
 		const errors = collectPageErrors(page);
 
-		await page.goto('/tracker');
+		await page.goto('/tracker/timeline');
 		await waitForHydration(page);
 		const toggle = page.getByRole('button', { name: 'Hide fuel tech table' });
 		await toggle.click();
@@ -83,7 +84,7 @@ test.describe('Tracker smoke tests', () => {
 	});
 
 	test('NEM region tables include imports and exports', async ({ page }) => {
-		await page.goto('/tracker?region=nsw1');
+		await page.goto('/tracker/timeline?region=nsw1');
 		await waitForHydration(page);
 
 		await expect(page.getByRole('button', { name: /^Imports\b/ })).toBeVisible({ timeout: 30000 });
@@ -93,7 +94,7 @@ test.describe('Tracker smoke tests', () => {
 	test('modifier-click solos table rows and the last fuel tech restores all fuel techs', async ({
 		page
 	}) => {
-		await page.goto('/tracker?table=1');
+		await page.goto('/tracker/timeline?table=1');
 		await waitForHydration(page);
 
 		const rows = page.getByTestId('fuel-tech-row');
@@ -159,7 +160,7 @@ test.describe('Tracker smoke tests', () => {
 		page
 	}) => {
 		await page.goto(
-			'/tracker?region=nsw1&table=0&overlay=demand,renewables,curtailment-solar,curtailment-wind'
+			'/tracker/timeline?region=nsw1&table=0&overlay=demand,renewables,curtailment-solar,curtailment-wind'
 		);
 		await waitForHydration(page);
 
@@ -191,7 +192,7 @@ test.describe('Tracker smoke tests', () => {
 	test('overlay row selections update the current URL and survive reload', async ({ page }) => {
 		const errors = collectPageErrors(page);
 
-		await page.goto('/tracker');
+		await page.goto('/tracker/timeline');
 		await waitForHydration(page);
 		const demandRow = page.getByRole('button', { name: /^Demand\b/ });
 		await expect(demandRow).toHaveAttribute('aria-pressed', 'false', { timeout: 30000 });
@@ -223,7 +224,7 @@ test.describe('Tracker smoke tests', () => {
 
 	test('a combined overlay URL restores every row selection', async ({ page }) => {
 		const overlays = 'demand,renewables,curtailment-solar,curtailment-wind';
-		await page.goto(`/tracker?overlay=${overlays}`);
+		await page.goto(`/tracker/timeline?overlay=${overlays}`);
 		await waitForHydration(page);
 
 		for (const name of [/^Demand\b/, /^Renewables\b/, /Curtailment.*Solar/, /Curtailment.*Wind/]) {
@@ -235,7 +236,7 @@ test.describe('Tracker smoke tests', () => {
 	});
 
 	test('generation chart options follow the power and energy unit families', async ({ page }) => {
-		await page.goto('/tracker?table=1');
+		await page.goto('/tracker/timeline?table=1');
 		await waitForHydration(page);
 		let generationCard = card(page, 'Generation');
 		const fuelTechTable = page.getByRole('table');
@@ -260,7 +261,7 @@ test.describe('Tracker smoke tests', () => {
 		const demandGW = Number((await demandPowerCell.textContent())?.trim().replaceAll(',', ''));
 		expect(demandGW).toBe(roundTablePower(demandMW / 1000));
 
-		await page.goto('/tracker?range=30d&interval=1d&table=0');
+		await page.goto('/tracker/timeline?range=30d&interval=1d&table=0');
 		await waitForHydration(page);
 		generationCard = card(page, 'Generation');
 		await expect(generationCard.getByText('Energy', { exact: true })).toBeVisible({
@@ -279,7 +280,7 @@ test.describe('Tracker options menu', () => {
 	test('grouping and contribution basis are chosen from the fuel-tech panel modal', async ({
 		page
 	}) => {
-		await page.goto('/tracker?table=1');
+		await page.goto('/tracker/timeline?table=1');
 		await waitForHydration(page);
 		const techHeader = page.getByRole('columnheader', { name: /Technology/ });
 		await expect(techHeader).toBeVisible({ timeout: 30000 });
@@ -308,7 +309,7 @@ test.describe('Tracker options menu', () => {
 	});
 
 	test('datasets download as CSV and as one XLSX workbook', async ({ page }) => {
-		await page.goto('/tracker?table=1');
+		await page.goto('/tracker/timeline?table=1');
 		await waitForHydration(page);
 		// The table renders from the generation snapshot — once it has rows,
 		// the export context is populated.
@@ -348,7 +349,7 @@ test.describe('Tracker table horizontal scrolling', () => {
 	test('a narrow panel pins Technology while value columns scroll', async ({ page }) => {
 		// The default 30% panel of a 1280px canvas is ~384px — below the 760px breakpoint.
 		await page.setViewportSize({ width: 1280, height: 720 });
-		await page.goto('/tracker?table=1');
+		await page.goto('/tracker/timeline?table=1');
 		await waitForHydration(page);
 
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30000 });
@@ -380,7 +381,7 @@ test.describe('Tracker table horizontal scrolling', () => {
 	test('a wide panel renders the plain six-column table', async ({ page }) => {
 		// 30% of a 3000px canvas is ~900px — comfortably above the 760px breakpoint.
 		await page.setViewportSize({ width: 3000, height: 1080 });
-		await page.goto('/tracker?table=1');
+		await page.goto('/tracker/timeline?table=1');
 		await waitForHydration(page);
 
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30000 });
@@ -393,7 +394,7 @@ test.describe('Tracker table horizontal scrolling', () => {
 
 	test('dragging the panel wider fits all columns', async ({ page }) => {
 		await page.setViewportSize({ width: 1280, height: 720 });
-		await page.goto('/tracker?table=1');
+		await page.goto('/tracker/timeline?table=1');
 		await waitForHydration(page);
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30000 });
 
