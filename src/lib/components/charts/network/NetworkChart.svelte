@@ -97,6 +97,9 @@
 	 * @property {(rows: TimeSeriesData[], names: string[]) => import('../v2/ChartStore.svelte.js').ProportionContext} [createProportionContext] - Optional display-grain percentage calculation
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
+	 * @property {((key: string | undefined) => void)} [onhoverkeychange] - Reports the
+	 *   series under the pointer (undefined once the hover ends). When given, the
+	 *   hovered series is also highlighted and the others dim
 	 * @property {number | undefined} [focusTime] - Controlled focus (pinned) time, for a
 	 *   parent that shares one focus across charts and other surfaces; pair with `onfocuschange`
 	 * @property {((time: number | undefined) => void)} [onfocuschange] - The reader
@@ -165,6 +168,7 @@
 		hoverTime = undefined,
 		focusTime = undefined,
 		onhoverchange,
+		onhoverkeychange,
 		onfocuschange,
 		onviewportchange,
 		onviewportsettle,
@@ -616,6 +620,11 @@
 		chartStore.chartOptions.onDataTransformChange = ondatatransformchange;
 	});
 
+	// A parent following the hovered series wants it visible on the chart too.
+	$effect(() => {
+		if (chartStore) chartStore.chartOptions.allowHoverHighlight = !!onhoverkeychange;
+	});
+
 	// Caller-driven overlay lines (demand / renewable share) — independent row
 	// sets drawn above the stack.
 	$effect(() => {
@@ -950,10 +959,14 @@
 		if (isPanning) return;
 		chartStore?.setHover(time, key);
 		onhoverchange?.(time);
+		// Only a series path names a key; the plot keeps the last one until the
+		// hover ends.
+		if (key !== undefined) onhoverkeychange?.(key);
 	}
 	function handleHoverEnd() {
 		chartStore?.clearHover();
 		onhoverchange?.(undefined);
+		onhoverkeychange?.(undefined);
 	}
 
 	$effect(() => {

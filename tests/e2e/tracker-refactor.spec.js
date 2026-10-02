@@ -1238,6 +1238,88 @@ test('comparison uses raw energy despite timeline transforms and follows visibil
 	await expect(panel.getByRole('combobox', { name: 'Date A', exact: true })).toHaveValue(String(a));
 });
 
+test('timeline cards outline their table column and series highlight their row', async ({
+	page
+}) => {
+	await trackerFixture(page);
+	await page.goto('/tracker/timeline?region=nsw1&table=1');
+	await page.locator('main[data-hydrated]').waitFor();
+	const table = page.locator('#tracker-table-panel');
+	const generation = card(page, 'Generation');
+	const focusedRows = table.locator('[data-testid="fuel-tech-row"][data-focused]');
+	const focusedColumns = table.locator('th[data-focused]');
+	await expect(generation.locator('path.path-area').first()).toBeVisible();
+	// A series under the pointer: its row and the card's column (Av power).
+	const areas = generation.locator('path.path-area');
+	await areas.nth((await areas.count()) - 1).hover({ force: true });
+	await expect(focusedColumns).toHaveCount(1);
+	await expect(focusedColumns).toHaveAttribute('data-column', 'power');
+	await expect(focusedRows).toHaveCount(1);
+	await page.mouse.move(0, 0);
+	await expect(focusedColumns).toHaveCount(0);
+	await expect(focusedRows).toHaveCount(0);
+	// Intensity isn't a default table column, so Emissions outlines nothing.
+	await card(page, 'Emissions').locator('.stratum-chart-area').hover();
+	await expect(focusedColumns).toHaveCount(0);
+});
+
+test('stacked profile cards outline Av power and area series highlight their row', async ({
+	page
+}) => {
+	await trackerFixture(page);
+	await page.goto('/tracker/profile?profile-end=2026-08-31');
+	await page.locator('main[data-hydrated]').waitFor();
+	const table = page.locator('#tracker-table-panel');
+	const stack = card(page, 'Average over 7 full days');
+	const focusedRows = table.locator('[data-testid="fuel-tech-row"][data-focused]');
+	const focusedColumns = table.locator('th[data-focused]');
+	const areas = stack.locator('path.path-area');
+	await expect(areas.first()).toBeVisible();
+	await areas.nth((await areas.count()) - 1).hover({ force: true });
+	await expect(focusedColumns).toHaveAttribute('data-column', 'power');
+	await expect(focusedRows).toHaveCount(1);
+	// The radial bars plot power too, by hour, with no series of their own.
+	const dial = card(page, 'Average by hour').getByRole('img', { name: /average by hour of day$/ });
+	const box = await dial.boundingBox();
+	if (!box) throw new Error('dial not laid out');
+	await page.mouse.move(box.x + box.width / 2 + 3, box.y + box.height / 2 - 20);
+	await expect(focusedColumns).toHaveAttribute('data-column', 'power');
+	await expect(focusedRows).toHaveCount(0);
+	await page.mouse.move(0, 0);
+	await expect(focusedColumns).toHaveCount(0);
+});
+
+test('stacked profile area and radial bars share one hover', async ({ page }) => {
+	await trackerFixture(page);
+	await page.goto('/tracker/profile?profile-end=2026-08-31');
+	await page.locator('main[data-hydrated]').waitFor();
+	const stack = card(page, 'Average over 7 full days');
+	const area = stack.locator('.stratum-chart-area');
+	const tooltip = stack.getByTestId('chart-tooltip-strip');
+	const dial = card(page, 'Average by hour').getByRole('img', { name: /average by hour of day$/ });
+	const dialReadout = card(page, 'Average by hour').getByTestId('dial-readout');
+	const readout = page.getByTestId('tracker-range-label');
+	await expect(stack.locator('path.path-area').first()).toBeVisible();
+	// Hovering the area marks its slot's hour on the dial.
+	await area.hover({ position: { x: 200, y: 120 } });
+	const slot = (await tooltip.textContent())?.match(/(\d\d):\d\d–\d\d:\d\d/);
+	expect(slot).not.toBeNull();
+	await expect(dial.getByTestId('radial-hover')).toHaveCount(1);
+	await expect(dialReadout).toContainText(`${slot?.[1]}:00–`);
+	await page.mouse.move(0, 0);
+	await expect(dial.getByTestId('radial-hover')).toHaveCount(0);
+	// Hovering the dial's 12:00 hour marks it on the area; the table and readout
+	// inspect the whole hour.
+	const box = await dial.boundingBox();
+	if (!box) throw new Error('dial not laid out');
+	await page.mouse.move(box.x + box.width / 2 + 3, box.y + box.height / 2 - 20);
+	await expect(dialReadout).toContainText('12:00–13:00');
+	await expect(tooltip).toContainText('12:00–');
+	await expect(readout).toHaveText('12:00–13:00');
+	await page.mouse.move(0, 0);
+	await expect(tooltip).not.toContainText('12:00–');
+});
+
 test('Stratum profiles support hover, keyboard pinning, table filtering and bounded zoom without fetching', async ({
 	page
 }, testInfo) => {

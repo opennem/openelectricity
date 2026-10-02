@@ -430,6 +430,7 @@
 	{@const focused = row.key === focusRow}
 	<tr
 		data-testid={row.testId}
+		data-focused={focused || undefined}
 		onclick={(event) => row.activate(isExclusive(event))}
 		onkeydown={(event) => activateOnKey(event, row)}
 		role="button"
@@ -575,6 +576,7 @@
 					{#each visibleColumns as column, index (column.key)}
 						<th
 							data-column={column.key}
+							data-focused={columnFocus[index].focused || undefined}
 							class="w-[100px] snap-start text-right transition-colors {index ===
 							visibleColumns.length - 1
 								? 'pr-3 pl-2'

@@ -39,6 +39,7 @@
 	import { formatTrackerPercentageValue } from './table-format.js';
 	import { createTrackerProviders } from './tracker-providers.svelte.js';
 	import { createTableColumnsPreference } from './table-columns.svelte.js';
+	import { chartTableColumn } from './table-columns.js';
 	import { createTrackerTable } from './tracker-table.svelte.js';
 	import { createTrackerData } from './tracker-data.svelte.js';
 	import { createTrackerMetrics } from './tracker-metrics.svelte.js';
@@ -97,6 +98,31 @@
 	let priceIsMarketValue = $derived(resolvePriceMode(region, priceMode) === 'market_value');
 	let emissionsIsIntensity = $derived(emissionsMode === 'intensity');
 	let energyMetric = $derived(range.activeMetric === 'energy');
+
+	/** @typedef {'generation' | 'market' | 'emissions'} TimelineCard */
+	/** The chart card under the pointer, and the series under it on that card:
+	 * as on the Profile breakdown, the table outlines the card's column and
+	 * highlights the series' row, and the card's border darkens. */
+	let hoveredCard = $state(/** @type {TimelineCard | null} */ (null));
+	let hoveredSeries = $state(/** @type {string | undefined} */ (undefined));
+	/** The hovered card's table column, while the table shows it. */
+	let focusColumn = $derived.by(() => {
+		if (!hoveredCard) return null;
+		const column = chartTableColumn(hoveredCard, {
+			energy: energyMetric,
+			proportion: session.selection.generationTransform === 'proportion',
+			marketValue: priceIsMarketValue,
+			intensity: emissionsIsIntensity
+		});
+		return column && tableColumns.value.includes(column) ? column : null;
+	});
+	/** @param {TimelineCard} card @param {boolean} hovered */
+	function hoverCard(card, hovered) {
+		if (hovered) hoveredCard = card;
+		else if (hoveredCard === card) hoveredCard = null;
+	}
+	/** @param {string | undefined} key */
+	const hoverSeries = (key) => (hoveredSeries = key);
 	let isRollingDisplay = $derived(isRollingInterval(range.displayInterval));
 	let intervalBadge = $derived(
 		getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval
@@ -478,6 +504,8 @@
 >
 	<ChartCard
 		title="Generation"
+		highlighted={hoveredCard === 'generation' && !!focusColumn}
+		onhover={(hovered) => hoverCard('generation', hovered)}
 		loading={trackerLoading}
 		status={generationFreshness}
 		png={{
@@ -539,6 +567,7 @@
 				{overlayLines}
 				{overlayAreas}
 				hiddenSeriesNames={hiddenSeries}
+				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, generationChart)}
 				onvisibledata={handleGenerationData}
 				bind:panZoomEngaged
@@ -565,6 +594,8 @@
 
 	<ChartCard
 		title="Market"
+		highlighted={hoveredCard === 'market' && !!focusColumn}
+		onhover={(hovered) => hoverCard('market', hovered)}
 		loading={trackerLoading}
 		status={marketFreshness}
 		png={{
@@ -606,6 +637,7 @@
 				hiddenSeriesNames={priceIsMarketValue ? hiddenSeries : []}
 				dataTransform={priceIsMarketValue ? session.selection.marketValueTransform : 'absolute'}
 				ondatatransformchange={(value) => session.select('marketValueTransform', value)}
+				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, priceChart)}
 				onvisibledata={handlePriceData}
 				bind:panZoomEngaged
@@ -615,6 +647,8 @@
 
 	<ChartCard
 		title="Emissions"
+		highlighted={hoveredCard === 'emissions' && !!focusColumn}
+		onhover={(hovered) => hoverCard('emissions', hovered)}
 		loading={trackerLoading}
 		status={emissionsFreshness}
 		png={{
@@ -647,6 +681,7 @@
 				chartHeightPx={heightPx}
 				hiddenSeriesNames={emissionsIsIntensity ? [] : hiddenSeries}
 				excludedFuelTechGroups={emissionsIsIntensity ? hiddenSeries : []}
+				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, emissionsChart)}
 				onvisibledata={handleEmissionsData}
 				bind:panZoomEngaged
@@ -661,6 +696,8 @@
 			bind:closeButton={dock.closer}
 			rows={inspectedTable?.rows ?? displayedRows}
 			tableColumns={tableColumns.value}
+			focusColumns={focusColumn ? [focusColumn] : []}
+			focusRow={hoveredSeries}
 			valuesPending={tableValuesPending}
 			error={data.state('generation').error ?? providers.error}
 			onretry={() => {

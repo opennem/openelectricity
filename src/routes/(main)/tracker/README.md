@@ -271,6 +271,16 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   Stratum's `hoverable` overlay lines (an invisible 8px hit stroke reporting
   the line's id as the series hover key, as a stack path does); a hovered day
   also reads in the multi-line strip.
+  Stacked shows the stacked radial bars, then the stacked area, sharing one
+  hover (TimeOfDay's `stackHover`): an area slot marks its hour on the dial, a
+  dial hour marks the start of that hour on the area, and the table and readout
+  inspect the slot or the whole hour, whichever is under the pointer. As in the
+  breakdown and on Timeline, a hovered card's border darkens and the table
+  outlines the column it plots (Av power for both stacked charts; on Timeline,
+  `chartTableColumn` maps Generation, Market and Emissions to theirs, while the
+  table shows it), and a hovered stack series fades the others and highlights
+  its row (`NetworkChart`'s and `ProfileChart`'s `onhoverkeychange`). Cards
+  report the pointer through `ChartCard`'s `onhover`.
   A top-nav **Style** dropdown (`profile-style`) switches the breakdown between
   **Percentile bands** (the default), that **Multi-line** view and
   **Ridgeline** under a Linear subheader, and **Bars** and **Heatmap** under

@@ -14,8 +14,9 @@
 	 * can run flush to the edges) — for small multiples such as the heatmap
 	 * cards. `onexpand`
 	 * adds an Enlarge button to the header (the radial cards' lightbox).
-	 * `highlighted` darkens the border like the engaged treatment: the Profile
-	 * breakdown card whose technology the table is highlighting.
+	 * `highlighted` darkens the border like the engaged treatment: the hovered
+	 * card whose row or column the table is highlighting. `onhover` reports the
+	 * pointer entering (true) and leaving (false) the card.
 	 *
 	 * Owns the drag-to-resize height so the five-dot handle sits OUTSIDE the
 	 * card container, between cards. The height is passed to `children` as a
@@ -36,6 +37,7 @@
 	 *   maxHeightPx?: number,
 	 *   actions?: import('svelte').Snippet,
 	 *   onexpand?: () => void,
+	 *   onhover?: (hovered: boolean) => void,
 	 *   status?: import('svelte').Snippet,
 	 *   children: import('svelte').Snippet<[number]>
 	 * }}
@@ -54,6 +56,7 @@
 		maxHeightPx = 800,
 		actions,
 		onexpand,
+		onhover,
 		status,
 		children
 	} = $props();
@@ -92,7 +95,11 @@
 	{/if}
 {/snippet}
 
-<div>
+<div
+	role="presentation"
+	onpointerenter={onhover && (() => onhover(true))}
+	onpointerleave={onhover && (() => onhover(false))}
+>
 	<!-- Subtle border at rest, dark when pan/zoom is engaged; the chart and its
 	     options bar sit flush against the container edges. overflow-hidden at
 	     every width — the flush chart would otherwise paint over the bottom

@@ -28,3 +28,17 @@ export function normaliseTableColumns(value) {
 		? ALL_TABLE_COLUMNS.filter((key) => value.includes(key))
 		: [...DEFAULT_TABLE_COLUMNS];
 }
+
+/**
+ * The table column a Timeline chart card plots, which hovering the card
+ * outlines (as a Profile breakdown card highlights its row), or null where the
+ * table has none (market value).
+ * @param {'generation' | 'market' | 'emissions'} card
+ * @param {{ energy: boolean, proportion: boolean, marketValue: boolean, intensity: boolean }} modes
+ * @returns {string | null}
+ */
+export function chartTableColumn(card, { energy, proportion, marketValue, intensity }) {
+	if (card === 'generation') return proportion ? 'contribution' : energy ? 'energy' : 'power';
+	if (card === 'market') return marketValue ? null : 'price';
+	return intensity ? 'intensity' : 'emissions';
+}

@@ -370,9 +370,43 @@
 	/** The slot (charts) or hour (radial clocks) hovered on any breakdown
 	 * card; every card mirrors it, as Timeline's cards share one hover. */
 	let breakdownHover = $state(/** @type {number | undefined} */ (undefined));
+	/** A breakdown radial card's hovered hour; every radial card mirrors it. */
 	let radialHour = $state(/** @type {number | null} */ (null));
-	/** The breakdown card under the pointer; the table highlights its row. */
+	/** Stacked: the hover shared by the stacked area and the radial bars — a
+	 * slot from the area or a whole hour from the dial, each mirrored on the
+	 * other, and inspected by the table and readout at its own span. */
+	let stackHover = $state.raw(
+		/** @type {{ start: number, end: number } | undefined} */ (undefined)
+	);
+	const HOUR_MS = 3_600_000;
+	/** @param {number | null} hour */
+	function hoverStackHour(hour) {
+		stackHover =
+			hour === null
+				? undefined
+				: {
+						start: PROFILE_DAY_START + hour * HOUR_MS,
+						end: PROFILE_DAY_START + (hour + 1) * HOUR_MS
+					};
+	}
+	/** @param {number | undefined} time */
+	function hoverStackSlot(time) {
+		stackHover = time === undefined ? undefined : { start: time, end: time + window.slotMs };
+	}
+	let stackHour = $derived(
+		stackHover === undefined ? null : Math.floor((stackHover.start - PROFILE_DAY_START) / HOUR_MS)
+	);
+	/** The card under the pointer. Breakdown: the table highlights its
+	 * technology's row. Stacked: the table outlines Av power, which both stacked
+	 * charts plot, and `stackSeries` (the area's series under the pointer)
+	 * picks the row, as on Timeline. */
 	let hoveredCard = $state(/** @type {string | null} */ (null));
+	let stackSeries = $state(/** @type {string | undefined} */ (undefined));
+	/** @param {string} key @param {boolean} hovered */
+	function hoverCard(key, hovered) {
+		if (hovered) hoveredCard = key;
+		else if (hoveredCard === key) hoveredCard = null;
+	}
 	/** The part of a breakdown chart under the pointer, as the table reads it
 	 * (`profileChartPart`): a day (ridgeline ridge, heatmap ring or multi-line
 	 * day), the multi-line average, or a percentile band or median. Every card
@@ -391,14 +425,16 @@
 	/** What the table and range readout inspect: a radial clock's hovered hour,
 	 * else the inspected chart slot. */
 	let inspectRange = $derived(
-		(!breakdown || style === 'radial') && radialHour !== null
-			? {
-					start: PROFILE_DAY_START + radialHour * 3_600_000,
-					end: PROFILE_DAY_START + (radialHour + 1) * 3_600_000
-				}
-			: inspectTime === undefined
-				? undefined
-				: { start: inspectTime, end: inspectTime + window.slotMs }
+		!breakdown && stackHover
+			? stackHover
+			: breakdown && style === 'radial' && radialHour !== null
+				? {
+						start: PROFILE_DAY_START + radialHour * HOUR_MS,
+						end: PROFILE_DAY_START + (radialHour + 1) * HOUR_MS
+					}
+				: inspectTime === undefined
+					? undefined
+					: { start: inspectTime, end: inspectTime + window.slotMs }
 	);
 
 	// Fuel-tech table: the average day's technologies, or the inspected slot.
@@ -681,7 +717,7 @@
 			layers={stackLayers}
 			unit="MW"
 			label={windowTitle}
-			bind:active={radialHour}
+			bind:active={() => stackHour, hoverStackHour}
 		/>
 	{:else}
 		{@const card = cards.find((candidate) => candidate.key === key)}
@@ -732,11 +768,39 @@
 		pngContext={`${regionLabel} · ${window.dates[0]} to ${window.lastDate} · UTC${zone} · ${group.label}`}
 	>
 		{#if !breakdown}
-			<!-- The stacked area and the stacked radial bars side by side: the same
-			     average day by slot and by hour. -->
+			<!-- The stacked radial bars and the stacked area side by side: the same
+			     average day by hour and by slot. -->
 			<div class="grid items-start gap-4 md:grid-cols-2">
 				<ChartCard
+					title={STACK_DIAL_TITLE}
+					highlighted={hoveredCard === 'stack-radial'}
+					onhover={(hovered) => hoverCard('stack-radial', hovered)}
+					mini
+					loading={stackLoading.active}
+					png={{
+						id: 'profile-stack-radial',
+						label: STACK_DIAL_TITLE,
+						ready: stackAvailable && !powerData.pending,
+						caption: windowTitle
+					}}
+				>
+					{#if stackUnavailable}
+						{@render unavailable(
+							powerData.error,
+							'Retry average day',
+							powerData.retry,
+							'No complete average-day stack available for this window.'
+						)}
+					{:else}
+						<div class="[--dial-max:560px]">
+							{@render dial(STACK_DIAL)}
+						</div>
+					{/if}
+				</ChartCard>
+				<ChartCard
 					title={windowTitle}
+					highlighted={hoveredCard === 'stack'}
+					onhover={(hovered) => hoverCard('stack', hovered)}
 					loading={stackLoading.active}
 					png={{
 						id: 'profile-stack',
@@ -769,33 +833,13 @@
 								label={windowTitle}
 								{heightPx}
 								slotMs={window.slotMs}
+								syncHoverTime={stackHover?.start}
+								onhoverchange={hoverStackSlot}
+								activeKey={stackSeries ?? null}
+								onhoverkeychange={(key) => (stackSeries = key)}
 							/>
 						{/if}
 					{/snippet}
-				</ChartCard>
-				<ChartCard
-					title={STACK_DIAL_TITLE}
-					mini
-					loading={stackLoading.active}
-					png={{
-						id: 'profile-stack-radial',
-						label: STACK_DIAL_TITLE,
-						ready: stackAvailable && !powerData.pending,
-						caption: windowTitle
-					}}
-				>
-					{#if stackUnavailable}
-						{@render unavailable(
-							powerData.error,
-							'Retry average day',
-							powerData.retry,
-							'No complete average-day stack available for this window.'
-						)}
-					{:else}
-						<div class="[--dial-max:560px]">
-							{@render dial(STACK_DIAL)}
-						</div>
-					{/if}
 				</ChartCard>
 			</div>
 		{:else if !gridError && (gridPending || gridAvailable)}
@@ -812,83 +856,76 @@
 				<!-- Keyed with the radial flag: a card's height storage is fixed at mount,
 				     and radial cards size themselves instead. -->
 				{#each cards as card (`${card.key}:${card.radial || card.heatmap ? 'square' : 'chart'}`)}
-					<!-- Hovering a card, whatever its style, outlines it and highlights its
-					     technology's table row (spot price has no row, so no outline). -->
-					<div
-						role="presentation"
-						onpointerenter={() => (hoveredCard = card.key)}
-						onpointerleave={() => {
-							if (hoveredCard === card.key) hoveredCard = null;
+					<!-- Hovering a card, whatever its style, highlights its technology's
+					     table row and outlines the card (spot price has no row, so no outline). -->
+					<ChartCard
+						title={card.price ? 'Market' : card.label}
+						mini={Boolean(card.radial || card.heatmap)}
+						loading={gridLoading.active}
+						png={{
+							id: `profile-${card.key}`,
+							label: card.label,
+							ready: !gridPending,
+							caption: card.radial
+								? 'Average by hour'
+								: card.ridgeline
+									? 'One curve per day'
+									: card.heatmap
+										? 'Each ring is a day'
+										: seriesCharts[card.key]?.getCaption()
 						}}
+						engaged={panZoomEngaged}
+						highlighted={!card.price && hoveredCard === card.key}
+						onhover={(hovered) => hoverCard(card.key, hovered)}
+						heightStorageKey={card.radial || card.heatmap ? '' : 'tracker-profile-height-series'}
+						onexpand={card.radial || card.heatmap ? () => (enlarged = card.key) : undefined}
 					>
-						<ChartCard
-							title={card.price ? 'Market' : card.label}
-							mini={Boolean(card.radial || card.heatmap)}
-							loading={gridLoading.active}
-							png={{
-								id: `profile-${card.key}`,
-								label: card.label,
-								ready: !gridPending,
-								caption: card.radial
-									? 'Average by hour'
-									: card.ridgeline
-										? 'One curve per day'
-										: card.heatmap
-											? 'Each ring is a day'
-											: seriesCharts[card.key]?.getCaption()
-							}}
-							engaged={panZoomEngaged}
-							highlighted={!card.price && hoveredCard === card.key}
-							heightStorageKey={card.radial || card.heatmap ? '' : 'tracker-profile-height-series'}
-							onexpand={card.radial || card.heatmap ? () => (enlarged = card.key) : undefined}
-						>
-							{#snippet children(heightPx)}
-								{#if card.radial || card.heatmap}
-									{@render dial(card.key)}
-								{:else if card.ridgeline}
-									<Ridgeline
-										days={card.ridgeline.days}
-										today={card.ridgeline.today}
-										average={card.ridgeline.average}
-										colour={card.ridgeline.colour}
-										slotMs={window.slotMs}
-										unit={card.unit}
-										label={card.label}
-										step={card.price}
-										{heightPx}
-										syncHoverTime={breakdownHover}
-										onhoverchange={(time) => (breakdownHover = time)}
-										onhoverday={(date) => (chartPart = date)}
-										activeDay={chartPart}
-									/>
-								{:else if card.chart}
-									<ProfileChart
-										bind:this={
-											() => seriesCharts[card.key] ?? null,
-											(chart) => (seriesCharts = { ...seriesCharts, [card.key]: chart })
-										}
-										bind:engaged={panZoomEngaged}
-										rows={card.chart.rows}
-										names={card.chart.names}
-										labels={card.chart.labels}
-										colours={card.chart.colours}
-										overlays={card.chart.overlays}
-										readout={card.chart.readout}
-										price={card.price}
-										syncHoverTime={breakdownHover}
-										onhoverchange={(time) => (breakdownHover = time)}
-										activeKey={profileChartPart(style, chartPart, isLoad(card.key))}
-										onhoverkeychange={(key) =>
-											(chartPart = profileChartPart(style, key, isLoad(card.key)))}
-										title={card.price ? 'Spot price' : 'Power'}
-										label={card.label}
-										{heightPx}
-										slotMs={window.slotMs}
-									/>
-								{/if}
-							{/snippet}
-						</ChartCard>
-					</div>
+						{#snippet children(heightPx)}
+							{#if card.radial || card.heatmap}
+								{@render dial(card.key)}
+							{:else if card.ridgeline}
+								<Ridgeline
+									days={card.ridgeline.days}
+									today={card.ridgeline.today}
+									average={card.ridgeline.average}
+									colour={card.ridgeline.colour}
+									slotMs={window.slotMs}
+									unit={card.unit}
+									label={card.label}
+									step={card.price}
+									{heightPx}
+									syncHoverTime={breakdownHover}
+									onhoverchange={(time) => (breakdownHover = time)}
+									onhoverday={(date) => (chartPart = date)}
+									activeDay={chartPart}
+								/>
+							{:else if card.chart}
+								<ProfileChart
+									bind:this={
+										() => seriesCharts[card.key] ?? null,
+										(chart) => (seriesCharts = { ...seriesCharts, [card.key]: chart })
+									}
+									bind:engaged={panZoomEngaged}
+									rows={card.chart.rows}
+									names={card.chart.names}
+									labels={card.chart.labels}
+									colours={card.chart.colours}
+									overlays={card.chart.overlays}
+									readout={card.chart.readout}
+									price={card.price}
+									syncHoverTime={breakdownHover}
+									onhoverchange={(time) => (breakdownHover = time)}
+									activeKey={profileChartPart(style, chartPart, isLoad(card.key))}
+									onhoverkeychange={(key) =>
+										(chartPart = profileChartPart(style, key, isLoad(card.key)))}
+									title={card.price ? 'Spot price' : 'Power'}
+									label={card.label}
+									{heightPx}
+									slotMs={window.slotMs}
+								/>
+							{/if}
+						{/snippet}
+					</ChartCard>
 				{/each}
 			</div>
 		{:else}
@@ -919,8 +956,12 @@
 				tableColumns={DEFAULT_TABLE_COLUMNS}
 				powerColumns={tablePowerColumns}
 				notes={tableNotes}
-				focusColumns={breakdown ? profileFocusColumns(style, chartPart) : []}
-				focusRow={breakdown ? (hoveredCard ?? undefined) : undefined}
+				focusColumns={breakdown
+					? profileFocusColumns(style, chartPart)
+					: hoveredCard
+						? ['power']
+						: []}
+				focusRow={breakdown ? (hoveredCard ?? undefined) : stackSeries}
 				{contributionMode}
 				oncontributionchange={selectContribution}
 				{tableUnits}
