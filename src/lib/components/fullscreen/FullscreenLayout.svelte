@@ -42,10 +42,3 @@
 	{@render filterBar?.()}
 	{@render content?.()}
 </div>
-
-<style>
-	:global(.gridline-bg) {
-		background-image: radial-gradient(circle, #d5d4d1 1px, transparent 1px);
-		background-size: 20px 20px;
-	}
-</style>

@@ -794,7 +794,7 @@
 	<div class="shrink-0" transition:slide={{ duration: reducedMotion.current ? 0 : 200 }}>
 		<section
 			aria-label="Breakdown options"
-			class="flex items-center gap-4 overflow-x-auto border-b border-warm-grey bg-white px-8 py-2"
+			class="gridline-bg flex items-center gap-4 overflow-x-auto border-b border-warm-grey bg-white px-8 py-2"
 		>
 			<div class="shrink-0 whitespace-nowrap">
 				<Toggle

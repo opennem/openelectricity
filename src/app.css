@@ -412,3 +412,10 @@
 .maplibregl-ctrl.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
 	background-size: 24px 24px;
 }
+
+/* The dotted grid behind fullscreen pages and the tracker's subnav bars
+   (the metrics strip and the Profile breakdown options). */
+@utility gridline-bg {
+	background-image: radial-gradient(circle, #d5d4d1 1px, transparent 1px);
+	background-size: 20px 20px;
+}
