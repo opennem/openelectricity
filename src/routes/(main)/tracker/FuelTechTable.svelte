@@ -3,6 +3,7 @@
 		TABLE_HEADER_CELL,
 		TABLE_ROW,
 		TABLE_SWATCH,
+		focusEdges,
 		pinnedTableEdge,
 		tableValueCell
 	} from './table-styles.js';
@@ -78,7 +79,12 @@
 	 *
 	 * A view can replace the window columns with its own average-power columns
 	 * (`powerColumns`, filled from each row's `powerValues` in the Av power
-	 * unit): the Profile's percentile range, or the ridgeline's days.
+	 * unit): the Profile's percentile range, or the day-by-day styles' days. A view can
+	 * also highlight one row (`focusRow`) as if hovered: the technology whose
+	 * Profile breakdown card is under the pointer, and its columns
+	 * (`focusColumns`): the hovered day, or a percentile band's bounds. Focused
+	 * rows and columns are outlined, and the cells where they meet read white
+	 * on OE red.
 	 *
 	 * In narrow panels, Technology pins left while the value columns scroll
 	 * horizontally and snap into place. The table fills the panel when its visible columns fit.
@@ -99,7 +105,8 @@
 		contributionMode = 'demand',
 		tableColumns = DEFAULT_TABLE_COLUMNS,
 		powerColumns = undefined,
-		focusColumn = undefined,
+		focusColumns = [],
+		focusRow = undefined,
 		notes = [],
 		tableUnits = {},
 		curtailmentRows = [],
@@ -118,17 +125,26 @@
 
 	let scrollLeft = $state(0);
 	let scroller = $state(/** @type {HTMLDivElement | undefined} */ (undefined));
-	// Bring a focused column (a hovered ridgeline day) into view beside the
-	// pinned Technology column: a DOM side effect, so an effect. The scroller's
-	// own snapping and `scroll-smooth` (off under reduced motion) do the rest.
+	// Bring the focused columns (a hovered day, or a percentile band's bounds)
+	// into view beside the pinned Technology column: a DOM side effect, so an
+	// effect. The scroller's own snapping and `scroll-smooth` (off under
+	// reduced motion) do the rest.
 	$effect(() => {
-		const key = focusColumn;
-		if (!key || !scroller) return;
-		const header = scroller.querySelector(`th[data-column="${CSS.escape(key)}"]`);
+		const keys = focusColumns;
+		if (!keys.length || !scroller) return;
+		/** @param {string} key */
+		const headerFor = (key) => scroller?.querySelector(`th[data-column="${CSS.escape(key)}"]`);
+		const first = headerFor(keys[0]);
+		const last = headerFor(keys[keys.length - 1]);
 		const pinned = scroller.querySelector('th');
-		if (!(header instanceof HTMLElement) || !(pinned instanceof HTMLElement)) return;
-		const left = header.offsetLeft - pinned.offsetWidth;
-		const right = header.offsetLeft + header.offsetWidth;
+		if (
+			!(first instanceof HTMLElement) ||
+			!(last instanceof HTMLElement) ||
+			!(pinned instanceof HTMLElement)
+		)
+			return;
+		const left = first.offsetLeft - pinned.offsetWidth;
+		const right = last.offsetLeft + last.offsetWidth;
 		if (left < scroller.scrollLeft || right > scroller.scrollLeft + scroller.clientWidth)
 			scroller.scrollTo({ left });
 	});
@@ -187,6 +203,19 @@
 					index,
 					...columnHeader(column.key)
 				})).filter((column) => tableColumns.includes(column.key))
+	);
+	/**
+	 * Each visible column's place in the focus: whether it is focused, and
+	 * whether the outline closes on its left or right — adjacent focused
+	 * columns (a percentile band's two bounds) outline as one block.
+	 */
+	let columnFocus = $derived(
+		visibleColumns.map((_, index) => {
+			/** @param {number} i */
+			const on = (i) => i >= 0 && focusColumns.includes(visibleColumns[i]?.key);
+			const focused = on(index);
+			return { focused, left: focused && !on(index - 1), right: focused && !on(index + 1) };
+		})
 	);
 	/** Cells for a row the view's own columns have no value for. */
 	let emptyCells = $derived((powerColumns ?? TABLE_COLUMNS).map(() => EMPTY_CELL));
@@ -316,6 +345,11 @@
 			: []
 	);
 
+	/** The table's bottom row, where a focused column's outline closes. */
+	let lastRowKey = $derived(
+		[...sourceRows, ...loadRows, ...curtailmentToggleRows, ...summaryRows].at(-1)?.key
+	);
+
 	/** ⌘/Ctrl-activation solos a row instead of toggling it.
 	 *  @param {MouseEvent | KeyboardEvent} event */
 	function isExclusive(event) {
@@ -351,7 +385,9 @@
 	 *  negative margins cancel the hover padding. */
 	const HEADER_BUTTON =
 		'-my-1 inline-flex cursor-pointer rounded-md px-1.5 py-1 transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:outline-dark-grey motion-reduce:transition-none';
-	let stickyLabelCell = $derived(`${pinnedEdgeClass} bg-white group-hover:bg-light-warm-grey`);
+	/** @param {boolean} focused */
+	const stickyLabelCell = (focused) =>
+		`${pinnedEdgeClass} ${focused ? 'bg-light-warm-grey' : 'bg-white group-hover:bg-light-warm-grey'}`;
 </script>
 
 {#snippet swatch(/** @type {Swatch} */ { kind, colour }, /** @type {boolean} */ active)}
@@ -391,6 +427,7 @@
 
 {#snippet toggleRow(/** @type {ToggleRow} */ row)}
 	{@const cellPad = row.summary ? 'py-2' : 'py-1.5'}
+	{@const focused = row.key === focusRow}
 	<tr
 		data-testid={row.testId}
 		onclick={(event) => row.activate(isExclusive(event))}
@@ -399,9 +436,19 @@
 		tabindex="0"
 		aria-pressed={row.active}
 		aria-describedby={row.interpolated ? 'rooftop-interpolation-note' : undefined}
-		class="{TABLE_ROW} {row.summary ? 'font-semibold' : ''} {row.dimmed ? 'opacity-50' : ''}"
+		class="{TABLE_ROW} {row.summary ? 'font-semibold' : ''} {row.dimmed
+			? 'opacity-50'
+			: ''} {focused ? 'bg-light-warm-grey' : ''}"
 	>
-		<td class="{stickyLabelCell} px-2 {cellPad}">
+		<td
+			class="{stickyLabelCell(focused)} px-2 {cellPad}"
+			style:box-shadow={focusEdges({
+				top: focused,
+				bottom: focused,
+				left: focused,
+				right: focused && !visibleColumns.length
+			})}
+		>
 			{#if row.breakdown?.length}
 				<Tooltip lines={row.breakdown} side="left" class="ml-2 flex items-center gap-2.5">
 					{@render rowLabel(row)}
@@ -414,11 +461,21 @@
 		</td>
 		{#each visibleColumns as column, index (column.key)}
 			{@const cell = row.cells[column.index]}
+			{@const columnFocused = columnFocus[index]}
+			{@const last = index === visibleColumns.length - 1}
 			<td
-				class="{tableValueCell(cell, index === visibleColumns.length - 1, cellPad)} {column.key ===
-				focusColumn
-					? 'bg-light-warm-grey'
-					: ''}"
+				class="{tableValueCell(
+					cell,
+					last,
+					cellPad,
+					columnFocused.focused && focused
+				)} {columnFocused.focused && !focused ? 'bg-light-warm-grey' : ''}"
+				style:box-shadow={focusEdges({
+					top: focused,
+					bottom: focused || (columnFocused.focused && row.key === lastRowKey),
+					left: columnFocused.left,
+					right: columnFocused.right || (focused && last)
+				})}
 			>
 				{cell}
 			</td>
@@ -435,10 +492,16 @@
 				>
 					<span class="ml-2">{label}</span>
 				</th>
-				{#if visibleColumns.length}<th
+				<!-- One cell per column, so a focused column's outline runs through. -->
+				{#each visibleColumns as column, index (column.key)}
+					<th
 						class="border-b border-warm-grey"
-						colspan={visibleColumns.length}
-					></th>{/if}
+						style:box-shadow={focusEdges({
+							left: columnFocus[index].left,
+							right: columnFocus[index].right
+						})}
+					></th>
+				{/each}
 			</tr>
 		</thead>
 		<tbody>
@@ -515,7 +578,12 @@
 							class="w-[100px] snap-start text-right transition-colors {index ===
 							visibleColumns.length - 1
 								? 'pr-3 pl-2'
-								: 'px-2'} {column.key === focusColumn ? 'bg-warm-grey' : ''} {TABLE_HEADER_CELL}"
+								: 'px-2'} {columnFocus[index].focused ? 'bg-warm-grey' : ''} {TABLE_HEADER_CELL}"
+							style:box-shadow={focusEdges({
+								top: columnFocus[index].focused,
+								left: columnFocus[index].left,
+								right: columnFocus[index].right
+							})}
 						>
 							{#if column.cycle}
 								<button

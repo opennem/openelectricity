@@ -301,7 +301,9 @@ export default class ChartStore {
 	 *  against a fixed 0–100% right-hand scale. Tooltip metadata is optional;
 	 *  when present, floating tooltips join the independent row by timestamp.
 	 *  `absoluteTooltipValue` pairs a percentage line with its independently joined amount.
-	 *  @type {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string, absoluteTooltipValue?: { data: any[], valueKey: string } }>} */
+	 *  A `hoverable` line reports its `id` as the series hover key, as a stack
+	 *  path does.
+	 *  @type {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, hoverable?: boolean, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string, absoluteTooltipValue?: { data: any[], valueKey: string } }>} */
 	overlayLines = $state.raw([]);
 
 	/** Hatched area bands stacked on top of the rendered stack from an

@@ -5,6 +5,9 @@
 	 * official renewable share). `scale: 'y'` plots against the chart's value
 	 * scale; `scale: 'percent'` plots against an independent percentage scale
 	 * spanning the same pixel range, with optional right-edge tick labels.
+	 * With `onmousemove`, an invisible `hitWidth` stroke along the line takes the
+	 * pointer and reports the row under it, as StackedArea's paths do; the
+	 * drawn line stays pointer-transparent.
 	 *
 	 * Must be rendered inside a LayerCake context.
 	 */
@@ -12,6 +15,7 @@
 	import { line as d3Line, curveLinear } from 'd3-shape';
 	import { scaleLinear } from 'd3-scale';
 	import { perfSpan } from '../perf.js';
+	import { bisectTimeRight, nearestIndexOfTime } from '../binary-search.js';
 	import { percentAxisTicks } from './percent-axis.js';
 
 	const { xScale, yScale, width } = getContext('LayerCake');
@@ -25,6 +29,11 @@
 	 * @property {'y' | 'percent'} [scale]
 	 * @property {boolean} [showAxis] - Right-edge % tick labels (percent scale)
 	 * @property {any} [curveType] - d3 curve factory, matching the host chart
+	 * @property {boolean} [stepMode] - Floor-based row lookup, as for step curves
+	 * @property {number} [hitWidth] - Pointer target width (px) when hoverable
+	 * @property {(row: any) => void} [onmousemove] - Makes the line hoverable
+	 * @property {() => void} [onmouseout]
+	 * @property {(row: any) => void} [onpointerup]
 	 */
 
 	/** @type {Props} */
@@ -35,7 +44,12 @@
 		strokeWidth = 1.5,
 		scale = 'y',
 		showAxis = false,
-		curveType = curveLinear
+		curveType = curveLinear,
+		stepMode = false,
+		hitWidth = 8,
+		onmousemove = undefined,
+		onmouseout = undefined,
+		onpointerup = undefined
 	} = $props();
 
 	/** Upper bound of the percent scale — 100 normally, extended in 20% steps
@@ -72,6 +86,22 @@
 		});
 	});
 
+	/** The row under the pointer: the active step's, else the nearest.
+	 *  @param {MouseEvent} event */
+	function rowAt(event) {
+		const time = $xScale.invert(event.offsetX).getTime();
+		const index = stepMode ? bisectTimeRight(dataset, time) - 1 : nearestIndexOfTime(dataset, time);
+		return dataset[index];
+	}
+
+	/** @param {MouseEvent} event */
+	function handlePointerUp(event) {
+		// Cmd/Ctrl+click is used for zoom — don't trigger focus
+		if (event.metaKey || event.ctrlKey) return;
+		const row = rowAt(event);
+		if (row) onpointerup?.(row);
+	}
+
 	/** 20% steps for ordinary ranges; adaptive, bounded ticks for extreme
 	 *  domains. The top label stays omitted so it never crowds the chart edge. */
 	let percentTicks = $derived(percentAxisTicks(percentMax));
@@ -86,6 +116,23 @@
 		stroke-width={strokeWidth}
 		pointer-events="none"
 	/>
+	{#if onmousemove}
+		<path
+			d={path}
+			role="presentation"
+			fill="none"
+			stroke="transparent"
+			stroke-width={hitWidth}
+			pointer-events="stroke"
+			onmousemove={(event) => {
+				const row = rowAt(event);
+				if (row) onmousemove(row);
+			}}
+			onmouseout={() => onmouseout?.()}
+			onblur={() => onmouseout?.()}
+			onpointerup={handlePointerUp}
+		/>
+	{/if}
 {/if}
 
 {#if scale === 'percent' && showAxis}

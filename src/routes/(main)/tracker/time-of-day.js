@@ -40,6 +40,49 @@ export function normaliseProfileStyle(value) {
 		: 'bands';
 }
 
+/** The percentile bands' hoverable parts — each band and the median line —
+ * as the table's percentile columns: a band spans its two bounds. */
+const BAND_COLUMNS = /** @type {Record<string, string[]>} */ ({
+	low: ['p10', 'p25'],
+	midLow: ['p25', 'p50'],
+	midHigh: ['p50', 'p75'],
+	high: ['p75', 'p90'],
+	p50: ['p50']
+});
+/** A load reads as a magnitude in the table, so its bands flip end to end. */
+const MIRRORED_BAND = /** @type {Record<string, string>} */ ({
+	low: 'high',
+	midLow: 'midHigh',
+	midHigh: 'midLow',
+	high: 'low',
+	p50: 'p50'
+});
+
+/**
+ * Converts between a breakdown chart's own hover key and the part the table
+ * reads, in both directions: a load's percentile bands mirror (its 10–25% band
+ * is the table's 75–90%), and every other key passes through. Percentile keys
+ * without a table column (the transparent base, today) read as nothing.
+ * @param {string} style @param {string | null | undefined} key @param {boolean} load
+ * @returns {string | null}
+ */
+export function profileChartPart(style, key, load) {
+	if (!key) return null;
+	if (style !== 'bands') return key;
+	if (!(key in MIRRORED_BAND)) return null;
+	return load ? MIRRORED_BAND[key] : key;
+}
+
+/**
+ * The table columns a hovered breakdown part focuses: a percentile band's two
+ * bounds or the median, else the day (or Average) column it names.
+ * @param {string} style @param {string | null} part @returns {string[]}
+ */
+export function profileFocusColumns(style, part) {
+	if (!part) return [];
+	return style === 'bands' ? (BAND_COLUMNS[part] ?? []) : [part];
+}
+
 /** Profile slot lengths: half-hours by default, or the native 5-minute readings. */
 export const PROFILE_INTERVAL_OPTIONS = [
 	{ value: '5m', label: '5 min' },

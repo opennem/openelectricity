@@ -14,6 +14,8 @@
 	 * can run flush to the edges) — for small multiples such as the heatmap
 	 * cards. `onexpand`
 	 * adds an Enlarge button to the header (the radial cards' lightbox).
+	 * `highlighted` darkens the border like the engaged treatment: the Profile
+	 * breakdown card whose technology the table is highlighting.
 	 *
 	 * Owns the drag-to-resize height so the five-dot handle sits OUTSIDE the
 	 * card container, between cards. The height is passed to `children` as a
@@ -26,6 +28,7 @@
 	 *   badge?: string,
 	 *   png?: {id: string, label: string, ready: boolean, caption?: string},
 	 *   engaged?: boolean,
+	 *   highlighted?: boolean,
 	 *   loading?: boolean,
 	 *   heightStorageKey?: string,
 	 *   defaultHeightPx?: number,
@@ -43,6 +46,7 @@
 		badge = '',
 		png,
 		engaged = false,
+		highlighted = false,
 		loading = false,
 		heightStorageKey = '',
 		defaultHeightPx = 260,
@@ -97,10 +101,11 @@
 	     charts. -->
 	<section
 		data-tracker-png={png ? JSON.stringify(png) : undefined}
-		class="overflow-hidden rounded-lg border bg-white transition-colors {mini
-			? 'border-warm-grey'
-			: engaged
-				? 'border-dark-grey'
+		class="overflow-hidden rounded-lg border bg-white transition-colors {highlighted ||
+		(engaged && !mini)
+			? 'border-dark-grey'
+			: mini
+				? 'border-warm-grey'
 				: 'border-mid-warm-grey/40'}"
 	>
 		{#if mini}

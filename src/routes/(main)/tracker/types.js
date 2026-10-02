@@ -128,8 +128,9 @@
  * @property {string[]} [tableColumns]
  * @property {Array<{key: string, label: string}>} [powerColumns] - A view's own
  *   average-power columns in place of the window columns, filled from each row's `powerValues`
- * @property {string} [focusColumn] - Column key to scroll into view and highlight
- *   (the ridgeline's hovered day)
+ * @property {string[]} [focusColumns] - Column keys to scroll into view and outline
+ *   (a Profile breakdown's hovered day, or a percentile band's bounds)
+ * @property {string} [focusRow] - Row key to highlight (the Profile breakdown's hovered card)
  * @property {string[]} [notes] - A view's own footnotes, listed last under the table
  * @property {import('./table-units.js').TableUnits} [tableUnits] - Header-chosen unit prefixes; absent columns use their defaults
  * @property {ContributionMode} [contributionMode]

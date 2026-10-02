@@ -233,7 +233,23 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   the choice for the other styles. The breakdown's charts share one hover (`ProfileChart`'s
   `onhoverchange` / `syncHoverTime`), as Timeline's cards do, and the radial
   clocks share the hovered hour (`RadialClock`'s bindable `active`). Hovering or
-  pinning any card drives the table and the range readout.
+  pinning any card drives the table and the range readout. Whatever the style,
+  the card under the pointer gets a dark border (`ChartCard`'s `highlighted`;
+  not the spot price card, which has no row) and highlights its technology's
+  table row (`FuelTechTable`'s `focusRow`), as hovering the row itself would.
+  The part of the chart under the pointer is shared too (TimeOfDay's
+  `chartPart`): a day (a multi-line day line, ridge or heatmap ring), the
+  multi-line average (its line or area), or a percentile band or the median
+  line. Every card emphasises it — the day's line or median thickens, other
+  bands fade (`ProfileChart`'s `activeKey`, fed by `onhoverkeychange`) — and
+  the table outlines its columns (`focusColumns`, from `profileFocusColumns`):
+  the day or Average, or a band's two percentile bounds as one block. The
+  cells where the focused row and columns meet read white on OE red. A load's
+  bands mirror between chart and table (`profileChartPart`), since the table
+  reads loads as magnitudes. Day and median lines take the pointer through
+  Stratum's `hoverable` overlay lines (an invisible 8px hit stroke reporting
+  the line's id as the series hover key, as a stack path does); a hovered day
+  also reads in the multi-line strip.
   A top-nav **Style** dropdown (`profile-style`) switches the breakdown between
   **Percentile bands** (the default), that **Multi-line** view and
   **Ridgeline** under a Linear subheader, and **Bars** and **Heatmap** under
@@ -245,8 +261,8 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   fuel-tech table swaps its window columns for the percentile range
   (`PERCENTILE_TABLE_COLUMNS`: 10%, 25%, Median, 75%, 90%, in the Av power
   unit, through `FuelTechTable`'s generic `powerColumns` / row `powerValues`;
-  the ridgeline uses the same mechanism for an Average column plus one per
-  date — each day's value in the inspected slot, else each day's average
+  the multi-line, ridgeline and heatmap use the same mechanism for an
+  Average column plus one per date — each day's value in the inspected slot, else each day's average
   power): across the inspected slot's days, or, without one, across each day's
   average power (`profileRange`). Loads read as magnitudes, so their order
   flips (their 10% is minus the raw 90%). The
@@ -270,7 +286,7 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   clock; spot price steps. Hover joins the shared breakdown hover (and so the
   table and range readout) and the strip reads the slot's average and today.
   The day whose ridge is under the pointer (`onhoverday`: each ridge owns the
-  band just above its baseline) becomes the table's `focusColumn`, which
+  band just above its baseline) becomes the table's focused column, which
   scrolls that date's column in beside the pinned Technology column and
   highlights it. The same day's ridge is highlighted on every ridgeline card
   (`activeDay`): a stronger tint, a thicker outline and a bold label.

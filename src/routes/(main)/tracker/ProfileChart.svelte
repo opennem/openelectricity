@@ -1,5 +1,6 @@
 <script>
 	import { onDestroy, untrack } from 'svelte';
+	import { color as d3Colour } from 'd3-color';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { getFormattedX, getFormattedY } from '$lib/components/charts/v2/tooltip-derivations.js';
@@ -23,12 +24,16 @@
 	 * `onhoverchange` reports this chart's hover (undefined when it ends) and
 	 * `syncHoverTime` mirrors the shared hover onto it, so sibling charts track
 	 * one slot, as Timeline's cards do.
+	 * `onhoverkeychange` reports the series area or `hoverable` overlay line
+	 * under the pointer (undefined once it leaves), and `activeKey` emphasises
+	 * one, as sibling cards share it: other series fade, and an overlay thickens.
 	 * @type {{rows: any[], names: string[], labels: Record<string,string>, colours: Record<string,string>,
 	 * title: string, label: string, heightPx: number, slotMs: number, hiddenSeriesNames?: string[],
-	 * overlays?: Array<{id: string, colour: string, strokeWidth?: number, label?: string}>,
+	 * overlays?: Array<{id: string, colour: string, strokeWidth?: number, label?: string, hoverable?: boolean}>,
 	 * price?: boolean, engaged?: boolean,
 	 * readout?: (row: Record<string, any>) => Array<{label: string, value: number | null, colour: string}>,
-	 * syncHoverTime?: number, onhoverchange?: (time: number | undefined) => void}} */
+	 * syncHoverTime?: number, onhoverchange?: (time: number | undefined) => void,
+	 * activeKey?: string | null, onhoverkeychange?: (key: string | undefined) => void}} */
 	let {
 		rows,
 		names,
@@ -44,6 +49,8 @@
 		readout = undefined,
 		syncHoverTime = undefined,
 		onhoverchange = undefined,
+		activeKey = null,
+		onhoverkeychange = undefined,
 		engaged = $bindable(false)
 	} = $props();
 	let viewport = $state.raw({ start: PROFILE_DAY_START, end: PROFILE_DAY_END });
@@ -72,22 +79,43 @@
 	chart.chartTooltips.showTotal = false;
 	chart.maximumFractionDigits = 1;
 	chart.formatTickX = profileClock;
+	/** A faded series, while another is the active one. @param {string} colour */
+	function recede(colour) {
+		const fill = d3Colour(colour);
+		if (!fill) return colour;
+		fill.opacity *= 0.4;
+		return fill.toString();
+	}
+	let activeSeries = $derived(activeKey !== null && names.includes(activeKey));
 	$effect(() => {
 		chart.title = title;
 		chart.seriesData = rows;
 		chart.seriesNames = names;
 		chart.seriesLabels = labels;
-		chart.seriesColours = colours;
 		chart.hiddenSeriesNames = hiddenSeriesNames;
-		chart.overlayLines = overlays.map(({ id, colour, strokeWidth, label: name }) => ({
-			id,
-			data: rows,
-			valueKey: id,
-			colour,
-			strokeWidth,
-			label: name ?? id
-		}));
 		chart.formatTooltipX = (date) => `${profileClock(date)}–${profileClock(Number(date) + slotMs)}`;
+	});
+	// Colours and lines follow the shared active key too, apart from the data.
+	$effect(() => {
+		chart.seriesColours = activeSeries
+			? Object.fromEntries(
+					Object.entries(colours).map(([key, colour]) => [
+						key,
+						key === activeKey ? colour : recede(colour)
+					])
+				)
+			: colours;
+		chart.overlayLines = overlays.map(
+			({ id, colour, strokeWidth = 1.5, label: name, hoverable }) => ({
+				id,
+				data: rows,
+				valueKey: id,
+				colour,
+				strokeWidth: id === activeKey ? strokeWidth + 1.5 : strokeWidth,
+				hoverable,
+				label: name ?? id
+			})
+		);
 	});
 	// Mirror the shared hover from sibling charts onto this one. Its own hover is
 	// already set by the interaction layer, so the echo is a no-op.
@@ -175,8 +203,16 @@
 <div role="group" aria-label={`${label} interactive chart`} class="relative">
 	<StratumChart
 		{chart}
-		onhover={(time) => onhoverchange?.(time)}
-		onhoverend={() => onhoverchange?.(undefined)}
+		onhover={(time, key) => {
+			onhoverchange?.(time);
+			// Only a series area or hoverable line names a key; the plot's own
+			// hover keeps the last one until that path reports leaving.
+			if (key !== undefined) onhoverkeychange?.(key);
+		}}
+		onhoverend={() => {
+			onhoverchange?.(undefined);
+			onhoverkeychange?.(undefined);
+		}}
 		tooltipMode="strip"
 		tooltip={readout ? readoutStrip : undefined}
 		enablePan

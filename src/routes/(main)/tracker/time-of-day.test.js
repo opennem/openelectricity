@@ -10,7 +10,9 @@ import {
 	buildAverageDayStack,
 	normaliseProfileDays,
 	normaliseProfileEnd,
+	profileChartPart,
 	profileDataset,
+	profileFocusColumns,
 	profileWindow,
 	todayWindow
 } from './time-of-day.js';
@@ -394,5 +396,31 @@ describe('time-of-day URLs', () => {
 			state
 		);
 		expect(url.search).toBe('?region=au');
+	});
+});
+
+describe('breakdown hover parts', () => {
+	it('focuses a percentile band on its two bounds and the median on its own', () => {
+		expect(profileFocusColumns('bands', 'midLow')).toEqual(['p25', 'p50']);
+		expect(profileFocusColumns('bands', 'p50')).toEqual(['p50']);
+		expect(profileFocusColumns('bands', null)).toEqual([]);
+	});
+
+	it("mirrors a load's bands, which the table reads as magnitudes", () => {
+		expect(profileChartPart('bands', 'low', true)).toBe('high');
+		expect(profileChartPart('bands', 'midHigh', true)).toBe('midLow');
+		expect(profileChartPart('bands', 'p50', true)).toBe('p50');
+		expect(profileChartPart('bands', 'low', false)).toBe('low');
+	});
+
+	it('ignores band keys without a table column', () => {
+		expect(profileChartPart('bands', 'base', false)).toBeNull();
+		expect(profileChartPart('bands', 'today', false)).toBeNull();
+	});
+
+	it('passes days and the average through on the other styles', () => {
+		expect(profileChartPart('lines', '2026-09-01', true)).toBe('2026-09-01');
+		expect(profileFocusColumns('lines', '2026-09-01')).toEqual(['2026-09-01']);
+		expect(profileFocusColumns('ridgeline', 'average')).toEqual(['average']);
 	});
 });

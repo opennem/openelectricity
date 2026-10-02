@@ -34,7 +34,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('./ChartStore.svelte.js').default} chart - The chart store instance
-	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove] - Series-key hover from StackedArea paths
+	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove] - Series-key hover from StackedArea paths and hoverable overlay lines
 	 * @property {() => void} [onmouseout]
 	 * @property {(evt: TimeSeriesData) => void} [onpointerup]
 	 * @property {boolean} [enablePan] - Whether panning is enabled (controls touch-action CSS)
@@ -265,6 +265,12 @@
 						scale={overlay.scale ?? 'y'}
 						showAxis={overlay.scale === 'percent'}
 						curveType={chart.chartOptions.curveFunction}
+						stepMode={isStepMode}
+						onmousemove={overlay.hoverable
+							? (/** @type {any} */ row) => onmousemove?.({ data: row, key: overlay.id })
+							: undefined}
+						{onmouseout}
+						{onpointerup}
 					/>
 				{/each}
 
