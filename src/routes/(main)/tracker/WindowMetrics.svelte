@@ -70,7 +70,7 @@
 
 <section
 	aria-label="Window metrics"
-	class="gridline-bg shrink-0 border-b border-warm-grey bg-white"
+	class="axis-ticks-bg shrink-0 border-b border-warm-grey bg-white"
 >
 	<div
 		class="ticker-scroll flex overflow-x-auto overscroll-x-contain scroll-px-8 divide-x divide-warm-grey"
