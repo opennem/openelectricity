@@ -1,10 +1,12 @@
 <script>
 	import {
+		TABLE_HEADER_BUTTON,
 		TABLE_HEADER_CELL,
 		TABLE_ROW,
 		TABLE_SWATCH,
 		focusEdges,
 		pinnedTableEdge,
+		scrollColumnsIntoView,
 		tableValueCell
 	} from './table-styles.js';
 	import { TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
@@ -130,26 +132,9 @@
 	let scroller = $state(/** @type {HTMLDivElement | undefined} */ (undefined));
 	// Bring the focused columns (a hovered day, or a percentile band's bounds)
 	// into view beside the pinned Technology column: a DOM side effect, so an
-	// effect. The scroller's own snapping and `scroll-smooth` (off under
-	// reduced motion) do the rest.
+	// effect.
 	$effect(() => {
-		const keys = focusColumns;
-		if (!keys.length || !scroller) return;
-		/** @param {string} key */
-		const headerFor = (key) => scroller?.querySelector(`th[data-column="${CSS.escape(key)}"]`);
-		const first = headerFor(keys[0]);
-		const last = headerFor(keys[keys.length - 1]);
-		const pinned = scroller.querySelector('th');
-		if (
-			!(first instanceof HTMLElement) ||
-			!(last instanceof HTMLElement) ||
-			!(pinned instanceof HTMLElement)
-		)
-			return;
-		const left = first.offsetLeft - pinned.offsetWidth;
-		const right = last.offsetLeft + last.offsetWidth;
-		if (left < scroller.scrollLeft || right > scroller.scrollLeft + scroller.clientWidth)
-			scroller.scrollTo({ left });
+		if (scroller) scrollColumnsIntoView(scroller, focusColumns);
 	});
 
 	/** The prefix each scalable column renders in: the header's choice, else
@@ -384,10 +369,6 @@
 	// strip anchors to it and paints above the value cells sliding under.
 	let pinnedEdgeClass = $derived(pinnedTableEdge(scrollLeft));
 
-	/** Header controls keep their text where the static labels sit: the
-	 *  negative margins cancel the hover padding. */
-	const HEADER_BUTTON =
-		'-my-1 inline-flex cursor-pointer rounded-md px-1.5 py-1 transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:outline-dark-grey motion-reduce:transition-none';
 	/** @param {boolean} focused */
 	const stickyLabelCell = (focused) =>
 		`${pinnedEdgeClass} ${focused ? 'bg-light-warm-grey' : 'bg-white group-hover:bg-light-warm-grey'}`;
@@ -560,7 +541,7 @@
 										aria-haspopup="listbox"
 										aria-expanded={open}
 										title="Change fuel tech grouping"
-										class="{HEADER_BUTTON} ml-0.5 items-start"
+										class="{TABLE_HEADER_BUTTON} ml-0.5 items-start"
 									>
 										<span class="flex flex-col items-start">{@render technologyHeading()}</span>
 									</button>
@@ -589,7 +570,7 @@
 									type="button"
 									onclick={column.cycle}
 									title={`Show ${column.nextUnit}`}
-									class="{HEADER_BUTTON} -mr-1.5 flex-col items-end"
+									class="{TABLE_HEADER_BUTTON} -mr-1.5 flex-col items-end"
 								>
 									<span class="text-xs">{column.label}</span>
 									{@render unitLine(column.unit)}

@@ -1,3 +1,5 @@
+import { TABLE_UNIT_CYCLES, nextTableUnitPrefix } from './table-units.js';
+import { formatTableEnergy, formatTableIntensity } from './table-format.js';
 /** @typedef {{data?:Array<{metric:string,results?:Array<{name?:string,columns?:{fueltech?:string},data?:Array<[string,number|null]>}>}>}} ComparisonResponse */
 /** Shared chart, table and export definitions for regional comparisons. */
 const generation = ['renewables', 'solar_wind', 'solar', 'wind', 'gas', 'coal'];
@@ -93,6 +95,22 @@ export const COMPARISON_CHART_OPTIONS = COMPARISON_METRICS.filter(
 export const COMPARISON_METRIC_GROUPS = [
 	...new Set(COMPARISON_CHART_OPTIONS.map((metric) => metric.group))
 ];
+/** A chart's URL name: hyphenated, with each proportion named by its fuel
+ * alone and renewables named in full (`intensity`, `renewables`,
+ * `solar-wind-generation`, `net-imports`, `price-real`).
+ * @param {string} id */
+export function comparisonChartSlug(id) {
+	if (id === 'share') return 'renewables';
+	if (id === 'generation') return 'renewables-generation';
+	return id.replace(/_share$/, '').replaceAll('_', '-');
+}
+const CHARTS_BY_SLUG = new Map(COMPARISON_METRICS.map(({ id }) => [comparisonChartSlug(id), id]));
+/** The metric id a URL name stands for; ids themselves (older links) pass
+ * through, and anything else is left for normalisation to drop.
+ * @param {string} slug */
+export function comparisonChartFromSlug(slug) {
+	return CHARTS_BY_SLUG.get(slug) ?? slug;
+}
 /** Preserve each selected chart's presentation when applying the chart picker. */
 export function selectComparisonCharts(
 	/** @type {string[]} */ ids,
@@ -119,6 +137,55 @@ export function formatComparisonValue(value, id) {
 	if (!Number.isFinite(value)) return '—';
 	const shown = comparisonMetric(id).kind === 'energy' ? Number(value) / 1000 : Number(value);
 	return shown.toLocaleString('en-AU', { maximumFractionDigits: 1 });
+}
+
+/** @typedef {import('./table-units.js').TableUnits} TableUnits */
+/** The Regions table's resting units: generation in GWh, intensity in kg. */
+const COMPARISON_TABLE_UNITS = /** @type {const} */ ({ energy: 'G', intensity: 'k' });
+/** The SI cycle a metric's table column steps through, if any.
+ * @param {string} id @returns {'energy' | 'intensity' | null} */
+function comparisonUnitKey(id) {
+	const { kind } = comparisonMetric(id);
+	return kind === 'energy' || kind === 'intensity' ? kind : null;
+}
+/**
+ * A Regions table cell. Generation and intensity render in their header's
+ * unit with the fuel-tech table's precision; the rest as `formatComparisonValue`.
+ * @param {number | null | undefined} value @param {string} id @param {TableUnits} units
+ */
+export function formatComparisonCell(value, id, units) {
+	const key = comparisonUnitKey(id);
+	if (key === 'energy')
+		return formatTableEnergy(value, units.energy ?? COMPARISON_TABLE_UNITS.energy);
+	if (key === 'intensity')
+		return formatTableIntensity(value, units.intensity ?? COMPARISON_TABLE_UNITS.intensity);
+	return formatComparisonValue(value, id);
+}
+/**
+ * A Regions table column header, as the fuel-tech table's headers work:
+ * generation and intensity step through their SI prefixes, proportions toggle
+ * their percentage basis (net imports are always a share of demand), and
+ * prices have a single unit. `change` is what a click applies.
+ * @param {string} id @param {'demand' | 'generation'} basis @param {TableUnits} units
+ * @returns {{unit: string, nextUnit?: string,
+ *   change?: {units: TableUnits} | {basis: 'demand' | 'generation'}}}
+ */
+export function comparisonTableColumn(id, basis, units) {
+	const key = comparisonUnitKey(id);
+	if (key) {
+		const prefix = units[key] ?? COMPARISON_TABLE_UNITS[key];
+		const next = nextTableUnitPrefix(key, prefix);
+		const { label } = TABLE_UNIT_CYCLES[key];
+		return {
+			unit: label(prefix),
+			nextUnit: label(next),
+			change: { units: { ...units, [key]: next } }
+		};
+	}
+	const unit = comparisonUnit(id, basis);
+	if (comparisonMetric(id).kind !== 'share' || id === 'net_imports_share') return { unit };
+	const next = basis === 'demand' ? 'generation' : 'demand';
+	return { unit, nextUnit: comparisonUnit(id, next), change: { basis: next } };
 }
 
 /**

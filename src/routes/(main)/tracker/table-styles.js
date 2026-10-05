@@ -5,6 +5,37 @@ export const TABLE_HEADER_CELL = 'border-b border-warm-grey py-3 align-top font-
 export const TABLE_ROW = 'group cursor-pointer text-sm hover:bg-light-warm-grey';
 export const TABLE_SWATCH = 'size-5 shrink-0 rounded-sm border';
 export const TABLE_EMPTY_SWATCH = `${TABLE_SWATCH} border-mid-warm-grey group-hover:border-mid-grey bg-transparent`;
+/** Header controls (unit cycles, grouping menu) keep their text where the
+ *  static labels sit: the negative margins cancel the hover padding. */
+export const TABLE_HEADER_BUTTON =
+	'-my-1 inline-flex cursor-pointer rounded-md px-1.5 py-1 transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:outline-dark-grey motion-reduce:transition-none';
+
+/**
+ * Bring a table's focused value columns (a hovered day, a percentile band's
+ * bounds, a hovered chart's metric) into view beside its pinned first column.
+ * Headers are found by `data-column`; the scroller's own snapping and
+ * `scroll-smooth` (off under reduced motion) do the rest. Nothing moves while
+ * the columns are already in view.
+ * @param {HTMLElement} scroller @param {string[]} keys - First to last focused column
+ */
+export function scrollColumnsIntoView(scroller, keys) {
+	if (!keys.length) return;
+	/** @param {string} key */
+	const headerFor = (key) => scroller.querySelector(`th[data-column="${CSS.escape(key)}"]`);
+	const first = headerFor(keys[0]);
+	const last = headerFor(keys[keys.length - 1]);
+	const pinned = scroller.querySelector('th');
+	if (
+		!(first instanceof HTMLElement) ||
+		!(last instanceof HTMLElement) ||
+		!(pinned instanceof HTMLElement)
+	)
+		return;
+	const left = first.offsetLeft - pinned.offsetWidth;
+	const right = last.offsetLeft + last.offsetWidth;
+	if (left < scroller.scrollLeft || right > scroller.scrollLeft + scroller.clientWidth)
+		scroller.scrollTo({ left });
+}
 
 /** @param {number} scrollLeft */
 export function pinnedTableEdge(scrollLeft) {

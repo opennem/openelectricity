@@ -26,6 +26,8 @@
 	 * @property {Object.<string, string>} [seriesColours] - Map of series id to colour
 	 * @property {string | null} [highlightId] - Currently highlighted series id
 	 * @property {string} [strokeWidth] - Line stroke width
+	 * @property {number} [lineHitWidth] - Line display: a transparent stroke this wide (px)
+	 *   reports each line's series key on hover; 0 leaves the lines inert
 	 * @property {boolean} [showLineDots] - Show dots on line chart
 	 * @property {number} [dotRadius] - Dot radius
 	 * @property {string} [dotFill] - Dot fill colour
@@ -48,6 +50,7 @@
 		seriesColours = {},
 		highlightId = null,
 		strokeWidth = '1.5',
+		lineHitWidth = 0,
 		showLineDots = false,
 		dotRadius = 3,
 		dotFill = 'white',
@@ -291,6 +294,21 @@
 					{stroke}
 					stroke-width={strokeWidth}
 					opacity={op}
+				/>
+			{/if}
+
+			{#if lineHitWidth > 0}
+				<path
+					role="presentation"
+					d={path}
+					fill="none"
+					stroke="transparent"
+					stroke-width={lineHitWidth}
+					pointer-events="stroke"
+					onmousemove={(e) => handlePointerMove(e, seriesKey)}
+					onmouseout={handleMouseOut}
+					onblur={handleMouseOut}
+					onpointerup={(e) => handlePointerUp(e, seriesKey)}
 				/>
 			{/if}
 		{/each}

@@ -35,7 +35,8 @@
 	 * @type {{data: Record<string, any[]>, regions: string[], metric: string,
 	 *   basis: 'demand' | 'generation', interval: string,
 	 *   viewport: {start: number, end: number}, bounds: {start: number, end: number},
-	 *   scale: import('./comparison-stripes.js').StripeScale,
+	 *   scale: import('./comparison-stripes.js').StripeScale, tooltip: boolean,
+	 *   onhoverregion: (region: string | null) => void,
 	 *   hover: number | null, focus: number | null,
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
 	 *   onviewport: (start: number, end: number, settled: boolean) => void}} */
@@ -48,6 +49,8 @@
 		viewport,
 		bounds,
 		scale,
+		tooltip,
+		onhoverregion,
 		hover,
 		focus,
 		onhover,
@@ -116,11 +119,18 @@
 	);
 	/** Pointer position inside the wrapper, for the tooltip and hovered row. */
 	let pointer = $state(/** @type {{x: number, y: number} | null} */ (null));
-	let hoveredRegion = $derived(
-		pointer ? (regions[Math.floor((pointer.y - TOP) / (rowHeight + GAP))] ?? null) : null
-	);
+	/** @param {{x: number, y: number} | null} point */
+	const regionAt = (point) =>
+		point ? (regions[Math.floor((point.y - TOP) / (rowHeight + GAP))] ?? null) : null;
+	let hoveredRegion = $derived(regionAt(pointer));
+	/** Move (or clear) the pointer, naming the row under it to the Regions table.
+	 * @param {{x: number, y: number} | null} point */
+	function setPointer(point) {
+		pointer = point;
+		onhoverregion(regionAt(point));
+	}
 	let tooltipRows = $derived(
-		inspected == null
+		!tooltip || inspected == null
 			? []
 			: regions.map((id) => {
 					const region = COMPARISON_REGIONS.find((r) => r.value === id);
@@ -204,7 +214,7 @@
 		minDurationMs: () => (fixedWindow ? DAILY_WINDOW_MS : COMPARISON_MIN_SPAN_MS),
 		maxDurationMs: () => (fixedWindow ? DAILY_WINDOW_MS : bounds.end - bounds.start),
 		onGestureStart: () => {
-			pointer = null;
+			setPointer(null);
 			onhover(null);
 		},
 		onSettle: (start, end) => onviewport(start, end, true)
@@ -268,7 +278,7 @@
 			if (drag.moved && pxPerMs) queuePan(dx / pxPerMs);
 			return;
 		}
-		pointer = point;
+		setPointer(point);
 		onhover(periodAt(point.x));
 	}
 	/** @param {PointerEvent} event */
@@ -289,7 +299,7 @@
 	}
 	function handlePointerLeave() {
 		if (drag?.moved) return;
-		pointer = null;
+		setPointer(null);
 		onhover(null);
 	}
 	/** Horizontal wheel slides the window (and must not trigger the browser's
@@ -303,7 +313,7 @@
 			if (classifyWheelIntent(deltaX, deltaY) !== 'pan') return;
 			event.preventDefault();
 			if (pointer) {
-				pointer = null;
+				setPointer(null);
 				onhover(null);
 			}
 			queuePan(wheelPanDeltaMs(deltaX, plotWidth, span));
@@ -322,7 +332,7 @@
 		const step = inspectionStep(event.key, visibleRows, hover, focus);
 		if (!step) return;
 		if (event.key !== 'Escape') event.preventDefault();
-		pointer = null;
+		setPointer(null);
 		if ('hover' in step) onhover(step.hover ?? null);
 		if ('focus' in step) onfocus(step.focus ?? null);
 	}
@@ -330,7 +340,7 @@
 
 <div
 	role="group"
-	aria-label={`${definition.label} stripes`}
+	aria-label={`${definition.label} heatmap`}
 	class="relative"
 	data-chart-image={imageMetadata}
 >

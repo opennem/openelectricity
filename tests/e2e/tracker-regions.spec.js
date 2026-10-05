@@ -41,8 +41,11 @@ test('defaults, region colours, complete rolling values and synchronised keyboar
 	await page.getByRole('button', { name: 'Inspect carbon intensity values' }).focus();
 	await page.keyboard.press('ArrowLeft');
 	await page.keyboard.press('Enter');
-	await expect(page.getByRole('button', { name: 'Clear pinned period' })).toBeVisible();
-	await page.getByRole('button', { name: 'Clear pinned period' }).click();
+	// The top nav names the pinned period; Escape clears it back to the range.
+	const readout = page.getByTestId('tracker-range-label');
+	await expect(readout).toHaveText(/^12 months to/);
+	await page.keyboard.press('Escape');
+	await expect(readout).not.toHaveText(/^12 months to/);
 	await page.screenshot({ path: 'test-results/tracker-regions-desktop.png', fullPage: true });
 	expect(errors).toEqual([]);
 });
@@ -58,8 +61,8 @@ test('metric and percentage switches reuse requests, preserve URL state and expo
 	await expect(
 		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
 	).toBeVisible();
-	await page.getByRole('button', { name: '% demand', exact: true }).click();
-	await page.getByRole('option', { name: '% generation', exact: true }).click();
+	// The proportion column's header toggles the basis, as the fuel-tech table's does.
+	await page.getByTitle('Show % generation', { exact: true }).click();
 	await expect(regionRow(page, 'New South Wales')).toContainText('75');
 	expect(data.requests.length).toBe(count);
 	const file = await download(page, 'Region comparison');
@@ -88,7 +91,8 @@ test('regional toggles, national sums, failure isolation and retry', async ({ pa
 	data.recover();
 	await page.getByRole('button', { name: 'Retry All Regions (NEM + WEM)', exact: true }).click();
 	await expect(regionRow(page, 'All Regions (NEM + WEM)')).toContainText('250');
-	await expect(regionRow(page, 'All Regions (NEM + WEM)')).toContainText('56.4');
+	// Generation cells follow the fuel-tech table's precision: whole GWh from 10.
+	await expect(regionRow(page, 'All Regions (NEM + WEM)')).toContainText('56');
 	await expect(
 		page.getByRole('button', { name: 'Retry All Regions (NEM + WEM)', exact: true })
 	).toHaveCount(0);
@@ -146,6 +150,12 @@ test('mobile panel, keyboard dismissal and responsive chart layout', async ({ pa
 	await page.screenshot({ path: 'test-results/tracker-regions-mobile-table.png', fullPage: true });
 	await page.keyboard.press('Escape');
 	await expect(page.getByRole('button', { name: 'Show regions table' })).toBeFocused();
+	// Without the table alongside, the charts carry their own tooltips.
+	const intensity = page.getByRole('group', { name: 'Carbon intensity comparison chart' });
+	const box = await intensity.boundingBox();
+	if (!box) throw new Error('Chart has no size');
+	await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2);
+	await expect(intensity.getByTestId('chart-floating-tooltip')).toBeVisible();
 	await page.screenshot({ path: 'test-results/tracker-regions-mobile.png', fullPage: true });
 	await expectNoHorizontalScroll(page);
 });
@@ -183,13 +193,13 @@ test('late responses cannot restore a deselected region; interval and zoom choic
 	await page.getByRole('button', { name: '12-month rolling', exact: true }).click();
 	await page.getByRole('option', { name: 'Financial year', exact: true }).click();
 	await expect(page).toHaveURL(/compare-interval=fy/);
-	await expect(page.getByText('2025–26 financial year', { exact: true })).toBeVisible();
+	await expect(page.getByTestId('tracker-range-label')).toHaveText(/ – FY2026$/);
 	await page.getByRole('group', { name: 'Carbon intensity comparison chart' }).hover();
 	await page.getByRole('button', { name: 'Zoom in', exact: true }).first().click();
 	await expect(page).toHaveURL(/compare-start=/);
-	await page.getByRole('button', { name: 'All history', exact: true }).click();
-	await expect(page).not.toHaveURL(/compare-start=/);
 	await page.goBack();
+	await expect(page).not.toHaveURL(/compare-start=/);
+	await page.goForward();
 	await expect(page).toHaveURL(/compare-start=/);
 });
 
@@ -230,11 +240,7 @@ test('live comparison renders regional history and exports a workbook', async ({
 			.locator('.path-line')
 	).toHaveCount(6);
 	await page.screenshot({ path: 'test-results/tracker-regions-live.png', fullPage: true });
-	const latestPeriod = await page
-		.getByRole('status')
-		.filter({ hasText: /12 months to/ })
-		.innerText();
-	await inspectLatestPoints(page, latestPeriod);
+	await inspectLatestPoints(page, /^12 months to/);
 	const workbook = await download(page, 'Everything (one workbook)');
 	expect(workbook.suggestedFilename()).toMatch(
 		/^tracker-regions-[a-z0-9]+-\d{4}-\d{2}-to-\d{4}-\d{2}\.xlsx$/
@@ -261,7 +267,8 @@ async function inspectLatestPoints(page, expected) {
 			lastPoint = point;
 			await page.mouse.move(point.x - 100, point.y + 50);
 			await page.mouse.move(point.x, point.y);
-			await expect(chart.getByTestId('chart-floating-tooltip')).toContainText(expected);
+			await expect(chart.getByTestId('chart-floating-tooltip')).toHaveCount(0);
+			await expect(page.getByTestId('tracker-range-label')).toHaveText(expected);
 			const hoverLine = chart.locator('.line-x');
 			await expect(hoverLine).toHaveCount(1);
 			await expect
@@ -279,7 +286,7 @@ async function inspectLatestPoints(page, expected) {
 		await chart.getByRole('button', { name: /Inspect .* values/ }).focus();
 		await page.keyboard.press('Enter');
 		await page.mouse.move(1, 1);
-		await expect(page.getByRole('button', { name: 'Clear pinned period' })).toBeVisible();
+		await expect(page.getByTestId('tracker-range-label')).toHaveText(expected);
 		await expect(chart.locator('.line-x')).toHaveCount(1);
 		const pinnedX = await chart
 			.locator('.line-x')
@@ -294,7 +301,9 @@ async function inspectLatestPoints(page, expected) {
 			path: `test-results/tracker-regions-alignment-${name.startsWith('Carbon') ? 'intensity' : 'renewables'}.png`,
 			fullPage: true
 		});
-		await page.getByRole('button', { name: 'Clear pinned period' }).click();
+		await chart.getByRole('button', { name: /Inspect .* values/ }).focus();
+		await page.keyboard.press('Escape');
+		await expect(chart.locator('.line-x')).toHaveCount(0);
 	}
 }
 
@@ -439,10 +448,8 @@ test('comparison charts reuse timeline options, retain curve and units, and shar
 		name: 'Carbon intensity comparison chart',
 		exact: true
 	});
-	// Rolling months open on the latest five years, so zoom out is still available
-	// until the reset control shows all history.
-	await expect(intensity.getByRole('button', { name: 'Zoom out', exact: true })).toBeEnabled();
-	await expect(page.getByRole('button', { name: 'Last 5 years', exact: true })).toBeVisible();
+	// Rolling months open on all history, so there is nothing further to zoom out to.
+	await expect(intensity.getByRole('button', { name: 'Zoom out', exact: true })).toBeDisabled();
 	const zoomOut = intensity.getByRole('button', { name: 'Zoom out', exact: true });
 	while (await zoomOut.isEnabled()) await zoomOut.click();
 	const energy = page.getByRole('group', {
@@ -510,8 +517,8 @@ test('fuel chart toggles share one picker entry and persist presentation through
 	await expect(
 		page.getByRole('heading', { name: 'Renewables generation', exact: true })
 	).toBeVisible();
-	await expect(regionRow(page, 'New South Wales')).toContainText('31.2');
-	await expect(page).toHaveURL(/compare-charts=intensity%2Cgeneration/);
+	await expect(regionRow(page, 'New South Wales')).toContainText('31');
+	await expect(page).toHaveURL(/compare-charts=intensity,renewables-generation/);
 	await page.getByRole('button', { name: /^Charts/ }).click();
 	const picker = page
 		.locator('div.fixed')
@@ -539,7 +546,75 @@ test('fuel chart toggles share one picker entry and persist presentation through
 	).toBeVisible();
 });
 
-test('stripes display shares hover and pinning with the table, exports PNG and restores through history', async ({
+test('hovering a chart outlines its column, a line its region row, and their cell in the table', async ({
+	page
+}) => {
+	await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/tracker/compare');
+	await regionsReady(page);
+	const table = regionsTable(page);
+	const intensityHeader = table.getByRole('columnheader', { name: /Intensity/ });
+	const nsw = regionRow(page, 'New South Wales');
+	const chart = page.getByRole('group', { name: 'Carbon intensity comparison chart', exact: true });
+	// The last line drawn (Western Australia) is on top where lines overlap.
+	const wa = regionRow(page, 'Western Australia (SWIS)');
+	const point = await chart
+		.locator('.path-line')
+		.last()
+		.evaluate((element) => {
+			const path = /** @type {SVGPathElement} */ (element);
+			const position = path.getPointAtLength(path.getTotalLength() / 2);
+			const screen = new DOMPoint(position.x, position.y).matrixTransform(path.getScreenCTM());
+			return { x: screen.x, y: screen.y };
+		});
+	await page.mouse.move(point.x, point.y - 40);
+	await page.mouse.move(point.x, point.y);
+	await expect(intensityHeader).toHaveAttribute('data-focused', 'true');
+	await expect(wa).toHaveAttribute('data-focused', 'true');
+	await expect(table.locator('tr[data-focused]')).toHaveCount(1);
+	await expect(wa.getByRole('cell').first()).toHaveClass(/bg-red/);
+	// Off the chart, nothing stays outlined.
+	await page.mouse.move(1, 1);
+	await expect(intensityHeader).not.toHaveAttribute('data-focused');
+	await expect(table.locator('tr[data-focused]')).toHaveCount(0);
+	// The heatmap names its rows the same way.
+	await page.getByRole('button', { name: 'Heatmap', exact: true }).click();
+	const stripes = card(page, 'Carbon intensity').locator('svg[data-png-layer]');
+	const box = await stripes.boundingBox();
+	if (!box) throw new Error('Heatmap has no size');
+	await page.mouse.move(box.x + 96 + (box.width - 96) * 0.5, box.y + 16);
+	await expect(intensityHeader).toHaveAttribute('data-focused', 'true');
+	await expect(nsw).toHaveAttribute('data-focused', 'true');
+	await expect(nsw.getByRole('cell').first()).toHaveClass(/bg-red/);
+});
+
+test('hovering a chart scrolls the Regions table to its column', async ({ page }) => {
+	await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto(
+		'/tracker/compare?compare-charts=intensity,net-imports,renewables,solar,wind,gas,coal,price-real'
+	);
+	await regionsReady(page);
+	const header = regionsTable(page).locator('th[data-column="price_real"]');
+	/** Whether the column sits fully inside the scroller, beside the pinned column. */
+	const inView = () =>
+		header.evaluate((element) => {
+			const scroller = /** @type {HTMLElement} */ (element.closest('.overflow-x-auto'));
+			const pinned = /** @type {HTMLElement} */ (scroller.querySelector('th'));
+			const box = element.getBoundingClientRect();
+			const frame = scroller.getBoundingClientRect();
+			return box.left >= frame.left + pinned.offsetWidth - 1 && box.right <= frame.right + 1;
+		});
+	expect(await inView()).toBe(false);
+	const price = card(page, 'Volume-weighted price (inflation adjusted)');
+	await price.scrollIntoViewIfNeeded();
+	await price.hover();
+	await expect(header).toHaveAttribute('data-focused', 'true');
+	await expect.poll(inView).toBe(true);
+});
+
+test('heatmap display shares hover and pinning with the table, exports PNG and restores through history', async ({
 	page
 }) => {
 	const errors = collectPageErrors(page);
@@ -548,8 +623,8 @@ test('stripes display shares hover and pinning with the table, exports PNG and r
 	await page.goto('/tracker/compare');
 	await regionsReady(page);
 	const requests = data.requests.length;
-	await page.getByRole('button', { name: 'Stripes', exact: true }).click();
-	await expect(page).toHaveURL(/compare-display=stripes/);
+	await page.getByRole('button', { name: 'Heatmap', exact: true }).click();
+	await expect(page).toHaveURL(/compare-display=heatmap/);
 	const intensity = card(page, 'Carbon intensity');
 	const stripes = intensity.locator('svg[data-png-layer]');
 	await expect(stripes).toBeVisible();
@@ -557,18 +632,24 @@ test('stripes display shares hover and pinning with the table, exports PNG and r
 	await expect(intensity.getByTestId('stripes-legend')).toContainText('kgCO₂e/MWh');
 	await expect(intensity.locator('text', { hasText: 'NSW' })).toBeVisible();
 	expect(data.requests.length).toBe(requests);
-	// Hovering a column inspects that period in the Regions table.
-	const period = page.getByRole('status').filter({ hasText: /12 months to/ });
+	// Hovering a column inspects that period in the Regions table, named in the top nav.
+	const period = page.getByTestId('tracker-range-label');
 	const resting = (await period.textContent()) ?? '';
 	const box = await stripes.boundingBox();
 	if (!box) throw new Error('Stripes have no size');
 	await page.mouse.move(box.x + 96 + (box.width - 96) * 0.3, box.y + 20);
 	await expect(period).not.toHaveText(resting);
-	await expect(intensity.getByTestId('chart-floating-tooltip')).toContainText('NSW');
+	// Beside the table the heatmap has no tooltip; the top nav names the period.
+	await expect(intensity.getByTestId('chart-floating-tooltip')).toHaveCount(0);
+	await expect(page.getByTestId('tracker-range-label')).toHaveText(/12 months to/);
+	// A click pins the period past the pointer leaving; a second click unpins it.
 	await page.mouse.down();
 	await page.mouse.up();
-	await expect(page.getByRole('button', { name: 'Clear pinned period' })).toBeVisible();
-	await page.getByRole('button', { name: 'Clear pinned period' }).click();
+	await page.mouse.move(0, 0);
+	await expect(period).toHaveText(/12 months to/);
+	await page.mouse.move(box.x + 96 + (box.width - 96) * 0.3, box.y + 20);
+	await page.mouse.down();
+	await page.mouse.up();
 	await page.mouse.move(0, 0);
 	await expect(period).toHaveText(resting);
 	// Keyboard inspection works exactly as it does on the line charts.
@@ -625,7 +706,7 @@ test('daily interval is a sliding one-year window fetched with a three-month buf
 	const box = await stripes.boundingBox();
 	if (!box) throw new Error('Stripes have no size');
 	await page.mouse.move(box.x + 96 + (box.width - 96) * 0.5, box.y + 20);
-	await expect(page.getByRole('status').filter({ hasText: /^\d{1,2} \w+ 2026/ })).toBeVisible();
+	await expect(page.getByTestId('tracker-range-label')).toHaveText(/^\d{1,2} \w+ 2026$/);
 	await page.mouse.move(0, 0);
 	// Stepping back a year fetches only the months the buffer does not hold.
 	await page.getByRole('button', { name: 'Previous year' }).click();

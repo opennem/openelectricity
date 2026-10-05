@@ -106,6 +106,11 @@ export default class ChartStyles {
 	/** @type {string} */
 	lineColour = $state('#777');
 
+	/** Line charts: with a width (px), each series line takes the pointer
+	 *  along a transparent stroke that wide and reports its series key, as
+	 *  hoverable overlay lines do. 0 leaves lines inert. @type {number} */
+	lineHitWidth = $state(0);
+
 	// Dot styling
 	/** @type {boolean} */
 	showLineDots = $state(false);

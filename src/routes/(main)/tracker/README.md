@@ -83,9 +83,11 @@ instantaneous cross-network comparison. National values sum NEM + WEM inputs
 before calculating ratios and require both networks. Regional failures can be
 retried independently; stale or disabled providers cannot populate current values.
 
-**Stripes display.** A two-icon segmented control at the start of the
-comparison filter row (`compare-display=stripes`; omitted for line charts)
-re-renders every selected metric card as stripes: one row per selected region,
+**Heatmap display.** The Trends / Heatmap switch at the start of the
+comparison filter row (the same compact `SwitchWithIcons` as the view switcher
+and Profile's display switch; `compare-display=heatmap`, omitted for Trends,
+older `stripes` links still parse) re-renders every selected metric card as a
+heatmap of stripes: one row per selected region,
 one colour cell per period, over the same viewport, ticks, hover and pinned
 period as the line charts, so the Regions table doubles as the readout. Colour
 scales are fixed and absolute so a shade means the same in every region and
@@ -107,11 +109,16 @@ are SVG so PNG export keeps them; `png-export.js` captures any
 `svg[data-png-layer]` or `canvas[data-png-layer]` (embedded as a raster
 image) inside a `[data-chart-area]` root as well as LayerCake layers. `comparison-stripes.js` holds the scales and geometry.
 
-**Windows and ticks.** Each interval opens on its own window, which the reset
-button in the filter row names and returns to (`comparisonDefaultViewport`,
-`comparisonDefaultLabel`): the latest year of days, the latest five years for
-monthly and 12-month rolling ("Last 5 years"), and all history for calendar
-and financial years ("All history"). Axis ticks are anchored to the calendar
+**Windows and ticks.** Each interval opens on its own window
+(`comparisonDefaultViewport`): the latest year of days, and all history for
+every other interval; zooming out returns to it. The top nav's range readout
+(`RangeStatus`, as in Timeline and Profile) names the first and last period
+on screen with a displayed value, so an unfinished year is never named
+(`comparisonRangeLabel`: `Jan 1999 – Aug 2026`, `1999 – 2025`,
+`FY2000 – FY2026`, `16 July 2024 – 15 July 2025`), and swaps to the hovered
+or pinned period while one is inspected. The Regions table has no period line
+of its own: at rest it holds the latest period every selected region has a
+value for. A pin clears by clicking the period again or pressing Escape. Axis ticks are anchored to the calendar
 (`comparisonTicks`): daily windows tick at month starts, monthly rows at the
 finest month step from January (1, 2, 3, 6, 12… months) that keeps at most
 six ticks, yearly rows at a year step (1, 2, 5…), so a tick keeps its date as
@@ -123,7 +130,7 @@ left of the viewport and clipped.
 one-year window of days for both displays. The right edge defaults to the last
 complete day in both networks (`comparisonBounds().dayEnd`) and never passes
 it; the window never resizes, so the zoom buttons hide and wheel zoom is inert.
-A year navigator replaces "All history" in the filter row: previous / next
+A year navigator joins the filter row: previous / next
 year, the window's first and last day, and Latest when the window is behind.
 With a navigator button focused, ← → move a month, Shift six months, Cmd/Ctrl
 snap to a 1 January, Home is the latest window and End the earliest
@@ -153,10 +160,15 @@ server with two cards of daily stripes: a synthetic wheel pan at 63 frames per
 second and a real mouse drag at 125, with 32 DOM nodes per card.
 
 Comparison settings are independent of Timeline: `compare-display`
-(`stripes`), `compare-interval` (`1d`, `1M`, `1y`, `fy`; 12-month rolling is
-the default), `compare-regions` (an empty value intentionally selects none), `compare-renewables`,
-`compare-charts` (empty selects none), `compare-basis`, `compare-start` / `compare-end`, and `compare-table`. Defaults are
-omitted. Explicit view switches navigate to the bare view route, so every query
+(`heatmap`), `compare-interval` (`1d`, `1M`, `1y`, `fy`; 12-month rolling is
+the default), `compare-regions` (short names `nsw,qld,sa,tas,vic,wem,nem,au`;
+an empty value intentionally selects none), `compare-renewables`,
+`compare-charts` (hyphenated names such as `intensity,renewables,solar-generation,price-real`;
+empty selects none), `compare-basis`, `compare-start` / `compare-end`, and
+`compare-table`. Defaults are omitted. Older links with the full ids
+(`nsw1`, `solar_generation`) still parse. Every Tracker list parameter
+(`hidden`, `overlay` and the two above) is written with bare commas
+(`readableQuery` in `tracker-url.js`), never `%2C`. Explicit view switches navigate to the bare view route, so every query
 setting starts at that view's defaults. Back/Forward
 and direct links restore the full historical selection. Explicit filter changes push history; settled gestures
 replace it. The top nav holds all three views' filters with uniform spacing and
@@ -489,8 +501,9 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   collapsed table rail, allowing chart configuration without table-provider
   fetches. Profile changes its grouping and contribution basis the same way (Technology and Contribution headers, or the options dialog — without table columns — in the panel header and rail); its top nav has no grouping control. Global page
   options now contain only page actions (exports, link, fullscreen and docs).
-  `FuelTechOptions` composes the app’s shared `Modal` (Bits UI Dialog), `Select`
-  in its expanded radio-list mode, `Checkbox` and button components. The dialog
+  `FuelTechOptions` fills `TableOptions` (the sliders trigger and the app’s
+  shared `Modal`, Bits UI Dialog, with Done) with `Select` in its expanded
+  radio-list mode, `Checkbox` and button components. The dialog
   supplies focus containment, Escape dismissal and focus restoration.
   The dialog scrolls within the viewport; Done and the close button dismiss it.
   Its trigger matches the panel controls' 40px
@@ -990,7 +1003,30 @@ interval, hovered series and total where applicable. Narrow cards reserve two
 lines, keeping the plot stable on hover. The table provides the complete series
 breakdown and contribution percentages at the same timestamp; leaving inspection
 restores the window totals. Profile's average-day stack shares the strip; its
-individual profile and Compare regions keep floating tooltips.
+individual profile keeps floating tooltips. Compare's charts and heatmap have
+no tooltip beside the Regions table, which is their readout (with the period in
+the top nav); below 1024px, where the table overlays the charts, they float one.
+
+**Regions table.** Its header carries the same sliders button as the fuel-tech
+table (`TableOptions`, shared with `FuelTechOptions`), whose dialog sets the
+percentage basis (`compare-basis`); the collapsed rail keeps it. Column headers
+work like the fuel-tech table's (`comparisonTableColumn`): generation steps
+through MWh / GWh / TWh and intensity through kg / t per MWh, with the same
+precision rule as the fuel-tech table, and proportion headers toggle
+% demand ⇄ % generation. Net imports are always a share of demand and prices
+have one unit, so their headers are static.
+
+Hovering the charts highlights the table as Profile's breakdown does: the card
+under the pointer outlines its metric's column (and darkens its border), the
+region under the pointer outlines its row, and their cell reads white on OE red.
+On the line charts a region is under the pointer while it is over that line:
+`chartStyles.lineHitWidth` (10px here) gives each line a transparent hit
+stroke that reports its series key. With `allowHoverHighlight`, the hovered
+region stays solid on every card while the others recede. On the heatmap it is
+the row under the pointer. A hovered card's column also scrolls into view
+beside the pinned Region column (`scrollColumnsIntoView` in `table-styles.js`,
+shared with the fuel-tech table's focused columns). The line hit stroke is
+mirrored in `@chienleng/stratum-ui` (`chartStyles.lineHitWidth`).
 
 The generation chart's **Proportion** view uses the same basis selected in
 **Fuel technology options → Contribution** as the table, including from the

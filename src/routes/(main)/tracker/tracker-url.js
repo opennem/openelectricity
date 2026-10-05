@@ -18,6 +18,8 @@
  * - `range` | `start`+`end`, `interval` — via the shared facility range params
  * - `group`     — fuel-tech grouping, default `simple` (Simplified)
  * - `hidden`    — comma-separated hidden IDs in the selected grouping
+ *
+ * Lists are comma-separated and written with bare commas (`readableQuery`).
  * - `contribution` — `generation` for source generation, otherwise gross demand
  * - `transform` / `market-transform` — generation / market-value data transform;
  *                 `proportion` or `changeSince`, default `absolute`
@@ -31,9 +33,11 @@
  * - `table`     — `0` when the fuel-tech panel is closed
  * - `fullscreen`— `false` opts out of the fullscreen chrome
  * - `compare-*` — Compare (`/tracker/compare`) controls, see
- *                 `region-comparison.js`: `compare-display=stripes` for the
- *                 stripes display, `compare-interval` (`1d` is the daily
- *                 one-year window), `compare-regions`, `compare-charts`,
+ *                 `region-comparison.js`: `compare-display=heatmap` for the
+ *                 heatmap display, `compare-interval` (`1d` is the daily
+ *                 one-year window), `compare-regions` (short names: `nsw`,
+ *                 `wem`, `nem`, `au`…), `compare-charts` (hyphenated names:
+ *                 `renewables`, `solar-generation`, `price-real`…),
  *                 `compare-basis`, `compare-start`/`compare-end`, `compare-table`
  */
 
@@ -275,7 +279,19 @@ export function applyTrackerUrl(url, state) {
 	])
 		params.delete(retired);
 
+	url.search = readableQuery(params);
 	return url;
+}
+
+/**
+ * The query as written to the address bar. Form encoding escapes every comma,
+ * but a comma is a legal query character, so lists (`hidden`, `overlay`,
+ * `compare-regions`, `compare-charts`) read `nsw,qld,vic`, not `nsw%2Cqld%2Cvic`.
+ * Parsing decodes both spellings alike.
+ * @param {URLSearchParams} params
+ */
+export function readableQuery(params) {
+	return params.toString().replaceAll('%2C', ',');
 }
 
 /** @param {URL} url @param {Parameters<typeof applyTrackerUrl>[1]} state */

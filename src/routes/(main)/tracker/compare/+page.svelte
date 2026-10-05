@@ -8,6 +8,7 @@
 	import { downloadXlsx } from '$lib/utils/download-xlsx.js';
 	import TrackerShell from '../TrackerShell.svelte';
 	import RegionComparison from '../RegionComparison.svelte';
+	import RangeStatus from '../RangeStatus.svelte';
 	import { createTrackerPage } from '../tracker-page.js';
 	import {
 		comparisonFileName,
@@ -67,5 +68,13 @@
 	ondownloadxlsx={downloadWorkbook}
 	downloadXlsxDisabled={empty}
 >
+	{#snippet status()}
+		<RangeStatus
+			label={canvas?.getRangeLabel() ?? ''}
+			inspectLabel={canvas?.getInspectLabel()}
+			loading={!!canvas?.isLoading()}
+		/>
+	{/snippet}
+
 	<RegionComparison bind:this={canvas} {session} cpi={data.comparisonCpi} />
 </TrackerShell>

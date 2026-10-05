@@ -206,13 +206,26 @@ describe('tracker URLs', () => {
 		expect(parsed.regionComparison.display).toBe('stripes');
 		expect(parsed.regionComparison.interval).toBe('1d');
 		const url = applyTrackerUrl(new URL('https://example.test/tracker'), parsed);
-		expect(url.searchParams.get('compare-display')).toBe('stripes');
+		expect(url.searchParams.get('compare-display')).toBe('heatmap');
 		expect(url.searchParams.get('compare-interval')).toBe('1d');
 		const charts = applyTrackerUrl(
 			new URL('https://example.test/tracker'),
 			parseTrackerUrl(new URLSearchParams(), context)
 		);
 		expect(charts.searchParams.has('compare-display')).toBe(false);
+	});
+
+	it('writes lists with bare commas, which parse as the encoded form did', () => {
+		const url = applyTrackerUrl(new URL('https://example.test/tracker'), {
+			...parseTrackerUrl(new URLSearchParams(), context),
+			hiddenSeries: ['coal', 'wind'],
+			overlays: ['demand', 'curtailment-solar']
+		});
+		expect(url.search).toContain('hidden=coal,wind');
+		expect(url.search).toContain('overlay=demand,curtailment-solar');
+		expect(url.search).not.toContain('%2C');
+		const encoded = new URLSearchParams('hidden=coal%2Cwind&overlay=demand%2Ccurtailment-solar');
+		expect(parseTrackerUrl(url.searchParams, context)).toEqual(parseTrackerUrl(encoded, context));
 	});
 
 	it('names each view route, falling back to Timeline', () => {

@@ -1,9 +1,8 @@
 <script>
 	import Toggle from '$lib/components/form-elements/Toggle.svelte';
+	import Select from '$lib/components/form-elements/Select.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
-	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
-	import ChartLine from '@lucide/svelte/icons/chart-line';
-	import Stripes from '$lib/icons/Stripes.svelte';
+	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import { untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { MediaQuery } from 'svelte/reactivity';
@@ -17,33 +16,38 @@
 		comparisonMetric,
 		comparisonChartId,
 		comparisonMetricValue,
-		comparisonUnit,
-		formatComparisonValue
+		comparisonTableColumn,
+		formatComparisonCell
 	} from './comparison-metrics.js';
 	import ChartCard from './ChartCard.svelte';
 	import { splitTableLabel } from './table-format.js';
 	import {
+		TABLE_HEADER_BUTTON,
 		TABLE_HEADER_CELL,
 		TABLE_ROW,
 		TABLE_SWATCH,
 		TABLE_EMPTY_SWATCH,
+		focusEdges,
 		pinnedTableEdge,
+		scrollColumnsIntoView,
 		tableValueCell
 	} from './table-styles.js';
 	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
+	import TableOptions from './TableOptions.svelte';
 	import TrackerSplitLayout from './TrackerSplitLayout.svelte';
 	import RegionComparisonChart from './RegionComparisonChart.svelte';
-	import { CONTRIBUTION_OPTIONS } from './tracker-model.js';
+	import { CONTRIBUTION_OPTIONS, contributionLabel } from './tracker-model.js';
 	import { createRegionComparisonData } from './region-comparison-data.svelte.js';
 	import { comparisonExportDataset } from './region-comparison-export.js';
 	import {
 		COMPARISON_REGIONS,
 		COMPARISON_INTERVALS,
 		normaliseRegionComparison,
+		COMPARISON_DISPLAYS,
 		comparisonBoundsFor,
-		comparisonDefaultLabel,
 		comparisonDefaultViewport,
 		comparisonPeriod,
+		comparisonRangeLabel,
 		clampComparisonViewport,
 		latestCommonComparisonPeriod
 	} from './region-comparison.js';
@@ -110,6 +114,25 @@
 	}
 	let hover = $state(/** @type {number | null} */ (null));
 	let focus = $state(/** @type {number | null} */ (null));
+	/** What the pointer is over, mirrored in the Regions table as in Profile's
+	 * breakdown: the hovered card's metric outlines its column, the region
+	 * under the pointer (a line, or a heatmap row) outlines its row, and the
+	 * cell where they meet reads white on OE red. */
+	let hoverMetric = $state(/** @type {string | null} */ (null));
+	let hoverRegion = $state(/** @type {string | null} */ (null));
+	/** @param {string} id @param {boolean} hovered */
+	function hoverCard(id, hovered) {
+		if (hovered) hoverMetric = id;
+		else if (hoverMetric === id) hoverMetric = null;
+	}
+	/** Each column's place in the outline: focused, and its left and right edges. */
+	let columnFocus = $derived(
+		metrics.map((metric) => {
+			const focused = metric.id === hoverMetric;
+			return { focused, left: focused, right: focused };
+		})
+	);
+	const LAST_REGION = COMPARISON_REGIONS[COMPARISON_REGIONS.length - 1].value;
 	let period = $derived(
 		hover ??
 			focus ??
@@ -121,11 +144,22 @@
 				metrics.map((metric) => metric.id)
 			)
 	);
+	/** Header-chosen units for the Regions table's generation and intensity columns. */
+	let tableUnits = $state.raw(/** @type {import('./table-units.js').TableUnits} */ ({}));
 	let tableScrollLeft = $state(0);
+	let tableScroller = $state(/** @type {HTMLDivElement | undefined} */ (undefined));
+	// Bring the hovered chart's column into view beside the pinned Region
+	// column, as Profile's breakdown does: a DOM side effect, so an effect.
+	$effect(() => {
+		if (tableScroller) scrollColumnsIntoView(tableScroller, hoverMetric ? [hoverMetric] : []);
+	});
 	let panZoomEngaged = $state(false);
 	let pinnedEdgeClass = $derived(pinnedTableEdge(tableScrollLeft));
 	const desktop = new MediaQuery('(min-width: 1024px)');
 	let panelOpen = $derived(selection.table ?? desktop.current);
+	// The Regions table is the readout beside the charts; below desktop it
+	// overlays them, so the charts carry their own tooltips there.
+	let tooltip = $derived(!desktop.current);
 	/** @param {Partial<import('./region-comparison.js').RegionComparisonSelection>} change @param {'push'|'replace'|null} [history] */
 	function select(change, history = 'push') {
 		hover = focus = null;
@@ -192,36 +226,54 @@
 	export function getControls() {
 		return controls;
 	}
+	/** The first and last period on screen with a displayed value. The daily
+	 * window is always whole days, loaded or not; the other intervals show only
+	 * complete periods, so an unfinished year inside the viewport is not one. */
+	let shownPeriods = $derived.by(() => {
+		if (daily) return { first: viewport.start, last: viewport.end - 86_400_000 };
+		let first = Infinity;
+		let last = -Infinity;
+		for (const id of regions)
+			for (const row of source.data[id] ?? []) {
+				if (row.time < viewport.start || row.time >= viewport.end) continue;
+				if (
+					!metrics.some((metric) => Number.isFinite(comparisonMetricValue(row, metric.id, basis)))
+				)
+					continue;
+				first = Math.min(first, row.time);
+				last = Math.max(last, row.time);
+			}
+		return Number.isFinite(first) ? { first, last } : { first: null, last: null };
+	});
+	/** The visible periods, for the top-nav readout. */
+	export function getRangeLabel() {
+		return comparisonRangeLabel(shownPeriods.first, shownPeriods.last, interval);
+	}
+	/** The hovered or pinned period, replacing the range readout while it lasts. */
+	export function getInspectLabel() {
+		const inspected = hover ?? focus;
+		return inspected == null ? undefined : comparisonPeriod(inspected, interval);
+	}
+	export function isLoading() {
+		return source.pending;
+	}
 </script>
 
 {#snippet controls()}
-	<SwitchWithIcons
+	<Switch
+		buttons={COMPARISON_DISPLAYS}
+		selected={selection.display}
 		compact
 		rounded="rounded-lg"
 		darkSelected
-		trackClass="border-mid-warm-grey bg-white"
 		aria-label="Comparison display"
-		selected={selection.display}
-		buttons={[
-			{
-				value: 'charts',
-				icon: ChartLine,
-				size: 'size-4',
-				ariaLabel: 'Line charts',
-				title: 'Line charts'
-			},
-			{ value: 'stripes', icon: Stripes, size: 'size-4', ariaLabel: 'Stripes', title: 'Stripes' }
-		]}
-		onchange={({ value }) => select({ display: value === 'stripes' ? 'stripes' : 'charts' })}
+		onchange={(option) => select({ display: option.value === 'stripes' ? 'stripes' : 'charts' })}
 	/>
+	<div>
+		<ComparisonChartSelect selected={selection.charts} onchange={(charts) => select({ charts })} />
+	</div>
 	{#if daily}
 		<ComparisonYearNavigator {viewport} {bounds} onmove={(next) => select(next)} />
-	{:else}
-		<button
-			type="button"
-			class="rounded-lg border border-mid-warm-grey px-4 py-2 text-xs font-medium hover:bg-warm-grey"
-			onclick={() => select({ start: null, end: null })}>{comparisonDefaultLabel(interval)}</button
-		>
 	{/if}
 	<FilterSelect
 		selected={interval}
@@ -231,17 +283,22 @@
 		compact
 		onchange={(interval) => select({ interval })}
 	/>
-	<div>
-		<ComparisonChartSelect selected={selection.charts} onchange={(charts) => select({ charts })} />
-	</div>
-	<FilterSelect
-		selected={basis}
-		options={CONTRIBUTION_OPTIONS}
-		listLabel="Percentage basis"
-		defaultValue="demand"
-		compact
-		onchange={(basis) => select({ basis: basis === 'generation' ? 'generation' : 'demand' })}
-	/>
+{/snippet}
+
+<!-- The percentage basis lives with the table, as in Timeline and Profile:
+     its options dialog, the collapsed rail and the proportion headers. -->
+{#snippet tableOptions()}
+	<TableOptions title="Regions table options" summary={contributionLabel(basis)}>
+		<Select
+			formLabel="Contribution %"
+			options={CONTRIBUTION_OPTIONS}
+			selected={basis}
+			staticDisplay
+			paddingX=""
+			onchange={(option) =>
+				select({ basis: option.value === 'generation' ? 'generation' : 'demand' })}
+		/>
+	</TableOptions>
 {/snippet}
 
 <section
@@ -309,6 +366,8 @@
 							: `tracker-comparison-${comparisonChartId(metric.id)}-height`}
 						loading={source.pending && !regions.some((id) => source.data[id]?.length)}
 						engaged={scale ? false : panZoomEngaged}
+						highlighted={hoverMetric === metric.id}
+						onhover={(hovered) => hoverCard(metric.id, hovered)}
 						png={{
 							id: `regions-${metric.id}`,
 							label: metric.label,
@@ -396,6 +455,8 @@
 									{viewport}
 									bounds={chartBounds}
 									{scale}
+									{tooltip}
+									onhoverregion={(region) => (hoverRegion = region)}
 									{hover}
 									{focus}
 									onhover={(time) => {
@@ -416,6 +477,9 @@
 									{viewport}
 									bounds={chartBounds}
 									{height}
+									{tooltip}
+									{hoverRegion}
+									onhoverregion={(region) => (hoverRegion = region)}
 									bind:engaged={panZoomEngaged}
 									{hover}
 									{focus}
@@ -439,11 +503,11 @@
 			Demand shares can exceed 100% in exporting regions. WA covers the WEM. Hover or use the arrow
 			keys to inspect a period; press Enter to pin it.
 			{#if stripes}
-				Stripes use fixed colour scales so a shade means the same in every region and year;
+				The heatmap uses fixed colour scales so a shade means the same in every region and year;
 				generation scales to the visible maximum and grey marks periods without data.
 			{/if}
 			{#if daily}
-				The daily view shows one year at a time: drag or scroll the stripes, click a month, or use
+				The daily view shows one year at a time: drag or scroll the heatmap, click a month, or use
 				the year controls to move through history.
 			{/if}
 		</p>
@@ -468,20 +532,15 @@
 				controls="tracker-regions-panel"
 				onclose={dock.close}
 				bind:closeButton={dock.closer}
-			/>
+			>
+				{@render tableOptions()}
+			</TrackerPanelHeader>
 		{/snippet}
+		{#snippet rail()}{@render tableOptions()}{/snippet}
 		{#snippet panel()}
-			<div class="border-b border-warm-grey px-4 py-3 text-xs text-mid-grey" role="status">
-				{period == null ? 'No common completed period' : comparisonPeriod(period, interval)}
-				{#if focus != null}<button
-						class="ml-2 underline"
-						onclick={() => {
-							focus = hover = null;
-						}}>Clear pinned period</button
-					>{/if}
-			</div>
 			<div class="[--region-w:240px]">
 				<div
+					bind:this={tableScroller}
 					onscroll={(event) => (tableScrollLeft = event.currentTarget.scrollLeft)}
 					class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--region-w) scroll-smooth motion-reduce:scroll-auto"
 				>
@@ -500,17 +559,48 @@
 										<span class="text-xs text-dark-grey">Region</span>
 									</div>
 								</th>
-								{#each metrics.map( (metric) => ({ label: metric.shortLabel, unit: comparisonUnit(metric.id, basis) }) ) as column, index (index)}
+								{#each metrics as metric, index (index)}
+									{@const column = comparisonTableColumn(metric.id, basis, tableUnits)}
+									{@const change = column.change}
 									<th
 										scope="col"
-										class="w-[100px] snap-start text-right {index === metrics.length - 1
+										data-column={metric.id}
+										data-focused={columnFocus[index].focused || undefined}
+										class="w-[100px] snap-start text-right transition-colors {index ===
+										metrics.length - 1
 											? 'pr-3 pl-2'
-											: 'px-2'} {TABLE_HEADER_CELL}"
+											: 'px-2'} {columnFocus[index].focused
+											? 'bg-warm-grey'
+											: ''} {TABLE_HEADER_CELL}"
+										style:box-shadow={focusEdges({
+											top: columnFocus[index].focused,
+											left: columnFocus[index].left,
+											right: columnFocus[index].right
+										})}
 									>
-										<div class="flex flex-col items-end">
-											<span class="text-xs">{column.label}</span>
-											<span class="font-mono text-xxs font-light text-mid-grey">{column.unit}</span>
-										</div>
+										{#if change}
+											<button
+												type="button"
+												onclick={() => {
+													if ('units' in change) tableUnits = change.units;
+													else select({ basis: change.basis });
+												}}
+												title={`Show ${column.nextUnit}`}
+												class="{TABLE_HEADER_BUTTON} -mr-1.5 flex-col items-end"
+											>
+												<span class="text-xs">{metric.shortLabel}</span>
+												<span class="font-mono text-xxs font-light text-mid-grey"
+													>{column.unit}</span
+												>
+											</button>
+										{:else}
+											<div class="flex flex-col items-end">
+												<span class="text-xs">{metric.shortLabel}</span>
+												<span class="font-mono text-xxs font-light text-mid-grey"
+													>{column.unit}</span
+												>
+											</div>
+										{/if}
 									</th>
 								{/each}
 							</tr>
@@ -520,10 +610,24 @@
 								{@const selected = regions.includes(region.value)}
 								{@const label = splitTableLabel(region.label)}
 								{@const row = source.data[region.value]?.find((row) => row.time === period)}
-								<tr class="{TABLE_ROW} {selected ? '' : 'opacity-50'}">
+								{@const focused = region.value === hoverRegion}
+								<tr
+									data-focused={focused || undefined}
+									class="{TABLE_ROW} {selected ? '' : 'opacity-50'} {focused
+										? 'bg-light-warm-grey'
+										: ''}"
+								>
 									<th
 										scope="row"
-										class="{pinnedEdgeClass} bg-white text-left font-normal group-hover:bg-light-warm-grey"
+										class="{pinnedEdgeClass} {focused
+											? 'bg-light-warm-grey'
+											: 'bg-white group-hover:bg-light-warm-grey'} text-left font-normal"
+										style:box-shadow={focusEdges({
+											top: focused,
+											bottom: focused,
+											left: focused,
+											right: focused && !metrics.length
+										})}
 									>
 										<button
 											type="button"
@@ -546,9 +650,24 @@
 									</th>
 									{#each metrics.map((metric) => {
 										const value = comparisonMetricValue(row, metric.id, basis);
-										return source.status[region.value]?.pending && !row ? '…' : formatComparisonValue(value, metric.id);
+										return source.status[region.value]?.pending && !row ? '…' : formatComparisonCell(value, metric.id, tableUnits);
 									}) as cell, index (index)}
-										<td class={tableValueCell(cell, index === metrics.length - 1)}>{cell}</td>
+										{@const column = columnFocus[index]}
+										{@const last = index === metrics.length - 1}
+										<td
+											class="{tableValueCell(
+												cell,
+												last,
+												'py-1.5',
+												column.focused && focused
+											)} {column.focused && !focused ? 'bg-light-warm-grey' : ''}"
+											style:box-shadow={focusEdges({
+												top: focused,
+												bottom: focused || (column.focused && region.value === LAST_REGION),
+												left: column.left,
+												right: column.right || (focused && last)
+											})}>{cell}</td
+										>
 									{/each}
 								</tr>
 							{/each}

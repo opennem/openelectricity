@@ -22,7 +22,8 @@
 
 	/** @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string,
 	 * viewport: {start:number,end:number}, bounds: {start:number,end:number}, height: number,
-	 * engaged: boolean, hover: number | null, focus: number | null, onhover: (time:number | null) => void, onfocus: (time:number | null) => void,
+	 * tooltip: boolean, engaged: boolean, hover: number | null, focus: number | null, onhover: (time:number | null) => void, onfocus: (time:number | null) => void,
+	 * hoverRegion: string | null, onhoverregion: (region: string | null) => void,
 	 * onviewport: (start:number,end:number,settled:boolean) => void}} */
 	let {
 		data,
@@ -33,11 +34,14 @@
 		viewport,
 		bounds,
 		height,
+		tooltip,
 		engaged = $bindable(false),
 		hover,
 		focus,
 		onhover,
 		onfocus,
+		hoverRegion,
+		onhoverregion,
 		onviewport
 	} = $props();
 	const chart = new ChartStore({
@@ -54,6 +58,10 @@
 	chart.maximumFractionDigits = 1;
 	chart.chartStyles.chartPadding = { top: 0, bottom: 20, left: 0, right: 0 };
 	chart.chartStyles.snapTicks = true;
+	// A region's line takes the pointer, naming its row in the Regions table;
+	// the hovered region stands out on every card while the others recede.
+	chart.chartStyles.lineHitWidth = 10;
+	chart.chartOptions.allowHoverHighlight = true;
 	const inspectionHintId = $props.id();
 	let definition = $derived(comparisonMetric(metric));
 	let rows = $derived(comparisonChartRows(data, regions, metric, basis, interval));
@@ -105,6 +113,7 @@
 	$effect(() => {
 		if (hover == null) chart.clearHover();
 		else chart.setHover(hover);
+		chart.hoverKey = hoverRegion ?? undefined;
 		if (focus == null) chart.clearFocus();
 		else chart.setFocus(focus);
 	});
@@ -132,7 +141,7 @@
 <div role="group" aria-label={`${definition.label} comparison chart`} class="relative">
 	<StratumChart
 		{chart}
-		tooltipMode="floating"
+		tooltipMode={tooltip ? 'floating' : 'none'}
 		enablePan
 		panZoomMode="tap-to-engage"
 		bind:engaged
@@ -145,8 +154,16 @@
 		onzoomout={gestures.zoomOut}
 		isAtMinZoom={fixedWindow || viewport.end - viewport.start <= COMPARISON_MIN_SPAN_MS}
 		isAtMaxZoom={fixedWindow || (viewport.start <= bounds.start && viewport.end >= bounds.end)}
-		onhover={(time) => onhover(time)}
-		onhoverend={() => onhover(null)}
+		onhover={(time, key) => {
+			onhover(time);
+			// Only a line names a region; the plot's own hover keeps it until
+			// that line reports leaving.
+			if (key !== undefined) onhoverregion(key);
+		}}
+		onhoverend={() => {
+			onhover(null);
+			onhoverregion(null);
+		}}
 		onfocus={(time) => onfocus(focus === time ? null : time)}
 	/>
 	<button

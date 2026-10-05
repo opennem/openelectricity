@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	DAILY_WINDOW_MS,
 	comparisonBoundsFor,
-	comparisonDefaultLabel,
+	comparisonRangeLabel,
 	comparisonDefaultViewport,
 	comparisonTickLabel,
 	dailyFetchWindow,
@@ -181,13 +181,10 @@ describe('region comparison calculations', () => {
 			2000, 2005, 2010, 2015, 2020, 2025
 		]);
 	});
-	it('opens each interval on its own window and names the reset', () => {
+	it('opens daily on the latest year and every other interval on all history', () => {
 		const bounds = { start: Date.UTC(1998, 11, 7), end: Date.UTC(2026, 8, 1) };
-		expect(comparisonDefaultViewport('12mr', bounds)).toEqual({
-			start: Date.UTC(2021, 8, 1),
-			end: bounds.end
-		});
-		expect(comparisonDefaultViewport('1M', bounds).start).toBe(Date.UTC(2021, 8, 1));
+		expect(comparisonDefaultViewport('12mr', bounds)).toEqual(bounds);
+		expect(comparisonDefaultViewport('1M', bounds)).toEqual(bounds);
 		expect(comparisonDefaultViewport('1y', bounds)).toEqual(bounds);
 		expect(comparisonDefaultViewport('fy', bounds)).toEqual(bounds);
 		expect(
@@ -196,12 +193,21 @@ describe('region comparison calculations', () => {
 			start: Date.UTC(2026, 8, 11) - DAILY_WINDOW_MS,
 			end: Date.UTC(2026, 8, 11)
 		});
-		expect(
-			comparisonDefaultViewport('1M', { start: Date.UTC(2024, 0), end: bounds.end }).start
-		).toBe(Date.UTC(2024, 0));
-		expect(comparisonDefaultLabel('12mr')).toBe('Last 5 years');
-		expect(comparisonDefaultLabel('fy')).toBe('All history');
-		expect(comparisonDefaultLabel('1d')).toBe('Latest year');
+	});
+	it('reads the periods on screen as a first-to-last range', () => {
+		const first = Date.UTC(1999, 0, 1);
+		expect(comparisonRangeLabel(first, Date.UTC(2026, 7, 1), '1M')).toBe('Jan 1999 – Aug 2026');
+		expect(comparisonRangeLabel(first, Date.UTC(2026, 7, 1), '12mr')).toBe('Jan 1999 – Aug 2026');
+		expect(comparisonRangeLabel(first, Date.UTC(2025, 0, 1), '1y')).toBe('1999 – 2025');
+		// Financial years by their closing year: 1999–00 is FY2000.
+		expect(comparisonRangeLabel(Date.UTC(1999, 6, 1), Date.UTC(2025, 6, 1), 'fy')).toBe(
+			'FY2000 – FY2026'
+		);
+		expect(comparisonRangeLabel(Date.UTC(2024, 6, 16), Date.UTC(2025, 6, 15), '1d')).toBe(
+			'16 July 2024 – 15 July 2025'
+		);
+		expect(comparisonRangeLabel(Date.UTC(2024, 0), Date.UTC(2024, 0), '1M')).toBe('Jan 2024');
+		expect(comparisonRangeLabel(null, null, '1M')).toBe('');
 	});
 	it('activates the two networks behind the combined scope and rolls their status up', () => {
 		expect(comparisonSourceActive(['nsw1'], 'nsw1')).toBe(true);
@@ -279,13 +285,37 @@ describe('region comparison navigation and export', () => {
 			});
 			const params = new URLSearchParams();
 			applyRegionComparison(params, state);
-			expect(params.get('compare-display')).toBe('stripes');
+			expect(params.get('compare-display')).toBe('heatmap');
 			expect(parseRegionComparison(params)).toEqual(state);
 		}
+		// Older links named the heatmap `stripes`.
+		expect(parseRegionComparison(new URLSearchParams('compare-display=stripes')).display).toBe(
+			'stripes'
+		);
 		expect(normaliseRegionComparison({ display: 'bogus' }).display).toBe('charts');
 		const params = new URLSearchParams();
 		applyRegionComparison(params, normaliseRegionComparison({}));
 		expect(params.has('compare-display')).toBe(false);
+	});
+	it('writes short region and chart names, and still reads the full ids', () => {
+		const state = normaliseRegionComparison({
+			regions: ['nsw1', 'wem', '_all', 'au'],
+			charts: ['intensity', 'share', 'solar_wind_generation', 'net_imports_share', 'price_real']
+		});
+		const params = new URLSearchParams();
+		applyRegionComparison(params, state);
+		expect(params.get('compare-regions')).toBe('nsw,wem,nem,au');
+		expect(params.get('compare-charts')).toBe(
+			'intensity,net-imports,renewables,solar-wind-generation,price-real'
+		);
+		expect(parseRegionComparison(params)).toEqual(state);
+		const legacy = new URLSearchParams(
+			'compare-regions=nsw1,wem&compare-charts=intensity,solar_generation'
+		);
+		expect(parseRegionComparison(legacy)).toMatchObject({
+			regions: ['nsw1', 'wem'],
+			charts: ['intensity', 'solar_generation']
+		});
 	});
 	it('fixes the daily interval to a one-year window ending on the last complete day', () => {
 		const now = Date.UTC(2026, 8, 17, 20);

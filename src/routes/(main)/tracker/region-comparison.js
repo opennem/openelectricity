@@ -4,7 +4,9 @@ import {
 	COMPARISON_CHART_OPTIONS,
 	DEFAULT_COMPARISON_CHARTS,
 	calendarLabelMs,
+	comparisonChartFromSlug,
 	comparisonChartId,
+	comparisonChartSlug,
 	FUEL_COMPONENTS,
 	comparisonFuelRows,
 	comparisonMetricValue
@@ -32,11 +34,24 @@ export const COMPARISON_REGIONS = [
 export const COMPARISON_MIN_SPAN_MS = 366 * 86_400_000;
 /** The daily interval always shows exactly one year of days. */
 export const DAILY_WINDOW_MS = 365 * 86_400_000;
-/** Monthly and rolling intervals open on the latest five years. */
-export const DEFAULT_MONTHLY_SPAN_MONTHS = 60;
 /** Below three years the axis shows months as well as years. */
 export const MONTH_TICKS_BELOW_MS = 3 * 365 * 86_400_000;
 export const DEFAULT_COMPARISON_REGIONS = COMPARISON_REGIONS.slice(0, 6).map((r) => r.value);
+/** A region's URL name: its value without the market's trailing `1`, and
+ * `nem` for the NEM-wide scope (`nsw`, `wem`, `nem`, `au`).
+ * @param {string} value */
+export function comparisonRegionSlug(value) {
+	return value === '_all' ? 'nem' : value.replace(/1$/, '');
+}
+const REGIONS_BY_SLUG = new Map(
+	COMPARISON_REGIONS.map(({ value }) => [comparisonRegionSlug(value), value])
+);
+/** The region a URL name stands for; values themselves (older links) pass
+ * through, and anything else is left for normalisation to drop.
+ * @param {string} slug */
+export function comparisonRegionFromSlug(slug) {
+	return REGIONS_BY_SLUG.get(slug) ?? slug;
+}
 export const COMPARISON_INTERVALS = [
 	{ value: '1d', label: 'Daily' },
 	{ value: '12mr', label: '12-month rolling' },
@@ -46,6 +61,12 @@ export const COMPARISON_INTERVALS = [
 ];
 
 /** @typedef {'charts' | 'stripes'} ComparisonDisplay */
+/** The top-nav display switch: each region as a line over time, or as a row
+ * of colour cells (`compare-display=heatmap`). */
+export const COMPARISON_DISPLAYS = [
+	{ value: 'charts', label: 'Trends' },
+	{ value: 'stripes', label: 'Heatmap' }
+];
 /** @typedef {{charts: string[], display: ComparisonDisplay, interval: string, regions: string[], mode: 'generation' | 'share', basis: 'demand' | 'generation', start: number | null, end: number | null, table: boolean | null}} RegionComparisonSelection */
 /** Unvalidated input (URL values, callers): `display` is any string until normalised.
  * @typedef {Partial<Omit<RegionComparisonSelection, 'display'>> & {display?: string}} RegionComparisonInput */
@@ -80,15 +101,16 @@ export function normaliseRegionComparison(value = undefined) {
 
 /** @param {URLSearchParams} params */
 export function parseRegionComparison(params) {
+	/** @param {string} key @param {(slug: string) => string} fromSlug */
+	const list = (key, fromSlug) =>
+		params.has(key) ? (params.get(key) ?? '').split(',').map(fromSlug) : undefined;
+	const display = params.get('compare-display');
 	return normaliseRegionComparison({
-		charts: params.has('compare-charts')
-			? (params.get('compare-charts') ?? '').split(',')
-			: undefined,
-		display: params.get('compare-display') ?? undefined,
+		charts: list('compare-charts', comparisonChartFromSlug),
+		// `stripes` is the heatmap's earlier name.
+		display: display === 'heatmap' || display === 'stripes' ? 'stripes' : undefined,
 		interval: params.get('compare-interval') ?? undefined,
-		regions: params.has('compare-regions')
-			? (params.get('compare-regions') ?? '').split(',')
-			: undefined,
+		regions: list('compare-regions', comparisonRegionFromSlug),
 		mode: params.get('compare-renewables') === 'generation' ? 'generation' : 'share',
 		basis: params.get('compare-basis') === 'generation' ? 'generation' : 'demand',
 		start: Number(params.get('compare-start')),
@@ -103,13 +125,13 @@ export function applyRegionComparison(params, selection) {
 		'compare-charts':
 			state.charts.join(',') === DEFAULT_COMPARISON_CHARTS.join(',')
 				? null
-				: state.charts.join(','),
-		'compare-display': state.display === 'charts' ? '' : state.display,
+				: state.charts.map(comparisonChartSlug).join(','),
+		'compare-display': state.display === 'stripes' ? 'heatmap' : '',
 		'compare-interval': state.interval === '12mr' ? '' : state.interval,
 		'compare-regions':
 			state.regions.join(',') === DEFAULT_COMPARISON_REGIONS.join(',')
 				? null
-				: state.regions.join(','),
+				: state.regions.map(comparisonRegionSlug).join(','),
 		'compare-renewables': state.mode === 'share' ? '' : state.mode,
 		'compare-basis': state.basis === 'demand' ? '' : state.basis,
 		'compare-start': state.start == null ? '' : String(state.start),
@@ -166,24 +188,12 @@ export function comparisonBoundsFor(bounds, interval) {
 }
 
 /** The window an interval opens on, and the reset control returns to: the
- * latest year of days, the latest five years of months, or all history for
- * calendar and financial years.
+ * latest year of days, or all history for every other interval.
  * @param {string} interval @param {{start: number, end: number}} bounds - The interval's bounds */
 export function comparisonDefaultViewport(interval, bounds) {
 	if (interval === '1d')
 		return { start: Math.max(bounds.start, bounds.end - DAILY_WINDOW_MS), end: bounds.end };
-	if (interval === '1M' || interval === '12mr')
-		return {
-			start: Math.max(bounds.start, monthStart(bounds.end, -DEFAULT_MONTHLY_SPAN_MONTHS)),
-			end: bounds.end
-		};
 	return { start: bounds.start, end: bounds.end };
-}
-/** @param {string} interval */
-export function comparisonDefaultLabel(interval) {
-	if (interval === '1d') return 'Latest year';
-	if (interval === '1M' || interval === '12mr') return 'Last 5 years';
-	return 'All history';
 }
 
 /** Bound copied/custom viewports to complete history, including future URLs.
@@ -373,6 +383,21 @@ export function comparisonPeriod(time, interval) {
 	if (interval === '1d') return utcFormatter(DAY_LABEL).format(date);
 	const month = utcFormatter(MONTH_LABEL).format(date);
 	return interval === '12mr' ? `12 months to ${month}` : month;
+}
+/** The top-nav readout of the periods on screen, from the first to the last
+ * period start — `16 July 2024 – 15 July 2025`, `Jan 1999 – Aug 2026`,
+ * `1999 – 2025` or `FY2000 – FY2026` (financial years by their closing
+ * year); empty when nothing is shown.
+ * @param {number | null} first @param {number | null} last @param {string} interval */
+export function comparisonRangeLabel(first, last, interval) {
+	if (first == null || last == null || last < first) return '';
+	/** @param {number} time */
+	const label = (time) => {
+		if (interval === 'fy') return `FY${new Date(time).getUTCFullYear() + 1}`;
+		if (interval === '1y') return String(new Date(time).getUTCFullYear());
+		return utcFormatter(interval === '1d' ? DAY_LABEL : MONTH_LABEL).format(time);
+	};
+	return first === last ? label(first) : `${label(first)} – ${label(last)}`;
 }
 /** Regions that do not import or export outside their own network. */
 export const CLOSED_NETWORKS = ['_all', 'wem'];
