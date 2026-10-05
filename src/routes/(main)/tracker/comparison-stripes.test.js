@@ -3,6 +3,8 @@ import {
 	STRIPE_EMPTY_COLOUR,
 	stripeCells,
 	stripeGradient,
+	stripeKeys,
+	stripeLegendItems,
 	stripeMax,
 	stripePeriodAt,
 	stripeScale
@@ -78,6 +80,33 @@ describe('stripe colour scales', () => {
 		expect(gradient.startsWith('linear-gradient(to right, #52A972 0%')).toBe(true);
 		expect(gradient).toContain('#594929 100%');
 		expect(gradient).toContain('10%');
+	});
+});
+
+describe('stripe legend keys', () => {
+	it('keys the zero cell and the no-data grey beside every ramp', () => {
+		const imports = stripeScale('net_imports_share', 'demand');
+		expect(stripeKeys(imports)).toEqual([
+			{ colour: imports.colour(0), label: '0' },
+			{ colour: STRIPE_EMPTY_COLOUR, label: 'No data' }
+		]);
+		// Fossil shares read renewables green at zero.
+		expect(stripeKeys(stripeScale('coal_share', 'demand'))[0].colour).toBe(
+			stripeScale('coal_share', 'demand').colour(0)
+		);
+	});
+	it('adds zero to the export legend only where no stop or ramp start shows it', () => {
+		const labels = (/** @type {string} */ id) =>
+			stripeLegendItems(stripeScale(id, 'demand')).map((item) => item.label);
+		expect(labels('net_imports_share')).toEqual([
+			'Export % demand',
+			'Import % demand',
+			'0 % demand',
+			'No data'
+		]);
+		expect(labels('intensity').filter((label) => label.startsWith('0'))).toHaveLength(1);
+		expect(labels('price').filter((label) => label.startsWith('0'))).toHaveLength(0);
+		expect(labels('price').at(-1)).toBe('No data');
 	});
 });
 

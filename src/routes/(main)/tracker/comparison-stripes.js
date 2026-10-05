@@ -155,8 +155,20 @@ export function stripeGradient(ramp) {
 	return `linear-gradient(to right, ${stops.join(', ')})`;
 }
 
+/** The two cells a legend keys explicitly, beside the ramp: a zero reading
+ * (white on most ramps, the midpoint of net imports, renewables green for
+ * fossil shares) and a period without data.
+ * @param {StripeScale} scale @returns {{label: string, colour: string}[]} */
+export function stripeKeys(scale) {
+	return [
+		{ colour: scale.colour(0), label: '0' },
+		{ colour: STRIPE_EMPTY_COLOUR, label: 'No data' }
+	];
+}
+
 /** Legend entries for exports: every price stop, or a ramp's two ends, plus
- * the no-data grey.
+ * the zero cell (unless a stop or the ramp's start already shows it) and the
+ * no-data grey.
  * @param {StripeScale} scale @returns {{label: string, colour: string}[]} */
 export function stripeLegendItems(scale) {
 	const items =
@@ -166,9 +178,12 @@ export function stripeLegendItems(scale) {
 					{ colour: scale.colours[0], label: scale.labels[0] },
 					{ colour: scale.colours[scale.colours.length - 1], label: scale.labels[1] }
 				];
+	const zeroShown = scale.kind === 'swatch' ? scale.domain.includes(0) : scale.domain[0] === 0;
+	const [zero, empty] = stripeKeys(scale);
 	return [
 		...items.map((item) => ({ ...item, label: `${item.label} ${scale.unit}`.trim() })),
-		{ colour: STRIPE_EMPTY_COLOUR, label: 'No data' }
+		...(zeroShown ? [] : [{ ...zero, label: `0 ${scale.unit}`.trim() }]),
+		empty
 	];
 }
 

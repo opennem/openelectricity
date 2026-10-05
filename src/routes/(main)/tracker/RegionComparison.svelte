@@ -9,7 +9,8 @@
 	import IntervalControls from '$lib/components/charts/v2/IntervalControls.svelte';
 	import ComparisonChartSelect from './ComparisonChartSelect.svelte';
 	import RegionStripes from './RegionStripes.svelte';
-	import { stripeGradient, stripeMax, stripeScale } from './comparison-stripes.js';
+	import { stripeMax, stripeScale } from './comparison-stripes.js';
+	import StripeLegend from './StripeLegend.svelte';
 	import {
 		comparisonMetric,
 		comparisonChartId,
@@ -376,30 +377,7 @@
 					>
 						{#snippet actions()}
 							{#if scale}
-								<div
-									class="flex items-center gap-2 font-mono text-xxs text-mid-grey"
-									role="img"
-									aria-label={`Colour scale from ${scale.labels[0]} to ${scale.labels[scale.labels.length - 1]} ${scale.unit}; grey means no data`}
-									data-testid="stripes-legend"
-								>
-									<span>{scale.labels[0]}</span>
-									{#if scale.kind === 'swatch'}
-										<span class="flex h-2 overflow-hidden rounded-sm">
-											{#each scale.colours as colour, index (colour)}
-												<span
-													class="block h-2 w-3"
-													style:background-color={colour}
-													title={scale.labels[index]}
-												></span>
-											{/each}
-										</span>
-									{:else}
-										<span class="block h-2 w-24 rounded-sm" style:background={stripeGradient(scale)}
-										></span>
-									{/if}
-									<span>{scale.labels[scale.labels.length - 1]}</span>
-									<span class="text-mid-warm-grey">{scale.unit}</span>
-								</div>
+								<StripeLegend {scale} metric={metric.id} />
 							{/if}
 							{#if metric.fuel && (metric.kind === 'energy' || metric.kind === 'share')}
 								{@const fuel = metric.fuel}
@@ -654,12 +632,9 @@
 					<li>Ratios use period totals; market values are weighted by generation.</li>
 					{#if metrics.some((metric) => metric.fuel === 'renewables' && !metric.exBatteries)}
 						<li>
-							Renewables are OE's official renewable generation, which includes battery discharge (<a
-								href={RENEWABLES_DOCS.href}
-								target="_blank"
-								rel="noreferrer"
-								class="underline">{RENEWABLES_DOCS.label.toLowerCase()}</a
-							>).
+							<a href={RENEWABLES_DOCS.href} target="_blank" rel="noreferrer" class="underline"
+								>{RENEWABLES_DOCS.label}</a
+							>
 						</li>
 					{/if}
 					{#if metrics.some((metric) => metric.exBatteries)}

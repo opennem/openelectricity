@@ -676,7 +676,7 @@ test('the renewables card switches between official renewables and renewables ex
 	await expect(exBatteries).not.toBeChecked();
 	// The official footnote links OE's renewables guide, as the Renewables metric does.
 	await expect(
-		page.getByRole('link', { name: 'how renewable energy is calculated', exact: true })
+		page.getByRole('link', { name: 'How renewable energy is calculated', exact: true })
 	).toHaveAttribute('href', 'https://docs.openelectricity.org.au/guides/renewables/');
 	await exBatteries.click();
 	await expect(page).toHaveURL(/compare-charts=intensity,renewables-ex-batteries/);
@@ -715,6 +715,17 @@ test('heatmap display shares hover and pinning with the table, exports PNG and r
 	await expect(stripes).toBeVisible();
 	await expect(intensity.locator('.stratum-chart')).toHaveCount(0);
 	await expect(intensity.getByTestId('stripes-legend')).toContainText('kgCO₂e/MWh');
+	// The legend reads out the value under the pointer, and its keys.
+	const readout = page.getByTestId('stripes-legend-readout');
+	const ramp = intensity.getByTestId('stripes-legend-ramp');
+	const rampBox = await ramp.boundingBox();
+	if (!rampBox) throw new Error('Legend ramp has no size');
+	await page.mouse.move(rampBox.x + rampBox.width / 2, rampBox.y + rampBox.height / 2);
+	await expect(readout).toHaveText(/^\s*(49\d|50\d) kgCO₂e\/MWh$/);
+	await intensity.getByTestId('stripes-legend').getByText('No data', { exact: true }).hover();
+	await expect(readout).toHaveText(/^\s*No data for the period$/);
+	await page.mouse.move(0, 0);
+	await expect(readout).toHaveCount(0);
 	await expect(intensity.locator('text', { hasText: 'NSW' })).toBeVisible();
 	expect(data.requests.length).toBe(requests);
 	// Hovering a column inspects that period in the Regions table, named in the top nav.
