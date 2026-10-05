@@ -33,6 +33,12 @@ export const DEFAULT_GROUP = 'simple';
  * The contribution bases in menu order — gross demand first, the default.
  * @type {Array<{ value: import('./types.js').ContributionMode, label: string }>}
  */
+/** OE's guide to how its official renewables figures are calculated. */
+export const RENEWABLES_DOCS = Object.freeze({
+	href: 'https://docs.openelectricity.org.au/guides/renewables/',
+	label: 'How renewable energy is calculated'
+});
+
 export const CONTRIBUTION_OPTIONS = [
 	{ value: 'demand', label: '% demand' },
 	{ value: 'generation', label: '% generation' }

@@ -6,15 +6,14 @@
 	import { untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { MediaQuery } from 'svelte/reactivity';
-	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
+	import IntervalControls from '$lib/components/charts/v2/IntervalControls.svelte';
 	import ComparisonChartSelect from './ComparisonChartSelect.svelte';
-	import ComparisonYearNavigator from './ComparisonYearNavigator.svelte';
 	import RegionStripes from './RegionStripes.svelte';
 	import { stripeGradient, stripeMax, stripeScale } from './comparison-stripes.js';
-	import { formatDailyWindow } from './comparison-navigation.js';
 	import {
 		comparisonMetric,
 		comparisonChartId,
+		comparisonFuelMetric,
 		comparisonMetricValue,
 		comparisonTableColumn,
 		formatComparisonCell
@@ -34,18 +33,19 @@
 	} from './table-styles.js';
 	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
 	import TableOptions from './TableOptions.svelte';
+	import TableFootnotes from './TableFootnotes.svelte';
 	import TrackerSplitLayout from './TrackerSplitLayout.svelte';
 	import RegionComparisonChart from './RegionComparisonChart.svelte';
-	import { CONTRIBUTION_OPTIONS, contributionLabel } from './tracker-model.js';
+	import { CONTRIBUTION_OPTIONS, RENEWABLES_DOCS, contributionLabel } from './tracker-model.js';
 	import { createRegionComparisonData } from './region-comparison-data.svelte.js';
 	import { comparisonExportDataset } from './region-comparison-export.js';
 	import {
 		COMPARISON_REGIONS,
 		COMPARISON_INTERVALS,
+		COMPARISON_INTERVAL_IDS,
+		comparisonFilterLabel,
 		normaliseRegionComparison,
 		COMPARISON_DISPLAYS,
-		comparisonBoundsFor,
-		comparisonDefaultViewport,
 		comparisonPeriod,
 		comparisonRangeLabel,
 		clampComparisonViewport,
@@ -66,20 +66,16 @@
 	// selection itself, so children would re-derive on every move.
 	let basis = $derived(selection.basis);
 	let interval = $derived(selection.interval);
+	let filter = $derived(selection.filter);
 	const source = createRegionComparisonData(
 		() => selection,
 		untrack(() => session.clockMs),
-		() => cpi,
-		() => viewport
+		() => cpi
 	);
 	let stripes = $derived(selection.display === 'stripes');
-	let daily = $derived(interval === '1d');
-	let bounds = $derived(comparisonBoundsFor(source.bounds, interval));
-	// Monthly history starts where the displayed metrics first have data. The
-	// daily cache only ever holds a few years, so its window slides over the
-	// whole data floor instead of the loaded rows.
+	// History starts where the displayed metrics first have data; the window
+	// opens on all of it.
 	let chartBounds = $derived.by(() => {
-		if (daily) return bounds;
 		const times = regions.flatMap((id) =>
 			(source.data[id] ?? [])
 				.filter((row) =>
@@ -87,15 +83,14 @@
 				)
 				.map((row) => row.time)
 		);
-		return { start: times.length ? Math.min(...times) : bounds.start, end: bounds.end };
+		const { start, end } = source.bounds;
+		return { start: times.length ? Math.min(...times) : start, end };
 	});
-	let defaultViewport = $derived(comparisonDefaultViewport(interval, chartBounds));
 	let viewport = $derived(
 		clampComparisonViewport(
-			selection.start ?? defaultViewport.start,
-			selection.end ?? defaultViewport.end,
-			chartBounds,
-			interval
+			selection.start ?? chartBounds.start,
+			selection.end ?? chartBounds.end,
+			chartBounds
 		)
 	);
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
@@ -179,8 +174,13 @@
 	};
 	/** @param {number} start @param {number} end @param {boolean} settled */
 	function moveViewport(start, end, settled) {
-		select(clampComparisonViewport(start, end, chartBounds, interval), settled ? 'replace' : null);
-		if (settled) source.settle();
+		select(clampComparisonViewport(start, end, chartBounds), settled ? 'replace' : null);
+	}
+	/** Switch a chart's presentation in place (proportion or generation,
+	 * official or excluding batteries, nominal or inflation adjusted).
+	 * @param {string} from @param {string} to */
+	function swapChart(from, to) {
+		select({ charts: selection.charts.map((current) => (current === from ? to : current)) });
 	}
 	/** @param {string} id @param {boolean} [solo] */
 	function toggleRegion(id, solo = false) {
@@ -195,7 +195,7 @@
 	let caption = $derived(
 		[
 			COMPARISON_INTERVALS.find((i) => i.value === interval)?.label,
-			daily ? formatDailyWindow(viewport) : null,
+			comparisonFilterLabel(interval, filter),
 			`% of ${basis === 'demand' ? 'gross demand' : 'generation'}`
 		]
 			.filter(Boolean)
@@ -226,11 +226,10 @@
 	export function getControls() {
 		return controls;
 	}
-	/** The first and last period on screen with a displayed value. The daily
-	 * window is always whole days, loaded or not; the other intervals show only
-	 * complete periods, so an unfinished year inside the viewport is not one. */
+	/** The first and last period on screen with a displayed value: only
+	 * complete periods are shown, so an unfinished year inside the viewport is
+	 * not one. */
 	let shownPeriods = $derived.by(() => {
-		if (daily) return { first: viewport.start, last: viewport.end - 86_400_000 };
 		let first = Infinity;
 		let last = -Infinity;
 		for (const id of regions)
@@ -272,16 +271,15 @@
 	<div>
 		<ComparisonChartSelect selected={selection.charts} onchange={(charts) => select({ charts })} />
 	</div>
-	{#if daily}
-		<ComparisonYearNavigator {viewport} {bounds} onmove={(next) => select(next)} />
-	{/if}
-	<FilterSelect
-		selected={interval}
-		options={COMPARISON_INTERVALS}
-		listLabel="Comparison interval"
-		defaultValue="12mr"
-		compact
-		onchange={(interval) => select({ interval })}
+	<!-- Timeline's interval pill, 12-month rolling switch and calendar-period
+	     filter; a filter the new grain cannot keep is dropped. -->
+	<IntervalControls
+		options={COMPARISON_INTERVAL_IDS}
+		displayInterval={interval}
+		showBucketFilter
+		bucketFilter={filter}
+		onintervalchange={(interval) => select({ interval })}
+		onbucketfilterchange={(filter) => select({ filter })}
 	/>
 {/snippet}
 
@@ -307,9 +305,7 @@
 	data-png-context={`Compare · ${caption}`}
 >
 	<span class="sr-only" role="status"
-		>{source.pending
-			? 'Loading regional data…'
-			: `Complete periods · ${daily ? 'daily' : 'monthly'} source data`}</span
+		>{source.pending ? 'Loading regional data…' : 'Complete periods · monthly source data'}</span
 	>
 	<TrackerSplitLayout
 		config={REGIONS_SPLIT}
@@ -406,38 +402,41 @@
 								</div>
 							{/if}
 							{#if metric.fuel && (metric.kind === 'energy' || metric.kind === 'share')}
+								{@const fuel = metric.fuel}
+								{@const exBatteries = !!metric.exBatteries}
 								<SwitchTabs
 									buttons={[
-										{ label: 'Proportion', value: comparisonChartId(metric.id) },
+										{ label: 'Proportion', value: comparisonFuelMetric(fuel, { exBatteries }) },
 										{
 											label: 'Generation',
-											value:
-												metric.fuel === 'renewables' ? 'generation' : `${metric.fuel}_generation`
+											value: comparisonFuelMetric(fuel, { generation: true, exBatteries })
 										}
 									]}
 									selected={metric.id}
-									onChange={(id) =>
-										select({
-											charts: selection.charts.map((current) =>
-												current === metric.id ? id : current
-											)
-										})}
+									onChange={(id) => swapChart(metric.id, id)}
 								/>
+								{#if fuel === 'renewables'}
+									<!-- Official counts battery discharge; excluding batteries sums the renewable fuel techs. -->
+									<Toggle
+										label="Excl. batteries"
+										checked={exBatteries}
+										onclick={() =>
+											swapChart(
+												metric.id,
+												comparisonFuelMetric(fuel, {
+													generation: metric.kind === 'energy',
+													exBatteries: !exBatteries
+												})
+											)}
+									/>
+								{/if}
 							{/if}
 							{#if comparisonChartId(metric.id) === 'price_real'}
 								<Toggle
 									label="Inflation adjusted"
 									checked={metric.id === 'price_real'}
 									onclick={() =>
-										select({
-											charts: selection.charts.map((current) =>
-												current === metric.id
-													? metric.id === 'price_real'
-														? 'price'
-														: 'price_real'
-													: current
-											)
-										})}
+										swapChart(metric.id, metric.id === 'price_real' ? 'price' : 'price_real')}
 								/>
 							{/if}
 							{#if metric.id === 'price_real'}
@@ -452,6 +451,7 @@
 									metric={metric.id}
 									{basis}
 									{interval}
+									{filter}
 									{viewport}
 									bounds={chartBounds}
 									{scale}
@@ -474,6 +474,7 @@
 									metric={metric.id}
 									{basis}
 									{interval}
+									{filter}
 									{viewport}
 									bounds={chartBounds}
 									{height}
@@ -497,31 +498,6 @@
 				{/each}
 			</div>
 		{/key}
-		<p class="px-2 text-xs leading-relaxed text-mid-grey">
-			Ratios use period totals. Renewable generation excludes storage discharge. Net imports are
-			imports minus exports, as a share of gross demand. Market values are weighted by generation.
-			Demand shares can exceed 100% in exporting regions. WA covers the WEM. Hover or use the arrow
-			keys to inspect a period; press Enter to pin it.
-			{#if stripes}
-				The heatmap uses fixed colour scales so a shade means the same in every region and year;
-				generation scales to the visible maximum and grey marks periods without data.
-			{/if}
-			{#if daily}
-				The daily view shows one year at a time: drag or scroll the heatmap, click a month, or use
-				the year controls to move through history.
-			{/if}
-		</p>
-		{#if selection.charts.includes('price_real')}
-			<p class="px-2 pt-2 text-xs text-mid-grey" role="status">
-				Inflation adjusted using <a
-					href={cpi.source}
-					target="_blank"
-					rel="noreferrer"
-					class="underline">ABS All Groups CPI</a
-				>, in {cpi.reference} dollars. Each month uses its quarter’s CPI; later periods remain blank until
-				CPI is published.
-			</p>
-		{/if}
 
 		{#snippet panelHeader(/** @type {import('./types.js').TrackerDock} */ dock)}
 			<TrackerPanelHeader
@@ -674,6 +650,46 @@
 						</tbody>
 					</table>
 				</div>
+				<TableFootnotes>
+					<li>Ratios use period totals; market values are weighted by generation.</li>
+					{#if metrics.some((metric) => metric.fuel === 'renewables' && !metric.exBatteries)}
+						<li>
+							Renewables are OE's official renewable generation, which includes battery discharge (<a
+								href={RENEWABLES_DOCS.href}
+								target="_blank"
+								rel="noreferrer"
+								class="underline">{RENEWABLES_DOCS.label.toLowerCase()}</a
+							>).
+						</li>
+					{/if}
+					{#if metrics.some((metric) => metric.exBatteries)}
+						<li>
+							Renewables excl. batteries sum solar, wind, hydro and bioenergy, without battery
+							discharge or pumping; hydro includes pumped-hydro output.
+						</li>
+					{/if}
+					<li>
+						Net imports are imports minus exports, as a share of gross demand. Demand shares can
+						exceed 100% in exporting regions.
+					</li>
+					{#if stripes}
+						<li>
+							The heatmap uses fixed colour scales so a shade means the same in every region and
+							year; generation scales to the visible maximum and grey marks periods without data.
+						</li>
+					{/if}
+					{#if selection.charts.includes('price_real')}
+						<li>
+							Inflation adjusted using <a
+								href={cpi.source}
+								target="_blank"
+								rel="noreferrer"
+								class="underline">ABS All Groups CPI</a
+							>, in {cpi.reference} dollars. Each month uses its quarter’s CPI; later periods remain blank
+							until CPI is published.
+						</li>
+					{/if}
+				</TableFootnotes>
 			</div>
 		{/snippet}
 	</TrackerSplitLayout>

@@ -176,21 +176,24 @@ export function stripeLegendItems(scale) {
 /**
  * Cell geometry at absolute time positions: x is measured from `origin` so a
  * sliding viewport translates the drawn cells rather than re-laying them out.
+ * A cell spans to the next row: its period, or a year while a calendar-period
+ * filter keeps one row per year.
  * @param {Array<{time: number}>} rows @param {string} interval
- * @param {number} origin @param {number} pxPerMs
+ * @param {number} origin @param {number} pxPerMs @param {string | null} [filter]
  * @returns {StripeCell[]}
  */
-export function stripeCells(rows, interval, origin, pxPerMs) {
+export function stripeCells(rows, interval, origin, pxPerMs, filter = null) {
 	return rows.map((row) => ({
 		time: row.time,
 		x: (row.time - origin) * pxPerMs,
-		width: (nextPeriodStart(row.time, interval) - row.time) * pxPerMs
+		width: (nextPeriodStart(row.time, interval, filter) - row.time) * pxPerMs
 	}));
 }
 
 /** The period containing an instant, or null between or beyond periods.
- * @param {Array<{time: number}>} rows - In time order @param {string} interval @param {number} time */
-export function stripePeriodAt(rows, interval, time) {
+ * @param {Array<{time: number}>} rows - In time order @param {string} interval @param {number} time
+ * @param {string | null} [filter] */
+export function stripePeriodAt(rows, interval, time, filter = null) {
 	let low = 0,
 		high = rows.length - 1,
 		found = -1;
@@ -203,5 +206,5 @@ export function stripePeriodAt(rows, interval, time) {
 	}
 	if (found < 0) return null;
 	const row = rows[found];
-	return time < nextPeriodStart(row.time, interval) ? row.time : null;
+	return time < nextPeriodStart(row.time, interval, filter) ? row.time : null;
 }

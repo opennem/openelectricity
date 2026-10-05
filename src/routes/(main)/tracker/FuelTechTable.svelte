@@ -11,6 +11,7 @@
 	} from './table-styles.js';
 	import { TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import TableFootnotes from './TableFootnotes.svelte';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import { getGroup, GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs.js';
@@ -603,27 +604,23 @@
 	{@render companion?.()}
 
 	<!-- Outside the table: a colspan footnote would scroll with the strip. -->
-	<footer
-		class="m-4 rounded-md border border-dashed border-mid-warm-grey bg-light-warm-grey px-4 py-3 text-[11px] leading-relaxed text-mid-grey"
-	>
-		<ul class="m-0 list-disc space-y-2 pl-4">
-			{#if showRooftopNote}
-				<li id="rooftop-interpolation-note">
-					Rooftop solar: 5-minute charts use linearly interpolated half-hour readings. Tables,
-					metrics, comparisons and exports retain reported values.
-				</li>
-			{/if}
-			<li>
-				{#if contributionMode === 'demand'}
-					Gross-demand shares may not total 100% due to losses and imports.
-				{:else}
-					Generation shares exclude loads and imports.
-				{/if}
+	<TableFootnotes>
+		{#if showRooftopNote}
+			<li id="rooftop-interpolation-note">
+				Rooftop solar: 5-minute charts use linearly interpolated half-hour readings. Tables,
+				metrics, comparisons and exports retain reported values.
 			</li>
-			<li>Emissions intensity: each technology's emissions divided by its generation.</li>
-			{#each notes as note (note)}
-				<li>{note}</li>
-			{/each}
-		</ul>
-	</footer>
+		{/if}
+		<li>
+			{#if contributionMode === 'demand'}
+				Gross-demand shares may not total 100% due to losses and imports.
+			{:else}
+				Generation shares exclude loads and imports.
+			{/if}
+		</li>
+		<li>Emissions intensity: each technology's emissions divided by its generation.</li>
+		{#each notes as note (note)}
+			<li>{note}</li>
+		{/each}
+	</TableFootnotes>
 </div>

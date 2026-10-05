@@ -3,7 +3,7 @@
 	import { Popover, Select } from 'bits-ui';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
-	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
+	import IntervalControls from './IntervalControls.svelte';
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import { portal } from '$lib/actions/portal.js';
 	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
@@ -15,16 +15,8 @@
 		RANGE_PRESETS,
 		getPresetByDays,
 		getIntervalsForRange,
-		getIntervalOptionsForDays,
-		getIntervalSpec,
-		isRollingInterval,
-		rollingIntervalFor,
-		baseIntervalFor
+		getIntervalOptionsForDays
 	} from '$lib/components/charts/facility/range-interval-config.js';
-	import {
-		bucketFilterKindFor,
-		bucketFilterOptionsFor
-	} from '$lib/components/charts/v2/bucket-filter.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -87,54 +79,9 @@
 			? getIntervalsForRange(preset.id, tierOptions).options
 			: getIntervalOptionsForDays(customDays ?? 0, tierOptions).options;
 	});
-	// While rolling, grains without a rolling variant are dimmed.
-	let intervalOptions = $derived(
-		intervalOptionIds
-			.filter((id) => !isRollingInterval(id))
-			.map((id) => {
-				const rollingTarget = rollingIntervalFor(id);
-				return {
-					value: id,
-					label: getIntervalSpec(id)?.label ?? id,
-					disabled: rollingActive && !(rollingTarget && intervalOptionIds.includes(rollingTarget))
-				};
-			})
-	);
-
-	let currentIntervalLabel = $derived(getIntervalSpec(displayInterval)?.label ?? displayInterval);
-
-	let rollingActive = $derived(isRollingInterval(displayInterval));
-	let baseInterval = $derived(baseIntervalFor(displayInterval) ?? displayInterval);
-	let rollingSupported = $derived(intervalOptionIds.some((id) => isRollingInterval(id)));
-	let rollingAvailable = $derived.by(() => {
-		const target = rollingIntervalFor(baseInterval);
-		return target != null && intervalOptionIds.includes(target);
-	});
-
-	/** @param {string} baseId */
-	function handleBaseIntervalChange(baseId) {
-		const target = rollingActive ? rollingIntervalFor(baseId) : null;
-		onintervalchange?.(target && intervalOptionIds.includes(target) ? target : baseId);
-	}
-
-	function toggleRolling() {
-		if (rollingActive) {
-			onintervalchange?.(baseInterval);
-			return;
-		}
-		const target = rollingIntervalFor(baseInterval);
-		if (target && intervalOptionIds.includes(target)) onintervalchange?.(target);
-	}
-
 	let inAllTier = $derived(
 		selectedRange === -1 || (selectedRange == null && (customDays ?? 0) > ALL_TIER_MIN_DAYS)
 	);
-	let bucketFilterOptions = $derived(bucketFilterOptionsFor(bucketFilterKindFor(displayInterval)));
-	let bucketFilterVisible = $derived(showBucketFilter && inAllTier && !!bucketFilterOptions);
-	let bucketFilterSelectOptions = $derived([
-		{ value: 'all', label: 'All', divider: true },
-		...(bucketFilterOptions ?? []).map((option) => ({ value: option.id, label: option.label }))
-	]);
 
 	// Panning or zooming also leaves a concrete custom range.
 	let isCustomActive = $derived(selectedRange == null && startDate != null && endDate != null);
@@ -225,14 +172,6 @@
 	</span>
 {/snippet}
 
-{#snippet intervalBadge()}
-	<span
-		class="inline-flex items-center rounded-lg border {chipRestClass} px-4 py-2.5 text-xs font-medium text-dark-grey"
-	>
-		{currentIntervalLabel}
-	</span>
-{/snippet}
-
 {#snippet rangeDropdown()}
 	<Select.Root
 		type="single"
@@ -279,66 +218,21 @@
 	</Select.Root>
 {/snippet}
 
-{#snippet rollingToggle()}
-	<!-- A switch keeps the rolling window independent of the base grain. -->
-	<button
-		type="button"
-		role="switch"
-		aria-checked={rollingActive}
-		disabled={!rollingActive && !rollingAvailable}
-		onclick={toggleRolling}
-		class="w-full flex items-center gap-5 px-2 py-2 rounded-md cursor-pointer outline-none transition-colors hover:bg-warm-grey disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent {rollingActive
-			? 'text-black'
-			: 'text-mid-grey'}"
-	>
-		<span class="flex-1 text-left whitespace-nowrap">12-mth rolling sum</span>
-		<span
-			class="relative h-4 w-7 shrink-0 rounded-full transition-colors {rollingActive
-				? 'bg-dark-grey'
-				: 'bg-mid-warm-grey'}"
-		>
-			<span
-				class="absolute top-0.5 size-3 rounded-full bg-white transition-all {rollingActive
-					? 'left-3.5'
-					: 'left-0.5'}"
-			></span>
-		</span>
-	</button>
-{/snippet}
-
-{#snippet intervalControl()}
-	{#if showIntervalDropdown}
-		<FilterSelect
-			selected={baseInterval}
-			options={intervalOptions}
-			listLabel="Interval"
-			compact
-			footer={rollingSupported ? rollingToggle : undefined}
-			onchange={handleBaseIntervalChange}
-		/>
-	{:else}
-		{@render intervalBadge()}
-	{/if}
-{/snippet}
-
-{#snippet bucketFilterControl()}
-	{#if bucketFilterVisible}
-		<!-- Compare the same calendar period across years. -->
-		<FilterSelect
-			selected={bucketFilter ?? 'all'}
-			options={bucketFilterSelectOptions}
-			listLabel="Calendar period"
-			defaultValue="all"
-			compact
-			onchange={(value) => onbucketfilterchange?.(value === 'all' ? null : value)}
-		/>
-	{/if}
+{#snippet intervalControls()}
+	<IntervalControls
+		options={intervalOptionIds}
+		{displayInterval}
+		staticDisplay={!showIntervalDropdown}
+		showBucketFilter={showBucketFilter && inAllTier}
+		{bucketFilter}
+		{onintervalchange}
+		{onbucketfilterchange}
+	/>
 {/snippet}
 
 {#snippet smallControls()}
 	{@render rangeDropdown()}
-	{@render intervalControl()}
-	{@render bucketFilterControl()}
+	{@render intervalControls()}
 {/snippet}
 
 {#if variant === 'expanded'}
@@ -354,8 +248,7 @@
 			aria-busy={pending}
 			onchange={handleSwitchChange}
 		/>
-		{@render intervalControl()}
-		{@render bucketFilterControl()}
+		{@render intervalControls()}
 	</div>
 
 	<div class="flex md:hidden items-stretch gap-[var(--chart-range-gap,0.375rem)]">

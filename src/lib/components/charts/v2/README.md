@@ -517,7 +517,7 @@ The underlying `ChartZoomControls` component (used internally by floating mode) 
 
 ### ChartRangeBar
 
-A unified toolbar combining range presets, an integrated date-range picker, and an interval dropdown. Designed for the Facility Explorer but reusable with any chart.
+A unified toolbar combining range presets, an integrated date-range picker, and an interval dropdown. Designed for the Facility Explorer but reusable with any chart. Its interval pill, 12-month rolling switch and calendar-period filter are `IntervalControls`, which Tracker Compare also uses on its own: pass `options` (interval ids, including any `12mr*` variants), `displayInterval`, `showBucketFilter`, `bucketFilter`, `onintervalchange` and `onbucketfilterchange`.
 
 ```svelte
 <script>
@@ -939,6 +939,7 @@ src/lib/components/charts/v2/
 ├── ChartZoomControls.svelte    # +/- zoom buttons (top-right, hover-reveal)
 ├── ChartResizeHandle.svelte    # Vertical resize handle below the chart
 ├── ChartRangeBar.svelte        # Unified toolbar: range presets + calendar + interval dropdown
+├── IntervalControls.svelte     # Interval pill + 12-mth rolling switch + calendar-period filter
 ├── DateBrush.svelte            # Date range brush selector
 ├── IntervalSelector.svelte     # Interval toggle
 │

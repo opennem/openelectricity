@@ -4,6 +4,7 @@ import {
 } from '$lib/components/charts/network/process-price-vw.js';
 import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
 import { deriveIntensityDisplayRows } from '$lib/components/charts/network/process-emissions-intensity.js';
+import { RENEWABLES_DOCS } from './tracker-model.js';
 /** @typedef {Pick<import('./types.js').GenerationSnapshot, 'data' | 'start' | 'end' | 'seriesNames'>} Snapshot */
 /** @typedef {{value: number, time: number, ties: number}} Extreme */
 
@@ -138,10 +139,7 @@ export function buildWindowMetrics({
 			id: 'renewables',
 			label: 'Renewables',
 			unit: '%',
-			docs: {
-				href: 'https://docs.openelectricity.org.au/guides/renewables/',
-				label: 'How renewable energy is calculated'
-			},
+			docs: RENEWABLES_DOCS,
 			description: 'Renewable share of regional gross demand, independent of technology selection.',
 			...windowExtrema(renewables, ['renewable_share'])
 		},

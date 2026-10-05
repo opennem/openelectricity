@@ -5,7 +5,6 @@ import {
 	collectPageErrors,
 	download,
 	expectNoHorizontalScroll,
-	hydrated,
 	navPill,
 	openOptions,
 	pickNavOption,
@@ -108,7 +107,7 @@ test('view routes reset query settings while history restores each view and its 
 	await page.goto(original);
 	await regionsReady(page);
 	const nav = page.getByTestId('tracker-top-nav');
-	await expect(nav.getByRole('button', { name: 'Monthly', exact: true })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'Month', exact: true })).toBeVisible();
 	await expect(nav.getByRole('separator')).toHaveCount(1);
 	await nav.getByRole('button', { name: 'Profile', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker\/profile$/);
@@ -125,13 +124,14 @@ test('view routes reset query settings while history restores each view and its 
 	await page.goBack();
 	await page.goBack();
 	await expect(page).toHaveURL(original);
-	await expect(nav.getByRole('button', { name: 'Monthly', exact: true })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'Month', exact: true })).toBeVisible();
 	await page.goForward();
 	await expect(navPill(page, '7 days')).toBeVisible();
 	await nav.getByRole('button', { name: 'Compare', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker\/compare$/);
 	await regionsReady(page);
-	await expect(nav.getByRole('button', { name: '12-month rolling', exact: true })).toBeVisible();
+	// The default 12-month rolling interval reads as its grain plus the switch.
+	await expect(nav.getByRole('button', { name: 'Month', exact: true })).toBeVisible();
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 	await expect(nav.locator('[data-view="compare"]')).toHaveCSS('opacity', '1');
 	await page.screenshot({ path: 'test-results/tracker-top-nav.png' });
@@ -190,8 +190,13 @@ test('late responses cannot restore a deselected region; interval and zoom choic
 		page.getByRole('button', { name: 'Compare Western Australia (SWIS)', exact: true })
 	).toHaveAttribute('aria-pressed', 'false');
 	await expect(regionRow(page, 'Western Australia (SWIS)')).toContainText('—');
-	await page.getByRole('button', { name: '12-month rolling', exact: true }).click();
-	await page.getByRole('option', { name: 'Financial year', exact: true }).click();
+	// Fin-Year has no rolling variant: switch rolling off, then pick it.
+	await navPill(page, 'Month').click();
+	await page.getByRole('switch', { name: '12-mth rolling sum', exact: true }).click();
+	await page
+		.getByRole('listbox', { name: 'Interval', exact: true })
+		.getByRole('option', { name: 'Fin-Year', exact: true })
+		.click();
 	await expect(page).toHaveURL(/compare-interval=fy/);
 	await expect(page.getByTestId('tracker-range-label')).toHaveText(/ – FY2026$/);
 	await page.getByRole('group', { name: 'Carbon intensity comparison chart' }).hover();
@@ -614,6 +619,86 @@ test('hovering a chart scrolls the Regions table to its column', async ({ page }
 	await expect.poll(inView).toBe(true);
 });
 
+test('intervals match Timeline: grains, a rolling switch and a calendar-period filter', async ({
+	page
+}) => {
+	await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/tracker/compare');
+	await regionsReady(page);
+	const readout = page.getByTestId('tracker-range-label');
+	// Rolling stays on across grains that have a rolling variant.
+	await pickNavOption(page, 'Interval', 'Month', 'Season');
+	await expect(page).toHaveURL(/compare-interval=12mr-season/);
+	await expect(navPill(page, 'Season')).toBeVisible();
+	// The calendar-period pill follows the grain.
+	await pickNavOption(page, 'Calendar period', 'All', 'Summer');
+	await expect(page).toHaveURL(/compare-filter=summer/);
+	await page.getByRole('button', { name: 'Inspect carbon intensity values' }).focus();
+	await page.keyboard.press('ArrowLeft');
+	await expect(readout).toHaveText(/^12 months to Feb \d{4}$/);
+	await page.keyboard.press('Escape');
+	// Rolling off: plain seasons keep the filter; a quarter cannot, so it drops.
+	await navPill(page, 'Season').click();
+	await page.getByRole('switch', { name: '12-mth rolling sum', exact: true }).click();
+	await expect(page).toHaveURL(/compare-interval=season&compare-filter=summer/);
+	await page
+		.getByRole('listbox', { name: 'Interval', exact: true })
+		.getByRole('option', { name: 'Quarter', exact: true })
+		.click();
+	await expect(page).toHaveURL(/compare-interval=quarter/);
+	await expect(page).not.toHaveURL(/compare-filter/);
+	await expect(navPill(page, 'All')).toBeVisible();
+	// Financial and calendar years have no periods to filter.
+	await pickNavOption(page, 'Interval', 'Quarter', 'Year');
+	await expect(navPill(page, 'All')).toHaveCount(0);
+	// There is no Daily interval; an older daily link opens on 12-month rolling months.
+	await navPill(page, 'Year').click();
+	await expect(
+		page.getByRole('listbox', { name: 'Interval', exact: true }).getByRole('option')
+	).toHaveText(['Month', 'Season', 'Quarter', 'Half-Year', 'Fin-Year', 'Year']);
+	await page.keyboard.press('Escape');
+	await page.goto('/tracker/compare?compare-interval=1d');
+	await regionsReady(page);
+	await expect(navPill(page, 'Month')).toBeVisible();
+	await expect(page.getByRole('switch', { name: '12-mth rolling sum' })).toHaveCount(0);
+});
+
+test('the renewables card switches between official renewables and renewables excluding batteries', async ({
+	page
+}) => {
+	const data = await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/tracker/compare');
+	await regionsReady(page);
+	const requests = data.requests.length;
+	const exBatteries = page.getByRole('switch', { name: 'Excl. batteries', exact: true });
+	await expect(exBatteries).not.toBeChecked();
+	// The official footnote links OE's renewables guide, as the Renewables metric does.
+	await expect(
+		page.getByRole('link', { name: 'how renewable energy is calculated', exact: true })
+	).toHaveAttribute('href', 'https://docs.openelectricity.org.au/guides/renewables/');
+	await exBatteries.click();
+	await expect(page).toHaveURL(/compare-charts=intensity,renewables-ex-batteries/);
+	await expect(
+		page.getByRole('heading', { name: 'Renewables proportion excl. batteries', exact: true })
+	).toBeVisible();
+	await expect(
+		regionsTable(page).getByRole('columnheader', { name: /Renewables excl. batteries/ })
+	).toBeVisible();
+	await expect(
+		page.getByText(/Renewables excl. batteries sum solar, wind, hydro and bioenergy/)
+	).toBeVisible();
+	// Generation keeps excluding batteries; the same responses serve both.
+	await page.getByRole('tab', { name: 'Generation', exact: true }).click();
+	await expect(page).toHaveURL(/compare-charts=intensity,renewables-ex-batteries-generation/);
+	await expect(exBatteries).toBeChecked();
+	expect(data.requests.length).toBe(requests);
+	await page.goBack();
+	await page.goBack();
+	await expect(exBatteries).not.toBeChecked();
+});
+
 test('heatmap display shares hover and pinning with the table, exports PNG and restores through history', async ({
 	page
 }) => {
@@ -672,79 +757,6 @@ test('heatmap display shares hover and pinning with the table, exports PNG and r
 	await expect(card(page, 'Carbon intensity').locator('.stratum-chart')).toHaveCount(1);
 	await page.goForward();
 	await expect(card(page, 'Carbon intensity').locator('svg[data-png-layer]')).toBeVisible();
-	await page.setViewportSize({ width: 390, height: 800 });
-	await expectNoHorizontalScroll(page);
-	expect(errors).toEqual([]);
-});
-
-test('daily interval is a sliding one-year window fetched with a three-month buffer', async ({
-	page
-}) => {
-	const errors = collectPageErrors(page);
-	const data = await regionsFixture(page);
-	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/tracker/compare?compare-display=stripes&compare-interval=1d');
-	await hydrated(page);
-	await expect(
-		page.getByText('Complete periods · daily source data', { exact: true })
-	).toBeVisible();
-	const daily = () => data.requests.filter((request) => request.interval === '1d');
-	const window = page.getByTestId('comparison-window');
-	await expect(window).toHaveText('11 Sept 2025 – 10 Sept 2026');
-	// Six regions × four sources, less flows for the closed WEM network.
-	await expect.poll(() => daily().length).toBe(23);
-	expect(new Set(daily().map((request) => request.dateStart))).toEqual(
-		new Set(['2025-06-01T00:00:00'])
-	);
-	await expect(page.getByRole('button', { name: 'Next year' })).toBeDisabled();
-	await expect(page.getByRole('button', { name: 'Latest' })).toHaveCount(0);
-	const intensity = card(page, 'Carbon intensity');
-	const stripes = intensity.locator('svg[data-png-layer]');
-	await expect(stripes.locator('text', { hasText: 'Jan 2026' })).toBeVisible();
-	await expect(stripes.locator('text', { hasText: 'Aug' })).toBeVisible();
-	// Hovering inspects a single day.
-	const box = await stripes.boundingBox();
-	if (!box) throw new Error('Stripes have no size');
-	await page.mouse.move(box.x + 96 + (box.width - 96) * 0.5, box.y + 20);
-	await expect(page.getByTestId('tracker-range-label')).toHaveText(/^\d{1,2} \w+ 2026$/);
-	await page.mouse.move(0, 0);
-	// Stepping back a year fetches only the months the buffer does not hold.
-	await page.getByRole('button', { name: 'Previous year' }).click();
-	await expect(window).toHaveText('11 Sept 2024 – 10 Sept 2025');
-	await expect
-		.poll(() => daily().filter((request) => request.dateStart === '2024-06-01T00:00:00').length)
-		.toBe(23);
-	expect(daily().length).toBe(46);
-	await expect(page.getByRole('button', { name: 'Latest' })).toBeVisible();
-	// Keyboard moves from the navigator: month, six months, year boundary, latest.
-	await page.getByRole('button', { name: 'Previous year' }).focus();
-	await page.keyboard.press('ArrowRight');
-	await expect(window).toHaveText('11 Oct 2024 – 10 Oct 2025');
-	expect(daily().length).toBe(46); // inside the buffer
-	await page.keyboard.press('Shift+ArrowLeft');
-	await expect(window).toHaveText('11 Apr 2024 – 10 Apr 2025');
-	await expect.poll(() => daily().length).toBe(69); // January to May 2024
-	await page.keyboard.press('Control+ArrowLeft');
-	await expect(window).toHaveText('1 Jan 2024 – 30 Dec 2024'); // a fixed 365-day window in a leap year
-	await expect.poll(() => daily().length).toBe(92); // October to December 2023
-	await page.keyboard.press('Home');
-	await expect(window).toHaveText('11 Sept 2025 – 10 Sept 2026');
-	expect(daily().length).toBe(92); // the latest window was warm
-	expect(new Set(daily().map((request) => request.dateStart)).size).toBe(4);
-	// A month label makes that month the window's first.
-	await page.getByRole('button', { name: 'Previous year' }).click();
-	await stripes.locator('text', { hasText: 'Jan 2025' }).click();
-	await expect(window).toHaveText('1 Jan 2025 – 31 Dec 2025');
-	await expect(page).toHaveURL(/compare-end=1767225600000/);
-	// Switching back to rolling months keeps the right edge and the warm monthly cache.
-	const monthly = data.requests.filter((request) => request.interval === '1M').length;
-	await page.getByRole('button', { name: 'Daily', exact: true }).click();
-	await page.getByRole('option', { name: '12-month rolling', exact: true }).click();
-	await expect(
-		page.getByText('Complete periods · monthly source data', { exact: true })
-	).toBeVisible();
-	await expect(page).toHaveURL(/compare-end=1767225600000/);
-	expect(data.requests.filter((request) => request.interval === '1M').length).toBe(monthly);
 	await page.setViewportSize({ width: 390, height: 800 });
 	await expectNoHorizontalScroll(page);
 	expect(errors).toEqual([]);

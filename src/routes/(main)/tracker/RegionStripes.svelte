@@ -10,16 +10,13 @@
 	import { comparisonMetric, formatComparisonValue } from './comparison-metrics.js';
 	import { inspectionStep } from './comparison-inspection.js';
 	import { stripeCells, stripeLegendItems, stripePeriodAt } from './comparison-stripes.js';
-	import { windowStartingAtMonth } from './comparison-navigation.js';
 	import {
 		COMPARISON_MIN_SPAN_MS,
 		COMPARISON_REGIONS,
-		DAILY_WINDOW_MS,
 		comparisonChartRows,
 		comparisonPeriod,
 		comparisonTickLabel,
 		comparisonTicks,
-		monthStart,
 		nextPeriodStart,
 		visibleComparisonRows
 	} from './region-comparison.js';
@@ -33,7 +30,7 @@
 	 * export composes the canvas raster under the SVG chrome. Pointer
 	 * geometry is pure maths on the rows, so nothing is hit-tested in the DOM.
 	 * @type {{data: Record<string, any[]>, regions: string[], metric: string,
-	 *   basis: 'demand' | 'generation', interval: string,
+	 *   basis: 'demand' | 'generation', interval: string, filter: string | null,
 	 *   viewport: {start: number, end: number}, bounds: {start: number, end: number},
 	 *   scale: import('./comparison-stripes.js').StripeScale, tooltip: boolean,
 	 *   onhoverregion: (region: string | null) => void,
@@ -46,6 +43,7 @@
 		metric,
 		basis,
 		interval,
+		filter,
 		viewport,
 		bounds,
 		scale,
@@ -63,7 +61,7 @@
 	const AXIS_HEIGHT = 24;
 	const DRAG_THRESHOLD_PX = 3;
 	/** Labels that fit the narrow gutter below `sm`. */
-	const NARROW_LABELS = /** @type {Record<string, string>} */ ({ wem: 'WA', au: 'All' });
+	const NARROW_LABELS = /** @type {Record<string, string>} */ ({ au: 'All' });
 	const inspectionHintId = $props.id();
 	const clipId = `${inspectionHintId}-plot`;
 	const sm = new MediaQuery('(min-width: 640px)');
@@ -77,45 +75,32 @@
 	let width = $state(0);
 	let plotWidth = $derived(Math.max(0, width - labelWidth));
 	let definition = $derived(comparisonMetric(metric));
-	let rows = $derived(comparisonChartRows(data, regions, metric, basis, interval));
+	let rows = $derived(comparisonChartRows(data, regions, metric, basis, interval, filter));
 	let byTime = $derived(new Map(rows.map((row) => [row.time, row])));
 	let visibleRows = $derived(visibleComparisonRows(rows, viewport));
 	let span = $derived(viewport.end - viewport.start);
 	let pxPerMs = $derived(span > 0 ? plotWidth / span : 0);
 	let rowsHeight = $derived(Math.max(0, regions.length * (rowHeight + GAP) - GAP));
 	let height = $derived(TOP + rowsHeight + AXIS_HEIGHT);
-	let fixedWindow = $derived(interval === '1d');
 	/** @param {number} time */
 	const x = (time) => labelWidth + (time - viewport.start) * pxPerMs;
 	/** @param {number} index */
 	const rowY = (index) => TOP + index * (rowHeight + GAP);
-	let ticks = $derived(comparisonTicks(visibleRows, interval).map((date) => date.getTime()));
-	/** Daily axes are month cells that jump the window, anchored to month
-	 * starts (the first may begin left of the viewport and is clipped) so a
-	 * label keeps its place as the window slides; other intervals label the
-	 * shared calendar-anchored ticks. */
-	let axis = $derived.by(() => {
-		const first = monthStart(viewport.start);
-		const starts = fixedWindow ? [first, ...ticks.filter((time) => time > first)] : ticks;
-		return starts.map((time, index) => {
-			const next = fixedWindow ? (starts[index + 1] ?? viewport.end) : time;
-			const date = new Date(time);
-			return {
-				time,
-				x: x(time),
-				width: (next - time) * pxPerMs,
-				label: comparisonTickLabel(time, interval, viewport),
-				year: date.getUTCFullYear(),
-				month: date.getUTCMonth() + 1,
-				january: date.getUTCMonth() === 0 && date.getUTCDate() === 1
-			};
-		});
-	});
+	let ticks = $derived(
+		comparisonTicks(visibleRows, interval, filter).map((date) => date.getTime())
+	);
+	/** Axis labels at the shared calendar-anchored ticks. */
+	let axis = $derived(
+		ticks.map((time) => ({ time, x: x(time), label: comparisonTickLabel(time, viewport) }))
+	);
 	let inspected = $derived(hover ?? focus);
 	let highlight = $derived(
 		inspected == null
 			? null
-			: { x: x(inspected), width: (nextPeriodStart(inspected, interval) - inspected) * pxPerMs }
+			: {
+					x: x(inspected),
+					width: (nextPeriodStart(inspected, interval, filter) - inspected) * pxPerMs
+				}
 	);
 	/** Pointer position inside the wrapper, for the tooltip and hovered row. */
 	let pointer = $state(/** @type {{x: number, y: number} | null} */ (null));
@@ -180,9 +165,10 @@
 		context.setTransform(dpr, 0, 0, dpr, 0, 0);
 		context.clearRect(0, 0, plotWidth, rowsHeight);
 		const drawn = rows.filter(
-			(row) => row.time < viewport.end && nextPeriodStart(row.time, interval) > viewport.start
+			(row) =>
+				row.time < viewport.end && nextPeriodStart(row.time, interval, filter) > viewport.start
 		);
-		const cells = stripeCells(drawn, interval, viewport.start, pxPerMs);
+		const cells = stripeCells(drawn, interval, viewport.start, pxPerMs, filter);
 		let fill = '';
 		regions.forEach((id, index) => {
 			const y = index * (rowHeight + GAP);
@@ -211,8 +197,8 @@
 		viewport: () => viewport,
 		apply: (start, end) => onviewport(start, end, false),
 		minDateMs: () => bounds.start,
-		minDurationMs: () => (fixedWindow ? DAILY_WINDOW_MS : COMPARISON_MIN_SPAN_MS),
-		maxDurationMs: () => (fixedWindow ? DAILY_WINDOW_MS : bounds.end - bounds.start),
+		minDurationMs: () => COMPARISON_MIN_SPAN_MS,
+		maxDurationMs: () => bounds.end - bounds.start,
 		onGestureStart: () => {
 			setPointer(null);
 			onhover(null);
@@ -255,7 +241,12 @@
 	/** The visible period under a wrapper x, if any. @param {number} px */
 	function periodAt(px) {
 		if (!pxPerMs) return null;
-		const period = stripePeriodAt(rows, interval, viewport.start + (px - labelWidth) / pxPerMs);
+		const period = stripePeriodAt(
+			rows,
+			interval,
+			viewport.start + (px - labelWidth) / pxPerMs,
+			filter
+		);
 		return period != null && period >= viewport.start && period < viewport.end ? period : null;
 	}
 	/** @param {PointerEvent} event */
@@ -321,11 +312,6 @@
 		element.addEventListener('wheel', handleWheel, { passive: false });
 		return () => element.removeEventListener('wheel', handleWheel);
 	}
-	/** Slide the window so a month is its first month. @param {number} year @param {number} month */
-	function jumpToMonth(year, month) {
-		const next = windowStartingAtMonth(year, month, bounds);
-		onviewport(next.start, next.end, true);
-	}
 	/** @param {KeyboardEvent} event */
 	function inspect(event) {
 		if (event.target !== event.currentTarget) return;
@@ -378,22 +364,6 @@
 				>
 			{/each}
 			<g clip-path={`url(#${clipId})`}>
-				{#if fixedWindow}
-					{#each axis as cell (cell.time)}
-						{#if cell.january}
-							<line
-								data-png-exclude
-								x1={cell.x}
-								x2={cell.x}
-								y1={TOP}
-								y2={TOP + rowsHeight}
-								class="stroke-dark-grey/60"
-								stroke="currentColor"
-								stroke-dasharray="2 3"
-							/>
-						{/if}
-					{/each}
-				{/if}
 				{#if highlight}
 					<rect
 						data-png-exclude
@@ -410,60 +380,17 @@
 			</g>
 			<g transform={`translate(0 ${TOP + rowsHeight})`} clip-path={`url(#${clipId})`}>
 				{#each axis as cell (cell.time)}
-					{#if fixedWindow}
-						<g
-							role="button"
-							tabindex="-1"
-							class="cursor-pointer [&:hover>rect]:fill-warm-grey"
-							onclick={() => jumpToMonth(cell.year, cell.month)}
-							onkeydown={(event) => {
-								if (event.key === 'Enter' || event.key === ' ') jumpToMonth(cell.year, cell.month);
-							}}
-						>
-							<title>Show the year from {cell.label}</title>
-							<rect
-								data-png-exclude
-								x={cell.x}
-								y="0"
-								width={Math.max(0, cell.width)}
-								height={AXIS_HEIGHT}
-								fill="transparent"
-							/>
-							<line
-								x1={cell.x}
-								x2={cell.x}
-								y1="0"
-								y2={cell.january ? 14 : 6}
-								class={cell.january ? 'stroke-dark-grey' : 'stroke-mid-warm-grey'}
-								stroke="currentColor"
-							/>
-							{#if cell.width > 20}
-								<!-- Narrow months keep the month; January drops its year when it cannot fit. -->
-								<text
-									x={cell.x + 4}
-									y="16"
-									class="text-xxs font-light {cell.january ? 'fill-dark-grey' : 'fill-mid-grey'}"
-									fill="currentColor"
-									>{cell.width > 52 ? cell.label : cell.label.split(' ')[0]}</text
-								>
-							{/if}
-						</g>
-					{:else}
-						<line
-							x1={cell.x}
-							x2={cell.x}
-							y1="0"
-							y2="6"
-							class="stroke-mid-warm-grey"
-							stroke="currentColor"
-						/>
-						<text
-							x={cell.x + 4}
-							y="16"
-							class="fill-mid-grey text-xxs font-light"
-							fill="currentColor">{cell.label}</text
-						>
-					{/if}
+					<line
+						x1={cell.x}
+						x2={cell.x}
+						y1="0"
+						y2="6"
+						class="stroke-mid-warm-grey"
+						stroke="currentColor"
+					/>
+					<text x={cell.x + 4} y="16" class="fill-mid-grey text-xxs font-light" fill="currentColor"
+						>{cell.label}</text
+					>
 				{/each}
 			</g>
 			<!-- Pointer-only overlay; keyboard inspection is the button below. -->
@@ -523,16 +450,14 @@
 			</div>
 		{/if}
 	</div>
-	{#if !fixedWindow}
-		<div class="flex items-center justify-end gap-0.5 px-2" data-png-exclude>
-			<StaticZoomButtons
-				onzoomin={gestures.zoomIn}
-				onzoomout={gestures.zoomOut}
-				isAtMinZoom={span <= COMPARISON_MIN_SPAN_MS}
-				isAtMaxZoom={viewport.start <= bounds.start && viewport.end >= bounds.end}
-			/>
-		</div>
-	{/if}
+	<div class="flex items-center justify-end gap-0.5 px-2" data-png-exclude>
+		<StaticZoomButtons
+			onzoomin={gestures.zoomIn}
+			onzoomout={gestures.zoomOut}
+			isAtMinZoom={span <= COMPARISON_MIN_SPAN_MS}
+			isAtMaxZoom={viewport.start <= bounds.start && viewport.end >= bounds.end}
+		/>
+	</div>
 	<button
 		type="button"
 		class="sr-only focus:not-sr-only focus:absolute focus:bottom-2 focus:left-2 focus:z-30 rounded border border-mid-warm-grey bg-white px-3 py-2 text-xs focus:outline focus:outline-dark-grey"

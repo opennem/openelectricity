@@ -12,7 +12,6 @@
 		comparisonTicks,
 		comparisonYDomain,
 		COMPARISON_MIN_SPAN_MS,
-		DAILY_WINDOW_MS,
 		visibleComparisonRows
 	} from './region-comparison.js';
 
@@ -20,7 +19,7 @@
 	const SERIES_LABELS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.label]));
 	const SERIES_COLOURS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.colour]));
 
-	/** @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string,
+	/** @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string, filter: string | null,
 	 * viewport: {start:number,end:number}, bounds: {start:number,end:number}, height: number,
 	 * tooltip: boolean, engaged: boolean, hover: number | null, focus: number | null, onhover: (time:number | null) => void, onfocus: (time:number | null) => void,
 	 * hoverRegion: string | null, onhoverregion: (region: string | null) => void,
@@ -31,6 +30,7 @@
 		metric,
 		basis,
 		interval,
+		filter,
 		viewport,
 		bounds,
 		height,
@@ -64,7 +64,7 @@
 	chart.chartOptions.allowHoverHighlight = true;
 	const inspectionHintId = $props.id();
 	let definition = $derived(comparisonMetric(metric));
-	let rows = $derived(comparisonChartRows(data, regions, metric, basis, interval));
+	let rows = $derived(comparisonChartRows(data, regions, metric, basis, interval, filter));
 	let visibleRows = $derived(visibleComparisonRows(rows, viewport));
 	// Each effect syncs one concern into the store, so a pan frame re-runs only
 	// the viewport sync rather than rebuilding labels, data and units.
@@ -90,12 +90,10 @@
 	$effect(() => {
 		chart.chartStyles.chartHeightPx = height;
 	});
-	// The daily interval is a fixed one-year window: zoom is exhausted both ways.
-	let fixedWindow = $derived(interval === '1d');
 	$effect(() => {
-		chart.formatTickX = (date) => comparisonTickLabel(Number(date), interval, viewport);
+		chart.formatTickX = (date) => comparisonTickLabel(Number(date), viewport);
 		chart.setXDomain(viewport.start, viewport.end);
-		const ticks = comparisonTicks(visibleRows, interval);
+		const ticks = comparisonTicks(visibleRows, interval, filter);
 		chart.xTicks = ticks;
 		chart.xGridlineTicks = ticks;
 	});
@@ -121,8 +119,8 @@
 		viewport: () => viewport,
 		apply: (start, end) => onviewport(start, end, false),
 		minDateMs: () => bounds.start,
-		minDurationMs: () => (fixedWindow ? DAILY_WINDOW_MS : COMPARISON_MIN_SPAN_MS),
-		maxDurationMs: () => (fixedWindow ? DAILY_WINDOW_MS : bounds.end - bounds.start),
+		minDurationMs: () => COMPARISON_MIN_SPAN_MS,
+		maxDurationMs: () => bounds.end - bounds.start,
 		onGestureStart: () => onhover(null),
 		onSettle: (start, end) => onviewport(start, end, true)
 	});
@@ -152,8 +150,8 @@
 		onzoom={gestures.handleZoom}
 		onzoomin={gestures.zoomIn}
 		onzoomout={gestures.zoomOut}
-		isAtMinZoom={fixedWindow || viewport.end - viewport.start <= COMPARISON_MIN_SPAN_MS}
-		isAtMaxZoom={fixedWindow || (viewport.start <= bounds.start && viewport.end >= bounds.end)}
+		isAtMinZoom={viewport.end - viewport.start <= COMPARISON_MIN_SPAN_MS}
+		isAtMaxZoom={viewport.start <= bounds.start && viewport.end >= bounds.end}
 		onhover={(time, key) => {
 			onhover(time);
 			// Only a line names a region; the plot's own hover keeps it until

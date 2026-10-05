@@ -13,7 +13,10 @@ const labels = {
 	coal: 'Coal',
 	hydro: 'Hydro'
 };
-/** @type {Array<{id:string,label:string,shortLabel:string,group:string,kind:string,fuel?:string}>} */
+/** `exBatteries` marks the renewables presentations that sum OE's renewable
+ * fuel technologies (`RENEWABLE_FUELS`) instead of the official
+ * `generation_renewable_energy`, which also counts battery discharge.
+ * @type {Array<{id:string,label:string,shortLabel:string,group:string,kind:string,fuel?:string,exBatteries?:boolean}>} */
 export const COMPARISON_METRICS = [
 	{
 		id: 'intensity',
@@ -31,6 +34,15 @@ export const COMPARISON_METRICS = [
 		kind: 'energy'
 	})),
 	{
+		id: 'generation_ex_batteries',
+		fuel: 'renewables',
+		exBatteries: true,
+		label: 'Renewables generation excl. batteries',
+		shortLabel: 'Renewables excl. batteries',
+		group: 'Generation',
+		kind: 'energy'
+	},
+	{
 		id: 'net_imports_share',
 		label: 'Net imports proportion',
 		shortLabel: 'Net imports',
@@ -45,6 +57,15 @@ export const COMPARISON_METRICS = [
 		group: 'Proportion',
 		kind: 'share'
 	})),
+	{
+		id: 'share_ex_batteries',
+		fuel: 'renewables',
+		exBatteries: true,
+		label: 'Renewables proportion excl. batteries',
+		shortLabel: 'Renewables excl. batteries',
+		group: 'Proportion',
+		kind: 'share'
+	},
 	...['solar', 'wind', 'hydro', 'gas', 'coal'].map((fuel) => ({
 		id: `${fuel}_value`,
 		fuel,
@@ -74,14 +95,20 @@ export const DEFAULT_COMPARISON_CHARTS = ['intensity', 'share'];
 export function comparisonChartId(/** @type {string} */ id) {
 	if (id === 'price') return 'price_real';
 	const metric = comparisonMetric(id);
-	return metric.kind === 'energy'
-		? metric.fuel === 'renewables'
-			? 'share'
-			: `${metric.fuel}_share`
+	return metric.kind === 'energy' || metric.exBatteries
+		? comparisonFuelMetric(metric.fuel ?? '')
 		: id;
 }
+/** A fuel chart's metric for a presentation: its proportion or generation,
+ * and for renewables the official figure or the sum excluding batteries.
+ * @param {string} fuel @param {{generation?: boolean, exBatteries?: boolean}} [presentation] */
+export function comparisonFuelMetric(fuel, { generation = false, exBatteries = false } = {}) {
+	const kind = generation ? 'generation' : 'share';
+	if (fuel !== 'renewables') return `${fuel}_${kind}`;
+	return exBatteries ? `${kind}_ex_batteries` : kind;
+}
 export const COMPARISON_CHART_OPTIONS = COMPARISON_METRICS.filter(
-	(metric) => metric.kind !== 'energy' && metric.id !== 'price'
+	(metric) => metric.kind !== 'energy' && metric.id !== 'price' && !metric.exBatteries
 ).map((metric) => ({
 	...metric,
 	label:
@@ -102,6 +129,8 @@ export const COMPARISON_METRIC_GROUPS = [
 export function comparisonChartSlug(id) {
 	if (id === 'share') return 'renewables';
 	if (id === 'generation') return 'renewables-generation';
+	if (id === 'share_ex_batteries') return 'renewables-ex-batteries';
+	if (id === 'generation_ex_batteries') return 'renewables-ex-batteries-generation';
 	return id.replace(/_share$/, '').replaceAll('_', '-');
 }
 const CHARTS_BY_SLUG = new Map(COMPARISON_METRICS.map(({ id }) => [comparisonChartSlug(id), id]));
@@ -129,7 +158,17 @@ export function comparisonUnit(id, basis, base = false) {
 	if (metric.kind === 'price') return '$/MWh';
 	return `% ${id === 'net_imports_share' || basis === 'demand' ? 'demand' : 'generation'}`;
 }
-export const FUEL_COMPONENTS = ['solar', 'wind', 'hydro', 'gas', 'coal'];
+export const FUEL_COMPONENTS = ['solar', 'wind', 'hydro', 'bioenergy', 'gas', 'coal'];
+/** OE's renewable fuel technologies (its `renewable=true` grouping): solar
+ * (utility and rooftop), wind, hydro (pumped-hydro output included, as OE
+ * classes it) and bioenergy — no battery discharge or pumping. */
+export const RENEWABLE_FUELS = ['solar', 'wind', 'hydro', 'bioenergy'];
+/** Renewables excluding batteries, or null when any of its fuels is missing.
+ * @param {Record<string, any> | undefined} row */
+function renewablesExBatteries(row) {
+	const values = RENEWABLE_FUELS.map((fuel) => row?.[`${fuel}_energy`]);
+	return values.every(Number.isFinite) ? values.reduce((a, b) => a + b, 0) : null;
+}
 /** Display value for the Regions table and stripes tooltips: one decimal,
  * energy in GWh, missing readings as an em dash.
  * @param {number | null | undefined} value @param {string} id */
@@ -197,6 +236,26 @@ export function comparisonTableColumn(id, basis, units) {
 export function calendarLabelMs(stamp) {
 	return Date.parse(String(stamp).slice(0, 19) + 'Z');
 }
+/**
+ * How Compare reads a provider series' gaps. Its life runs from its first
+ * reading to its last, as calendar label times (`first` is Infinity when it has
+ * none): the API pads a technology's series with nulls before it starts and
+ * after it retires, and those months are absent, not missing. Inside its life,
+ * a technology that `idles` (reports explicit zeros elsewhere, as peakers do)
+ * also reports some idle months as null, so its nulls count as zero; for any
+ * other technology a null is a missing observation (SA wind, May 2008 – June
+ * 2009).
+ * @param {Array<[string, number | null]> | undefined} data
+ */
+export function seriesSpan(data) {
+	const readings = (data ?? []).filter(([, value]) => Number.isFinite(value));
+	const times = readings.map(([stamp]) => calendarLabelMs(stamp));
+	return {
+		first: Math.min(...times),
+		last: Math.max(...times),
+		idles: readings.some(([, value]) => value === 0)
+	};
+}
 /** @param {string} tech @param {string} fuel */
 export function matchesComparisonFuel(tech, fuel) {
 	return tech === fuel || tech.startsWith(`${fuel}_`);
@@ -216,8 +275,7 @@ export function comparisonFuelRows(response, metric) {
 		return {
 			tech: series.columns?.fueltech ?? series.name ?? '',
 			values,
-			first: Math.min(...values.keys()),
-			last: Math.max(...values.keys())
+			...seriesSpan(series.data)
 		};
 	});
 	const times = [...new Set(entries.flatMap((entry) => [...entry.values.keys()]))]
@@ -227,11 +285,14 @@ export function comparisonFuelRows(response, metric) {
 		/** @param {typeof entries} members */
 		const sum = (members) => {
 			if (!members.length) return 0;
-			// A technology absent at this date contributes zero; an explicit missing
+			// A technology absent at this date, or idle, contributes zero; a missing
 			// observation invalidates the group instead of silently understating it.
 			const values = members
 				.filter((entry) => time >= entry.first && time <= entry.last)
-				.map((entry) => entry.values.get(time));
+				.map((entry) => {
+					const value = entry.values.get(time);
+					return Number.isFinite(value) || !entry.idles ? value : 0;
+				});
 			return values.every(Number.isFinite) ? values.map(Number).reduce((a, b) => a + b, 0) : null;
 		};
 		return {
@@ -303,7 +364,9 @@ export function comparisonMetricValue(row, id, basis) {
 	const fuel = metric.fuel;
 	const energy =
 		fuel === 'renewables'
-			? row?.renewables
+			? metric.exBatteries
+				? renewablesExBatteries(row)
+				: row?.renewables
 			: fuel === 'solar_wind'
 				? sum(row?.solar_energy, row?.wind_energy)
 				: row?.[`${fuel}_energy`];

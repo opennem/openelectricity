@@ -200,14 +200,18 @@ describe('tracker URLs', () => {
 		expect(parsed.range).toEqual({ kind: 'preset', days: 365, intervalId: '1M' });
 	});
 
-	it('round-trips the comparison display and daily interval with the compare view', () => {
-		const params = new URLSearchParams('compare-display=stripes&compare-interval=1d');
+	it('round-trips the comparison display, interval and filter with the compare view', () => {
+		const params = new URLSearchParams(
+			'compare-display=stripes&compare-interval=season&compare-filter=winter'
+		);
 		const parsed = parseTrackerUrl(params, context);
 		expect(parsed.regionComparison.display).toBe('stripes');
-		expect(parsed.regionComparison.interval).toBe('1d');
+		expect(parsed.regionComparison.interval).toBe('season');
+		expect(parsed.regionComparison.filter).toBe('winter');
 		const url = applyTrackerUrl(new URL('https://example.test/tracker'), parsed);
 		expect(url.searchParams.get('compare-display')).toBe('heatmap');
-		expect(url.searchParams.get('compare-interval')).toBe('1d');
+		expect(url.searchParams.get('compare-interval')).toBe('season');
+		expect(url.searchParams.get('compare-filter')).toBe('winter');
 		const charts = applyTrackerUrl(
 			new URL('https://example.test/tracker'),
 			parseTrackerUrl(new URLSearchParams(), context)

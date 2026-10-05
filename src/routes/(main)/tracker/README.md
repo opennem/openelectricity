@@ -45,13 +45,44 @@ Keyboard inspection is available through a focus-only chart control.
 
 Monthly source data comes through the existing network endpoint and headless
 providers. All history starts at the earliest available completed comparison
-period. Monthly 12-month rolling values are the default, with monthly, calendar
-year and July–June financial year alternatives. Only complete periods are shown;
-rolling gaps and incomplete annual components stay unavailable. Ratios are
+period. The interval controls are Timeline's All-range ones (`IntervalControls`):
+a Month, Season, Quarter, Half-Year, Fin-Year or Year pill whose footer
+switches the 12-month rolling sum on for the grains that have it (month,
+season, quarter, half; ids `12mr`, `12mr-season`, `12mr-quarter`, `12mr-half`),
+beside a calendar-period pill (All, a month, season, quarter or half) that
+follows the grain. 12-month rolling months are the default. Seasons are
+meteorological (summer is December to February) and financial years run July
+to June, bucketed by `bucketStartMs` at a zero offset on the UTC
+calendar-label axis. A rolling grain samples the trailing 12-month sum as
+each of its periods closes, dated by that period's start ("12 months to Feb
+2025" for summer 2024/25). A calendar-period filter (`compare-filter`) keeps
+that period each year, so rows, cells and ticks step a year apart. Only
+complete periods are shown; rolling gaps and incomplete buckets stay
+unavailable. **Nulls in source series** (`seriesSpan`): the API pads
+a fueltech's series with nulls before it starts and after it retires, which
+count as absent. Inside its life, a fueltech that also reports explicit zeros
+(idle plant such as distillate and OCGT peakers) has its nulls counted as
+zero. For any other fueltech a null is a missing reading, which blanks that
+month and every rolling window containing it. A live audit (October 2026,
+every metric and region, Month and 12-month rolling) left exactly two such
+source gaps: SA wind, May 2008 – June 2009, and WA battery charging, November 2023. Ratios are
 calculated after summing components: emissions tonnes × 1,000 / energy MWh, or
 renewable energy / gross demand or source generation × 100. Intensity and source
 generation reuse Tracker's fuel-tech classifications. The renewable numerator
-is the official `generation_renewable_energy` series, excluding storage discharge.
+is the official `generation_renewable_energy` series, which is not a plain
+renewable fueltech sum (checked against the live API for August 2026): it adds
+battery discharge (VIC matches renewables + battery discharge exactly), keeps
+Shoalhaven and Wivenhoe pumped-hydro output as hydro, apparently adds their
+pump consumption too, and leaves out Tumut 3's generation and its SNOWYP pump
+load, which `generation_renewable_with_storage_energy` adds back. The renewables card's
+**Excl. batteries** toggle switches to a sum of OE's renewable fuel
+technologies (`RENEWABLE_FUELS`: solar including rooftop, wind, hydro and
+bioenergy; OE classes pumped-hydro output as hydro), with no battery discharge
+or pumping. It is a presentation of the one Renewables picker entry, like the
+price card's inflation adjustment (`share_ex_batteries` /
+`generation_ex_batteries`, URL `renewables-ex-batteries` /
+`renewables-ex-batteries-generation`), and each footnote shows only while its
+definition is on screen.
 Demand shares can exceed 100%. Net imports subtract exported energy from imports
 and can be negative. Non-interconnected whole networks have zero net imports.
 Technology market values divide summed market value by matching fuel-tech energy;
@@ -109,45 +140,29 @@ are SVG so PNG export keeps them; `png-export.js` captures any
 `svg[data-png-layer]` or `canvas[data-png-layer]` (embedded as a raster
 image) inside a `[data-chart-area]` root as well as LayerCake layers. `comparison-stripes.js` holds the scales and geometry.
 
-**Windows and ticks.** Each interval opens on its own window
-(`comparisonDefaultViewport`): the latest year of days, and all history for
-every other interval; zooming out returns to it. The top nav's range readout
+**Windows and ticks.** Every interval opens on all history, where its
+metrics first have data; zooming out returns to it, and a window is never
+narrower than a year of periods (`clampComparisonViewport`). The top nav's range readout
 (`RangeStatus`, as in Timeline and Profile) names the first and last period
 on screen with a displayed value, so an unfinished year is never named
 (`comparisonRangeLabel`: `Jan 1999 – Aug 2026`, `1999 – 2025`,
-`FY2000 – FY2026`, `16 July 2024 – 15 July 2025`), and swaps to the hovered
+`FY2000 – FY2026`, `Autumn 2024 – Spring 2025`), and swaps to the hovered
 or pinned period while one is inspected. The Regions table has no period line
 of its own: at rest it holds the latest period every selected region has a
 value for. A pin clears by clicking the period again or pressing Escape. Axis ticks are anchored to the calendar
-(`comparisonTicks`): daily windows tick at month starts, monthly rows at the
-finest month step from January (1, 2, 3, 6, 12… months) that keeps at most
-six ticks, yearly rows at a year step (1, 2, 5…), so a tick keeps its date as
-the window slides and leaves the axis only when it leaves the viewport. The
-stripes' daily month cells are anchored the same way, the first beginning
-left of the viewport and clipped.
+(`comparisonTicks`): monthly rows at the finest month step from January (1,
+2, 3, 6, 12… months) that keeps at most six ticks, coarser rows at each year's
+first row a year step (1, 2, 5…) apart, so a tick keeps its date as the
+window slides and leaves the axis only when it leaves the viewport.
 
-**Daily interval.** `compare-interval=1d` turns the comparison into a fixed
-one-year window of days for both displays. The right edge defaults to the last
-complete day in both networks (`comparisonBounds().dayEnd`) and never passes
-it; the window never resizes, so the zoom buttons hide and wheel zoom is inert.
-A year navigator joins the filter row: previous / next
-year, the window's first and last day, and Latest when the window is behind.
-With a navigator button focused, ← → move a month, Shift six months, Cmd/Ctrl
-snap to a 1 January, Home is the latest window and End the earliest
-(`comparison-navigation.js`). Both displays tick at month starts; the stripes
-axis renders month cells and clicking one makes that month the window's first
-month. Switching Monthly → Daily keeps the right edge, and Daily → Monthly
-widens to the monthly minimum span around it. Data comes from a second
-provider set per region (`region-comparison-data.svelte.js`), enabled only
-for the daily interval, that fetches the viewport plus three whole months
-either side (`dailyFetchWindow`): a slide inside that buffer fetches nothing
-and crossing a month boundary fetches one month; a settled gesture reconciles
-the buffer. Daily rows keep their cached months while new ones load; the
-monthly set stays warm, so switching back is free. Daily bounds clamp the
-window to the data floor rather than to loaded rows. The data module derives
-only the interval and regions from the selection and the buffer's start and
-end as numbers, so a pan (which replaces the selection object each frame)
-never rebuilds the joined dataset while it stays inside the buffer. For the
+Compare has no Daily interval (removed October 2026); an older
+`compare-interval=1d` link falls back to the default.
+
+**Pan performance.** Every interval is aggregated from each region's warm
+monthly provider set (`region-comparison-data.svelte.js`), pinned once to the
+full history. The data module derives only the interval, filter and regions
+from the selection, so a pan (which replaces the selection object each frame)
+never rebuilds the joined dataset. For the
 same reason `RegionComparison` derives its `metrics` and `regions` arrays from
 join-keys of the selection (stable identity while the contents are) and
 passes `basis` and `interval` through its own string deriveds rather than as
@@ -155,13 +170,13 @@ passes `basis` and `interval` through its own string deriveds rather than as
 would re-derive on every move even though the string is unchanged); the
 stripes colour scale is memoised on metric, basis and visible maximum, and
 the UTC date formatters are cached. Pointer and wheel deltas are
-accumulated and applied once per animation frame. Measured under the dev
-server with two cards of daily stripes: a synthetic wheel pan at 63 frames per
-second and a real mouse drag at 125, with 32 DOM nodes per card.
+accumulated and applied once per animation frame.
 
 Comparison settings are independent of Timeline: `compare-display`
-(`heatmap`), `compare-interval` (`1d`, `1M`, `1y`, `fy`; 12-month rolling is
-the default), `compare-regions` (short names `nsw,qld,sa,tas,vic,wem,nem,au`;
+(`heatmap`), `compare-interval` (Timeline's ids: `1M`, `season`,
+`quarter`, `half`, `fy`, `1y` and the `12mr*` rolling variants; `12mr` is the
+default), `compare-filter` (Timeline's calendar-period ids: `jan`…`dec`,
+`summer`…, `q1`…, `h1`/`h2`, validated against the grain), `compare-regions` (short names `nsw,qld,sa,tas,vic,wem,nem,au`;
 an empty value intentionally selects none), `compare-renewables`,
 `compare-charts` (hyphenated names such as `intensity,renewables,solar-generation,price-real`;
 empty selects none), `compare-basis`, `compare-start` / `compare-end`, and
@@ -1014,7 +1029,9 @@ work like the fuel-tech table's (`comparisonTableColumn`): generation steps
 through MWh / GWh / TWh and intensity through kg / t per MWh, with the same
 precision rule as the fuel-tech table, and proportion headers toggle
 % demand ⇄ % generation. Net imports are always a share of demand and prices
-have one unit, so their headers are static.
+have one unit, so their headers are static. Its notes (ratios, net imports, the heatmap's
+scales, ABS CPI) sit under the table in `TableFootnotes`, the
+dashed note box the fuel-tech table also uses.
 
 Hovering the charts highlights the table as Profile's breakdown does: the card
 under the pointer outlines its metric's column (and darkens its border), the

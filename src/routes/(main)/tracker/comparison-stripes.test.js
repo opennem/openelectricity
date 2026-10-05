@@ -90,15 +90,16 @@ describe('stripe geometry', () => {
 			{ time: rows[1].time, x: 31, width: 29 }
 		]);
 		expect(stripeCells(rows, '1y', rows[0].time, 1 / DAY)[0].width).toBe(366);
-		expect(stripeCells([{ time: Date.UTC(2024, 5, 3) }], '1d', 0, 1)[0].width).toBe(DAY);
+		// A filtered row spans to the same period next year.
+		expect(stripeCells(rows, '1M', rows[0].time, 1 / DAY, 'jan')[0].width).toBe(366);
 	});
 	it('finds the period containing an instant and nothing between periods', () => {
-		const rows = [0, 1, 3].map((day) => ({ time: day * DAY }));
-		expect(stripePeriodAt(rows, '1d', 1.5 * DAY)).toBe(DAY);
-		expect(stripePeriodAt(rows, '1d', 2.5 * DAY)).toBeNull();
-		expect(stripePeriodAt(rows, '1d', -1)).toBeNull();
-		expect(stripePeriodAt(rows, '1d', 4.5 * DAY)).toBeNull();
-		expect(stripePeriodAt(rows, '1d', 3 * DAY)).toBe(3 * DAY);
-		expect(stripePeriodAt([], '1d', 0)).toBeNull();
+		const rows = [0, 1, 3].map((month) => ({ time: Date.UTC(2024, month) }));
+		expect(stripePeriodAt(rows, '1M', Date.UTC(2024, 1, 15))).toBe(Date.UTC(2024, 1));
+		expect(stripePeriodAt(rows, '1M', Date.UTC(2024, 2, 15))).toBeNull();
+		expect(stripePeriodAt(rows, '1M', Date.UTC(2023, 11, 31))).toBeNull();
+		expect(stripePeriodAt(rows, '1M', Date.UTC(2024, 4, 15))).toBeNull();
+		expect(stripePeriodAt(rows, '1M', Date.UTC(2024, 3))).toBe(Date.UTC(2024, 3));
+		expect(stripePeriodAt([], '1M', 0)).toBeNull();
 	});
 });

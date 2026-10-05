@@ -34,8 +34,9 @@
  * - `fullscreen`— `false` opts out of the fullscreen chrome
  * - `compare-*` — Compare (`/tracker/compare`) controls, see
  *                 `region-comparison.js`: `compare-display=heatmap` for the
- *                 heatmap display, `compare-interval` (`1d` is the daily
- *                 one-year window), `compare-regions` (short names: `nsw`,
+ *                 heatmap display, `compare-interval` (Timeline's All-range
+ *                 interval ids), `compare-filter`
+ *                 (a calendar period of the grain), `compare-regions` (short names: `nsw`,
  *                 `wem`, `nem`, `au`…), `compare-charts` (hyphenated names:
  *                 `renewables`, `solar-generation`, `price-real`…),
  *                 `compare-basis`, `compare-start`/`compare-end`, `compare-table`
