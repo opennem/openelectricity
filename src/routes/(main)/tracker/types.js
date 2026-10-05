@@ -129,6 +129,8 @@
  *   (a Profile breakdown's hovered day, or a percentile band's bounds)
  * @property {string} [focusRow] - Row key to highlight (the Profile breakdown's hovered card)
  * @property {string[]} [notes] - A view's own footnotes, listed last under the table
+ * @property {import('svelte').Snippet} [companion] - A view's own chart between the
+ *   table and its footnotes (the Profile's stacked radial bars)
  * @property {import('./table-units.js').TableUnits} [tableUnits] - Header-chosen unit prefixes; absent columns use their defaults
  * @property {ContributionMode} [contributionMode]
  * @property {string[]} [shownCurtailment] - Curtailment series ids banded on the chart

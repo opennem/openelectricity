@@ -224,11 +224,15 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   / Breakdown** switch at the start of the top-nav filters chooses the cards:
   one stack of every technology, titled for its window ("Average over last 28
   full days", or "Average over 28 full days" once a last day is picked), or a
-  chart per technology, two columns wide, then spot price. Stacked shows
-  the stacked area chart and stacked **Radial bars** ("Average by hour")
-  side by side: every visible technology's hourly average stacked around the
-  dial (sources outward, loads inward from the zero ring), read out as the
-  hour's net. The radial bars have no enlarge mode there; the retired
+  chart per technology, two columns wide, then spot price. Stacked shows the
+  stacked area chart across the canvas, and the stacked **Radial bars**
+  ("Average by hour") in the table panel, between the table and its footnotes
+  (`FuelTechTable`'s `companion` snippet): every visible technology's hourly
+  average stacked around the dial (sources outward, loads inward from the
+  zero ring), read out as the hour's net. The two share one hover and one
+  pinned slot (`pinnedSlot`, which the breakdown charts share too), so a
+  pinned time stays highlighted on the dial; closing the panel hides the
+  dial. The radial bars have no enlarge mode and no PNG of their own; the retired
   `profile-stack` style parameter is dropped from old links.
   **`profile-data.svelte.js`** shares the bounded source lifecycle on the
   headless provider core (`exactWindow`, so the selected days are fetched with

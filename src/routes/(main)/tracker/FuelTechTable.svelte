@@ -85,6 +85,9 @@
 	 * rows and columns are outlined, and the cells where they meet read white
 	 * on OE red.
 	 *
+	 * A view can set its own chart (`companion`) between the table and the
+	 * footnotes, scrolling with them.
+	 *
 	 * In narrow panels, Technology pins left while the value columns scroll
 	 * horizontally and snap into place. The table fills the panel when its visible columns fit.
 	 *
@@ -107,6 +110,7 @@
 		focusColumns = [],
 		focusRow = undefined,
 		notes = [],
+		companion = undefined,
 		tableUnits = {},
 		curtailmentRows = [],
 		shownCurtailment = [],
@@ -614,6 +618,8 @@
 			{/if}
 		</table>
 	</div>
+
+	{@render companion?.()}
 
 	<!-- Outside the table: a colspan footnote would scroll with the strip. -->
 	<footer

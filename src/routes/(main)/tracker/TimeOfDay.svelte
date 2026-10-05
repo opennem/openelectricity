@@ -385,7 +385,7 @@
 		}))
 	);
 	/** The radial charts the lightbox steps through: the breakdown's cards, in
-	 * order (the stacked radial bars sit beside the area chart, unenlarged). */
+	 * order (the stacked radial bars sit in the table panel, unenlarged). */
 	let lightboxItems = $derived(
 		breakdown
 			? cards
@@ -407,12 +407,13 @@
 	/** The slot (charts) or hour (radial clocks) hovered on any breakdown
 	 * card; every card mirrors it, as Timeline's cards share one hover. */
 	let breakdownHover = $state(/** @type {number | undefined} */ (undefined));
-	/** The slot pinned on any breakdown chart (a click, or Enter), shared by
-	 * every card as the hover is; the linear breakdown charts have no pan or
-	 * zoom, so a click pins straight away. Snapped to the current slot length,
-	 * so a 5-minute pin lands on its half-hour after an interval change. */
+	/** The slot pinned on the stacked area or any breakdown chart (a click, or
+	 * Enter), shared by every card as the hover is, and held on the stacked
+	 * dial; the linear breakdown charts have no pan or zoom, so a click pins
+	 * straight away. Snapped to the current slot length, so a 5-minute pin
+	 * lands on its half-hour after an interval change. */
 	let pinnedSlot = $state(/** @type {number | undefined} */ (undefined));
-	let breakdownPin = $derived(
+	let focusSlot = $derived(
 		pinnedSlot === undefined
 			? undefined
 			: pinnedSlot - ((pinnedSlot - PROFILE_DAY_START) % window.slotMs)
@@ -440,15 +441,18 @@
 	function hoverStackSlot(time) {
 		stackHover = time === undefined ? undefined : { start: time, end: time + window.slotMs };
 	}
-	let stackHour = $derived(
-		stackHover === undefined ? null : Math.floor((stackHover.start - PROFILE_DAY_START) / HOUR_MS)
-	);
+	/** The dial's highlighted hour: the hovered span's, else the pinned slot's. */
+	let stackHour = $derived.by(() => {
+		const time = stackHover?.start ?? focusSlot;
+		return time === undefined ? null : Math.floor((time - PROFILE_DAY_START) / HOUR_MS);
+	});
 	/** The card under the pointer. Breakdown: the table highlights its
-	 * technology's row. Stacked: the table outlines the column the card plots
-	 * (Energy for the radial bars, Av power for the area), and `stackSeries`
-	 * (the series under the pointer on either chart) picks the row, as on
-	 * Timeline, and stands out on both charts. */
+	 * technology's row. Stacked: the table outlines the column the chart under
+	 * the pointer plots (Energy for the radial bars, `dialHovered`; Av
+	 * power for the area), and `stackSeries` (the series under the pointer on
+	 * either chart) picks the row, as on Timeline, and stands out on both. */
 	let hoveredCard = $state(/** @type {string | null} */ (null));
+	let dialHovered = $state(false);
 	let stackSeries = $state(/** @type {string | null} */ (null));
 	/** @param {string} key @param {boolean} hovered */
 	function hoverCard(key, hovered) {
@@ -735,6 +739,22 @@
 	{/if}
 {/snippet}
 
+<!-- Stacked's radial bars, in the table panel between the table and its
+     footnotes, framed like the footnotes. Hovering them outlines the table's
+     Energy column (`dialHovered`). -->
+{#snippet stackDial()}
+	<div
+		role="group"
+		aria-label={STACK_DIAL_TITLE}
+		class="mx-4 mt-4 overflow-hidden rounded-md border border-warm-grey pb-4 [--dial-max:300px]"
+		onpointerenter={() => (dialHovered = true)}
+		onpointerleave={() => (dialHovered = false)}
+	>
+		<h6 class="m-0 px-4 py-2 text-dark-grey">{STACK_DIAL_TITLE}</h6>
+		{@render dial(STACK_DIAL)}
+	</div>
+{/snippet}
+
 <!-- One radial chart by key (the stacked dial, or a breakdown card's), shared
      by the cards and the lightbox (`large`: bigger labels and readout) so
      both draw the same chart on the same hover state. -->
@@ -834,22 +854,25 @@
 		pngContext={`${regionLabel} · ${window.dates[0]} to ${window.lastDate} · UTC${zone} · ${group.label}`}
 	>
 		{#if !breakdown}
-			<!-- The stacked radial bars and the stacked area side by side: the same
-			     average day by hour and by slot. -->
-			<div class="grid items-start gap-4 md:grid-cols-2">
-				<ChartCard
-					title={STACK_DIAL_TITLE}
-					highlighted={hoveredCard === 'stack-radial'}
-					onhover={(hovered) => hoverCard('stack-radial', hovered)}
-					mini
-					loading={stackLoading.active}
-					png={{
-						id: 'profile-stack-radial',
-						label: STACK_DIAL_TITLE,
-						ready: stackAvailable && !powerData.pending,
-						caption: windowTitle
-					}}
-				>
+			<!-- The stacked area across the canvas; the stacked radial bars sit in
+			     the table panel, between the table and its footnotes (`stackDial`):
+			     the same average day by slot and by hour, sharing one hover and pin. -->
+			<ChartCard
+				title={windowTitle}
+				highlighted={hoveredCard === 'stack'}
+				onhover={(hovered) => hoverCard('stack', hovered)}
+				loading={stackLoading.active}
+				png={{
+					id: 'profile-stack',
+					label: windowTitle,
+					ready: stackAvailable && !powerData.pending,
+					caption: stackChart?.getCaption()
+				}}
+				engaged={panZoomEngaged}
+				heightStorageKey="tracker-profile-height-stack"
+				defaultHeightPx={320}
+			>
+				{#snippet children(heightPx)}
 					{#if stackUnavailable}
 						{@render unavailable(
 							powerData.error,
@@ -858,56 +881,28 @@
 							'No complete average-day stack available for this window.'
 						)}
 					{:else}
-						<div class="[--dial-max:560px]">
-							{@render dial(STACK_DIAL)}
-						</div>
+						<ProfileChart
+							bind:this={stackChart}
+							bind:engaged={panZoomEngaged}
+							rows={stackRows}
+							names={stackMeta?.seriesNames ?? []}
+							labels={stackMeta?.seriesLabels ?? {}}
+							colours={stackMeta?.seriesColours ?? {}}
+							hiddenSeriesNames={hidden}
+							title="Power"
+							label={windowTitle}
+							{heightPx}
+							slotMs={window.slotMs}
+							syncHoverTime={stackHover?.start}
+							onhoverchange={hoverStackSlot}
+							focusTime={focusSlot}
+							onfocuschange={(time) => (pinnedSlot = time)}
+							activeKey={stackSeries}
+							onhoverkeychange={(key) => (stackSeries = key ?? null)}
+						/>
 					{/if}
-				</ChartCard>
-				<ChartCard
-					title={windowTitle}
-					highlighted={hoveredCard === 'stack'}
-					onhover={(hovered) => hoverCard('stack', hovered)}
-					loading={stackLoading.active}
-					png={{
-						id: 'profile-stack',
-						label: windowTitle,
-						ready: stackAvailable && !powerData.pending,
-						caption: stackChart?.getCaption()
-					}}
-					engaged={panZoomEngaged}
-					heightStorageKey="tracker-profile-height-stack"
-					defaultHeightPx={320}
-				>
-					{#snippet children(heightPx)}
-						{#if stackUnavailable}
-							{@render unavailable(
-								powerData.error,
-								'Retry average day',
-								powerData.retry,
-								'No complete average-day stack available for this window.'
-							)}
-						{:else}
-							<ProfileChart
-								bind:this={stackChart}
-								bind:engaged={panZoomEngaged}
-								rows={stackRows}
-								names={stackMeta?.seriesNames ?? []}
-								labels={stackMeta?.seriesLabels ?? {}}
-								colours={stackMeta?.seriesColours ?? {}}
-								hiddenSeriesNames={hidden}
-								title="Power"
-								label={windowTitle}
-								{heightPx}
-								slotMs={window.slotMs}
-								syncHoverTime={stackHover?.start}
-								onhoverchange={hoverStackSlot}
-								activeKey={stackSeries}
-								onhoverkeychange={(key) => (stackSeries = key ?? null)}
-							/>
-						{/if}
-					{/snippet}
-				</ChartCard>
-			</div>
+				{/snippet}
+			</ChartCard>
 		{:else if !gridError && (gridPending || gridAvailable)}
 			<!-- Each technology, then spot price, on the stacked view's chart in its
 			     own card, two columns wide. As on Timeline, the card names the
@@ -972,7 +967,7 @@
 										(chart) => (seriesCharts = { ...seriesCharts, [card.key]: chart })
 									}
 									panZoom={false}
-									focusTime={breakdownPin}
+									focusTime={focusSlot}
 									onfocuschange={(time) => (pinnedSlot = time)}
 									rows={card.chart.rows}
 									names={card.chart.names}
@@ -1024,9 +1019,10 @@
 				tableColumns={DEFAULT_TABLE_COLUMNS}
 				powerColumns={tablePowerColumns}
 				notes={tableNotes}
+				companion={breakdown || stackUnavailable ? undefined : stackDial}
 				focusColumns={breakdown
 					? profileFocusColumns(style, chartPart)
-					: hoveredCard === 'stack-radial'
+					: dialHovered
 						? ['energy']
 						: hoveredCard
 							? ['power']

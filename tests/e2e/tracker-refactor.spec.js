@@ -1031,10 +1031,11 @@ test('PNG captures average-day charts and fits a narrow screen', async ({ page }
 	await page.setViewportSize({ width: 390, height: 844 });
 	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker/profile?profile-end=2026-08-31');
-	// Stacked exports both of its charts: the stacked area and the radial bars.
-	await expect(page.locator('[data-tracker-png]')).toHaveCount(2);
+	// Stacked exports its one card: the stacked area (the radial bars sit in the
+	// table panel).
+	await expect(page.locator('[data-tracker-png]')).toHaveCount(1);
 	const dialog = await openPng(page);
-	await expect(dialog.getByRole('checkbox')).toHaveCount(2);
+	await expect(dialog.getByRole('checkbox')).toHaveCount(1);
 	await expect(dialog.getByRole('button', { name: 'Download PNG' })).toBeEnabled();
 	const bounds = await dialog.boundingBox();
 	expect(bounds.x).toBeGreaterThanOrEqual(0);
@@ -1280,7 +1281,11 @@ test('stacked profile cards outline their table column and area series highlight
 	await expect(focusedColumns).toHaveAttribute('data-column', 'power');
 	await expect(focusedRows).toHaveCount(1);
 	// The radial bars read each hour's energy, with no series of their own.
-	const dial = card(page, 'Average by hour').getByRole('img', { name: /average by hour of day$/ });
+	const dial = page
+		.getByRole('group', { name: 'Average by hour', exact: true })
+		.getByRole('img', { name: /average by hour of day$/ });
+	// The dial sits under the table, possibly below the panel's fold.
+	await dial.scrollIntoViewIfNeeded();
 	const box = await dial.boundingBox();
 	if (!box) throw new Error('dial not laid out');
 	await page.mouse.move(box.x + box.width / 2 + 3, box.y + box.height / 2 - 20);
@@ -1324,7 +1329,7 @@ test('stacked radial bars and area share the hovered series', async ({ page }) =
 	await page.locator('main[data-hydrated]').waitFor();
 	const table = page.locator('#tracker-table-panel');
 	const focusedRows = table.locator('[data-testid="fuel-tech-row"][data-focused]');
-	const clock = card(page, 'Average by hour').getByRole('img', {
+	const clock = page.getByRole('group', { name: 'Average by hour', exact: true }).getByRole('img', {
 		name: /average by hour of day$/
 	});
 	const slices = clock.locator(
@@ -1364,8 +1369,12 @@ test('stacked profile area and radial bars share one hover', async ({ page }) =>
 	const stack = card(page, 'Average over 7 full days');
 	const area = stack.locator('.stratum-chart-area');
 	const tooltip = stack.getByTestId('chart-tooltip-strip');
-	const dial = card(page, 'Average by hour').getByRole('img', { name: /average by hour of day$/ });
-	const dialReadout = card(page, 'Average by hour').getByTestId('dial-readout');
+	const dial = page
+		.getByRole('group', { name: 'Average by hour', exact: true })
+		.getByRole('img', { name: /average by hour of day$/ });
+	const dialReadout = page
+		.getByRole('group', { name: 'Average by hour', exact: true })
+		.getByTestId('dial-readout');
 	const readout = page.getByTestId('tracker-range-label');
 	await expect(stack.locator('path.path-area').first()).toBeVisible();
 	// Hovering the area marks its slot's hour on the dial.
@@ -1378,6 +1387,8 @@ test('stacked profile area and radial bars share one hover', async ({ page }) =>
 	await expect(dial.getByTestId('radial-hover')).toHaveCount(0);
 	// Hovering the dial's 12:00 hour marks it on the area; the table and readout
 	// inspect the whole hour.
+	// The dial sits under the table, possibly below the panel's fold.
+	await dial.scrollIntoViewIfNeeded();
 	const box = await dial.boundingBox();
 	if (!box) throw new Error('dial not laid out');
 	await page.mouse.move(box.x + box.width / 2 + 3, box.y + box.height / 2 - 20);
@@ -1770,10 +1781,10 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	await page.goto('/tracker/profile?profile-end=2026-08-31');
 	const table = page.locator('#tracker-table-panel');
 	const readout = page.getByTestId('tracker-range-label');
-	// Both stacked charts show side by side, with no stacked style to pick.
+	// Both stacked charts show (the dial in the table panel), with no stacked style to pick.
 	await expect(card(page, 'Average over 7 full days').locator('path.path-area')).toHaveCount(4);
 	await expect(navPill(page, 'Stacked area')).toHaveCount(0);
-	const stack = card(page, 'Average by hour');
+	const stack = page.getByRole('group', { name: 'Average by hour', exact: true });
 	const clock = stack.getByRole('img', { name: /average by hour of day$/ });
 	await expect(clock).toHaveCount(1);
 	// One slice per technology per hour, sources outward and loads inward.
@@ -1791,7 +1802,7 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	// Noon sits at the top, and the window's average night is shaded behind,
 	// from sunset round to sunrise at the NEM capitals.
 	await expect(clock.getByTestId('dial-tick')).toHaveCount(4);
-	// The stacked radial bars sit beside the area chart, with no enlarge mode.
+	// The stacked radial bars sit in the table panel, with no enlarge mode.
 	await expect(stack.getByRole('button', { name: /^Enlarge / })).toHaveCount(0);
 	await expect(clock.getByTestId('dial-night').locator('title')).toHaveText(
 		/^Night 1[78]:\d\d–0[67]:\d\d, average sunset to sunrise at the NEM capitals$/
@@ -1800,6 +1811,8 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	await expect(table.locator('footer li').last()).toHaveText(
 		/^Night shading: .* a plain average of Sydney, Brisbane, Melbourne, Adelaide and Hobart, in market time \(AEST all year\)\.$/
 	);
+	// The dial sits under the table, possibly below the panel's fold.
+	await clock.scrollIntoViewIfNeeded();
 	const dial = await clock.boundingBox();
 	await page.mouse.move(dial.x + dial.width / 2 + 3, dial.y + dial.height / 2 - 20);
 	await expect(stack.getByTestId('dial-readout')).toContainText('12:00–13:00');
@@ -1818,7 +1831,9 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	expect(api.requests.filter((metric) => metric === 'power')).toHaveLength(1);
 	// An old link with the retired stacked style still opens both charts.
 	await page.goto('/tracker/profile?profile-end=2026-08-31&profile-stack=radial');
-	await expect(card(page, 'Average by hour').getByRole('img')).toHaveCount(1);
+	await expect(
+		page.getByRole('group', { name: 'Average by hour', exact: true }).getByRole('img')
+	).toHaveCount(1);
 	await expect(card(page, 'Average over 7 full days').locator('path.path-area')).toHaveCount(4);
 });
 
