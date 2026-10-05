@@ -25,8 +25,8 @@ export function normaliseProfileDisplay(value) {
 
 /** How the breakdown draws each series' days: the linear styles, then the radial. */
 export const PROFILE_STYLE_OPTIONS = /** @type {const} */ ([
-	{ value: 'bands', label: 'Percentile bands' },
 	{ value: 'lines', label: 'Multi-line' },
+	{ value: 'bands', label: 'Percentile bands' },
 	{ value: 'ridgeline', label: 'Ridgeline' },
 	{ value: 'radial', label: 'Radial bars' },
 	{ value: 'heatmap', label: 'Radial heatmap' }

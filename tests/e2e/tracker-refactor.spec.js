@@ -1570,7 +1570,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 		await breakdownOptions
 			.getByRole('button')
 			.evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')))
-	).toEqual(['Percentile bands', 'Multi-line', 'Ridgeline', 'Radial bars', 'Radial heatmap']);
+	).toEqual(['Multi-line', 'Percentile bands', 'Ridgeline', 'Radial bars', 'Radial heatmap']);
 	await expect(styleButton(page, 'Multi-line')).toHaveAttribute('aria-pressed', 'true');
 	// Each icon names its style in the app's tooltip, not the browser's title.
 	await expect(styleButton(page, 'Ridgeline')).not.toHaveAttribute('title');
