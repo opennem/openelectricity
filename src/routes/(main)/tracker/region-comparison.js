@@ -10,7 +10,7 @@ import {
 	FUEL_COMPONENTS,
 	comparisonFuelRows,
 	comparisonMetricValue,
-	seriesSpan
+	normaliseComparisonResponse
 } from './comparison-metrics.js';
 import { allRegionsOption, regionOptions } from '$lib/regions.js';
 import { withTrackerLabel } from './tracker-regions.js';
@@ -20,21 +20,23 @@ import { contributionSeries } from '$lib/components/charts/network/contribution.
 import { processEmissionsIntensity } from '$lib/components/charts/network/process-emissions-intensity.js';
 import { processNetworkData } from '$lib/components/charts/network/process-network-data.js';
 import {
-	bucketAggregate,
-	rollingSum12MonthRows
+	completeBucketRows,
+	displayFullTransform
 } from '$lib/components/charts/v2/dataProcessing.js';
-import { bucketStartMs } from '$lib/components/charts/v2/bucket-boundaries.js';
+import { BUCKET_MONTHS } from '$lib/components/charts/v2/bucket-boundaries.js';
 import {
 	bucketFilterKindFor,
 	bucketFilterOptionsFor,
 	bucketFilterPredicate,
 	isValidBucketFilter
 } from '$lib/components/charts/v2/bucket-filter.js';
-import { formatBucketLabel } from '$lib/components/charts/v2/date-labels.js';
+import {
+	formatRangeLabel,
+	getTimeFormatPolicy
+} from '$lib/components/charts/v2/time-format-policy.js';
 import {
 	baseIntervalFor,
-	getIntervalSpec,
-	isRollingInterval
+	getIntervalsForRange
 } from '$lib/components/charts/facility/range-interval-config.js';
 
 export const COMPARISON_REGIONS = [
@@ -62,25 +64,11 @@ const REGIONS_BY_SLUG = new Map(
 export function comparisonRegionFromSlug(slug) {
 	return REGIONS_BY_SLUG.get(slug) ?? slug;
 }
-/** Compare's intervals, as Timeline's All range offers them: Month to Year,
- * each grain with a 12-month rolling variant where it has one. Ids and labels
- * are Timeline's. */
-export const COMPARISON_INTERVAL_IDS = [
-	'1M',
-	'12mr',
-	'season',
-	'12mr-season',
-	'quarter',
-	'12mr-quarter',
-	'half',
-	'12mr-half',
-	'fy',
-	'1y'
-];
-export const COMPARISON_INTERVALS = COMPARISON_INTERVAL_IDS.map((value) => ({
-	value,
-	label: getIntervalSpec(value)?.label ?? value
-}));
+/** Compare's intervals: Timeline's All range, Month to Year, each grain with
+ * its 12-month rolling variant where it has one. */
+export const COMPARISON_INTERVAL_IDS = getIntervalsForRange('ALL', {
+	includeRolling: true
+}).options;
 /** The calendar-period filter's label ("Jan", "Summer", "Q1"…), or null when unfiltered.
  * @param {string} interval @param {string | null} filter */
 export function comparisonFilterLabel(interval, filter) {
@@ -99,7 +87,7 @@ export const COMPARISON_DISPLAYS = [
 ];
 /** `filter` keeps one calendar period of the interval's grain each year — a
  * month, season, quarter or half (Timeline's calendar-period filter ids).
- * @typedef {{charts: string[], display: ComparisonDisplay, interval: string, filter: string | null, regions: string[], mode: 'generation' | 'share', basis: 'demand' | 'generation', start: number | null, end: number | null, table: boolean | null}} RegionComparisonSelection */
+ * @typedef {{charts: string[], display: ComparisonDisplay, interval: string, filter: string | null, regions: string[], basis: 'demand' | 'generation', start: number | null, end: number | null, table: boolean | null}} RegionComparisonSelection */
 /** Unvalidated input (URL values, callers): `display` is any string until normalised.
  * @typedef {Partial<Omit<RegionComparisonSelection, 'display'>> & {display?: string}} RegionComparisonInput */
 /** @param {RegionComparisonInput | null | undefined} value @returns {RegionComparisonSelection} */
@@ -122,12 +110,13 @@ export function normaliseRegionComparison(value = undefined) {
 		regions,
 		charts: Array.isArray(value?.charts)
 			? COMPARISON_CHART_OPTIONS.flatMap(({ id }) => {
-					const selected = value.charts?.find((entry) => comparisonChartId(entry) === id);
+					const selected = value.charts
+						?.map(comparisonChartFromSlug)
+						.find((entry) => comparisonChartId(entry) === id);
 					return selected ? [selected] : [];
 				})
 			: [...DEFAULT_COMPARISON_CHARTS],
 		display: value?.display === 'stripes' ? 'stripes' : 'charts',
-		mode: value?.mode === 'generation' ? 'generation' : 'share',
 		basis: value?.basis === 'generation' ? 'generation' : 'demand',
 		start: validWindow ? start : null,
 		end: validWindow ? end : null,
@@ -148,7 +137,6 @@ export function parseRegionComparison(params) {
 		interval: params.get('compare-interval') ?? undefined,
 		filter: params.get('compare-filter'),
 		regions: list('compare-regions', comparisonRegionFromSlug),
-		mode: params.get('compare-renewables') === 'generation' ? 'generation' : 'share',
 		basis: params.get('compare-basis') === 'generation' ? 'generation' : 'demand',
 		start: Number(params.get('compare-start')),
 		end: Number(params.get('compare-end')),
@@ -170,7 +158,6 @@ export function applyRegionComparison(params, selection) {
 			state.regions.join(',') === DEFAULT_COMPARISON_REGIONS.join(',')
 				? null
 				: state.regions.map(comparisonRegionSlug).join(','),
-		'compare-renewables': state.mode === 'share' ? '' : state.mode,
 		'compare-basis': state.basis === 'demand' ? '' : state.basis,
 		'compare-start': state.start == null ? '' : String(state.start),
 		'compare-end': state.end == null ? '' : String(state.end),
@@ -200,27 +187,20 @@ export function monthStart(time, offset = 0) {
 	const date = new Date(time);
 	return Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + offset, 1);
 }
-/** Months each period of a calendar grain spans. */
-const GRAIN_MONTHS = /** @type {Record<string, number>} */ ({
-	'1M': 1,
-	season: 3,
-	quarter: 3,
-	half: 6,
-	fy: 12,
-	'1y': 12
-});
 /** Months from one row to the next: the grain's period (a rolling interval
  * samples its window once per period of its grain), or a whole year while a
  * calendar-period filter keeps one row per year.
  * @param {string} interval - A monthly-based interval @param {string | null} [filter] */
 export function periodMonths(interval, filter = null) {
 	if (filter) return 12;
-	return GRAIN_MONTHS[baseIntervalFor(interval) ?? interval] ?? 1;
+	const grain = /** @type {keyof typeof BUCKET_MONTHS} */ (baseIntervalFor(interval) ?? interval);
+	return BUCKET_MONTHS[grain] ?? 1;
 }
-/** The start of the row after the one beginning at `time`.
- * @param {number} time @param {string} interval @param {string | null} [filter] */
-export function nextPeriodStart(time, interval, filter = null) {
-	return monthStart(time, periodMonths(interval, filter));
+/** The start of the row after the one beginning at `time`, `months` on
+ * (`periodMonths`).
+ * @param {number} time @param {number} months */
+export function nextPeriodStart(time, months) {
+	return monthStart(time, months);
 }
 /** Complete history: from the data floor to the last complete calendar month
  * in both networks (WEM is two hours behind NEM, so the WEM-local clock is the
@@ -242,10 +222,12 @@ export function clampComparisonViewport(start, end, bounds) {
 	return { start: right - duration, end: right };
 }
 
-/** Reuse Tracker's intensity and source-generation classifications. Null source
- * readings invalidate their component for that month rather than becoming zero.
- * @param {any} response */
-export function processComparisonEnergy(response) {
+/** Reuse Tracker's intensity and source-generation classifications. Missing
+ * source readings (`normaliseComparisonResponse`) invalidate their component
+ * for that month rather than becoming zero.
+ * @param {any} raw */
+export function processComparisonEnergy(raw) {
+	const response = normaliseComparisonResponse(raw);
 	const group = getGroup('detailed');
 	const intensity = processEmissionsIntensity(response, {
 		intervalHours: 1,
@@ -269,14 +251,9 @@ export function processComparisonEnergy(response) {
 		for (const series of entry.results ?? []) {
 			const tech = series.columns?.fueltech ?? series.name;
 			if (tech === 'battery' || !group.fuelTechs[tech]) continue;
-			// Only a null inside the life of a technology that does not idle is a
-			// missing reading; the processors already sum the others as zero.
-			const { first, last, idles } = seriesSpan(series.data);
-			if (idles) continue;
 			for (const [stamp, value] of series.data ?? []) {
 				if (Number.isFinite(value)) continue;
 				const time = calendarLabelMs(stamp);
-				if (time < first || time > last) continue;
 				const keys = invalid.get(time) ?? new Set();
 				keys.add(entry.metric === 'emissions' ? 'emissions' : 'energy_mwh');
 				if (entry.metric === 'energy' && sourceIds.includes(tech)) keys.add('generation_mwh');
@@ -345,50 +322,30 @@ export function aggregateComparison(rows, interval, end, filter = null) {
 	const keep = bucketFilterPredicate(bucketFilterKindFor(interval), filter, 'UTC');
 	return keep ? periods.filter((row) => keep(row.time)) : periods;
 }
-/** @param {any[]} monthly - Complete months @param {string} interval */
+/** Timeline's calendar buckets and rolling windows, on the UTC
+ * calendar-label axis.
+ * @param {any[]} monthly - Complete months @param {string} interval */
 function comparisonPeriods(monthly, interval) {
 	if (interval === '1M') return monthly;
-	// Calendar labels are UTC: bucket on the label's own month.
-	/** @param {string} grain @param {number} time */
-	const bucketStart = (grain, time) => bucketStartMs(grain, time, 0);
-	if (isRollingInterval(interval)) {
-		const rolled = rollingSum12MonthRows(monthly, COMPONENTS);
-		const grain = baseIntervalFor(interval) ?? '1M';
-		if (grain === '1M') return rolled;
-		// Sample the window as each period of the grain closes.
-		return rolled.flatMap((row) => {
-			const next = monthStart(row.time, 1);
-			if (bucketStart(grain, next) !== next) return [];
-			const time = bucketStart(grain, row.time);
-			return [{ ...row, date: new Date(time), time }];
-		});
-	}
-	const months = GRAIN_MONTHS[interval];
-	const { rows, counts, valueCounts } = bucketAggregate(monthly, COMPONENTS, 'sum', (time) =>
-		bucketStart(interval, time)
-	);
-	return rows.flatMap((row, i) =>
-		counts[i] === months
-			? [
-					{
-						...row,
-						...Object.fromEntries(
-							COMPONENTS.map((key) => [
-								key,
-								valueCounts[i][key] === months && Number.isFinite(row[key]) ? row[key] : null
-							])
-						)
-					}
-				]
-			: []
+	const rolling = displayFullTransform({
+		apiInterval: '1M',
+		displayInterval: interval,
+		ianaTimeZone: 'UTC'
+	});
+	if (rolling) return rolling(monthly, COMPONENTS);
+	return completeBucketRows(
+		monthly,
+		COMPONENTS,
+		/** @type {keyof typeof BUCKET_MONTHS} */ (interval),
+		'UTC'
 	);
 }
 /** Drawing-only empty periods stop Stratum joining lines across entirely absent
  * periods. Exports continue to use the original observations.
  * @param {Record<string, any[]>} data @param {string[]} regions
  * @param {string} metric @param {'demand'|'generation'} basis
- * @param {string} interval @param {string | null} [filter] @returns {any[]} */
-export function comparisonChartRows(data, regions, metric, basis, interval, filter = null) {
+ * @param {number} months - Months between rows (`periodMonths`) @returns {any[]} */
+export function comparisonChartRows(data, regions, metric, basis, months) {
 	const times = regions.flatMap((id) => (data[id] ?? []).map((row) => row.time));
 	if (!times.length) return [];
 	const first = Math.min(...times),
@@ -400,7 +357,7 @@ export function comparisonChartRows(data, regions, metric, basis, interval, filt
 		])
 	);
 	const rows = [];
-	for (let time = first; time <= last; time = nextPeriodStart(time, interval, filter)) {
+	for (let time = first; time <= last; time = nextPeriodStart(time, months)) {
 		rows.push({
 			date: new Date(time),
 			time,
@@ -427,34 +384,19 @@ export function utcFormatter(options) {
 const MONTH_LABEL = { month: 'short', year: 'numeric' };
 /** @type {Intl.DateTimeFormatOptions} */
 const YEAR_ONLY = { year: 'numeric' };
-/** @param {number} time @param {string} interval */
+/** A period's label, as Timeline's tooltips name it: `Aug 2026`,
+ * `Summer 2025/26`, `Q1 2026`, `FY2026`, `2025`, `12 months to Winter 2026`.
+ * @param {number} time @param {string} interval */
 export function comparisonPeriod(time, interval) {
-	const year = new Date(time).getUTCFullYear();
-	if (interval === 'fy') return `${year}–${String(year + 1).slice(-2)} financial year`;
-	if (isRollingInterval(interval)) return `12 months to ${periodLabel(time, interval)}`;
-	return periodLabel(time, interval);
+	return getTimeFormatPolicy(interval, 'UTC').formatTooltip(time);
 }
-/** A period's short name: `Aug 2026`, `Summer 2025/26`,
- * `Q1 2026`, `H2 2025`, `FY2026` or `2025`; a rolling window by its last
- * month.
- * @param {number} time - The period's start @param {string} interval */
-function periodLabel(time, interval) {
-	if (interval === '1y') return String(new Date(time).getUTCFullYear());
-	if (isRollingInterval(interval))
-		return utcFormatter(MONTH_LABEL).format(monthStart(time, periodMonths(interval) - 1));
-	if (interval === 'fy' || interval === 'season' || interval === 'quarter' || interval === 'half')
-		return formatBucketLabel(time, 'UTC', interval);
-	return utcFormatter(MONTH_LABEL).format(time);
-}
-/** The top-nav readout of the periods on screen, from the first to the last
- * period start — `16 July 2024 – 15 July 2025`, `Jan 1999 – Aug 2026`,
- * `1999 – 2025` or `FY2000 – FY2026` (financial years by their closing
- * year); empty when nothing is shown.
+/** The top-nav readout of the periods on screen, from the first to the last,
+ * as Timeline's range readout writes it (`Jan 1999 — Aug 2026`,
+ * `FY2000 — FY2026`); empty when nothing is shown.
  * @param {number | null} first @param {number | null} last @param {string} interval */
 export function comparisonRangeLabel(first, last, interval) {
 	if (first == null || last == null || last < first) return '';
-	const from = periodLabel(first, interval);
-	return first === last ? from : `${from} – ${periodLabel(last, interval)}`;
+	return formatRangeLabel(first, last, interval, 'UTC');
 }
 /** Regions that do not import or export outside their own network. */
 export const CLOSED_NETWORKS = ['_all', 'wem'];
@@ -527,11 +469,11 @@ const MAX_TICKS = 6;
  * step (1, 2, 3, 6, 12… months, counted from January) that keeps the count
  * within six; coarser rows (seasons to years, or one filtered period a
  * year) at each year's first row, a year step (1, 2, 5… years) apart.
- * @param {Array<{date: Date, time: number}>} visibleRows @param {string} [interval]
- * @param {string | null} [filter] */
-export function comparisonTicks(visibleRows, interval = '12mr', filter = null) {
+ * @param {Array<{date: Date, time: number}>} visibleRows
+ * @param {number} [months] - Months between rows (`periodMonths`) */
+export function comparisonTicks(visibleRows, months = 1) {
 	const dates = visibleRows.map((row) => new Date(row.time));
-	if (periodMonths(interval, filter) === 1) {
+	if (months === 1) {
 		/** @param {Date} date */
 		const index = (date) => date.getUTCFullYear() * 12 + date.getUTCMonth();
 		for (const step of MONTH_STEPS) {

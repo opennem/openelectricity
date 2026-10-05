@@ -40,8 +40,7 @@ export function createRegionComparisonData(selection, now, cpi) {
 		const calendar = {
 			region: () => id,
 			interval: () => '1M',
-			timeZone: () => '+00:00',
-			exactWindow: false
+			timeZone: () => '+00:00'
 		};
 		return {
 			energy: createHeadlessSeriesProvider({

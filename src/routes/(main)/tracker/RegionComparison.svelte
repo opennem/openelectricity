@@ -4,6 +4,8 @@
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import { untrack } from 'svelte';
+	import { bisectLeft } from 'd3-array';
+	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
 	import { fade } from 'svelte/transition';
 	import { MediaQuery } from 'svelte/reactivity';
 	import IntervalControls from '$lib/components/charts/v2/IntervalControls.svelte';
@@ -14,7 +16,8 @@
 	import {
 		comparisonMetric,
 		comparisonChartId,
-		comparisonFuelMetric,
+		comparisonPresentation,
+		comparisonPresentations,
 		comparisonMetricValue,
 		comparisonTableColumn,
 		formatComparisonCell
@@ -30,7 +33,11 @@
 		focusEdges,
 		pinnedTableEdge,
 		scrollColumnsIntoView,
-		tableValueCell
+		columnFocusFor,
+		valueCellClass,
+		valueCellEdges,
+		valueHeaderClass,
+		valueHeaderEdges
 	} from './table-styles.js';
 	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
 	import TableOptions from './TableOptions.svelte';
@@ -42,9 +49,9 @@
 	import { comparisonExportDataset } from './region-comparison-export.js';
 	import {
 		COMPARISON_REGIONS,
-		COMPARISON_INTERVALS,
 		COMPARISON_INTERVAL_IDS,
 		comparisonFilterLabel,
+		periodMonths,
 		normaliseRegionComparison,
 		COMPARISON_DISPLAYS,
 		comparisonPeriod,
@@ -68,24 +75,28 @@
 	let basis = $derived(selection.basis);
 	let interval = $derived(selection.interval);
 	let filter = $derived(selection.filter);
+	let months = $derived(periodMonths(interval, filter));
 	const source = createRegionComparisonData(
 		() => selection,
 		untrack(() => session.clockMs),
 		() => cpi
 	);
 	let stripes = $derived(selection.display === 'stripes');
-	// History starts where the displayed metrics first have data; the window
-	// opens on all of it.
-	let chartBounds = $derived.by(() => {
-		const times = regions.flatMap((id) =>
-			(source.data[id] ?? [])
-				.filter((row) =>
-					metrics.some((metric) => Number.isFinite(comparisonMetricValue(row, metric.id, basis)))
-				)
-				.map((row) => row.time)
-		);
-		const { start, end } = source.bounds;
-		return { start: times.length ? Math.min(...times) : start, end };
+	/** The periods, ascending, where some selected region has a value for a
+	 * displayed metric. History starts at the first (the window opens on all of
+	 * it), exports need one, and the readout names the first and last on
+	 * screen, found by bisection rather than a scan on every pan frame. */
+	let valueTimes = $derived.by(() => {
+		const times = new Set();
+		for (const id of regions)
+			for (const row of source.data[id] ?? [])
+				if (metrics.some((metric) => Number.isFinite(comparisonMetricValue(row, metric.id, basis))))
+					times.add(row.time);
+		return /** @type {number[]} */ ([...times]).sort((a, b) => a - b);
+	});
+	let chartBounds = $derived({
+		start: valueTimes[0] ?? source.bounds.start,
+		end: source.bounds.end
 	});
 	let viewport = $derived(
 		clampComparisonViewport(
@@ -121,12 +132,12 @@
 		if (hovered) hoverMetric = id;
 		else if (hoverMetric === id) hoverMetric = null;
 	}
-	/** Each column's place in the outline: focused, and its left and right edges. */
+	/** Each metric column's place in the focus: the hovered card's column. */
 	let columnFocus = $derived(
-		metrics.map((metric) => {
-			const focused = metric.id === hoverMetric;
-			return { focused, left: focused, right: focused };
-		})
+		columnFocusFor(
+			metrics.map((metric) => metric.id),
+			hoverMetric ? [hoverMetric] : []
+		)
 	);
 	const LAST_REGION = COMPARISON_REGIONS[COMPARISON_REGIONS.length - 1].value;
 	let period = $derived(
@@ -153,9 +164,9 @@
 	let pinnedEdgeClass = $derived(pinnedTableEdge(tableScrollLeft));
 	const desktop = new MediaQuery('(min-width: 1024px)');
 	let panelOpen = $derived(selection.table ?? desktop.current);
-	// The Regions table is the readout beside the charts; below desktop it
-	// overlays them, so the charts carry their own tooltips there.
-	let tooltip = $derived(!desktop.current);
+	// The Regions table is the readout beside the charts. While it is closed,
+	// or overlays them below desktop, the charts carry their own tooltips.
+	let tooltip = $derived(!desktop.current || !panelOpen);
 	/** @param {Partial<import('./region-comparison.js').RegionComparisonSelection>} change @param {'push'|'replace'|null} [history] */
 	function select(change, history = 'push') {
 		hover = focus = null;
@@ -195,22 +206,14 @@
 	}
 	let caption = $derived(
 		[
-			COMPARISON_INTERVALS.find((i) => i.value === interval)?.label,
+			getIntervalSpec(interval)?.label,
 			comparisonFilterLabel(interval, filter),
 			`% of ${basis === 'demand' ? 'gross demand' : 'generation'}`
 		]
 			.filter(Boolean)
 			.join(' · ')
 	);
-	let ready = $derived(
-		metrics.length > 0 &&
-			!source.pending &&
-			regions.some((id) =>
-				source.data[id]?.some((row) =>
-					metrics.some((metric) => Number.isFinite(comparisonMetricValue(row, metric.id, basis)))
-				)
-			)
-	);
+	let ready = $derived(!source.pending && valueTimes.length > 0);
 	/** Whether any selected region has a value to export. */
 	export function canExport() {
 		return ready;
@@ -231,19 +234,11 @@
 	 * complete periods are shown, so an unfinished year inside the viewport is
 	 * not one. */
 	let shownPeriods = $derived.by(() => {
-		let first = Infinity;
-		let last = -Infinity;
-		for (const id of regions)
-			for (const row of source.data[id] ?? []) {
-				if (row.time < viewport.start || row.time >= viewport.end) continue;
-				if (
-					!metrics.some((metric) => Number.isFinite(comparisonMetricValue(row, metric.id, basis)))
-				)
-					continue;
-				first = Math.min(first, row.time);
-				last = Math.max(last, row.time);
-			}
-		return Number.isFinite(first) ? { first, last } : { first: null, last: null };
+		const from = bisectLeft(valueTimes, viewport.start);
+		const to = bisectLeft(valueTimes, viewport.end) - 1;
+		return from <= to
+			? { first: valueTimes[from], last: valueTimes[to] }
+			: { first: null, last: null };
 	});
 	/** The visible periods, for the top-nav readout. */
 	export function getRangeLabel() {
@@ -258,6 +253,11 @@
 		return source.pending;
 	}
 </script>
+
+{#snippet columnHeading(/** @type {string} */ label, /** @type {string} */ unit)}
+	<span class="text-xs">{label}</span>
+	<span class="font-mono text-xxs font-light text-mid-grey">{unit}</span>
+{/snippet}
 
 {#snippet controls()}
 	<Switch
@@ -379,44 +379,30 @@
 							{#if scale}
 								<StripeLegend {scale} metric={metric.id} />
 							{/if}
-							{#if metric.fuel && (metric.kind === 'energy' || metric.kind === 'share')}
-								{@const fuel = metric.fuel}
-								{@const exBatteries = !!metric.exBatteries}
-								<SwitchTabs
-									buttons={[
-										{ label: 'Proportion', value: comparisonFuelMetric(fuel, { exBatteries }) },
-										{
-											label: 'Generation',
-											value: comparisonFuelMetric(fuel, { generation: true, exBatteries })
-										}
-									]}
-									selected={metric.id}
-									onChange={(id) => swapChart(metric.id, id)}
-								/>
-								{#if fuel === 'renewables'}
-									<!-- Official counts battery discharge; excluding batteries sums the renewable fuel techs. -->
+							<!-- Each presentation axis the chart varies along: proportion or
+							     generation, official or excluding batteries, nominal or real. -->
+							{#each comparisonPresentations(metric.chart) as axis (axis.key)}
+								{#if axis.control === 'tabs'}
+									<SwitchTabs
+										buttons={axis.labels.map((label, index) => ({
+											label,
+											value: comparisonPresentation(metric.id, axis.key, index === 1)
+										}))}
+										selected={metric.id}
+										onChange={(id) => swapChart(metric.id, id)}
+									/>
+								{:else}
 									<Toggle
-										label="Excl. batteries"
-										checked={exBatteries}
+										label={axis.label}
+										checked={!!metric[axis.key] !== !!axis.checkedWhenOff}
 										onclick={() =>
 											swapChart(
 												metric.id,
-												comparisonFuelMetric(fuel, {
-													generation: metric.kind === 'energy',
-													exBatteries: !exBatteries
-												})
+												comparisonPresentation(metric.id, axis.key, !metric[axis.key])
 											)}
 									/>
 								{/if}
-							{/if}
-							{#if comparisonChartId(metric.id) === 'price_real'}
-								<Toggle
-									label="Inflation adjusted"
-									checked={metric.id === 'price_real'}
-									onclick={() =>
-										swapChart(metric.id, metric.id === 'price_real' ? 'price' : 'price_real')}
-								/>
-							{/if}
+							{/each}
 							{#if metric.id === 'price_real'}
 								<span class="text-xs text-mid-grey">{cpi.reference} dollars</span>
 							{/if}
@@ -429,7 +415,7 @@
 									metric={metric.id}
 									{basis}
 									{interval}
-									{filter}
+									{months}
 									{viewport}
 									bounds={chartBounds}
 									{scale}
@@ -452,7 +438,7 @@
 									metric={metric.id}
 									{basis}
 									{interval}
-									{filter}
+									{months}
 									{viewport}
 									bounds={chartBounds}
 									{height}
@@ -520,17 +506,11 @@
 										scope="col"
 										data-column={metric.id}
 										data-focused={columnFocus[index].focused || undefined}
-										class="w-[100px] snap-start text-right transition-colors {index ===
-										metrics.length - 1
-											? 'pr-3 pl-2'
-											: 'px-2'} {columnFocus[index].focused
-											? 'bg-warm-grey'
-											: ''} {TABLE_HEADER_CELL}"
-										style:box-shadow={focusEdges({
-											top: columnFocus[index].focused,
-											left: columnFocus[index].left,
-											right: columnFocus[index].right
-										})}
+										class={valueHeaderClass(
+											index === metrics.length - 1,
+											columnFocus[index].focused
+										)}
+										style:box-shadow={valueHeaderEdges(columnFocus[index])}
 									>
 										{#if change}
 											<button
@@ -542,17 +522,11 @@
 												title={`Show ${column.nextUnit}`}
 												class="{TABLE_HEADER_BUTTON} -mr-1.5 flex-col items-end"
 											>
-												<span class="text-xs">{metric.shortLabel}</span>
-												<span class="font-mono text-xxs font-light text-mid-grey"
-													>{column.unit}</span
-												>
+												{@render columnHeading(metric.shortLabel, column.unit)}
 											</button>
 										{:else}
 											<div class="flex flex-col items-end">
-												<span class="text-xs">{metric.shortLabel}</span>
-												<span class="font-mono text-xxs font-light text-mid-grey"
-													>{column.unit}</span
-												>
+												{@render columnHeading(metric.shortLabel, column.unit)}
 											</div>
 										{/if}
 									</th>
@@ -606,20 +580,12 @@
 										const value = comparisonMetricValue(row, metric.id, basis);
 										return source.status[region.value]?.pending && !row ? '…' : formatComparisonCell(value, metric.id, tableUnits);
 									}) as cell, index (index)}
-										{@const column = columnFocus[index]}
 										{@const last = index === metrics.length - 1}
 										<td
-											class="{tableValueCell(
-												cell,
+											class={valueCellClass(cell, last, 'py-1.5', focused, columnFocus[index])}
+											style:box-shadow={valueCellEdges(focused, columnFocus[index], {
 												last,
-												'py-1.5',
-												column.focused && focused
-											)} {column.focused && !focused ? 'bg-light-warm-grey' : ''}"
-											style:box-shadow={focusEdges({
-												top: focused,
-												bottom: focused || (column.focused && region.value === LAST_REGION),
-												left: column.left,
-												right: column.right || (focused && last)
+												lastRow: region.value === LAST_REGION
 											})}>{cell}</td
 										>
 									{/each}

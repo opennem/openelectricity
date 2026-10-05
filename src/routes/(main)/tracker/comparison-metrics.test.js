@@ -8,7 +8,10 @@ import {
 	processComparisonFlows,
 	comparisonMetricValue,
 	comparisonChartId,
-	comparisonFuelMetric
+	comparisonPresentation,
+	comparisonPresentations,
+	formatComparisonCell,
+	normaliseComparisonResponse
 } from './comparison-metrics.js';
 import {
 	aggregateComparison,
@@ -34,20 +37,27 @@ describe('expanded regional metrics', () => {
 	it('defaults to intensity and renewable proportion and round-trips selections', () => {
 		expect(ALL_COMPARISON_CHARTS).toHaveLength(23);
 		expect(COMPARISON_CHART_OPTIONS).toHaveLength(14);
-		expect(normaliseRegionComparison().charts).toEqual(['intensity', 'share']);
+		expect(normaliseRegionComparison().charts).toEqual(['intensity', 'renewables_share']);
+		// Renewables' earlier ids still select their charts.
 		expect(
 			normaliseRegionComparison({ charts: ['intensity', 'generation', 'share'] }).charts
-		).toEqual(['intensity', 'generation']);
-		expect(selectComparisonCharts(['share', 'wind_share'], ['generation'])).toEqual([
-			'generation',
-			'wind_share'
-		]);
+		).toEqual(['intensity', 'renewables_generation']);
+		expect(
+			selectComparisonCharts(['renewables_share', 'wind_share'], ['renewables_generation'])
+		).toEqual(['renewables_generation', 'wind_share']);
 		for (const charts of [undefined, [], ['solar_value', 'price', 'unknown']]) {
 			const state = normaliseRegionComparison({ charts });
 			const params = new URLSearchParams();
 			applyRegionComparison(params, state);
 			expect(parseRegionComparison(params).charts).toEqual(state.charts);
 		}
+	});
+	it('formats Regions table cells as the fuel-tech table formats the same values', () => {
+		expect(formatComparisonCell(42, 'renewables_share', {})).toBe('42.0%');
+		expect(formatComparisonCell(-3.25, 'net_imports_share', {})).toBe('-3.3%');
+		expect(formatComparisonCell(85.3, 'price_real', {})).toBe('$85.30');
+		expect(formatComparisonCell(null, 'price', {})).toBe('—');
+		expect(formatComparisonCell(250, 'intensity', {})).toBe('250');
 	});
 	it('offers renewables excluding batteries as a presentation of the one renewables chart', () => {
 		const row = {
@@ -59,28 +69,45 @@ describe('expanded regional metrics', () => {
 			bioenergy_energy: 50
 		};
 		// Official counts battery discharge; excluding batteries sums the renewable fuel techs.
-		expect(comparisonMetricValue(row, 'generation', 'demand')).toBe(1200);
-		expect(comparisonMetricValue(row, 'generation_ex_batteries', 'demand')).toBe(1000);
-		expect(comparisonMetricValue(row, 'share_ex_batteries', 'demand')).toBe(50);
+		expect(comparisonMetricValue(row, 'renewables_generation', 'demand')).toBe(1200);
+		expect(comparisonMetricValue(row, 'renewables_generation_ex_batteries', 'demand')).toBe(1000);
+		expect(comparisonMetricValue(row, 'renewables_share_ex_batteries', 'demand')).toBe(50);
 		expect(
-			comparisonMetricValue({ ...row, bioenergy_energy: null }, 'share_ex_batteries', 'demand')
+			comparisonMetricValue(
+				{ ...row, bioenergy_energy: null },
+				'renewables_share_ex_batteries',
+				'demand'
+			)
 		).toBeNull();
-		expect(comparisonChartId('share_ex_batteries')).toBe('share');
-		expect(comparisonChartId('generation_ex_batteries')).toBe('share');
-		expect(comparisonFuelMetric('renewables', { generation: true, exBatteries: true })).toBe(
-			'generation_ex_batteries'
+		expect(comparisonChartId('renewables_share_ex_batteries')).toBe('renewables_share');
+		expect(comparisonChartId('renewables_generation_ex_batteries')).toBe('renewables_share');
+		// Each axis switches on its own, keeping the others.
+		expect(comparisonPresentation('renewables_share_ex_batteries', 'generation', true)).toBe(
+			'renewables_generation_ex_batteries'
 		);
-		expect(comparisonFuelMetric('wind', { generation: true, exBatteries: true })).toBe(
-			'wind_generation'
+		expect(comparisonPresentation('renewables_generation', 'exBatteries', true)).toBe(
+			'renewables_generation_ex_batteries'
 		);
-		expect(selectComparisonCharts(['share'], ['share_ex_batteries'])).toEqual([
-			'share_ex_batteries'
+		expect(comparisonPresentation('price_real', 'nominal', true)).toBe('price');
+		// A presentation a chart lacks leaves the metric as it is.
+		expect(comparisonPresentation('wind_generation', 'exBatteries', true)).toBe('wind_generation');
+		expect(comparisonPresentations('renewables_share').map(({ key }) => key)).toEqual([
+			'generation',
+			'exBatteries'
 		]);
-		const state = normaliseRegionComparison({ charts: ['intensity', 'generation_ex_batteries'] });
-		expect(state.charts).toEqual(['intensity', 'generation_ex_batteries']);
+		expect(comparisonPresentations('wind_share').map(({ key }) => key)).toEqual(['generation']);
+		expect(comparisonPresentations('price_real').map(({ key }) => key)).toEqual(['nominal']);
+		expect(comparisonPresentations('intensity')).toEqual([]);
+		expect(selectComparisonCharts(['renewables_share'], ['renewables_share_ex_batteries'])).toEqual(
+			['renewables_share_ex_batteries']
+		);
+		const state = normaliseRegionComparison({
+			charts: ['intensity', 'renewables_generation_ex_batteries']
+		});
+		expect(state.charts).toEqual(['intensity', 'renewables_generation_ex_batteries']);
 		const params = new URLSearchParams();
 		applyRegionComparison(params, state);
-		expect(params.get('compare-charts')).toBe('intensity,renewables-ex-batteries-generation');
+		expect(params.get('compare-charts')).toBe('intensity,renewables-generation-ex-batteries');
 		expect(parseRegionComparison(params).charts).toEqual(state.charts);
 	});
 	it('offers one price chart, defaults to adjusted and preserves nominal selections', () => {
@@ -139,7 +166,9 @@ describe('expanded regional metrics', () => {
 			['2024-02-01T00:00:00+10:00', 20],
 			['2024-03-01T00:00:00+10:00', 20]
 		);
-		expect(comparisonFuelRows(gap, 'energy')[1].solar_energy).toBeNull();
+		expect(
+			comparisonFuelRows(normaliseComparisonResponse(gap), 'energy')[1].solar_energy
+		).toBeNull();
 	});
 	it('treats the nulls padding a technology before it starts or after it retires as absent', () => {
 		// As the API returns a new technology: a null month, then its first reading.
@@ -151,7 +180,7 @@ describe('expanded regional metrics', () => {
 		raw.data[0].results[0].data.push(['2024-02-01T00:00:00+10:00', 12]);
 		raw.data[0].results[1].data.push(['2024-02-01T00:00:00+10:00', 20]);
 		raw.data[0].results[2].data.push(['2024-02-01T00:00:00+10:00', null]);
-		const [january, february] = comparisonFuelRows(raw, 'energy');
+		const [january, february] = comparisonFuelRows(normaliseComparisonResponse(raw), 'energy');
 		expect(january.solar_energy).toBe(10);
 		expect(february.solar_energy).toBe(32);
 		expect(february.bioenergy_energy).toBe(0);
@@ -166,17 +195,24 @@ describe('expanded regional metrics', () => {
 			['2024-02-01T00:00:00+10:00', 40],
 			['2024-03-01T00:00:00+10:00', 40]
 		);
-		expect(comparisonFuelRows(peaker, 'energy').map((row) => row.gas_energy)).toEqual([40, 40, 55]);
+		expect(
+			comparisonFuelRows(normaliseComparisonResponse(peaker), 'energy').map((row) => row.gas_energy)
+		).toEqual([40, 40, 55]);
 		// A technology with no readings at all contributes nothing.
-		expect(comparisonFuelRows(response('energy', { hydro: null }), 'energy')[0].hydro_energy).toBe(
-			0
-		);
+		expect(
+			comparisonFuelRows(
+				normaliseComparisonResponse(response('energy', { hydro: null, wind: 5 })),
+				'energy'
+			)[0].hydro_energy
+		).toBe(0);
 	});
 	it('does not bridge an unreported observation inside a technology history', () => {
 		const raw = response('energy', { solar_rooftop: 10, solar_utility: 20 });
 		raw.data[0].results[0].data.push(['2024-03-01T00:00:00+10:00', 30]);
 		raw.data[0].results[1].data.push(['2024-02-01T00:00:00+10:00', 20]);
-		expect(comparisonFuelRows(raw, 'energy')[1].solar_energy).toBeNull();
+		expect(
+			comparisonFuelRows(normaliseComparisonResponse(raw), 'energy')[1].solar_energy
+		).toBeNull();
 	});
 	it('weights prices by energy after complete annual aggregation, including negative prices', () => {
 		const rows = Array.from({ length: 12 }, (_, i) => ({

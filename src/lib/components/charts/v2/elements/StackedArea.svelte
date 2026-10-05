@@ -11,6 +11,7 @@
 	import { closestTo } from 'date-fns';
 	import chroma from 'chroma-js';
 	import { perfSpan } from '../perf.js';
+	import { nearestLine } from './line-hit.js';
 
 	const { data, xGet, xScale, yScale, yGet, z, width, height } = getContext('LayerCake');
 
@@ -26,8 +27,8 @@
 	 * @property {Object.<string, string>} [seriesColours] - Map of series id to colour
 	 * @property {string | null} [highlightId] - Currently highlighted series id
 	 * @property {string} [strokeWidth] - Line stroke width
-	 * @property {number} [lineHitWidth] - Line display: a transparent stroke this wide (px)
-	 *   reports each line's series key on hover; 0 leaves the lines inert
+	 * @property {number} [lineHitWidth] - Line display: the line within half this width (px) of
+	 *   the pointer, at the hovered time, reports its series key on hover; 0 leaves the lines inert
 	 * @property {boolean} [showLineDots] - Show dots on line chart
 	 * @property {number} [dotRadius] - Dot radius
 	 * @property {string} [dotFill] - Dot fill colour
@@ -209,6 +210,35 @@
 	function handleMouseOut() {
 		onmouseout?.();
 	}
+
+	/** The line under the pointer on the last move, if any. @type {string | undefined} */
+	let hoveredLine;
+
+	/**
+	 * Line display with a hit width: report the line nearest the pointer at
+	 * the hovered time, within half the width, as a series hover; leaving
+	 * every line ends it. Computed from the drawn values rather than a hit
+	 * path per line, so lines add no pointer geometry.
+	 * @param {MouseEvent & { currentTarget: SVGRectElement }} evt
+	 */
+	function handleLineHit(evt) {
+		const item = findClosestDataPoint(evt);
+		if (!item) return;
+		const pointerY = evt.clientY - evt.currentTarget.getBoundingClientRect().top;
+		const key = nearestLine($data, item.time, pointerY, $yGet, lineHitWidth);
+		if (key !== undefined) {
+			hoveredLine = key;
+			onmousemove?.({ data: item, key });
+		} else if (hoveredLine !== undefined) {
+			leaveLines();
+		}
+	}
+
+	function leaveLines() {
+		if (hoveredLine === undefined) return;
+		hoveredLine = undefined;
+		onmouseout?.();
+	}
 </script>
 
 {#if display === 'line'}
@@ -296,22 +326,23 @@
 					opacity={op}
 				/>
 			{/if}
-
-			{#if lineHitWidth > 0}
-				<path
-					role="presentation"
-					d={path}
-					fill="none"
-					stroke="transparent"
-					stroke-width={lineHitWidth}
-					pointer-events="stroke"
-					onmousemove={(e) => handlePointerMove(e, seriesKey)}
-					onmouseout={handleMouseOut}
-					onblur={handleMouseOut}
-					onpointerup={(e) => handlePointerUp(e, seriesKey)}
-				/>
-			{/if}
 		{/each}
+
+		{#if lineHitWidth > 0}
+			<!-- One target over the plot: the line nearest the pointer at the
+			     hovered time, within half the hit width, names its series. -->
+			<rect
+				class="line-hit"
+				role="presentation"
+				width={$width}
+				height={$height}
+				fill="transparent"
+				onmousemove={handleLineHit}
+				onmouseout={leaveLines}
+				onblur={leaveLines}
+				onpointerup={(e) => handlePointerUp(e, hoveredLine ?? '')}
+			/>
+		{/if}
 	</g>
 {/if}
 

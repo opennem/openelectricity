@@ -18,8 +18,6 @@
  * - `range` | `start`+`end`, `interval` — via the shared facility range params
  * - `group`     — fuel-tech grouping, default `simple` (Simplified)
  * - `hidden`    — comma-separated hidden IDs in the selected grouping
- *
- * Lists are comma-separated and written with bare commas (`readableQuery`).
  * - `contribution` — `generation` for source generation, otherwise gross demand
  * - `transform` / `market-transform` — generation / market-value data transform;
  *                 `proportion` or `changeSince`, default `absolute`
@@ -40,6 +38,8 @@
  *                 `wem`, `nem`, `au`…), `compare-charts` (hyphenated names:
  *                 `renewables`, `solar-generation`, `price-real`…),
  *                 `compare-basis`, `compare-start`/`compare-end`, `compare-table`
+ *
+ * Lists are comma-separated and written with bare commas (`readableQuery`).
  */
 
 import {
@@ -270,9 +270,11 @@ export function applyTrackerUrl(url, state) {
 	// The breakdown draws every technology, every day, with no spot price, and
 	// Stacked shows its area and radial bars side by side; drop the retired
 	// metric, view, series and stacked-style choices. The analysis view is the
-	// route now, so `view` is retired too.
+	// route now, so `view` is retired too, and Compare never read the
+	// renewables mode `compare-renewables` wrote.
 	for (const retired of [
 		'view',
+		'compare-renewables',
 		'profile-metric',
 		'profile-view',
 		'profile-series',
@@ -291,7 +293,7 @@ export function applyTrackerUrl(url, state) {
  * Parsing decodes both spellings alike.
  * @param {URLSearchParams} params
  */
-export function readableQuery(params) {
+function readableQuery(params) {
 	return params.toString().replaceAll('%2C', ',');
 }
 

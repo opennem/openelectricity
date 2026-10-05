@@ -7,7 +7,11 @@
 		focusEdges,
 		pinnedTableEdge,
 		scrollColumnsIntoView,
-		tableValueCell
+		columnFocusFor,
+		valueCellClass,
+		valueCellEdges,
+		valueHeaderClass,
+		valueHeaderEdges
 	} from './table-styles.js';
 	import { TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
@@ -193,18 +197,12 @@
 					...columnHeader(column.key)
 				})).filter((column) => tableColumns.includes(column.key))
 	);
-	/**
-	 * Each visible column's place in the focus: whether it is focused, and
-	 * whether the outline closes on its left or right — adjacent focused
-	 * columns (a percentile band's two bounds) outline as one block.
-	 */
+	/** Each visible column's place in the focus (`columnFocusFor`). */
 	let columnFocus = $derived(
-		visibleColumns.map((_, index) => {
-			/** @param {number} i */
-			const on = (i) => i >= 0 && focusColumns.includes(visibleColumns[i]?.key);
-			const focused = on(index);
-			return { focused, left: focused && !on(index - 1), right: focused && !on(index + 1) };
-		})
+		columnFocusFor(
+			visibleColumns.map((column) => column.key),
+			focusColumns
+		)
 	);
 	/** Cells for a row the view's own columns have no value for. */
 	let emptyCells = $derived((powerColumns ?? TABLE_COLUMNS).map(() => EMPTY_CELL));
@@ -450,17 +448,10 @@
 			{@const columnFocused = columnFocus[index]}
 			{@const last = index === visibleColumns.length - 1}
 			<td
-				class="{tableValueCell(
-					cell,
+				class={valueCellClass(cell, last, cellPad, focused, columnFocused)}
+				style:box-shadow={valueCellEdges(focused, columnFocused, {
 					last,
-					cellPad,
-					columnFocused.focused && focused
-				)} {columnFocused.focused && !focused ? 'bg-light-warm-grey' : ''}"
-				style:box-shadow={focusEdges({
-					top: focused,
-					bottom: focused || (columnFocused.focused && row.key === lastRowKey),
-					left: columnFocused.left,
-					right: columnFocused.right || (focused && last)
+					lastRow: row.key === lastRowKey
 				})}
 			>
 				{cell}
@@ -556,15 +547,11 @@
 						<th
 							data-column={column.key}
 							data-focused={columnFocus[index].focused || undefined}
-							class="w-[100px] snap-start text-right transition-colors {index ===
-							visibleColumns.length - 1
-								? 'pr-3 pl-2'
-								: 'px-2'} {columnFocus[index].focused ? 'bg-warm-grey' : ''} {TABLE_HEADER_CELL}"
-							style:box-shadow={focusEdges({
-								top: columnFocus[index].focused,
-								left: columnFocus[index].left,
-								right: columnFocus[index].right
-							})}
+							class={valueHeaderClass(
+								index === visibleColumns.length - 1,
+								columnFocus[index].focused
+							)}
+							style:box-shadow={valueHeaderEdges(columnFocus[index])}
 						>
 							{#if column.cycle}
 								<button

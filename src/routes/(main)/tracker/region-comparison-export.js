@@ -34,7 +34,7 @@ export function comparisonExportDataset(data, state, viewport, cpiReference = nu
 			...metrics.map((metric) => ({
 				key: metric.id,
 				header:
-					metric.id === 'share'
+					metric.id === 'renewables_share'
 						? `Renewables / ${state.basis === 'demand' ? 'gross demand' : 'source generation'} (%)`
 						: `${metric.label} (${comparisonUnit(metric.id, state.basis, true).replace('CO₂', 'CO2')}${metric.id === 'price_real' && cpiReference ? `; ${cpiReference} dollars` : ''})`,
 				type: /** @type {const} */ ('number')

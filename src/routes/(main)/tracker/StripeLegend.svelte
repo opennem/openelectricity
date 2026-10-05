@@ -1,4 +1,5 @@
 <script>
+	import { formatWithUnit } from '$lib/utils/formatters.js';
 	import { formatComparisonValue } from './comparison-metrics.js';
 	import { stripeGradient, stripeKeys } from './comparison-stripes.js';
 
@@ -18,7 +19,7 @@
 	let readout = $state(null);
 
 	/** @param {number} value */
-	const valueText = (value) => `${formatComparisonValue(value, metric)} ${scale.unit}`;
+	const valueText = (value) => formatWithUnit(formatComparisonValue(value, metric), scale.unit);
 
 	/** @param {PointerEvent & { currentTarget: HTMLElement }} event */
 	function trackRamp(event) {
@@ -89,7 +90,7 @@
 		<span
 			class="flex items-center gap-1"
 			onpointerenter={(event) =>
-				showAt(event, key.label === '0' ? valueText(0) : 'No data for the period', key.colour)}
+				showAt(event, key.kind === 'zero' ? valueText(0) : 'No data for the period', key.colour)}
 			onpointerleave={clear}
 		>
 			<span

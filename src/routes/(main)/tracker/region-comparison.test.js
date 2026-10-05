@@ -50,7 +50,7 @@ const monthly = (count = 24) =>
 describe('region comparison calculations', () => {
 	it('draws gaps for entirely absent calendar periods without inventing exported observations', () => {
 		const data = { nsw1: monthly(3).filter((_, i) => i !== 1) };
-		const rows = comparisonChartRows(data, ['nsw1'], 'generation', 'demand', '1M');
+		const rows = comparisonChartRows(data, ['nsw1'], 'renewables_generation', 'demand', 1);
 		expect(rows).toHaveLength(3);
 		expect(rows[1].nsw1).toBeNull();
 		const state = normaliseRegionComparison({ regions: ['nsw1'], interval: '1M' });
@@ -62,21 +62,25 @@ describe('region comparison calculations', () => {
 		const rows = aggregateComparison(monthly(), '12mr', Date.UTC(2026, 0));
 		expect(rows).toHaveLength(13);
 		expect(comparisonMetricValue(rows[0], 'intensity', 'demand')).toBe((10000 / 34000) * 1000);
-		expect(comparisonMetricValue(rows[0], 'generation', 'demand')).toBe(18000);
-		expect(comparisonMetricValue(rows[0], 'share', 'demand')).toBe(150);
-		expect(comparisonMetricValue(rows[0], 'share', 'generation')).toBe(75);
+		expect(comparisonMetricValue(rows[0], 'renewables_generation', 'demand')).toBe(18000);
+		expect(comparisonMetricValue(rows[0], 'renewables_share', 'demand')).toBe(150);
+		expect(comparisonMetricValue(rows[0], 'renewables_share', 'generation')).toBe(75);
 	});
 	it('preserves zero numerators and rejects non-positive or missing denominators', () => {
 		const zero = { emissions: 0, energy_mwh: 10, renewables: 0, demand_gross: 10 };
 		expect(
-			['intensity', 'generation', 'share'].map((id) => comparisonMetricValue(zero, id, 'demand'))
+			['intensity', 'renewables_generation', 'renewables_share'].map((id) =>
+				comparisonMetricValue(zero, id, 'demand')
+			)
 		).toEqual([0, 0, 0]);
 		const bad = { emissions: 5, energy_mwh: 0, renewables: 10, demand_gross: -1 };
 		expect(
-			['intensity', 'generation', 'share'].map((id) => comparisonMetricValue(bad, id, 'demand'))
+			['intensity', 'renewables_generation', 'renewables_share'].map((id) =>
+				comparisonMetricValue(bad, id, 'demand')
+			)
 		).toEqual([null, 10, null]);
 		expect(
-			['intensity', 'generation', 'share'].map((id) =>
+			['intensity', 'renewables_generation', 'renewables_share'].map((id) =>
 				comparisonMetricValue(undefined, id, 'generation')
 			)
 		).toEqual([null, null, null]);
@@ -117,12 +121,12 @@ describe('region comparison calculations', () => {
 			Date.UTC(2025, 8)
 		]);
 		expect(rows.every((row) => row.renewables === 18000)).toBe(true);
-		expect(comparisonPeriod(rows[0].time, '12mr-season')).toBe('12 months to Feb 2025');
+		expect(comparisonPeriod(rows[0].time, '12mr-season')).toBe('12 months to Summer 2024/25');
 		// Halves close in Dec 2024, Jun 2025 and Dec 2025.
 		expect(
 			aggregateComparison(monthly(), '12mr-half', Date.UTC(2026, 0)).map((row) => row.time)
 		).toEqual([Date.UTC(2024, 6), Date.UTC(2025, 0), Date.UTC(2025, 6)]);
-		expect(comparisonPeriod(Date.UTC(2025, 6), '12mr-half')).toBe('12 months to Dec 2025');
+		expect(comparisonPeriod(Date.UTC(2025, 6), '12mr-half')).toBe('12 months to H2 2025');
 		expect(comparisonPeriod(Date.UTC(2025, 6), '12mr')).toBe('12 months to July 2025');
 	});
 	it('keeps one calendar period a year under a filter', () => {
@@ -142,8 +146,10 @@ describe('region comparison calculations', () => {
 		expect(periodMonths('season')).toBe(3);
 		expect(periodMonths('12mr-half')).toBe(6);
 		expect(periodMonths('season', 'summer')).toBe(12);
-		expect(nextPeriodStart(Date.UTC(2024, 2), 'season')).toBe(Date.UTC(2024, 5));
-		expect(nextPeriodStart(Date.UTC(2024, 2), 'season', 'autumn')).toBe(Date.UTC(2025, 2));
+		expect(nextPeriodStart(Date.UTC(2024, 2), periodMonths('season'))).toBe(Date.UTC(2024, 5));
+		expect(nextPeriodStart(Date.UTC(2024, 2), periodMonths('season', 'autumn'))).toBe(
+			Date.UTC(2025, 2)
+		);
 	});
 	it('validates the filter against the grain and round-trips it in the URL', () => {
 		expect(normaliseRegionComparison({ interval: '1M', filter: 'jan' }).filter).toBe('jan');
@@ -163,13 +169,13 @@ describe('region comparison calculations', () => {
 	it('ticks coarse rows at each year’s first row, a year step apart', () => {
 		const seasons = Array.from({ length: 12 }, (_, i) => ({ time: monthStart(start, 2 + i * 3) }));
 		expect(
-			comparisonTicks(/** @type {any[]} */ (seasons), 'season').map((date) => date.getTime())
+			comparisonTicks(/** @type {any[]} */ (seasons), 3).map((date) => date.getTime())
 		).toEqual([Date.UTC(2024, 2), Date.UTC(2025, 2), Date.UTC(2026, 2)]);
 		expect(comparisonRangeLabel(Date.UTC(2024, 2), Date.UTC(2025, 8), 'season')).toBe(
-			'Autumn 2024 – Spring 2025'
+			'Autumn 2024 — Spring 2025'
 		);
 		expect(comparisonRangeLabel(Date.UTC(2024, 11), Date.UTC(2025, 8), '12mr-season')).toBe(
-			'Feb 2025 – Nov 2025'
+			'Summer 2024/25 — Spring 2025'
 		);
 	});
 	it('only includes complete months and years and uses July financial years', () => {
@@ -179,7 +185,7 @@ describe('region comparison calculations', () => {
 		const financial = aggregateComparison(data, 'fy', Date.UTC(2026, 0));
 		const complete = financial.find((row) => row.time === Date.UTC(2024, 6));
 		expect(complete.renewables).toBe(18000);
-		expect(comparisonPeriod(complete.time, 'fy')).toBe('2024–25 financial year');
+		expect(comparisonPeriod(complete.time, 'fy')).toBe('FY2025');
 		expect(financial.find((row) => row.time === Date.UTC(2025, 6))).toBeUndefined();
 		expect(comparisonBounds(Date.parse('2026-08-31T15:00:00Z')).end).toBe(Date.UTC(2026, 7));
 		expect(comparisonBounds(Date.parse('2026-08-31T16:00:00Z')).end).toBe(Date.UTC(2026, 8));
@@ -252,7 +258,7 @@ describe('region comparison calculations', () => {
 	it('selects a common completed period without mixing region dates', () => {
 		const data = { a: monthly(12), b: monthly(10) };
 		const viewport = { start, end: Date.UTC(2025, 0) };
-		const charts = ['intensity', 'share'];
+		const charts = ['intensity', 'renewables_share'];
 		expect(latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, charts)).toBe(
 			Date.UTC(2024, 9)
 		);
@@ -286,18 +292,18 @@ describe('region comparison calculations', () => {
 			time: Date.UTC(1999 + i, 0, 1),
 			date: new Date(Date.UTC(1999 + i, 0, 1))
 		}));
-		expect(comparisonTicks(years, '1y').map((date) => date.getUTCFullYear())).toEqual([
+		expect(comparisonTicks(years, 12).map((date) => date.getUTCFullYear())).toEqual([
 			2000, 2005, 2010, 2015, 2020, 2025
 		]);
 	});
 	it('reads the periods on screen as a first-to-last range', () => {
 		const first = Date.UTC(1999, 0, 1);
-		expect(comparisonRangeLabel(first, Date.UTC(2026, 7, 1), '1M')).toBe('Jan 1999 – Aug 2026');
-		expect(comparisonRangeLabel(first, Date.UTC(2026, 7, 1), '12mr')).toBe('Jan 1999 – Aug 2026');
-		expect(comparisonRangeLabel(first, Date.UTC(2025, 0, 1), '1y')).toBe('1999 – 2025');
+		expect(comparisonRangeLabel(first, Date.UTC(2026, 7, 1), '1M')).toBe('Jan 1999 — Aug 2026');
+		expect(comparisonRangeLabel(first, Date.UTC(2026, 7, 1), '12mr')).toBe('Jan 1999 — Aug 2026');
+		expect(comparisonRangeLabel(first, Date.UTC(2025, 0, 1), '1y')).toBe('1999 — 2025');
 		// Financial years by their closing year: 1999–00 is FY2000.
 		expect(comparisonRangeLabel(Date.UTC(1999, 6, 1), Date.UTC(2025, 6, 1), 'fy')).toBe(
-			'FY2000 – FY2026'
+			'FY2000 — FY2026'
 		);
 		expect(comparisonRangeLabel(Date.UTC(2024, 0), Date.UTC(2024, 0), '1M')).toBe('Jan 2024');
 		expect(comparisonRangeLabel(null, null, '1M')).toBe('');
@@ -335,9 +341,9 @@ describe('region comparison calculations', () => {
 		expect(
 			latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, ['price'])
 		).toBeNull();
-		expect(latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, ['share'])).toBe(
-			Date.UTC(2024, 9)
-		);
+		expect(
+			latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, ['renewables_share'])
+		).toBe(Date.UTC(2024, 9));
 	});
 });
 
@@ -369,7 +375,6 @@ describe('region comparison navigation and export', () => {
 			const state = normaliseRegionComparison({
 				interval: 'fy',
 				display: 'stripes',
-				mode: 'generation',
 				basis: 'generation',
 				table: false,
 				regions,
@@ -393,7 +398,13 @@ describe('region comparison navigation and export', () => {
 	it('writes short region and chart names, and still reads the full ids', () => {
 		const state = normaliseRegionComparison({
 			regions: ['nsw1', 'wem', '_all', 'au'],
-			charts: ['intensity', 'share', 'solar_wind_generation', 'net_imports_share', 'price_real']
+			charts: [
+				'intensity',
+				'renewables_share',
+				'solar_wind_generation',
+				'net_imports_share',
+				'price_real'
+			]
 		});
 		const params = new URLSearchParams();
 		applyRegionComparison(params, state);
@@ -413,8 +424,8 @@ describe('region comparison navigation and export', () => {
 	it('bounds history at the last complete month in both networks', () => {
 		const bounds = comparisonBounds(Date.UTC(2026, 8, 17, 20));
 		expect(bounds.end).toBe(Date.UTC(2026, 8, 1));
-		expect(nextPeriodStart(Date.UTC(2024, 1, 1), '1M')).toBe(Date.UTC(2024, 2, 1));
-		expect(nextPeriodStart(Date.UTC(2024, 6, 1), 'fy')).toBe(Date.UTC(2025, 6, 1));
+		expect(nextPeriodStart(Date.UTC(2024, 1, 1), periodMonths('1M'))).toBe(Date.UTC(2024, 2, 1));
+		expect(nextPeriodStart(Date.UTC(2024, 6, 1), periodMonths('fy'))).toBe(Date.UTC(2025, 6, 1));
 	});
 	it('labels ticks with months below three years and years beyond', () => {
 		const year = { start: Date.UTC(2024, 11, 15), end: Date.UTC(2025, 11, 15) };
@@ -445,7 +456,7 @@ describe('region comparison navigation and export', () => {
 		const state = normaliseRegionComparison({
 			regions: ['nsw1'],
 			interval: '1M',
-			charts: ['intensity', 'share']
+			charts: ['intensity', 'renewables_share']
 		});
 		const data = { nsw1: [{ ...monthly(1)[0], emissions: null }] };
 		const dataset = comparisonExportDataset(data, state, { start, end: Date.UTC(2025, 0) });

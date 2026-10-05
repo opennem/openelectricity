@@ -158,11 +158,12 @@ export function stripeGradient(ramp) {
 /** The two cells a legend keys explicitly, beside the ramp: a zero reading
  * (white on most ramps, the midpoint of net imports, renewables green for
  * fossil shares) and a period without data.
- * @param {StripeScale} scale @returns {{label: string, colour: string}[]} */
+ * @param {StripeScale} scale
+ * @returns {Array<{kind: 'zero' | 'empty', label: string, colour: string}>} */
 export function stripeKeys(scale) {
 	return [
-		{ colour: scale.colour(0), label: '0' },
-		{ colour: STRIPE_EMPTY_COLOUR, label: 'No data' }
+		{ kind: 'zero', colour: scale.colour(0), label: '0' },
+		{ kind: 'empty', colour: STRIPE_EMPTY_COLOUR, label: 'No data' }
 	];
 }
 
@@ -182,8 +183,8 @@ export function stripeLegendItems(scale) {
 	const [zero, empty] = stripeKeys(scale);
 	return [
 		...items.map((item) => ({ ...item, label: `${item.label} ${scale.unit}`.trim() })),
-		...(zeroShown ? [] : [{ ...zero, label: `0 ${scale.unit}`.trim() }]),
-		empty
+		...(zeroShown ? [] : [{ colour: zero.colour, label: `0 ${scale.unit}`.trim() }]),
+		{ colour: empty.colour, label: empty.label }
 	];
 }
 
@@ -191,24 +192,23 @@ export function stripeLegendItems(scale) {
 /**
  * Cell geometry at absolute time positions: x is measured from `origin` so a
  * sliding viewport translates the drawn cells rather than re-laying them out.
- * A cell spans to the next row: its period, or a year while a calendar-period
- * filter keeps one row per year.
- * @param {Array<{time: number}>} rows @param {string} interval
- * @param {number} origin @param {number} pxPerMs @param {string | null} [filter]
+ * A cell spans to the next row, `months` on (`periodMonths`).
+ * @param {Array<{time: number}>} rows @param {number} months
+ * @param {number} origin @param {number} pxPerMs
  * @returns {StripeCell[]}
  */
-export function stripeCells(rows, interval, origin, pxPerMs, filter = null) {
+export function stripeCells(rows, months, origin, pxPerMs) {
 	return rows.map((row) => ({
 		time: row.time,
 		x: (row.time - origin) * pxPerMs,
-		width: (nextPeriodStart(row.time, interval, filter) - row.time) * pxPerMs
+		width: (nextPeriodStart(row.time, months) - row.time) * pxPerMs
 	}));
 }
 
 /** The period containing an instant, or null between or beyond periods.
- * @param {Array<{time: number}>} rows - In time order @param {string} interval @param {number} time
- * @param {string | null} [filter] */
-export function stripePeriodAt(rows, interval, time, filter = null) {
+ * @param {Array<{time: number}>} rows - In time order @param {number} months - Months between rows
+ * @param {number} time */
+export function stripePeriodAt(rows, months, time) {
 	let low = 0,
 		high = rows.length - 1,
 		found = -1;
@@ -221,5 +221,5 @@ export function stripePeriodAt(rows, interval, time, filter = null) {
 	}
 	if (found < 0) return null;
 	const row = rows[found];
-	return time < nextPeriodStart(row.time, interval, filter) ? row.time : null;
+	return time < nextPeriodStart(row.time, months) ? row.time : null;
 }

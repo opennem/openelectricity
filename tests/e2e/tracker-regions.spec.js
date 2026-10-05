@@ -198,7 +198,7 @@ test('late responses cannot restore a deselected region; interval and zoom choic
 		.getByRole('option', { name: 'Fin-Year', exact: true })
 		.click();
 	await expect(page).toHaveURL(/compare-interval=fy/);
-	await expect(page.getByTestId('tracker-range-label')).toHaveText(/ – FY2026$/);
+	await expect(page.getByTestId('tracker-range-label')).toHaveText(/ — FY2026$/);
 	await page.getByRole('group', { name: 'Carbon intensity comparison chart' }).hover();
 	await page.getByRole('button', { name: 'Zoom in', exact: true }).first().click();
 	await expect(page).toHaveURL(/compare-start=/);
@@ -316,7 +316,7 @@ for (const [interval, expected] of [
 	['12mr', '12 months to Aug 2026'],
 	['1M', 'Aug 2026'],
 	['1y', '2025'],
-	['fy', '2025–26 financial year']
+	['fy', 'FY2026']
 ]) {
 	test(`pointer inspection reaches the latest plotted point for ${interval}`, async ({ page }) => {
 		await regionsFixture(page);
@@ -636,7 +636,7 @@ test('intervals match Timeline: grains, a rolling switch and a calendar-period f
 	await expect(page).toHaveURL(/compare-filter=summer/);
 	await page.getByRole('button', { name: 'Inspect carbon intensity values' }).focus();
 	await page.keyboard.press('ArrowLeft');
-	await expect(readout).toHaveText(/^12 months to Feb \d{4}$/);
+	await expect(readout).toHaveText(/^12 months to Summer \d{4}\/\d{2}$/);
 	await page.keyboard.press('Escape');
 	// Rolling off: plain seasons keep the filter; a quarter cannot, so it drops.
 	await navPill(page, 'Season').click();
@@ -691,12 +691,29 @@ test('the renewables card switches between official renewables and renewables ex
 	).toBeVisible();
 	// Generation keeps excluding batteries; the same responses serve both.
 	await page.getByRole('tab', { name: 'Generation', exact: true }).click();
-	await expect(page).toHaveURL(/compare-charts=intensity,renewables-ex-batteries-generation/);
+	await expect(page).toHaveURL(/compare-charts=intensity,renewables-generation-ex-batteries/);
 	await expect(exBatteries).toBeChecked();
 	expect(data.requests.length).toBe(requests);
 	await page.goBack();
 	await page.goBack();
 	await expect(exBatteries).not.toBeChecked();
+});
+
+test('charts float their own tooltips while the desktop table is closed, prices as the table reads them', async ({
+	page
+}) => {
+	await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/tracker/compare?compare-charts=intensity,price-real&compare-table=0');
+	await expect(
+		page.getByText('Complete periods · monthly source data', { exact: true })
+	).toBeVisible();
+	const price = page.getByRole('group', { name: /Volume-weighted price .*comparison chart/ });
+	const box = await price.boundingBox();
+	if (!box) throw new Error('Price chart has no size');
+	// The latest periods' prices have a decimal, which whole dollars would drop.
+	await page.mouse.move(box.x + box.width * 0.94, box.y + box.height / 2);
+	await expect(price.getByTestId('chart-floating-tooltip')).toContainText(/\$\d+\.\d/);
 });
 
 test('heatmap display shares hover and pinning with the table, exports PNG and restores through history', async ({

@@ -73,3 +73,56 @@ export function focusEdges({ top, right, bottom, left }) {
 	].filter(Boolean);
 	return shadows.length ? shadows.join(', ') : undefined;
 }
+
+/** @typedef {{ focused: boolean, left: boolean, right: boolean }} ColumnFocus */
+
+/**
+ * Each value column's place in the focus: whether it is focused, and whether
+ * its outline closes on the left or right. Adjacent focused columns (a
+ * percentile band's two bounds) outline as one block.
+ * @param {string[]} keys - The value columns, in order
+ * @param {string[]} focusedKeys
+ * @returns {ColumnFocus[]}
+ */
+export function columnFocusFor(keys, focusedKeys) {
+	/** @param {number} i */
+	const on = (i) => i >= 0 && i < keys.length && focusedKeys.includes(keys[i]);
+	return keys.map((_, i) => {
+		const focused = on(i);
+		return { focused, left: focused && !on(i - 1), right: focused && !on(i + 1) };
+	});
+}
+
+/** A value column header: fixed width, snapping, the last column's wider
+ * right padding, and the focused column's tint.
+ * @param {boolean} last @param {boolean} focused */
+export function valueHeaderClass(last, focused) {
+	return `w-[100px] snap-start text-right transition-colors ${last ? 'pr-3 pl-2' : 'px-2'} ${focused ? 'bg-warm-grey' : ''} ${TABLE_HEADER_CELL}`;
+}
+
+/** @param {ColumnFocus} column */
+export function valueHeaderEdges(column) {
+	return focusEdges({ top: column.focused, left: column.left, right: column.right });
+}
+
+/** A value cell: the focused column tints it, and where the focused row
+ * crosses it the cell reads white on OE red.
+ * @param {string} text @param {boolean} last @param {string} padding
+ * @param {boolean} rowFocused @param {ColumnFocus} column */
+export function valueCellClass(text, last, padding, rowFocused, column) {
+	return `${tableValueCell(text, last, padding, column.focused && rowFocused)} ${column.focused && !rowFocused ? 'bg-light-warm-grey' : ''}`;
+}
+
+/** A value cell's outline: its row's top and bottom while the row is focused,
+ * its column's sides, closing under the table's last row and beside its last
+ * column.
+ * @param {boolean} rowFocused @param {ColumnFocus} column
+ * @param {{ last: boolean, lastRow: boolean }} position */
+export function valueCellEdges(rowFocused, column, { last, lastRow }) {
+	return focusEdges({
+		top: rowFocused,
+		bottom: rowFocused || (column.focused && lastRow),
+		left: column.left,
+		right: column.right || (rowFocused && last)
+	});
+}

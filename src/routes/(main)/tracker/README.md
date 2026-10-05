@@ -52,13 +52,16 @@ season, quarter, half; ids `12mr`, `12mr-season`, `12mr-quarter`, `12mr-half`),
 beside a calendar-period pill (All, a month, season, quarter or half) that
 follows the grain. 12-month rolling months are the default. Seasons are
 meteorological (summer is December to February) and financial years run July
-to June, bucketed by `bucketStartMs` at a zero offset on the UTC
-calendar-label axis. A rolling grain samples the trailing 12-month sum as
-each of its periods closes, dated by that period's start ("12 months to Feb
-2025" for summer 2024/25). A calendar-period filter (`compare-filter`) keeps
+to June. Buckets and rolling windows are Timeline's own
+(`completeBucketRows`, `displayFullTransform`), run on the UTC calendar-label
+axis (`offsetHoursFromIana('UTC')` is 0), and periods and the range readout
+use Timeline's label policy (`getTimeFormatPolicy`, `formatRangeLabel`): a
+rolling grain is named by its last period ("12 months to Summer 2024/25").
+Geometry steps by `periodMonths(interval, filter)`. A calendar-period filter (`compare-filter`) keeps
 that period each year, so rows, cells and ticks step a year apart. Only
 complete periods are shown; rolling gaps and incomplete buckets stay
-unavailable. **Nulls in source series** (`seriesSpan`): the API pads
+unavailable. **Nulls in source series** (`normaliseComparisonResponse`, applied once
+as each response is processed): the API pads
 a fueltech's series with nulls before it starts and after it retires, which
 count as absent. Inside its life, a fueltech that also reports explicit zeros
 (idle plant such as distillate and OCGT peakers) has its nulls counted as
@@ -145,8 +148,8 @@ metrics first have data; zooming out returns to it, and a window is never
 narrower than a year of periods (`clampComparisonViewport`). The top nav's range readout
 (`RangeStatus`, as in Timeline and Profile) names the first and last period
 on screen with a displayed value, so an unfinished year is never named
-(`comparisonRangeLabel`: `Jan 1999 – Aug 2026`, `1999 – 2025`,
-`FY2000 – FY2026`, `Autumn 2024 – Spring 2025`), and swaps to the hovered
+(`comparisonRangeLabel`: `Jan 1999 — Aug 2026`, `1999 — 2025`,
+`FY2000 — FY2026`, `Autumn 2024 — Spring 2025`), and swaps to the hovered
 or pinned period while one is inspected. The Regions table has no period line
 of its own: at rest it holds the latest period every selected region has a
 value for. A pin clears by clicking the period again or pressing Escape. Axis ticks are anchored to the calendar
@@ -177,7 +180,7 @@ Comparison settings are independent of Timeline: `compare-display`
 `quarter`, `half`, `fy`, `1y` and the `12mr*` rolling variants; `12mr` is the
 default), `compare-filter` (Timeline's calendar-period ids: `jan`…`dec`,
 `summer`…, `q1`…, `h1`/`h2`, validated against the grain), `compare-regions` (short names `nsw,qld,sa,tas,vic,wem,nem,au`;
-an empty value intentionally selects none), `compare-renewables`,
+an empty value intentionally selects none),
 `compare-charts` (hyphenated names such as `intensity,renewables,solar-generation,price-real`;
 empty selects none), `compare-basis`, `compare-start` / `compare-end`, and
 `compare-table`. Defaults are omitted. Older links with the full ids
@@ -1020,7 +1023,7 @@ breakdown and contribution percentages at the same timestamp; leaving inspection
 restores the window totals. Profile's average-day stack shares the strip; its
 individual profile keeps floating tooltips. Compare's charts and heatmap have
 no tooltip beside the Regions table, which is their readout (with the period in
-the top nav); below 1024px, where the table overlays the charts, they float one.
+the top nav); while the table is closed, or below 1024px where it overlays the charts, they float one. Price tooltips use the table's one-decimal format.
 
 **Regions table.** Its header carries the same sliders button as the fuel-tech
 table (`TableOptions`, shared with `FuelTechOptions`), whose dialog sets the
@@ -1036,13 +1039,16 @@ dashed note box the fuel-tech table also uses.
 Hovering the charts highlights the table as Profile's breakdown does: the card
 under the pointer outlines its metric's column (and darkens its border), the
 region under the pointer outlines its row, and their cell reads white on OE red.
-On the line charts a region is under the pointer while it is over that line:
-`chartStyles.lineHitWidth` (10px here) gives each line a transparent hit
-stroke that reports its series key. With `allowHoverHighlight`, the hovered
+On the line charts a region is under the pointer while its line is: with
+`chartStyles.lineHitWidth` (10px here), one transparent hit area over the plot
+names the line nearest the pointer at the hovered time, within 5px
+(`nearestLine` in `elements/line-hit.js`), with no extra path per line. With `allowHoverHighlight`, the hovered
 region stays solid on every card while the others recede. On the heatmap it is
 the row under the pointer. A hovered card's column also scrolls into view
 beside the pinned Region column (`scrollColumnsIntoView` in `table-styles.js`,
-shared with the fuel-tech table's focused columns). The line hit stroke is
+shared with the fuel-tech table's focused columns). Both tables' value
+headers and cells share their classes and outlines (`columnFocusFor`,
+`valueHeaderClass`, `valueCellClass`, `valueCellEdges`). The line hit area is
 mirrored in `@chienleng/stratum-ui` (`chartStyles.lineHitWidth`).
 
 The generation chart's **Proportion** view uses the same basis selected in

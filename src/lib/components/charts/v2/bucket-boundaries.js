@@ -13,7 +13,7 @@
 const HOUR_MS = 60 * 60 * 1000;
 
 /** Number of calendar months each coarse bucket spans. */
-const BUCKET_MONTHS = /** @type {const} */ ({
+export const BUCKET_MONTHS = /** @type {const} */ ({
 	'1M': 1,
 	quarter: 3,
 	'3M': 3,

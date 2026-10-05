@@ -7,7 +7,7 @@
  * working.
  */
 
-import { bucketStartMs } from './bucket-boundaries.js';
+import { BUCKET_MONTHS, bucketStartMs } from './bucket-boundaries.js';
 import { localYearMonth } from './date-labels.js';
 import { offsetHoursFromIana } from './network-time.js';
 import { perfSpan } from './perf.js';
@@ -344,6 +344,34 @@ const ROLLING_DISPLAY = {
 };
 
 /**
+ * Sum monthly rows into calendar buckets (quarter, season, half-year,
+ * financial or calendar year), keeping only buckets with every month present;
+ * a series missing a month in a kept bucket is null there.
+ *
+ * @param {any[]} data - Time-sorted monthly rows
+ * @param {string[]} seriesNames
+ * @param {keyof typeof BUCKET_MONTHS} kind
+ * @param {string} ianaTimeZone
+ * @returns {any[]}
+ */
+export function completeBucketRows(data, seriesNames, kind, ianaTimeZone) {
+	const months = BUCKET_MONTHS[kind];
+	const { rows, counts, valueCounts } = bucketAggregate(
+		data,
+		seriesNames,
+		'sum',
+		boundaryBucketTimeOf(kind, ianaTimeZone)
+	);
+	return rows.filter((row, i) => {
+		if (counts[i] !== months) return false;
+		for (const name of seriesNames) {
+			if (valueCounts[i][name] !== months) row[name] = null;
+		}
+		return true;
+	});
+}
+
+/**
  * Return a whole-cache transform for rolling intervals. Rate series are not
  * transformed because a sum of averages has no useful meaning.
  *
@@ -359,21 +387,9 @@ export function displayFullTransform({
 	const cfg = ROLLING_DISPLAY[/** @type {keyof typeof ROLLING_DISPLAY} */ (displayInterval)];
 	if (!cfg || apiInterval !== '1M' || method !== 'sum') return null;
 	if (!cfg.bucket) return rollingSum12MonthRows;
-	const bucketKind = cfg.bucket;
+	const bucketKind = /** @type {keyof typeof BUCKET_MONTHS} */ (cfg.bucket);
 	return (data, seriesNames) => {
-		const { rows, counts, valueCounts } = bucketAggregate(
-			data,
-			seriesNames,
-			'sum',
-			boundaryBucketTimeOf(bucketKind, ianaTimeZone)
-		);
-		const complete = rows.filter((row, i) => {
-			if (counts[i] !== cfg.monthsPerBucket) return false;
-			for (const name of seriesNames) {
-				if (valueCounts[i][name] !== cfg.monthsPerBucket) row[name] = null;
-			}
-			return true;
-		});
+		const complete = completeBucketRows(data, seriesNames, bucketKind, ianaTimeZone);
 		return rollingSumRows(
 			complete,
 			seriesNames,

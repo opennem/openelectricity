@@ -1,5 +1,5 @@
 <script>
-	import { comparisonMetric } from './comparison-metrics.js';
+	import { comparisonMetric, formatComparisonCell } from './comparison-metrics.js';
 	import { onDestroy, untrack } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
@@ -19,7 +19,7 @@
 	const SERIES_LABELS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.label]));
 	const SERIES_COLOURS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.colour]));
 
-	/** @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string, filter: string | null,
+	/** @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string, months: number,
 	 * viewport: {start:number,end:number}, bounds: {start:number,end:number}, height: number,
 	 * tooltip: boolean, engaged: boolean, hover: number | null, focus: number | null, onhover: (time:number | null) => void, onfocus: (time:number | null) => void,
 	 * hoverRegion: string | null, onhoverregion: (region: string | null) => void,
@@ -30,7 +30,7 @@
 		metric,
 		basis,
 		interval,
-		filter,
+		months,
 		viewport,
 		bounds,
 		height,
@@ -64,7 +64,7 @@
 	chart.chartOptions.allowHoverHighlight = true;
 	const inspectionHintId = $props.id();
 	let definition = $derived(comparisonMetric(metric));
-	let rows = $derived(comparisonChartRows(data, regions, metric, basis, interval, filter));
+	let rows = $derived(comparisonChartRows(data, regions, metric, basis, months));
 	let visibleRows = $derived(visibleComparisonRows(rows, viewport));
 	// Each effect syncs one concern into the store, so a pan frame re-runs only
 	// the viewport sync rather than rebuilding labels, data and units.
@@ -80,6 +80,9 @@
 		chart.chartOptions.prefix = definition.kind === 'energy' ? 'M' : '';
 		chart.chartOptions.setAutomaticDisplayPrefix(definition.kind === 'energy' ? 'G' : '');
 		chart.chartOptions.allowedPrefixes = definition.kind === 'energy' ? ['M', 'G', 'T'] : [];
+		// Prices read as the Regions table does ($85.30), not whole dollars.
+		chart.formatTooltipY =
+			definition.kind === 'price' ? (value) => formatComparisonCell(value, metric, {}) : null;
 	});
 	$effect(() => {
 		chart.seriesData = rows;
@@ -93,7 +96,7 @@
 	$effect(() => {
 		chart.formatTickX = (date) => comparisonTickLabel(Number(date), viewport);
 		chart.setXDomain(viewport.start, viewport.end);
-		const ticks = comparisonTicks(visibleRows, interval, filter);
+		const ticks = comparisonTicks(visibleRows, months);
 		chart.xTicks = ticks;
 		chart.xGridlineTicks = ticks;
 	});

@@ -19,12 +19,15 @@ export function ianaFromOffset(offset) {
 }
 
 /**
- * Whole-hour UTC offset for an IANA network timezone name.
+ * Whole-hour UTC offset for an IANA network timezone name: AWST for Perth,
+ * zero for `UTC` (calendar-label axes such as Tracker Compare's), otherwise
+ * AEST.
  *
  * @param {string | undefined | null} ianaTimeZone - e.g. 'Australia/Perth'
  * @returns {number}
  */
 export function offsetHoursFromIana(ianaTimeZone) {
+	if (ianaTimeZone === 'UTC') return 0;
 	return ianaTimeZone === 'Australia/Perth' ? 8 : 10;
 }
 

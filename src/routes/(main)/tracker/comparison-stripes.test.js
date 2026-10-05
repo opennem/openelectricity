@@ -24,7 +24,7 @@ describe('stripe colour scales', () => {
 		expect(scale.unit).toBe('kgCO₂e/MWh');
 	});
 	it('greys missing readings instead of treating them as zero', () => {
-		const scale = stripeScale('share', 'demand');
+		const scale = stripeScale('renewables_share', 'demand');
 		expect(scale.colour(null)).toBe(STRIPE_EMPTY_COLOUR);
 		expect(scale.colour(undefined)).toBe(STRIPE_EMPTY_COLOUR);
 		expect(scale.colour(Number.NaN)).toBe(STRIPE_EMPTY_COLOUR);
@@ -68,12 +68,18 @@ describe('stripe colour scales', () => {
 		expect(scale.colour(12345)).toBe('#fed500');
 		expect(scale.labels).toEqual(['0', '12.3']);
 		expect(scale.unit).toBe('GWh');
-		expect(stripeScale('generation', 'demand').domain).toEqual([0, 1]);
+		expect(stripeScale('renewables_generation', 'demand').domain).toEqual([0, 1]);
 	});
 	it('hands back the same scale for the same inputs', () => {
-		expect(stripeScale('share', 'demand')).toBe(stripeScale('share', 'demand'));
-		expect(stripeScale('share', 'demand')).not.toBe(stripeScale('share', 'generation'));
-		expect(stripeScale('generation', 'demand', 5)).not.toBe(stripeScale('generation', 'demand', 6));
+		expect(stripeScale('renewables_share', 'demand')).toBe(
+			stripeScale('renewables_share', 'demand')
+		);
+		expect(stripeScale('renewables_share', 'demand')).not.toBe(
+			stripeScale('renewables_share', 'generation')
+		);
+		expect(stripeScale('renewables_generation', 'demand', 5)).not.toBe(
+			stripeScale('renewables_generation', 'demand', 6)
+		);
 	});
 	it('describes a ramp as a CSS gradient positioned by stop value', () => {
 		const gradient = stripeGradient(stripeScale('intensity', 'demand'));
@@ -87,8 +93,8 @@ describe('stripe legend keys', () => {
 	it('keys the zero cell and the no-data grey beside every ramp', () => {
 		const imports = stripeScale('net_imports_share', 'demand');
 		expect(stripeKeys(imports)).toEqual([
-			{ colour: imports.colour(0), label: '0' },
-			{ colour: STRIPE_EMPTY_COLOUR, label: 'No data' }
+			{ kind: 'zero', colour: imports.colour(0), label: '0' },
+			{ kind: 'empty', colour: STRIPE_EMPTY_COLOUR, label: 'No data' }
 		]);
 		// Fossil shares read renewables green at zero.
 		expect(stripeKeys(stripeScale('coal_share', 'demand'))[0].colour).toBe(
@@ -113,22 +119,22 @@ describe('stripe legend keys', () => {
 describe('stripe geometry', () => {
 	it('lays cells out at absolute time positions with calendar widths', () => {
 		const rows = [{ time: monthStart(Date.UTC(2024, 0)) }, { time: monthStart(Date.UTC(2024, 1)) }];
-		const cells = stripeCells(rows, '1M', rows[0].time, 1 / DAY);
+		const cells = stripeCells(rows, 1, rows[0].time, 1 / DAY);
 		expect(cells).toEqual([
 			{ time: rows[0].time, x: 0, width: 31 },
 			{ time: rows[1].time, x: 31, width: 29 }
 		]);
-		expect(stripeCells(rows, '1y', rows[0].time, 1 / DAY)[0].width).toBe(366);
+		expect(stripeCells(rows, 12, rows[0].time, 1 / DAY)[0].width).toBe(366);
 		// A filtered row spans to the same period next year.
-		expect(stripeCells(rows, '1M', rows[0].time, 1 / DAY, 'jan')[0].width).toBe(366);
+		expect(stripeCells(rows, 12, rows[0].time, 1 / DAY)[0].width).toBe(366);
 	});
 	it('finds the period containing an instant and nothing between periods', () => {
 		const rows = [0, 1, 3].map((month) => ({ time: Date.UTC(2024, month) }));
-		expect(stripePeriodAt(rows, '1M', Date.UTC(2024, 1, 15))).toBe(Date.UTC(2024, 1));
-		expect(stripePeriodAt(rows, '1M', Date.UTC(2024, 2, 15))).toBeNull();
-		expect(stripePeriodAt(rows, '1M', Date.UTC(2023, 11, 31))).toBeNull();
-		expect(stripePeriodAt(rows, '1M', Date.UTC(2024, 4, 15))).toBeNull();
-		expect(stripePeriodAt(rows, '1M', Date.UTC(2024, 3))).toBe(Date.UTC(2024, 3));
-		expect(stripePeriodAt([], '1M', 0)).toBeNull();
+		expect(stripePeriodAt(rows, 1, Date.UTC(2024, 1, 15))).toBe(Date.UTC(2024, 1));
+		expect(stripePeriodAt(rows, 1, Date.UTC(2024, 2, 15))).toBeNull();
+		expect(stripePeriodAt(rows, 1, Date.UTC(2023, 11, 31))).toBeNull();
+		expect(stripePeriodAt(rows, 1, Date.UTC(2024, 4, 15))).toBeNull();
+		expect(stripePeriodAt(rows, 1, Date.UTC(2024, 3))).toBe(Date.UTC(2024, 3));
+		expect(stripePeriodAt([], 1, 0)).toBeNull();
 	});
 });

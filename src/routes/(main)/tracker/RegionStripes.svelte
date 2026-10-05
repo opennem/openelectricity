@@ -7,7 +7,7 @@
 		wheelPanDeltaMs
 	} from '$lib/components/charts/v2/wheel-interaction.js';
 	import StaticZoomButtons from '$lib/components/charts/v2/StaticZoomButtons.svelte';
-	import { comparisonMetric, formatComparisonValue } from './comparison-metrics.js';
+	import { comparisonMetric, formatComparisonCell } from './comparison-metrics.js';
 	import { inspectionStep } from './comparison-inspection.js';
 	import { stripeCells, stripeLegendItems, stripePeriodAt } from './comparison-stripes.js';
 	import {
@@ -30,7 +30,7 @@
 	 * export composes the canvas raster under the SVG chrome. Pointer
 	 * geometry is pure maths on the rows, so nothing is hit-tested in the DOM.
 	 * @type {{data: Record<string, any[]>, regions: string[], metric: string,
-	 *   basis: 'demand' | 'generation', interval: string, filter: string | null,
+	 *   basis: 'demand' | 'generation', interval: string, months: number,
 	 *   viewport: {start: number, end: number}, bounds: {start: number, end: number},
 	 *   scale: import('./comparison-stripes.js').StripeScale, tooltip: boolean,
 	 *   onhoverregion: (region: string | null) => void,
@@ -43,7 +43,7 @@
 		metric,
 		basis,
 		interval,
-		filter,
+		months,
 		viewport,
 		bounds,
 		scale,
@@ -75,7 +75,7 @@
 	let width = $state(0);
 	let plotWidth = $derived(Math.max(0, width - labelWidth));
 	let definition = $derived(comparisonMetric(metric));
-	let rows = $derived(comparisonChartRows(data, regions, metric, basis, interval, filter));
+	let rows = $derived(comparisonChartRows(data, regions, metric, basis, months));
 	let byTime = $derived(new Map(rows.map((row) => [row.time, row])));
 	let visibleRows = $derived(visibleComparisonRows(rows, viewport));
 	let span = $derived(viewport.end - viewport.start);
@@ -86,12 +86,12 @@
 	const x = (time) => labelWidth + (time - viewport.start) * pxPerMs;
 	/** @param {number} index */
 	const rowY = (index) => TOP + index * (rowHeight + GAP);
-	let ticks = $derived(
-		comparisonTicks(visibleRows, interval, filter).map((date) => date.getTime())
-	);
 	/** Axis labels at the shared calendar-anchored ticks. */
 	let axis = $derived(
-		ticks.map((time) => ({ time, x: x(time), label: comparisonTickLabel(time, viewport) }))
+		comparisonTicks(visibleRows, months).map((date) => {
+			const time = date.getTime();
+			return { time, x: x(time), label: comparisonTickLabel(time, viewport) };
+		})
 	);
 	let inspected = $derived(hover ?? focus);
 	let highlight = $derived(
@@ -99,7 +99,7 @@
 			? null
 			: {
 					x: x(inspected),
-					width: (nextPeriodStart(inspected, interval, filter) - inspected) * pxPerMs
+					width: (nextPeriodStart(inspected, months) - inspected) * pxPerMs
 				}
 	);
 	/** Pointer position inside the wrapper, for the tooltip and hovered row. */
@@ -123,7 +123,7 @@
 						id,
 						label: region?.shortLabel ?? id,
 						colour: region?.colour ?? '#333333',
-						value: formatComparisonValue(byTime.get(inspected)?.[id], metric),
+						value: formatComparisonCell(byTime.get(inspected)?.[id], metric, {}),
 						hovered: id === hoveredRegion
 					};
 				})
@@ -165,10 +165,9 @@
 		context.setTransform(dpr, 0, 0, dpr, 0, 0);
 		context.clearRect(0, 0, plotWidth, rowsHeight);
 		const drawn = rows.filter(
-			(row) =>
-				row.time < viewport.end && nextPeriodStart(row.time, interval, filter) > viewport.start
+			(row) => row.time < viewport.end && nextPeriodStart(row.time, months) > viewport.start
 		);
-		const cells = stripeCells(drawn, interval, viewport.start, pxPerMs, filter);
+		const cells = stripeCells(drawn, months, viewport.start, pxPerMs);
 		let fill = '';
 		regions.forEach((id, index) => {
 			const y = index * (rowHeight + GAP);
@@ -241,12 +240,7 @@
 	/** The visible period under a wrapper x, if any. @param {number} px */
 	function periodAt(px) {
 		if (!pxPerMs) return null;
-		const period = stripePeriodAt(
-			rows,
-			interval,
-			viewport.start + (px - labelWidth) / pxPerMs,
-			filter
-		);
+		const period = stripePeriodAt(rows, months, viewport.start + (px - labelWidth) / pxPerMs);
 		return period != null && period >= viewport.start && period < viewport.end ? period : null;
 	}
 	/** @param {PointerEvent} event */

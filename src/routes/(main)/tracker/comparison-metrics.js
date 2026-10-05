@@ -1,5 +1,10 @@
 import { TABLE_UNIT_CYCLES, nextTableUnitPrefix } from './table-units.js';
-import { formatTableEnergy, formatTableIntensity } from './table-format.js';
+import {
+	formatTableEnergy,
+	formatTableIntensity,
+	formatTablePercentage,
+	formatTablePrice
+} from './table-format.js';
 /** @typedef {{data?:Array<{metric:string,results?:Array<{name?:string,columns?:{fueltech?:string},data?:Array<[string,number|null]>}>}>}} ComparisonResponse */
 /** Shared chart, table and export definitions for regional comparisons. */
 const generation = ['renewables', 'solar_wind', 'solar', 'wind', 'gas', 'coal'];
@@ -13,20 +18,31 @@ const labels = {
 	coal: 'Coal',
 	hydro: 'Hydro'
 };
-/** `exBatteries` marks the renewables presentations that sum OE's renewable
- * fuel technologies (`RENEWABLE_FUELS`) instead of the official
- * `generation_renewable_energy`, which also counts battery discharge.
- * @type {Array<{id:string,label:string,shortLabel:string,group:string,kind:string,fuel?:string,exBatteries?:boolean}>} */
+/**
+ * Every metric Compare can draw. Each belongs to one picker `chart`, whose own
+ * id names its default presentation, and is one presentation of it along the
+ * `PRESENTATIONS` axes: `generation` rather than proportion; `exBatteries`,
+ * summing OE's renewable fuel technologies (`RENEWABLE_FUELS`) rather than the
+ * official `generation_renewable_energy`, which counts battery discharge; or
+ * `nominal` rather than inflation-adjusted dollars. Picker entries, URL names
+ * and each card's header switches all follow from these fields.
+ * @typedef {{id: string, chart: string, label: string, shortLabel: string, group: string,
+ *   kind: string, fuel?: string, generation?: boolean, exBatteries?: boolean, nominal?: boolean}} ComparisonMetric
+ */
+/** @type {ComparisonMetric[]} */
 export const COMPARISON_METRICS = [
 	{
 		id: 'intensity',
+		chart: 'intensity',
 		label: 'Carbon intensity',
 		shortLabel: 'Intensity',
 		group: 'Emissions',
 		kind: 'intensity'
 	},
 	...generation.map((fuel) => ({
-		id: fuel === 'renewables' ? 'generation' : `${fuel}_generation`,
+		id: `${fuel}_generation`,
+		chart: `${fuel}_share`,
+		generation: true,
 		fuel,
 		label: `${labels[fuel]} generation`,
 		shortLabel: labels[fuel],
@@ -34,9 +50,11 @@ export const COMPARISON_METRICS = [
 		kind: 'energy'
 	})),
 	{
-		id: 'generation_ex_batteries',
-		fuel: 'renewables',
+		id: 'renewables_generation_ex_batteries',
+		chart: 'renewables_share',
+		generation: true,
 		exBatteries: true,
+		fuel: 'renewables',
 		label: 'Renewables generation excl. batteries',
 		shortLabel: 'Renewables excl. batteries',
 		group: 'Generation',
@@ -44,13 +62,15 @@ export const COMPARISON_METRICS = [
 	},
 	{
 		id: 'net_imports_share',
+		chart: 'net_imports_share',
 		label: 'Net imports proportion',
 		shortLabel: 'Net imports',
 		group: 'Proportion',
 		kind: 'share'
 	},
 	...generation.map((fuel) => ({
-		id: fuel === 'renewables' ? 'share' : `${fuel}_share`,
+		id: `${fuel}_share`,
+		chart: `${fuel}_share`,
 		fuel,
 		label: `${labels[fuel]} proportion`,
 		shortLabel: labels[fuel],
@@ -58,9 +78,10 @@ export const COMPARISON_METRICS = [
 		kind: 'share'
 	})),
 	{
-		id: 'share_ex_batteries',
-		fuel: 'renewables',
+		id: 'renewables_share_ex_batteries',
+		chart: 'renewables_share',
 		exBatteries: true,
+		fuel: 'renewables',
 		label: 'Renewables proportion excl. batteries',
 		shortLabel: 'Renewables excl. batteries',
 		group: 'Proportion',
@@ -68,6 +89,7 @@ export const COMPARISON_METRICS = [
 	},
 	...['solar', 'wind', 'hydro', 'gas', 'coal'].map((fuel) => ({
 		id: `${fuel}_value`,
+		chart: `${fuel}_value`,
 		fuel,
 		label: `${labels[fuel]} value`,
 		shortLabel: `${labels[fuel]} value`,
@@ -76,6 +98,8 @@ export const COMPARISON_METRICS = [
 	})),
 	{
 		id: 'price',
+		chart: 'price_real',
+		nominal: true,
 		label: 'Volume-weighted price',
 		shortLabel: 'VW price',
 		group: 'Prices',
@@ -83,6 +107,7 @@ export const COMPARISON_METRICS = [
 	},
 	{
 		id: 'price_real',
+		chart: 'price_real',
 		label: 'Volume-weighted price (inflation adjusted)',
 		shortLabel: 'Real VW price',
 		group: 'Prices',
@@ -90,25 +115,51 @@ export const COMPARISON_METRICS = [
 	}
 ];
 export const ALL_COMPARISON_CHARTS = COMPARISON_METRICS.map((metric) => metric.id);
-export const DEFAULT_COMPARISON_CHARTS = ['intensity', 'share'];
-/** Paired metrics share one selectable chart and retain their chosen presentation. */
-export function comparisonChartId(/** @type {string} */ id) {
-	if (id === 'price') return 'price_real';
-	const metric = comparisonMetric(id);
-	return metric.kind === 'energy' || metric.exBatteries
-		? comparisonFuelMetric(metric.fuel ?? '')
-		: id;
+export const DEFAULT_COMPARISON_CHARTS = ['intensity', 'renewables_share'];
+const METRICS_BY_ID = new Map(COMPARISON_METRICS.map((metric) => [metric.id, metric]));
+/** @param {string} id */
+export const comparisonMetric = (id) => METRICS_BY_ID.get(id) ?? COMPARISON_METRICS[0];
+/** The picker chart a metric presents; an unknown id stands for itself.
+ * @param {string} id */
+export function comparisonChartId(id) {
+	return METRICS_BY_ID.get(id)?.chart ?? id;
 }
-/** A fuel chart's metric for a presentation: its proportion or generation,
- * and for renewables the official figure or the sum excluding batteries.
- * @param {string} fuel @param {{generation?: boolean, exBatteries?: boolean}} [presentation] */
-export function comparisonFuelMetric(fuel, { generation = false, exBatteries = false } = {}) {
-	const kind = generation ? 'generation' : 'share';
-	if (fuel !== 'renewables') return `${fuel}_${kind}`;
-	return exBatteries ? `${kind}_ex_batteries` : kind;
+
+/** @typedef {'generation' | 'exBatteries' | 'nominal'} PresentationKey */
+/**
+ * The axes a chart's presentations switch along, as its card header shows
+ * them: proportion or generation tabs, and toggles. `checkedWhenOff` toggles
+ * read the other way round (inflation adjusted is the default).
+ * @type {Array<{key: PresentationKey, control: 'tabs', labels: [string, string]} |
+ *   {key: PresentationKey, control: 'toggle', label: string, checkedWhenOff?: boolean}>}
+ */
+export const PRESENTATIONS = [
+	{ key: 'generation', control: 'tabs', labels: ['Proportion', 'Generation'] },
+	{ key: 'exBatteries', control: 'toggle', label: 'Excl. batteries' },
+	{ key: 'nominal', control: 'toggle', label: 'Inflation adjusted', checkedWhenOff: true }
+];
+/** The presentation axes a chart varies along. @param {string} chart */
+export function comparisonPresentations(chart) {
+	return PRESENTATIONS.filter(({ key }) =>
+		COMPARISON_METRICS.some((metric) => metric.chart === chart && metric[key])
+	);
+}
+/** The same chart's metric with one presentation axis switched on or off, the
+ * others kept; the metric itself when no such presentation exists.
+ * @param {string} id @param {PresentationKey} key @param {boolean} on */
+export function comparisonPresentation(id, key, on) {
+	const metric = comparisonMetric(id);
+	const match = COMPARISON_METRICS.find(
+		(candidate) =>
+			candidate.chart === metric.chart &&
+			PRESENTATIONS.every(
+				(axis) => !!candidate[axis.key] === (axis.key === key ? on : !!metric[axis.key])
+			)
+	);
+	return match?.id ?? id;
 }
 export const COMPARISON_CHART_OPTIONS = COMPARISON_METRICS.filter(
-	(metric) => metric.kind !== 'energy' && metric.id !== 'price' && !metric.exBatteries
+	(metric) => metric.id === metric.chart
 ).map((metric) => ({
 	...metric,
 	label:
@@ -122,23 +173,25 @@ export const COMPARISON_CHART_OPTIONS = COMPARISON_METRICS.filter(
 export const COMPARISON_METRIC_GROUPS = [
 	...new Set(COMPARISON_CHART_OPTIONS.map((metric) => metric.group))
 ];
-/** A chart's URL name: hyphenated, with each proportion named by its fuel
- * alone and renewables named in full (`intensity`, `renewables`,
- * `solar-wind-generation`, `net-imports`, `price-real`).
+/** A chart's URL name: its id hyphenated, with proportions named by their
+ * subject alone (`intensity`, `renewables`, `solar-wind-generation`,
+ * `renewables-ex-batteries`, `net-imports`, `price-real`).
  * @param {string} id */
 export function comparisonChartSlug(id) {
-	if (id === 'share') return 'renewables';
-	if (id === 'generation') return 'renewables-generation';
-	if (id === 'share_ex_batteries') return 'renewables-ex-batteries';
-	if (id === 'generation_ex_batteries') return 'renewables-ex-batteries-generation';
-	return id.replace(/_share$/, '').replaceAll('_', '-');
+	return id.replace('_share', '').replaceAll('_', '-');
 }
 const CHARTS_BY_SLUG = new Map(COMPARISON_METRICS.map(({ id }) => [comparisonChartSlug(id), id]));
-/** The metric id a URL name stands for; ids themselves (older links) pass
- * through, and anything else is left for normalisation to drop.
+/** Renewables' ids before they followed the other fuels' pattern. */
+const LEGACY_IDS = /** @type {Record<string, string>} */ ({
+	share: 'renewables_share',
+	generation: 'renewables_generation'
+});
+/** The metric id a URL name stands for. Ids themselves (older links) pass
+ * through, renewables' earlier ids map to their current ones, and anything
+ * else is left for normalisation to drop.
  * @param {string} slug */
 export function comparisonChartFromSlug(slug) {
-	return CHARTS_BY_SLUG.get(slug) ?? slug;
+	return CHARTS_BY_SLUG.get(slug) ?? LEGACY_IDS[slug] ?? slug;
 }
 /** Preserve each selected chart's presentation when applying the chart picker. */
 export function selectComparisonCharts(
@@ -147,9 +200,6 @@ export function selectComparisonCharts(
 ) {
 	return ids.map((id) => previous.find((value) => comparisonChartId(value) === id) ?? id);
 }
-/** @param {string} id */
-export const comparisonMetric = (id) =>
-	COMPARISON_METRICS.find((metric) => metric.id === id) ?? COMPARISON_METRICS[0];
 /** @param {string} id @param {string} basis @param {boolean} [base] */
 export function comparisonUnit(id, basis, base = false) {
 	const metric = comparisonMetric(id);
@@ -163,10 +213,11 @@ export const FUEL_COMPONENTS = ['solar', 'wind', 'hydro', 'bioenergy', 'gas', 'c
  * (utility and rooftop), wind, hydro (pumped-hydro output included, as OE
  * classes it) and bioenergy — no battery discharge or pumping. */
 export const RENEWABLE_FUELS = ['solar', 'wind', 'hydro', 'bioenergy'];
+const RENEWABLE_ENERGY_KEYS = RENEWABLE_FUELS.map((fuel) => `${fuel}_energy`);
 /** Renewables excluding batteries, or null when any of its fuels is missing.
  * @param {Record<string, any> | undefined} row */
 function renewablesExBatteries(row) {
-	const values = RENEWABLE_FUELS.map((fuel) => row?.[`${fuel}_energy`]);
+	const values = RENEWABLE_ENERGY_KEYS.map((key) => row?.[key]);
 	return values.every(Number.isFinite) ? values.reduce((a, b) => a + b, 0) : null;
 }
 /** Display value for the Regions table and stripes tooltips: one decimal,
@@ -188,8 +239,10 @@ function comparisonUnitKey(id) {
 	return kind === 'energy' || kind === 'intensity' ? kind : null;
 }
 /**
- * A Regions table cell. Generation and intensity render in their header's
- * unit with the fuel-tech table's precision; the rest as `formatComparisonValue`.
+ * A Regions table cell, formatted as the fuel-tech table formats the same
+ * kind of value: generation and intensity in their header's unit, shares to
+ * one decimal with % (`42.0%`) and prices with cents (`$85.30`). Price
+ * tooltips use it too, so chart and table read the same.
  * @param {number | null | undefined} value @param {string} id @param {TableUnits} units
  */
 export function formatComparisonCell(value, id, units) {
@@ -198,6 +251,9 @@ export function formatComparisonCell(value, id, units) {
 		return formatTableEnergy(value, units.energy ?? COMPARISON_TABLE_UNITS.energy);
 	if (key === 'intensity')
 		return formatTableIntensity(value, units.intensity ?? COMPARISON_TABLE_UNITS.intensity);
+	const { kind } = comparisonMetric(id);
+	if (kind === 'share') return formatTablePercentage(value);
+	if (kind === 'price') return formatTablePrice(value);
 	return formatComparisonValue(value, id);
 }
 /**
@@ -237,30 +293,40 @@ export function calendarLabelMs(stamp) {
 	return Date.parse(String(stamp).slice(0, 19) + 'Z');
 }
 /**
- * How Compare reads a provider series' gaps. Its life runs from its first
- * reading to its last, as calendar label times (`first` is Infinity when it has
- * none): the API pads a technology's series with nulls before it starts and
- * after it retires, and those months are absent, not missing. Inside its life,
- * a technology that `idles` (reports explicit zeros elsewhere, as peakers do)
- * also reports some idle months as null, so its nulls count as zero; for any
- * other technology a null is a missing observation (SA wind, May 2008 – June
- * 2009).
- * @param {Array<[string, number | null]> | undefined} data
+ * A provider response with its gaps read the way Compare reads them, applied
+ * once where responses are processed. The API pads a technology's series with
+ * nulls before it starts and after it retires: those months are absent, so
+ * they are dropped. Inside its life, a technology that idles (reports explicit
+ * zeros elsewhere, as peakers do) also reports some idle months as null, so
+ * those become zero. Any other null stays: a missing reading (SA wind, May
+ * 2008 – June 2009).
+ * @template {ComparisonResponse} Response @param {Response} response @returns {Response}
  */
-export function seriesSpan(data) {
-	const readings = (data ?? []).filter(([, value]) => Number.isFinite(value));
-	const times = readings.map(([stamp]) => calendarLabelMs(stamp));
+export function normaliseComparisonResponse(response) {
 	return {
-		first: Math.min(...times),
-		last: Math.max(...times),
-		idles: readings.some(([, value]) => value === 0)
+		...response,
+		data: response?.data?.map((entry) => ({
+			...entry,
+			results: entry.results?.map((series) => ({ ...series, data: readSeries(series.data) }))
+		}))
 	};
+}
+/** @param {Array<[string, number | null]> | undefined} data */
+function readSeries(data = []) {
+	const observed = (/** @type {[string, number | null]} */ [, value]) => Number.isFinite(value);
+	const first = data.findIndex(observed);
+	if (first < 0) return [];
+	const last = data.findLastIndex(observed);
+	const life = data.slice(first, last + 1);
+	if (!life.some(([, value]) => value === 0)) return life;
+	return life.map(([stamp, value]) => [stamp, Number.isFinite(value) ? value : 0]);
 }
 /** @param {string} tech @param {string} fuel */
 export function matchesComparisonFuel(tech, fuel) {
 	return tech === fuel || tech.startsWith(`${fuel}_`);
 }
-/** @param {ComparisonResponse} response @param {'energy'|'market_value'} metric
+/** Per-fuel sums of a normalised response (`normaliseComparisonResponse`).
+ * @param {ComparisonResponse} response @param {'energy'|'market_value'} metric
  * @returns {Array<{time:number,date:Date} & Record<string,any>>} */
 export function comparisonFuelRows(response, metric) {
 	const series = (response?.data ?? [])
@@ -275,7 +341,8 @@ export function comparisonFuelRows(response, metric) {
 		return {
 			tech: series.columns?.fueltech ?? series.name ?? '',
 			values,
-			...seriesSpan(series.data)
+			first: Math.min(...values.keys()),
+			last: Math.max(...values.keys())
 		};
 	});
 	const times = [...new Set(entries.flatMap((entry) => [...entry.values.keys()]))]
@@ -285,14 +352,11 @@ export function comparisonFuelRows(response, metric) {
 		/** @param {typeof entries} members */
 		const sum = (members) => {
 			if (!members.length) return 0;
-			// A technology absent at this date, or idle, contributes zero; a missing
+			// A technology absent at this date contributes zero; a missing
 			// observation invalidates the group instead of silently understating it.
 			const values = members
 				.filter((entry) => time >= entry.first && time <= entry.last)
-				.map((entry) => {
-					const value = entry.values.get(time);
-					return Number.isFinite(value) || !entry.idles ? value : 0;
-				});
+				.map((entry) => entry.values.get(time));
 			return values.every(Number.isFinite) ? values.map(Number).reduce((a, b) => a + b, 0) : null;
 		};
 		return {
@@ -310,7 +374,7 @@ export function comparisonFuelRows(response, metric) {
 }
 /** @param {ComparisonResponse} response */
 export function processComparisonFinancial(response) {
-	const data = comparisonFuelRows(response, 'market_value');
+	const data = comparisonFuelRows(normaliseComparisonResponse(response), 'market_value');
 	return data.length
 		? {
 				data,
