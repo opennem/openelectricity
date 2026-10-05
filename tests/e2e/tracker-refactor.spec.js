@@ -315,7 +315,7 @@ test('data refreshes only on demand: the range readout button, the options menu 
 	await expect(modal).toBeVisible();
 	const panel = modal.locator('..').locator('..');
 	await expect(panel).toContainText('Refresh data');
-	await expect(panel).toContainText('Show or hide metrics');
+	await expect(panel).toContainText('Show / hide metrics');
 	await expect(panel).toContainText('Enter / exit full screen');
 	await expect(panel).toContainText('Toggle navigation menu');
 	await expect(panel.locator('kbd', { hasText: /^R$/ })).toBeVisible();
