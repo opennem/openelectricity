@@ -135,5 +135,5 @@ export async function POST({ request }) {
 		})
 	});
 
-	return json({ chart: { _id: doc._id } }, { status: 201 });
+	return json({ chart: { _id: doc._id, _rev: doc._rev } }, { status: 201 });
 }

@@ -44,16 +44,20 @@ src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/foo
 ├── docs/                              # Public examples and plain-language guides
 ├── _state/
 │   ├── StratifyPlotProject.svelte.js  # Central state class (runes)
+│   ├── ChartSaveSession.svelte.js     # Conflict-safe saving: base revision, merges, conflicts
+│   ├── snapshot.js                    # normaliseSnapshot (defaults + legacy migrations)
 │   └── context.js                     # setContext/getContext helpers
 ├── _utils/
-│   ├── api.js                         # Sanity CMS CRUD client (list, get, create, update, delete, fork)
+│   ├── api.js                         # Sanity CMS CRUD client (list, get, create, field save, delete, fork); ApiError
 │   ├── storage.js                     # localStorage + JSON file export/import
 │   ├── export.js                      # SVG/PNG capture
 │   ├── format.js                      # Date formatting (timeAgo)
+│   ├── field-values.js                # Readable chart field values (conflicts, history)
 │   └── examples.js                    # Built-in example datasets
 └── _components/
     ├── BuilderPage.svelte             # Main layout; coordinates all panels, auto-save
     ├── ChartPreview.svelte            # Live chart preview
+    ├── ConflictDialog.svelte          # Choose yours/theirs per field after a save conflict
     ├── ChartTypeSelector.svelte       # Chart family/variant toggle
     ├── SeriesConfig.svelte            # Per-series colour, label, type, Y-axis, visibility
     ├── ColourPicker.svelte            # Shared colour picker: theme swatches + native + hex + reset (Series panel + map controls)
@@ -131,18 +135,52 @@ document goes through it:
 - `POST /api/stratify/charts` fills missing fields with
   `withChartDefaults()` (new charts start as `stacked-area`, always as a
   draft) and writes them with `encodeChartFields()`.
-- `PATCH /api/stratify/charts/:id` accepts any subset of registry keys and
-  ignores the rest.
+- `PATCH /api/stratify/charts/:id` saves only changed registry fields and
+  ignores other keys (see [Saving and conflicts](#saving-and-conflicts)).
 - `GET /api/stratify/charts/:id` returns the document with its JSON fields
   parsed (`decodeChartFields()`); `normaliseChart()` also applies defaults
   for the public render paths.
-- `diffSnapshots()` and `mergeFields()` compare snapshots field by field —
-  the groundwork for conflict-safe saves and the change log.
+- `diffSnapshots()` and `mergeFields()` compare chart settings field by
+  field (meta fields excluded) for dirty tracking, saves and merges.
 
 To add a chart setting, add it to the registry and to
 `StratifyPlotProject` (`$state`, `toJSON()`, `loadFromSnapshot()`, `reset()`).
 `StratifyPlotProject.svelte.test.js` fails if `toJSON()` and the registry
-drift apart.
+drift apart. `loadFromSnapshot()` assigns `normaliseSnapshot()` from
+`_state/snapshot.js` (registry defaults plus legacy migrations).
+
+### Saving and conflicts
+
+Several people (or tabs) can edit a chart in turn without overwriting each
+other. `_state/ChartSaveSession.svelte.js` owns saving for the builder and is
+shared through context (`getChartSaveContext()`), so the header and the Share
+panel use the same state.
+
+- **Base.** The session keeps the chart as last loaded or saved, with its
+  Sanity `_rev`. `isDirty` is any setting that differs from the base.
+- **Save.** `PATCH /api/stratify/charts/:id` with
+  `{ baseRev, fields }`: only the fields changed since the base, plus
+  `status`/`publishedAt` when publishing. Publishing and unpublishing save
+  pending edits too; the Share panel's branding toggle saves that one field.
+- **Server** (`$lib/server/stratify/save-chart.js`). If the chart is still at
+  `baseRev`, the change is written. If not, the revision log says which
+  fields later saves touched; an incoming field another save changed to a
+  different value is a conflict (409 with the current chart). Otherwise the
+  save merges, and the response's `latest` carries the merged chart. The
+  chart patch (`ifRevisionId`) and its revision document commit in one
+  transaction; a lost race is retried against the newer chart.
+- **Client.** Fields only others changed are applied to the editor in
+  place. Fields both sides changed open `ConflictDialog`: pick yours or
+  theirs per field (or all at once), and the session adopts the server
+  chart as its base and saves again.
+
+Every save writes a `stratifyChartRevision` document (schemaless, like
+`stratifyChart`): `chartId`, `parentRev` (the chart `_rev` it replaced),
+`kind` (`edit`, `publish`, `unpublish`, or `baseline` for the marker written
+before the first logged save of an older chart), `fields`, `changes`
+(JSON `[{ field, before, after }]`), `summary`, author and `createdAt`.
+Deleting a chart deletes its revisions. A PATCH body without `fields` (an
+editor opened before this protocol) is saved without conflict checks.
 
 ## Public documentation and templates
 

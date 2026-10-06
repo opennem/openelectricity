@@ -278,8 +278,15 @@ export function isSameFieldValue(a, b) {
 }
 
 /**
- * List the registry fields whose values differ between two snapshots, in
- * registry order. Keys outside the registry are ignored.
+ * Chart settings compared by `diffSnapshots` and `mergeFields`: every
+ * registry field except `meta`. Publish state travels as explicit fields
+ * with its own action, and the format version is not a user edit.
+ */
+const SETTING_FIELDS = CHART_FIELDS.filter((field) => field.group !== 'meta');
+
+/**
+ * List the chart settings whose values differ between two snapshots, in
+ * registry order. Meta fields and keys outside the registry are ignored.
  * @param {Record<string, any>} before
  * @param {Record<string, any>} after
  * @returns {ChartFieldChange[]}
@@ -287,7 +294,7 @@ export function isSameFieldValue(a, b) {
 export function diffSnapshots(before, after) {
 	/** @type {ChartFieldChange[]} */
 	const changes = [];
-	for (const { key } of CHART_FIELDS) {
+	for (const { key } of SETTING_FIELDS) {
 		if (!isSameFieldValue(before[key], after[key])) {
 			changes.push({ field: key, before: before[key], after: after[key] });
 		}
@@ -298,11 +305,11 @@ export function diffSnapshots(before, after) {
 /**
  * Three-way merge of two snapshots that both started from `base`.
  *
- * Per registry field: a field only one side changed takes that side's
+ * Per chart setting: a field only one side changed takes that side's
  * value; a field both sides changed to the same value merges cleanly; a
  * field both sides changed to different values is a conflict. Conflicting
- * fields keep `mine` in `merged` until the caller resolves them. Keys
- * outside the registry are taken from `mine`.
+ * fields keep `mine` in `merged` until the caller resolves them. Meta
+ * fields and keys outside the registry are taken from `mine`.
  * @param {Record<string, any>} base
  * @param {Record<string, any>} mine
  * @param {Record<string, any>} theirs
@@ -313,7 +320,7 @@ export function mergeFields(base, mine, theirs) {
 	/** @type {ChartFieldConflict[]} */
 	const conflicts = [];
 
-	for (const { key } of CHART_FIELDS) {
+	for (const { key } of SETTING_FIELDS) {
 		const mineChanged = !isSameFieldValue(base[key], mine[key]);
 		const theirsChanged = !isSameFieldValue(base[key], theirs[key]);
 		if (!theirsChanged) continue;

@@ -129,6 +129,15 @@ describe('diffSnapshots', () => {
 	});
 });
 
+describe('diffSnapshots meta fields', () => {
+	it('ignores publish state and format version', () => {
+		const before = { status: 'draft', publishedAt: null, version: 1 };
+		const after = { status: 'published', publishedAt: '2026-10-06T00:00:00Z', version: 2 };
+
+		expect(diffSnapshots(before, after)).toEqual([]);
+	});
+});
+
 describe('mergeFields', () => {
 	const base = withChartDefaults({ title: 'Base', chartHeight: 250 });
 

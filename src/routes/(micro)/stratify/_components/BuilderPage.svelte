@@ -14,7 +14,8 @@
 	import ScanText from '@lucide/svelte/icons/scan-text';
 	import Share2 from '@lucide/svelte/icons/share-2';
 	import StratifyPlotProject from '../_state/StratifyPlotProject.svelte.js';
-	import { setStratifyContext } from '../_state/context.js';
+	import { setStratifyContext, setChartSaveContext } from '../_state/context.js';
+	import ChartSaveSession from '../_state/ChartSaveSession.svelte.js';
 
 	import DataPanel from './panels/DataPanel.svelte';
 	import ChartPanel from './panels/ChartPanel.svelte';
@@ -31,7 +32,8 @@
 	import StratifyHeader from './StratifyHeader.svelte';
 	import StratifyButton from './StratifyButton.svelte';
 	import ConfirmModal from './ConfirmModal.svelte';
-	import { createChart, updateChart, getChart } from '../_utils/api.js';
+	import ConflictDialog from './ConflictDialog.svelte';
+	import { getChart } from '../_utils/api.js';
 	import { loadExampleTemplate } from '../_utils/templates.js';
 
 	/** @type {{ initialChartId?: string, templateSlug?: string }} */
@@ -39,6 +41,8 @@
 
 	const project = new StratifyPlotProject();
 	setStratifyContext(project);
+	const saveSession = new ChartSaveSession(project);
+	setChartSaveContext(saveSession);
 
 	const steps = [
 		{
@@ -102,6 +106,8 @@
 		mounted = true;
 		setActiveStep(activeStep);
 		loadingChart = Boolean(initialChartId || templateSlug);
+		/** @type {string | null} */
+		let loadedRev = null;
 
 		if (initialChartId) {
 			try {
@@ -109,6 +115,7 @@
 				if (chart) {
 					project.loadFromSnapshot(chart);
 					project.currentChartId = chart._id;
+					loadedRev = chart._rev;
 				}
 			} catch {
 				// Chart not found — stay on empty builder
@@ -125,62 +132,24 @@
 			}
 		}
 
-		markSaved();
+		saveSession.markLoaded(loadedRev);
 	});
 
-	// --- Save to Sanity ---
-	/** @type {'idle' | 'saving' | 'saved' | 'error'} */
-	let saveStatus = $state('idle');
+	// --- Save to Sanity (ChartSaveSession: changed fields only, conflict-safe) ---
 
-	/** @type {string | null} JSON of the project state at the last save (or initial load). */
-	let lastSavedSnapshotJSON = $state(null);
-
-	const currentSnapshotJSON = $derived(project.hasData ? JSON.stringify(project.toJSON()) : '');
-	const isDirty = $derived(
-		project.hasData &&
-			lastSavedSnapshotJSON !== null &&
-			currentSnapshotJSON !== lastSavedSnapshotJSON
-	);
-
-	function markSaved() {
-		lastSavedSnapshotJSON = JSON.stringify(project.toJSON());
-	}
-
-	/** Persist to Sanity. Returns true on success. */
-	async function saveProject() {
-		if (!project.hasData) return false;
-		saveStatus = 'saving';
-		try {
-			if (project.currentChartId) {
-				await updateChart(project.currentChartId, project.toJSON());
-			} else {
-				const result = await createChart(project.toJSON());
-				project.currentChartId = result._id;
-			}
-			markSaved();
-			saveStatus = 'saved';
-			setTimeout(() => {
-				if (saveStatus === 'saved') saveStatus = 'idle';
-			}, 2000);
-			return true;
-		} catch {
-			saveStatus = 'error';
-			setTimeout(() => {
-				if (saveStatus === 'error') saveStatus = 'idle';
-			}, 3000);
-			return false;
-		}
+	/** Move a chart saved for the first time onto its own URL. */
+	function routeToSavedChart() {
+		if (!project.currentChartId) return;
+		goto(resolve(`/(micro)/stratify/[id]?step=${activeStep}`, { id: project.currentChartId }), {
+			replaceState: true
+		});
 	}
 
 	/** Manual save via the toolbar button — also routes to the new chart on create. */
 	async function handleSave() {
 		const wasNew = !project.currentChartId;
-		const success = await saveProject();
-		if (success && wasNew && project.currentChartId) {
-			goto(resolve(`/(micro)/stratify/[id]?step=${activeStep}`, { id: project.currentChartId }), {
-				replaceState: true
-			});
-		}
+		const success = await saveSession.save();
+		if (success && wasNew) routeToSavedChart();
 	}
 
 	// --- Unsaved-changes guards ---
@@ -190,7 +159,7 @@
 	let savingFromModal = $state(false);
 
 	beforeNavigate((navigation) => {
-		if (!isDirty) return;
+		if (!saveSession.isDirty) return;
 		// Tab close / external nav: trigger the browser's native warning. We
 		// can't show a custom modal because the dialog has to be synchronous.
 		if (navigation.type === 'leave') {
@@ -204,7 +173,7 @@
 
 	/** @param {BeforeUnloadEvent} e */
 	function handleBeforeUnload(e) {
-		if (!isDirty) return;
+		if (!saveSession.isDirty) return;
 		e.preventDefault();
 		// Some older browsers still require returnValue to be set.
 		e.returnValue = '';
@@ -212,13 +181,15 @@
 
 	async function modalSave() {
 		savingFromModal = true;
-		const success = await saveProject();
+		const success = await saveSession.save();
 		savingFromModal = false;
 		if (success) resumePendingNavigation();
+		// A conflict needs resolving first; its own dialog takes over.
+		else if (saveSession.conflict) pendingNavigation = null;
 	}
 
 	function modalDiscard() {
-		markSaved();
+		saveSession.markSaved();
 		resumePendingNavigation();
 	}
 
@@ -232,56 +203,23 @@
 		if (url) goto(url);
 	}
 
-	let publishing = $state(false);
+	let publishing = $derived(saveSession.action === 'publish' || saveSession.action === 'unpublish');
 
 	async function handlePublish() {
-		if (!project.hasData) return;
-		publishing = true;
-		try {
-			if (!project.currentChartId) {
-				const result = await createChart(project.toJSON());
-				project.currentChartId = result._id;
-				markSaved();
-				goto(resolve(`/(micro)/stratify/[id]?step=${activeStep}`, { id: result._id }), {
-					replaceState: true
-				});
-			}
-			await updateChart(project.currentChartId, {
-				...project.toJSON(),
-				status: 'published',
-				publishedAt: new Date().toISOString()
-			});
-			project.status = 'published';
-			markSaved();
-		} catch {
-			// handled silently
-		} finally {
-			publishing = false;
-		}
+		const wasNew = !project.currentChartId;
+		await saveSession.publish();
+		if (wasNew) routeToSavedChart();
 	}
 
-	async function handleUnpublish() {
-		if (!project.currentChartId) return;
-		publishing = true;
-		try {
-			await updateChart(project.currentChartId, {
-				status: 'draft',
-				publishedAt: null
-			});
-			project.status = 'draft';
-			markSaved();
-		} catch {
-			// handled silently
-		} finally {
-			publishing = false;
-		}
+	function handleUnpublish() {
+		saveSession.unpublish();
 	}
 
 	/** @type {string} */
 	let saveButtonLabel = $derived.by(() => {
-		if (saveStatus === 'saving') return 'Saving...';
-		if (saveStatus === 'saved') return 'Saved';
-		if (saveStatus === 'error') return 'Error';
+		if (saveSession.status === 'saving') return 'Saving...';
+		if (saveSession.status === 'saved') return 'Saved';
+		if (saveSession.status === 'error') return 'Error';
 		return project.currentChartId ? 'Update' : 'Save';
 	});
 
@@ -339,6 +277,15 @@
 	onsecondary={modalDiscard}
 	oncancel={modalCancel}
 />
+
+{#if saveSession.conflict}
+	<ConflictDialog
+		conflict={saveSession.conflict}
+		saving={saveSession.action !== null}
+		onresolve={(choices) => saveSession.resolveConflict(choices)}
+		oncancel={() => saveSession.dismissConflict()}
+	/>
+{/if}
 
 {#if !mounted || loadingChart}
 	<div class="flex items-center justify-center h-dvh font-mono">
@@ -483,7 +430,7 @@
 						<StratifyButton
 							variant="primary"
 							onclick={() => handleSave()}
-							disabled={!project.hasData || saveStatus === 'saving'}
+							disabled={!project.hasData || saveSession.action !== null}
 						>
 							{saveButtonLabel}
 						</StratifyButton>

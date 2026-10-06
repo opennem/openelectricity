@@ -6,14 +6,9 @@
  */
 
 import { parseCSV } from '$lib/stratify/csv-parser.js';
-import { getPreset, migratePreset } from '$lib/stratify/chart-styles.js';
+import { getPreset } from '$lib/stratify/chart-styles.js';
+import { assignPaletteColours, getPaletteSwatchColours } from '$lib/stratify/colour-palettes.js';
 import {
-	assignPaletteColours,
-	migratePresetToPalette,
-	getPaletteSwatchColours
-} from '$lib/stratify/colour-palettes.js';
-import {
-	migrateChartType,
 	HORIZONTAL_TYPES,
 	WATERFALL_TYPES,
 	WATERFALL_ROLE_KEYS,
@@ -21,6 +16,7 @@ import {
 	getWaterfallRoleColours
 } from '$lib/stratify/chart-types.js';
 import { getNumericSeriesNames, uniqueColumnValues } from '$lib/stratify/chart-data.js';
+import { normaliseSnapshot, PROJECT_FIELD_KEYS } from './snapshot.js';
 import {
 	compileAnnotationItems,
 	createAnnotationItem,
@@ -602,11 +598,7 @@ export default class StratifyPlotProject {
 		const rangeMaxKey = hasLineRange ? this.lineRangeMaxColumn : null;
 		const parsed = getNumericSeriesNames(this.allColumns, this.parsedData.seriesNames).filter(
 			(n) =>
-				n !== colourKey &&
-				n !== facetKey &&
-				n !== sizeKey &&
-				n !== rangeMinKey &&
-				n !== rangeMaxKey
+				n !== colourKey && n !== facetKey && n !== sizeKey && n !== rangeMinKey && n !== rangeMaxKey
 		);
 		if (this.seriesOrder.length === 0) return parsed;
 
@@ -995,90 +987,13 @@ export default class StratifyPlotProject {
 	}
 
 	/**
-	 * Populate this project from a snapshot (or Sanity chart document).
-	 * @param {StratifyPlotSnapshot & Record<string, any>} snapshot
+	 * Populate this project from a snapshot (or decoded Sanity chart
+	 * document), applying defaults and legacy migrations.
+	 * @param {Partial<StratifyPlotSnapshot> & Record<string, any>} snapshot
 	 */
 	loadFromSnapshot(snapshot) {
-		this.csvText = snapshot.csvText ?? '';
-		this.annotationItems = Array.isArray(snapshot.annotationItems) ? snapshot.annotationItems : [];
-		this.annotationStyle = { ...DEFAULT_ANNOTATION_STYLE, ...(snapshot.annotationStyle ?? {}) };
-		this.annotations = Array.isArray(snapshot.annotations) ? snapshot.annotations : [];
-		this.title = snapshot.title ?? '';
-		this.description = snapshot.description ?? '';
-		this.dataSource = snapshot.dataSource ?? '';
-		this.notes = snapshot.notes ?? '';
-		this.chartType = migrateChartType(snapshot.chartType ?? 'line');
-		this.displayMode = snapshot.displayMode ?? 'auto';
-		this.stylePreset = migratePreset(snapshot.stylePreset ?? 'sans');
-		this.colourPalette =
-			snapshot.colourPalette ?? migratePresetToPalette(snapshot.stylePreset ?? 'oe');
-		this.hiddenSeries = snapshot.hiddenSeries ?? [];
-		this.userSeriesColours = snapshot.userSeriesColours ?? {};
-		this.userSeriesLabels = snapshot.userSeriesLabels ?? {};
-		this.seriesChartTypes = snapshot.seriesChartTypes ?? {};
-		this.seriesLineStyles = snapshot.seriesLineStyles ?? {};
-		this.plotOverrides = snapshot.plotOverrides ?? null;
-		this.seriesOrder = snapshot.seriesOrder ?? [];
-		this.chartHeight = snapshot.chartHeight ?? 250;
-		this.showXTickLabels = snapshot.showXTickLabels ?? true;
-		this.xTicks = snapshot.xTicks ?? 0;
-		this.xTickRotate = snapshot.xTickRotate ?? 0;
-		this.marginBottom = snapshot.marginBottom ?? 0;
-		this.marginLeft = snapshot.marginLeft ?? 0;
-		this.yTicks = snapshot.yTicks ?? 0;
-		this.yMinMax = snapshot.yMinMax ?? false;
-		this.y1Min = snapshot.y1Min ?? null;
-		this.y1Max = snapshot.y1Max ?? null;
-		this.y2Ticks = snapshot.y2Ticks ?? 0;
-		this.y2MinMax = snapshot.y2MinMax ?? false;
-		this.y2Min = snapshot.y2Min ?? null;
-		this.y2Max = snapshot.y2Max ?? null;
-		this.tooltipColumns = snapshot.tooltipColumns ?? [];
-		this.tooltipDateFormat = snapshot.tooltipDateFormat ?? 'date';
-		this.dataTransform = snapshot.dataTransform ?? 'none';
-		this.categorySort = snapshot.categorySort ?? 'default';
-		this.xColumn = snapshot.xColumn ?? '';
-		this.colourSeries = snapshot.colourSeries ?? null;
-		this.facetColumn = snapshot.facetColumn ?? null;
-		this.facetPanelsPerRow = snapshot.facetPanelsPerRow ?? 0;
-		this.animateAsOneChart = snapshot.animateAsOneChart ?? false;
-		this.animationSpeedMs = snapshot.animationSpeedMs ?? 800;
-		this.animationAutoLoop = snapshot.animationAutoLoop ?? false;
-		this.animationAutoPlay = snapshot.animationAutoPlay ?? false;
-		this.animationTween = snapshot.animationTween ?? true;
-		this.chartCurve = snapshot.chartCurve ?? 'linear';
-		this.lineRangeMinColumn = snapshot.lineRangeMinColumn ?? null;
-		this.lineRangeMaxColumn = snapshot.lineRangeMaxColumn ?? null;
-		this.lineRangeOpacity = snapshot.lineRangeOpacity ?? 0.2;
-		this.scatterSizeColumn = snapshot.scatterSizeColumn ?? null;
-		this.scatterPointRadius = snapshot.scatterPointRadius ?? 4;
-		this.scatterMinRadius = snapshot.scatterMinRadius ?? 3;
-		this.scatterMaxRadius = snapshot.scatterMaxRadius ?? 18;
-		this.scatterPointOpacity = snapshot.scatterPointOpacity ?? 0.7;
-		this.waterfallMode = snapshot.waterfallMode ?? 'single';
-		this.waterfallShowTotal = snapshot.waterfallShowTotal ?? true;
-		this.waterfallColourMode = snapshot.waterfallColourMode ?? 'semantic';
-		this.valueFormat = snapshot.valueFormat ?? '1';
-		this.chartBorderWidth = snapshot.chartBorderWidth ?? 0.5;
-		this.chartBorderColour = snapshot.chartBorderColour ?? '#000000';
-		this.xLabel = snapshot.xLabel ?? '';
-		this.yLabel = snapshot.yLabel ?? '';
-		this.seriesYAxis = snapshot.seriesYAxis ?? {};
-		this.y2Label = snapshot.y2Label ?? '';
-		this.status = snapshot.status ?? 'draft';
-		this.showLegend = snapshot.showLegend ?? true;
-		this.showBranding = snapshot.showBranding ?? true;
-		this.latColumn = snapshot.latColumn ?? null;
-		this.lngColumn = snapshot.lngColumn ?? null;
-		this.labelColumn = snapshot.labelColumn ?? null;
-		this.sizeColumn = snapshot.sizeColumn ?? null;
-		this.mapColourMode = snapshot.mapColourMode ?? 'single';
-		this.colourColumn = snapshot.colourColumn ?? null;
-		this.singleMarkerColour = snapshot.singleMarkerColour ?? '#3b82f6';
-		this.mapRangeMinColour = snapshot.mapRangeMinColour ?? '#dbeafe';
-		this.mapRangeMaxColour = snapshot.mapRangeMaxColour ?? '#1e3a8a';
-		this.mapMinRadius = snapshot.mapMinRadius ?? 4;
-		this.mapMaxRadius = snapshot.mapMaxRadius ?? 24;
-		this.mapTheme = snapshot.mapTheme ?? 'light';
+		const values = normaliseSnapshot(snapshot);
+		const project = /** @type {Record<string, any>} */ (/** @type {unknown} */ (this));
+		for (const key of PROJECT_FIELD_KEYS) project[key] = values[key];
 	}
 }

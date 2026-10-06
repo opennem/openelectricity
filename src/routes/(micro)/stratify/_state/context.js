@@ -17,3 +17,21 @@ export function setStratifyContext(project) {
 export function getStratifyContext() {
 	return getContext(KEY);
 }
+
+const SAVE_KEY = Symbol('stratify-save-session');
+
+/**
+ * Set the builder's ChartSaveSession in component context.
+ * @param {import('./ChartSaveSession.svelte.js').default} session
+ */
+export function setChartSaveContext(session) {
+	setContext(SAVE_KEY, session);
+}
+
+/**
+ * Get the builder's ChartSaveSession from component context.
+ * @returns {import('./ChartSaveSession.svelte.js').default}
+ */
+export function getChartSaveContext() {
+	return getContext(SAVE_KEY);
+}

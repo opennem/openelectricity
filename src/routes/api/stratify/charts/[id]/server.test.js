@@ -2,129 +2,117 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
 	fetch: vi.fn(),
-	set: vi.fn(),
-	commit: vi.fn(),
-	verifyAdmin: vi.fn()
+	verifyAdmin: vi.fn(),
+	saveChartFields: vi.fn()
 }));
 
 vi.mock('$lib/sanity-cms.js', () => ({
-	createCmsClient: () => ({
-		fetch: mocks.fetch,
-		patch: () => ({ set: mocks.set })
-	})
+	createCmsClient: () => ({ fetch: mocks.fetch })
 }));
 
 vi.mock('$lib/auth/clerk-server.js', () => ({
 	verifyAdmin: mocks.verifyAdmin
 }));
 
+vi.mock('$lib/server/stratify/save-chart.js', async (importOriginal) => ({
+	...(await importOriginal()),
+	saveChartFields: mocks.saveChartFields
+}));
+
 import { PATCH } from './+server.js';
 
-describe('PATCH /api/stratify/charts/:id chart-field persistence', () => {
+/** @param {unknown} body */
+async function patch(body) {
+	const request = new Request('http://localhost/api/stratify/charts/chart-1', {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(body)
+	});
+	return PATCH(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
+}
+
+describe('PATCH /api/stratify/charts/:id', () => {
 	beforeEach(() => {
 		mocks.fetch.mockReset().mockResolvedValue({ _id: 'chart-1', userId: 'user-1' });
-		mocks.commit.mockReset().mockResolvedValue({ _id: 'chart-1' });
-		mocks.set.mockReset().mockReturnValue({ commit: mocks.commit });
+		mocks.saveChartFields.mockReset().mockResolvedValue({
+			outcome: 'saved',
+			rev: 'rev-2',
+			latest: null
+		});
 		mocks.verifyAdmin.mockReset().mockResolvedValue({
 			isAdmin: true,
 			isSuperAdmin: false,
 			authenticated: true,
-			userId: 'user-1'
+			userId: 'user-1',
+			userEmail: 'a@example.com'
 		});
 	});
 
-	it('patches nullable and zero-valued scatter fields without dropping them', async () => {
-		const request = new Request('http://localhost/api/stratify/charts/chart-1', {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
+	it('saves changed fields against the base revision, keeping null and zero values', async () => {
+		const response = await patch({
+			baseRev: 'rev-1',
+			fields: {
 				scatterSizeColumn: null,
 				scatterPointRadius: 0,
-				scatterMinRadius: 0,
-				scatterMaxRadius: 0,
-				scatterPointOpacity: 0
-			})
-		});
-
-		const response = await PATCH(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
-
-		expect(response.status).toBe(200);
-		expect(mocks.set).toHaveBeenCalledWith({
-			scatterSizeColumn: null,
-			scatterPointRadius: 0,
-			scatterMinRadius: 0,
-			scatterMaxRadius: 0,
-			scatterPointOpacity: 0
-		});
-	});
-
-	it('patches nullable and zero-valued line range fields without dropping them', async () => {
-		const request = new Request('http://localhost/api/stratify/charts/chart-1', {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				lineRangeMinColumn: null,
-				lineRangeMaxColumn: null,
-				lineRangeOpacity: 0,
-				tooltipDateFormat: 'time'
-			})
-		});
-
-		const response = await PATCH(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
-
-		expect(response.status).toBe(200);
-		expect(mocks.set).toHaveBeenCalledWith({
-			lineRangeMinColumn: null,
-			lineRangeMaxColumn: null,
-			lineRangeOpacity: 0,
-			tooltipDateFormat: 'time'
-		});
-	});
-
-	it('patches structured annotation data and preserves explicit zero values', async () => {
-		const request = new Request('http://localhost/api/stratify/charts/chart-1', {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				annotationStyle: { lineWidth: 0, pointRadius: 0 },
 				annotationItems: [],
-				annotations: []
-			})
+				userId: 'user-2'
+			}
 		});
 
-		const response = await PATCH(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
-
 		expect(response.status).toBe(200);
-		expect(mocks.set).toHaveBeenCalledWith({
-			annotationStyle: JSON.stringify({ lineWidth: 0, pointRadius: 0 }),
-			annotationItems: JSON.stringify([]),
-			annotations: JSON.stringify([])
+		expect(await response.json()).toEqual({
+			chart: { _id: 'chart-1', _rev: 'rev-2' },
+			latest: null
+		});
+		expect(mocks.saveChartFields).toHaveBeenCalledWith(expect.anything(), {
+			id: 'chart-1',
+			baseRev: 'rev-1',
+			values: { scatterSizeColumn: null, scatterPointRadius: 0, annotationItems: [] },
+			author: { userId: 'user-1', userEmail: 'a@example.com' }
 		});
 	});
 
-	it('ignores keys outside the field registry and stores version as snapshotVersion', async () => {
-		const request = new Request('http://localhost/api/stratify/charts/chart-1', {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ title: 'Mix', version: 2, userId: 'user-2', _id: 'chart-9' })
-		});
+	it('requires a base revision with changed fields', async () => {
+		const response = await patch({ fields: { title: 'A' } });
 
-		const response = await PATCH(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
+		expect(response.status).toBe(400);
+		expect(mocks.saveChartFields).not.toHaveBeenCalled();
+	});
+
+	it('saves an earlier whole-snapshot body without conflict checks', async () => {
+		const response = await patch({ title: 'Mix', version: 2, _id: 'chart-9' });
 
 		expect(response.status).toBe(200);
-		expect(mocks.set).toHaveBeenCalledWith({ title: 'Mix', snapshotVersion: 2 });
+		expect(mocks.saveChartFields).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ baseRev: null, values: { title: 'Mix', version: 2 } })
+		);
 	});
 
 	it('rejects a body with no registry fields', async () => {
-		const request = new Request('http://localhost/api/stratify/charts/chart-1', {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ userId: 'user-2' })
-		});
-
-		const response = await PATCH(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
+		const response = await patch({ baseRev: 'rev-1', fields: { userId: 'user-2' } });
 
 		expect(response.status).toBe(400);
-		expect(mocks.set).not.toHaveBeenCalled();
+		expect(mocks.saveChartFields).not.toHaveBeenCalled();
+	});
+
+	it('returns 409 with the conflicts and current chart', async () => {
+		const latest = { _id: 'chart-1', _rev: 'rev-3', title: 'Theirs' };
+		const conflicts = [{ field: 'title', changedBy: null }];
+		mocks.saveChartFields.mockResolvedValue({ outcome: 'conflict', conflicts, latest });
+
+		const response = await patch({ baseRev: 'rev-1', fields: { title: 'Mine' } });
+
+		expect(response.status).toBe(409);
+		expect(await response.json()).toEqual({ error: 'Conflict', conflicts, chart: latest });
+	});
+
+	it('forbids saves by someone other than the owner', async () => {
+		mocks.fetch.mockResolvedValue({ _id: 'chart-1', userId: 'user-9' });
+
+		const response = await patch({ baseRev: 'rev-1', fields: { title: 'A' } });
+
+		expect(response.status).toBe(403);
+		expect(mocks.saveChartFields).not.toHaveBeenCalled();
 	});
 });

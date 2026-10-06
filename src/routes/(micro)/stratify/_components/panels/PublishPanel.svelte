@@ -1,7 +1,6 @@
 <script>
-	import { getStratifyContext } from '../../_state/context.js';
+	import { getStratifyContext, getChartSaveContext } from '../../_state/context.js';
 	import { exportToFile, importFromFile } from '../../_utils/storage.js';
-	import { createChart, updateChart } from '../../_utils/api.js';
 	import SectionHeader from '../SectionHeader.svelte';
 	import StratifyButton from '../StratifyButton.svelte';
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
@@ -10,10 +9,11 @@
 	import UploadIcon from '@lucide/svelte/icons/upload';
 
 	const project = getStratifyContext();
+	const saveSession = getChartSaveContext();
 
 	/** @type {string} */
 	let statusMessage = $state('');
-	let publishing = $state(false);
+	let publishing = $derived(saveSession.action === 'publish' || saveSession.action === 'unpublish');
 	let copied = $state(false);
 
 	let isPublished = $derived(project.status === 'published');
@@ -29,60 +29,32 @@
 			: ''
 	);
 
+	/**
+	 * Report a publish action: nothing while a conflict prompt is open, the
+	 * error when it failed.
+	 * @param {boolean} success
+	 * @param {string} done
+	 */
+	function report(success, done) {
+		if (success) statusMessage = done;
+		else if (!saveSession.conflict)
+			statusMessage = `Error: ${saveSession.errorMessage ?? 'Failed'}`;
+	}
+
 	async function handlePublish() {
-		if (!project.hasData) return;
-		publishing = true;
 		statusMessage = '';
-
-		try {
-			// Save first if not yet saved
-			if (!project.currentChartId) {
-				const result = await createChart(project.toJSON());
-				project.currentChartId = result._id;
-			}
-
-			await updateChart(project.currentChartId, {
-				...project.toJSON(),
-				status: 'published',
-				publishedAt: new Date().toISOString()
-			});
-			project.status = 'published';
-			statusMessage = 'Published';
-		} catch (e) {
-			statusMessage = `Error: ${e instanceof Error ? e.message : 'Failed to publish'}`;
-		} finally {
-			publishing = false;
-		}
+		report(await saveSession.publish(), 'Published');
 	}
 
 	async function handleUnpublish() {
-		if (!project.currentChartId) return;
-		publishing = true;
 		statusMessage = '';
-
-		try {
-			await updateChart(project.currentChartId, {
-				status: 'draft',
-				publishedAt: null
-			});
-			project.status = 'draft';
-			statusMessage = 'Unpublished';
-		} catch (e) {
-			statusMessage = `Error: ${e instanceof Error ? e.message : 'Failed to unpublish'}`;
-		} finally {
-			publishing = false;
-		}
+		report(await saveSession.unpublish(), 'Unpublished');
 	}
 
-	async function handleToggleBranding() {
+	function handleToggleBranding() {
 		project.showBranding = !project.showBranding;
-		if (project.currentChartId) {
-			try {
-				await updateChart(project.currentChartId, { showBranding: project.showBranding });
-			} catch {
-				// Silently fail — will be saved on next auto-save
-			}
-		}
+		// Published embeds follow the toggle at once; other edits stay unsaved.
+		if (project.currentChartId) saveSession.saveField('showBranding');
 	}
 
 	/** @param {string} text */

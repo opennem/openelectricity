@@ -16,6 +16,24 @@ async function getToken() {
 }
 
 /**
+ * A failed API request, keeping the response status and body (e.g. a 409
+ * save conflict's current chart).
+ */
+export class ApiError extends Error {
+	/**
+	 * @param {string} message
+	 * @param {number} status
+	 * @param {Record<string, any>} body
+	 */
+	constructor(message, status, body) {
+		super(message);
+		this.name = 'ApiError';
+		this.status = status;
+		this.body = body;
+	}
+}
+
+/**
  * Make an authenticated fetch request.
  * @param {string} url
  * @param {RequestInit} [options]
@@ -36,7 +54,7 @@ async function authFetch(url, options = {}) {
 
 	if (!res.ok) {
 		const body = await res.json().catch(() => ({}));
-		throw new Error(body.error || `Request failed (${res.status})`);
+		throw new ApiError(body.error || `Request failed (${res.status})`, res.status, body);
 	}
 
 	return res.json();
@@ -114,7 +132,7 @@ export async function getChart(id) {
 /**
  * Create a new chart.
  * @param {import('../_state/StratifyPlotProject.svelte.js').StratifyPlotSnapshot} snapshot
- * @returns {Promise<{ _id: string }>}
+ * @returns {Promise<{ _id: string, _rev: string }>}
  */
 export async function createChart(snapshot) {
 	const data = await authFetch('/api/stratify/charts', {
@@ -125,17 +143,24 @@ export async function createChart(snapshot) {
 }
 
 /**
- * Update an existing chart.
- * @param {string} id
- * @param {Partial<import('../_state/StratifyPlotProject.svelte.js').StratifyPlotSnapshot> & Record<string, any>} fields
- * @returns {Promise<{ _id: string }>}
+ * @typedef {Object} SaveChartResponse
+ * @property {{ _id: string, _rev: string }} chart
+ * @property {Record<string, any> | null} latest - The merged chart when the save landed on a newer revision
  */
-export async function updateChart(id, fields) {
-	const data = await authFetch(`/api/stratify/charts/${id}`, {
+
+/**
+ * Save the fields changed since chart revision `baseRev`. Rejects with an
+ * `ApiError` of status 409 (body `{ conflicts, chart }`) when another save
+ * changed the same fields differently.
+ * @param {string} id
+ * @param {{ baseRev: string, fields: Record<string, any> }} save
+ * @returns {Promise<SaveChartResponse>}
+ */
+export async function updateChart(id, save) {
+	return authFetch(`/api/stratify/charts/${id}`, {
 		method: 'PATCH',
-		body: JSON.stringify(fields)
+		body: JSON.stringify(save)
 	});
-	return data.chart;
 }
 
 /**

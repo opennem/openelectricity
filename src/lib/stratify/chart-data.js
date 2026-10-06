@@ -72,7 +72,8 @@ function readChartField(chart, field) {
 
 /**
  * Parse the JSON-encoded fields of a raw Sanity document in place of their
- * stored strings, keeping every other field (including Sanity metadata and
+ * stored strings and expose renamed fields under their snapshot key (e.g.
+ * `version`), keeping every other field (including Sanity metadata and
  * ownership) as stored.
  * @param {Record<string, any>} chart - Raw Sanity document
  * @returns {Record<string, any>}
@@ -80,7 +81,9 @@ function readChartField(chart, field) {
 export function decodeChartFields(chart) {
 	const decoded = { ...chart };
 	for (const field of CHART_FIELDS) {
-		if (field.encoding === 'json') decoded[field.key] = readChartField(chart, field);
+		if (field.encoding === 'json' || field.docKey) {
+			decoded[field.key] = readChartField(chart, field);
+		}
 	}
 	return decoded;
 }
