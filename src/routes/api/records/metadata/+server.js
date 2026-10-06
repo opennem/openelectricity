@@ -1,4 +1,4 @@
-import { PUBLIC_RECORDS_API } from '$env/static/public';
+import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
 
 /**
  * Proxies the records/milestones metadata endpoint.
@@ -16,5 +16,5 @@ import { PUBLIC_RECORDS_API } from '$env/static/public';
 export function GET({ fetch }) {
 	const path = `${PUBLIC_RECORDS_API}/metadata`;
 
-	return fetch(path);
+	return fetch(path, { headers: { Authorization: `Bearer ${PUBLIC_API_KEY}` } });
 }
