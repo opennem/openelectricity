@@ -8,16 +8,26 @@
  * The chart patch and its revision document commit in one transaction,
  * guarded by `ifRevisionId`, so a save that races another is retried
  * against the newer chart rather than overwriting it.
+ *
+ * History is bounded (`$lib/stratify/revision-policy.js`): a person's quick
+ * successive edits fold into their newest entry, and the same transaction
+ * deletes revisions beyond the per-chart limit.
  */
 
 import { decodeChartFields } from '$lib/stratify/chart-data.js';
 import { encodeChartFields, getChartField, isSameFieldValue } from '$lib/stratify/chart-fields.js';
+import { REVISION_LIMIT } from '$lib/stratify/revision-policy.js';
 import {
 	REVISION_TYPE,
 	buildBaselineRevision,
 	buildRevision,
+	canMergeInto,
 	findRevisionsAfter,
-	revisionKind
+	getRevisionVersion,
+	mergeChanges,
+	parseChanges,
+	revisionKind,
+	summariseRevision
 } from './revisions.js';
 
 /** Attempts before a save that keeps losing `ifRevisionId` races gives up. */
@@ -29,9 +39,19 @@ const MAX_ATTEMPTS = 3;
  */
 const RETRY_DELAY_MS = 150;
 
+/**
+ * How far past the limit one save looks for revisions to prune. Saves keep
+ * a chart at the limit, so only concurrent saves can overshoot, and any
+ * excess beyond this is caught by later saves.
+ */
+const PRUNE_SCAN = 20;
+
+/** The chart, and its newest revisions (enough to merge into and prune). */
 const CHART_QUERY = `{
 	"chart": *[_type == "stratifyChart" && _id == $id][0],
-	"hasHistory": defined(*[_type == $type && chartId == $id][0]._id)
+	"history": *[_type == $type && chartId == $id] | order(createdAt desc)[0...${REVISION_LIMIT + PRUNE_SCAN}] {
+		_id, _rev, kind, userId, createdAt
+	}
 }`;
 
 /**
@@ -43,12 +63,12 @@ const CHART_QUERY = `{
 /**
  * @typedef {{ outcome: 'not-found' }
  *   | { outcome: 'unchanged', rev: string }
- *   | { outcome: 'saved', rev: string, latest: Record<string, any> | null }
+ *   | { outcome: 'saved', rev: string, chart: Record<string, any>, merged: boolean }
  *   | { outcome: 'conflict', conflicts: FieldConflict[], latest: Record<string, any> }
  * } SaveResult
- * `latest` is the decoded chart after the save when it merged with saves the
- * editor had not seen (null when the editor was up to date), or the current
- * chart on conflict, so the editor can rebase either way.
+ * `chart` is the decoded chart after the save; `merged` is true when the
+ * save landed on saves the editor had not seen. On conflict, `latest` is the
+ * current chart, so the editor can rebase.
  */
 
 /**
@@ -94,16 +114,17 @@ async function findConflicts(client, current, baseRev, values) {
  *   id: string,
  *   baseRev: string | null,
  *   values: Record<string, any>,
- *   author: import('./revisions.js').RevisionAuthor
+ *   author: import('./revisions.js').RevisionAuthor,
+ *   restoredFrom?: import('./revisions.js').RestoredFrom
  * }} input
  * `baseRev` null skips conflict checks (the pre-revision whole-snapshot
  * PATCH, kept for editors opened before this protocol shipped). `values`
- * must hold registry keys only.
+ * must hold registry keys only. `restoredFrom` logs the save as a restore.
  * @returns {Promise<SaveResult>}
  */
-export async function saveChartFields(client, { id, baseRev, values, author }) {
+export async function saveChartFields(client, { id, baseRev, values, author, restoredFrom }) {
 	for (let attempt = 1; ; attempt++) {
-		const { chart, hasHistory } = await client.fetch(CHART_QUERY, { id, type: REVISION_TYPE });
+		const { chart, history = [] } = await client.fetch(CHART_QUERY, { id, type: REVISION_TYPE });
 		if (!chart) return { outcome: 'not-found' };
 
 		const current = decodeChartFields(chart);
@@ -120,20 +141,54 @@ export async function saveChartFields(client, { id, baseRev, values, author }) {
 		if (changes.length === 0) return { outcome: 'unchanged', rev: chart._rev };
 
 		const changed = Object.fromEntries(changes.map(({ field, after }) => [field, after]));
+		const kind = restoredFrom ? 'restore' : revisionKind(values, chart.status);
+		const now = new Date();
+		const latest = history[0] ?? null;
+		const mergeInto = canMergeInto(latest, kind, author, now) ? latest : null;
+
 		const transaction = client.transaction();
-		if (!hasHistory) transaction.create(buildBaselineRevision(chart));
-		transaction
-			.patch(client.patch(id).ifRevisionId(chart._rev).set(encodeChartFields(changed)))
-			.create(
+		if (!latest) transaction.create(buildBaselineRevision(chart));
+		transaction.patch(client.patch(id).ifRevisionId(chart._rev).set(encodeChartFields(changed)));
+
+		if (mergeInto) {
+			const earlier = parseChanges(
+				await client.fetch(`*[_id == $revisionId][0].changes`, { revisionId: mergeInto._id })
+			);
+			const merged = mergeChanges(earlier, changes);
+			if (merged.length === 0) {
+				// The person undid their own edits: the entry has nothing left to say.
+				transaction.delete(mergeInto._id);
+			} else {
+				const fields = merged.map((change) => change.field);
+				transaction.patch(
+					client
+						.patch(mergeInto._id)
+						.ifRevisionId(mergeInto._rev)
+						.set({
+							fields,
+							changes: JSON.stringify(merged),
+							summary: summariseRevision('edit', fields),
+							updatedAt: now.toISOString()
+						})
+				);
+			}
+		} else {
+			transaction.create(
 				buildRevision({
 					chartId: id,
 					parentRev: chart._rev,
-					kind: revisionKind(values, chart.status),
+					kind,
 					changes,
 					author,
-					createdAt: new Date().toISOString()
+					createdAt: now.toISOString(),
+					restoredFrom
 				})
 			);
+		}
+
+		// Keep the newest REVISION_LIMIT, counting the one this save adds.
+		const keep = mergeInto ? REVISION_LIMIT : REVISION_LIMIT - 1;
+		for (const { _id } of history.slice(keep)) transaction.delete(_id);
 
 		/** @type {Array<{ _id: string, _rev: string }>} */
 		let documents;
@@ -149,7 +204,8 @@ export async function saveChartFields(client, { id, baseRev, values, author }) {
 		return {
 			outcome: 'saved',
 			rev,
-			latest: behind ? { ...current, ...changed, _rev: rev } : null
+			chart: { ...current, ...changed, _rev: rev },
+			merged: behind
 		};
 	}
 }
@@ -163,4 +219,28 @@ export function pickChartFields(values) {
 	return Object.fromEntries(
 		Object.entries(values).filter(([key, value]) => getChartField(key) && value !== undefined)
 	);
+}
+
+/**
+ * Restore a chart's settings to how they were right after a revision,
+ * logged as a `restore` revision. Publish state is left as it is.
+ * @param {import('@sanity/client').SanityClient} client
+ * @param {{
+ *   chart: Record<string, any>,
+ *   revisionId: string,
+ *   author: import('./revisions.js').RevisionAuthor
+ * }} input - `chart` is the raw current chart document
+ * @returns {Promise<SaveResult>}
+ */
+export async function restoreChartVersion(client, { chart, revisionId, author }) {
+	const version = await getRevisionVersion(client, decodeChartFields(chart), revisionId);
+	if (!version) return { outcome: 'not-found' };
+
+	return saveChartFields(client, {
+		id: chart._id,
+		baseRev: chart._rev,
+		values: version.restore,
+		author,
+		restoredFrom: { revisionId, createdAt: version.revision.createdAt }
+	});
 }

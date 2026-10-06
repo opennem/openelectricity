@@ -36,7 +36,8 @@ function createApi() {
 			/** @type {ApiCall} */ (
 				async () => ({ chart: { _id: 'chart-1', _rev: 'rev-2' }, latest: null })
 			)
-		)
+		),
+		restoreRevision: vi.fn(/** @type {ApiCall} */ (async () => ({})))
 	};
 }
 
@@ -242,5 +243,23 @@ describe('ChartSaveSession', () => {
 		expect(session.status).toBe('error');
 		expect(session.errorMessage).toBe('Network down');
 		expect(session.isDirty).toBe(true);
+	});
+
+	it('restores a version, replacing unsaved edits and taking it as the base', async () => {
+		const api = createApi();
+		api.restoreRevision.mockResolvedValueOnce({
+			chart: { _id: 'chart-1', _rev: 'rev-5' },
+			latest: serverChart({ _rev: 'rev-5', title: 'Old title', status: 'published' })
+		});
+		const { project, session } = loadedSession(api);
+
+		project.title = 'Unsaved';
+		expect(await session.restore('revision-1')).toBe(true);
+
+		expect(api.restoreRevision).toHaveBeenCalledWith('chart-1', 'revision-1');
+		expect(project.title).toBe('Old title');
+		expect(project.status).toBe('published');
+		expect(session.rev).toBe('rev-5');
+		expect(session.isDirty).toBe(false);
 	});
 });

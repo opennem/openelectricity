@@ -26,14 +26,49 @@ function plural(count, noun) {
 }
 
 /**
+ * Header columns and data row count of delimited text.
+ * @param {unknown} csvText
+ * @returns {{ columns: string[], rows: number } | null}
+ */
+function dataShape(csvText) {
+	if (typeof csvText !== 'string') return null;
+	const lines = csvText.trim().split(/\r?\n/).filter(Boolean);
+	if (lines.length === 0) return null;
+	const columns = lines[0].split(lines[0].includes('\t') ? '\t' : ',').map((name) => name.trim());
+	return { columns, rows: lines.length - 1 };
+}
+
+/**
  * Rows and columns of delimited text, e.g. "12 rows × 3 columns".
- * @param {string} csvText
+ * @param {unknown} csvText
  */
 function describeData(csvText) {
-	const lines = csvText.trim().split(/\r?\n/).filter(Boolean);
-	if (lines.length === 0) return 'No data';
-	const columns = lines[0].split(lines[0].includes('\t') ? '\t' : ',').length;
-	return `${plural(lines.length - 1, 'row')} × ${plural(columns, 'column')}`;
+	const shape = dataShape(csvText);
+	if (!shape) return 'No data';
+	return `${plural(shape.rows, 'row')} × ${plural(shape.columns.length, 'column')}`;
+}
+
+/**
+ * What changed between two versions of a chart's data, e.g.
+ * "+12 rows · added wind · removed hydro", or "Values edited".
+ * @param {unknown} before
+ * @param {unknown} after
+ * @returns {string}
+ */
+export function describeDataChange(before, after) {
+	const from = dataShape(before);
+	const to = dataShape(after);
+	if (!from || !to) return to ? `Added ${describeData(after)}` : 'Removed all data';
+
+	const parts = [];
+	const rowDelta = to.rows - from.rows;
+	if (rowDelta !== 0) parts.push(`${rowDelta > 0 ? '+' : '−'}${plural(Math.abs(rowDelta), 'row')}`);
+	const added = to.columns.filter((name) => !from.columns.includes(name));
+	const removed = from.columns.filter((name) => !to.columns.includes(name));
+	if (added.length) parts.push(`added ${truncate(added.join(', '))}`);
+	if (removed.length) parts.push(`removed ${truncate(removed.join(', '))}`);
+
+	return parts.length ? parts.join(' · ') : 'Values edited';
 }
 
 /** @param {unknown} value @returns {string} */
@@ -50,7 +85,7 @@ function describeScalar(value) {
  * @returns {string}
  */
 export function describeFieldValue(field, value) {
-	if (field === 'csvText') return typeof value === 'string' ? describeData(value) : 'No data';
+	if (field === 'csvText') return describeData(value);
 
 	if (Array.isArray(value)) {
 		if (value.length === 0) return 'None';

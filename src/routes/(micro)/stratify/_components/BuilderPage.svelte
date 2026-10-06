@@ -13,6 +13,8 @@
 	import Palette from '@lucide/svelte/icons/palette';
 	import ScanText from '@lucide/svelte/icons/scan-text';
 	import Share2 from '@lucide/svelte/icons/share-2';
+	import HistoryIcon from '@lucide/svelte/icons/history';
+	import StrataChartView from '$lib/stratify/StrataChartView.svelte';
 	import StratifyPlotProject from '../_state/StratifyPlotProject.svelte.js';
 	import { setStratifyContext, setChartSaveContext } from '../_state/context.js';
 	import ChartSaveSession from '../_state/ChartSaveSession.svelte.js';
@@ -33,6 +35,9 @@
 	import StratifyButton from './StratifyButton.svelte';
 	import ConfirmModal from './ConfirmModal.svelte';
 	import ConflictDialog from './ConflictDialog.svelte';
+	import HistoryDrawer from './HistoryDrawer.svelte';
+	import { normaliseSnapshot } from '../_state/snapshot.js';
+	import { formatRevisionDateTime } from '../_utils/history.js';
 	import { getChart } from '../_utils/api.js';
 	import { loadExampleTemplate } from '../_utils/templates.js';
 
@@ -215,6 +220,47 @@
 		saveSession.unpublish();
 	}
 
+	// --- History: preview and restore past versions ---
+
+	/** @typedef {import('../_utils/api.js').RevisionSummary} RevisionSummary */
+
+	let historyOpen = $state(false);
+	/** @type {{ revision: RevisionSummary, chart: Record<string, any> } | null} */
+	let preview = $state.raw(null);
+	/** @type {RevisionSummary | null} A restore waiting for the user to discard unsaved edits */
+	let pendingRestore = $state.raw(null);
+	/** @type {string | null} */
+	let restoreError = $state(null);
+
+	function closeHistory() {
+		historyOpen = false;
+		preview = null;
+		restoreError = null;
+	}
+
+	/**
+	 * @param {RevisionSummary} revision
+	 * @param {Record<string, any>} chart - The decoded chart at that version
+	 */
+	function handlePreview(revision, chart) {
+		preview = { revision, chart: normaliseSnapshot(chart) };
+	}
+
+	/** @param {RevisionSummary} revision */
+	function handleRestore(revision) {
+		if (saveSession.isDirty) pendingRestore = revision;
+		else restore(revision);
+	}
+
+	/** @param {RevisionSummary} revision */
+	async function restore(revision) {
+		restoreError = null;
+		const restored = await saveSession.restore(revision._id);
+		pendingRestore = null;
+		if (restored) preview = null;
+		else restoreError = saveSession.errorMessage ?? 'Restore failed';
+	}
+
 	/** @type {string} */
 	let saveButtonLabel = $derived.by(() => {
 		if (saveSession.status === 'saving') return 'Saving...';
@@ -276,6 +322,26 @@
 	onconfirm={modalSave}
 	onsecondary={modalDiscard}
 	oncancel={modalCancel}
+/>
+
+<ConfirmModal
+	open={pendingRestore !== null}
+	title="Restore this version?"
+	message="Restoring replaces your unsaved changes. The version you last saved stays in the history."
+	confirmLabel="Restore"
+	loading={saveSession.action === 'restore'}
+	loadingConfirmLabel="Restoring…"
+	onconfirm={() => pendingRestore && restore(pendingRestore)}
+	oncancel={() => (pendingRestore = null)}
+/>
+
+<HistoryDrawer
+	open={historyOpen}
+	previewingId={preview?.revision._id ?? null}
+	error={restoreError}
+	onclose={closeHistory}
+	onpreview={handlePreview}
+	onrestore={handleRestore}
 />
 
 {#if saveSession.conflict}
@@ -416,6 +482,13 @@
 
 					<div class="ml-auto flex items-center gap-2">
 						{#if project.currentChartId}
+							<StratifyButton
+								onclick={() => (historyOpen ? closeHistory() : (historyOpen = true))}
+								title="Change history"
+							>
+								<HistoryIcon size={14} />
+								History
+							</StratifyButton>
 							{#if project.status === 'published'}
 								<StratifyButton onclick={handleUnpublish} disabled={publishing}>
 									{publishing ? '...' : 'Unpublish'}
@@ -437,7 +510,28 @@
 					</div>
 				</div>
 
-				{#if project.hasData}
+				{#if preview}
+					<div
+						class="flex flex-wrap items-center gap-3 border-b border-warm-grey bg-light-warm-grey px-5 py-2 text-sm"
+					>
+						<span class="text-dark-grey">
+							Previewing the version from {formatRevisionDateTime(preview.revision.createdAt)}
+						</span>
+						<div class="ml-auto flex items-center gap-2">
+							<StratifyButton onclick={() => (preview = null)}>Back to current</StratifyButton>
+							<StratifyButton
+								variant="primary"
+								onclick={() => preview && handleRestore(preview.revision)}
+								disabled={saveSession.action !== null}
+							>
+								Restore this version
+							</StratifyButton>
+						</div>
+					</div>
+					<div class="min-h-0 flex-1 overflow-y-auto p-5 md:p-8">
+						<StrataChartView chart={preview.chart} />
+					</div>
+				{:else if project.hasData}
 					<div class="min-h-0 flex-1 overflow-y-auto p-5 md:p-8">
 						<ChartPreview />
 					</div>

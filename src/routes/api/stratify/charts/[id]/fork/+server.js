@@ -1,31 +1,15 @@
 import { json } from '@sveltejs/kit';
-import { createCmsClient } from '$lib/sanity-cms.js';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
+import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
 
 /**
  * POST /api/stratify/charts/:id/fork — fork a chart into the current user's account.
  * @type {import('./$types').RequestHandler}
  */
 export async function POST({ request, params }) {
-	const auth = await verifyAdmin(request);
-	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
-	}
-
-	const client = createCmsClient();
-	const source = await client.fetch(`*[_type == "stratifyChart" && _id == $id][0]`, {
-		id: params.id
-	});
-
-	if (!source) {
-		return json({ error: 'Not found' }, { status: 404 });
-	}
-
-	// Normal users can only fork published charts; superadmin can fork any
-	const isOwner = source.userId === auth.userId;
-	if (!isOwner && !auth.isSuperAdmin && source.status !== 'published') {
-		return json({ error: 'Not found' }, { status: 404 });
-	}
+	// Owners fork any of their charts; readers fork published ones.
+	const loaded = await loadChartForRequest(request, params.id, 'reader', { full: true });
+	if (loaded.response) return loaded.response;
+	const { client, auth, chart: source } = loaded;
 
 	// Strip Sanity metadata and reassign ownership
 	const {

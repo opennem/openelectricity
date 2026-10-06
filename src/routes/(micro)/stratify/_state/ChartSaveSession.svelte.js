@@ -14,7 +14,7 @@
 
 import { diffSnapshots, getChartField, mergeFields } from '$lib/stratify/chart-fields.js';
 import { normaliseSnapshot } from './snapshot.js';
-import { ApiError, createChart, updateChart } from '../_utils/api.js';
+import { ApiError, createChart, restoreRevision, updateChart } from '../_utils/api.js';
 
 /** Saves that keep finding fresh-but-compatible server changes give up after this. */
 const MAX_REBASES = 2;
@@ -41,6 +41,7 @@ const MAX_REBASES = 2;
  * @typedef {Object} SaveApi
  * @property {typeof createChart} createChart
  * @property {typeof updateChart} updateChart
+ * @property {typeof restoreRevision} restoreRevision
  */
 
 /**
@@ -64,7 +65,7 @@ export default class ChartSaveSession {
 	/** @type {'idle' | 'saving' | 'saved' | 'error'} */
 	status = $state('idle');
 
-	/** @type {'save' | 'publish' | 'unpublish' | null} The action in flight */
+	/** @type {'save' | 'publish' | 'unpublish' | 'restore' | null} The action in flight */
 	action = $state(null);
 
 	/** @type {string | null} */
@@ -87,9 +88,14 @@ export default class ChartSaveSession {
 	 * @param {import('./StratifyPlotProject.svelte.js').default} project
 	 * @param {SaveApi} [api]
 	 */
-	constructor(project, api = { createChart, updateChart }) {
+	constructor(project, api = { createChart, updateChart, restoreRevision }) {
 		this.#project = project;
 		this.#api = api;
+	}
+
+	/** The server revision the editor is based on; changes with every save. */
+	get rev() {
+		return this.#base?.rev ?? null;
 	}
 
 	/**
@@ -150,6 +156,30 @@ export default class ChartSaveSession {
 		const { status } = conflict.pending;
 		const action = status === 'published' ? 'publish' : status === 'draft' ? 'unpublish' : 'save';
 		return this.#run(action, conflict.pending);
+	}
+
+	/**
+	 * Restore the chart's settings to a past version (logged on the server
+	 * as a new revision) and load the result, replacing unsaved edits.
+	 * @param {string} revisionId
+	 * @returns {Promise<boolean>}
+	 */
+	async restore(revisionId) {
+		const id = this.#project.currentChartId;
+		if (!id || this.action) return false;
+		this.action = 'restore';
+		this.errorMessage = null;
+		try {
+			const { latest } = await this.#api.restoreRevision(id, revisionId);
+			this.#project.loadFromSnapshot(latest);
+			this.markLoaded(latest._rev);
+			return true;
+		} catch (error) {
+			this.errorMessage = error instanceof Error ? error.message : 'Restore failed';
+			return false;
+		} finally {
+			this.action = null;
+		}
 	}
 
 	/** Close the conflict prompt; the edits stay unsaved. */

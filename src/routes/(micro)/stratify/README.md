@@ -53,11 +53,13 @@ src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/foo
 │   ├── export.js                      # SVG/PNG capture
 │   ├── format.js                      # Date formatting (timeAgo)
 │   ├── field-values.js                # Readable chart field values (conflicts, history)
+│   ├── history.js                     # History day grouping and times
 │   └── examples.js                    # Built-in example datasets
 └── _components/
     ├── BuilderPage.svelte             # Main layout; coordinates all panels, auto-save
     ├── ChartPreview.svelte            # Live chart preview
     ├── ConflictDialog.svelte          # Choose yours/theirs per field after a save conflict
+    ├── HistoryDrawer.svelte           # Change history: field diffs, preview, restore
     ├── ChartTypeSelector.svelte       # Chart family/variant toggle
     ├── SeriesConfig.svelte            # Per-series colour, label, type, Y-axis, visibility
     ├── ColourPicker.svelte            # Shared colour picker: theme swatches + native + hex + reset (Series panel + map controls)
@@ -181,6 +183,42 @@ before the first logged save of an older chart), `fields`, `changes`
 (JSON `[{ field, before, after }]`), `summary`, author and `createdAt`.
 Deleting a chart deletes its revisions. A PATCH body without `fields` (an
 editor opened before this protocol) is saved without conflict checks.
+
+### History and restore
+
+The builder's **History** button (saved charts only) opens `HistoryDrawer`:
+revisions newest first, grouped by day, each with time, author, summary and
+a kind badge. Expanding one shows its field changes (colour swatches, and a
+row/column summary for data). **Preview** shows the chart as it was right
+after that revision in place of the live preview; **Restore this version**
+writes it back. Restoring with unsaved edits asks first, since it replaces
+them.
+
+- `GET /api/stratify/charts/:id/revisions?before=` — a page of revision
+  summaries (30, newest first) and the `nextBefore` cursor.
+- `GET /api/stratify/charts/:id/revisions/:revisionId` — the revision's
+  changes and the chart at that version.
+- `POST /api/stratify/charts/:id/revisions` `{ restoreTo }` — restore.
+
+History is bounded (`$lib/stratify/revision-policy.js`), since every
+revision is a Sanity document and the dataset's document count is the limit
+that matters:
+
+- **Merge.** A plain edit by the same person within 10 minutes of their
+  newest entry's first save updates that entry (`updatedAt`) instead of
+  adding one; each field keeps its earliest `before`, and an entry whose
+  edits cancel out is deleted. Publishes, unpublishes, restores and the
+  baseline always stay separate.
+- **Cap.** Each chart keeps its newest 50 revisions; the save that would
+  exceed it deletes the oldest in the same transaction. Older versions can
+  no longer be restored.
+
+A version is rebuilt from the current chart by applying the `before` value
+of every later change, newest first (`revertedSettings()` in
+`$lib/server/stratify/revisions.js`). A restore changes chart settings only,
+never publish state, and is saved as a new `restore` revision (with
+`restoredFrom`), so history is never rewritten. All three endpoints are
+owner/superadmin only (`$lib/server/stratify/chart-access.js`) and uncached.
 
 ## Public documentation and templates
 

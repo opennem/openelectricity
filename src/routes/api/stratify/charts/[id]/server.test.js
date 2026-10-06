@@ -37,7 +37,8 @@ describe('PATCH /api/stratify/charts/:id', () => {
 		mocks.saveChartFields.mockReset().mockResolvedValue({
 			outcome: 'saved',
 			rev: 'rev-2',
-			latest: null
+			chart: { _id: 'chart-1', _rev: 'rev-2' },
+			merged: false
 		});
 		mocks.verifyAdmin.mockReset().mockResolvedValue({
 			isAdmin: true,
@@ -107,12 +108,34 @@ describe('PATCH /api/stratify/charts/:id', () => {
 		expect(await response.json()).toEqual({ error: 'Conflict', conflicts, chart: latest });
 	});
 
-	it('forbids saves by someone other than the owner', async () => {
-		mocks.fetch.mockResolvedValue({ _id: 'chart-1', userId: 'user-9' });
+	it('forbids saves to a published chart by someone other than the owner', async () => {
+		mocks.fetch.mockResolvedValue({ _id: 'chart-1', userId: 'user-9', status: 'published' });
 
 		const response = await patch({ baseRev: 'rev-1', fields: { title: 'A' } });
 
 		expect(response.status).toBe(403);
 		expect(mocks.saveChartFields).not.toHaveBeenCalled();
+	});
+
+	it("hides someone else's draft", async () => {
+		mocks.fetch.mockResolvedValue({ _id: 'chart-1', userId: 'user-9', status: 'draft' });
+
+		const response = await patch({ baseRev: 'rev-1', fields: { title: 'A' } });
+
+		expect(response.status).toBe(404);
+	});
+
+	it('lets a superadmin save any chart', async () => {
+		mocks.fetch.mockResolvedValue({ _id: 'chart-1', userId: 'user-9', status: 'draft' });
+		mocks.verifyAdmin.mockResolvedValue({
+			isAdmin: true,
+			isSuperAdmin: true,
+			authenticated: true,
+			userId: 'user-1'
+		});
+
+		const response = await patch({ baseRev: 'rev-1', fields: { title: 'A' } });
+
+		expect(response.status).toBe(200);
 	});
 });

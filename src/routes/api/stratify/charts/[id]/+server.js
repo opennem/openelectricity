@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { createCmsClient } from '$lib/sanity-cms.js';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
 import { decodeChartFields } from '$lib/stratify/chart-data.js';
+import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
 import { pickChartFields, saveChartFields } from '$lib/server/stratify/save-chart.js';
 import { deleteChartWithRevisions } from '$lib/server/stratify/revisions.js';
 
@@ -11,26 +10,10 @@ import { deleteChartWithRevisions } from '$lib/server/stratify/revisions.js';
  * @type {import('./$types').RequestHandler}
  */
 export async function GET({ request, params }) {
-	const auth = await verifyAdmin(request);
-	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
-	}
+	const loaded = await loadChartForRequest(request, params.id, 'reader', { full: true });
+	if (loaded.response) return loaded.response;
 
-	const client = createCmsClient();
-	const chart = await client.fetch(`*[_type == "stratifyChart" && _id == $id][0]`, {
-		id: params.id
-	});
-
-	if (!chart) {
-		return json({ error: 'Not found' }, { status: 404 });
-	}
-
-	const isOwner = chart.userId === auth.userId;
-	if (!isOwner && !auth.isSuperAdmin && chart.status !== 'published') {
-		return json({ error: 'Not found' }, { status: 404 });
-	}
-
-	return json({ chart: decodeChartFields(chart) });
+	return json({ chart: decodeChartFields(loaded.chart) });
 }
 
 /**
@@ -51,25 +34,9 @@ export async function GET({ request, params }) {
  * @type {import('./$types').RequestHandler}
  */
 export async function PATCH({ request, params }) {
-	const auth = await verifyAdmin(request);
-	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
-	}
-
-	const client = createCmsClient();
-
-	const existing = await client.fetch(
-		`*[_type == "stratifyChart" && _id == $id][0]{ _id, userId }`,
-		{ id: params.id }
-	);
-
-	if (!existing) {
-		return json({ error: 'Not found' }, { status: 404 });
-	}
-
-	if (existing.userId !== auth.userId && !auth.isSuperAdmin) {
-		return json({ error: 'Forbidden' }, { status: 403 });
-	}
+	const loaded = await loadChartForRequest(request, params.id, 'owner');
+	if (loaded.response) return loaded.response;
+	const { client, auth } = loaded;
 
 	const body = await request.json();
 	const isFieldSave = typeof body?.fields === 'object' && body.fields !== null;
@@ -100,7 +67,10 @@ export async function PATCH({ request, params }) {
 		case 'unchanged':
 			return json({ chart: { _id: params.id, _rev: result.rev }, latest: null });
 		case 'saved':
-			return json({ chart: { _id: params.id, _rev: result.rev }, latest: result.latest });
+			return json({
+				chart: { _id: params.id, _rev: result.rev },
+				latest: result.merged ? result.chart : null
+			});
 	}
 }
 
@@ -109,27 +79,10 @@ export async function PATCH({ request, params }) {
  * @type {import('./$types').RequestHandler}
  */
 export async function DELETE({ request, params }) {
-	const auth = await verifyAdmin(request);
-	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
-	}
+	const loaded = await loadChartForRequest(request, params.id, 'owner');
+	if (loaded.response) return loaded.response;
 
-	const client = createCmsClient();
-
-	const existing = await client.fetch(
-		`*[_type == "stratifyChart" && _id == $id][0]{ _id, userId }`,
-		{ id: params.id }
-	);
-
-	if (!existing) {
-		return json({ error: 'Not found' }, { status: 404 });
-	}
-
-	if (existing.userId !== auth.userId && !auth.isSuperAdmin) {
-		return json({ error: 'Forbidden' }, { status: 403 });
-	}
-
-	await deleteChartWithRevisions(client, params.id);
+	await deleteChartWithRevisions(loaded.client, params.id);
 
 	return json({ deleted: true });
 }

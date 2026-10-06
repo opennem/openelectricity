@@ -164,6 +164,58 @@ export async function updateChart(id, save) {
 }
 
 /**
+ * @typedef {Object} RevisionSummary
+ * @property {string} _id
+ * @property {'baseline' | 'edit' | 'publish' | 'unpublish' | 'restore'} kind
+ * @property {string} summary
+ * @property {string[]} fields
+ * @property {string | null} userEmail
+ * @property {string} createdAt
+ * @property {string | null} updatedAt - Last save folded into this entry, if any
+ * @property {{ revisionId: string, createdAt: string } | null} restoredFrom
+ */
+
+/**
+ * @typedef {RevisionSummary & {
+ *   changes: Array<{ field: string, before?: any, after?: any }>
+ * }} RevisionDetail
+ */
+
+/**
+ * One page of a chart's change history, newest first.
+ * @param {string} id
+ * @param {string | null} [before] - `nextBefore` from the previous page
+ * @returns {Promise<{ revisions: RevisionSummary[], nextBefore: string | null }>}
+ */
+export async function listRevisions(id, before = null) {
+	const qs = before ? `?${new URLSearchParams({ before })}` : '';
+	return authFetch(`/api/stratify/charts/${id}/revisions${qs}`);
+}
+
+/**
+ * A revision's changes and the chart as it was right after it.
+ * @param {string} id
+ * @param {string} revisionId
+ * @returns {Promise<{ revision: RevisionDetail, chart: Record<string, any> }>}
+ */
+export async function getRevision(id, revisionId) {
+	return authFetch(`/api/stratify/charts/${id}/revisions/${revisionId}`);
+}
+
+/**
+ * Restore the chart's settings to how they were right after a revision.
+ * @param {string} id
+ * @param {string} revisionId
+ * @returns {Promise<SaveChartResponse & { latest: Record<string, any> }>}
+ */
+export async function restoreRevision(id, revisionId) {
+	return authFetch(`/api/stratify/charts/${id}/revisions`, {
+		method: 'POST',
+		body: JSON.stringify({ restoreTo: revisionId })
+	});
+}
+
+/**
  * Delete a chart.
  * @param {string} id
  * @returns {Promise<void>}

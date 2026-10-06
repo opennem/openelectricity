@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { pickChartFields, saveChartFields } from './save-chart.js';
+import { pickChartFields, restoreChartVersion, saveChartFields } from './save-chart.js';
 
 const AUTHOR = { userId: 'user-2', userEmail: 'b@example.com' };
 
@@ -19,19 +19,41 @@ function storedChart(overrides = {}) {
 	};
 }
 
+/** The chart's baseline: older than the merge window and by its owner. */
+const BASELINE_ENTRY = {
+	_id: 'baseline-1',
+	_rev: 'baseline-rev',
+	kind: 'baseline',
+	userId: 'user-1',
+	createdAt: '2026-10-01T00:00:00.000Z'
+};
+
 /**
- * Minimal Sanity client: answers the chart and later-revisions queries and
- * records transactions. `commitErrors` are thrown by successive commits.
+ * A history entry `minutesAgo` old.
+ * @param {Record<string, any>} entry
+ * @param {number} minutesAgo
+ */
+function entryAgo(entry, minutesAgo) {
+	return { ...entry, createdAt: new Date(Date.now() - minutesAgo * 60_000).toISOString() };
+}
+
+/**
+ * Minimal Sanity client: answers the chart, later-revisions and
+ * entry-changes queries and records transactions. `history` is the chart's
+ * revisions, newest first; `latestChanges` the JSON changes of the newest.
+ * `commitErrors` are thrown by successive commits.
  * @param {{
  *   chart?: Record<string, any> | null,
- *   hasHistory?: boolean,
+ *   history?: Array<Record<string, any>>,
+ *   latestChanges?: string,
  *   later?: Array<{ fields: string[], userEmail: string, createdAt: string }> | null,
  *   commitErrors?: unknown[]
  * }} [options]
  */
 function createFakeClient({
 	chart = storedChart(),
-	hasHistory = true,
+	history = [BASELINE_ENTRY],
+	latestChanges = '[]',
 	later = null,
 	commitErrors = []
 } = {}) {
@@ -40,7 +62,8 @@ function createFakeClient({
 
 	const client = {
 		fetch: vi.fn(async (/** @type {string} */ query) => {
-			if (query.includes('"hasHistory"')) return { chart, hasHistory };
+			if (query.includes('"history"')) return { chart, history };
+			if (query.includes('.changes')) return latestChanges;
 			return { start: later ? '2026-10-02T00:00:00Z' : null, revisions: later ?? [] };
 		}),
 		patch: (/** @type {string} */ id) => {
@@ -59,6 +82,7 @@ function createFakeClient({
 			const builder = {
 				create: (/** @type {any} */ doc) => (ops.push({ create: doc }), builder),
 				patch: (/** @type {any} */ patch) => (ops.push({ patch: patch.patch }), builder),
+				delete: (/** @type {string} */ id) => (ops.push({ delete: id }), builder),
 				commit: async (/** @type {any} */ options) => {
 					if (commitErrors.length > 0) throw commitErrors.shift();
 					commits.push({ ops, options });
@@ -83,7 +107,7 @@ describe('saveChartFields', () => {
 			author: AUTHOR
 		});
 
-		expect(result).toEqual({ outcome: 'saved', rev: 'rev-saved-1', latest: null });
+		expect(result).toMatchObject({ outcome: 'saved', rev: 'rev-saved-1', merged: false });
 		expect(commits).toHaveLength(1);
 
 		const [{ ops, options }] = commits;
@@ -109,7 +133,7 @@ describe('saveChartFields', () => {
 	});
 
 	it('writes a baseline revision first for a chart without history', async () => {
-		const { client, commits } = createFakeClient({ hasHistory: false });
+		const { client, commits } = createFakeClient({ history: [] });
 
 		await saveChartFields(client, {
 			id: 'chart-1',
@@ -125,7 +149,7 @@ describe('saveChartFields', () => {
 				parentRev: null,
 				fields: [],
 				userEmail: 'a@example.com',
-				createdAt: '2026-10-01T00:00:00Z'
+				createdAt: '2026-10-01T00:00:00.000Z'
 			})
 		});
 	});
@@ -159,7 +183,8 @@ describe('saveChartFields', () => {
 
 		expect(result.outcome).toBe('saved');
 		expect(commits[0].ops[0].patch.ifRevision).toBe('rev-2');
-		expect(/** @type {any} */ (result).latest).toMatchObject({
+		expect(result).toMatchObject({ merged: true });
+		expect(/** @type {any} */ (result).chart).toMatchObject({
 			title: 'Mine',
 			chartHeight: 400,
 			userSeriesColours: { solar: '#ff0' },
@@ -232,7 +257,7 @@ describe('saveChartFields', () => {
 			author: AUTHOR
 		});
 
-		expect(result).toMatchObject({ outcome: 'saved', latest: null });
+		expect(result).toMatchObject({ outcome: 'saved', merged: false });
 		expect(client.fetch).toHaveBeenCalledTimes(1);
 		expect(commits).toHaveLength(1);
 	});
@@ -312,5 +337,169 @@ describe('pickChartFields', () => {
 		expect(
 			pickChartFields({ title: 'A', y1Min: null, notes: undefined, userId: 'x', _rev: 'r' })
 		).toEqual({ title: 'A', y1Min: null });
+	});
+});
+
+describe('restoreChartVersion', () => {
+	it('saves the reverted settings as a restore revision', async () => {
+		const { client, commits } = createFakeClient({
+			chart: storedChart({ title: 'Newest', chartHeight: 400 })
+		});
+		const fetchSave = client.fetch.getMockImplementation();
+		client.fetch.mockImplementation(
+			async (/** @type {string} */ query, /** @type {any} */ params) => {
+				if (query.includes('"newer"')) {
+					return {
+						revision: {
+							_id: 'revision-1',
+							kind: 'edit',
+							fields: ['title'],
+							createdAt: '2026-10-02T00:00:00.000Z',
+							changes: '[{"field":"title","before":"First","after":"Second"}]'
+						},
+						newer: [
+							{ changes: '[{"field":"title","before":"Second","after":"Newest"}]' },
+							{ changes: '[{"field":"chartHeight","before":250,"after":400}]' }
+						]
+					};
+				}
+				return fetchSave?.(query, params);
+			}
+		);
+
+		const result = await restoreChartVersion(client, {
+			chart: storedChart({ title: 'Newest', chartHeight: 400 }),
+			revisionId: 'revision-1',
+			author: AUTHOR
+		});
+
+		expect(result).toMatchObject({
+			outcome: 'saved',
+			chart: { title: 'Second', chartHeight: 250 }
+		});
+		expect(commits[0].ops[0].patch.set).toEqual({ title: 'Second', chartHeight: 250 });
+		expect(commits[0].ops[1].create).toMatchObject({
+			kind: 'restore',
+			summary: 'Restored Title, Chart height',
+			restoredFrom: { revisionId: 'revision-1', createdAt: '2026-10-02T00:00:00.000Z' }
+		});
+	});
+
+	it('reports an unknown revision', async () => {
+		const { client } = createFakeClient();
+		client.fetch.mockResolvedValueOnce({ revision: null, newer: [] });
+
+		const result = await restoreChartVersion(client, {
+			chart: storedChart(),
+			revisionId: 'missing',
+			author: AUTHOR
+		});
+
+		expect(result).toEqual({ outcome: 'not-found' });
+	});
+});
+
+describe('saveChartFields history limits', () => {
+	const MINE = { _id: 'mine', _rev: 'mine-rev', kind: 'edit', userId: 'user-2' };
+
+	it("folds a person's quick successive edits into their newest entry", async () => {
+		const { client, commits } = createFakeClient({
+			history: [entryAgo(MINE, 2), BASELINE_ENTRY],
+			latestChanges: '[{"field":"title","before":"Original","after":"Generation"}]'
+		});
+
+		await saveChartFields(client, {
+			id: 'chart-1',
+			baseRev: 'rev-1',
+			values: { title: 'Generation mix', chartHeight: 300 },
+			author: AUTHOR
+		});
+
+		const [, merge, ...rest] = commits[0].ops;
+		expect(rest).toEqual([]);
+		expect(merge.patch).toMatchObject({
+			id: 'mine',
+			ifRevision: 'mine-rev',
+			set: {
+				fields: ['title', 'chartHeight'],
+				changes: JSON.stringify([
+					{ field: 'title', before: 'Original', after: 'Generation mix' },
+					{ field: 'chartHeight', before: 250, after: 300 }
+				]),
+				summary: 'Title, Chart height',
+				updatedAt: expect.any(String)
+			}
+		});
+	});
+
+	it('removes the entry when the person undoes their own edits', async () => {
+		const { client, commits } = createFakeClient({
+			history: [entryAgo(MINE, 2), BASELINE_ENTRY],
+			latestChanges: '[{"field":"title","before":"Original","after":"Generation"}]'
+		});
+
+		await saveChartFields(client, {
+			id: 'chart-1',
+			baseRev: 'rev-1',
+			values: { title: 'Original' },
+			author: AUTHOR
+		});
+
+		expect(commits[0].ops[1]).toEqual({ delete: 'mine' });
+	});
+
+	it.each([
+		['by someone else', entryAgo({ ...MINE, userId: 'user-9' }, 2), { title: 'New' }],
+		['older than the merge window', entryAgo(MINE, 11), { title: 'New' }],
+		['when publishing', entryAgo(MINE, 2), { status: 'published' }],
+		['after a publish', { ...entryAgo(MINE, 2), kind: 'publish' }, { title: 'New' }]
+	])('starts a new entry %s', async (_, latest, values) => {
+		const { client, commits } = createFakeClient({
+			history: [latest, BASELINE_ENTRY]
+		});
+
+		await saveChartFields(client, { id: 'chart-1', baseRev: 'rev-1', values, author: AUTHOR });
+
+		expect(commits[0].ops[1]).toHaveProperty('create');
+	});
+
+	it('deletes the oldest revisions beyond the per-chart limit', async () => {
+		const history = Array.from({ length: 55 }, (_, i) => ({
+			...BASELINE_ENTRY,
+			_id: `old-${i}`,
+			kind: 'edit'
+		}));
+		const { client, commits } = createFakeClient({ history });
+
+		await saveChartFields(client, {
+			id: 'chart-1',
+			baseRev: 'rev-1',
+			values: { title: 'New' },
+			author: AUTHOR
+		});
+
+		const deleted = commits[0].ops.filter((op) => op.delete).map((op) => op.delete);
+		expect(deleted).toEqual(['old-49', 'old-50', 'old-51', 'old-52', 'old-53', 'old-54']);
+	});
+
+	it('keeps one more revision when the save merges rather than adds', async () => {
+		const history = [
+			entryAgo(MINE, 2),
+			...Array.from({ length: 50 }, (_, i) => ({ ...BASELINE_ENTRY, _id: `old-${i}` }))
+		];
+		const { client, commits } = createFakeClient({
+			history,
+			latestChanges: '[{"field":"title","before":"Original","after":"Generation"}]'
+		});
+
+		await saveChartFields(client, {
+			id: 'chart-1',
+			baseRev: 'rev-1',
+			values: { notes: 'Source' },
+			author: AUTHOR
+		});
+
+		const deleted = commits[0].ops.filter((op) => op.delete).map((op) => op.delete);
+		expect(deleted).toEqual(['old-49']);
 	});
 });

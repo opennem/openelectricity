@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeFieldValue, isColourValue } from './field-values.js';
+import { describeDataChange, describeFieldValue, isColourValue } from './field-values.js';
 
 describe('describeFieldValue', () => {
 	it('summarises data by its shape', () => {
@@ -40,5 +40,25 @@ describe('isColourValue', () => {
 		expect(isColourValue('#fff')).toBe(true);
 		expect(isColourValue('blue')).toBe(false);
 		expect(isColourValue(null)).toBe(false);
+	});
+});
+
+describe('describeDataChange', () => {
+	const base = 'date,solar,hydro\n2024-01-01,1,2\n2024-02-01,3,4';
+
+	it('reports rows and columns added or removed', () => {
+		expect(
+			describeDataChange(base, 'date,solar,wind\n2024-01-01,1,2\n2024-02-01,3,4\n2024-03-01,5,6')
+		).toBe('+1 row · added wind · removed hydro');
+		expect(describeDataChange(base, 'date,solar,hydro\n2024-01-01,1,2')).toBe('−1 row');
+	});
+
+	it('falls back to an edit note when the shape is unchanged', () => {
+		expect(describeDataChange(base, base.replace('3,4', '3,5'))).toBe('Values edited');
+	});
+
+	it('describes data appearing or disappearing', () => {
+		expect(describeDataChange(undefined, base)).toBe('Added 2 rows × 3 columns');
+		expect(describeDataChange(base, '')).toBe('Removed all data');
 	});
 });
