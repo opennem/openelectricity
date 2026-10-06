@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { createCmsClient } from '$lib/sanity-cms.js';
 import { verifyAdmin } from '$lib/auth/clerk-server.js';
 import { normaliseChart } from '$lib/stratify/chart-data.js';
+import { encodeChartFields, withChartDefaults } from '$lib/stratify/chart-fields.js';
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 100;
@@ -105,7 +106,8 @@ export async function GET({ request, url }) {
 }
 
 /**
- * POST /api/stratify/charts — create a new chart document.
+ * POST /api/stratify/charts — create a new draft chart document. Missing
+ * registry fields take their defaults (new charts start as stacked area).
  * @type {import('./$types').RequestHandler}
  */
 export async function POST({ request }) {
@@ -125,88 +127,12 @@ export async function POST({ request }) {
 		_type: 'stratifyChart',
 		userId: auth.userId,
 		userEmail: auth.userEmail,
-		status: 'draft',
-		title: body.title ?? '',
-		description: body.description ?? '',
-		dataSource: body.dataSource ?? '',
-		notes: body.notes ?? '',
-		csvText: body.csvText,
-		annotationStyle: JSON.stringify(body.annotationStyle ?? {}),
-		annotationItems: JSON.stringify(body.annotationItems ?? []),
-		chartType: body.chartType ?? 'stacked-area',
-		displayMode: body.displayMode ?? 'auto',
-		hiddenSeries: body.hiddenSeries ?? [],
-		userSeriesColours: JSON.stringify(body.userSeriesColours ?? {}),
-		userSeriesLabels: JSON.stringify(body.userSeriesLabels ?? {}),
-		annotations: JSON.stringify(body.annotations ?? []),
-		seriesChartTypes: JSON.stringify(body.seriesChartTypes ?? {}),
-		seriesLineStyles: JSON.stringify(body.seriesLineStyles ?? {}),
-		plotOverrides: JSON.stringify(body.plotOverrides ?? null),
-		seriesOrder: body.seriesOrder ?? [],
-		stylePreset: body.stylePreset ?? 'sans',
-		colourPalette: body.colourPalette ?? 'oe-energy',
-		showLegend: body.showLegend ?? true,
-		showBranding: body.showBranding ?? true,
-		chartHeight: body.chartHeight ?? 250,
-		xTicks: body.xTicks ?? 0,
-		xTickRotate: body.xTickRotate ?? 0,
-		marginBottom: body.marginBottom ?? 0,
-		marginLeft: body.marginLeft ?? 0,
-		yTicks: body.yTicks ?? 0,
-		yMinMax: body.yMinMax ?? false,
-		y1Min: body.y1Min ?? null,
-		y1Max: body.y1Max ?? null,
-		y2Ticks: body.y2Ticks ?? 0,
-		y2MinMax: body.y2MinMax ?? false,
-		y2Min: body.y2Min ?? null,
-		y2Max: body.y2Max ?? null,
-		tooltipColumns: body.tooltipColumns ?? [],
-		tooltipDateFormat: body.tooltipDateFormat ?? 'date',
-		xColumn: body.xColumn ?? '',
-		dataTransform: body.dataTransform ?? 'none',
-		categorySort: body.categorySort ?? 'default',
-		showXTickLabels: body.showXTickLabels ?? true,
-		colourSeries: body.colourSeries ?? null,
-		facetColumn: body.facetColumn ?? null,
-		facetPanelsPerRow: body.facetPanelsPerRow ?? 0,
-		animateAsOneChart: body.animateAsOneChart ?? false,
-		animationSpeedMs: body.animationSpeedMs ?? 800,
-		animationAutoLoop: body.animationAutoLoop ?? false,
-		animationAutoPlay: body.animationAutoPlay ?? false,
-		animationTween: body.animationTween ?? true,
-		chartCurve: body.chartCurve ?? 'linear',
-		lineRangeMinColumn: body.lineRangeMinColumn ?? null,
-		lineRangeMaxColumn: body.lineRangeMaxColumn ?? null,
-		lineRangeOpacity: body.lineRangeOpacity ?? 0.2,
-		scatterSizeColumn: body.scatterSizeColumn ?? null,
-		scatterPointRadius: body.scatterPointRadius ?? 4,
-		scatterMinRadius: body.scatterMinRadius ?? 3,
-		scatterMaxRadius: body.scatterMaxRadius ?? 18,
-		scatterPointOpacity: body.scatterPointOpacity ?? 0.7,
-		waterfallMode: body.waterfallMode ?? 'single',
-		waterfallShowTotal: body.waterfallShowTotal ?? true,
-		waterfallColourMode: body.waterfallColourMode ?? 'semantic',
-		valueFormat: body.valueFormat ?? '1',
-		chartBorderWidth: body.chartBorderWidth ?? 0.5,
-		chartBorderColour: body.chartBorderColour ?? '#000000',
-		xLabel: body.xLabel ?? '',
-		yLabel: body.yLabel ?? '',
-		seriesYAxis: JSON.stringify(body.seriesYAxis ?? {}),
-		y2Label: body.y2Label ?? '',
-		latColumn: body.latColumn ?? null,
-		lngColumn: body.lngColumn ?? null,
-		labelColumn: body.labelColumn ?? null,
-		sizeColumn: body.sizeColumn ?? null,
-		mapColourMode: body.mapColourMode ?? 'single',
-		colourColumn: body.colourColumn ?? null,
-		singleMarkerColour: body.singleMarkerColour ?? '#3b82f6',
-		mapRangeMinColour: body.mapRangeMinColour ?? '#dbeafe',
-		mapRangeMaxColour: body.mapRangeMaxColour ?? '#1e3a8a',
-		mapMinRadius: body.mapMinRadius ?? 4,
-		mapMaxRadius: body.mapMaxRadius ?? 24,
-		mapTheme: body.mapTheme ?? 'light',
-		snapshotVersion: body.version ?? 1,
-		publishedAt: null
+		...encodeChartFields({
+			...withChartDefaults(body),
+			chartType: body.chartType ?? 'stacked-area',
+			status: 'draft',
+			publishedAt: null
+		})
 	});
 
 	return json({ chart: { _id: doc._id } }, { status: 201 });

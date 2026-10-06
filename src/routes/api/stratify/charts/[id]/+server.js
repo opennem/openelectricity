@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { createCmsClient } from '$lib/sanity-cms.js';
 import { verifyAdmin } from '$lib/auth/clerk-server.js';
-import { safeParseJSON } from '$lib/stratify/chart-data.js';
+import { decodeChartFields } from '$lib/stratify/chart-data.js';
+import { encodeChartFields } from '$lib/stratify/chart-fields.js';
 
 /**
  * GET /api/stratify/charts/:id — fetch a single chart.
@@ -28,25 +29,13 @@ export async function GET({ request, params }) {
 		return json({ error: 'Not found' }, { status: 404 });
 	}
 
-	return json({
-		chart: {
-			...chart,
-			userSeriesColours: safeParseJSON(chart.userSeriesColours, {}),
-			userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),
-			annotations: safeParseJSON(chart.annotations, []),
-			annotationStyle: safeParseJSON(chart.annotationStyle, {}),
-			annotationItems: safeParseJSON(chart.annotationItems, []),
-			seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
-			seriesLineStyles: safeParseJSON(chart.seriesLineStyles, {}),
-			plotOverrides: safeParseJSON(chart.plotOverrides, null),
-			seriesYAxis: safeParseJSON(chart.seriesYAxis, {}),
-			seriesOrder: chart.seriesOrder ?? []
-		}
-	});
+	return json({ chart: decodeChartFields(chart) });
 }
 
 /**
  * PATCH /api/stratify/charts/:id — update a chart (owner or superadmin).
+ * Accepts any subset of the registry fields in `$lib/stratify/chart-fields.js`;
+ * other keys are ignored.
  * @type {import('./$types').RequestHandler}
  */
 export async function PATCH({ request, params }) {
@@ -72,99 +61,7 @@ export async function PATCH({ request, params }) {
 
 	const body = await request.json();
 
-	/** @type {Record<string, any>} */
-	const patches = {};
-
-	if (body.title !== undefined) patches.title = body.title;
-	if (body.description !== undefined) patches.description = body.description;
-	if (body.dataSource !== undefined) patches.dataSource = body.dataSource;
-	if (body.notes !== undefined) patches.notes = body.notes;
-	if (body.csvText !== undefined) patches.csvText = body.csvText;
-	if (body.annotationStyle !== undefined)
-		patches.annotationStyle = JSON.stringify(body.annotationStyle);
-	if (body.annotationItems !== undefined)
-		patches.annotationItems = JSON.stringify(body.annotationItems);
-	if (body.chartType !== undefined) patches.chartType = body.chartType;
-	if (body.displayMode !== undefined) patches.displayMode = body.displayMode;
-	if (body.hiddenSeries !== undefined) patches.hiddenSeries = body.hiddenSeries;
-	if (body.userSeriesColours !== undefined)
-		patches.userSeriesColours = JSON.stringify(body.userSeriesColours);
-	if (body.userSeriesLabels !== undefined)
-		patches.userSeriesLabels = JSON.stringify(body.userSeriesLabels);
-	if (body.annotations !== undefined) patches.annotations = JSON.stringify(body.annotations);
-	if (body.seriesChartTypes !== undefined)
-		patches.seriesChartTypes = JSON.stringify(body.seriesChartTypes);
-	if (body.seriesLineStyles !== undefined)
-		patches.seriesLineStyles = JSON.stringify(body.seriesLineStyles);
-	if (body.plotOverrides !== undefined) patches.plotOverrides = JSON.stringify(body.plotOverrides);
-	if (body.seriesOrder !== undefined) patches.seriesOrder = body.seriesOrder;
-	if (body.stylePreset !== undefined) patches.stylePreset = body.stylePreset;
-	if (body.colourPalette !== undefined) patches.colourPalette = body.colourPalette;
-	if (body.showLegend !== undefined) patches.showLegend = body.showLegend;
-	if (body.showBranding !== undefined) patches.showBranding = body.showBranding;
-	if (body.chartHeight !== undefined) patches.chartHeight = body.chartHeight;
-	if (body.xTicks !== undefined) patches.xTicks = body.xTicks;
-	if (body.xTickRotate !== undefined) patches.xTickRotate = body.xTickRotate;
-	if (body.marginBottom !== undefined) patches.marginBottom = body.marginBottom;
-	if (body.marginLeft !== undefined) patches.marginLeft = body.marginLeft;
-	if (body.yTicks !== undefined) patches.yTicks = body.yTicks;
-	if (body.yMinMax !== undefined) patches.yMinMax = body.yMinMax;
-	if (body.y1Min !== undefined) patches.y1Min = body.y1Min;
-	if (body.y1Max !== undefined) patches.y1Max = body.y1Max;
-	if (body.y2Ticks !== undefined) patches.y2Ticks = body.y2Ticks;
-	if (body.y2MinMax !== undefined) patches.y2MinMax = body.y2MinMax;
-	if (body.y2Min !== undefined) patches.y2Min = body.y2Min;
-	if (body.y2Max !== undefined) patches.y2Max = body.y2Max;
-	if (body.tooltipColumns !== undefined) patches.tooltipColumns = body.tooltipColumns;
-	if (body.tooltipDateFormat !== undefined) patches.tooltipDateFormat = body.tooltipDateFormat;
-	if (body.xColumn !== undefined) patches.xColumn = body.xColumn;
-	if (body.dataTransform !== undefined) patches.dataTransform = body.dataTransform;
-	if (body.categorySort !== undefined) patches.categorySort = body.categorySort;
-	if (body.showXTickLabels !== undefined) patches.showXTickLabels = body.showXTickLabels;
-	if (body.colourSeries !== undefined) patches.colourSeries = body.colourSeries;
-	if (body.facetColumn !== undefined) patches.facetColumn = body.facetColumn;
-	if (body.facetPanelsPerRow !== undefined) patches.facetPanelsPerRow = body.facetPanelsPerRow;
-	if (body.animateAsOneChart !== undefined) patches.animateAsOneChart = body.animateAsOneChart;
-	if (body.animationSpeedMs !== undefined) patches.animationSpeedMs = body.animationSpeedMs;
-	if (body.animationAutoLoop !== undefined) patches.animationAutoLoop = body.animationAutoLoop;
-	if (body.animationAutoPlay !== undefined) patches.animationAutoPlay = body.animationAutoPlay;
-	if (body.animationTween !== undefined) patches.animationTween = body.animationTween;
-	if (body.chartCurve !== undefined) patches.chartCurve = body.chartCurve;
-	if (body.lineRangeMinColumn !== undefined) patches.lineRangeMinColumn = body.lineRangeMinColumn;
-	if (body.lineRangeMaxColumn !== undefined) patches.lineRangeMaxColumn = body.lineRangeMaxColumn;
-	if (body.lineRangeOpacity !== undefined) patches.lineRangeOpacity = body.lineRangeOpacity;
-	if (body.scatterSizeColumn !== undefined) patches.scatterSizeColumn = body.scatterSizeColumn;
-	if (body.scatterPointRadius !== undefined) patches.scatterPointRadius = body.scatterPointRadius;
-	if (body.scatterMinRadius !== undefined) patches.scatterMinRadius = body.scatterMinRadius;
-	if (body.scatterMaxRadius !== undefined) patches.scatterMaxRadius = body.scatterMaxRadius;
-	if (body.scatterPointOpacity !== undefined)
-		patches.scatterPointOpacity = body.scatterPointOpacity;
-	if (body.waterfallMode !== undefined) patches.waterfallMode = body.waterfallMode;
-	if (body.waterfallShowTotal !== undefined) patches.waterfallShowTotal = body.waterfallShowTotal;
-	if (body.waterfallColourMode !== undefined)
-		patches.waterfallColourMode = body.waterfallColourMode;
-	if (body.valueFormat !== undefined) patches.valueFormat = body.valueFormat;
-	if (body.chartBorderWidth !== undefined) patches.chartBorderWidth = body.chartBorderWidth;
-	if (body.chartBorderColour !== undefined) patches.chartBorderColour = body.chartBorderColour;
-	if (body.xLabel !== undefined) patches.xLabel = body.xLabel;
-	if (body.yLabel !== undefined) patches.yLabel = body.yLabel;
-	if (body.seriesYAxis !== undefined) patches.seriesYAxis = JSON.stringify(body.seriesYAxis);
-	if (body.y2Label !== undefined) patches.y2Label = body.y2Label;
-	if (body.status !== undefined) patches.status = body.status;
-	if (body.publishedAt !== undefined) patches.publishedAt = body.publishedAt;
-	if (body.version !== undefined) patches.snapshotVersion = body.version;
-	if (body.latColumn !== undefined) patches.latColumn = body.latColumn;
-	if (body.lngColumn !== undefined) patches.lngColumn = body.lngColumn;
-	if (body.labelColumn !== undefined) patches.labelColumn = body.labelColumn;
-	if (body.sizeColumn !== undefined) patches.sizeColumn = body.sizeColumn;
-	if (body.mapColourMode !== undefined) patches.mapColourMode = body.mapColourMode;
-	if (body.colourColumn !== undefined) patches.colourColumn = body.colourColumn;
-	if (body.singleMarkerColour !== undefined) patches.singleMarkerColour = body.singleMarkerColour;
-	if (body.mapRangeMinColour !== undefined) patches.mapRangeMinColour = body.mapRangeMinColour;
-	if (body.mapRangeMaxColour !== undefined) patches.mapRangeMaxColour = body.mapRangeMaxColour;
-	if (body.mapMinRadius !== undefined) patches.mapMinRadius = body.mapMinRadius;
-	if (body.mapMaxRadius !== undefined) patches.mapMaxRadius = body.mapMaxRadius;
-	if (body.mapTheme !== undefined) patches.mapTheme = body.mapTheme;
+	const patches = encodeChartFields(body);
 
 	if (Object.keys(patches).length === 0) {
 		return json({ error: 'No fields to update' }, { status: 400 });

@@ -101,4 +101,30 @@ describe('PATCH /api/stratify/charts/:id chart-field persistence', () => {
 			annotations: JSON.stringify([])
 		});
 	});
+
+	it('ignores keys outside the field registry and stores version as snapshotVersion', async () => {
+		const request = new Request('http://localhost/api/stratify/charts/chart-1', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ title: 'Mix', version: 2, userId: 'user-2', _id: 'chart-9' })
+		});
+
+		const response = await PATCH(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
+
+		expect(response.status).toBe(200);
+		expect(mocks.set).toHaveBeenCalledWith({ title: 'Mix', snapshotVersion: 2 });
+	});
+
+	it('rejects a body with no registry fields', async () => {
+		const request = new Request('http://localhost/api/stratify/charts/chart-1', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ userId: 'user-2' })
+		});
+
+		const response = await PATCH(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
+
+		expect(response.status).toBe(400);
+		expect(mocks.set).not.toHaveBeenCalled();
+	});
 });

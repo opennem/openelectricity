@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { flushSync } from 'svelte';
 import StratifyPlotProject from './StratifyPlotProject.svelte.js';
 import { examples } from '../_utils/examples.js';
+import { CHART_FIELDS } from '$lib/stratify/chart-fields.js';
 
 /**
  * `it` whose body runs inside an effect root. The constructor registers
@@ -35,6 +36,18 @@ const FACET_CSV = 'date,region,solar,wind\n2024-01-01,NSW,100,50\n2024-02-01,VIC
 
 /** A mean with min/max bounds — valid backing for the line range mapping. */
 const RANGE_CSV = 'date,mean,minimum,maximum\n2025-01-01,20,10,30\n2025-01-02,25,12,36';
+
+describe('StratifyPlotProject — persisted fields', () => {
+	it('serialises exactly the chart field registry (less the publish fields)', () => {
+		const project = createProject();
+		const publishKeys = ['status', 'publishedAt'];
+		const registryKeys = CHART_FIELDS.map((field) => field.key).filter(
+			(key) => !publishKeys.includes(key)
+		);
+
+		expect(Object.keys(project.toJSON()).sort()).toEqual(registryKeys.sort());
+	});
+});
 
 describe('StratifyPlotProject — annotation dataset', () => {
 	it('adds, updates and compiles a guided annotation', () => {

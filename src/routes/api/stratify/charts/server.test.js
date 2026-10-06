@@ -107,4 +107,37 @@ describe('POST /api/stratify/charts chart-field persistence', () => {
 		});
 		expect(JSON.parse(document.annotations)).toHaveLength(1);
 	});
+
+	it('creates a draft with registry defaults and ignores publish fields in the body', async () => {
+		const request = new Request('http://localhost/api/stratify/charts', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				csvText: 'x,y\n1,2',
+				status: 'published',
+				publishedAt: '2026-01-01T00:00:00Z',
+				userId: 'user-2'
+			})
+		});
+
+		const response = await POST(/** @type {any} */ ({ request }));
+
+		expect(response.status).toBe(201);
+		expect(mocks.create).toHaveBeenCalledWith(
+			expect.objectContaining({
+				_type: 'stratifyChart',
+				userId: 'user-1',
+				userEmail: 'user@example.com',
+				status: 'draft',
+				publishedAt: null,
+				chartType: 'stacked-area',
+				snapshotVersion: 1,
+				hiddenSeries: [],
+				annotationStyle: '{}',
+				plotOverrides: 'null',
+				userSeriesColours: '{}',
+				chartHeight: 250
+			})
+		);
+	});
 });

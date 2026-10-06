@@ -89,7 +89,8 @@ src/lib/stratify/                      # Stratify library
 ├── StrataChartCard.svelte             # Card component for published charts (header, chart, menu)
 ├── StratifyPlotChart.svelte           # Plot chart component (dual Y-axis, tooltips, annotations)
 ├── StratifyMapChart.svelte            # Map chart wrapper — CSV → PointMap points, size/colour scales
-├── chart-data.js                      # safeParseJSON, normaliseChart, uniqueColumnValues (shared server-side)
+├── chart-data.js                      # safeParseJSON, normaliseChart, decodeChartFields, uniqueColumnValues (shared server-side)
+├── chart-fields.js                    # Persisted-field registry + encode, diffSnapshots, mergeFields
 ├── chart-types.js                     # Chart type definitions and type constants (incl. MAP_TYPES)
 ├── chart-styles.js                    # Themes — sans (DM Sans) and mono (DM Mono)
 ├── colour-palette.js                  # Default colour assignment for series
@@ -118,6 +119,30 @@ src/lib/components/text-components/    # Article content rendering
 ├── StrataEmbed.svelte                 # Native Stratify chart embed for articles
 └── Image.svelte                       # Image block handler
 ```
+
+### Persisted chart fields
+
+`src/lib/stratify/chart-fields.js` is the single list of fields a chart
+saves: key, human label, group, default, and whether Sanity stores it as a
+JSON string (`encoding: 'json'`) or under another name (`docKey`, used only
+by `version` → `snapshotVersion`). Everything that reads or writes a chart
+document goes through it:
+
+- `POST /api/stratify/charts` fills missing fields with
+  `withChartDefaults()` (new charts start as `stacked-area`, always as a
+  draft) and writes them with `encodeChartFields()`.
+- `PATCH /api/stratify/charts/:id` accepts any subset of registry keys and
+  ignores the rest.
+- `GET /api/stratify/charts/:id` returns the document with its JSON fields
+  parsed (`decodeChartFields()`); `normaliseChart()` also applies defaults
+  for the public render paths.
+- `diffSnapshots()` and `mergeFields()` compare snapshots field by field —
+  the groundwork for conflict-safe saves and the change log.
+
+To add a chart setting, add it to the registry and to
+`StratifyPlotProject` (`$state`, `toJSON()`, `loadFromSnapshot()`, `reset()`).
+`StratifyPlotProject.svelte.test.js` fails if `toJSON()` and the registry
+drift apart.
 
 ## Public documentation and templates
 

@@ -7,6 +7,7 @@
 
 import { migrateChartType } from '$lib/stratify/chart-types.js';
 import { DEFAULT_ANNOTATION_STYLE } from '$lib/stratify/annotation-data.js';
+import { CHART_FIELDS, chartFieldDefault } from '$lib/stratify/chart-fields.js';
 
 /**
  * Collect the unique values of a column from a row array, preserving
@@ -57,95 +58,48 @@ export function safeParseJSON(value, fallback) {
 }
 
 /**
+ * Read one registry field from a raw Sanity document: parse `json` fields
+ * and fall back to the field's default when the value is missing.
+ * @param {Record<string, any>} chart - Raw Sanity document
+ * @param {import('./chart-fields.js').ChartField} field
+ */
+function readChartField(chart, field) {
+	const value = chart[field.docKey ?? field.key];
+	return field.encoding === 'json'
+		? safeParseJSON(value, chartFieldDefault(field))
+		: (value ?? chartFieldDefault(field));
+}
+
+/**
+ * Parse the JSON-encoded fields of a raw Sanity document in place of their
+ * stored strings, keeping every other field (including Sanity metadata and
+ * ownership) as stored.
+ * @param {Record<string, any>} chart - Raw Sanity document
+ * @returns {Record<string, any>}
+ */
+export function decodeChartFields(chart) {
+	const decoded = { ...chart };
+	for (const field of CHART_FIELDS) {
+		if (field.encoding === 'json') decoded[field.key] = readChartField(chart, field);
+	}
+	return decoded;
+}
+
+/**
  * Normalise a raw Sanity stratifyChart document into a consistent shape
- * with defaults applied and JSON fields parsed.
+ * with defaults applied and JSON fields parsed. Only chart settings from
+ * the field registry are returned (no meta, ownership or Sanity fields
+ * other than `_id`).
  * @param {Record<string, any>} chart - Raw Sanity document
  * @returns {Record<string, any>}
  */
 export function normaliseChart(chart) {
-	return {
-		_id: chart._id,
-		title: chart.title ?? '',
-		description: chart.description ?? '',
-		dataSource: chart.dataSource ?? '',
-		notes: chart.notes ?? '',
-		csvText: chart.csvText ?? '',
-		annotationItems: safeParseJSON(chart.annotationItems, []),
-		annotationStyle: {
-			...DEFAULT_ANNOTATION_STYLE,
-			...safeParseJSON(chart.annotationStyle, {})
-		},
-		chartType: migrateChartType(chart.chartType ?? 'line'),
-		displayMode: chart.displayMode ?? 'auto',
-		hiddenSeries: chart.hiddenSeries ?? [],
-		userSeriesColours: safeParseJSON(chart.userSeriesColours, {}),
-		userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),
-		annotations: safeParseJSON(chart.annotations, []),
-		seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
-		seriesLineStyles: safeParseJSON(chart.seriesLineStyles, {}),
-		plotOverrides: safeParseJSON(chart.plotOverrides, null),
-		seriesOrder: chart.seriesOrder ?? [],
-		stylePreset: chart.stylePreset ?? 'sans',
-		colourPalette: chart.colourPalette ?? 'oe-energy',
-		showLegend: chart.showLegend ?? true,
-		showBranding: chart.showBranding ?? true,
-		chartHeight: chart.chartHeight ?? 250,
-		xTicks: chart.xTicks ?? 0,
-		xTickRotate: chart.xTickRotate ?? 0,
-		marginBottom: chart.marginBottom ?? 0,
-		marginLeft: chart.marginLeft ?? 0,
-		yTicks: chart.yTicks ?? 0,
-		yMinMax: chart.yMinMax ?? false,
-		y1Min: chart.y1Min ?? null,
-		y1Max: chart.y1Max ?? null,
-		y2Ticks: chart.y2Ticks ?? 0,
-		y2MinMax: chart.y2MinMax ?? false,
-		y2Min: chart.y2Min ?? null,
-		y2Max: chart.y2Max ?? null,
-		tooltipColumns: chart.tooltipColumns ?? [],
-		tooltipDateFormat: chart.tooltipDateFormat ?? 'date',
-		xColumn: chart.xColumn ?? '',
-		dataTransform: chart.dataTransform ?? 'none',
-		categorySort: chart.categorySort ?? 'default',
-		showXTickLabels: chart.showXTickLabels ?? true,
-		colourSeries: chart.colourSeries ?? null,
-		facetColumn: chart.facetColumn ?? null,
-		facetPanelsPerRow: chart.facetPanelsPerRow ?? 0,
-		animateAsOneChart: chart.animateAsOneChart ?? false,
-		animationSpeedMs: chart.animationSpeedMs ?? 800,
-		animationAutoLoop: chart.animationAutoLoop ?? false,
-		animationAutoPlay: chart.animationAutoPlay ?? false,
-		animationTween: chart.animationTween ?? true,
-		chartCurve: chart.chartCurve ?? 'linear',
-		lineRangeMinColumn: chart.lineRangeMinColumn ?? null,
-		lineRangeMaxColumn: chart.lineRangeMaxColumn ?? null,
-		lineRangeOpacity: chart.lineRangeOpacity ?? 0.2,
-		scatterSizeColumn: chart.scatterSizeColumn ?? null,
-		scatterPointRadius: chart.scatterPointRadius ?? 4,
-		scatterMinRadius: chart.scatterMinRadius ?? 3,
-		scatterMaxRadius: chart.scatterMaxRadius ?? 18,
-		scatterPointOpacity: chart.scatterPointOpacity ?? 0.7,
-		chartBorderWidth: chart.chartBorderWidth ?? 0.5,
-		chartBorderColour: chart.chartBorderColour ?? '#000000',
-		waterfallMode: chart.waterfallMode ?? 'single',
-		waterfallShowTotal: chart.waterfallShowTotal ?? true,
-		waterfallColourMode: chart.waterfallColourMode ?? 'semantic',
-		valueFormat: chart.valueFormat ?? '1',
-		xLabel: chart.xLabel ?? '',
-		yLabel: chart.yLabel ?? '',
-		seriesYAxis: safeParseJSON(chart.seriesYAxis, {}),
-		y2Label: chart.y2Label ?? '',
-		latColumn: chart.latColumn ?? null,
-		lngColumn: chart.lngColumn ?? null,
-		labelColumn: chart.labelColumn ?? null,
-		sizeColumn: chart.sizeColumn ?? null,
-		mapColourMode: chart.mapColourMode ?? 'single',
-		colourColumn: chart.colourColumn ?? null,
-		singleMarkerColour: chart.singleMarkerColour ?? '#3b82f6',
-		mapRangeMinColour: chart.mapRangeMinColour ?? '#dbeafe',
-		mapRangeMaxColour: chart.mapRangeMaxColour ?? '#1e3a8a',
-		mapMinRadius: chart.mapMinRadius ?? 4,
-		mapMaxRadius: chart.mapMaxRadius ?? 24,
-		mapTheme: chart.mapTheme ?? 'light'
-	};
+	/** @type {Record<string, any>} */
+	const normalised = { _id: chart._id };
+	for (const field of CHART_FIELDS) {
+		if (field.group !== 'meta') normalised[field.key] = readChartField(chart, field);
+	}
+	normalised.chartType = migrateChartType(normalised.chartType);
+	normalised.annotationStyle = { ...DEFAULT_ANNOTATION_STYLE, ...normalised.annotationStyle };
+	return normalised;
 }
