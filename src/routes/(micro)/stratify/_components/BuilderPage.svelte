@@ -37,8 +37,9 @@
 	import ConfirmModal from './ConfirmModal.svelte';
 	import ConflictDialog from './ConflictDialog.svelte';
 	import HistoryDrawer from './HistoryDrawer.svelte';
-	import { normaliseSnapshot } from '../_state/snapshot.js';
+	import { normaliseSnapshot } from '$lib/stratify/chart-data.js';
 	import { formatRevisionDateTime } from '../_utils/history.js';
+	import { timeAgo } from '../_utils/format.js';
 	import { forkChart, getChart } from '../_utils/api.js';
 	import { loadExampleTemplate } from '../_utils/templates.js';
 
@@ -147,6 +148,9 @@
 
 		saveSession.markLoaded(loadedRev, sharing);
 	});
+
+	// Notice other people's saves while this chart is open.
+	$effect(() => saveSession.watch());
 
 	/** Viewers and readers of someone else's published chart can look, not change. */
 	const readOnly = $derived(!saveSession.can('edit'));
@@ -561,6 +565,34 @@
 						{/if}
 					</div>
 				</div>
+
+				{#if saveSession.accessLost}
+					<div
+						class="border-b border-warm-grey bg-light-warm-grey px-5 py-2 text-sm text-dark-grey"
+						role="status"
+					>
+						You can no longer open this chart: it was deleted or is no longer shared with you.
+						Changes here can't be saved.
+					</div>
+				{:else if saveSession.remote}
+					<div
+						class="flex flex-wrap items-center gap-3 border-b border-warm-grey bg-light-warm-grey px-5 py-2 text-sm"
+						role="status"
+					>
+						<span class="min-w-0 flex-1 text-dark-grey">
+							{saveSession.remote.userEmail ?? 'Someone else'} saved changes{saveSession.remote
+								.summary
+								? ` (${saveSession.remote.summary})`
+								: ''}{saveSession.remote.at ? ` ${timeAgo(saveSession.remote.at)}` : ''}.
+						</span>
+						<StratifyButton
+							onclick={() => saveSession.pullIn()}
+							disabled={saveSession.action !== null}
+						>
+							{saveSession.action === 'pull' ? 'Pulling in…' : 'Pull in'}
+						</StratifyButton>
+					</div>
+				{/if}
 
 				{#if preview}
 					<div

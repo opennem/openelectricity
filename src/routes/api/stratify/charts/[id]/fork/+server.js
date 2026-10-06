@@ -10,18 +10,19 @@ export async function POST({ request, params }) {
 	if (loaded.response) return loaded.response;
 	const { client, auth, chart: source } = loaded;
 
-	// Strip Sanity metadata and reassign ownership
+	// Strip Sanity metadata, ownership, publish state and sharing; the fork is
+	// a new private draft.
 	const {
 		_id,
 		_rev,
 		_type,
 		_createdAt,
 		_updatedAt,
-		userId,
-		userEmail,
-		status,
-		publishedAt,
-		collaborators,
+		userId: _userId,
+		userEmail: _userEmail,
+		status: _status,
+		publishedAt: _publishedAt,
+		collaborators: _collaborators,
 		...chartFields
 	} = source;
 

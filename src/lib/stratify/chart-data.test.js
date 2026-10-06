@@ -226,10 +226,23 @@ describe('normaliseChart', () => {
 		expect(result.csvText).toBe('date,value\n2024-01-01,100');
 		expect(result.chartType).toBe('column-stacked');
 		expect(result.chartHeight).toBe(600);
-		expect(result.stylePreset).toBe('oe');
+		expect(result.stylePreset).toBe('sans');
 		expect(result.showBranding).toBe(false);
 		expect(result.xLabel).toBe('Year');
 		expect(result.yLabel).toBe('GWh');
+	});
+
+	it('migrates a legacy style preset the same way the builder does', () => {
+		const result = normaliseChart({ _id: 'legacy', stylePreset: 'default' });
+
+		expect(result.stylePreset).toBe('mono');
+		expect(result.colourPalette).toBe('tableau10');
+	});
+
+	it('keeps an explicit palette over the preset-derived one', () => {
+		const result = normaliseChart({ _id: 'c', stylePreset: 'default', colourPalette: 'set2' });
+
+		expect(result.colourPalette).toBe('set2');
 	});
 
 	it('parses JSON string fields', () => {

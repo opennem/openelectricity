@@ -15,8 +15,12 @@ import {
 	WATERFALL_ROLE_LABELS,
 	getWaterfallRoleColours
 } from '$lib/stratify/chart-types.js';
-import { getNumericSeriesNames, uniqueColumnValues } from '$lib/stratify/chart-data.js';
-import { normaliseSnapshot, PROJECT_FIELD_KEYS } from './snapshot.js';
+import {
+	getNumericSeriesNames,
+	normaliseSnapshot,
+	uniqueColumnValues
+} from '$lib/stratify/chart-data.js';
+import { CHART_FIELDS } from '$lib/stratify/chart-fields.js';
 import {
 	compileAnnotationItems,
 	createAnnotationItem,
@@ -31,6 +35,14 @@ import {
 /**
  * @typedef {import('$lib/stratify/chart-types.js').ChartType} ChartType
  */
+
+/**
+ * Registry fields the project holds as state. `version` is fixed by
+ * `toJSON()` and `publishedAt` lives only on the server.
+ */
+const PROJECT_FIELD_KEYS = CHART_FIELDS.map((field) => field.key).filter(
+	(key) => key !== 'version' && key !== 'publishedAt'
+);
 
 /**
  * @typedef {Object} StratifyPlotSnapshot
@@ -782,89 +794,10 @@ export default class StratifyPlotProject {
 		this.annotationItems = this.annotationItems.filter((item) => item.id !== id);
 	}
 
-	/** Reset the project to a blank state. */
+	/** Reset the project to a blank, unsaved chart (every registry default). */
 	reset() {
-		this.csvText = '';
-		this.annotationItems = [];
-		this.annotationStyle = { ...DEFAULT_ANNOTATION_STYLE };
-		this.annotations = [];
-		this.title = '';
-		this.description = '';
-		this.dataSource = '';
-		this.notes = '';
-		this.displayMode = 'auto';
-		this.chartType = 'line';
-		this.stylePreset = 'sans';
-		this.colourPalette = 'oe-energy';
-		this.hiddenSeries = [];
-		this.userSeriesColours = {};
-		this.userSeriesLabels = {};
-		this.seriesChartTypes = {};
-		this.seriesLineStyles = {};
-		this.plotOverrides = null;
-		this.seriesOrder = [];
-		this.chartHeight = 250;
-		this.showXTickLabels = true;
-		this.xTicks = 0;
-		this.xTickRotate = 0;
-		this.marginBottom = 0;
-		this.marginLeft = 0;
-		this.yTicks = 0;
-		this.yMinMax = false;
-		this.y1Min = null;
-		this.y1Max = null;
-		this.y2Ticks = 0;
-		this.y2MinMax = false;
-		this.y2Min = null;
-		this.y2Max = null;
-		this.tooltipColumns = [];
-		this.tooltipDateFormat = 'date';
-		this.dataTransform = 'none';
-		this.categorySort = 'default';
-		this.xColumn = '';
-		this.colourSeries = null;
-		this.facetColumn = null;
-		this.facetPanelsPerRow = 0;
-		this.animateAsOneChart = false;
-		this.animationSpeedMs = 800;
-		this.animationAutoLoop = false;
-		this.animationAutoPlay = false;
-		this.animationTween = true;
-		this.chartCurve = 'linear';
-		this.lineRangeMinColumn = null;
-		this.lineRangeMaxColumn = null;
-		this.lineRangeOpacity = 0.2;
-		this.scatterSizeColumn = null;
-		this.scatterPointRadius = 4;
-		this.scatterMinRadius = 3;
-		this.scatterMaxRadius = 18;
-		this.scatterPointOpacity = 0.7;
-		this.waterfallMode = 'single';
-		this.waterfallShowTotal = true;
-		this.waterfallColourMode = 'semantic';
-		this.valueFormat = '1';
-		this.chartBorderWidth = 0.5;
-		this.chartBorderColour = '#000000';
-		this.xLabel = '';
-		this.yLabel = '';
-		this.seriesYAxis = {};
-		this.y2Label = '';
-		this.status = 'draft';
-		this.showLegend = true;
-		this.showBranding = true;
+		this.loadFromSnapshot({});
 		this.currentChartId = null;
-		this.latColumn = null;
-		this.lngColumn = null;
-		this.labelColumn = null;
-		this.sizeColumn = null;
-		this.mapColourMode = 'single';
-		this.colourColumn = null;
-		this.singleMarkerColour = '#3b82f6';
-		this.mapRangeMinColour = '#dbeafe';
-		this.mapRangeMaxColour = '#1e3a8a';
-		this.mapMinRadius = 4;
-		this.mapMaxRadius = 24;
-		this.mapTheme = 'light';
 	}
 
 	/**

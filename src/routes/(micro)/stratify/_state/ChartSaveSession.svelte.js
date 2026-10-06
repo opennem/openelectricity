@@ -8,6 +8,11 @@
  * changed update in place, and fields both sides changed become a
  * `conflict` for the user to resolve. See `PATCH /api/stratify/charts/:id`.
  *
+ * While a chart is open, `watch()` checks every 30 seconds (when the tab is
+ * visible) whether someone else saved. With no unsaved edits their changes
+ * are pulled in at once; otherwise `remote` describes the change for a
+ * banner, and `pullIn()` merges it the same way a save does.
+ *
  * It also holds what the current user may do with the chart (`access`, from
  * `$lib/stratify/chart-permissions.js`) and who it is shared with, since
  * sharing changes move the chart's `_rev` too.
@@ -17,12 +22,14 @@
  */
 
 import { diffSnapshots, getChartField, mergeFields } from '$lib/stratify/chart-fields.js';
-import { normaliseSnapshot } from './snapshot.js';
+import { normaliseSnapshot } from '$lib/stratify/chart-data.js';
 import { canAccess } from '$lib/stratify/chart-permissions.js';
 import {
 	ApiError,
 	addCollaborator,
 	createChart,
+	getChart,
+	getChartHead,
 	removeCollaborator,
 	restoreRevision,
 	setCollaboratorRole,
@@ -31,6 +38,19 @@ import {
 
 /** Saves that keep finding fresh-but-compatible server changes give up after this. */
 const MAX_REBASES = 2;
+
+/** How often an open builder checks whether someone else saved. */
+export const HEAD_POLL_MS = 30_000;
+
+/**
+ * Someone else's save the editor hasn't pulled in yet.
+ * @typedef {Object} RemoteChange
+ * @property {string} rev
+ * @property {string | null} userEmail
+ * @property {string} kind
+ * @property {string} summary
+ * @property {string | null} at
+ */
 
 /**
  * @typedef {Object} SaveConflictField
@@ -58,6 +78,8 @@ const MAX_REBASES = 2;
  * @property {typeof addCollaborator} addCollaborator
  * @property {typeof setCollaboratorRole} setCollaboratorRole
  * @property {typeof removeCollaborator} removeCollaborator
+ * @property {typeof getChart} getChart
+ * @property {typeof getChartHead} getChartHead
  */
 
 /** @typedef {import('$lib/stratify/chart-permissions.js').ChartAccess} ChartAccess */
@@ -70,7 +92,9 @@ const DEFAULT_API = {
 	restoreRevision,
 	addCollaborator,
 	setCollaboratorRole,
-	removeCollaborator
+	removeCollaborator,
+	getChart,
+	getChartHead
 };
 
 /**
@@ -94,7 +118,7 @@ export default class ChartSaveSession {
 	/** @type {'idle' | 'saving' | 'saved' | 'error'} */
 	status = $state('idle');
 
-	/** @type {'save' | 'publish' | 'unpublish' | 'restore' | null} The action in flight */
+	/** @type {'save' | 'publish' | 'unpublish' | 'restore' | 'pull' | null} The action in flight */
 	action = $state(null);
 
 	/** @type {string | null} */
@@ -111,6 +135,12 @@ export default class ChartSaveSession {
 
 	/** @type {string | null} */
 	ownerEmail = $state(null);
+
+	/** @type {RemoteChange | null} A save by someone else, waiting to be pulled in */
+	remote = $state.raw(null);
+
+	/** The chart stopped being readable (deleted, or sharing removed). */
+	accessLost = $state(false);
 
 	/** Whether the project differs from the base in a way this user can save. */
 	isDirty = $derived.by(() => {
@@ -154,6 +184,7 @@ export default class ChartSaveSession {
 	markLoaded(rev, chart = {}) {
 		this.#base = { snapshot: this.#current(), rev };
 		this.conflict = null;
+		this.remote = null;
 		if (chart.access) this.access = chart.access;
 		if (chart.collaborators) this.collaborators = chart.collaborators;
 		if (chart.ownerEmail !== undefined) this.ownerEmail = chart.ownerEmail;
@@ -282,6 +313,97 @@ export default class ChartSaveSession {
 		}
 	}
 
+	/**
+	 * Check now and then for other people's saves, while the tab is visible.
+	 * Returns a cleanup for `$effect`.
+	 * @param {number} [intervalMs]
+	 * @returns {() => void}
+	 */
+	watch(intervalMs = HEAD_POLL_MS) {
+		const check = () => {
+			if (!document.hidden) this.checkForChanges();
+		};
+		const timer = setInterval(check, intervalMs);
+		document.addEventListener('visibilitychange', check);
+		return () => {
+			clearInterval(timer);
+			document.removeEventListener('visibilitychange', check);
+		};
+	}
+
+	/**
+	 * Ask the server whether the chart moved past the base. With no unsaved
+	 * edits, pull the change in straight away; otherwise record it in
+	 * `remote` for the user to pull in when ready.
+	 */
+	async checkForChanges() {
+		const id = this.#project.currentChartId;
+		const base = this.#base;
+		if (!id || !base?.rev || this.action || this.accessLost) return;
+
+		/** @type {import('../_utils/api.js').ChartHead} */
+		let head;
+		try {
+			head = await this.#api.getChartHead(id);
+		} catch (error) {
+			if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
+				this.accessLost = true;
+				this.remote = null;
+			}
+			return;
+		}
+
+		// A save, restore or pull may have started or finished meanwhile.
+		if (this.action || this.#base?.rev !== base.rev) return;
+		if (head.rev === base.rev) {
+			this.remote = null;
+			return;
+		}
+
+		if (!this.isDirty && !this.conflict) {
+			await this.pullIn();
+			return;
+		}
+		this.remote = {
+			rev: head.rev,
+			userEmail: head.latest?.userEmail ?? null,
+			kind: head.latest?.kind ?? 'edit',
+			summary: head.latest?.summary ?? '',
+			at: head.latest?.at ?? null
+		};
+	}
+
+	/**
+	 * Bring the latest saved chart into the editor: settings only others
+	 * changed update in place, and fields both sides changed open the
+	 * conflict prompt. Sharing and access follow the server too.
+	 * @returns {Promise<boolean>} true when merged without a conflict
+	 */
+	async pullIn() {
+		const id = this.#project.currentChartId;
+		const base = this.#base;
+		if (!id || !base || this.action) return false;
+		this.action = 'pull';
+		this.errorMessage = null;
+		try {
+			const latest = await this.#api.getChart(id);
+			if (latest.access) this.access = latest.access;
+			if (latest.collaborators) this.collaborators = latest.collaborators;
+			this.remote = null;
+			return this.#reconcile(latest, base.snapshot, {});
+		} catch (error) {
+			if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
+				this.accessLost = true;
+				this.remote = null;
+			} else {
+				this.errorMessage = error instanceof Error ? error.message : 'Could not load changes';
+			}
+			return false;
+		} finally {
+			this.action = null;
+		}
+	}
+
 	/** Close the conflict prompt; the edits stay unsaved. */
 	dismissConflict() {
 		this.conflict = null;
@@ -307,6 +429,8 @@ export default class ChartSaveSession {
 		try {
 			if (!this.#project.currentChartId) await this.#create();
 			const saved = await this.#saveChanges(publishFields, only);
+			// A successful save has merged whatever the server held.
+			if (saved) this.remote = null;
 			this.#settle(saved ? 'saved' : 'idle');
 			return saved;
 		} catch (error) {
@@ -418,6 +542,7 @@ export default class ChartSaveSession {
 		}
 		this.#project.status = theirs.status;
 		this.#base = { snapshot: theirs, rev };
+		this.remote = null;
 	}
 
 	/** @param {'idle' | 'saved' | 'error'} status */

@@ -136,6 +136,22 @@ export async function getChart(id) {
 }
 
 /**
+ * @typedef {Object} ChartHead
+ * @property {string} rev - The chart's current `_rev`
+ * @property {{ userEmail: string | null, kind: string, summary: string, at: string } | null} latest - Its latest change
+ */
+
+/**
+ * The chart's current revision and latest change; cheap enough to poll.
+ * Rejects with an `ApiError` 404 once the user can no longer read it.
+ * @param {string} id
+ * @returns {Promise<ChartHead>}
+ */
+export async function getChartHead(id) {
+	return authFetch(`/api/stratify/charts/${id}/head`);
+}
+
+/**
  * Create a new chart.
  * @param {import('../_state/StratifyPlotProject.svelte.js').StratifyPlotSnapshot} snapshot
  * @returns {Promise<{ _id: string, _rev: string }>}
@@ -227,6 +243,7 @@ export async function restoreRevision(id, revisionId) {
  * @property {string} email
  * @property {import('$lib/stratify/chart-permissions.js').CollaboratorRole} role
  * @property {string} addedAt
+ * @property {boolean} [isAdmin] - False once they lose the admin role (owner's view only)
  */
 
 /**
@@ -235,6 +252,24 @@ export async function restoreRevision(id, revisionId) {
  * @property {{ _id: string, _rev: string }} chart
  * @property {string | null} parentRev - The chart revision the change replaced; null if unchanged
  */
+
+/**
+ * @typedef {Object} AdminSuggestion
+ * @property {string} userId
+ * @property {string} email
+ * @property {string | null} name
+ */
+
+/**
+ * Admins matching a partial email, name or username (two characters or
+ * more), for share suggestions.
+ * @param {string} query
+ * @returns {Promise<AdminSuggestion[]>}
+ */
+export async function searchAdmins(query) {
+	const data = await authFetch(`/api/stratify/admins?${new URLSearchParams({ q: query })}`);
+	return data.admins;
+}
 
 /**
  * Share a chart with an admin by email, or change their role.

@@ -48,7 +48,9 @@ function createApi() {
 			)
 		),
 		setCollaboratorRole: vi.fn(/** @type {ApiCall} */ (async () => ({}))),
-		removeCollaborator: vi.fn(/** @type {ApiCall} */ (async () => ({})))
+		removeCollaborator: vi.fn(/** @type {ApiCall} */ (async () => ({}))),
+		getChart: vi.fn(/** @type {ApiCall} */ (async () => ({}))),
+		getChartHead: vi.fn(/** @type {ApiCall} */ (async () => ({ rev: 'rev-1', latest: null })))
 	};
 }
 
@@ -345,5 +347,97 @@ describe('ChartSaveSession permissions and sharing', () => {
 		expect(await session.share('x@example.com', 'viewer')).toBe(
 			'Only the owner can share this chart'
 		);
+	});
+});
+
+describe('ChartSaveSession remote changes', () => {
+	const HEAD = {
+		rev: 'rev-4',
+		latest: {
+			userEmail: 'c@example.com',
+			kind: 'edit',
+			summary: 'Chart height',
+			at: '2026-10-06T06:00:00.000Z'
+		}
+	};
+
+	it('does nothing while the chart is still at the base revision', async () => {
+		const api = createApi();
+		const { session } = loadedSession(api);
+
+		await session.checkForChanges();
+
+		expect(session.remote).toBeNull();
+		expect(api.getChart).not.toHaveBeenCalled();
+	});
+
+	it("pulls others' changes straight in when there is nothing unsaved", async () => {
+		const api = createApi();
+		api.getChartHead.mockResolvedValueOnce(HEAD);
+		api.getChart.mockResolvedValueOnce(
+			serverChart({ _rev: 'rev-4', chartHeight: 400, access: 'owner', collaborators: [] })
+		);
+		const { project, session } = loadedSession(api);
+
+		await session.checkForChanges();
+
+		expect(project.chartHeight).toBe(400);
+		expect(session.rev).toBe('rev-4');
+		expect(session.remote).toBeNull();
+		expect(session.isDirty).toBe(false);
+	});
+
+	it('waits for the user when they have unsaved edits, then merges on pull-in', async () => {
+		const api = createApi();
+		api.getChartHead.mockResolvedValueOnce(HEAD);
+		api.getChart.mockResolvedValueOnce(serverChart({ _rev: 'rev-4', chartHeight: 400 }));
+		const { project, session } = loadedSession(api);
+
+		project.title = 'Mine';
+		await session.checkForChanges();
+
+		expect(session.remote).toMatchObject({ rev: 'rev-4', userEmail: 'c@example.com' });
+		expect(project.chartHeight).toBe(250);
+
+		expect(await session.pullIn()).toBe(true);
+		expect(project.chartHeight).toBe(400);
+		expect(project.title).toBe('Mine');
+		expect(session.isDirty).toBe(true);
+		expect(session.remote).toBeNull();
+	});
+
+	it('opens the conflict prompt when pulling in a field the user also changed', async () => {
+		const api = createApi();
+		api.getChart.mockResolvedValueOnce(serverChart({ _rev: 'rev-4', title: 'Theirs' }));
+		const { project, session } = loadedSession(api);
+
+		project.title = 'Mine';
+		expect(await session.pullIn()).toBe(false);
+
+		expect(session.conflict?.fields.map((field) => field.field)).toEqual(['title']);
+		expect(project.title).toBe('Mine');
+	});
+
+	it('follows a role change made by the owner', async () => {
+		const api = createApi();
+		api.getChart.mockResolvedValueOnce(serverChart({ _rev: 'rev-4', access: 'viewer' }));
+		const { session } = loadedSession(api);
+		session.markLoaded('rev-1', { access: 'editor' });
+
+		await session.pullIn();
+
+		expect(session.access).toBe('viewer');
+	});
+
+	it('notices when the user can no longer open the chart', async () => {
+		const api = createApi();
+		api.getChartHead.mockRejectedValueOnce(new ApiError('Not found', 404, {}));
+		const { session } = loadedSession(api);
+
+		await session.checkForChanges();
+
+		expect(session.accessLost).toBe(true);
+		await session.checkForChanges();
+		expect(api.getChartHead).toHaveBeenCalledOnce();
 	});
 });

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
 	fetch: vi.fn(),
 	verifyAdmin: vi.fn(),
+	findAdminIds: vi.fn(),
 	saveChartFields: vi.fn()
 }));
 
@@ -11,7 +12,8 @@ vi.mock('$lib/sanity-cms.js', () => ({
 }));
 
 vi.mock('$lib/auth/clerk-server.js', () => ({
-	verifyAdmin: mocks.verifyAdmin
+	verifyAdmin: mocks.verifyAdmin,
+	findAdminIds: mocks.findAdminIds
 }));
 
 vi.mock('$lib/server/stratify/save-chart.js', async (importOriginal) => ({
@@ -186,6 +188,32 @@ describe('GET /api/stratify/charts/:id', () => {
 		const chart = await getChart({ userId: 'user-9', status: 'draft', collaborators });
 
 		expect(chart).toMatchObject({ access: 'viewer', collaborators });
+	});
+
+	it('flags collaborators who lost the admin role, for the owner', async () => {
+		mocks.findAdminIds.mockResolvedValue(new Set(['user-4']));
+		const chart = await getChart({
+			userId: 'user-1',
+			status: 'draft',
+			collaborators: [
+				{ userId: 'user-4', role: 'editor' },
+				{ userId: 'user-5', role: 'viewer' }
+			]
+		});
+
+		expect(chart.collaborators).toEqual([
+			{ userId: 'user-4', role: 'editor', isAdmin: true },
+			{ userId: 'user-5', role: 'viewer', isAdmin: false }
+		]);
+	});
+
+	it('still loads the chart when the admin lookup fails', async () => {
+		mocks.findAdminIds.mockRejectedValue(new Error('Clerk down'));
+		const collaborators = [{ userId: 'user-4', role: 'editor' }];
+
+		const chart = await getChart({ userId: 'user-1', status: 'draft', collaborators });
+
+		expect(chart.collaborators).toEqual(collaborators);
 	});
 
 	it('hides collaborators from readers of a published chart', async () => {

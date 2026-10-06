@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { decodeChartFields } from '$lib/stratify/chart-data.js';
+import { findAdminIds } from '$lib/auth/clerk-server.js';
 import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
 import { canAccess } from '$lib/stratify/chart-permissions.js';
 import { pickChartFields, saveChartFields } from '$lib/server/stratify/save-chart.js';
@@ -9,7 +10,9 @@ import { deleteChartWithRevisions } from '$lib/server/stratify/revisions.js';
  * GET /api/stratify/charts/:id — fetch a single chart, with the caller's
  * `access` (see `$lib/stratify/chart-permissions.js`).
  * The owner, superadmins and collaborators can read it; other admins can
- * read published charts, without the collaborator list.
+ * read published charts, without the collaborator list. For the owner,
+ * each collaborator carries `isAdmin`: false once they have lost the admin
+ * role (their access has already ended; the owner can remove them).
  * @type {import('./$types').RequestHandler}
  */
 export async function GET({ request, params }) {
@@ -17,13 +20,31 @@ export async function GET({ request, params }) {
 	if (loaded.response) return loaded.response;
 	const { chart, access } = loaded;
 
+	/** @type {Array<Record<string, any>>} */
+	const collaborators = access === 'reader' ? [] : (chart.collaborators ?? []);
+
 	return json({
 		chart: {
 			...decodeChartFields(chart),
-			collaborators: access === 'reader' ? [] : (chart.collaborators ?? []),
+			collaborators: access === 'owner' ? await withAdminStatus(collaborators) : collaborators,
 			access
 		}
 	});
+}
+
+/**
+ * Flag collaborators who are no longer admins. If Clerk can't be reached,
+ * the list is returned unflagged rather than failing the chart load.
+ * @param {Array<Record<string, any>>} collaborators
+ */
+async function withAdminStatus(collaborators) {
+	if (collaborators.length === 0) return collaborators;
+	try {
+		const admins = await findAdminIds(collaborators.map((person) => person.userId));
+		return collaborators.map((person) => ({ ...person, isAdmin: admins.has(person.userId) }));
+	} catch {
+		return collaborators;
+	}
 }
 
 /**

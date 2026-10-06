@@ -49,3 +49,46 @@ export async function findAdminByEmail(email) {
 	return { userId: user.id, email: address };
 }
 
+/**
+ * Which of the given users currently have the admin role, in one Clerk
+ * call. Used to flag chart collaborators who have lost it.
+ * @param {string[]} userIds
+ * @returns {Promise<Set<string>>}
+ */
+export async function findAdminIds(userIds) {
+	if (userIds.length === 0) return new Set();
+	const clerk = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
+	const { data } = await clerk.users.getUserList({ userId: userIds, limit: userIds.length });
+	return new Set(data.filter(isAdminUser).map((user) => user.id));
+}
+
+/** Clerk matches fetched per search, before keeping only admins. */
+const ADMIN_SEARCH_SCAN = 50;
+
+/**
+ * Admins whose email, name or username contains `query`, for suggesting
+ * people to share a Stratify chart with. Clerk can't filter on private
+ * metadata, so this scans the first matches and keeps the admins.
+ * @param {string} query
+ * @param {{ limit?: number }} [options]
+ * @returns {Promise<Array<{ userId: string, email: string, name: string | null }>>}
+ */
+export async function searchAdmins(query, { limit = 10 } = {}) {
+	const clerk = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
+	const { data } = await clerk.users.getUserList({
+		query,
+		limit: ADMIN_SEARCH_SCAN,
+		orderBy: '-last_active_at'
+	});
+	return data
+		.filter(isAdminUser)
+		.slice(0, limit)
+		.map((user) => {
+			const primary =
+				user.emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId) ??
+				user.emailAddresses[0];
+			const name = [user.firstName, user.lastName].filter(Boolean).join(' ');
+			return { userId: user.id, email: primary?.emailAddress ?? '', name: name || null };
+		})
+		.filter((admin) => admin.email);
+}

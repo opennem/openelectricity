@@ -7,7 +7,9 @@
 
 import { migrateChartType } from '$lib/stratify/chart-types.js';
 import { DEFAULT_ANNOTATION_STYLE } from '$lib/stratify/annotation-data.js';
-import { CHART_FIELDS, chartFieldDefault } from '$lib/stratify/chart-fields.js';
+import { migratePreset } from '$lib/stratify/chart-styles.js';
+import { migratePresetToPalette } from '$lib/stratify/colour-palettes.js';
+import { CHART_FIELDS, chartFieldDefault, withChartDefaults } from '$lib/stratify/chart-fields.js';
 
 /**
  * Collect the unique values of a column from a row array, preserving
@@ -89,20 +91,41 @@ export function decodeChartFields(chart) {
 }
 
 /**
- * Normalise a raw Sanity stratifyChart document into a consistent shape
- * with defaults applied and JSON fields parsed. Only chart settings from
- * the field registry are returned (no meta, ownership or Sanity fields
- * other than `_id`).
+ * Every registry field of a decoded chart or snapshot, defaulted and with
+ * legacy values migrated (chart type, style preset, and a palette derived
+ * from an old preset). The single definition of what a stored chart means:
+ * the builder loads it (`StratifyPlotProject.loadFromSnapshot`), the save
+ * session compares against it, and `normaliseChart` renders from it.
+ * @param {Record<string, any>} raw - Decoded chart document or snapshot
+ * @returns {Record<string, any>}
+ */
+export function normaliseSnapshot(raw) {
+	const values = withChartDefaults(raw);
+	return {
+		...values,
+		annotationItems: Array.isArray(raw.annotationItems) ? raw.annotationItems : [],
+		annotationStyle: { ...DEFAULT_ANNOTATION_STYLE, ...(raw.annotationStyle ?? {}) },
+		annotations: Array.isArray(raw.annotations) ? raw.annotations : [],
+		chartType: migrateChartType(values.chartType),
+		stylePreset: migratePreset(values.stylePreset),
+		colourPalette: raw.colourPalette ?? migratePresetToPalette(raw.stylePreset ?? 'oe')
+	};
+}
+
+/**
+ * Normalise a raw Sanity stratifyChart document for rendering: JSON fields
+ * parsed, defaults and migrations applied (`normaliseSnapshot`). Only chart
+ * settings are returned (no meta, ownership or Sanity fields other than
+ * `_id`).
  * @param {Record<string, any>} chart - Raw Sanity document
  * @returns {Record<string, any>}
  */
 export function normaliseChart(chart) {
+	const settings = normaliseSnapshot(decodeChartFields(chart));
 	/** @type {Record<string, any>} */
 	const normalised = { _id: chart._id };
 	for (const field of CHART_FIELDS) {
-		if (field.group !== 'meta') normalised[field.key] = readChartField(chart, field);
+		if (field.group !== 'meta') normalised[field.key] = settings[field.key];
 	}
-	normalised.chartType = migrateChartType(normalised.chartType);
-	normalised.annotationStyle = { ...DEFAULT_ANNOTATION_STYLE, ...normalised.annotationStyle };
 	return normalised;
 }

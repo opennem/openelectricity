@@ -45,7 +45,6 @@ src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/foo
 ├── _state/
 │   ├── StratifyPlotProject.svelte.js  # Central state class (runes)
 │   ├── ChartSaveSession.svelte.js     # Conflict-safe saving, access and sharing for the open chart
-│   ├── snapshot.js                    # normaliseSnapshot (defaults + legacy migrations)
 │   └── context.js                     # setContext/getContext helpers
 ├── _utils/
 │   ├── api.js                         # Sanity CMS CRUD client (list, get, create, field save, delete, fork); ApiError
@@ -66,7 +65,6 @@ src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/foo
     ├── ColourPicker.svelte            # Shared colour picker: theme swatches + native + hex + reset (Series panel + map controls)
     ├── DataInput.svelte               # CSV/TSV textarea + data preview
     ├── ExamplePicker.svelte           # Example dataset buttons
-    ├── ChartManager.svelte            # Full chart management modal
     ├── ChartCard.svelte               # List card: thumbnail + title/status/meta + actions
     ├── ChartThumbnail.svelte          # Scaled-down live chart preview (500×400 → card width); map placeholder
     ├── SectionPagination.svelte       # Prev/next pagination for one list section
@@ -141,16 +139,20 @@ document goes through it:
 - `PATCH /api/stratify/charts/:id` saves only changed registry fields and
   ignores other keys (see [Saving and conflicts](#saving-and-conflicts)).
 - `GET /api/stratify/charts/:id` returns the document with its JSON fields
-  parsed (`decodeChartFields()`); `normaliseChart()` also applies defaults
-  for the public render paths.
+  parsed (`decodeChartFields()`).
+- `normaliseSnapshot()` in `chart-data.js` is the one definition of what a
+  stored chart means: registry defaults plus legacy migrations (chart type,
+  style preset, palette derived from an old preset). The builder loads it,
+  the save session compares against it, and `normaliseChart()` (public
+  `/strata/{id}`, embeds, article embeds) renders from it, so published
+  charts match the builder.
 - `diffSnapshots()` and `mergeFields()` compare chart settings field by
   field (meta fields excluded) for dirty tracking, saves and merges.
 
-To add a chart setting, add it to the registry and to
-`StratifyPlotProject` (`$state`, `toJSON()`, `loadFromSnapshot()`, `reset()`).
-`StratifyPlotProject.svelte.test.js` fails if `toJSON()` and the registry
-drift apart. `loadFromSnapshot()` assigns `normaliseSnapshot()` from
-`_state/snapshot.js` (registry defaults plus legacy migrations).
+To add a chart setting, add it to the registry and to `StratifyPlotProject`
+(a `$state` field and a line in `toJSON()`); `loadFromSnapshot()` and
+`reset()` take it from the registry. `StratifyPlotProject.svelte.test.js`
+fails if `toJSON()` and the registry drift apart.
 
 ### Collaborators and access
 
@@ -180,6 +182,11 @@ userId, email, role, addedAt, addedBy }]` (at most 20), so the list API's
   is logged as a `collaborator` revision in the same transaction, so
   editors' saves merge past it; the response's `parentRev` lets the
   builder move its base revision forward.
+- Typing two or more characters in the People field suggests matching
+  admins (`GET /api/stratify/admins?q=`, admins only, uncached;
+  `searchAdmins` in `$lib/auth/clerk-server.js`). Clerk can't filter on
+  private metadata, so it scans the first 50 matches for the text and keeps
+  up to 10 admins; the owner and current collaborators are left out.
 - In the builder, viewers and readers see a "Fork" banner and every control
   outside the Share step sits in a disabled `<fieldset>`; Save, Publish and
   Restore show only when allowed.
@@ -216,6 +223,31 @@ before the first logged save of an older chart), `fields`, `changes`
 (JSON `[{ field, before, after }]`), `summary`, author and `createdAt`.
 Deleting a chart deletes its revisions. A PATCH body without `fields` (an
 editor opened before this protocol) is saved without conflict checks.
+
+### Noticing other people's saves
+
+While a saved chart is open, `ChartSaveSession.watch()` polls
+`GET /api/stratify/charts/:id/head` (`{ rev, latest }`, two small
+projections) every 30 seconds when the tab is visible, and again when the
+tab becomes visible.
+
+- If the chart moved on and you have **no unsaved edits**, the change is
+  pulled in at once.
+- If you **do**, a banner names who saved what ("… saved changes (Title)
+  5m ago") with **Pull in**, which merges like a save: settings only they
+  changed update in place; settings you both changed open the conflict
+  dialog. Your own save also merges whatever the server holds.
+- Sharing and role changes come with a pull-in, so an editor turned viewer
+  goes read-only. Once the chart can't be read (deleted or unshared), a
+  banner says changes can't be saved and polling stops.
+
+There is no live presence ("also viewing"); that waits for the history
+store move (D1 or KV), so it isn't built on Sanity.
+
+`_state/collaboration.svelte.test.js` runs two builder sessions against the
+real server save, restore and sharing code with an in-memory Sanity:
+merges, conflicts, pull-in, restore, merged history entries and read-only
+viewers. (A browser test would need Clerk test accounts.)
 
 ### History and restore
 
@@ -420,7 +452,7 @@ The CSV parser stores the first column under a synthetic key (`category` / `line
 
 ### Sanity persistence
 
-The 12 map fields (`latColumn`, `lngColumn`, `labelColumn`, `sizeColumn`, `mapColourMode`, `colourColumn`, `singleMarkerColour`, `mapRangeMinColour`, `mapRangeMaxColour`, `mapMinRadius`, `mapMaxRadius`, `mapTheme`) round-trip through Sanity via `POST /api/stratify/charts`, `PATCH /api/stratify/charts/:id`, and `normaliseChart()` in `chart-data.js`. They're also covered by `StratifyPlotProject.toJSON()` / `loadFromSnapshot()` and the `reset()` defaults.
+The 12 map fields (`latColumn`, `lngColumn`, `labelColumn`, `sizeColumn`, `mapColourMode`, `colourColumn`, `singleMarkerColour`, `mapRangeMinColour`, `mapRangeMaxColour`, `mapMinRadius`, `mapMaxRadius`, `mapTheme`) round-trip through Sanity via `POST /api/stratify/charts`, `PATCH /api/stratify/charts/:id`, and `normaliseChart()` in `chart-data.js`. They're also covered by `StratifyPlotProject.toJSON()` / `loadFromSnapshot()`.
 
 ## Waterfall Chart Type
 
@@ -468,7 +500,7 @@ and (for maps) `StratifyMapChart`'s legend descriptor.
 
 `waterfallMode`, `waterfallShowTotal`, `waterfallColourMode`, and `valueFormat` round-trip
 through `POST` / `PATCH /api/stratify/charts`, `StratifyPlotProject.toJSON()` /
-`loadFromSnapshot()`, the `reset()` defaults, **and `normaliseChart()` in `chart-data.js`**
+`loadFromSnapshot()`, **and `normaliseChart()` in `chart-data.js`**
 (the published `/strata/{id}` + embed render path — missing fields there fall back to single
 colour) — same pattern as the other scalar fields.
 
