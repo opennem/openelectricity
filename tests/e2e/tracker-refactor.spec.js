@@ -1483,11 +1483,14 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	]);
 	expect(right.x).toBeGreaterThan(left.x + left.width);
 	expect(Math.abs(right.y - left.y)).toBeLessThan(2);
-	// Percentile bands by default: the 10–90% and 25–75% spread (an invisible
-	// base and four bands) with a dark median. The strip reads the slot's
-	// average; the table swaps its columns for each technology's percentiles.
-	await expect(styleButton(page, 'Percentile bands')).toHaveAttribute('aria-pressed', 'true');
+	// Multi-line by default.
+	await expect(styleButton(page, 'Multi-line')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page).not.toHaveURL(/profile-style/);
+	// Percentile bands: the 10–90% and 25–75% spread (an invisible base and
+	// four bands) with a dark median. The strip reads the slot's average; the
+	// table swaps its columns for each technology's percentiles.
+	await styleButton(page, 'Percentile bands').click();
+	await expect(page).toHaveURL(/profile-style=bands/);
 	await expect(charts.first().locator('path.path-area')).toHaveCount(5);
 	await expect(charts.first().locator('path.overlay-line')).toHaveCount(1);
 	await expect(charts.first().locator('path.overlay-line')).toHaveAttribute('stroke', '#222222');
@@ -1553,7 +1556,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await page.mouse.move(0, 0);
 	// Multi-line: the average area with the 7 days, the dark average and today.
 	await styleButton(page, 'Multi-line').click();
-	await expect(page).toHaveURL(/profile-style=lines/);
+	await expect(page).not.toHaveURL(/profile-style/);
 	await expect(charts).toHaveCount(4);
 	await expect(charts.first().locator('path.path-area')).toHaveCount(1);
 	await expect(charts.first().locator('path.overlay-line')).toHaveCount(9);
@@ -1708,7 +1711,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await expect(table.locator('th[data-column="2026-08-25"]')).toHaveClass(/bg-warm-grey/);
 	await page.mouse.move(0, 0);
 	await styleButton(page, 'Percentile bands').click();
-	await expect(page).not.toHaveURL(/profile-style/);
+	await expect(page).toHaveURL(/profile-style=bands/);
 	await expect(showToday).toBeEnabled();
 	await expect(showToday).toHaveAttribute('aria-checked', 'true');
 	await page.getByRole('button', { name: 'Stacked', exact: true }).click();
@@ -1841,7 +1844,9 @@ test('time-of-day profiles keep requests bounded and reproduce selections and CS
 	page
 }) => {
 	const api = await trackerFixture(page);
-	await page.goto('/tracker/profile?region=wem&profile-display=breakdown&profile-end=2026-08-31');
+	await page.goto(
+		'/tracker/profile?region=wem&profile-display=breakdown&profile-style=bands&profile-end=2026-08-31'
+	);
 	// The WEM fixture has coal and wind: a chart each, then spot price.
 	const charts = page.getByRole('group', { name: /interactive chart$/ });
 	await expect(charts).toHaveCount(3);

@@ -246,7 +246,8 @@ describe('tracker URLs', () => {
 			['profile-metric=price', ''],
 			['profile-series=coal,price', ''],
 			['profile-style=ridgeline', 'profile-style=ridgeline'],
-			['profile-style=bands', '']
+			['profile-style=bands', 'profile-style=bands'],
+			['profile-style=lines', '']
 		];
 		for (const [query, canonical] of cases) {
 			const parsed = parseTrackerUrl(new URLSearchParams(query), context);

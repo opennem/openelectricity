@@ -32,12 +32,12 @@ export const PROFILE_STYLE_OPTIONS = /** @type {const} */ ([
 	{ value: 'heatmap', label: 'Radial heatmap' }
 ]);
 
-/** Percentile bands unless a link asks for another style.
+/** Multi-line unless a link asks for another style.
  * @param {unknown} value @returns {'lines' | 'bands' | 'radial' | 'ridgeline' | 'heatmap'} */
 export function normaliseProfileStyle(value) {
-	return value === 'lines' || value === 'radial' || value === 'ridgeline' || value === 'heatmap'
+	return value === 'bands' || value === 'radial' || value === 'ridgeline' || value === 'heatmap'
 		? value
-		: 'bands';
+		: 'lines';
 }
 
 /** The percentile bands' hoverable parts — each band and the median line —

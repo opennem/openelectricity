@@ -340,12 +340,12 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   top nav, as Timeline's metrics strip does, sliding open and shut with the
   display: the compact **Show today** toggle, a divider, then a **Style**
   icon switcher (`profile-style`), which switches the breakdown between
-  **Percentile bands** (the default; a filled-area icon), that
-  **Multi-line** view (curves) and **Ridgeline** (waves), then **Radial
+  that **Multi-line** view (the default; curves), **Percentile bands** (a
+  filled-area icon) and **Ridgeline** (waves), then **Radial
   bars** (a dashed ring) and **Radial heatmap** (concentric rings). Each icon
   carries its style's name as its accessible label and in the app's hover
   tooltip (`SwitchWithIcons`' `tooltip`), and the
-  URL keeps `radial` / `heatmap`. Percentile bands show each slot's 10–90% and 25–75% spread across
+  URL keeps `bands` / `radial` / `heatmap`. Percentile bands show each slot's 10–90% and 25–75% spread across
   the window's days (drawn as an invisible 10th-percentile base plus four
   stacked bands) with a dark median line and today; the strip (`ProfileChart`'s
   `readout`) shows the slot's average rather than a band thickness. The
@@ -762,8 +762,8 @@ disposed on changes or close. CSV/XLSX semantics remain unchanged.
 ## URL schema
 
 Profile selections (on `/tracker/profile`):
-`profile-display=breakdown` (default stacked), `profile-style=lines|radial|ridgeline|heatmap` (the breakdown's style; default
-percentile bands), `profile-today=1` (the
+`profile-display=breakdown` (default stacked), `profile-style=bands|radial|ridgeline|heatmap` (the breakdown's style; default
+multi-line; older `lines` links still parse), `profile-today=1` (the
 breakdown's current-day line; default off), `profile-interval=5m`
 (default 30-minute slots), `profile-days=14|28` (default 7), and
 `profile-end=YYYY-MM-DD` (inclusive last day; default yesterday in network time).

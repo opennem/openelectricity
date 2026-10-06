@@ -9,9 +9,9 @@
  *
  * Schema (defaults omitted so the canonical URL stays clean):
  * - `profile-display` — `breakdown` for the Profile's per-series cards (default stacked)
- * - `profile-style` — `lines` (multi-line), `radial` (radial clock),
+ * - `profile-style` — `bands` (percentile bands), `radial` (radial clock),
  *                 `ridgeline` or `heatmap` (radial heatmap) for the breakdown;
- *                 default percentile bands
+ *                 default multi-line
  * - `profile-today` — `1` adds the current day's line to the breakdown charts
  * - `profile-interval` — `5m` for 5-minute Profile slots (default 30-minute)
  * - `region`    — tracker scope, default `_all` (NEM)
@@ -238,7 +238,7 @@ export function applyTrackerUrl(url, state) {
 		set(`compare-${side}`, time == null ? null : String(time));
 	}
 	set('profile-display', next.profileDisplay === 'breakdown' ? 'breakdown' : null);
-	set('profile-style', next.profileStyle === 'bands' ? null : next.profileStyle);
+	set('profile-style', next.profileStyle === 'lines' ? null : next.profileStyle);
 	set('profile-interval', next.profileInterval === '5m' ? '5m' : null);
 	set('profile-today', next.profileToday ? '1' : null);
 	set('profile-days', next.profileDays === 7 ? null : String(next.profileDays));
