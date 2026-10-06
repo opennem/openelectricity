@@ -11,7 +11,7 @@
  */
 
 import { chartFieldDefault, getChartField, isSameFieldValue } from '$lib/stratify/chart-fields.js';
-import { MERGE_WINDOW_MS } from '$lib/stratify/revision-policy.js';
+import { MERGE_WINDOW_MS, REVISION_LIMIT } from '$lib/stratify/revision-policy.js';
 
 export const REVISION_TYPE = 'stratifyChartRevision';
 
@@ -19,7 +19,7 @@ export const REVISION_TYPE = 'stratifyChartRevision';
 const SUMMARY_LABEL_LIMIT = 3;
 
 /**
- * @typedef {'baseline' | 'edit' | 'publish' | 'unpublish' | 'restore'} RevisionKind
+ * @typedef {'baseline' | 'edit' | 'publish' | 'unpublish' | 'restore' | 'collaborator'} RevisionKind
  */
 
 /**
@@ -104,8 +104,9 @@ export function summariseRevision(kind, fields) {
  *   changes: import('$lib/stratify/chart-fields.js').ChartFieldChange[],
  *   author: RevisionAuthor,
  *   createdAt: string,
- *   restoredFrom?: RestoredFrom | null
- * }} input
+ *   restoredFrom?: RestoredFrom | null,
+ *   summary?: string
+ * }} input - `summary` overrides the one built from the changed fields
  */
 export function buildRevision({
 	chartId,
@@ -114,7 +115,8 @@ export function buildRevision({
 	changes,
 	author,
 	createdAt,
-	restoredFrom = null
+	restoredFrom = null,
+	summary
 }) {
 	const fields = changes.map((change) => change.field);
 	return {
@@ -124,7 +126,7 @@ export function buildRevision({
 		kind,
 		fields,
 		changes: JSON.stringify(changes),
-		summary: summariseRevision(kind, fields),
+		summary: summary ?? summariseRevision(kind, fields),
 		userId: author.userId,
 		userEmail: author.userEmail,
 		createdAt,
@@ -368,4 +370,29 @@ export function mergeChanges(earlier, later) {
 		byField.set(change.field, previous ? { ...change, before: previous.before } : change);
 	}
 	return [...byField.values()].filter((change) => !isSameFieldValue(change.before, change.after));
+}
+
+/**
+ * How far past the limit one save looks for revisions to prune. Saves keep
+ * a chart at the limit, so only concurrent saves can overshoot, and any
+ * excess beyond this is caught by later saves.
+ */
+const PRUNE_SCAN = 20;
+
+/**
+ * A chart's newest revisions, enough to merge into and prune: a GROQ
+ * expression taking `$type` and `$id`.
+ */
+export const RECENT_HISTORY_QUERY = `*[_type == $type && chartId == $id] | order(createdAt desc)[0...${REVISION_LIMIT + PRUNE_SCAN}] {
+	_id, _rev, kind, userId, createdAt
+}`;
+
+/**
+ * Revisions to delete so the chart keeps its newest REVISION_LIMIT.
+ * @param {HistoryEntry[]} history - Newest first (RECENT_HISTORY_QUERY)
+ * @param {boolean} adding - Whether this transaction adds a revision
+ * @returns {string[]}
+ */
+export function revisionsToPrune(history, adding) {
+	return history.slice(adding ? REVISION_LIMIT - 1 : REVISION_LIMIT).map((entry) => entry._id);
 }

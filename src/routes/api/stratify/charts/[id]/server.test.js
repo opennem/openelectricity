@@ -19,7 +19,7 @@ vi.mock('$lib/server/stratify/save-chart.js', async (importOriginal) => ({
 	saveChartFields: mocks.saveChartFields
 }));
 
-import { PATCH } from './+server.js';
+import { GET, PATCH } from './+server.js';
 
 /** @param {unknown} body */
 async function patch(body) {
@@ -125,6 +125,29 @@ describe('PATCH /api/stratify/charts/:id', () => {
 		expect(response.status).toBe(404);
 	});
 
+	it('lets an editor save settings but not publish', async () => {
+		mocks.fetch.mockResolvedValue({
+			_id: 'chart-1',
+			userId: 'user-9',
+			status: 'draft',
+			collaborators: [{ userId: 'user-1', role: 'editor' }]
+		});
+
+		expect((await patch({ baseRev: 'rev-1', fields: { title: 'A' } })).status).toBe(200);
+		expect((await patch({ baseRev: 'rev-1', fields: { status: 'published' } })).status).toBe(403);
+	});
+
+	it('keeps viewers read-only', async () => {
+		mocks.fetch.mockResolvedValue({
+			_id: 'chart-1',
+			userId: 'user-9',
+			status: 'draft',
+			collaborators: [{ userId: 'user-1', role: 'viewer' }]
+		});
+
+		expect((await patch({ baseRev: 'rev-1', fields: { title: 'A' } })).status).toBe(403);
+	});
+
 	it('lets a superadmin save any chart', async () => {
 		mocks.fetch.mockResolvedValue({ _id: 'chart-1', userId: 'user-9', status: 'draft' });
 		mocks.verifyAdmin.mockResolvedValue({
@@ -137,5 +160,41 @@ describe('PATCH /api/stratify/charts/:id', () => {
 		const response = await patch({ baseRev: 'rev-1', fields: { title: 'A' } });
 
 		expect(response.status).toBe(200);
+	});
+});
+
+describe('GET /api/stratify/charts/:id', () => {
+	beforeEach(() => {
+		mocks.verifyAdmin.mockReset().mockResolvedValue({
+			isAdmin: true,
+			isSuperAdmin: false,
+			authenticated: true,
+			userId: 'user-1'
+		});
+	});
+
+	/** @param {Record<string, any>} chart */
+	async function getChart(chart) {
+		mocks.fetch.mockReset().mockResolvedValue({ _id: 'chart-1', _rev: 'rev-1', ...chart });
+		const request = new Request('http://localhost/api/stratify/charts/chart-1');
+		const response = await GET(/** @type {any} */ ({ request, params: { id: 'chart-1' } }));
+		return (await response.json()).chart;
+	}
+
+	it("returns the caller's access and the collaborators", async () => {
+		const collaborators = [{ userId: 'user-1', role: 'viewer' }];
+		const chart = await getChart({ userId: 'user-9', status: 'draft', collaborators });
+
+		expect(chart).toMatchObject({ access: 'viewer', collaborators });
+	});
+
+	it('hides collaborators from readers of a published chart', async () => {
+		const chart = await getChart({
+			userId: 'user-9',
+			status: 'published',
+			collaborators: [{ userId: 'user-5', role: 'editor' }]
+		});
+
+		expect(chart).toMatchObject({ access: 'reader', collaborators: [] });
 	});
 });

@@ -16,8 +16,8 @@
 
 import { decodeChartFields } from '$lib/stratify/chart-data.js';
 import { encodeChartFields, getChartField, isSameFieldValue } from '$lib/stratify/chart-fields.js';
-import { REVISION_LIMIT } from '$lib/stratify/revision-policy.js';
 import {
+	RECENT_HISTORY_QUERY,
 	REVISION_TYPE,
 	buildBaselineRevision,
 	buildRevision,
@@ -27,6 +27,7 @@ import {
 	mergeChanges,
 	parseChanges,
 	revisionKind,
+	revisionsToPrune,
 	summariseRevision
 } from './revisions.js';
 
@@ -39,19 +40,10 @@ const MAX_ATTEMPTS = 3;
  */
 const RETRY_DELAY_MS = 150;
 
-/**
- * How far past the limit one save looks for revisions to prune. Saves keep
- * a chart at the limit, so only concurrent saves can overshoot, and any
- * excess beyond this is caught by later saves.
- */
-const PRUNE_SCAN = 20;
-
 /** The chart, and its newest revisions (enough to merge into and prune). */
 const CHART_QUERY = `{
 	"chart": *[_type == "stratifyChart" && _id == $id][0],
-	"history": *[_type == $type && chartId == $id] | order(createdAt desc)[0...${REVISION_LIMIT + PRUNE_SCAN}] {
-		_id, _rev, kind, userId, createdAt
-	}
+	"history": ${RECENT_HISTORY_QUERY}
 }`;
 
 /**
@@ -186,9 +178,9 @@ export async function saveChartFields(client, { id, baseRev, values, author, res
 			);
 		}
 
-		// Keep the newest REVISION_LIMIT, counting the one this save adds.
-		const keep = mergeInto ? REVISION_LIMIT : REVISION_LIMIT - 1;
-		for (const { _id } of history.slice(keep)) transaction.delete(_id);
+		for (const revisionId of revisionsToPrune(history, !mergeInto)) {
+			transaction.delete(revisionId);
+		}
 
 		/** @type {Array<{ _id: string, _rev: string }>} */
 		let documents;

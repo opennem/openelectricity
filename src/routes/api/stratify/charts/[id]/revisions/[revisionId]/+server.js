@@ -5,7 +5,7 @@ import { getRevisionVersion } from '$lib/server/stratify/revisions.js';
 
 /**
  * GET /api/stratify/charts/:id/revisions/:revisionId — one revision's field
- * changes, and the chart as it was right after it (owner or superadmin).
+ * changes, and the chart as it was right after it (owner and collaborators).
  * Called by the History drawer to expand an entry and preview a version.
  *
  * Response: `{ revision: RevisionDetail, chart }`, where `chart` is the
@@ -13,7 +13,7 @@ import { getRevisionVersion } from '$lib/server/stratify/revisions.js';
  * @type {import('./$types').RequestHandler}
  */
 export async function GET({ request, params }) {
-	const loaded = await loadChartForRequest(request, params.id, 'owner', { full: true });
+	const loaded = await loadChartForRequest(request, params.id, 'history', { full: true });
 	if (loaded.response) return loaded.response;
 
 	const version = await getRevisionVersion(

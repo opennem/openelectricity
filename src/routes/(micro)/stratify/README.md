@@ -44,7 +44,7 @@ src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/foo
 ├── docs/                              # Public examples and plain-language guides
 ├── _state/
 │   ├── StratifyPlotProject.svelte.js  # Central state class (runes)
-│   ├── ChartSaveSession.svelte.js     # Conflict-safe saving: base revision, merges, conflicts
+│   ├── ChartSaveSession.svelte.js     # Conflict-safe saving, access and sharing for the open chart
 │   ├── snapshot.js                    # normaliseSnapshot (defaults + legacy migrations)
 │   └── context.js                     # setContext/getContext helpers
 ├── _utils/
@@ -60,6 +60,7 @@ src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/foo
     ├── ChartPreview.svelte            # Live chart preview
     ├── ConflictDialog.svelte          # Choose yours/theirs per field after a save conflict
     ├── HistoryDrawer.svelte           # Change history: field diffs, preview, restore
+    ├── SharePanel.svelte              # Share step: collaborators and invite by email
     ├── ChartTypeSelector.svelte       # Chart family/variant toggle
     ├── SeriesConfig.svelte            # Per-series colour, label, type, Y-axis, visibility
     ├── ColourPicker.svelte            # Shared colour picker: theme swatches + native + hex + reset (Series panel + map controls)
@@ -150,6 +151,38 @@ To add a chart setting, add it to the registry and to
 `StratifyPlotProject.svelte.test.js` fails if `toJSON()` and the registry
 drift apart. `loadFromSnapshot()` assigns `normaliseSnapshot()` from
 `_state/snapshot.js` (registry defaults plus legacy migrations).
+
+### Collaborators and access
+
+Owners share a chart with other Stratify admins (Clerk `role: 'admin'`) as
+**editors** or **viewers** from the Share step's People section
+(`SharePanel`). What each level may do lives in
+`$lib/stratify/chart-permissions.js`, shared by the server and the builder:
+
+| Access   | Who                              | Can                                                        |
+| -------- | -------------------------------- | ---------------------------------------------------------- |
+| `owner`  | creator, or a superadmin         | everything: edit, publish, share, delete, history, restore |
+| `editor` | collaborator                     | edit, see history, restore, fork                           |
+| `viewer` | collaborator                     | open read-only, see history, fork                          |
+| `reader` | any admin, published charts only | open read-only, fork                                       |
+
+- The server decides access in `$lib/server/stratify/chart-access.js`
+  (`getChartAccess`, `loadChartForRequest(request, id, action)`); routes
+  ask for an action, not a role. `GET /api/stratify/charts/:id` returns the
+  caller's `access` (and the collaborator list, except to readers). PATCH
+  rejects `status`/`publishedAt` from anyone but the owner.
+- Collaborators are a native array on the chart, `collaborators: [{ _key,
+userId, email, role, addedAt, addedBy }]` (at most 20), so the list API's
+  **Shared with me** section can query `$userId in collaborators[].userId`.
+- `POST|PATCH|DELETE /api/stratify/charts/:id/collaborators` (owner only)
+  add by email (`findAdminByEmail` in `$lib/auth/clerk-server.js`; the
+  person must be an admin), change a role, or remove someone. Each change
+  is logged as a `collaborator` revision in the same transaction, so
+  editors' saves merge past it; the response's `parentRev` lets the
+  builder move its base revision forward.
+- In the builder, viewers and readers see a "Fork" banner and every control
+  outside the Share step sits in a disabled `<fieldset>`; Save, Publish and
+  Restore show only when allowed.
 
 ### Saving and conflicts
 

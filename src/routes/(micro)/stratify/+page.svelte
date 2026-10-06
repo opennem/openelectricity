@@ -21,19 +21,33 @@
 		return Number.isFinite(n) && n > 0 ? n : fallback;
 	}
 
+	/** @typedef {'my' | 'shared' | 'community'} SectionKey */
+	/** @typedef {import('./_utils/api.js').ChartListSection} ChartListSection */
+
+	/** @type {readonly SectionKey[]} */
+	const SECTIONS = ['my', 'shared', 'community'];
+
+	/** URL param holding each section's page. */
+	const PAGE_PARAMS = /** @type {const} */ ({
+		my: 'myPage',
+		shared: 'sharedPage',
+		community: 'communityPage'
+	});
+
 	// The URL is the source of truth for pagination + filters
-	let myPage = $derived(toPositiveInt(page.url.searchParams.get('myPage'), 1));
-	let communityPage = $derived(toPositiveInt(page.url.searchParams.get('communityPage'), 1));
+	let pages = $derived({
+		my: toPositiveInt(page.url.searchParams.get('myPage'), 1),
+		shared: toPositiveInt(page.url.searchParams.get('sharedPage'), 1),
+		community: toPositiveInt(page.url.searchParams.get('communityPage'), 1)
+	});
 	let q = $derived(page.url.searchParams.get('q') ?? '');
 	let statusFilter = $derived(page.url.searchParams.get('status') ?? 'all');
 	let filtersActive = $derived(q.trim() !== '' || statusFilter !== 'all');
 
-	let mySection = $state(/** @type {import('./_utils/api.js').ChartListSection | null} */ (null));
-	let communitySection = $state(
-		/** @type {import('./_utils/api.js').ChartListSection | null} */ (null)
-	);
-	let myLoading = $state(true);
-	let communityLoading = $state(true);
+	/** @type {Record<SectionKey, ChartListSection | null>} */
+	let sections = $state({ my: null, shared: null, community: null });
+	/** @type {Record<SectionKey, boolean>} */
+	let loading = $state({ my: true, shared: true, community: true });
 	let isSuperAdmin = $state(false);
 	let deletingId = $state('');
 	let forkingId = $state('');
@@ -42,72 +56,47 @@
 	let confirmOpen = $state(false);
 	let confirmChartId = $state('');
 	let confirmChartTitle = $state('');
-	/** @type {'my' | 'community'} */
+	/** @type {SectionKey} */
 	let confirmSection = $state('my');
 
 	// Request counters so stale responses never overwrite newer ones
-	let myRequestToken = 0;
-	let communityRequestToken = 0;
+	const requestTokens = { my: 0, shared: 0, community: 0 };
 
-	function myOpts() {
-		return /** @type {const} */ ({
-			scope: /** @type {'my'} */ ('my'),
-			myPage,
-			q: q.trim() || undefined,
-			status: statusFilter === 'all' ? undefined : statusFilter
-		});
-	}
-
-	function communityOpts() {
+	/** @param {SectionKey} key */
+	function sectionOpts(key) {
 		return {
-			scope: /** @type {'community'} */ ('community'),
-			communityPage,
+			scope: key,
+			[PAGE_PARAMS[key]]: pages[key],
 			q: q.trim() || undefined,
 			status: statusFilter === 'all' ? undefined : statusFilter
 		};
 	}
 
-	$effect(() => {
-		loadMySection(myOpts());
-	});
-
-	$effect(() => {
-		loadCommunitySection(communityOpts());
-	});
-
-	/** @param {Parameters<typeof api.listCharts>[0]} opts */
-	async function loadMySection(opts) {
-		const token = ++myRequestToken;
-		myLoading = true;
-		try {
-			const data = await api.listCharts(opts);
-			if (token !== myRequestToken) return;
-			mySection = data.my ?? null;
-			isSuperAdmin = data.isSuperAdmin;
-			clampPage('myPage', data.my);
-		} catch {
-			if (token !== myRequestToken) return;
-			mySection = { items: [], total: 0, page: 1, totalPages: 1 };
-		} finally {
-			if (token === myRequestToken) myLoading = false;
-		}
+	// One effect per section, so paging one section leaves the others alone.
+	for (const key of SECTIONS) {
+		$effect(() => {
+			loadSection(key, sectionOpts(key));
+		});
 	}
 
-	/** @param {Parameters<typeof api.listCharts>[0]} opts */
-	async function loadCommunitySection(opts) {
-		const token = ++communityRequestToken;
-		communityLoading = true;
+	/**
+	 * @param {SectionKey} key
+	 * @param {Parameters<typeof api.listCharts>[0]} opts
+	 */
+	async function loadSection(key, opts) {
+		const token = ++requestTokens[key];
+		loading[key] = true;
 		try {
 			const data = await api.listCharts(opts);
-			if (token !== communityRequestToken) return;
-			communitySection = data.community ?? null;
+			if (token !== requestTokens[key]) return;
+			sections[key] = data[key] ?? null;
 			isSuperAdmin = data.isSuperAdmin;
-			clampPage('communityPage', data.community);
+			clampPage(key, data[key]);
 		} catch {
-			if (token !== communityRequestToken) return;
-			communitySection = { items: [], total: 0, page: 1, totalPages: 1 };
+			if (token !== requestTokens[key]) return;
+			sections[key] = { items: [], total: 0, page: 1, totalPages: 1 };
 		} finally {
-			if (token === communityRequestToken) communityLoading = false;
+			if (token === requestTokens[key]) loading[key] = false;
 		}
 	}
 
@@ -115,30 +104,45 @@
 	 * If a page beyond the last (e.g. after deleting the last item on it)
 	 * comes back empty, snap to the last valid page — the URL change
 	 * triggers a refetch.
-	 * @param {'myPage' | 'communityPage'} key
-	 * @param {import('./_utils/api.js').ChartListSection | undefined} section
+	 * @param {SectionKey} key
+	 * @param {ChartListSection | undefined} section
 	 */
 	function clampPage(key, section) {
 		if (section && section.items.length === 0 && section.page > section.totalPages) {
-			goto(hrefWith({ [key]: section.totalPages }), { replaceState: true, noScroll: true });
+			goto(hrefWith({ [PAGE_PARAMS[key]]: section.totalPages }), {
+				replaceState: true,
+				noScroll: true
+			});
 		}
 	}
 
 	/**
 	 * Build a list URL from the current params with overrides applied,
 	 * omitting defaults to keep URLs clean.
-	 * @param {{ myPage?: number, communityPage?: number, q?: string, status?: string }} overrides
+	 * @param {{ myPage?: number, sharedPage?: number, communityPage?: number, q?: string, status?: string }} overrides
 	 */
 	function hrefWith(overrides = {}) {
-		const merged = { myPage, communityPage, q, status: statusFilter, ...overrides };
+		const merged = {
+			myPage: pages.my,
+			sharedPage: pages.shared,
+			communityPage: pages.community,
+			q,
+			status: statusFilter,
+			...overrides
+		};
 		const params = new URLSearchParams();
-		if (merged.myPage > 1) params.set('myPage', String(merged.myPage));
-		if (merged.communityPage > 1) params.set('communityPage', String(merged.communityPage));
+		for (const key of SECTIONS) {
+			const pageNumber = merged[PAGE_PARAMS[key]];
+			if (pageNumber > 1) params.set(PAGE_PARAMS[key], String(pageNumber));
+		}
 		if (merged.q.trim()) params.set('q', merged.q.trim());
 		if (merged.status !== 'all') params.set('status', merged.status);
 		const qs = params.toString();
 		return qs ? `?${qs}` : page.url.pathname;
 	}
+
+	/** Filters reset every section to its first page. */
+	const FIRST_PAGES = { myPage: 1, sharedPage: 1, communityPage: 1 };
 
 	// Search input is a local mirror of the URL's q, debounced before navigating
 	let searchInput = $state(page.url.searchParams.get('q') ?? '');
@@ -151,7 +155,7 @@
 	function handleSearchInput() {
 		clearTimeout(searchTimer);
 		searchTimer = setTimeout(() => {
-			goto(hrefWith({ q: searchInput, myPage: 1, communityPage: 1 }), {
+			goto(hrefWith({ q: searchInput, ...FIRST_PAGES }), {
 				replaceState: true,
 				keepFocus: true,
 				noScroll: true
@@ -161,7 +165,7 @@
 
 	/** @param {string} option */
 	function setStatusFilter(option) {
-		goto(hrefWith({ status: option, myPage: 1, communityPage: 1 }), { noScroll: true });
+		goto(hrefWith({ status: option, ...FIRST_PAGES }), { noScroll: true });
 	}
 
 	/** @param {import('./_utils/api.js').ChartDoc} chart */
@@ -187,10 +191,10 @@
 
 			await api.createChart(/** @type {any} */ (snapshot));
 			// The copy sorts to the top of page 1 (_updatedAt desc)
-			if (myPage !== 1) {
+			if (pages.my !== 1) {
 				goto(hrefWith({ myPage: 1 }), { noScroll: true });
 			} else {
-				await loadMySection(myOpts());
+				await loadSection('my', sectionOpts('my'));
 			}
 		} catch {
 			// Silently fail
@@ -199,7 +203,7 @@
 
 	/**
 	 * @param {import('./_utils/api.js').ChartDoc} chart
-	 * @param {'my' | 'community'} section
+	 * @param {SectionKey} section
 	 */
 	function promptDelete(chart, section) {
 		confirmChartId = chart._id;
@@ -218,11 +222,7 @@
 		deletingId = id;
 		try {
 			await api.deleteChart(id);
-			if (section === 'my') {
-				await loadMySection(myOpts());
-			} else {
-				await loadCommunitySection(communityOpts());
-			}
+			await loadSection(section, sectionOpts(section));
 		} catch {
 			// Silently fail
 		} finally {
@@ -252,7 +252,12 @@
 	const filterOptions = /** @type {const} */ (['all', 'draft', 'published']);
 
 	let showCommunitySection = $derived(
-		communityLoading || (communitySection !== null && (communitySection.total > 0 || filtersActive))
+		loading.community ||
+			(sections.community !== null && (sections.community.total > 0 || filtersActive))
+	);
+	/** Shared charts only appear once someone has shared one with you. */
+	let showSharedSection = $derived(
+		loading.shared || (sections.shared !== null && sections.shared.total > 0)
 	);
 </script>
 
@@ -332,18 +337,18 @@
 		<section class="mb-10">
 			<h2 class="mb-5 flex items-center gap-3">
 				<span class="font-sans text-xl font-semibold tracking-tight">My charts</span>
-				{#if mySection}
+				{#if sections.my}
 					<span
 						class="rounded-full bg-warm-grey px-2 py-0.5 font-mono text-[10px] text-mid-grey tabular-nums"
 					>
-						{mySection.total}
+						{sections.my.total}
 					</span>
 				{/if}
 			</h2>
 
-			{#if myLoading}
+			{#if loading.my}
 				{@render skeletonGrid()}
-			{:else if !mySection || mySection.total === 0}
+			{:else if !sections.my || sections.my.total === 0}
 				<Card.Root class="gap-0 border-dashed bg-white py-0 text-center shadow-none">
 					<Card.Content class="px-6 py-14">
 						<p class="mb-4 text-sm text-mid-grey">
@@ -360,7 +365,7 @@
 				<div
 					class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[2560px]:grid-cols-6 gap-4"
 				>
-					{#each mySection.items as chart (chart._id)}
+					{#each sections.my.items as chart (chart._id)}
 						<ChartCard
 							{chart}
 							variant="my"
@@ -370,10 +375,10 @@
 						/>
 					{/each}
 				</div>
-				{#if mySection.totalPages > 1}
+				{#if sections.my.totalPages > 1}
 					<SectionPagination
-						page={mySection.page}
-						totalPages={mySection.totalPages}
+						page={sections.my.page}
+						totalPages={sections.my.totalPages}
 						hrefFor={(n) => hrefWith({ myPage: n })}
 						label="My charts pagination"
 					/>
@@ -381,23 +386,64 @@
 			{/if}
 		</section>
 
+		<!-- Shared with me -->
+		{#if showSharedSection}
+			<section class="mb-10">
+				<h2 class="mb-5 flex items-center gap-3">
+					<span class="font-sans text-xl font-semibold tracking-tight">Shared with me</span>
+					{#if sections.shared}
+						<span
+							class="rounded-full bg-warm-grey px-2 py-0.5 font-mono text-[10px] text-mid-grey tabular-nums"
+						>
+							{sections.shared.total}
+						</span>
+					{/if}
+				</h2>
+
+				{#if loading.shared || !sections.shared}
+					{@render skeletonGrid()}
+				{:else}
+					<div
+						class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[2560px]:grid-cols-6 gap-4"
+					>
+						{#each sections.shared.items as chart (chart._id)}
+							<ChartCard
+								{chart}
+								variant="shared"
+								forking={forkingId === chart._id}
+								onfork={() => handleFork(chart._id)}
+							/>
+						{/each}
+					</div>
+					{#if sections.shared.totalPages > 1}
+						<SectionPagination
+							page={sections.shared.page}
+							totalPages={sections.shared.totalPages}
+							hrefFor={(n) => hrefWith({ sharedPage: n })}
+							label="Shared charts pagination"
+						/>
+					{/if}
+				{/if}
+			</section>
+		{/if}
+
 		<!-- Community Charts -->
 		{#if showCommunitySection}
 			<section>
 				<h2 class="mb-5 flex items-center gap-3">
 					<span class="font-sans text-xl font-semibold tracking-tight"> Community charts </span>
-					{#if communitySection}
+					{#if sections.community}
 						<span
 							class="rounded-full bg-warm-grey px-2 py-0.5 font-mono text-[10px] text-mid-grey tabular-nums"
 						>
-							{communitySection.total}
+							{sections.community.total}
 						</span>
 					{/if}
 				</h2>
 
-				{#if communityLoading}
+				{#if loading.community}
 					{@render skeletonGrid()}
-				{:else if !communitySection || communitySection.total === 0}
+				{:else if !sections.community || sections.community.total === 0}
 					<Card.Root class="gap-0 border-dashed bg-white py-0 text-center shadow-none">
 						<Card.Content class="px-6 py-12 text-sm text-mid-grey">
 							No matching community charts
@@ -407,7 +453,7 @@
 					<div
 						class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[2560px]:grid-cols-6 gap-4"
 					>
-						{#each communitySection.items as chart (chart._id)}
+						{#each sections.community.items as chart (chart._id)}
 							<ChartCard
 								{chart}
 								variant="community"
@@ -419,10 +465,10 @@
 							/>
 						{/each}
 					</div>
-					{#if communitySection.totalPages > 1}
+					{#if sections.community.totalPages > 1}
 						<SectionPagination
-							page={communitySection.page}
-							totalPages={communitySection.totalPages}
+							page={sections.community.page}
+							totalPages={sections.community.totalPages}
 							hrefFor={(n) => hrefWith({ communityPage: n })}
 							label="Community charts pagination"
 						/>

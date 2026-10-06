@@ -14,6 +14,7 @@
 	import ScanText from '@lucide/svelte/icons/scan-text';
 	import Share2 from '@lucide/svelte/icons/share-2';
 	import HistoryIcon from '@lucide/svelte/icons/history';
+	import GitForkIcon from '@lucide/svelte/icons/git-fork';
 	import StrataChartView from '$lib/stratify/StrataChartView.svelte';
 	import StratifyPlotProject from '../_state/StratifyPlotProject.svelte.js';
 	import { setStratifyContext, setChartSaveContext } from '../_state/context.js';
@@ -38,7 +39,7 @@
 	import HistoryDrawer from './HistoryDrawer.svelte';
 	import { normaliseSnapshot } from '../_state/snapshot.js';
 	import { formatRevisionDateTime } from '../_utils/history.js';
-	import { getChart } from '../_utils/api.js';
+	import { forkChart, getChart } from '../_utils/api.js';
 	import { loadExampleTemplate } from '../_utils/templates.js';
 
 	/** @type {{ initialChartId?: string, templateSlug?: string }} */
@@ -113,6 +114,8 @@
 		loadingChart = Boolean(initialChartId || templateSlug);
 		/** @type {string | null} */
 		let loadedRev = null;
+		/** @type {Parameters<typeof saveSession.markLoaded>[1]} */
+		let sharing = {};
 
 		if (initialChartId) {
 			try {
@@ -121,6 +124,11 @@
 					project.loadFromSnapshot(chart);
 					project.currentChartId = chart._id;
 					loadedRev = chart._rev;
+					sharing = {
+						access: chart.access,
+						collaborators: chart.collaborators,
+						ownerEmail: chart.userEmail ?? null
+					};
 				}
 			} catch {
 				// Chart not found — stay on empty builder
@@ -137,8 +145,24 @@
 			}
 		}
 
-		saveSession.markLoaded(loadedRev);
+		saveSession.markLoaded(loadedRev, sharing);
 	});
+
+	/** Viewers and readers of someone else's published chart can look, not change. */
+	const readOnly = $derived(!saveSession.can('edit'));
+	let forking = $state(false);
+
+	/** Copy a read-only chart into the user's own charts and open the copy. */
+	async function handleFork() {
+		if (!project.currentChartId) return;
+		forking = true;
+		try {
+			const copy = await forkChart(project.currentChartId);
+			goto(resolve('/(micro)/stratify/[id]', { id: copy._id }));
+		} catch {
+			forking = false;
+		}
+	}
 
 	// --- Save to Sanity (ChartSaveSession: changed fields only, conflict-safe) ---
 
@@ -418,23 +442,45 @@
 						</header>
 
 						<div class="min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-8">
-							{#if activeStep === 'data'}
-								<DataPanel />
-							{:else if activeStep === 'chart'}
-								<ChartPanel />
-							{:else if activeStep === 'theme'}
-								<SectionHeader label="Theme">
-									<StylePresetPicker />
-								</SectionHeader>
-								<SectionHeader label="Colours">
-									<ColourPalettePicker />
-								</SectionHeader>
-							{:else if activeStep === 'clarity'}
-								<ChartConfig />
-								<SeriesPanel />
-								<AnnotatePanel />
-							{:else if activeStep === 'share'}
+							{#if readOnly && project.currentChartId}
+								<div
+									class="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-warm-grey bg-light-warm-grey px-4 py-3 text-sm"
+								>
+									<p class="m-0 min-w-0 flex-1 text-dark-grey">
+										{saveSession.access === 'viewer'
+											? 'You can view this chart, not change it.'
+											: "This is someone else's published chart."}
+										Fork it to make your own copy.
+									</p>
+									<StratifyButton onclick={handleFork} disabled={forking}>
+										<GitForkIcon size={14} />
+										{forking ? 'Forking…' : 'Fork'}
+									</StratifyButton>
+								</div>
+							{/if}
+
+							{#if activeStep === 'share'}
 								<PublishPanel />
+							{:else}
+								<!-- A disabled fieldset disables every control inside for read-only users. -->
+								<fieldset disabled={readOnly} class="m-0 min-w-0 border-0 p-0">
+									{#if activeStep === 'data'}
+										<DataPanel />
+									{:else if activeStep === 'chart'}
+										<ChartPanel />
+									{:else if activeStep === 'theme'}
+										<SectionHeader label="Theme">
+											<StylePresetPicker />
+										</SectionHeader>
+										<SectionHeader label="Colours">
+											<ColourPalettePicker />
+										</SectionHeader>
+									{:else if activeStep === 'clarity'}
+										<ChartConfig />
+										<SeriesPanel />
+										<AnnotatePanel />
+									{/if}
+								</fieldset>
 							{/if}
 						</div>
 
@@ -482,14 +528,18 @@
 
 					<div class="ml-auto flex items-center gap-2">
 						{#if project.currentChartId}
-							<StratifyButton
-								onclick={() => (historyOpen ? closeHistory() : (historyOpen = true))}
-								title="Change history"
-							>
-								<HistoryIcon size={14} />
-								History
-							</StratifyButton>
-							{#if project.status === 'published'}
+							{#if saveSession.can('history')}
+								<StratifyButton
+									onclick={() => (historyOpen ? closeHistory() : (historyOpen = true))}
+									title="Change history"
+								>
+									<HistoryIcon size={14} />
+									History
+								</StratifyButton>
+							{/if}
+							{#if !saveSession.can('publish')}
+								<!-- Only the owner publishes. -->
+							{:else if project.status === 'published'}
 								<StratifyButton onclick={handleUnpublish} disabled={publishing}>
 									{publishing ? '...' : 'Unpublish'}
 								</StratifyButton>
@@ -500,13 +550,15 @@
 							{/if}
 						{/if}
 
-						<StratifyButton
-							variant="primary"
-							onclick={() => handleSave()}
-							disabled={!project.hasData || saveSession.action !== null}
-						>
-							{saveButtonLabel}
-						</StratifyButton>
+						{#if saveSession.can('edit')}
+							<StratifyButton
+								variant="primary"
+								onclick={() => handleSave()}
+								disabled={!project.hasData || saveSession.action !== null}
+							>
+								{saveButtonLabel}
+							</StratifyButton>
+						{/if}
 					</div>
 				</div>
 
@@ -519,13 +571,15 @@
 						</span>
 						<div class="ml-auto flex items-center gap-2">
 							<StratifyButton onclick={() => (preview = null)}>Back to current</StratifyButton>
-							<StratifyButton
-								variant="primary"
-								onclick={() => preview && handleRestore(preview.revision)}
-								disabled={saveSession.action !== null}
-							>
-								Restore this version
-							</StratifyButton>
+							{#if saveSession.can('restore')}
+								<StratifyButton
+									variant="primary"
+									onclick={() => preview && handleRestore(preview.revision)}
+									disabled={saveSession.action !== null}
+								>
+									Restore this version
+								</StratifyButton>
+							{/if}
 						</div>
 					</div>
 					<div class="min-h-0 flex-1 overflow-y-auto p-5 md:p-8">

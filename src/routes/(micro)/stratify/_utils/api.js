@@ -72,6 +72,7 @@ async function authFetch(url, options = {}) {
  *   status: string,
  *   userEmail?: string,
  *   publishedAt?: string | null,
+ *   role?: import('$lib/stratify/chart-permissions.js').CollaboratorRole | null,
  *   _createdAt: string,
  *   _updatedAt: string
  * }} ChartDoc
@@ -88,16 +89,18 @@ async function authFetch(url, options = {}) {
 /**
  * @typedef {Object} ChartsListResponse
  * @property {ChartListSection} [my]
+ * @property {ChartListSection} [shared]
  * @property {ChartListSection} [community]
  * @property {boolean} isSuperAdmin
  */
 
 /**
- * List charts — own charts + community charts, each section paginated
- * independently.
+ * List charts — own, shared-with-me and community charts, each section
+ * paginated independently.
  * @param {{
- *   scope?: 'all' | 'my' | 'community',
+ *   scope?: 'all' | 'my' | 'shared' | 'community',
  *   myPage?: number,
+ *   sharedPage?: number,
  *   communityPage?: number,
  *   pageSize?: number,
  *   q?: string,
@@ -109,6 +112,9 @@ export async function listCharts(options = {}) {
 	const params = new URLSearchParams();
 	if (options.scope && options.scope !== 'all') params.set('scope', options.scope);
 	if (options.myPage && options.myPage > 1) params.set('myPage', String(options.myPage));
+	if (options.sharedPage && options.sharedPage > 1) {
+		params.set('sharedPage', String(options.sharedPage));
+	}
 	if (options.communityPage && options.communityPage > 1) {
 		params.set('communityPage', String(options.communityPage));
 	}
@@ -166,7 +172,7 @@ export async function updateChart(id, save) {
 /**
  * @typedef {Object} RevisionSummary
  * @property {string} _id
- * @property {'baseline' | 'edit' | 'publish' | 'unpublish' | 'restore'} kind
+ * @property {'baseline' | 'edit' | 'publish' | 'unpublish' | 'restore' | 'collaborator'} kind
  * @property {string} summary
  * @property {string[]} fields
  * @property {string | null} userEmail
@@ -212,6 +218,59 @@ export async function restoreRevision(id, revisionId) {
 	return authFetch(`/api/stratify/charts/${id}/revisions`, {
 		method: 'POST',
 		body: JSON.stringify({ restoreTo: revisionId })
+	});
+}
+
+/**
+ * @typedef {Object} Collaborator
+ * @property {string} userId
+ * @property {string} email
+ * @property {import('$lib/stratify/chart-permissions.js').CollaboratorRole} role
+ * @property {string} addedAt
+ */
+
+/**
+ * @typedef {Object} SharingResponse
+ * @property {Collaborator[]} collaborators
+ * @property {{ _id: string, _rev: string }} chart
+ * @property {string | null} parentRev - The chart revision the change replaced; null if unchanged
+ */
+
+/**
+ * Share a chart with an admin by email, or change their role.
+ * @param {string} id
+ * @param {{ email: string, role: Collaborator['role'] }} person
+ * @returns {Promise<SharingResponse>}
+ */
+export async function addCollaborator(id, person) {
+	return authFetch(`/api/stratify/charts/${id}/collaborators`, {
+		method: 'POST',
+		body: JSON.stringify(person)
+	});
+}
+
+/**
+ * @param {string} id
+ * @param {{ userId: string, role: Collaborator['role'] }} change
+ * @returns {Promise<SharingResponse>}
+ */
+export async function setCollaboratorRole(id, change) {
+	return authFetch(`/api/stratify/charts/${id}/collaborators`, {
+		method: 'PATCH',
+		body: JSON.stringify(change)
+	});
+}
+
+/**
+ * Stop sharing a chart with someone.
+ * @param {string} id
+ * @param {string} userId
+ * @returns {Promise<SharingResponse>}
+ */
+export async function removeCollaborator(id, userId) {
+	return authFetch(`/api/stratify/charts/${id}/collaborators`, {
+		method: 'DELETE',
+		body: JSON.stringify({ userId })
 	});
 }
 

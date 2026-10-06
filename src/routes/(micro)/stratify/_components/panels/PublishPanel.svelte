@@ -2,6 +2,7 @@
 	import { getStratifyContext, getChartSaveContext } from '../../_state/context.js';
 	import { exportToFile, importFromFile } from '../../_utils/storage.js';
 	import SectionHeader from '../SectionHeader.svelte';
+	import SharePanel from '../SharePanel.svelte';
 	import StratifyButton from '../StratifyButton.svelte';
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import CopyIcon from '@lucide/svelte/icons/copy';
@@ -100,7 +101,17 @@
 </script>
 
 <SectionHeader label="Status">
-	{#if isPublished}
+	{#if !saveSession.can('publish')}
+		<p class="m-0 text-xs text-mid-grey">
+			{isPublished ? 'Published.' : 'Draft.'} Only the chart's owner can publish or unpublish it.
+		</p>
+		{#if isPublished}
+			<StratifyButton href="/strata/{project.currentChartId}" target="_blank">
+				<ExternalLinkIcon size={12} />
+				Published link
+			</StratifyButton>
+		{/if}
+	{:else if isPublished}
 		<div class="flex flex-col gap-2">
 			<div class="flex items-center gap-2">
 				<span class="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700">Published</span>
@@ -133,6 +144,10 @@
 		</p>
 	{/if}
 </SectionHeader>
+
+{#if project.currentChartId && saveSession.can('share')}
+	<SharePanel />
+{/if}
 
 {#if isPublished && shareUrl}
 	<SectionHeader label="Share & Embed">
@@ -172,6 +187,7 @@
 					type="checkbox"
 					checked={project.showBranding}
 					onchange={handleToggleBranding}
+					disabled={!saveSession.can('edit')}
 					class="accent-dark-grey"
 				/>
 				<span class="text-[10px] text-mid-grey">Show Open Electricity attribution</span>
@@ -199,9 +215,11 @@
 			<DownloadIcon size={12} />
 			Export JSON
 		</StratifyButton>
-		<StratifyButton onclick={handleImportJSON}>
-			<UploadIcon size={12} />
-			Import JSON
-		</StratifyButton>
+		{#if saveSession.can('edit')}
+			<StratifyButton onclick={handleImportJSON}>
+				<UploadIcon size={12} />
+				Import JSON
+			</StratifyButton>
+		{/if}
 	</div>
 </SectionHeader>

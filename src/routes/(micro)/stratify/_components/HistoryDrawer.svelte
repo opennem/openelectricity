@@ -38,6 +38,7 @@
 		publish: 'Published',
 		unpublish: 'Unpublished',
 		restore: 'Restored',
+		collaborator: 'Sharing',
 		baseline: 'Start'
 	});
 
@@ -147,7 +148,9 @@
 
 {#snippet changeList(/** @type {RevisionDetail} */ revision)}
 	{@const changes = revision.changes.filter((change) => !HIDDEN_FIELDS.includes(change.field))}
-	{#if changes.length === 0}
+	{#if revision.kind === 'collaborator'}
+		<p class="m-0 text-xs text-mid-grey">Sharing changed; the chart itself didn't.</p>
+	{:else if changes.length === 0}
 		<p class="m-0 text-xs text-mid-grey">The chart as it was when change tracking began.</p>
 	{:else}
 		<ul class="m-0 flex list-none flex-col gap-2 p-0">
@@ -243,15 +246,17 @@
 													>
 														Preview
 													</StratifyButton>
-													<StratifyButton
-														variant="primary"
-														onclick={() => onrestore(revision)}
-														disabled={busy}
-													>
-														{saveSession.action === 'restore'
-															? 'Restoring…'
-															: 'Restore this version'}
-													</StratifyButton>
+													{#if saveSession.can('restore')}
+														<StratifyButton
+															variant="primary"
+															onclick={() => onrestore(revision)}
+															disabled={busy}
+														>
+															{saveSession.action === 'restore'
+																? 'Restoring…'
+																: 'Restore this version'}
+														</StratifyButton>
+													{/if}
 												</div>
 											{/if}
 										{/if}

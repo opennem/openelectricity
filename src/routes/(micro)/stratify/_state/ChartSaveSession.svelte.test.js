@@ -37,7 +37,18 @@ function createApi() {
 				async () => ({ chart: { _id: 'chart-1', _rev: 'rev-2' }, latest: null })
 			)
 		),
-		restoreRevision: vi.fn(/** @type {ApiCall} */ (async () => ({})))
+		restoreRevision: vi.fn(/** @type {ApiCall} */ (async () => ({}))),
+		addCollaborator: vi.fn(
+			/** @type {ApiCall} */ (
+				async () => ({
+					collaborators: [{ userId: 'u1', email: 'u1@example.com', role: 'editor' }],
+					chart: { _id: 'chart-1', _rev: 'rev-shared' },
+					parentRev: 'rev-1'
+				})
+			)
+		),
+		setCollaboratorRole: vi.fn(/** @type {ApiCall} */ (async () => ({}))),
+		removeCollaborator: vi.fn(/** @type {ApiCall} */ (async () => ({})))
 	};
 }
 
@@ -261,5 +272,78 @@ describe('ChartSaveSession', () => {
 		expect(project.status).toBe('published');
 		expect(session.rev).toBe('rev-5');
 		expect(session.isDirty).toBe(false);
+	});
+});
+
+describe('ChartSaveSession permissions and sharing', () => {
+	it('keeps a viewer read-only: nothing is dirty and nothing saves', async () => {
+		const api = createApi();
+		const { project, session } = loadedSession(api);
+		session.markLoaded('rev-1', { access: 'viewer' });
+
+		project.title = 'Changed';
+		flushSync();
+
+		expect(session.isDirty).toBe(false);
+		expect(await session.save()).toBe(false);
+		expect(api.updateChart).not.toHaveBeenCalled();
+	});
+
+	it('lets an editor save but not publish', async () => {
+		const api = createApi();
+		const { project, session } = loadedSession(api);
+		session.markLoaded('rev-1', { access: 'editor' });
+
+		project.title = 'Changed';
+		expect(await session.publish()).toBe(false);
+		expect(api.updateChart).not.toHaveBeenCalled();
+		expect(await session.save()).toBe(true);
+	});
+
+	it('moves the base revision forward past its own sharing change', async () => {
+		const api = createApi();
+		const { project, session } = loadedSession(api);
+
+		expect(await session.share('u1@example.com', 'editor')).toBeNull();
+		expect(session.collaborators).toHaveLength(1);
+		expect(session.rev).toBe('rev-shared');
+
+		project.title = 'After sharing';
+		await session.save();
+		expect(api.updateChart).toHaveBeenLastCalledWith('chart-1', {
+			baseRev: 'rev-shared',
+			fields: { title: 'After sharing' }
+		});
+	});
+
+	it('leaves the base alone when others saved before the sharing change', async () => {
+		const api = createApi();
+		api.addCollaborator.mockResolvedValueOnce({
+			collaborators: [],
+			chart: { _id: 'chart-1', _rev: 'rev-9' },
+			parentRev: 'rev-8'
+		});
+		const { session } = loadedSession(api);
+
+		await session.share('u1@example.com', 'viewer');
+
+		expect(session.rev).toBe('rev-1');
+	});
+
+	it('reports sharing errors and refuses non-owners', async () => {
+		const api = createApi();
+		api.addCollaborator.mockRejectedValueOnce(
+			new Error('No Stratify admin uses that email address')
+		);
+		const { session } = loadedSession(api);
+
+		expect(await session.share('x@example.com', 'viewer')).toBe(
+			'No Stratify admin uses that email address'
+		);
+
+		session.markLoaded('rev-1', { access: 'editor' });
+		expect(await session.share('x@example.com', 'viewer')).toBe(
+			'Only the owner can share this chart'
+		);
 	});
 });

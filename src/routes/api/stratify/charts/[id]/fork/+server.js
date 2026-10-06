@@ -6,8 +6,7 @@ import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
  * @type {import('./$types').RequestHandler}
  */
 export async function POST({ request, params }) {
-	// Owners fork any of their charts; readers fork published ones.
-	const loaded = await loadChartForRequest(request, params.id, 'reader', { full: true });
+	const loaded = await loadChartForRequest(request, params.id, 'fork', { full: true });
 	if (loaded.response) return loaded.response;
 	const { client, auth, chart: source } = loaded;
 
@@ -22,6 +21,7 @@ export async function POST({ request, params }) {
 		userEmail,
 		status,
 		publishedAt,
+		collaborators,
 		...chartFields
 	} = source;
 

@@ -9,14 +9,14 @@ const NO_STORE = { 'cache-control': 'no-store' };
 
 /**
  * GET /api/stratify/charts/:id/revisions — the chart's change history, newest
- * first (owner or superadmin). Called by the builder's History drawer.
+ * first (owner and collaborators). Called by the builder's History drawer.
  *
  * Query: `before` — the `nextBefore` cursor from the previous page.
  * Response: `{ revisions: RevisionSummary[], nextBefore: string | null }`.
  * @type {import('./$types').RequestHandler}
  */
 export async function GET({ request, params, url }) {
-	const loaded = await loadChartForRequest(request, params.id, 'owner');
+	const loaded = await loadChartForRequest(request, params.id, 'history');
 	if (loaded.response) return loaded.response;
 
 	const before = url.searchParams.get('before');
@@ -30,7 +30,7 @@ export async function GET({ request, params, url }) {
 
 /**
  * POST /api/stratify/charts/:id/revisions — restore the chart's settings to
- * how they were right after a revision (owner or superadmin). Publish state
+ * how they were right after a revision (owner or editor). Publish state
  * is unchanged; the restore is logged as a new `restore` revision.
  *
  * Body: `{ restoreTo: revisionId }`.
@@ -39,7 +39,7 @@ export async function GET({ request, params, url }) {
  * @type {import('./$types').RequestHandler}
  */
 export async function POST({ request, params }) {
-	const loaded = await loadChartForRequest(request, params.id, 'owner', { full: true });
+	const loaded = await loadChartForRequest(request, params.id, 'restore', { full: true });
 	if (loaded.response) return loaded.response;
 	const { client, auth, chart } = loaded;
 

@@ -1,23 +1,34 @@
 import { json } from '@sveltejs/kit';
 import { decodeChartFields } from '$lib/stratify/chart-data.js';
 import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
+import { canAccess } from '$lib/stratify/chart-permissions.js';
 import { pickChartFields, saveChartFields } from '$lib/server/stratify/save-chart.js';
 import { deleteChartWithRevisions } from '$lib/server/stratify/revisions.js';
 
 /**
- * GET /api/stratify/charts/:id — fetch a single chart.
- * Owner can always read. Others can read published charts. Superadmin can read any.
+ * GET /api/stratify/charts/:id — fetch a single chart, with the caller's
+ * `access` (see `$lib/stratify/chart-permissions.js`).
+ * The owner, superadmins and collaborators can read it; other admins can
+ * read published charts, without the collaborator list.
  * @type {import('./$types').RequestHandler}
  */
 export async function GET({ request, params }) {
-	const loaded = await loadChartForRequest(request, params.id, 'reader', { full: true });
+	const loaded = await loadChartForRequest(request, params.id, 'read', { full: true });
 	if (loaded.response) return loaded.response;
+	const { chart, access } = loaded;
 
-	return json({ chart: decodeChartFields(loaded.chart) });
+	return json({
+		chart: {
+			...decodeChartFields(chart),
+			collaborators: access === 'reader' ? [] : (chart.collaborators ?? []),
+			access
+		}
+	});
 }
 
 /**
- * PATCH /api/stratify/charts/:id — save changed fields (owner or superadmin).
+ * PATCH /api/stratify/charts/:id — save changed fields (owner or editor;
+ * only the owner may change `status`/`publishedAt`).
  *
  * Body: `{ baseRev, fields }`, where `fields` holds only the registry fields
  * (`$lib/stratify/chart-fields.js`) the editor changed since loading chart
@@ -34,9 +45,9 @@ export async function GET({ request, params }) {
  * @type {import('./$types').RequestHandler}
  */
 export async function PATCH({ request, params }) {
-	const loaded = await loadChartForRequest(request, params.id, 'owner');
+	const loaded = await loadChartForRequest(request, params.id, 'edit');
 	if (loaded.response) return loaded.response;
-	const { client, auth } = loaded;
+	const { client, auth, access } = loaded;
 
 	const body = await request.json();
 	const isFieldSave = typeof body?.fields === 'object' && body.fields !== null;
@@ -47,6 +58,9 @@ export async function PATCH({ request, params }) {
 	const values = pickChartFields(isFieldSave ? body.fields : body);
 	if (Object.keys(values).length === 0) {
 		return json({ error: 'No fields to update' }, { status: 400 });
+	}
+	if (('status' in values || 'publishedAt' in values) && !canAccess(access, 'publish')) {
+		return json({ error: 'Only the owner can publish or unpublish' }, { status: 403 });
 	}
 
 	const result = await saveChartFields(client, {
@@ -75,11 +89,11 @@ export async function PATCH({ request, params }) {
 }
 
 /**
- * DELETE /api/stratify/charts/:id — delete a chart and its revisions (owner or superadmin).
+ * DELETE /api/stratify/charts/:id — delete a chart and its revisions (owner only).
  * @type {import('./$types').RequestHandler}
  */
 export async function DELETE({ request, params }) {
-	const loaded = await loadChartForRequest(request, params.id, 'owner');
+	const loaded = await loadChartForRequest(request, params.id, 'delete');
 	if (loaded.response) return loaded.response;
 
 	await deleteChartWithRevisions(loaded.client, params.id);

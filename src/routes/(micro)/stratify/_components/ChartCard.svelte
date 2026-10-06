@@ -6,7 +6,7 @@
 	/**
 	 * @type {{
 	 *   chart: import('../_utils/api.js').ChartDoc,
-	 *   variant: 'my' | 'community',
+	 *   variant: 'my' | 'shared' | 'community',
 	 *   isSuperAdmin?: boolean,
 	 *   deleting?: boolean,
 	 *   forking?: boolean,
@@ -26,7 +26,8 @@
 		onfork
 	} = $props();
 
-	let href = $derived(variant === 'my' ? `/stratify/${chart._id}` : `/strata/${chart._id}`);
+	// Own and shared charts open in the builder; community charts on their public page.
+	let href = $derived(variant === 'community' ? `/strata/${chart._id}` : `/stratify/${chart._id}`);
 	let target = $derived(variant === 'community' ? '_blank' : undefined);
 	let isDraft = $derived(chart.status !== 'published');
 
@@ -73,8 +74,12 @@
 		</div>
 		<div class="flex items-center justify-between min-h-5">
 			<span class="inline-flex items-center gap-1.5 truncate text-xs text-mid-grey">
-				{#if variant === 'community'}
+				{#if variant !== 'my'}
 					<span class="truncate">{chart.userEmail || 'Unknown'}</span>
+					&middot;
+				{/if}
+				{#if variant === 'shared' && chart.role}
+					<span class="capitalize">{chart.role}</span>
 					&middot;
 				{/if}
 				{timeAgo(chart._updatedAt)}
@@ -103,7 +108,7 @@
 					>
 						{forking ? 'Forking...' : 'Fork'}
 					</button>
-					{#if isSuperAdmin}
+					{#if variant === 'community' && isSuperAdmin}
 						<a href="/stratify/{chart._id}" class={actionClass}> Edit </a>
 						<button
 							type="button"

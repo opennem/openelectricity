@@ -18,19 +18,20 @@ function toPositiveInt(value, fallback) {
 }
 
 /**
- * GET /api/stratify/charts — list own charts + community charts.
+ * GET /api/stratify/charts — list own, shared and community charts.
  *
  * Each section is paginated independently and returned as
  * `{ items, total, page, totalPages }` where items are full normalised
- * chart documents (including csvText, for thumbnail rendering).
+ * chart documents (including csvText, for thumbnail rendering). Shared
+ * items also carry the caller's `role` (`editor` or `viewer`).
  *
  * Query params:
- * - scope: 'all' (default) | 'my' | 'community' — fetch one section only
- * - myPage / communityPage: 1-based page numbers
+ * - scope: 'all' (default) | 'my' | 'shared' | 'community' — fetch one section only
+ * - myPage / sharedPage / communityPage: 1-based page numbers
  * - pageSize: items per section page (default 12, max 100)
  * - q: search term matched against title/description
- * - status: 'draft' | 'published' — applied to my charts always, to
- *   community charts only for superadmins (normal users always see
+ * - status: 'draft' | 'published' — applied to my and shared charts always,
+ *   to community charts only for superadmins (normal users always see
  *   published community charts only)
  * @type {import('./$types').RequestHandler}
  */
@@ -48,6 +49,7 @@ export async function GET({ request, url }) {
 		MAX_PAGE_SIZE
 	);
 	const myPage = toPositiveInt(url.searchParams.get('myPage'), 1);
+	const sharedPage = toPositiveInt(url.searchParams.get('sharedPage'), 1);
 	const communityPage = toPositiveInt(url.searchParams.get('communityPage'), 1);
 
 	const client = createCmsClient();
@@ -56,6 +58,7 @@ export async function GET({ request, url }) {
 	const searchClause = search ? ' && (title match $q || description match $q)' : '';
 
 	const myFilters = `_type == "stratifyChart" && userId == $userId${statusClause}${searchClause}`;
+	const sharedFilters = `_type == "stratifyChart" && $userId in collaborators[].userId${statusClause}${searchClause}`;
 	// Community charts: superadmin sees all (optionally status-filtered), normal users published only
 	const communityFilters = auth.isSuperAdmin
 		? `_type == "stratifyChart" && userId != $userId${statusClause}${searchClause}`
@@ -84,6 +87,10 @@ export async function GET({ request, url }) {
 				status: doc.status,
 				userEmail: doc.userEmail,
 				publishedAt: doc.publishedAt,
+				role:
+					doc.collaborators?.find(
+						(/** @type {{ userId: string }} */ entry) => entry.userId === auth.userId
+					)?.role ?? null,
 				_createdAt: doc._createdAt,
 				_updatedAt: doc._updatedAt
 			})),
@@ -93,13 +100,17 @@ export async function GET({ request, url }) {
 		};
 	}
 
-	const [my, community] = await Promise.all([
-		scope === 'community' ? null : fetchSection(myFilters, myPage),
-		scope === 'my' ? null : fetchSection(communityFilters, communityPage)
+	/** @param {string} section */
+	const wants = (section) => scope === 'all' || scope === section;
+	const [my, shared, community] = await Promise.all([
+		wants('my') ? fetchSection(myFilters, myPage) : null,
+		wants('shared') ? fetchSection(sharedFilters, sharedPage) : null,
+		wants('community') ? fetchSection(communityFilters, communityPage) : null
 	]);
 
 	return json({
 		...(my ? { my } : {}),
+		...(shared ? { shared } : {}),
 		...(community ? { community } : {}),
 		isSuperAdmin: auth.isSuperAdmin
 	});
