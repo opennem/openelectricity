@@ -28,6 +28,7 @@
 	 *   panelClass?: string,
 	 *   onopenchange?: (open: boolean) => void,
 	 *   onapply?: () => void,
+	 *   applyLabel?: string,
 	 *   footerLeft?: import('svelte').Snippet,
 	 *   trigger?: import('svelte').Snippet<[{ open: boolean, toggle: () => void }]>,
 	 *   children: import('svelte').Snippet<[() => void]>
@@ -43,6 +44,9 @@
 		panelClass = '',
 		onopenchange,
 		onapply,
+		/** The footer button's text: Apply commits staged changes; an
+		 *  immediate-apply consumer can call it Done. */
+		applyLabel = 'Apply',
 		footerLeft,
 		trigger,
 		children
@@ -119,7 +123,7 @@
 							setOpen(false);
 						}}
 					>
-						Apply
+						{applyLabel}
 					</button>
 				</div>
 			{/if}

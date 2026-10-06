@@ -1,5 +1,6 @@
 import { TABLE_UNIT_CYCLES, nextTableUnitPrefix } from './table-units.js';
 import {
+	formatTableEmissions,
 	formatTableEnergy,
 	formatTableIntensity,
 	formatTablePercentage,
@@ -27,7 +28,8 @@ const labels = {
  * `nominal` rather than inflation-adjusted dollars. Picker entries, URL names
  * and each card's header switches all follow from these fields.
  * @typedef {{id: string, chart: string, label: string, shortLabel: string, group: string,
- *   kind: string, fuel?: string, generation?: boolean, exBatteries?: boolean, nominal?: boolean}} ComparisonMetric
+ *   kind: string, fuel?: string, chip?: string, generation?: boolean, exBatteries?: boolean,
+ *   nominal?: boolean}} ComparisonMetric
  */
 /** @type {ComparisonMetric[]} */
 export const COMPARISON_METRICS = [
@@ -38,6 +40,15 @@ export const COMPARISON_METRICS = [
 		shortLabel: 'Intensity',
 		group: 'Emissions',
 		kind: 'intensity'
+	},
+	{
+		id: 'emissions',
+		chart: 'emissions',
+		label: 'Emissions volume',
+		shortLabel: 'Emissions',
+		chip: 'Volume',
+		group: 'Emissions',
+		kind: 'emissions'
 	},
 	...generation.map((fuel) => ({
 		id: `${fuel}_generation`,
@@ -108,6 +119,7 @@ export const COMPARISON_METRICS = [
 	{
 		id: 'price_real',
 		chart: 'price_real',
+		chip: 'VW price',
 		label: 'Volume-weighted price (inflation adjusted)',
 		shortLabel: 'Real VW price',
 		group: 'Prices',
@@ -158,21 +170,35 @@ export function comparisonPresentation(id, key, on) {
 	);
 	return match?.id ?? id;
 }
+/** The picker's charts, in card order, each by its default presentation:
+ * a short chip `label` within its `group` (Emissions, Generation, Prices),
+ * with the full name as its `title`. */
 export const COMPARISON_CHART_OPTIONS = COMPARISON_METRICS.filter(
 	(metric) => metric.id === metric.chart
 ).map((metric) => ({
 	...metric,
-	label:
-		metric.id === 'price_real'
-			? 'Volume-weighted price'
-			: metric.kind === 'share' && metric.fuel
-				? labels[metric.fuel]
-				: metric.label,
-	group: metric.kind === 'share' ? 'Generation / Proportion' : metric.group
+	label: metric.chip ?? metric.shortLabel,
+	title: metric.id === 'price_real' ? 'Volume-weighted price' : metric.label,
+	group: metric.kind === 'share' ? 'Generation' : metric.group
 }));
 export const COMPARISON_METRIC_GROUPS = [
 	...new Set(COMPARISON_CHART_OPTIONS.map((metric) => metric.group))
 ];
+/**
+ * The metric ids for a set of chosen charts: each chart already shown keeps
+ * its presentation, one shown again returns in the presentation `remembered`
+ * for it, and any other starts in its default.
+ * @param {string[]} chartIds - The chosen charts
+ * @param {string[]} current - The selected metric ids
+ * @param {Record<string, string>} [remembered] - Last metric id by chart id
+ */
+export function selectComparisonCharts(chartIds, current, remembered = {}) {
+	return chartIds.map(
+		(chart) =>
+			current.find((id) => comparisonChartId(id) === chart) ??
+			(comparisonChartId(remembered[chart] ?? '') === chart ? remembered[chart] : chart)
+	);
+}
 /** A chart's URL name: its id hyphenated, with proportions named by their
  * subject alone (`intensity`, `renewables`, `solar-wind-generation`,
  * `renewables-ex-batteries`, `net-imports`, `price-real`).
@@ -193,17 +219,11 @@ const LEGACY_IDS = /** @type {Record<string, string>} */ ({
 export function comparisonChartFromSlug(slug) {
 	return CHARTS_BY_SLUG.get(slug) ?? LEGACY_IDS[slug] ?? slug;
 }
-/** Preserve each selected chart's presentation when applying the chart picker. */
-export function selectComparisonCharts(
-	/** @type {string[]} */ ids,
-	/** @type {string[]} */ previous = []
-) {
-	return ids.map((id) => previous.find((value) => comparisonChartId(value) === id) ?? id);
-}
 /** @param {string} id @param {string} basis @param {boolean} [base] */
 export function comparisonUnit(id, basis, base = false) {
 	const metric = comparisonMetric(id);
 	if (metric.kind === 'energy') return base ? 'MWh' : 'GWh';
+	if (metric.kind === 'emissions') return base ? 'tCO₂e' : 'ktCO₂e';
 	if (metric.kind === 'intensity') return 'kgCO₂e/MWh';
 	if (metric.kind === 'price') return '$/MWh';
 	return `% ${id === 'net_imports_share' || basis === 'demand' ? 'demand' : 'generation'}`;
@@ -225,18 +245,37 @@ function renewablesExBatteries(row) {
  * @param {number | null | undefined} value @param {string} id */
 export function formatComparisonValue(value, id) {
 	if (!Number.isFinite(value)) return '—';
-	const shown = comparisonMetric(id).kind === 'energy' ? Number(value) / 1000 : Number(value);
+	const { kind } = comparisonMetric(id);
+	const shown = Number(value) / (kind === 'energy' || kind === 'emissions' ? 1e3 : 1);
 	return shown.toLocaleString('en-AU', { maximumFractionDigits: 1 });
 }
 
 /** @typedef {import('./table-units.js').TableUnits} TableUnits */
 /** The Regions table's resting units: generation in GWh, intensity in kg. */
-const COMPARISON_TABLE_UNITS = /** @type {const} */ ({ energy: 'G', intensity: 'k' });
+const COMPARISON_TABLE_UNITS = /** @type {const} */ ({
+	energy: 'G',
+	emissions: 'k',
+	intensity: 'k'
+});
 /** The SI cycle a metric's table column steps through, if any.
- * @param {string} id @returns {'energy' | 'intensity' | null} */
+ * @param {string} id @returns {'energy' | 'emissions' | 'intensity' | null} */
 function comparisonUnitKey(id) {
 	const { kind } = comparisonMetric(id);
-	return kind === 'energy' || kind === 'intensity' ? kind : null;
+	return kind === 'energy' || kind === 'emissions' || kind === 'intensity' ? kind : null;
+}
+/** Each kind's chart unit: the data's base unit and SI prefix, the prefix
+ * the chart opens in, and the prefixes its unit switch offers. */
+const CHART_UNITS =
+	/** @type {Record<string, {baseUnit: string, prefix: SiPrefix, display: SiPrefix, allowed: SiPrefix[]}>} */ ({
+		energy: { baseUnit: 'Wh', prefix: 'M', display: 'G', allowed: ['M', 'G', 'T'] },
+		emissions: { baseUnit: 'tCO₂e', prefix: '', display: 'k', allowed: ['k', 'M'] },
+		intensity: { baseUnit: 'kgCO₂e/MWh', prefix: '', display: '', allowed: [] },
+		price: { baseUnit: '$/MWh', prefix: '', display: '', allowed: [] },
+		share: { baseUnit: '%', prefix: '', display: '', allowed: [] }
+	});
+/** @param {string} id */
+export function comparisonChartUnits(id) {
+	return CHART_UNITS[comparisonMetric(id).kind] ?? CHART_UNITS.share;
 }
 /**
  * A Regions table cell, formatted as the fuel-tech table formats the same
@@ -249,6 +288,8 @@ export function formatComparisonCell(value, id, units) {
 	const key = comparisonUnitKey(id);
 	if (key === 'energy')
 		return formatTableEnergy(value, units.energy ?? COMPARISON_TABLE_UNITS.energy);
+	if (key === 'emissions')
+		return formatTableEmissions(value, units.emissions ?? COMPARISON_TABLE_UNITS.emissions);
 	if (key === 'intensity')
 		return formatTableIntensity(value, units.intensity ?? COMPARISON_TABLE_UNITS.intensity);
 	const { kind } = comparisonMetric(id);
@@ -435,6 +476,7 @@ export function comparisonMetricValue(row, id, basis) {
 				? sum(row?.solar_energy, row?.wind_energy)
 				: row?.[`${fuel}_energy`];
 	if (id === 'intensity') return ratio(row?.emissions, row?.energy_mwh, 1000);
+	if (id === 'emissions') return Number.isFinite(row?.emissions) ? row.emissions : null;
 	if (id === 'price' || id === 'price_real')
 		return ratio(row?.[id === 'price' ? 'market_value' : 'market_value_real'], row?.energy_mwh);
 	if (id === 'net_imports_share') return ratio(row?.net_imports, row?.demand_gross, 100);

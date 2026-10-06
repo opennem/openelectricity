@@ -8,8 +8,8 @@ import { nextPeriodStart } from './region-comparison.js';
  * Colour scales and cell geometry for the Compare regions stripes display.
  *
  * Scales are fixed and absolute so a cell's colour means the same thing in
- * every region and every year; only generation, which has no natural ceiling,
- * scales to the visible maximum. Missing readings are never zero: they take
+ * every region and every year; only generation and emissions volume, which
+ * have no natural ceiling, scale to the visible maximum. Missing readings are never zero: they take
  * the page's warm grey rather than the bottom of a ramp.
  */
 
@@ -66,11 +66,18 @@ function stripeRamp(id, basis, max) {
 		};
 	if (metric.kind === 'price')
 		return { kind: 'swatch', domain: PRICE_STOPS, colours: PRICE_COLOURS, labels: PRICE_LABELS };
-	if (metric.kind === 'energy') {
+	// Generation and emissions have no natural ceiling: they scale to the
+	// visible maximum.
+	if (metric.kind === 'energy' || metric.kind === 'emissions') {
 		return {
 			kind: 'ramp',
 			domain: [0, max || 1],
-			colours: [WHITE, fuelColour(metric.fuel)],
+			colours: [
+				WHITE,
+				metric.kind === 'emissions'
+					? spectrum.intensity[spectrum.intensity.length - 1]
+					: fuelColour(metric.fuel)
+			],
 			labels: [label(0, id), label(max, id)]
 		};
 	}

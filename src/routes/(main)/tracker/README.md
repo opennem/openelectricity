@@ -13,20 +13,25 @@ rest of the query intact). Promoted from `/tracker/next`. The map/dashboard/expl
 ### Region comparison
 
 The scenarios-style view switch offers Timeline, Profile and **Compare**
-(`/tracker/compare`). Comparison offers 14 selectable Stratum charts covering
-21 metrics: carbon
-intensity; renewable, solar + wind, solar, wind, gas and coal generation and
+(`/tracker/compare`). Comparison offers 15 selectable Stratum charts covering
+24 metrics: carbon
+intensity; emissions volume (tCO₂e, shown in kt, the Regions table cycling
+kt / Mt / t; on the heatmap it scales to the visible maximum, as generation
+does); renewable (official or excluding batteries), solar + wind, solar,
+wind, gas and coal generation and
 proportions; net imports proportion; solar, wind, hydro, gas and coal market
 values; and nominal and inflation-adjusted volume-weighted prices. Only carbon
-intensity and renewables proportion start visible. Each generation/proportion pair
-shares one chart-selector entry and uses the existing Timeline tabs to switch its
-presentation. The Prices section groups market values and a single volume-weighted price entry.
-Newly selected fuel charts default to Proportion; the table and
-exports follow the selected presentation, which is preserved in the URL. The
-shared bordered `FilterDropdown` (`$lib/components/filters`, promoted from the
-facilities route) stages chart selections until
-Apply, updating charts and their table/export columns. Its standard grouped
-checkboxes, Select all and Reset controls are reused. A shared gross-demand / source-generation
+intensity and renewables proportion start visible. Charts are chosen in a strip
+under the top nav (`ComparisonChartToggles`, Profile's breakdown-bar look): one
+multi-select `FilterDropdown` per group (Emissions, Generation, Prices) in its
+`immediate` mode, so each tick shows or hides its chart at once and the panel's
+button reads Done; ⌘/Ctrl-click keeps a chart alone within its group, and Reset
+charts returns to the default two (`selectComparisonCharts`). Each chart is one
+option whatever its presentation (`comparisonChartId`); the card's
+own tabs and toggles switch the presentation, a chart switched off and on
+again returns in the one it had for the visit, and newly shown fuel charts
+default to Proportion. The table and exports follow the selected
+presentation, which is preserved in the URL. A shared gross-demand / source-generation
 selector controls generation proportions; net imports always uses gross demand.
 The shared Regions table controls regional visibility across charts and follows hover, pinned inspection or the latest common complete period (the latest period where every selected region has a value for every displayed chart).
 NSW, QLD, SA, TAS, VIC and WA (WEM) start selected; NEM and All Regions (NEM + WEM)
@@ -81,10 +86,10 @@ load, which `generation_renewable_with_storage_energy` adds back. The renewables
 **Excl. batteries** toggle switches to a sum of OE's renewable fuel
 technologies (`RENEWABLE_FUELS`: solar including rooftop, wind, hydro and
 bioenergy; OE classes pumped-hydro output as hydro), with no battery discharge
-or pumping. It is a presentation of the one Renewables picker entry, like the
-price card's inflation adjustment (`share_ex_batteries` /
-`generation_ex_batteries`, URL `renewables-ex-batteries` /
-`renewables-ex-batteries-generation`), and each footnote shows only while its
+or pumping. It is a presentation of the one Renewables option, like the
+price card's inflation adjustment (`renewables_share_ex_batteries` /
+`renewables_generation_ex_batteries`, URL `renewables-ex-batteries` /
+`renewables-generation-ex-batteries`), and each footnote shows only while its
 definition is on screen.
 Demand shares can exceed 100%. Net imports subtract exported energy from imports
 and can be negative. Non-interconnected whole networks have zero net imports.

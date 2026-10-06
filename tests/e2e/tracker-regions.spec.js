@@ -5,6 +5,7 @@ import {
 	collectPageErrors,
 	download,
 	expectNoHorizontalScroll,
+	hydrated,
 	navPill,
 	openOptions,
 	pickNavOption,
@@ -13,6 +14,35 @@ import {
 	regionsReady,
 	regionsTable
 } from './helpers/tracker.js';
+
+/**
+ * Close an open Charts dropdown with Done, waiting out its exit transition so
+ * only one panel is ever in the page.
+ * @param {import('@playwright/test').Page} page
+ */
+async function closeChartOptions(page) {
+	const done = page.getByRole('button', { name: 'Done', exact: true });
+	if ((await done.count()) === 0) return;
+	await done.click();
+	await expect(done).toHaveCount(0);
+}
+
+/**
+ * A chart's option in its group's Charts dropdown (Emissions, Generation,
+ * Prices), opening that dropdown and closing any other first.
+ * @param {import('@playwright/test').Page} page @param {string} group @param {string} name
+ */
+async function chartOption(page, group, name) {
+	await closeChartOptions(page);
+	await page
+		.getByRole('region', { name: 'Charts', exact: true })
+		.getByRole('button', { name: new RegExp(`^${group}`) })
+		.click();
+	return page
+		.locator('div.fixed')
+		.filter({ has: page.getByRole('button', { name: 'Done', exact: true }) })
+		.getByRole('button', { name, exact: true });
+}
 
 test('defaults, region colours, complete rolling values and synchronised keyboard inspection', async ({
 	page
@@ -327,7 +357,7 @@ for (const [interval, expected] of [
 	});
 }
 
-test('two charts start visible and the multiselect controls charts, table and exports without refetching', async ({
+test('two charts start visible and the charts strip controls charts, table and exports without refetching', async ({
 	page
 }) => {
 	const data = await regionsFixture(page);
@@ -336,32 +366,24 @@ test('two charts start visible and the multiselect controls charts, table and ex
 	await regionsReady(page);
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
 	const requests = data.requests.length;
-	await page.getByRole('button', { name: /^Charts/ }).click();
-	const selector = page
-		.locator('div.fixed')
-		.filter({ has: page.getByRole('button', { name: 'Apply', exact: true }) });
-	await expect(selector.getByText('2 selected', { exact: true })).toBeVisible();
-	await expect(selector).toHaveCSS('opacity', '1');
-	await page.screenshot({ path: 'test-results/tracker-chart-multiselect.png' });
-	for (const name of ['Carbon intensity', 'Renewables']) {
-		await selector.getByRole('button', { name, exact: true }).click();
-	}
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
-	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
-	await expect(page.getByText('No charts selected. Use Charts to show comparisons.')).toBeVisible();
+	await expect(await chartOption(page, 'Emissions', 'Intensity')).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(await chartOption(page, 'Generation', 'Renewables')).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await page.screenshot({ path: 'test-results/tracker-chart-strip.png' });
+	// Each tick shows or hides its chart at once; Done only closes the panel.
+	await (await chartOption(page, 'Emissions', 'Intensity')).click();
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(1);
+	await (await chartOption(page, 'Generation', 'Renewables')).click();
+	await expect(page.getByText('No charts selected. Choose charts in the bar above.')).toBeVisible();
 	await expect(regionsTable(page).getByRole('columnheader')).toHaveCount(1);
-	await page.getByRole('button', { name: /^Charts/ }).click();
-	await selector.getByRole('button', { name: 'Wind value', exact: true }).click();
-	await expect(selector.getByRole('button', { name: 'Prices', exact: true })).toBeVisible();
-	await expect(
-		selector.getByRole('button', {
-			name: 'Volume-weighted price (inflation adjusted)',
-			exact: true
-		})
-	).toHaveCount(0);
-	await selector.getByRole('button', { name: 'Volume-weighted price', exact: true }).click();
-	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
-	await expect(selector).toHaveCount(0);
+	await (await chartOption(page, 'Prices', 'Wind value')).click();
+	await (await chartOption(page, 'Prices', 'VW price')).click();
+	await closeChartOptions(page);
 	await expect(
 		page.getByRole('heading', { name: 'Wind value', exact: true, level: 3 })
 	).toBeVisible();
@@ -397,14 +419,17 @@ test('two charts start visible and the multiselect controls charts, table and ex
 	).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Carbon intensity', exact: true })).toHaveCount(0);
 	await expect(adjusted).not.toBeChecked();
-	await page.getByRole('button', { name: /^Charts/ }).click();
-	await page.getByRole('button', { name: 'Select all', exact: true }).click();
-	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(14);
-	await page.getByRole('button', { name: /^Charts/ }).click();
-	await selector.getByRole('button', { name: 'Reset', exact: true }).click();
-	await selector.getByRole('button', { name: 'Apply', exact: true }).click();
+	// ⌘/Ctrl-click keeps one chart alone in its group; Reset charts returns to the default two.
+	await hydrated(page);
+	await (await chartOption(page, 'Prices', 'Wind value')).click({ modifiers: ['ControlOrMeta'] });
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(1);
+	await expect(
+		page.getByRole('heading', { name: 'Wind value', exact: true, level: 3 })
+	).toBeVisible();
+	await closeChartOptions(page);
+	await page.getByRole('button', { name: 'Reset charts', exact: true }).click();
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
+	await expect(page.getByRole('button', { name: 'Reset charts', exact: true })).toHaveCount(0);
 });
 
 test('comparison Y axis rescales on zoom and pan as an offscreen peak enters or leaves', async ({
@@ -524,19 +549,24 @@ test('fuel chart toggles share one picker entry and persist presentation through
 	).toBeVisible();
 	await expect(regionRow(page, 'New South Wales')).toContainText('31');
 	await expect(page).toHaveURL(/compare-charts=intensity,renewables-generation/);
-	await page.getByRole('button', { name: /^Charts/ }).click();
-	const picker = page
-		.locator('div.fixed')
-		.filter({ has: page.getByRole('button', { name: 'Apply', exact: true }) });
-	await expect(picker.getByRole('button', { name: 'Renewables', exact: true })).toHaveCount(1);
-	await picker.getByRole('button', { name: 'Wind', exact: true }).click();
-	await picker.getByRole('button', { name: 'Apply', exact: true }).click();
+	await expect(await chartOption(page, 'Generation', 'Renewables')).toHaveCount(1);
+	await (await chartOption(page, 'Generation', 'Wind')).click();
 	await expect(page.getByRole('heading', { name: 'Wind proportion', exact: true })).toBeVisible();
 	await expect(
 		page.getByRole('heading', { name: 'Renewables generation', exact: true })
 	).toBeVisible();
 	expect(data.requests.length).toBe(requests);
-	await expect(picker).toHaveCount(0);
+	// Off and on again, a chart returns in the presentation it had.
+	const renewables = await chartOption(page, 'Generation', 'Renewables');
+	await renewables.click();
+	await expect(page.getByRole('heading', { name: /^Renewables/ })).toHaveCount(0);
+	await renewables.click();
+	await expect(
+		page.getByRole('heading', { name: 'Renewables generation', exact: true })
+	).toBeVisible();
+	await closeChartOptions(page);
+	await page.goBack();
+	await page.goBack();
 	await page.screenshot({ path: 'test-results/tracker-comparison-combined.png', fullPage: true });
 	await page.reload();
 	await regionsReady(page);

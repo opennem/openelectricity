@@ -20,6 +20,10 @@
 	 * until the Apply button fires `onapply` with the final selection.
 	 * Dismissing the panel any other way (outside click, scroll, pill toggle)
 	 * discards the draft; it re-seeds from `selected` on the next open.
+	 *
+	 * With `immediate`, nothing is staged: every change (a checkbox, Select
+	 * all, Clear) fires `onapply` at once, and the footer button is Done,
+	 * which only closes the panel.
 	 * @type {{
 	 *   label: string,
 	 *   options: FilterOption[],
@@ -31,6 +35,7 @@
 	 *   clearLabel?: string,
 	 *   defaults?: string[] | null,
 	 *   listMaxHeight?: number,
+	 *   immediate?: boolean,
 	 *   onapply?: (values: string[]) => void,
 	 *   row?: import('svelte').Snippet<[FilterOption, RowState]>
 	 * }}
@@ -47,6 +52,7 @@
 		defaults = null,
 		/** Scroll cap for the option list (px) — raise it for tall trees. */
 		listMaxHeight = 320,
+		immediate = false,
 		onapply,
 		row
 	} = $props();
@@ -58,7 +64,15 @@
 	/** @type {string[]} */
 	let draft = $state([]);
 
-	let draftCount = $derived(countSelectedLeaves(options, draft));
+	/** What the panel shows: the draft, or the live selection when immediate. */
+	let shown = $derived(immediate ? selected : draft);
+	/** @param {string[]} next */
+	function change(next) {
+		if (immediate) onapply?.(next);
+		else draft = next;
+	}
+
+	let draftCount = $derived(countSelectedLeaves(options, shown));
 	let selectedCount = $derived(countSelectedLeaves(options, selected));
 
 	// Deviation-aware badge on the pill — always reflects the COMMITTED
@@ -90,13 +104,16 @@
 			panelSearchTerm = '';
 		}
 	}}
-	onapply={() => onapply?.(draft)}
+	onapply={() => {
+		if (!immediate) onapply?.(draft);
+	}}
+	applyLabel={immediate ? 'Done' : 'Apply'}
 >
 	{#snippet footerLeft()}
 		<button
 			type="button"
 			class="text-sm text-dark-grey underline underline-offset-2 hover:text-black cursor-pointer"
-			onclick={() => (draft = getLeafValues(options))}
+			onclick={() => change(getLeafValues(options))}
 		>
 			Select all
 		</button>
@@ -122,7 +139,7 @@
 		<button
 			type="button"
 			class="text-xs text-mid-grey hover:text-dark-grey underline underline-offset-2 transition-colors cursor-pointer"
-			onclick={() => (draft = defaults ? [...defaults] : [])}
+			onclick={() => change(defaults ? [...defaults] : [])}
 		>
 			{clearLabel}
 		</button>
@@ -131,11 +148,11 @@
 	<div class="px-2 py-1 overflow-y-auto" style="max-height: {listMaxHeight}px">
 		<FilterOptionList
 			{options}
-			selected={draft}
+			selected={shown}
 			{defaultExpanded}
 			searchTerm={panelSearchTerm}
 			dense
-			onchange={(value, isMetaPressed) => (draft = toggleInSelection(draft, value, isMetaPressed))}
+			onchange={(value, isMetaPressed) => change(toggleInSelection(shown, value, isMetaPressed))}
 			{row}
 		/>
 	</div>

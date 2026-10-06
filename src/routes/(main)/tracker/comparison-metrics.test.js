@@ -11,6 +11,9 @@ import {
 	comparisonPresentation,
 	comparisonPresentations,
 	formatComparisonCell,
+	comparisonChartUnits,
+	comparisonTableColumn,
+	comparisonUnit,
 	normaliseComparisonResponse
 } from './comparison-metrics.js';
 import {
@@ -35,22 +38,50 @@ const response = (metric, values) => ({
 });
 describe('expanded regional metrics', () => {
 	it('defaults to intensity and renewable proportion and round-trips selections', () => {
-		expect(ALL_COMPARISON_CHARTS).toHaveLength(23);
-		expect(COMPARISON_CHART_OPTIONS).toHaveLength(14);
+		expect(ALL_COMPARISON_CHARTS).toHaveLength(24);
+		expect(COMPARISON_CHART_OPTIONS).toHaveLength(15);
 		expect(normaliseRegionComparison().charts).toEqual(['intensity', 'renewables_share']);
 		// Renewables' earlier ids still select their charts.
 		expect(
 			normaliseRegionComparison({ charts: ['intensity', 'generation', 'share'] }).charts
 		).toEqual(['intensity', 'renewables_generation']);
+		// Chosen charts keep their current presentations…
 		expect(
 			selectComparisonCharts(['renewables_share', 'wind_share'], ['renewables_generation'])
 		).toEqual(['renewables_generation', 'wind_share']);
+		// …and one shown again returns in the presentation remembered for it,
+		expect(
+			selectComparisonCharts(['renewables_share'], [], {
+				renewables_share: 'renewables_generation'
+			})
+		).toEqual(['renewables_generation']);
+		// unless the memory belongs to another chart.
+		expect(
+			selectComparisonCharts(['renewables_share'], [], { renewables_share: 'wind_generation' })
+		).toEqual(['renewables_share']);
 		for (const charts of [undefined, [], ['solar_value', 'price', 'unknown']]) {
 			const state = normaliseRegionComparison({ charts });
 			const params = new URLSearchParams();
 			applyRegionComparison(params, state);
 			expect(parseRegionComparison(params).charts).toEqual(state.charts);
 		}
+	});
+	it('charts emissions volume in kt, cycling kt / Mt / t in the table', () => {
+		const row = { emissions: 4_250_000, energy_mwh: 5_000_000 };
+		expect(comparisonMetricValue(row, 'emissions', 'demand')).toBe(4_250_000);
+		expect(comparisonMetricValue({ emissions: null }, 'emissions', 'demand')).toBeNull();
+		expect(comparisonUnit('emissions', 'demand')).toBe('ktCO₂e');
+		expect(comparisonUnit('emissions', 'demand', true)).toBe('tCO₂e');
+		expect(formatComparisonCell(4_250_000, 'emissions', {})).toBe('4,250');
+		expect(formatComparisonCell(4_250_000, 'emissions', { emissions: 'M' })).toBe('4.3');
+		expect(formatComparisonCell(62_000, 'emissions', {})).toBe('62');
+		expect(comparisonTableColumn('emissions', 'demand', {})).toMatchObject({
+			unit: 'ktCO₂e',
+			nextUnit: 'MtCO₂e'
+		});
+		expect(comparisonChartUnits('emissions')).toMatchObject({ prefix: '', display: 'k' });
+		const emissions = COMPARISON_CHART_OPTIONS.find((option) => option.id === 'emissions');
+		expect(emissions).toMatchObject({ group: 'Emissions', label: 'Volume' });
 	});
 	it('formats Regions table cells as the fuel-tech table formats the same values', () => {
 		expect(formatComparisonCell(42, 'renewables_share', {})).toBe('42.0%');
@@ -98,9 +129,6 @@ describe('expanded regional metrics', () => {
 		expect(comparisonPresentations('wind_share').map(({ key }) => key)).toEqual(['generation']);
 		expect(comparisonPresentations('price_real').map(({ key }) => key)).toEqual(['nominal']);
 		expect(comparisonPresentations('intensity')).toEqual([]);
-		expect(selectComparisonCharts(['renewables_share'], ['renewables_share_ex_batteries'])).toEqual(
-			['renewables_share_ex_batteries']
-		);
 		const state = normaliseRegionComparison({
 			charts: ['intensity', 'renewables_generation_ex_batteries']
 		});
@@ -113,10 +141,11 @@ describe('expanded regional metrics', () => {
 	it('offers one price chart, defaults to adjusted and preserves nominal selections', () => {
 		const prices = COMPARISON_CHART_OPTIONS.filter((metric) => metric.group === 'Prices');
 		expect(prices).toHaveLength(6);
-		expect(
-			prices.filter((metric) => metric.label === 'Volume-weighted price').map((metric) => metric.id)
-		).toEqual(['price_real']);
-		expect(selectComparisonCharts(['price_real'])).toEqual(['price_real']);
+		// One chip for both: inflation adjusted by default, its title in full.
+		expect(prices.filter((metric) => metric.label === 'VW price')).toMatchObject([
+			{ id: 'price_real', title: 'Volume-weighted price' }
+		]);
+		expect(selectComparisonCharts(['price_real'], [])).toEqual(['price_real']);
 		expect(selectComparisonCharts(['price_real'], ['price'])).toEqual(['price']);
 		for (const charts of [
 			['price'],

@@ -9,7 +9,7 @@
 	import { fade } from 'svelte/transition';
 	import { MediaQuery } from 'svelte/reactivity';
 	import IntervalControls from '$lib/components/charts/v2/IntervalControls.svelte';
-	import ComparisonChartSelect from './ComparisonChartSelect.svelte';
+	import ComparisonChartToggles from './ComparisonChartToggles.svelte';
 	import RegionStripes from './RegionStripes.svelte';
 	import { stripeMax, stripeScale } from './comparison-stripes.js';
 	import StripeLegend from './StripeLegend.svelte';
@@ -106,11 +106,11 @@
 		)
 	);
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
-	/** The visible maximum of a generation metric, for its data-driven ramp;
+	/** The visible maximum of a generation or emissions metric, for its data-driven ramp;
 	 * zero for every other kind, so their memoised scales never change.
 	 * @param {{id: string, kind: string}} metric */
 	function visibleMax(metric) {
-		if (metric.kind !== 'energy') return 0;
+		if (metric.kind !== 'energy' && metric.kind !== 'emissions') return 0;
 		return stripeMax(
 			regions.flatMap((region) =>
 				(source.data[region] ?? [])
@@ -269,9 +269,6 @@
 		aria-label="Comparison display"
 		onchange={(option) => select({ display: option.value === 'stripes' ? 'stripes' : 'charts' })}
 	/>
-	<div>
-		<ComparisonChartSelect selected={selection.charts} onchange={(charts) => select({ charts })} />
-	</div>
 	<!-- Timeline's interval pill, 12-month rolling switch and calendar-period
 	     filter; a filter the new grain cannot keep is dropped. -->
 	<IntervalControls
@@ -305,6 +302,7 @@
 	class="flex min-h-0 flex-1 flex-col"
 	data-png-context={`Compare · ${caption}`}
 >
+	<ComparisonChartToggles selected={selection.charts} onchange={(charts) => select({ charts })} />
 	<span class="sr-only" role="status"
 		>{source.pending ? 'Loading regional data…' : 'Complete periods · monthly source data'}</span
 	>
@@ -342,7 +340,7 @@
 			</div>
 		{/each}
 		{#if !metrics.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
-				No charts selected. Use Charts to show comparisons.
+				No charts selected. Choose charts in the bar above.
 			</p>{/if}
 		{#key selection.display}
 			<div in:fade={{ duration: reducedMotion.current ? 0 : 160 }}>
@@ -616,7 +614,8 @@
 					{#if stripes}
 						<li>
 							The heatmap uses fixed colour scales so a shade means the same in every region and
-							year; generation scales to the visible maximum and grey marks periods without data.
+							year; generation and emissions volume scale to the visible maximum, and grey marks
+							periods without data.
 						</li>
 					{/if}
 					{#if selection.charts.includes('price_real')}

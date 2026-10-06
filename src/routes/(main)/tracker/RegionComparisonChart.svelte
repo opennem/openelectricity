@@ -1,5 +1,9 @@
 <script>
-	import { comparisonMetric, formatComparisonCell } from './comparison-metrics.js';
+	import {
+		comparisonChartUnits,
+		comparisonMetric,
+		formatComparisonCell
+	} from './comparison-metrics.js';
 	import { onDestroy, untrack } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
@@ -69,17 +73,11 @@
 	// Each effect syncs one concern into the store, so a pan frame re-runs only
 	// the viewport sync rather than rebuilding labels, data and units.
 	$effect(() => {
-		chart.chartOptions.baseUnit =
-			definition.kind === 'energy'
-				? 'Wh'
-				: definition.kind === 'intensity'
-					? 'kgCO₂e/MWh'
-					: definition.kind === 'price'
-						? '$/MWh'
-						: '%';
-		chart.chartOptions.prefix = definition.kind === 'energy' ? 'M' : '';
-		chart.chartOptions.setAutomaticDisplayPrefix(definition.kind === 'energy' ? 'G' : '');
-		chart.chartOptions.allowedPrefixes = definition.kind === 'energy' ? ['M', 'G', 'T'] : [];
+		const units = comparisonChartUnits(metric);
+		chart.chartOptions.baseUnit = units.baseUnit;
+		chart.chartOptions.prefix = units.prefix;
+		chart.chartOptions.setAutomaticDisplayPrefix(units.display);
+		chart.chartOptions.allowedPrefixes = units.allowed;
 		// Prices read as the Regions table does ($85.30), not whole dollars.
 		chart.formatTooltipY =
 			definition.kind === 'price' ? (value) => formatComparisonCell(value, metric, {}) : null;

@@ -189,6 +189,7 @@
 					class="flex-1 min-w-0 flex items-center gap-3 rounded-md text-dark-grey hover:bg-warm-grey cursor-pointer px-2 {dense
 						? 'py-2'
 						: 'py-2.5'}"
+					aria-pressed={someSelected && !allSelected ? 'mixed' : allSelected}
 					onclick={() => handleSelect(opt.value, hasChildren ? opt : undefined)}
 				>
 					{@render checkbox(allSelected, someSelected)}
