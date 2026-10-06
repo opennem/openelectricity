@@ -215,14 +215,15 @@ export async function trackerFixture(
  * the clock pinned to 11 September 2026. Flags are keyed on the request's
  * `region`.
  * @param {Page} page
- * @param {{ fail?: string, hold?: string, empty?: boolean, spike?: boolean }} [options]
+ * @param {{ fail?: string, hold?: string, empty?: boolean, spike?: boolean, variedShares?: boolean }} [options]
  *   `fail` answers 503 for that region until `recover()`; `hold` parks that
  *   region's requests until `release()`; `empty` answers every request with an
- *   empty dataset; `spike` multiplies the first twelve months by 50.
+ *   empty dataset; `spike` multiplies the first twelve months by 50;
+ *   `variedShares` gives each region its own renewables share.
  */
 export async function regionsFixture(
 	page,
-	{ fail = '', hold = '', empty = false, spike = false } = {}
+	{ fail = '', hold = '', empty = false, spike = false, variedShares = false } = {}
 ) {
 	let failure = fail;
 	const held = createHold(hold);
@@ -241,6 +242,12 @@ export async function regionsFixture(
 		if (region === failure)
 			return route.fulfill({ status: 503, json: { error: 'Regional fixture unavailable' } });
 		const amount = { nsw1: 1, qld1: 2, sa1: 3, tas1: 4, vic1: 5, wem: 6, _all: 15 }[region] ?? 1;
+		// Renewables shares are otherwise 150% everywhere; varied, they rank
+		// TAS, SA, VIC, WEM, QLD, NSW, with NEM (49.5%) between WEM and QLD.
+		const renewablesScale = variedShares
+			? ({ nsw1: 0.2, qld1: 0.3, sa1: 0.7, tas1: 0.9, vic1: 0.4, wem: 0.35, _all: 0.33 }[region] ??
+				1)
+			: 1;
 		// Monthly requests always answer 80 months from 2020; daily requests answer
 		// exactly the requested calendar window, one reading per day.
 		const dayMs = 86_400_000;
@@ -279,7 +286,10 @@ export async function regionsFixture(
 						]
 					: metric === 'renewables_energy'
 						? [
-								{ metric: 'generation_renewable_energy', results: [series('renewables', 1500)] },
+								{
+									metric: 'generation_renewable_energy',
+									results: [series('renewables', 1500 * renewablesScale)]
+								},
 								{ metric: 'demand_gross_energy', results: [series('demand', 1000)] }
 							]
 						: [

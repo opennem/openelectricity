@@ -8,7 +8,11 @@
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { inspectionStep } from './comparison-inspection.js';
-	import { rankComparisonRows } from './comparison-displays.js';
+	import {
+		benchmarkRankRows,
+		formatBenchmarkRank,
+		rankComparisonRows
+	} from './comparison-displays.js';
 	import {
 		COMPARISON_REGIONS,
 		comparisonPeriod,
@@ -25,9 +29,11 @@
 	const SERIES_COLOURS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.colour]));
 
 	/** `shape` is what each region's line plots: its value, or its `rank`
-	 * among the regions that period (1 at the top, the Ranks display).
+	 * among the regions that period (1 at the top, the Ranks display). With
+	 * ranks, `benchmarks` (NEM, All Regions) are dashed reference lines placed
+	 * among the ranks rather than ranked themselves.
 	 * @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string, months: number,
-	 * shape?: 'line' | 'rank',
+	 * shape?: 'line' | 'rank', benchmarks?: string[],
 	 * viewport: {start:number,end:number}, bounds: {start:number,end:number}, height: number,
 	 * tooltip: boolean, engaged: boolean, hover: number | null, focus: number | null, onhover: (time:number | null) => void, onfocus: (time:number | null) => void,
 	 * hoverRegion: string | null, onhoverregion: (region: string | null) => void,
@@ -40,6 +46,7 @@
 		interval,
 		months,
 		shape = 'line',
+		benchmarks = [],
 		viewport,
 		bounds,
 		height,
@@ -76,10 +83,21 @@
 	const formatRank = (rank) => `#${rank}`;
 	const inspectionHintId = $props.id();
 	let definition = $derived(comparisonMetric(metric));
-	let rows = $derived.by(() => {
-		const values = comparisonChartRows(data, regions, metric, basis, months);
-		return shape === 'rank' ? rankComparisonRows(values, regions) : values;
-	});
+	/** Each period's values: the regions', and with ranks the references' too. */
+	let values = $derived(
+		comparisonChartRows(
+			data,
+			shape === 'rank' ? [...regions, ...benchmarks] : regions,
+			metric,
+			basis,
+			months
+		)
+	);
+	let rows = $derived(shape === 'rank' ? rankComparisonRows(values, regions) : values);
+	/** Where NEM and All Regions fall among the ranks, period by period. */
+	let benchmarkRows = $derived(
+		shape === 'rank' && benchmarks.length ? benchmarkRankRows(values, regions, benchmarks) : []
+	);
 	let visibleRows = $derived(visibleComparisonRows(rows, viewport));
 	// Each effect syncs one concern into the store, so a pan frame re-runs only
 	// the viewport sync rather than rebuilding labels, data and units.
@@ -106,6 +124,24 @@
 		chart.seriesNames = regions;
 		chart.title = definition.shortLabel;
 		chart.formatTooltipX = (date) => comparisonPeriod(Number(date), interval);
+	});
+	$effect(() => {
+		const count = regions.length;
+		chart.overlayLines =
+			shape === 'rank'
+				? benchmarks.map((id) => ({
+						id,
+						data: benchmarkRows,
+						valueKey: id,
+						colour: SERIES_COLOURS[id],
+						dasharray: '4 3',
+						label: SERIES_LABELS[id],
+						tooltipUnit: '',
+						formatTooltipValue: (/** @type {number} */ place) => formatBenchmarkRank(place, count),
+						// Hovering a reference names its row in the Regions table.
+						hoverable: true
+					}))
+				: [];
 	});
 	$effect(() => {
 		chart.chartStyles.chartHeightPx = height;

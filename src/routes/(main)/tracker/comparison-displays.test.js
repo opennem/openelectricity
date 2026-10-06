@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { rankComparisonRows } from './comparison-displays.js';
+import {
+	benchmarkComparisonRegions,
+	benchmarkRankRows,
+	formatBenchmarkRank,
+	isRankableComparisonMetric,
+	rankComparisonRows,
+	rankedComparisonRegions
+} from './comparison-displays.js';
 
 const row = (/** @type {number} */ time, /** @type {Record<string, any>} */ values) => ({
 	date: new Date(time),
@@ -30,5 +37,40 @@ describe('comparison displays', () => {
 			{ date: new Date(5), time: 5, nsw1: null }
 		]);
 		expect(rankComparisonRows([], ['nsw1'])).toEqual([]);
+	});
+	it('ranks the states and WEM, with NEM and All Regions as references', () => {
+		const regions = ['vic1', '_all', 'nsw1', 'au', 'wem'];
+		expect(rankedComparisonRegions(regions)).toEqual(['vic1', 'nsw1', 'wem']);
+		expect(benchmarkComparisonRegions(regions)).toEqual(['_all', 'au']);
+		expect(rankedComparisonRegions(['_all'])).toEqual([]);
+	});
+	it('ranks ratios only, never volumes', () => {
+		expect(isRankableComparisonMetric('intensity')).toBe(true);
+		expect(isRankableComparisonMetric('renewables_share')).toBe(true);
+		expect(isRankableComparisonMetric('price')).toBe(true);
+		expect(isRankableComparisonMetric('emissions')).toBe(false);
+		expect(isRankableComparisonMetric('solar_generation')).toBe(false);
+	});
+	it('places references on a tied rank or between the ranks either side', () => {
+		const ranked = ['nsw1', 'qld1', 'sa1'];
+		const placed = benchmarkRankRows(
+			[
+				row(0, { nsw1: 30, qld1: 20, sa1: 10, _all: 25, au: 20 }),
+				row(1, { nsw1: 30, qld1: 20, sa1: 10, _all: 40, au: 5 }),
+				row(2, { nsw1: null, qld1: null, sa1: null, _all: 40, au: null })
+			],
+			ranked,
+			['_all', 'au']
+		);
+		expect(placed[0]).toMatchObject({ time: 0, _all: 1.5, au: 2 });
+		expect(placed[1]).toMatchObject({ _all: 0.5, au: 3.5 });
+		// Nothing to place against, or no value of its own.
+		expect(placed[2]).toMatchObject({ _all: null, au: null });
+	});
+	it('reads a reference place as a rank, a range or an end', () => {
+		expect(formatBenchmarkRank(2, 6)).toBe('#2');
+		expect(formatBenchmarkRank(2.5, 6)).toBe('#2–3');
+		expect(formatBenchmarkRank(0.5, 6)).toBe('above #1');
+		expect(formatBenchmarkRank(6.5, 6)).toBe('below #6');
 	});
 });

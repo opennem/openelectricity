@@ -19,6 +19,7 @@
 	 * @property {string | null} [highlightId] - Currently hovered series key (dims others)
 	 * @property {(evt: { data: any, key: string }) => void} [onmousemove] - Callback on bar hover
 	 * @property {() => void} [onmouseout] - Callback on bar mouse leave
+	 * @property {(data: any) => void} [onpointerup] - Callback on bar click, with the bar's row
 	 */
 
 	/** @type {Props} */
@@ -28,7 +29,8 @@
 		seriesColours = {},
 		highlightId = null,
 		onmousemove = () => {},
-		onmouseout = () => {}
+		onmouseout = () => {},
+		onpointerup = () => {}
 	} = $props();
 
 	let bandwidth = $derived($xScale.bandwidth ? $xScale.bandwidth() : 0);
@@ -55,6 +57,7 @@
 				role="presentation"
 				onmouseenter={() => onmousemove({ data: row, key })}
 				onmouseleave={onmouseout}
+				onpointerup={() => onpointerup(row)}
 			/>
 		{/each}
 	{/each}

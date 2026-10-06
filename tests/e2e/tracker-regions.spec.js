@@ -918,46 +918,67 @@ test('panels share one scale, ghost the other regions and name the hovered regio
 	expect(errors).toEqual([]);
 });
 
-test('ranks order regions by value, 1 for the highest, ties sharing a rank', async ({ page }) => {
+test('ranks order the states and WEM by ratio, with NEM as a reference and volumes unranked', async ({
+	page
+}) => {
 	const errors = collectPageErrors(page);
-	await regionsFixture(page);
+	await regionsFixture(page, { variedShares: true });
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto(
-		'/tracker/compare?compare-charts=intensity,emissions&compare-display=ranks&compare-table=0'
+		'/tracker/compare?compare-charts=intensity,renewables,emissions&compare-display=ranks&compare-regions=nsw,qld,sa,tas,vic,wem,nem&compare-table=0'
 	);
 	await expect(
 		page.getByText('Complete periods · monthly source data', { exact: true })
 	).toBeVisible();
-	await expect(
-		card(page, 'Emissions volume').getByText('1 = highest', { exact: true })
-	).toBeVisible();
 	/** @param {RegExp} name */
 	const hoverChart = async (name) => {
+		await page.mouse.move(0, 0);
 		const chart = page.getByRole('group', { name });
+		await chart.scrollIntoViewIfNeeded();
 		const box = await chart.boundingBox();
 		if (!box) throw new Error('Rank chart has no size');
 		await page.mouse.move(box.x + box.width * 0.9, box.y + box.height / 2);
 		return chart.getByTestId('chart-floating-tooltip');
 	};
-	// Emissions grow with the region: WA's are the highest, NSW's the lowest of six.
-	const emissions = await hoverChart(/Emissions volume rank comparison chart/);
-	await expect(emissions).toContainText('#1');
-	await expect(emissions).toContainText('#6');
-	await expect(emissions).toContainText(/Western Australia \(SWIS\)\s*#1/);
-	await expect(emissions).toContainText(/New South Wales\s*#6/);
-	// Every region's intensity is the same, so all six share first place.
-	await page.mouse.move(0, 0);
+	// Renewables shares rank Tasmania first and NSW last of the six; NEM is
+	// not ranked against the states it contains but placed between WEM and QLD.
+	const renewables = await hoverChart(/Renewables proportion rank comparison chart/);
+	await expect(renewables).toContainText(/Tasmania\s*#1/);
+	await expect(renewables).toContainText(/New South Wales\s*#6/);
+	await expect(renewables).toContainText(/National Electricity Market\s*#4–5/);
+	await expect(renewables).not.toContainText('#7');
+	await expect(
+		card(page, 'Renewables proportion').getByText('1 = highest', { exact: true })
+	).toBeVisible();
+	// The reference line is dashed.
+	await expect(
+		page
+			.getByRole('group', { name: /Renewables proportion rank comparison chart/ })
+			.locator('path.overlay-line[stroke-dasharray]')
+	).toHaveCount(1);
+	// Every region's intensity is the same, so all six share first place, NEM on it.
 	const intensity = await hoverChart(/Carbon intensity rank comparison chart/);
 	await expect(intensity).toContainText('#1');
 	await expect(intensity).not.toContainText('#2');
+	await expect(intensity).toContainText(/National Electricity Market\s*#1/);
 	// The axis reads ranks, 1 at the top.
 	await expect(
 		page
 			.getByRole('group', { name: /Carbon intensity rank comparison chart/ })
-			.getByText('#1', {
-				exact: true
-			})
+			.getByText('#1', { exact: true })
 			.first()
 	).toBeVisible();
+	// Volumes mostly measure size, so they stay as lines.
+	await expect(
+		card(page, 'Emissions volume').getByText('Not rankable', { exact: true })
+	).toBeVisible();
+	await expect(
+		page.getByRole('group', { name: 'Emissions volume comparison chart', exact: true })
+	).toBeVisible();
+	// With only NEM selected there is nothing to rank.
+	await page.goto(
+		'/tracker/compare?compare-charts=intensity&compare-display=ranks&compare-regions=nem'
+	);
+	await expect(page.getByText('Select a state or WEM to rank.', { exact: false })).toBeVisible();
 	expect(errors).toEqual([]);
 });

@@ -49,6 +49,11 @@
 	import TrackerSplitLayout from './TrackerSplitLayout.svelte';
 	import RegionComparisonChart from './RegionComparisonChart.svelte';
 	import RegionPanels from './RegionPanels.svelte';
+	import {
+		benchmarkComparisonRegions,
+		isRankableComparisonMetric,
+		rankedComparisonRegions
+	} from './comparison-displays.js';
 	import { CONTRIBUTION_OPTIONS, RENEWABLES_DOCS, contributionLabel } from './tracker-model.js';
 	import { createRegionComparisonData } from './region-comparison-data.svelte.js';
 	import { comparisonExportDataset } from './region-comparison-export.js';
@@ -90,6 +95,10 @@
 	);
 	let display = $derived(selection.display);
 	let descriptor = $derived(comparisonDisplay(display));
+	/** Ranks ranks the states and WEM; NEM and All Regions, which contain
+	 * them, are references placed among the ranks. */
+	let rankedRegions = $derived(rankedComparisonRegions(regions));
+	let benchmarkRegions = $derived(benchmarkComparisonRegions(regions));
 	/** The display switch: icon-only, each icon naming its display in a
 	 * tooltip, as Profile's Style switcher. */
 	const DISPLAY_ICONS = {
@@ -384,9 +393,12 @@
 						)}
 					{@const scale =
 						display === 'stripes' ? stripeScale(metric.id, basis, visibleMax(metric)) : null}
+					<!-- Ranks ranks ratios; volumes, which mostly measure a region's
+					     size, stay lines, badged. -->
+					{@const ranked = display === 'ranks' && isRankableComparisonMetric(metric.id)}
 					<ChartCard
 						title={metric.label}
-						badge={display === 'ranks' ? '1 = highest' : ''}
+						badge={ranked ? '1 = highest' : display === 'ranks' ? 'Not rankable' : ''}
 						defaultHeightPx={320}
 						heightStorageKey={descriptor.resizable
 							? `tracker-comparison-${comparisonChartId(metric.id)}-height`
@@ -484,15 +496,21 @@
 									}}
 									onviewport={moveViewport}
 								/>
+							{:else if ranked && !rankedRegions.length}
+								<p role="status" class="p-4 text-sm">
+									Select a state or WEM to rank. NEM and All Regions contain them, so they are drawn
+									among the ranks rather than ranked.
+								</p>
 							{:else}
 								<RegionComparisonChart
 									data={source.data}
-									{regions}
+									regions={ranked ? rankedRegions : regions}
+									benchmarks={ranked ? benchmarkRegions : []}
 									metric={metric.id}
 									{basis}
 									{interval}
 									{months}
-									shape={display === 'ranks' ? 'rank' : 'line'}
+									shape={ranked ? 'rank' : 'line'}
 									{viewport}
 									bounds={chartBounds}
 									{height}
@@ -669,8 +687,10 @@
 					</li>
 					{#if display === 'ranks'}
 						<li>
-							Ranks count the selected regions with a value that period, 1 for the highest; tied
-							regions share a rank.
+							Ranks order the selected states and WEM with a value that period, 1 for the highest;
+							tied regions share a rank. NEM and All Regions are dashed lines between the ranks they
+							fall between. Generation and emissions volumes are not ranked, as they mostly reflect
+							a region's size.
 						</li>
 					{/if}
 					{#if display === 'panels'}

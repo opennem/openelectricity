@@ -857,6 +857,10 @@ Two optional SVG elements for specialized visualizations:
 
 - **HatchOverlay** (`overlayStart` prop): Renders a hatched rectangle from `overlayStart` (time in ms) to the right edge of the chart. Uses the existing `HatchPattern` SVG def. Useful for marking projection/forecast regions.
 
+### Bar charts
+
+`grouped-bar` and `bar-stacked` render through `BarChart` (a band x-scale, no `InteractionLayer`, so no drag-pan or wheel zoom). Hovering a bar reports its row and series key, as stack areas do, and a click (`onpointerup` on each `<rect>`) reaches `StratumChart`'s series click, so it pins the period like a click on a line or area.
+
 ### ChartStore
 
 `ChartStore` is a Svelte 5 reactive class (`$state`, `$derived`) that holds all chart configuration and data:

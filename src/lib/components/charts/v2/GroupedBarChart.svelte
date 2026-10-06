@@ -66,6 +66,7 @@
 				highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
 				onmousemove={handleSeriesHover}
 				onmouseout={handleSeriesOut}
+				{onpointerup}
 			/>
 		</Svg>
 

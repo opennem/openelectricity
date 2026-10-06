@@ -148,8 +148,17 @@ reshaping lives in `comparison-displays.js`.
   become ranks among the regions with a value (`rankComparisonRows`,
   competition ranking, so ties share a rank and the next skips), on a reversed
   y-domain (`[n + 0.5, 0.5]`, which LayerCake applies as given) so 1 sits at the
-  top, read as `#1` on the axis and in tooltips. The card is badged
-  "1 = highest" for every metric.
+  top, read as `#1` on the axis and in tooltips. Only ratios are ranked
+  (`isRankableComparisonMetric`): generation and emissions volumes mostly
+  measure a region's size, so their cards stay as Trends lines, badged "Not
+  rankable"; ranked cards are badged "1 = highest". Only the states and WEM
+  are ranked (`rankedComparisonRegions`). NEM and All Regions contain them,
+  so they are dashed reference lines (v2 overlay lines with `dasharray`)
+  placed among the ranks by `benchmarkRankRows`: on the rank they tie, or
+  halfway between the ranks either side, read as `#4–5`, `above #1` or
+  `below #6` (`formatBenchmarkRank`). Hovering a reference names its row in
+  the table. With only NEM or All Regions selected, a ranked card asks for a
+  state or WEM.
 
 `RegionTooltip` is the floating tooltip of the custom displays (heatmap and
 panels), styled as Stratum's.

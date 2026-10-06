@@ -265,6 +265,7 @@
 						valueKey={overlay.valueKey}
 						colour={overlay.colour}
 						strokeWidth={overlay.strokeWidth ?? 1.5}
+						dasharray={overlay.dasharray}
 						scale={overlay.scale ?? 'y'}
 						showAxis={overlay.scale === 'percent'}
 						curveType={chart.chartOptions.curveFunction}

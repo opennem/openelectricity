@@ -17,6 +17,7 @@
 	 * @property {string | null} [highlightId] - Currently hovered series key (dims others)
 	 * @property {(evt: { data: any, key: string }) => void} [onmousemove] - Callback on bar hover
 	 * @property {() => void} [onmouseout] - Callback on bar mouse leave
+	 * @property {(data: any) => void} [onpointerup] - Callback on bar click, with the bar's row
 	 */
 
 	/** @type {Props} */
@@ -25,7 +26,8 @@
 		seriesColours = {},
 		highlightId = null,
 		onmousemove = () => {},
-		onmouseout = () => {}
+		onmouseout = () => {},
+		onpointerup = () => {}
 	} = $props();
 </script>
 
@@ -50,6 +52,7 @@
 					role="presentation"
 					onmouseenter={() => onmousemove({ data: row, key: series.key })}
 					onmouseleave={onmouseout}
+					onpointerup={() => onpointerup(row)}
 				/>
 			{/if}
 		{/each}

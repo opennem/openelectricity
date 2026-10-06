@@ -26,6 +26,7 @@
 	 * @property {string} valueKey
 	 * @property {string} [colour]
 	 * @property {number} [strokeWidth]
+	 * @property {string} [dasharray] - SVG stroke-dasharray, e.g. '4 3' for a reference line
 	 * @property {'y' | 'percent'} [scale]
 	 * @property {boolean} [showAxis] - Right-edge % tick labels (percent scale)
 	 * @property {any} [curveType] - d3 curve factory, matching the host chart
@@ -42,6 +43,7 @@
 		valueKey,
 		colour = '#C74523',
 		strokeWidth = 1.5,
+		dasharray = undefined,
 		scale = 'y',
 		showAxis = false,
 		curveType = curveLinear,
@@ -114,6 +116,7 @@
 		fill="none"
 		stroke={colour}
 		stroke-width={strokeWidth}
+		stroke-dasharray={dasharray}
 		pointer-events="none"
 	/>
 	{#if onmousemove}

@@ -115,6 +115,7 @@
 					highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
 					onmousemove={handleSeriesHover}
 					onmouseout={handleSeriesOut}
+					{onpointerup}
 				/>
 			{:else}
 				<GroupedBar
@@ -124,6 +125,7 @@
 					highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
 					onmousemove={handleSeriesHover}
 					onmouseout={handleSeriesOut}
+					{onpointerup}
 				/>
 			{/if}
 		</Svg>
