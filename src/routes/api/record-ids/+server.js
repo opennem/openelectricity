@@ -1,10 +1,6 @@
 import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
 
-export async function GET({ url, fetch, setHeaders }) {
-	setHeaders({
-		Authorization: `Bearer ${PUBLIC_API_KEY}`
-	});
-
+export async function GET({ url, fetch }) {
 	// const date = url.searchParams.get('date');
 	const { searchParams } = url;
 
@@ -144,7 +140,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	const path = `${PUBLIC_RECORDS_API}/record_id?${fuelTechParams}${metricParams}${aggregateParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}${significanceParams}`;
 
 	console.log('record_id path', path);
-	const response = await fetch(path);
+	const response = await fetch(path, { headers: { Authorization: `Bearer ${PUBLIC_API_KEY}` } });
 
 	if (response.ok) {
 		const data = await response.json();

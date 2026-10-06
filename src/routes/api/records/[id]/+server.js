@@ -2,8 +2,7 @@ import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
 
 export async function GET({ params, url, fetch, setHeaders }) {
 	setHeaders({
-		'cache-control': 'max-age=0',
-		Authorization: `Bearer ${PUBLIC_API_KEY}`
+		'cache-control': 'max-age=0'
 	});
 
 	const { searchParams } = url;
@@ -24,7 +23,7 @@ export async function GET({ params, url, fetch, setHeaders }) {
 
 	console.log('path', path);
 
-	const response = await fetch(path);
+	const response = await fetch(path, { headers: { Authorization: `Bearer ${PUBLIC_API_KEY}` } });
 	if (response.ok) {
 		const data = await response.json();
 		return Response.json(data);
