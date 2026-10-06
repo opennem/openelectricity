@@ -217,6 +217,13 @@ describe('tracker URLs', () => {
 			parseTrackerUrl(new URLSearchParams(), context)
 		);
 		expect(charts.searchParams.has('compare-display')).toBe(false);
+		const ranks = parseTrackerUrl(new URLSearchParams('compare-display=ranks'), context);
+		expect(ranks.regionComparison.display).toBe('ranks');
+		expect(
+			applyTrackerUrl(new URL('https://example.test/tracker'), ranks).searchParams.get(
+				'compare-display'
+			)
+		).toBe('ranks');
 	});
 
 	it('writes lists with bare commas, which parse as the encoded form did', () => {

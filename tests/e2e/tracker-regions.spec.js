@@ -35,7 +35,7 @@ async function closeChartOptions(page) {
 async function chartOption(page, group, name) {
 	await closeChartOptions(page);
 	await page
-		.getByRole('region', { name: 'Charts', exact: true })
+		.getByRole('group', { name: 'Charts', exact: true })
 		.getByRole('button', { name: new RegExp(`^${group}`) })
 		.click();
 	return page
@@ -379,7 +379,7 @@ test('two charts start visible and the charts strip controls charts, table and e
 	await (await chartOption(page, 'Emissions', 'Intensity')).click();
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(1);
 	await (await chartOption(page, 'Generation', 'Renewables')).click();
-	await expect(page.getByText('No charts selected. Choose charts in the bar above.')).toBeVisible();
+	await expect(page.getByText('No charts selected. Choose charts in the top nav.')).toBeVisible();
 	await expect(regionsTable(page).getByRole('columnheader')).toHaveCount(1);
 	await (await chartOption(page, 'Prices', 'Wind value')).click();
 	await (await chartOption(page, 'Prices', 'VW price')).click();
@@ -419,7 +419,7 @@ test('two charts start visible and the charts strip controls charts, table and e
 	).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Carbon intensity', exact: true })).toHaveCount(0);
 	await expect(adjusted).not.toBeChecked();
-	// ⌘/Ctrl-click keeps one chart alone in its group; Reset charts returns to the default two.
+	// ⌘/Ctrl-click keeps one chart alone in its group.
 	await hydrated(page);
 	await (await chartOption(page, 'Prices', 'Wind value')).click({ modifiers: ['ControlOrMeta'] });
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(1);
@@ -427,9 +427,6 @@ test('two charts start visible and the charts strip controls charts, table and e
 		page.getByRole('heading', { name: 'Wind value', exact: true, level: 3 })
 	).toBeVisible();
 	await closeChartOptions(page);
-	await page.getByRole('button', { name: 'Reset charts', exact: true }).click();
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
-	await expect(page.getByRole('button', { name: 'Reset charts', exact: true })).toHaveCount(0);
 });
 
 test('comparison Y axis rescales on zoom and pan as an offscreen peak enters or leaves', async ({
@@ -815,7 +812,152 @@ test('heatmap display shares hover and pinning with the table, exports PNG and r
 	await expect(card(page, 'Carbon intensity').locator('.stratum-chart')).toHaveCount(1);
 	await page.goForward();
 	await expect(card(page, 'Carbon intensity').locator('svg[data-png-layer]')).toBeVisible();
+	// With the table closed the heatmap floats its own tooltip.
+	await page.getByRole('button', { name: 'Hide regions table' }).click();
+	const closed = await card(page, 'Carbon intensity').locator('svg[data-png-layer]').boundingBox();
+	if (!closed) throw new Error('Stripes have no size');
+	await page.mouse.move(closed.x + 96 + (closed.width - 96) * 0.5, closed.y + 20);
+	const tooltip = card(page, 'Carbon intensity').getByTestId('chart-floating-tooltip');
+	await expect(tooltip).toContainText('kgCO₂e/MWh');
+	await expect(tooltip.locator('.font-semibold')).toContainText(['NSW']);
 	await page.setViewportSize({ width: 390, height: 800 });
 	await expectNoHorizontalScroll(page);
+	expect(errors).toEqual([]);
+});
+
+test('display switch is icon-only, round-trips every display and restores through history', async ({
+	page
+}) => {
+	const errors = collectPageErrors(page);
+	const data = await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/tracker/compare');
+	await regionsReady(page);
+	const requests = data.requests.length;
+	for (const [name, slug] of [
+		['Panels', 'panels'],
+		['Ranks', 'ranks'],
+		['Heatmap', 'heatmap'],
+		['Trends', '']
+	]) {
+		const button = page.getByRole('button', { name, exact: true });
+		// Icons name themselves only to assistive technology and in a tooltip.
+		await expect(button).toHaveText('');
+		await button.click();
+		if (slug) await expect(page).toHaveURL(new RegExp(`compare-display=${slug}(&|$)`));
+		else await expect(page).not.toHaveURL(/compare-display/);
+	}
+	expect(data.requests.length).toBe(requests);
+	await page.goBack();
+	await expect(page).toHaveURL(/compare-display=heatmap/);
+	await page.goBack();
+	await expect(page).toHaveURL(/compare-display=ranks/);
+	await expect(
+		page.getByRole('group', { name: /Carbon intensity rank comparison chart/ })
+	).toBeVisible();
+	expect(errors).toEqual([]);
+});
+
+test('panels share one scale, ghost the other regions and name the hovered region to the table', async ({
+	page
+}) => {
+	const errors = collectPageErrors(page);
+	await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/tracker/compare?compare-charts=emissions&compare-display=panels');
+	await expect(regionRow(page, 'New South Wales')).toContainText(/\d/);
+	const emissions = card(page, 'Emissions volume');
+	const panels = emissions.getByRole('group', { name: 'Emissions volume panels' });
+	await expect(panels.locator('.stratum-chart')).toHaveCount(6);
+	// Each panel is labelled with its region, behind which the others are ghosts.
+	await expect(panels.locator('[data-region="qld1"] text', { hasText: 'QLD' })).toBeVisible();
+	await expect(
+		panels
+			.locator('[data-region="qld1"] path.layercake-line, [data-region="qld1"] .stratum-chart path')
+			.first()
+	).toBeAttached();
+	// One shared scale: every panel's y-axis reads the same.
+	const axis = async (/** @type {string} */ region) =>
+		(await panels.locator(`[data-region="${region}"] .stratum-chart`).textContent()) ?? '';
+	expect(await axis('nsw1')).toBe(await axis('wem'));
+	// Hovering a panel inspects its period everywhere and focuses its region's row.
+	const period = page.getByTestId('tracker-range-label');
+	const resting = (await period.textContent()) ?? '';
+	const queensland = panels.locator('[data-region="qld1"] .stratum-chart');
+	const box = await queensland.boundingBox();
+	if (!box) throw new Error('Queensland panel has no size');
+	await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.4);
+	await expect(period).not.toHaveText(resting);
+	await expect(regionRow(page, 'Queensland')).toHaveAttribute('data-focused', 'true');
+	await page.mouse.move(0, 0);
+	await expect(period).toHaveText(resting);
+	// Keyboard inspection walks the periods, as on the other displays.
+	await page.getByRole('button', { name: 'Inspect emissions volume values' }).focus();
+	await page.keyboard.press('ArrowLeft');
+	await expect(period).not.toHaveText(resting);
+	await page.keyboard.press('Escape');
+	await expect(period).toHaveText(resting);
+	// The panels card exports as one PNG.
+	const menu = await openOptions(page);
+	await menu.getByRole('button', { name: 'Export PNG', exact: true }).click();
+	const dialog = page.getByRole('dialog');
+	await expect(dialog.getByRole('checkbox', { name: /Emissions volume/ })).toBeEnabled();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toHaveCount(0);
+	await page.screenshot({ path: 'test-results/tracker-regions-panels.png', fullPage: true });
+	// With the table closed the card floats one tooltip, the hovered region emphasised.
+	await page.getByRole('button', { name: 'Hide regions table' }).click();
+	const vic = await panels.locator('[data-region="vic1"] .stratum-chart').boundingBox();
+	if (!vic) throw new Error('Victoria panel has no size');
+	await page.mouse.move(vic.x + vic.width * 0.5, vic.y + vic.height * 0.4);
+	const tooltip = panels.getByTestId('chart-floating-tooltip');
+	await expect(tooltip).toContainText('ktCO₂e');
+	await expect(tooltip.locator('.font-semibold')).toContainText(['VIC']);
+	await page.setViewportSize({ width: 390, height: 800 });
+	await expectNoHorizontalScroll(page);
+	expect(errors).toEqual([]);
+});
+
+test('ranks order regions by value, 1 for the highest, ties sharing a rank', async ({ page }) => {
+	const errors = collectPageErrors(page);
+	await regionsFixture(page);
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto(
+		'/tracker/compare?compare-charts=intensity,emissions&compare-display=ranks&compare-table=0'
+	);
+	await expect(
+		page.getByText('Complete periods · monthly source data', { exact: true })
+	).toBeVisible();
+	await expect(
+		card(page, 'Emissions volume').getByText('1 = highest', { exact: true })
+	).toBeVisible();
+	/** @param {RegExp} name */
+	const hoverChart = async (name) => {
+		const chart = page.getByRole('group', { name });
+		const box = await chart.boundingBox();
+		if (!box) throw new Error('Rank chart has no size');
+		await page.mouse.move(box.x + box.width * 0.9, box.y + box.height / 2);
+		return chart.getByTestId('chart-floating-tooltip');
+	};
+	// Emissions grow with the region: WA's are the highest, NSW's the lowest of six.
+	const emissions = await hoverChart(/Emissions volume rank comparison chart/);
+	await expect(emissions).toContainText('#1');
+	await expect(emissions).toContainText('#6');
+	await expect(emissions).toContainText(/Western Australia \(SWIS\)\s*#1/);
+	await expect(emissions).toContainText(/New South Wales\s*#6/);
+	// Every region's intensity is the same, so all six share first place.
+	await page.mouse.move(0, 0);
+	const intensity = await hoverChart(/Carbon intensity rank comparison chart/);
+	await expect(intensity).toContainText('#1');
+	await expect(intensity).not.toContainText('#2');
+	// The axis reads ranks, 1 at the top.
+	await expect(
+		page
+			.getByRole('group', { name: /Carbon intensity rank comparison chart/ })
+			.getByText('#1', {
+				exact: true
+			})
+			.first()
+	).toBeVisible();
 	expect(errors).toEqual([]);
 });

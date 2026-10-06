@@ -78,13 +78,44 @@ export function comparisonFilterLabel(interval, filter) {
 	);
 }
 
-/** @typedef {'charts' | 'stripes'} ComparisonDisplay */
-/** The top-nav display switch: each region as a line over time, or as a row
- * of colour cells (`compare-display=heatmap`). */
+/** @typedef {'charts' | 'panels' | 'ranks' | 'stripes'} ComparisonDisplay */
+/**
+ * The top-nav display switch, in switch order. Each display draws every
+ * selected chart in its own way; the orchestrator reads these flags rather
+ * than naming displays. `slug` is the `compare-display` URL value (empty for
+ * the default); `resizable` cards keep a drag-to-resize height, and `panZoom`
+ * cards take Trends' tap-to-engage pan and zoom.
+ * @typedef {{value: ComparisonDisplay, slug: string, label: string, resizable: boolean, panZoom: boolean}} ComparisonDisplayDescriptor
+ * @type {ComparisonDisplayDescriptor[]}
+ */
 export const COMPARISON_DISPLAYS = [
-	{ value: 'charts', label: 'Trends' },
-	{ value: 'stripes', label: 'Heatmap' }
+	// Each region as a line over time.
+	{ value: 'charts', slug: '', label: 'Trends', resizable: true, panZoom: true },
+	// Small multiples: one panel per region on a shared scale, the other
+	// regions as grey ghost lines behind it.
+	{ value: 'panels', slug: 'panels', label: 'Panels', resizable: false, panZoom: false },
+	// Each region's rank among the selected regions, 1 for the highest.
+	{ value: 'ranks', slug: 'ranks', label: 'Ranks', resizable: true, panZoom: true },
+	// A row of colour cells per region.
+	{ value: 'stripes', slug: 'heatmap', label: 'Heatmap', resizable: false, panZoom: false }
 ];
+/** A display's descriptor; Trends for anything unknown.
+ * @param {string | null | undefined} value @returns {ComparisonDisplayDescriptor} */
+export function comparisonDisplay(value) {
+	return COMPARISON_DISPLAYS.find((display) => display.value === value) ?? COMPARISON_DISPLAYS[0];
+}
+/** @param {string | null | undefined} value @returns {ComparisonDisplay} */
+export function normaliseComparisonDisplay(value) {
+	return comparisonDisplay(value).value;
+}
+/** The display a `compare-display` value names: its slug, or the display's
+ * own id (`stripes`, the heatmap's earlier name); undefined when unknown.
+ * @param {string | null} slug @returns {ComparisonDisplay | undefined} */
+export function comparisonDisplayFromSlug(slug) {
+	return COMPARISON_DISPLAYS.find(
+		(display) => slug && (display.slug === slug || display.value === slug)
+	)?.value;
+}
 /** `filter` keeps one calendar period of the interval's grain each year — a
  * month, season, quarter or half (Timeline's calendar-period filter ids).
  * @typedef {{charts: string[], display: ComparisonDisplay, interval: string, filter: string | null, regions: string[], basis: 'demand' | 'generation', start: number | null, end: number | null, table: boolean | null}} RegionComparisonSelection */
@@ -116,7 +147,7 @@ export function normaliseRegionComparison(value = undefined) {
 					return selected ? [selected] : [];
 				})
 			: [...DEFAULT_COMPARISON_CHARTS],
-		display: value?.display === 'stripes' ? 'stripes' : 'charts',
+		display: normaliseComparisonDisplay(value?.display),
 		basis: value?.basis === 'generation' ? 'generation' : 'demand',
 		start: validWindow ? start : null,
 		end: validWindow ? end : null,
@@ -129,11 +160,9 @@ export function parseRegionComparison(params) {
 	/** @param {string} key @param {(slug: string) => string} fromSlug */
 	const list = (key, fromSlug) =>
 		params.has(key) ? (params.get(key) ?? '').split(',').map(fromSlug) : undefined;
-	const display = params.get('compare-display');
 	return normaliseRegionComparison({
 		charts: list('compare-charts', comparisonChartFromSlug),
-		// `stripes` is the heatmap's earlier name.
-		display: display === 'heatmap' || display === 'stripes' ? 'stripes' : undefined,
+		display: comparisonDisplayFromSlug(params.get('compare-display')),
 		interval: params.get('compare-interval') ?? undefined,
 		filter: params.get('compare-filter'),
 		regions: list('compare-regions', comparisonRegionFromSlug),
@@ -151,7 +180,7 @@ export function applyRegionComparison(params, selection) {
 			state.charts.join(',') === DEFAULT_COMPARISON_CHARTS.join(',')
 				? null
 				: state.charts.map(comparisonChartSlug).join(','),
-		'compare-display': state.display === 'stripes' ? 'heatmap' : '',
+		'compare-display': comparisonDisplay(state.display).slug,
 		'compare-interval': state.interval === '12mr' ? '' : state.interval,
 		'compare-filter': state.filter ?? '',
 		'compare-regions':
@@ -470,15 +499,16 @@ const MAX_TICKS = 6;
  * within six; coarser rows (seasons to years, or one filtered period a
  * year) at each year's first row, a year step (1, 2, 5… years) apart.
  * @param {Array<{date: Date, time: number}>} visibleRows
- * @param {number} [months] - Months between rows (`periodMonths`) */
-export function comparisonTicks(visibleRows, months = 1) {
+ * @param {number} [months] - Months between rows (`periodMonths`)
+ * @param {number} [maxTicks] - The most ticks to keep, six unless a narrow chart asks for fewer */
+export function comparisonTicks(visibleRows, months = 1, maxTicks = MAX_TICKS) {
 	const dates = visibleRows.map((row) => new Date(row.time));
 	if (months === 1) {
 		/** @param {Date} date */
 		const index = (date) => date.getUTCFullYear() * 12 + date.getUTCMonth();
 		for (const step of MONTH_STEPS) {
 			const ticks = dates.filter((date) => index(date) % step === 0);
-			if (ticks.length <= MAX_TICKS) return ticks;
+			if (ticks.length <= maxTicks) return ticks;
 		}
 		return [];
 	}
@@ -488,7 +518,7 @@ export function comparisonTicks(visibleRows, months = 1) {
 	);
 	for (const step of YEAR_STEPS) {
 		const ticks = firsts.filter((date) => date.getUTCFullYear() % step === 0);
-		if (ticks.length <= MAX_TICKS) return ticks;
+		if (ticks.length <= maxTicks) return ticks;
 	}
 	return [];
 }

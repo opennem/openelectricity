@@ -7,7 +7,8 @@
 		wheelPanDeltaMs
 	} from '$lib/components/charts/v2/wheel-interaction.js';
 	import StaticZoomButtons from '$lib/components/charts/v2/StaticZoomButtons.svelte';
-	import { comparisonMetric, formatComparisonCell } from './comparison-metrics.js';
+	import { comparisonMetric } from './comparison-metrics.js';
+	import RegionTooltip from './RegionTooltip.svelte';
 	import { inspectionStep } from './comparison-inspection.js';
 	import { stripeCells, stripeLegendItems, stripePeriodAt } from './comparison-stripes.js';
 	import {
@@ -114,32 +115,10 @@
 		pointer = point;
 		onhoverregion(regionAt(point));
 	}
-	let tooltipRows = $derived(
-		!tooltip || inspected == null
-			? []
-			: regions.map((id) => {
-					const region = COMPARISON_REGIONS.find((r) => r.value === id);
-					return {
-						id,
-						label: region?.shortLabel ?? id,
-						colour: region?.colour ?? '#333333',
-						value: formatComparisonCell(byTime.get(inspected)?.[id], metric, {}),
-						hovered: id === hoveredRegion
-					};
-				})
+	/** The tooltip sits by the pointer, or mid-period for keyboard inspection. */
+	let tooltipAnchor = $derived(
+		pointer ?? (highlight ? { x: highlight.x + highlight.width / 2, y: TOP } : null)
 	);
-	let tooltipWidth = $state(0);
-	let tooltipHeight = $state(0);
-	let tooltipStyle = $derived.by(() => {
-		if (!highlight) return '';
-		const anchorX = pointer?.x ?? highlight.x + highlight.width / 2;
-		const anchorY = pointer?.y ?? TOP;
-		let left = anchorX + 12;
-		if (left + tooltipWidth > width) left = Math.max(0, anchorX - 12 - tooltipWidth);
-		let top = anchorY + 12;
-		if (top + tooltipHeight > height) top = Math.max(0, anchorY - 12 - tooltipHeight);
-		return `left: ${left}px; top: ${top}px;`;
-	});
 	let imageMetadata = $derived(
 		JSON.stringify({
 			hasData: visibleRows.length > 0,
@@ -405,43 +384,18 @@
 				onpointercancel={handlePointerLeave}
 			/>
 		</svg>
-		{#if highlight && tooltipRows.length}
-			<div
-				class="pointer-events-none absolute z-20 flex min-w-[160px] flex-col rounded-md border border-warm-grey bg-white/70 px-3 py-2 text-xs whitespace-nowrap shadow-sm backdrop-blur-md backdrop-saturate-150"
-				style={tooltipStyle}
-				bind:clientWidth={tooltipWidth}
-				bind:clientHeight={tooltipHeight}
-				data-testid="chart-floating-tooltip"
-			>
-				<div
-					class="mb-1.5 flex items-baseline justify-between gap-3 border-b border-warm-grey/60 pb-1.5 font-light text-mid-grey"
-				>
-					<span>{comparisonPeriod(inspected ?? 0, interval)}</span>
-					<span class="text-right font-mono">{scale.unit}</span>
-				</div>
-				<div class="flex flex-col gap-1">
-					{#each tooltipRows as row (row.id)}
-						<div
-							class="flex items-center justify-between gap-3 rounded-sm {row.hovered
-								? 'bg-warm-grey/60'
-								: ''}"
-						>
-							<span class="flex min-w-0 items-center gap-1.5">
-								<span class="size-2 shrink-0 rounded-full" style:background-color={row.colour}
-								></span>
-								<span class="truncate {row.hovered ? 'font-semibold text-black' : 'text-dark-grey'}"
-									>{row.label}</span
-								>
-							</span>
-							<span
-								class="text-right font-mono tabular-nums {row.hovered
-									? 'font-semibold text-black'
-									: 'font-medium text-dark-grey'}">{row.value}</span
-							>
-						</div>
-					{/each}
-				</div>
-			</div>
+		{#if tooltip && inspected != null && tooltipAnchor}
+			<RegionTooltip
+				period={comparisonPeriod(inspected, interval)}
+				unit={scale.unit}
+				{regions}
+				row={byTime.get(inspected)}
+				{metric}
+				hovered={hoveredRegion}
+				anchor={tooltipAnchor}
+				{width}
+				{height}
+			/>
 		{/if}
 	</div>
 	<div class="flex items-center justify-end gap-0.5 px-2" data-png-exclude>

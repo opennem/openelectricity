@@ -8,6 +8,7 @@
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { inspectionStep } from './comparison-inspection.js';
+	import { rankComparisonRows } from './comparison-displays.js';
 	import {
 		COMPARISON_REGIONS,
 		comparisonPeriod,
@@ -23,7 +24,10 @@
 	const SERIES_LABELS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.label]));
 	const SERIES_COLOURS = Object.fromEntries(COMPARISON_REGIONS.map((r) => [r.value, r.colour]));
 
-	/** @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string, months: number,
+	/** `shape` is what each region's line plots: its value, or its `rank`
+	 * among the regions that period (1 at the top, the Ranks display).
+	 * @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string, months: number,
+	 * shape?: 'line' | 'rank',
 	 * viewport: {start:number,end:number}, bounds: {start:number,end:number}, height: number,
 	 * tooltip: boolean, engaged: boolean, hover: number | null, focus: number | null, onhover: (time:number | null) => void, onfocus: (time:number | null) => void,
 	 * hoverRegion: string | null, onhoverregion: (region: string | null) => void,
@@ -35,6 +39,7 @@
 		basis,
 		interval,
 		months,
+		shape = 'line',
 		viewport,
 		bounds,
 		height,
@@ -59,28 +64,42 @@
 	chart.seriesLabels = SERIES_LABELS;
 	chart.seriesColours = SERIES_COLOURS;
 	chart.chartTooltips.showTotal = false;
-	chart.maximumFractionDigits = 1;
 	chart.chartStyles.chartPadding = { top: 0, bottom: 20, left: 0, right: 0 };
 	chart.chartStyles.snapTicks = true;
 	// A region's line takes the pointer, naming its row in the Regions table;
 	// the hovered region stands out on every card while the others recede.
 	chart.chartStyles.lineHitWidth = 10;
 	chart.chartOptions.allowHoverHighlight = true;
+	/** @type {ReturnType<typeof comparisonChartUnits>} */
+	const RANK_UNITS = { baseUnit: '', prefix: '', display: '', allowed: [] };
+	/** @param {number} rank */
+	const formatRank = (rank) => `#${rank}`;
 	const inspectionHintId = $props.id();
 	let definition = $derived(comparisonMetric(metric));
-	let rows = $derived(comparisonChartRows(data, regions, metric, basis, months));
+	let rows = $derived.by(() => {
+		const values = comparisonChartRows(data, regions, metric, basis, months);
+		return shape === 'rank' ? rankComparisonRows(values, regions) : values;
+	});
 	let visibleRows = $derived(visibleComparisonRows(rows, viewport));
 	// Each effect syncs one concern into the store, so a pan frame re-runs only
 	// the viewport sync rather than rebuilding labels, data and units.
 	$effect(() => {
-		const units = comparisonChartUnits(metric);
+		// Ranks are unitless whole numbers, read as `#1` on the axis and in the tooltip.
+		const units = shape === 'rank' ? RANK_UNITS : comparisonChartUnits(metric);
 		chart.chartOptions.baseUnit = units.baseUnit;
 		chart.chartOptions.prefix = units.prefix;
 		chart.chartOptions.setAutomaticDisplayPrefix(units.display);
 		chart.chartOptions.allowedPrefixes = units.allowed;
+		chart.maximumFractionDigits = shape === 'rank' ? 0 : 1;
+		chart.useFormatY = shape === 'rank';
+		chart.formatY = formatRank;
 		// Prices read as the Regions table does ($85.30), not whole dollars.
 		chart.formatTooltipY =
-			definition.kind === 'price' ? (value) => formatComparisonCell(value, metric, {}) : null;
+			shape === 'rank'
+				? formatRank
+				: definition.kind === 'price'
+					? (value) => formatComparisonCell(value, metric, {})
+					: null;
 	});
 	$effect(() => {
 		chart.seriesData = rows;
@@ -99,6 +118,13 @@
 		chart.xGridlineTicks = ticks;
 	});
 	$effect(() => {
+		// Rank 1 at the top: LayerCake applies a reversed domain as given.
+		if (shape === 'rank') {
+			chart.setYDomain([regions.length + 0.5, 0.5]);
+			chart.yTicks = regions.map((_, index) => index + 1);
+			return;
+		}
+		chart.yTicks = undefined;
 		const domain = chart.renderXDomain;
 		chart.setYDomain(
 			comparisonYDomain(
@@ -137,7 +163,11 @@
 	}
 </script>
 
-<div role="group" aria-label={`${definition.label} comparison chart`} class="relative">
+<div
+	role="group"
+	aria-label={`${definition.label}${shape === 'rank' ? ' rank' : ''} comparison chart`}
+	class="relative"
+>
 	<StratumChart
 		{chart}
 		tooltipMode={tooltip ? 'floating' : 'none'}

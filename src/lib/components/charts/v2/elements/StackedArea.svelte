@@ -27,6 +27,7 @@
 	 * @property {Object.<string, string>} [seriesColours] - Map of series id to colour
 	 * @property {string | null} [highlightId] - Currently highlighted series id
 	 * @property {string} [strokeWidth] - Line stroke width
+	 * @property {Record<string, number>} [strokeWidths] - Line display: per-series widths over `strokeWidth`
 	 * @property {number} [lineHitWidth] - Line display: the line within half this width (px) of
 	 *   the pointer, at the hovered time, reports its series key on hover; 0 leaves the lines inert
 	 * @property {boolean} [showLineDots] - Show dots on line chart
@@ -51,6 +52,7 @@
 		seriesColours = {},
 		highlightId = null,
 		strokeWidth = '1.5',
+		strokeWidths = {},
 		lineHitWidth = 0,
 		showLineDots = false,
 		dotRadius = 3,
@@ -264,6 +266,7 @@
 			{@const seriesKey = d.key || d.group}
 			{@const path = lineGen(d.values)}
 			{@const stroke = seriesColours[$z(d)]}
+			{@const width = strokeWidths[$z(d)] ?? strokeWidth}
 			{@const op = getOpacity(d, 1, 0.5)}
 
 			<!-- Optional dots for line chart -->
@@ -296,7 +299,7 @@
 					d={path}
 					fill="transparent"
 					{stroke}
-					stroke-width={strokeWidth}
+					stroke-width={width}
 					opacity={op}
 					clip-path="url(#{clipId}-solid)"
 				/>
@@ -307,7 +310,7 @@
 					d={path}
 					fill="transparent"
 					{stroke}
-					stroke-width={strokeWidth}
+					stroke-width={width}
 					stroke-dasharray="1 3"
 					stroke-linecap="round"
 					opacity={op}
@@ -322,7 +325,7 @@
 					d={path}
 					fill="transparent"
 					{stroke}
-					stroke-width={strokeWidth}
+					stroke-width={width}
 					opacity={op}
 				/>
 			{/if}

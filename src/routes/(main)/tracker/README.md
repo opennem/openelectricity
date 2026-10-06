@@ -21,12 +21,12 @@ does); renewable (official or excluding batteries), solar + wind, solar,
 wind, gas and coal generation and
 proportions; net imports proportion; solar, wind, hydro, gas and coal market
 values; and nominal and inflation-adjusted volume-weighted prices. Only carbon
-intensity and renewables proportion start visible. Charts are chosen in a strip
-under the top nav (`ComparisonChartToggles`, Profile's breakdown-bar look): one
+intensity and renewables proportion start visible. Charts are chosen in the top nav
+(`ComparisonChartToggles`): one
 multi-select `FilterDropdown` per group (Emissions, Generation, Prices) in its
 `immediate` mode, so each tick shows or hides its chart at once and the panel's
-button reads Done; ⌘/Ctrl-click keeps a chart alone within its group, and Reset
-charts returns to the default two (`selectComparisonCharts`). Each chart is one
+button reads Done; ⌘/Ctrl-click keeps a chart alone within its group
+(`selectComparisonCharts`). Each chart is one
 option whatever its presentation (`comparisonChartId`); the card's
 own tabs and toggles switch the presentation, a chart switched off and on
 again returns in the one it had for the visit, and newly shown fuel charts
@@ -122,10 +122,39 @@ instantaneous cross-network comparison. National values sum NEM + WEM inputs
 before calculating ratios and require both networks. Regional failures can be
 retried independently; stale or disabled providers cannot populate current values.
 
-**Heatmap display.** The Trends / Heatmap switch at the start of the
-comparison filter row (the same compact `SwitchWithIcons` as the view switcher
-and Profile's display switch; `compare-display=heatmap`, omitted for Trends,
-older `stripes` links still parse) re-renders every selected metric card as a
+**Displays.** An icon-only display switch in a bar under the top nav (as
+Profile's breakdown options sit; the same compact `SwitchWithIcons` as the view
+switcher, each icon naming itself in a tooltip and to assistive technology, as
+Profile's Style switcher) re-renders every selected metric card one way: **Trends** (a line per
+region), **Panels**, **Ranks** and **Heatmap**. The displays are a registry,
+`COMPARISON_DISPLAYS` in `region-comparison.js`: each descriptor carries its
+URL slug (`compare-display=panels|ranks|heatmap`, omitted for Trends; older
+`stripes` links still parse) and the flags the page reads instead of naming
+displays (`resizable` cards keep a drag-to-resize height; `panZoom` cards take
+Trends' tap-to-engage pan and zoom). Switching display never refetches: every
+display draws from the same per-card rows (`comparisonChartRows`), and pure
+reshaping lives in `comparison-displays.js`.
+
+- **Panels** (`RegionPanels`, one `RegionPanel` per region) are small multiples:
+  a 120px Stratum line chart per selected region on the shared viewport and one
+  y-scale (`comparisonYDomain` over every region), so heights compare across
+  panels, with the other selected regions drawn first as grey ghost lines and
+  this region's line on top, a touch heavier (`chartStyles.seriesStrokeWidths`,
+  per-series line widths in the shared v2 chart). Each panel's label row is SVG (region and the
+  inspected or latest value), so PNG export composes the whole grid as one
+  image. Hovering a panel inspects its period in every panel and names its
+  region to the table; zoom is by the buttons, with no drag-pan.
+- **Ranks** reuse the Trends chart with `shape="rank"`: each period's values
+  become ranks among the regions with a value (`rankComparisonRows`,
+  competition ranking, so ties share a rank and the next skips), on a reversed
+  y-domain (`[n + 0.5, 0.5]`, which LayerCake applies as given) so 1 sits at the
+  top, read as `#1` on the axis and in tooltips. The card is badged
+  "1 = highest" for every metric.
+
+`RegionTooltip` is the floating tooltip of the custom displays (heatmap and
+panels), styled as Stratum's.
+
+**Heatmap display.** The Heatmap re-renders every selected metric card as a
 heatmap of stripes: one row per selected region,
 one colour cell per period, over the same viewport, ticks, hover and pinned
 period as the line charts, so the Regions table doubles as the readout. Colour
@@ -181,7 +210,7 @@ the UTC date formatters are cached. Pointer and wheel deltas are
 accumulated and applied once per animation frame.
 
 Comparison settings are independent of Timeline: `compare-display`
-(`heatmap`), `compare-interval` (Timeline's ids: `1M`, `season`,
+(`panels`, `ranks`, `heatmap`), `compare-interval` (Timeline's ids: `1M`, `season`,
 `quarter`, `half`, `fy`, `1y` and the `12mr*` rolling variants; `12mr` is the
 default), `compare-filter` (Timeline's calendar-period ids: `jan`…`dec`,
 `summer`…, `q1`…, `h1`/`h2`, validated against the grain), `compare-regions` (short names `nsw,qld,sa,tas,vic,wem,nem,au`;
@@ -1026,7 +1055,7 @@ interval, hovered series and total where applicable. Narrow cards reserve two
 lines, keeping the plot stable on hover. The table provides the complete series
 breakdown and contribution percentages at the same timestamp; leaving inspection
 restores the window totals. Profile's average-day stack shares the strip; its
-individual profile keeps floating tooltips. Compare's charts and heatmap have
+individual profile keeps floating tooltips. Compare's displays have
 no tooltip beside the Regions table, which is their readout (with the period in
 the top nav); while the table is closed, or below 1024px where it overlays the charts, they float one. Price tooltips use the table's one-decimal format.
 
@@ -1049,7 +1078,7 @@ On the line charts a region is under the pointer while its line is: with
 names the line nearest the pointer at the hovered time, within 5px
 (`nearestLine` in `elements/line-hit.js`), with no extra path per line. With `allowHoverHighlight`, the hovered
 region stays solid on every card while the others recede. On the heatmap it is
-the row under the pointer. A hovered card's column also scrolls into view
+the row under the pointer, and on Panels the panel under it. A hovered card's column also scrolls into view
 beside the pinned Region column (`scrollColumnsIntoView` in `table-styles.js`,
 shared with the fuel-tech table's focused columns). Both tables' value
 headers and cells share their classes and outlines (`columnFocusFor`,

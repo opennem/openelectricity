@@ -3,15 +3,13 @@
 	import {
 		COMPARISON_CHART_OPTIONS,
 		COMPARISON_METRIC_GROUPS,
-		DEFAULT_COMPARISON_CHARTS,
 		comparisonChartId,
 		selectComparisonCharts
 	} from './comparison-metrics.js';
 
 	/**
-	 * The Compare charts strip under the top nav, as Profile's breakdown
-	 * options sit: one multi-select dropdown per group (Emissions, Generation,
-	 * Prices). Ticking a chart shows or hides it at once (`immediate`), so the
+	 * Compare's chart picker in the top nav: one multi-select dropdown per
+	 * group (Emissions, Generation, Prices). Ticking a chart shows or hides it at once (`immediate`), so the
 	 * panel's button is Done; ⌘/Ctrl-click keeps that chart alone within its
 	 * group. A chart switched off and back on returns in the presentation it
 	 * had (generation, excluding batteries, nominal) for this visit.
@@ -30,7 +28,6 @@
 	});
 
 	let shown = $derived(selected.map(comparisonChartId));
-	let isDefault = $derived(shown.join(',') === DEFAULT_COMPARISON_CHARTS.join(','));
 	/** Each chart's last presentation, by chart id: a session-only nicety. */
 	const remembered = /** @type {Record<string, string>} */ ({});
 
@@ -46,10 +43,7 @@
 	}
 </script>
 
-<section
-	aria-label="Charts"
-	class="axis-ticks-bg flex shrink-0 items-center gap-2 overflow-x-auto border-b border-warm-grey bg-white px-8 py-2"
->
+<div role="group" aria-label="Charts" class="flex shrink-0 items-center gap-2">
 	{#each GROUPS as { group, ids, options } (group)}
 		<FilterDropdown
 			label={group}
@@ -60,11 +54,4 @@
 			onapply={(chosen) => choose(ids, chosen)}
 		/>
 	{/each}
-	{#if !isDefault}
-		<button
-			type="button"
-			class="shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-black"
-			onclick={() => onchange([...DEFAULT_COMPARISON_CHARTS])}>Reset charts</button
-		>
-	{/if}
-</section>
+</div>

@@ -235,6 +235,7 @@
 						lighterNegative={chart.lighterNegative}
 						solidLineRange={chart.solidLineRange}
 						lineHitWidth={chart.chartStyles.lineHitWidth}
+						strokeWidths={chart.chartStyles.seriesStrokeWidths}
 						stepMode={isStepMode}
 						{onmousemove}
 						{onmouseout}

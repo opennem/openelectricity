@@ -1,6 +1,8 @@
 import { comparisonYDomain } from './region-comparison.js';
 import { describe, expect, it } from 'vitest';
 import {
+	COMPARISON_DISPLAYS,
+	comparisonDisplay,
 	comparisonRangeLabel,
 	comparisonTickLabel,
 	nextPeriodStart,
@@ -295,6 +297,11 @@ describe('region comparison calculations', () => {
 		expect(comparisonTicks(years, 12).map((date) => date.getUTCFullYear())).toEqual([
 			2000, 2005, 2010, 2015, 2020, 2025
 		]);
+		// A narrow panel asks for fewer, still on the calendar.
+		expect(comparisonTicks(visible, 1, 3).map((date) => date.getUTCMonth())).toEqual([6, 0]);
+		expect(comparisonTicks(years, 12, 3).map((date) => date.getUTCFullYear())).toEqual([
+			2000, 2010, 2020
+		]);
 	});
 	it('reads the periods on screen as a first-to-last range', () => {
 		const first = Date.UTC(1999, 0, 1);
@@ -386,11 +393,24 @@ describe('region comparison navigation and export', () => {
 			expect(params.get('compare-display')).toBe('heatmap');
 			expect(parseRegionComparison(params)).toEqual(state);
 		}
+		// Every display round-trips through its slug, Trends by omission.
+		for (const { value, slug } of COMPARISON_DISPLAYS) {
+			const state = normaliseRegionComparison({ display: value });
+			const params = new URLSearchParams();
+			applyRegionComparison(params, state);
+			expect(params.get('compare-display') ?? '').toBe(slug);
+			expect(parseRegionComparison(params).display).toBe(value);
+		}
+		expect(COMPARISON_DISPLAYS.map(({ slug }) => slug)).toEqual(['', 'panels', 'ranks', 'heatmap']);
 		// Older links named the heatmap `stripes`.
 		expect(parseRegionComparison(new URLSearchParams('compare-display=stripes')).display).toBe(
 			'stripes'
 		);
+		expect(parseRegionComparison(new URLSearchParams('compare-display=bogus')).display).toBe(
+			'charts'
+		);
 		expect(normaliseRegionComparison({ display: 'bogus' }).display).toBe('charts');
+		expect(comparisonDisplay('bogus')).toBe(COMPARISON_DISPLAYS[0]);
 		const params = new URLSearchParams();
 		applyRegionComparison(params, normaliseRegionComparison({}));
 		expect(params.has('compare-display')).toBe(false);

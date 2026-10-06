@@ -111,6 +111,11 @@ export default class ChartStyles {
 	 *  as stack areas do. 0 leaves lines inert. @type {number} */
 	lineHitWidth = $state(0);
 
+	/** Line charts: per-series line widths (px) by series key, over the
+	 *  default, e.g. one line drawn heavier than the context lines around it.
+	 *  @type {Record<string, number>} */
+	seriesStrokeWidths = $state.raw({});
+
 	// Dot styling
 	/** @type {boolean} */
 	showLineDots = $state(false);

@@ -3,6 +3,10 @@
 	import Select from '$lib/components/form-elements/Select.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
+	import ChartLine from '@lucide/svelte/icons/chart-line';
+	import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+	import ListOrdered from '@lucide/svelte/icons/list-ordered';
+	import Rows3 from '@lucide/svelte/icons/rows-3';
 	import { untrack } from 'svelte';
 	import { bisectLeft } from 'd3-array';
 	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
@@ -44,6 +48,7 @@
 	import TableFootnotes from './TableFootnotes.svelte';
 	import TrackerSplitLayout from './TrackerSplitLayout.svelte';
 	import RegionComparisonChart from './RegionComparisonChart.svelte';
+	import RegionPanels from './RegionPanels.svelte';
 	import { CONTRIBUTION_OPTIONS, RENEWABLES_DOCS, contributionLabel } from './tracker-model.js';
 	import { createRegionComparisonData } from './region-comparison-data.svelte.js';
 	import { comparisonExportDataset } from './region-comparison-export.js';
@@ -54,6 +59,8 @@
 		periodMonths,
 		normaliseRegionComparison,
 		COMPARISON_DISPLAYS,
+		comparisonDisplay,
+		normaliseComparisonDisplay,
 		comparisonPeriod,
 		comparisonRangeLabel,
 		clampComparisonViewport,
@@ -81,7 +88,23 @@
 		untrack(() => session.clockMs),
 		() => cpi
 	);
-	let stripes = $derived(selection.display === 'stripes');
+	let display = $derived(selection.display);
+	let descriptor = $derived(comparisonDisplay(display));
+	/** The display switch: icon-only, each icon naming its display in a
+	 * tooltip, as Profile's Style switcher. */
+	const DISPLAY_ICONS = {
+		charts: ChartLine,
+		panels: LayoutGrid,
+		ranks: ListOrdered,
+		stripes: Rows3
+	};
+	const DISPLAY_BUTTONS = COMPARISON_DISPLAYS.map(({ value, label }) => ({
+		value,
+		icon: DISPLAY_ICONS[value],
+		size: 'size-[16px]',
+		ariaLabel: label,
+		tooltip: label
+	}));
 	/** The periods, ascending, where some selected region has a value for a
 	 * displayed metric. History starts at the first (the window opens on all of
 	 * it), exports need one, and the readout names the first and last on
@@ -260,15 +283,7 @@
 {/snippet}
 
 {#snippet controls()}
-	<Switch
-		buttons={COMPARISON_DISPLAYS}
-		selected={selection.display}
-		compact
-		rounded="rounded-lg"
-		darkSelected
-		aria-label="Comparison display"
-		onchange={(option) => select({ display: option.value === 'stripes' ? 'stripes' : 'charts' })}
-	/>
+	<ComparisonChartToggles selected={selection.charts} onchange={(charts) => select({ charts })} />
 	<!-- Timeline's interval pill, 12-month rolling switch and calendar-period
 	     filter; a filter the new grain cannot keep is dropped. -->
 	<IntervalControls
@@ -302,7 +317,22 @@
 	class="flex min-h-0 flex-1 flex-col"
 	data-png-context={`Compare · ${caption}`}
 >
-	<ComparisonChartToggles selected={selection.charts} onchange={(charts) => select({ charts })} />
+	<!-- How the charts are drawn sits in a bar under the top nav, as Profile's
+	     breakdown options do. -->
+	<section
+		aria-label="Display options"
+		class="axis-ticks-bg flex shrink-0 items-center gap-4 overflow-x-auto border-b border-warm-grey bg-white px-8 py-2"
+	>
+		<Switch
+			buttons={DISPLAY_BUTTONS}
+			selected={display}
+			compact
+			rounded="rounded-lg"
+			darkSelected
+			aria-label="Comparison display"
+			onchange={(option) => select({ display: normaliseComparisonDisplay(option.value) })}
+		/>
+	</section>
 	<span class="sr-only" role="status"
 		>{source.pending ? 'Loading regional data…' : 'Complete periods · monthly source data'}</span
 	>
@@ -340,9 +370,9 @@
 			</div>
 		{/each}
 		{#if !metrics.length}<p role="status" class="mb-4 rounded-lg bg-white p-4 text-sm">
-				No charts selected. Choose charts in the bar above.
+				No charts selected. Choose charts in the top nav.
 			</p>{/if}
-		{#key selection.display}
+		{#key display}
 			<div in:fade={{ duration: reducedMotion.current ? 0 : 160 }}>
 				{#each metrics as metric (comparisonChartId(metric.id))}
 					{@const cardReady =
@@ -352,15 +382,17 @@
 								Number.isFinite(comparisonMetricValue(row, metric.id, basis))
 							)
 						)}
-					{@const scale = stripes ? stripeScale(metric.id, basis, visibleMax(metric)) : null}
+					{@const scale =
+						display === 'stripes' ? stripeScale(metric.id, basis, visibleMax(metric)) : null}
 					<ChartCard
 						title={metric.label}
+						badge={display === 'ranks' ? '1 = highest' : ''}
 						defaultHeightPx={320}
-						heightStorageKey={scale
-							? ''
-							: `tracker-comparison-${comparisonChartId(metric.id)}-height`}
+						heightStorageKey={descriptor.resizable
+							? `tracker-comparison-${comparisonChartId(metric.id)}-height`
+							: ''}
 						loading={source.pending && !regions.some((id) => source.data[id]?.length)}
-						engaged={scale ? false : panZoomEngaged}
+						engaged={descriptor.panZoom ? panZoomEngaged : false}
 						highlighted={hoverMetric === metric.id}
 						onhover={(hovered) => hoverCard(metric.id, hovered)}
 						png={{
@@ -429,6 +461,29 @@
 									}}
 									onviewport={moveViewport}
 								/>
+							{:else if display === 'panels'}
+								<RegionPanels
+									data={source.data}
+									{regions}
+									metric={metric.id}
+									{basis}
+									{interval}
+									{months}
+									{viewport}
+									bounds={chartBounds}
+									{tooltip}
+									{hoverRegion}
+									onhoverregion={(region) => (hoverRegion = region)}
+									{hover}
+									{focus}
+									onhover={(time) => {
+										hover = time;
+									}}
+									onfocus={(time) => {
+										focus = time;
+									}}
+									onviewport={moveViewport}
+								/>
 							{:else}
 								<RegionComparisonChart
 									data={source.data}
@@ -437,6 +492,7 @@
 									{basis}
 									{interval}
 									{months}
+									shape={display === 'ranks' ? 'rank' : 'line'}
 									{viewport}
 									bounds={chartBounds}
 									{height}
@@ -611,7 +667,19 @@
 						Net imports are imports minus exports, as a share of gross demand. Demand shares can
 						exceed 100% in exporting regions.
 					</li>
-					{#if stripes}
+					{#if display === 'ranks'}
+						<li>
+							Ranks count the selected regions with a value that period, 1 for the highest; tied
+							regions share a rank.
+						</li>
+					{/if}
+					{#if display === 'panels'}
+						<li>
+							Panels share one scale, so heights compare across regions; the other selected regions
+							are the grey lines behind each.
+						</li>
+					{/if}
+					{#if display === 'stripes'}
 						<li>
 							The heatmap uses fixed colour scales so a shade means the same in every region and
 							year; generation and emissions volume scale to the visible maximum, and grey marks
