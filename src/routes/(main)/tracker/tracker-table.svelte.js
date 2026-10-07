@@ -1,6 +1,7 @@
 import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
 import { indexOfTime } from '$lib/components/charts/v2/binary-search.js';
 import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
+import { currentIncompleteInterval } from '$lib/components/charts/v2/incomplete-interval.js';
 import {
 	applyBucketFilter,
 	bucketFilterPredicate,
@@ -76,33 +77,17 @@ export function createTrackerTable(opts) {
 	});
 	let shareRowOpts = $derived({ ...displayRowOpts, method: /** @type {const} */ ('mean') });
 
-	/** Summaries use native rows whenever display rows would overlap (rolling
-	 *  windows) or carry a synthetic band close (calendar filters). */
-	let summariesUseNativeRows = $derived(isRollingDisplay || !!bucketFilter);
-
 	/**
 	 * Native-grain rows with the calendar filter applied to every side of the
-	 * table ratios alike.
+	 * table ratios alike. Window summaries read only these: display rows can
+	 * overlap (rolling windows) or carry a synthetic band close (calendar
+	 * filters), and one grain lets every bucket report its own duration.
 	 * @param {HeadlessSeriesProvider} provider
 	 * @param {number} start
 	 * @param {number} end
 	 */
 	function nativeRows(provider, start, end) {
 		return applyBucketFilter(provider.getVisibleRows(start, end), nativeFilterPredicate);
-	}
-
-	/**
-	 * Rows for a window summary — native when display rows can't be summed
-	 * safely, otherwise the same display-grain rows the chart renders.
-	 * @param {HeadlessSeriesProvider} provider
-	 * @param {number} start
-	 * @param {number} end
-	 * @param {typeof displayRowOpts} opts
-	 */
-	function summaryRows(provider, start, end, opts) {
-		return summariesUseNativeRows
-			? nativeRows(provider, start, end)
-			: provider.getDisplayRows(start, end, opts);
 	}
 
 	// ============================================
@@ -115,12 +100,50 @@ export function createTrackerTable(opts) {
 		end: generationDataset?.end ?? viewWindow.end
 	});
 
-	/** Use native rows when display rows overlap or contain a synthetic band close. */
+	/** The generation snapshot at its native cadence, already filtered. */
 	let tableGenerationDataset = $derived(
-		summariesUseNativeRows && generationDataset?.nativeData
-			? { ...generationDataset, data: generationDataset.nativeData }
-			: generationDataset
+		generationDataset && { ...generationDataset, data: generationDataset.nativeData }
 	);
+
+	/** When the window's data runs to: its end, which a following window
+	 *  advances on refresh. Never later than now. Not the ticking clock, which
+	 *  would stretch an open bucket's duration past its unchanged energy. */
+	let dataAsOfMs = $derived(Math.min(opts.session.clockMs, tableWindow.end));
+
+	/**
+	 * Start of the bucket still in progress (the one the chart hatches) among
+	 * `rows`, or null. Only energy buckets hold a part-filled total; a power
+	 * reading is already an average over its elapsed time. Rolling rows are
+	 * trailing years, never cut short here.
+	 * @param {Array<Record<string, any>> | undefined} rows @param {string} interval
+	 */
+	function openBucketStart(rows, interval) {
+		if (!rows || range.activeMetric !== 'energy' || isRollingInterval(interval)) return null;
+		return (
+			currentIncompleteInterval(rows, interval, opts.session.clockMs, ianaTimeZone)?.start ?? null
+		);
+	}
+	let nativeOpenStart = $derived(
+		openBucketStart(tableGenerationDataset?.data, range.activeInterval)
+	);
+	let displayOpenStart = $derived(openBucketStart(generationDataset?.data, range.displayInterval));
+
+	/**
+	 * Bucket lengths for one grain. Calendar months and years vary, and filtered
+	 * rows skip periods, so a length never comes from the gap between rows. The
+	 * bucket still in progress holds energy only up to the data's as-of time,
+	 * so it counts only those hours.
+	 * @param {string} interval @param {number | null} openStart
+	 * @returns {(time: number) => number}
+	 */
+	function bucketHoursFor(interval, openStart) {
+		return (time) => {
+			const hours = getIntervalHours(interval, time, ianaTimeZone);
+			if (time !== openStart) return hours;
+			return Math.min(hours, Math.max(0, (dataAsOfMs - time) / 3_600_000));
+		};
+	}
+	let nativeBucketHours = $derived(bucketHoursFor(range.activeInterval, nativeOpenStart));
 
 	/** Recompute table rows when chart or provider data changes. */
 	let tableRows = $derived.by(() => {
@@ -134,6 +157,7 @@ export function createTrackerTable(opts) {
 				demandRows: nativeRows(marketData, start, end),
 				basis: range.activeMetric,
 				demandBasis: range.activeMetric,
+				bucketHours: nativeBucketHours,
 				mode: contributionMode,
 				hiddenSeries,
 				loadSeriesIds
@@ -147,13 +171,15 @@ export function createTrackerTable(opts) {
 		if (!tableGenerationDataset) return [];
 		const { start, end } = tableWindow;
 		return computeCurtailmentRows({
-			rows: summaryRows(curtailmentData, start, end, displayRowOpts),
+			rows: nativeRows(curtailmentData, start, end),
 			series: [...CURTAILMENT_SERIES].reverse(),
 			basis: range.activeMetric,
+			bucketHours: nativeBucketHours,
 			denominatorMWh: contributionDenominatorMWh({
 				generationRows: tableGenerationDataset.data,
 				seriesNames: tableGenerationDataset.seriesNames,
 				basis: range.activeMetric,
+				bucketHours: nativeBucketHours,
 				mode: contributionMode,
 				demandRows: nativeRows(marketData, start, end),
 				demandBasis: range.activeMetric,
@@ -164,10 +190,11 @@ export function createTrackerTable(opts) {
 
 	let overlaySummary = $derived(
 		computeOverlaySummary({
-			demandRows: summaryRows(demandData, viewWindow.start, viewWindow.end, displayRowOpts),
+			demandRows: nativeRows(demandData, viewWindow.start, viewWindow.end),
 			marketRows: nativeRows(marketData, viewWindow.start, viewWindow.end),
-			shareRows: summaryRows(shareData, viewWindow.start, viewWindow.end, shareRowOpts),
-			basis: range.activeMetric
+			shareRows: nativeRows(shareData, viewWindow.start, viewWindow.end),
+			basis: range.activeMetric,
+			bucketHours: nativeBucketHours
 		})
 	);
 
@@ -233,12 +260,13 @@ export function createTrackerTable(opts) {
 		const totals = { ...displayRowOpts, method: /** @type {const} */ ('sum') };
 		const marketRows = sample(marketData, displayRowOpts);
 		const basis = range.activeMetric;
-		const hours = getIntervalHours(range.displayInterval, time, ianaTimeZone);
+		const hours = bucketHoursFor(range.displayInterval, displayOpenStart)(time);
+		const bucketHours = () => hours;
 		const contribution = {
 			generationRows,
 			seriesNames: generationDataset.seriesNames,
 			basis,
-			hours,
+			bucketHours,
 			mode: contributionMode,
 			demandRows: marketRows,
 			demandBasis: basis,
@@ -257,15 +285,19 @@ export function createTrackerTable(opts) {
 				rows: sample(curtailmentData, displayRowOpts),
 				series: [...CURTAILMENT_SERIES].reverse(),
 				basis,
-				hours,
+				bucketHours,
 				denominatorMWh: contributionDenominatorMWh(contribution)
 			}),
 			overlaySummary: computeOverlaySummary({
 				demandRows: sample(demandData, displayRowOpts),
 				marketRows,
-				shareRows: sample(shareData, shareRowOpts),
+				// The share line's own source: at rolling grains a ratio of
+				// 12-month sums, never the official monthly share.
+				shareRows: atTime(
+					opts.providers.renewableShareRows(tableWindow.start, tableWindow.end, shareRowOpts)
+				),
 				basis,
-				hours
+				bucketHours
 			})
 		};
 	});

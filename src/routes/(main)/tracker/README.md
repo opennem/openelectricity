@@ -580,8 +580,18 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   intensity (kgCO₂e/MWh, Σ tonnes ÷ Σ energy) per group, computed in `table-model.js` from: the generation chart's
   `onvisibledata` snapshot, the headless `createNetworkFuelTechSeries`
   providers for `market_value` and `emissions`, and the market pair's
-  `demand_gross`. Loads report no emissions. Ratios are ratios of window sums (each side normalised to
-  MWh via its own interval length), never means of per-bucket ratios. Row
+  `demand_gross`. Loads report no emissions. Window totals read every feed at its
+  native cadence (calendar-filtered when a filter is set) and give each bucket its own
+  duration — months and years vary in length, and filters skip periods — so energy and
+  Av power never infer a bucket length from the gap between rows. On energy grains the
+  bucket still in progress (the one the chart hatches) counts only the hours up to the
+  window's end, which a refresh advances, because its energy so far covers only those.
+  Ratios are ratios of
+  window sums over the periods both sides report (a period missing its market value or
+  emissions leaves its energy out too), never means of per-bucket ratios. When a
+  generating period has no market value or emissions, the Av price or Intensity cell
+  carries a `*` linked to a footnote, and the table export's `Av price partial` /
+  `Intensity partial` columns say the same. Row
   clicks toggle chart series; denominators ignore visibility so percentages
   stay stable. Stale rows stay visible under a veil while refetching. The
   panel also shows a curtailment section (official solar/wind curtailment, outside the
@@ -918,8 +928,8 @@ failures do not block an otherwise ready generation comparison.
 `filter` — a calendar-period id (`jan`…`dec`,
 `summer`…, `q1`…`q4`, `h1`/`h2`) shown beside the interval control in the All
 range. Charts connect matching occurrences across years. For non-rolling
-intervals, table summaries retain the native row cadence but ignore values
-outside the selected period.
+intervals, table summaries keep the native row cadence (as they always do) but
+ignore values outside the selected period.
 Defaults are omitted.
 At the rolling grain every summed surface shows trailing 12-month windows,
 intensity and the price card derive ratios of 12-month sums (the price card

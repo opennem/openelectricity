@@ -216,7 +216,8 @@ function emissionsDataset(ctx) {
  * The fuel-tech table as displayed: sources, loads, the curtailment section
  * and the Demand / Renewables summary rows, with a `Type` column standing in
  * for the table's headings. Values are the raw window statistics behind the
- * formatted cells.
+ * formatted cells; the partial flags mirror the table's * markers (a ratio
+ * over only the periods with market value or emissions).
  * @param {TrackerExportContext} ctx
  * @returns {ExportDataset | null}
  */
@@ -231,8 +232,10 @@ function tableDataset(ctx) {
 		{ key: 'avPowerMW', header: 'Av power (MW)', type: 'number' },
 		{ key: 'contributionPct', header: contributionHeader, type: 'number' },
 		{ key: 'vwPrice', header: 'Av price ($/MWh)', type: 'number' },
+		{ key: 'vwPricePartial', header: 'Av price partial', type: 'boolean' },
 		{ key: 'emissionsT', header: 'Emissions (tCO2e)', type: 'number' },
 		{ key: 'intensityKgPerMWh', header: 'Intensity (kgCO2e/MWh)', type: 'number' },
+		{ key: 'intensityPartial', header: 'Intensity partial', type: 'boolean' },
 		{ key: 'hidden', header: 'Hidden', type: 'boolean' },
 		{ key: 'fuelTechs', header: 'Fuel techs', type: 'string' }
 	];
@@ -243,8 +246,10 @@ function tableDataset(ctx) {
 		avPowerMW: row.avPowerMW,
 		contributionPct: row.contributionPct,
 		vwPrice: row.vwPrice,
+		vwPricePartial: row.vwPricePartial,
 		emissionsT: row.emissionsT,
 		intensityKgPerMWh: row.intensityKgPerMWh,
+		intensityPartial: row.intensityPartial,
 		hidden: row.hidden,
 		fuelTechs: row.fuelTechs.join(' ')
 	}));

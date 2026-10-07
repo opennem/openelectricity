@@ -3,19 +3,22 @@
  * contribution share and volume-weighted price per group over the visible
  * window.
  *
- * Inputs are independently-grained row sets (the generation chart's
- * display-aggregated rows; market value and demand at their native grain), so
- * every cross-set ratio normalises each side to energy (MWh) using its own
- * interval length first — the `network-metrics-calc` doctrine. Ratios are
- * ratios of window sums, never means of per-bucket ratios.
+ * Every row set shares one grain, whose bucket lengths `bucketHours` gives by
+ * start time: window summaries pass native rows, and inspection one display
+ * bucket. Energy and average power use those durations, never a gap inferred
+ * between rows — calendar months differ in length and filtered rows skip
+ * periods. Ratios are ratios of window sums, never means of per-bucket ratios,
+ * and sum only the periods both sides report: rows sharing a grain pair by
+ * start time.
  *
  * No side effects, no fetching, no Svelte — unit-testable maths only.
  */
 
 import {
-	averagePower as windowAveragePower,
+	averagePower,
+	isFiniteNumber,
 	meanSeries,
-	sumAsEnergy as windowSumAsEnergy
+	sumAsEnergy
 } from '$lib/components/charts/network/network-metrics-calc.js';
 import {
 	DEMAND_GROSS_SERIES_ID,
@@ -30,27 +33,10 @@ import {
 /** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */
 /** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
 /** @typedef {import('./types.js').OverlaySummary} OverlaySummary */
+/** @typedef {import('$lib/components/charts/network/network-metrics-calc.js').BucketHours} BucketHours */
 
 /** Below this magnitude (MWh) a window's energy is noise, not a denominator. */
 const ENERGY_EPSILON_MWH = 1e-6;
-
-/** Single-bucket inspection supplies its duration explicitly: one row has no
- * neighbouring timestamp from which the window helpers can infer a cadence.
- * @param {Array<Record<string, any>>} rows @param {string[]} keys
- * @param {'power' | 'energy'} basis @param {number} [hours] */
-function sumAsEnergy(rows, keys, basis, hours) {
-	return hours === undefined || basis === 'energy'
-		? windowSumAsEnergy(rows, keys, basis)
-		: windowSumAsEnergy(rows, keys, 'energy') * hours;
-}
-
-/** @param {Array<Record<string, any>>} rows @param {string} key
- * @param {'power' | 'energy'} basis @param {number} [hours] */
-function averagePower(rows, key, basis, hours) {
-	if (hours === undefined || basis === 'power') return windowAveragePower(rows, key, basis);
-	const mean = meanSeries(rows, key);
-	return mean === null || hours <= 0 ? null : mean / hours;
-}
 
 /**
  * Whether a series has at least one finite value in the window — distinguishes
@@ -60,7 +46,48 @@ function averagePower(rows, key, basis, hours) {
  * @param {string} key
  */
 function hasFiniteValue(rows, key) {
-	return rows.some((row) => typeof row[key] === 'number' && !isNaN(row[key]));
+	return rows.some((row) => isFiniteNumber(row[key]));
+}
+
+/**
+ * One series' Σ numerator (market value $, emissions t) and Σ energy (MWh)
+ * over only the periods reporting both. A numerator missing some periods
+ * must not leave their energy in the denominator: two 100 MWh periods with
+ * $10,000 in the first and nothing in the second are $100/MWh observed, not
+ * $50. Zero and negative values are real readings and count. `partial`
+ * reports a period with generation but no numerator, so the ratio covers
+ * only part of the window. Null when no period reports both.
+ * @param {Array<Record<string, any>>} numeratorRows - Per-period totals
+ * @param {Array<Record<string, any>>} generationRows
+ * @param {string} key
+ * @param {'power' | 'energy'} basis
+ * @param {BucketHours} bucketHours
+ * @returns {{ numerator: number, energyMWh: number, partial: boolean } | null}
+ */
+function pairedWindowSums(numeratorRows, generationRows, key, basis, bucketHours) {
+	/** @type {Map<number, number>} */
+	const numerators = new Map();
+	for (const row of numeratorRows) {
+		if (isFiniteNumber(row[key])) numerators.set(row.time, row[key]);
+	}
+	let numerator = 0;
+	let energyMWh = 0;
+	let paired = false;
+	let partial = false;
+	for (const row of generationRows) {
+		const value = numerators.get(row.time);
+		const generation = row[key];
+		if (!isFiniteNumber(generation)) continue;
+		if (value === undefined) {
+			// A period that generated nothing has nothing to settle or emit.
+			if (generation !== 0) partial = true;
+			continue;
+		}
+		numerator += value;
+		energyMWh += basis === 'energy' ? generation : generation * bucketHours(row.time);
+		paired = true;
+	}
+	return paired ? { numerator, energyMWh, partial } : null;
 }
 
 /**
@@ -69,10 +96,10 @@ function hasFiniteValue(rows, key) {
  * @param {Array<Record<string, any>>} rows
  * @param {string} key
  * @param {'power' | 'energy'} basis
- * @param {number} [hours]
+ * @param {BucketHours} bucketHours
  */
-function windowEnergy(rows, key, basis, hours) {
-	return hasFiniteValue(rows, key) ? sumAsEnergy(rows, [key], basis, hours) : null;
+function windowEnergy(rows, key, basis, bucketHours) {
+	return hasFiniteValue(rows, key) ? sumAsEnergy(rows, [key], basis, bucketHours) : null;
 }
 
 /**
@@ -80,12 +107,12 @@ function windowEnergy(rows, key, basis, hours) {
  * @param {Array<Record<string, any>>} generationRows
  * @param {string[]} seriesNames
  * @param {'power' | 'energy'} basis
- * @param {number} [hours]
+ * @param {BucketHours} bucketHours
  * @returns {Record<string, number | null>}
  */
-export function computeAvPowerMW(generationRows, seriesNames, basis, hours) {
+export function computeAvPowerMW(generationRows, seriesNames, basis, bucketHours) {
 	return Object.fromEntries(
-		seriesNames.map((name) => [name, averagePower(generationRows, name, basis, hours)])
+		seriesNames.map((name) => [name, averagePower(generationRows, name, basis, bucketHours)])
 	);
 }
 
@@ -95,82 +122,93 @@ export function computeAvPowerMW(generationRows, seriesNames, basis, hours) {
  * @param {Array<Record<string, any>>} generationRows
  * @param {string[]} seriesNames
  * @param {'power' | 'energy'} basis
- * @param {number} [hours]
+ * @param {BucketHours} bucketHours
  * @returns {Record<string, number | null>}
  */
-export function computeEnergyMWh(generationRows, seriesNames, basis, hours) {
+export function computeEnergyMWh(generationRows, seriesNames, basis, bucketHours) {
 	return Object.fromEntries(
-		seriesNames.map((name) => [name, windowEnergy(generationRows, name, basis, hours)])
+		seriesNames.map((name) => [name, windowEnergy(generationRows, name, basis, bucketHours)])
 	);
 }
 
 /**
  * Volume-weighted price ($/MWh) per series: Σ market value ÷ Σ energy over the
- * window. Both sides carry the same load inversion, so a load's negative ÷
- * negative yields its positive price paid. Null when the series has no market
- * settlement in the window or its energy is ~zero.
+ * periods with both. Both sides carry the same load inversion, so a load's
+ * negative ÷ negative yields its positive price paid. Null when the series has
+ * no market settlement in the window or its paired energy is ~zero.
+ * `vwPricePartial` flags a price missing some generating periods' market value.
  * @param {{
  *   mvRows: Array<Record<string, any>>,
  *   generationRows: Array<Record<string, any>>,
  *   seriesNames: string[],
- *   hours?: number,
+ *   bucketHours: BucketHours,
  *   basis: 'power' | 'energy'
  * }} input
- * @returns {Record<string, number | null>}
+ * @returns {{ vwPrice: Record<string, number | null>, vwPricePartial: Record<string, boolean> }}
  */
-export function computeVWPrices({ mvRows, generationRows, seriesNames, basis, hours }) {
-	return Object.fromEntries(
-		seriesNames.map((name) => {
-			if (!hasFiniteValue(mvRows, name)) return [name, null];
-			const energyMWh = sumAsEnergy(generationRows, [name], basis, hours);
-			if (Math.abs(energyMWh) < ENERGY_EPSILON_MWH) return [name, null];
-			return [name, sumAsEnergy(mvRows, [name], 'energy') / energyMWh];
-		})
-	);
+export function computeVWPrices({ mvRows, generationRows, seriesNames, basis, bucketHours }) {
+	/** @type {Record<string, number | null>} */
+	const vwPrice = {};
+	/** @type {Record<string, boolean>} */
+	const vwPricePartial = {};
+	for (const name of seriesNames) {
+		const sums = pairedWindowSums(mvRows, generationRows, name, basis, bucketHours);
+		const priced = sums !== null && Math.abs(sums.energyMWh) >= ENERGY_EPSILON_MWH;
+		vwPrice[name] = priced ? sums.numerator / sums.energyMWh : null;
+		vwPricePartial[name] = priced && sums.partial;
+	}
+	return { vwPrice, vwPricePartial };
 }
 
 /**
  * Emissions per series over the window: the volume (tCO₂e, Σ of per-bucket
  * tonnes — emissions rows are per-bucket totals like energy rows) and the
- * intensity (kgCO₂e/MWh, Σ tonnes ÷ Σ energy × 1000 — a ratio of window
- * sums). Loads report null on both: they consume rather than produce, and
- * their negative energy makes a ratio meaningless. Null also when the series
+ * intensity (kgCO₂e/MWh, Σ tonnes ÷ Σ energy × 1000 over the periods with
+ * both — a ratio of window sums). Loads report null on both: they consume
+ * rather than produce, and their negative energy makes a ratio meaningless.
+ * Null also when the series
  * has no emissions data in the window (imports, the WEM's missing feeds).
+ * `intensityPartial` flags an intensity missing some generating periods'
+ * emissions.
  *
  * @param {{
  *   emissionsRows: Array<Record<string, any>>,
  *   generationRows: Array<Record<string, any>>,
  *   seriesNames: string[],
- *   hours?: number,
+ *   bucketHours: BucketHours,
  *   basis: 'power' | 'energy',
  *   loadSeriesIds: string[]
  * }} input
- * @returns {{ volumeT: Record<string, number | null>, intensityKgPerMWh: Record<string, number | null> }}
+ * @returns {{ volumeT: Record<string, number | null>, intensityKgPerMWh: Record<string, number | null>, intensityPartial: Record<string, boolean> }}
  */
 export function computeEmissions({
 	emissionsRows,
 	generationRows,
 	seriesNames,
 	basis,
-	hours,
+	bucketHours,
 	loadSeriesIds
 }) {
 	/** @type {Record<string, number | null>} */
 	const volumeT = {};
 	/** @type {Record<string, number | null>} */
 	const intensityKgPerMWh = {};
+	/** @type {Record<string, boolean>} */
+	const intensityPartial = {};
 	for (const name of seriesNames) {
+		intensityPartial[name] = false;
 		if (loadSeriesIds.includes(name) || !hasFiniteValue(emissionsRows, name)) {
 			volumeT[name] = null;
 			intensityKgPerMWh[name] = null;
 			continue;
 		}
-		const tonnes = sumAsEnergy(emissionsRows, [name], 'energy');
-		const energyMWh = sumAsEnergy(generationRows, [name], basis, hours);
-		volumeT[name] = tonnes;
-		intensityKgPerMWh[name] = energyMWh > ENERGY_EPSILON_MWH ? (tonnes / energyMWh) * 1000 : null;
+		volumeT[name] = sumAsEnergy(emissionsRows, [name], 'energy');
+		const sums = pairedWindowSums(emissionsRows, generationRows, name, basis, bucketHours);
+		const rated = sums !== null && sums.energyMWh > ENERGY_EPSILON_MWH;
+		intensityKgPerMWh[name] = rated ? (sums.numerator / sums.energyMWh) * 1000 : null;
+		intensityPartial[name] = rated && sums.partial;
 	}
-	return { volumeT, intensityKgPerMWh };
+	return { volumeT, intensityKgPerMWh, intensityPartial };
 }
 
 /**
@@ -181,7 +219,7 @@ export function computeEmissions({
  * @param {{
  *   generationRows: Array<Record<string, any>>,
  *   seriesNames: string[],
- *   hours?: number,
+ *   bucketHours: BucketHours,
  *   basis: 'power' | 'energy',
  *   mode: ContributionMode,
  *   demandRows: Array<Record<string, any>>,
@@ -194,16 +232,16 @@ export function contributionDenominatorMWh({
 	generationRows,
 	seriesNames,
 	basis,
-	hours,
+	bucketHours,
 	mode,
 	demandRows,
 	demandBasis,
 	loadSeriesIds
 }) {
 	if (mode === 'demand')
-		return sumAsEnergy(demandRows, [DEMAND_GROSS_SERIES_ID], demandBasis, hours);
+		return sumAsEnergy(demandRows, [DEMAND_GROSS_SERIES_ID], demandBasis, bucketHours);
 	const sourceKeys = contributionSeries(seriesNames, loadSeriesIds, 'generation');
-	return sumAsEnergy(generationRows, sourceKeys, basis, hours);
+	return sumAsEnergy(generationRows, sourceKeys, basis, bucketHours);
 }
 
 /**
@@ -222,7 +260,7 @@ export function contributionDenominatorMWh({
  * @param {{
  *   generationRows: Array<Record<string, any>>,
  *   seriesNames: string[],
- *   hours?: number,
+ *   bucketHours: BucketHours,
  *   basis: 'power' | 'energy',
  *   mode: ContributionMode,
  *   demandRows: Array<Record<string, any>>,
@@ -235,7 +273,7 @@ export function computeContribution({
 	generationRows,
 	seriesNames,
 	basis,
-	hours,
+	bucketHours,
 	mode,
 	demandRows,
 	demandBasis,
@@ -247,7 +285,7 @@ export function computeContribution({
 		generationRows,
 		seriesNames,
 		basis,
-		hours,
+		bucketHours,
 		mode,
 		demandRows,
 		demandBasis,
@@ -260,7 +298,7 @@ export function computeContribution({
 			return [
 				name,
 				contributionPercent(
-					sumAsEnergy(generationRows, [name], basis, hours),
+					sumAsEnergy(generationRows, [name], basis, bucketHours),
 					denominatorMWh,
 					ENERGY_EPSILON_MWH
 				)
@@ -286,7 +324,7 @@ export function computeContribution({
  *   mvRows: Array<Record<string, any>>,
  *   emissionsRows: Array<Record<string, any>>,
  *   demandRows: Array<Record<string, any>>,
- *   hours?: number,
+ *   bucketHours: BucketHours,
  *   basis: 'power' | 'energy',
  *   demandBasis: 'power' | 'energy',
  *   mode: ContributionMode,
@@ -301,7 +339,7 @@ export function buildFuelTechTableRows({
 	emissionsRows,
 	demandRows,
 	basis,
-	hours,
+	bucketHours,
 	demandBasis,
 	mode,
 	hiddenSeries,
@@ -314,22 +352,22 @@ export function buildFuelTechTableRows({
 		seriesColours,
 		groupFuelTechs
 	} = generationData;
-	const avPower = computeAvPowerMW(generationRows, seriesNames, basis, hours);
-	const energy = computeEnergyMWh(generationRows, seriesNames, basis, hours);
-	const vwPrices = computeVWPrices({ mvRows, generationRows, seriesNames, basis, hours });
+	const avPower = computeAvPowerMW(generationRows, seriesNames, basis, bucketHours);
+	const energy = computeEnergyMWh(generationRows, seriesNames, basis, bucketHours);
+	const prices = computeVWPrices({ mvRows, generationRows, seriesNames, basis, bucketHours });
 	const emissions = computeEmissions({
 		emissionsRows,
 		generationRows,
 		seriesNames,
 		basis,
-		hours,
+		bucketHours,
 		loadSeriesIds
 	});
 	const contribution = computeContribution({
 		generationRows,
 		seriesNames,
 		basis,
-		hours,
+		bucketHours,
 		mode,
 		demandRows,
 		demandBasis,
@@ -348,9 +386,11 @@ export function buildFuelTechTableRows({
 			energyMWh: signedEnergy === null ? null : Math.abs(signedEnergy),
 			avPowerMW: signedAvPower === null ? null : Math.abs(signedAvPower),
 			contributionPct: contribution[name],
-			vwPrice: vwPrices[name],
+			vwPrice: prices.vwPrice[name],
+			vwPricePartial: prices.vwPricePartial[name],
 			emissionsT: emissions.volumeT[name],
 			intensityKgPerMWh: emissions.intensityKgPerMWh[name],
+			intensityPartial: emissions.intensityPartial[name],
 			fuelTechs: groupFuelTechs?.[name] ?? []
 		};
 	});
@@ -364,19 +404,19 @@ export function buildFuelTechTableRows({
  * @param {{
  *   rows: Array<Record<string, any>>,
  *   series: Array<{ id: string, label: string }>,
- *   hours?: number,
+ *   bucketHours: BucketHours,
  *   basis: 'power' | 'energy',
  *   denominatorMWh: number
  * }} input
  * @returns {CurtailmentTableRow[]}
  */
-export function computeCurtailmentRows({ rows, series, basis, denominatorMWh, hours }) {
+export function computeCurtailmentRows({ rows, series, basis, denominatorMWh, bucketHours }) {
 	/** @type {CurtailmentTableRow[]} */
 	const out = [];
 	for (const { id, label } of series) {
-		const av = averagePower(rows, id, basis, hours);
+		const av = averagePower(rows, id, basis, bucketHours);
 		if (av === null) continue;
-		const energyMWh = sumAsEnergy(rows, [id], basis, hours);
+		const energyMWh = sumAsEnergy(rows, [id], basis, bucketHours);
 		out.push({
 			id,
 			label,
@@ -399,17 +439,17 @@ export function computeCurtailmentRows({ rows, series, basis, denominatorMWh, ho
  *   demandRows: Array<Record<string, any>>,
  *   marketRows: Array<Record<string, any>>,
  *   shareRows: Array<Record<string, any>>,
- *   hours?: number,
+ *   bucketHours: BucketHours,
  *   basis: 'power' | 'energy'
  * }} input
  * @returns {OverlaySummary}
  */
-export function computeOverlaySummary({ demandRows, marketRows, shareRows, basis, hours }) {
+export function computeOverlaySummary({ demandRows, marketRows, shareRows, basis, bucketHours }) {
 	return {
-		demandEnergyMWh: windowEnergy(demandRows, 'demand', basis, hours),
-		demandAvMW: averagePower(demandRows, 'demand', basis, hours),
-		renewablesEnergyMWh: windowEnergy(marketRows, RENEWABLES_SERIES_ID, basis, hours),
-		renewablesAvMW: averagePower(marketRows, RENEWABLES_SERIES_ID, basis, hours),
+		demandEnergyMWh: windowEnergy(demandRows, 'demand', basis, bucketHours),
+		demandAvMW: averagePower(demandRows, 'demand', basis, bucketHours),
+		renewablesEnergyMWh: windowEnergy(marketRows, RENEWABLES_SERIES_ID, basis, bucketHours),
+		renewablesAvMW: averagePower(marketRows, RENEWABLES_SERIES_ID, basis, bucketHours),
 		renewablesSharePct: meanSeries(shareRows, 'renewable_share')
 	};
 }

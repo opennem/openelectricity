@@ -85,8 +85,12 @@
  * @property {number | null} avPowerMW
  * @property {number | null} contributionPct
  * @property {number | null} vwPrice - Volume-weighted price, $/MWh
+ * @property {boolean} vwPricePartial - The price misses some generating
+ *   periods' market value, so it covers only part of the window
  * @property {number | null} emissionsT - Window emissions, tCO₂e
  * @property {number | null} intensityKgPerMWh - Σ emissions ÷ Σ energy, kgCO₂e/MWh
+ * @property {boolean} intensityPartial - The intensity misses some generating
+ *   periods' emissions
  * @property {string[]} fuelTechs - Member fuel-tech codes present in the dataset
  * @property {Record<string, number | null>} [powerValues] - Average power (MW) by
  *   `powerColumns` key, when a view supplies its own columns

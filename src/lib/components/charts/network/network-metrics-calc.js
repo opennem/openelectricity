@@ -23,19 +23,37 @@ import { FOSSIL_FUEL_TECHS } from '$lib/oe-api/fuel-tech-classes.js';
 import { loadFuelTechs } from '$lib/fuel_techs';
 import { RENEWABLES_SERIES_ID, DEMAND_GROSS_SERIES_ID } from './network-market-data.svelte.js';
 
+/** @param {unknown} value @returns {value is number} */
+export const isFiniteNumber = (value) => typeof value === 'number' && !isNaN(value);
+
+/** A bucket's length in hours from its start time — calendar grains vary.
+ * @typedef {(time: number) => number} BucketHours */
+
 /**
  * Total energy (MWh) across keys. Power rows hold MW means per bucket, so each
- * bucket contributes `value × intervalHours`; energy rows hold MWh directly.
- * @param {Array<Record<string, any>>} rows - Time-ordered, uniform interval
+ * bucket contributes `value × hours`; energy rows hold MWh directly.
+ * Without `bucketHours` the length is inferred from the first two rows, which
+ * suits only contiguous, uniform intervals.
+ * @param {Array<Record<string, any>>} rows - Time-ordered
  * @param {string[]} keys
  * @param {'power' | 'energy'} basis
+ * @param {BucketHours} [bucketHours]
  * @returns {number}
  */
-export function sumAsEnergy(rows, keys, basis) {
-	const total = sumAllSeries(rows, keys);
-	if (basis === 'energy') return total;
+export function sumAsEnergy(rows, keys, basis, bucketHours) {
+	if (basis === 'energy') return sumAllSeries(rows, keys);
+	if (bucketHours) {
+		let total = 0;
+		for (const row of rows) {
+			const hours = bucketHours(row.time);
+			for (const key of keys) {
+				if (isFiniteNumber(row[key])) total += row[key] * hours;
+			}
+		}
+		return total;
+	}
 	const hours = getIntervalHours(rows);
-	return hours > 0 ? total * hours : 0;
+	return hours > 0 ? sumAllSeries(rows, keys) * hours : 0;
 }
 
 /**
@@ -90,14 +108,31 @@ export function meanSeries(rows, key) {
 }
 
 /**
- * Average power (MW) of one series — a plain mean at power basis; at energy
- * basis each bucket's MWh is divided back by the bucket length.
+ * Average power (MW) of one series over the buckets that report it. With
+ * `bucketHours` it is energy ÷ duration: power buckets weigh their MW by their
+ * hours, and energy buckets' MWh divide by their summed hours, so unequal
+ * months and calendar-filtered (non-contiguous) rows average correctly.
+ * Without it: a plain mean at power basis, and at energy basis the mean MWh
+ * divided by the gap between the first two rows.
  * @param {Array<Record<string, any>>} rows
  * @param {string} key
  * @param {'power' | 'energy'} basis
+ * @param {BucketHours} [bucketHours]
  * @returns {number | null}
  */
-export function averagePower(rows, key, basis) {
+export function averagePower(rows, key, basis, bucketHours) {
+	if (bucketHours) {
+		let energy = 0;
+		let hours = 0;
+		for (const row of rows) {
+			const value = row[key];
+			if (!isFiniteNumber(value)) continue;
+			const bucket = bucketHours(row.time);
+			energy += basis === 'power' ? value * bucket : value;
+			hours += bucket;
+		}
+		return hours > 0 ? energy / hours : null;
+	}
 	const mean = meanSeries(rows, key);
 	if (mean === null || basis === 'power') return mean;
 	const hours = getIntervalHours(rows);

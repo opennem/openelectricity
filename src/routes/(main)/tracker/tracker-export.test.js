@@ -71,8 +71,10 @@ function context(overrides = {}) {
 				avPowerMW: 5.5,
 				contributionPct: null,
 				vwPrice: 40,
+				vwPricePartial: false,
 				emissionsT: null,
 				intensityKgPerMWh: null,
+				intensityPartial: false,
 				fuelTechs: ['pumps']
 			},
 			{
@@ -85,8 +87,10 @@ function context(overrides = {}) {
 				avPowerMW: 105.25,
 				contributionPct: 83.4,
 				vwPrice: 88.1,
+				vwPricePartial: true,
 				emissionsT: 1234.5,
 				intensityKgPerMWh: 900.2,
+				intensityPartial: false,
 				fuelTechs: ['coal_black', 'coal_brown']
 			}
 		],
@@ -271,9 +275,9 @@ describe('datasetToCsv', () => {
 	it('serialises table strings and booleans', () => {
 		const csv = datasetToCsv(/** @type {any} */ (buildExportDataset('table', context())), '+10:00');
 		expect(csv.split('\n')[1]).toBe(
-			'Coal,source,210.5,105.25,83.4,88.1,1234.5,900.2,true,coal_black coal_brown'
+			'Coal,source,210.5,105.25,83.4,88.1,true,1234.5,900.2,false,true,coal_black coal_brown'
 		);
-		expect(csv.split('\n')[4]).toBe('Demand,summary,240,120,,,,,,');
+		expect(csv.split('\n')[4]).toBe('Demand,summary,240,120,,,,,,,,');
 	});
 });
 

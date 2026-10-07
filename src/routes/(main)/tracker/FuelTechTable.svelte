@@ -65,6 +65,8 @@
 	 * @property {boolean} [summary] - Bold summary treatment for the overlay rows
 	 * @property {string} [testId]
 	 * @property {boolean} [interpolated]
+	 * @property {string[]} [partialColumns] - Keys of the visible columns whose
+	 *   value covers only the periods with data (`PARTIAL_NOTE_ID`)
 	 */
 
 	/**
@@ -209,6 +211,18 @@
 	let showRooftopNote = $derived(
 		rooftopInterpolation && rows.some((row) => row.fuelTechs.includes('solar_rooftop'))
 	);
+	const PARTIAL_NOTE_ID = 'partial-coverage-note';
+	/** Visible columns whose value covers only the periods with data.
+	 * @param {FuelTechTableRow} row */
+	function partialColumnsOf(row) {
+		if (powerColumns) return [];
+		return [
+			...(row.vwPricePartial ? ['price'] : []),
+			...(row.intensityPartial ? ['intensity'] : [])
+		].filter((key) => tableColumns.includes(key));
+	}
+	/** The note shows while a visible cell carries its marker. */
+	let showPartialNote = $derived(rows.some((row) => partialColumnsOf(row).length > 0));
 
 	/**
 	 * Underlying fuel techs folded into a group — one label per tooltip line,
@@ -247,6 +261,7 @@
 					],
 			breakdown: underlyingFuelTechs(row),
 			interpolated: rooftopInterpolation && row.fuelTechs.includes('solar_rooftop'),
+			partialColumns: partialColumnsOf(row),
 			dimmed: row.hidden,
 			testId: 'fuel-tech-row'
 		};
@@ -419,7 +434,12 @@
 		role="button"
 		tabindex="0"
 		aria-pressed={row.active}
-		aria-describedby={row.interpolated ? 'rooftop-interpolation-note' : undefined}
+		aria-describedby={[
+			row.interpolated && 'rooftop-interpolation-note',
+			row.partialColumns?.length && PARTIAL_NOTE_ID
+		]
+			.filter(Boolean)
+			.join(' ') || undefined}
 		class="{TABLE_ROW} {row.summary ? 'font-semibold' : ''} {row.dimmed
 			? 'opacity-50'
 			: ''} {focused ? 'bg-light-warm-grey' : ''}"
@@ -454,7 +474,17 @@
 					lastRow: row.key === lastRowKey
 				})}
 			>
-				{cell}
+				{#if row.partialColumns?.includes(column.key)}
+					<!-- Outside the digits' flow, so partial values stay aligned. -->
+					<span class="relative">
+						{cell}<span
+							class="absolute -right-1.5 -top-0.5 text-[10px] leading-none"
+							aria-hidden="true">*</span
+						><span class="sr-only">, partial</span>
+					</span>
+				{:else}
+					{cell}
+				{/if}
 			</td>
 		{/each}
 	</tr>
@@ -606,6 +636,12 @@
 			{/if}
 		</li>
 		<li>Emissions intensity: each technology's emissions divided by its generation.</li>
+		{#if showPartialNote}
+			<li id={PARTIAL_NOTE_ID}>
+				* Covers only the periods with market value or emissions data: some periods in this window
+				have generation without them yet.
+			</li>
+		{/if}
 		{#each notes as note (note)}
 			<li>{note}</li>
 		{/each}

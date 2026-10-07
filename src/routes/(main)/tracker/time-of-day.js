@@ -331,9 +331,7 @@ export function averageDayTableRows({
 		demandRows: at(demandRows),
 		basis: 'power',
 		demandBasis: 'power',
-		// Each inspected row is one slot; the window helpers can't infer a
-		// cadence from a single row.
-		hours: range ? slotMs / 3_600_000 : undefined,
+		bucketHours: () => slotMs / 3_600_000,
 		mode,
 		hiddenSeries: hidden,
 		loadSeriesIds

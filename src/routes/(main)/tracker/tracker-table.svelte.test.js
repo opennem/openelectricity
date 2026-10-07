@@ -7,10 +7,11 @@ import { makeProvider, makeProviders, makeSnapshot } from './test-fixtures.svelt
 
 const nowMs = Date.parse('2026-09-06T00:00:00Z');
 
-/** Everything the table owner needs, with settable readiness. */
-function harness() {
+/** Everything the table owner needs, with settable readiness.
+ * @param {string} [search] - Tracker URL query */
+function harness(search = '') {
 	const session = createTrackerSession(
-		{ ...parseTrackerUrl(new URLSearchParams(), { nowMs }), nowMs },
+		{ ...parseTrackerUrl(new URLSearchParams(search), { nowMs }), nowMs },
 		() => {}
 	);
 	const { start, end } = session.window;
@@ -48,7 +49,7 @@ function harness() {
 		inspectTime: () => state.inspectTime,
 		ianaTimeZone: () => session.ianaTimeZone
 	});
-	return { session, state, table, marketData };
+	return { session, state, table, marketData, providers };
 }
 
 describe('tracker table owner', () => {
@@ -100,6 +101,91 @@ describe('tracker table owner', () => {
 			state.hidden = ['coal'];
 			flushSync();
 			expect(table.displayedRows?.map((row) => row.hidden)).toEqual([true, false]);
+		});
+		stop();
+	});
+});
+
+describe('window durations', () => {
+	// A constant 100 MW: 74,400 MWh in a 31-day month, 67,200 MWh in February.
+	it.each([
+		['unequal months', 'range=1y', ['2024-12-31T14:00:00Z', '2025-01-31T14:00:00Z']],
+		[
+			'a calendar filter',
+			'range=all&interval=1M&filter=jan',
+			['2023-12-31T14:00:00Z', '2024-12-31T14:00:00Z']
+		]
+	])('averages power over native month lengths with %s', (_, search, months) => {
+		const stop = $effect.root(() => {
+			const { state, table, session } = harness(search);
+			expect(session.range.activeInterval).toBe('1M');
+			const nativeData = months.map((iso) => {
+				const time = Date.parse(iso);
+				const days = new Date(time + 10 * 3_600_000).getUTCMonth() === 1 ? 28 : 31;
+				return { time, coal: 100 * 24 * days, pumps: 0 };
+			});
+			state.snapshot = { ...state.snapshot, data: nativeData, nativeData };
+			flushSync();
+			expect(table.rows?.find((row) => row.id === 'coal')?.avPowerMW).toBeCloseTo(100);
+		});
+		stop();
+	});
+});
+
+describe('the month in progress', () => {
+	// nowMs is 6 September 10:00 AEST: September has run 130 hours of its 720.
+	const august = Date.parse('2026-07-31T14:00:00Z');
+	const september = Date.parse('2026-08-31T14:00:00Z');
+	const elapsed = (nowMs - september) / 3_600_000;
+	/** A constant 100 MW through a complete August and September so far. */
+	function openMonth() {
+		const harnessed = harness('range=1y');
+		const nativeData = [
+			{ time: august, coal: 100 * 744, pumps: 0 },
+			{ time: september, coal: 100 * elapsed, pumps: 0 }
+		];
+		harnessed.state.snapshot = { ...harnessed.state.snapshot, data: nativeData, nativeData };
+		flushSync();
+		return harnessed;
+	}
+
+	it('counts only its elapsed hours in the window average', () => {
+		const stop = $effect.root(() => {
+			const { table } = openMonth();
+			expect(elapsed).toBe(130);
+			const coal = table.rows?.find((row) => row.id === 'coal');
+			expect(coal?.energyMWh).toBe(100 * (744 + 130));
+			expect(coal?.avPowerMW).toBeCloseTo(100);
+		});
+		stop();
+	});
+
+	it('averages over its elapsed hours when inspected', () => {
+		const stop = $effect.root(() => {
+			const { state, table } = openMonth();
+			state.inspectTime = september;
+			flushSync();
+			expect(table.inspection?.rows.find((row) => row.id === 'coal')?.avPowerMW).toBeCloseTo(100);
+			state.inspectTime = august;
+			flushSync();
+			expect(table.inspection?.rows.find((row) => row.id === 'coal')?.avPowerMW).toBeCloseTo(100);
+		});
+		stop();
+	});
+});
+
+describe('rolling renewables share', () => {
+	it('inspects the share line’s own rolling ratio, not the month’s official share', () => {
+		const stop = $effect.root(() => {
+			const { state, table, session, providers } = harness('range=1y&interval=12mr');
+			expect(session.range.displayInterval).toBe('12mr');
+			const time = session.window.start;
+			// The month alone read 60%; its trailing 12 months, 32.5%.
+			providers.shareData.rows = [{ time, renewable_share: 60 }];
+			providers.renewableShareRows = () => [{ time, renewable_share: 32.5 }];
+			state.inspectTime = time;
+			flushSync();
+			expect(table.inspection?.overlaySummary.renewablesSharePct).toBe(32.5);
 		});
 		stop();
 	});
