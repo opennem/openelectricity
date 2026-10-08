@@ -341,3 +341,45 @@ describe('Tracker metrics', () => {
 		expect(byId(groups, 'market').max?.value).toBe(2);
 	});
 });
+
+describe('the day still in progress', () => {
+	// Daily energy: two full days at 500 MWh, then today with 150 MWh by 08:00.
+	const rows = [
+		{ time: 10, coal: 500, wind: 0 },
+		{ time: 20, coal: 500, wind: 0 },
+		{ time: 30, coal: 150, wind: 0 }
+	];
+	const groups = buildWindowMetrics(
+		input({
+			generation: snapshot(rows),
+			demand: snapshot(
+				rows.map(({ time, coal }) => ({ time, demand: coal })),
+				['demand']
+			),
+			emissions: snapshot(
+				rows.map(({ time, coal }) => ({ time, emissions: coal, energy_mwh: coal })),
+				['emissions', 'energy_mwh']
+			),
+			basis: 'energy',
+			bucketHours: (time) => (time === 30 ? 8 : 24),
+			openBucket: 30
+		})
+	);
+
+	it('leaves its part-filled totals out of the volume extrema', () => {
+		for (const id of ['energy', 'demand', 'emissions']) {
+			expect(byId(groups, id).min).toMatchObject({ value: 500, time: 10, ties: 2 });
+		}
+	});
+
+	it('averages its power over the elapsed hours, so it reads like a full day', () => {
+		const power = byId(groups, 'generation');
+		// 500 / 24 ≈ 20.8 MW for the full days; 150 / 8 = 18.75 MW so far today.
+		expect(power.min).toMatchObject({ value: 18.75, time: 30 });
+		expect(power.max?.value).toBeCloseTo(500 / 24);
+	});
+
+	it('still counts its ratios', () => {
+		expect(byId(groups, 'intensity').available).toBe(3);
+	});
+});

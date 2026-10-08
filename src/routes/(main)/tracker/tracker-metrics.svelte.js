@@ -1,4 +1,3 @@
-import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
 import { selectIntensityComponents } from '$lib/components/charts/network/process-emissions-intensity.js';
 /** @typedef {'generation' | 'energy' | 'market' | 'emissions' | 'intensity' | 'demand' | 'renewables'
  * | 'curtailment_solar' | 'curtailment_wind'} MetricId */
@@ -110,8 +109,8 @@ export function createTrackerMetrics(opts) {
 			: null,
 		hidden: opts.hidden(),
 		basis: session.range.activeMetric,
-		bucketHours: (/** @type {number} */ time) =>
-			getIntervalHours(session.range.displayInterval, time, session.ianaTimeZone),
+		bucketHours: table.displayBucketHours,
+		openBucket: table.openDisplayBucket,
 		priceMetric: opts.priceMetric()
 	});
 	return {

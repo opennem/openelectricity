@@ -331,7 +331,9 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   (2.5px) OE red line (`OE_RED`, `#C74523`) ending at the latest reading. Today
   is fetched by its own bounded sources (network midnight to the page's clock)
   only while the line is shown, and never joins the average, stack, table or
-  CSV. The radial heatmap has no today ring: there the toggle is disabled and
+  CSV. Its loading shows in the top-nav loader and holds the PNG export; a
+  failure shows an alert with "Retry today" beside the toggle, leaving the
+  historical profile on screen. The radial heatmap has no today ring: there the toggle is disabled and
   shows off (Toggle's `disabled`), and today isn't fetched, while the URL keeps
   the choice for the other styles. The breakdown's charts share one hover (`ProfileChart`'s
   `onhoverchange` / `syncHoverTime`), as Timeline's cards do, and the radial
@@ -715,6 +717,10 @@ buckets**, not native-cadence peaks or sums of overlapping rolling periods.
 Only actual interval starts inside the selected bounds are considered; synthetic
 calendar-band closing rows are excluded. Ties show the earliest occurrence.
 Network-local timestamps use the same interval formatting policy as the charts.
+On energy grains the bucket still in progress (the one the chart hatches) holds
+only part of its total, so it is left out of the volume extrema (net energy,
+demand, emissions, curtailment, market value); its net power divides by the
+hours elapsed so far, and its ratios count as they are.
 
 Values stay absolute when charts use percentage/change-since transforms. Net
 generation is the signed sum of selected technologies, including imports and

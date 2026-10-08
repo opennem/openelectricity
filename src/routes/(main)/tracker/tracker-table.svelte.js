@@ -144,6 +144,7 @@ export function createTrackerTable(opts) {
 		};
 	}
 	let nativeBucketHours = $derived(bucketHoursFor(range.activeInterval, nativeOpenStart));
+	let displayBucketHours = $derived(bucketHoursFor(range.displayInterval, displayOpenStart));
 
 	/** Recompute table rows when chart or provider data changes. */
 	let tableRows = $derived.by(() => {
@@ -260,7 +261,7 @@ export function createTrackerTable(opts) {
 		const totals = { ...displayRowOpts, method: /** @type {const} */ ('sum') };
 		const marketRows = sample(marketData, displayRowOpts);
 		const basis = range.activeMetric;
-		const hours = bucketHoursFor(range.displayInterval, displayOpenStart)(time);
+		const hours = displayBucketHours(time);
 		const bucketHours = () => hours;
 		const contribution = {
 			generationRows,
@@ -320,6 +321,16 @@ export function createTrackerTable(opts) {
 		},
 		get displayRowOpts() {
 			return displayRowOpts;
+		},
+		/** Start of the display bucket still in progress on an energy grain (the
+		 *  one the chart hatches), or null. */
+		get openDisplayBucket() {
+			return displayOpenStart;
+		},
+		/** Display bucket lengths, the bucket in progress counting only its
+		 *  elapsed hours. */
+		get displayBucketHours() {
+			return displayBucketHours;
 		},
 		get shareRowOpts() {
 			return shareRowOpts;

@@ -2608,3 +2608,21 @@ for (const interval of ['30m', '1d']) {
 		source.release();
 	});
 }
+
+test('a failed Show today says so beside its toggle, keeps the profile and retries', async ({
+	page
+}) => {
+	const api = await trackerFixture(page);
+	await page.goto('/tracker/profile?profile-display=breakdown&profile-end=2026-08-31');
+	await expect(page.getByRole('group', { name: 'Spot price interactive chart' })).toBeVisible();
+	const options = page.getByRole('region', { name: 'Breakdown options' });
+	api.fail('power');
+	await options.getByRole('switch', { name: 'Show today' }).click();
+	const alert = options.getByRole('alert');
+	await expect(alert).toContainText("Today's readings couldn't load");
+	// The days that did load stay on screen.
+	await expect(page.getByRole('group', { name: 'Spot price interactive chart' })).toBeVisible();
+	api.recover();
+	await alert.getByRole('button', { name: 'Retry today' }).click();
+	await expect(options.getByRole('alert')).toHaveCount(0);
+});

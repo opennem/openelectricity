@@ -40,10 +40,18 @@ function completeSum(row, keys) {
 
 /** Min/max of complete, finite display buckets. Ties use the earliest time.
  * `scaleAt` rescales a bucket's sum by its time — MW means to MWh per bucket
- * and back — so a metric can be read in either basis.
+ * and back — so a metric can be read in either basis. `skip` leaves out one
+ * bucket by its time: a part-filled total can't stand beside full ones.
  * @param {Snapshot | null} snapshot @param {string[]} keys
- * @param {Array<Record<string, any>>} [rows] @param {(time: number) => number} [scaleAt] */
-export function windowExtrema(snapshot, keys, rows = snapshot?.data ?? [], scaleAt = () => 1) {
+ * @param {Array<Record<string, any>>} [rows] @param {(time: number) => number} [scaleAt]
+ * @param {number | null} [skip] */
+export function windowExtrema(
+	snapshot,
+	keys,
+	rows = snapshot?.data ?? [],
+	scaleAt = () => 1,
+	skip = null
+) {
 	/** @type {Extreme | null} */
 	let min = null;
 	/** @type {Extreme | null} */
@@ -51,6 +59,7 @@ export function windowExtrema(snapshot, keys, rows = snapshot?.data ?? [], scale
 	let available = 0;
 	let intervals = 0;
 	for (const row of windowRows(snapshot, rows)) {
+		if (row.time === skip) continue;
 		intervals++;
 		const sum = completeSum(row, keys);
 		if (sum === null) continue;
@@ -74,8 +83,12 @@ export function windowExtrema(snapshot, keys, rows = snapshot?.data ?? [], scale
 /** @param {{generation: Snapshot | null, demand: Snapshot | null, renewables: Snapshot | null, market: Snapshot | null, emissions: Snapshot | null,
  * curtailment?: Snapshot | null,
  * hidden: string[], basis: 'power' | 'energy', priceMetric: 'price' | 'price_vw' | 'market_value',
- * bucketHours?: (time: number) => number}} input - `bucketHours` is the display
- * bucket's length at a time, turning energy buckets into average power
+ * bucketHours?: (time: number) => number, openBucket?: number | null}} input -
+ * `bucketHours` is the display bucket's length at a time (the bucket in progress
+ * counting only its elapsed hours), turning energy buckets into average power.
+ * `openBucket` is that bucket's start on an energy grain: its part-filled
+ * totals are left out of the volume extrema, while its average power and
+ * ratios still count.
  * @returns {WindowMetricGroup[]} */
 export function buildWindowMetrics({
 	generation,
@@ -87,7 +100,8 @@ export function buildWindowMetrics({
 	hidden,
 	basis,
 	priceMetric,
-	bucketHours = () => 1
+	bucketHours = () => 1,
+	openBucket = null
 }) {
 	/** @param {Snapshot | null} snapshot */
 	const visible = (snapshot) => snapshot?.seriesNames.filter((key) => !hidden.includes(key)) ?? [];
@@ -111,7 +125,7 @@ export function buildWindowMetrics({
 						unit: 'MWh',
 						description:
 							'Selected technologies, including imports and subtracting loads, per bucket.',
-						...windowExtrema(generation, visible(generation))
+						...windowExtrema(generation, visible(generation), undefined, undefined, openBucket)
 					}
 				]
 			: []),
@@ -133,7 +147,7 @@ export function buildWindowMetrics({
 			label: 'Demand',
 			unit: basis === 'energy' ? 'MWh' : 'MW',
 			description: 'Regional operational demand, independent of technology selection.',
-			...windowExtrema(demand, ['demand'])
+			...windowExtrema(demand, ['demand'], undefined, undefined, openBucket)
 		},
 		{
 			id: 'renewables',
@@ -163,7 +177,9 @@ export function buildWindowMetrics({
 					: priceMetric === 'market_value'
 						? visible(market)
 						: (market?.seriesNames ?? []),
-				priceRatio ? ratios(market, deriveVwPriceDisplayRows) : market?.data
+				priceRatio ? ratios(market, deriveVwPriceDisplayRows) : market?.data,
+				undefined,
+				priceMetric === 'market_value' ? openBucket : null
 			)
 		},
 		// The emissions pair reads one components feed: tonnes per bucket, and the
@@ -173,7 +189,7 @@ export function buildWindowMetrics({
 			label: 'Emissions',
 			unit: 'tCO₂e',
 			description: 'Emissions from selected technologies.',
-			...windowExtrema(emissions, ['emissions'])
+			...windowExtrema(emissions, ['emissions'], undefined, undefined, openBucket)
 		},
 		{
 			id: 'intensity',
@@ -188,14 +204,14 @@ export function buildWindowMetrics({
 			label: 'Solar curtailment',
 			unit: basis === 'energy' ? 'MWh' : 'MW',
 			description: 'Utility solar curtailed in the region, independent of technology selection.',
-			...windowExtrema(curtailment, ['curtailment_solar'])
+			...windowExtrema(curtailment, ['curtailment_solar'], undefined, undefined, openBucket)
 		},
 		{
 			id: 'curtailment_wind',
 			label: 'Wind curtailment',
 			unit: basis === 'energy' ? 'MWh' : 'MW',
 			description: 'Wind curtailed in the region, independent of technology selection.',
-			...windowExtrema(curtailment, ['curtailment_wind'])
+			...windowExtrema(curtailment, ['curtailment_wind'], undefined, undefined, openBucket)
 		}
 	];
 }

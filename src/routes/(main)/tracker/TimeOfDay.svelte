@@ -161,6 +161,19 @@
 		window: todaySoFar,
 		enabled: showToday && showPrice
 	}));
+	/** Today's overlay has its own state beside the historical profile: a
+	 * failure must say so rather than read as missing readings, and must not
+	 * hide the days that did load. */
+	let todayPending = $derived(
+		showToday && (powerToday.pending || (showPrice && priceToday.pending))
+	);
+	let todayError = $derived(
+		showToday ? (powerToday.error ?? (showPrice ? priceToday.error : null)) : null
+	);
+	function retryToday() {
+		powerToday.retry();
+		if (showPrice) priceToday.retry();
+	}
 	const PRICE_COLOUR = '#6A6A6A';
 	/** Every technology's profile, hidden ones too: the breakdown's charts and
 	 * the stacked radial bars draw the shown ones, and the table's percentile
@@ -510,7 +523,7 @@
 	 * the top-nav loader reports any of them, so a refresh always shows. */
 	let viewPending = $derived(
 		(breakdown ? gridPending : powerData.pending) ||
-			(showToday && (powerToday.pending || (showPrice && priceToday.pending))) ||
+			todayPending ||
 			(byDemand && demandData.pending)
 	);
 	const viewLoading = createLoadingNotice(() => viewPending);
@@ -843,6 +856,16 @@
 					onclick={() => session.select('profileToday', !selection.profileToday)}
 				/>
 			</div>
+			{#if todayError}
+				<div role="alert" class="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs">
+					<span class="text-dark-grey">Today's readings couldn't load</span>
+					<button
+						type="button"
+						class="rounded border border-mid-warm-grey px-2 py-1 hover:bg-warm-grey"
+						onclick={retryToday}>Retry today</button
+					>
+				</div>
+			{/if}
 			<div
 				class="h-8 shrink-0 border-l border-warm-grey"
 				role="separator"
@@ -944,7 +967,7 @@
 						png={{
 							id: `profile-${card.key}`,
 							label: card.label,
-							ready: !gridPending,
+							ready: !gridPending && !todayPending,
 							caption: card.radial
 								? 'Average by hour'
 								: card.ridgeline
