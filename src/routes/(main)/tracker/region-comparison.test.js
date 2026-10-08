@@ -264,11 +264,56 @@ describe('region comparison calculations', () => {
 		expect(latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, charts)).toBe(
 			Date.UTC(2024, 9)
 		);
-		expect(
-			latestCommonComparisonPeriod(data, ['a', 'missing'], 'demand', viewport, charts)
-		).toBeNull();
+		// A region still loading or failed (no rows) no longer blanks the rest.
+		expect(latestCommonComparisonPeriod(data, ['a', 'missing'], 'demand', viewport, charts)).toBe(
+			Date.UTC(2024, 11)
+		);
+		expect(latestCommonComparisonPeriod(data, ['missing'], 'demand', viewport, charts)).toBeNull();
 		expect(latestCommonComparisonPeriod(data, [], 'demand', viewport, charts)).toBeNull();
 		expect(latestCommonComparisonPeriod(data, ['a', 'b'], 'demand', viewport, [])).toBeNull();
+	});
+	describe('the Regions table’s resting period with a fuel value shown', () => {
+		const viewport = { start, end: Date.UTC(2026, 0) };
+		const charts = ['intensity', 'coal_value'];
+		/** Coal value from `from` to `to` (month indexes), none otherwise. @param {number} [from] @param {number} [to] */
+		const coal = (from = 0, to = 23) =>
+			monthly(24).map((row, i) =>
+				i >= from && i <= to ? { ...row, coal_energy: 1000, coal_market_value: 80_000 } : row
+			);
+		it('ignores a region that never had the fuel', () => {
+			// Tasmania has no coal: its coal value is never a reason to go back.
+			const data = { nsw1: coal(), tas1: monthly(24) };
+			expect(latestCommonComparisonPeriod(data, ['nsw1', 'tas1'], 'demand', viewport, charts)).toBe(
+				Date.UTC(2025, 11)
+			);
+		});
+		it('ignores a fuel that ended long before the view’s latest year', () => {
+			// South Australia's coal stopped years ago: no pinning to its last month.
+			const data = { nsw1: coal(), sa1: coal(0, 3) };
+			expect(latestCommonComparisonPeriod(data, ['nsw1', 'sa1'], 'demand', viewport, charts)).toBe(
+				Date.UTC(2025, 11)
+			);
+		});
+		it('still steps back for a value lagging within the latest year', () => {
+			// Two months short at the end: the table reads the last complete month.
+			const data = { nsw1: coal(0, 21), vic1: coal() };
+			expect(latestCommonComparisonPeriod(data, ['nsw1', 'vic1'], 'demand', viewport, charts)).toBe(
+				Date.UTC(2025, 9)
+			);
+		});
+		it('spans two periods at coarser grains', () => {
+			// Yearly rows: a value missing only from the latest year still holds it back.
+			const yearly = [0, 1, 2].map((i) => ({
+				...monthly(1)[0],
+				time: Date.UTC(2023 + i, 0),
+				coal_energy: 1000,
+				coal_market_value: i === 2 ? null : 80_000
+			}));
+			const range = { start: Date.UTC(2023, 0), end: Date.UTC(2026, 0) };
+			expect(
+				latestCommonComparisonPeriod({ nsw1: yearly }, ['nsw1'], 'demand', range, charts, 12)
+			).toBe(Date.UTC(2024, 0));
+		});
 	});
 	it('thins ticks to at most six, anchored to the calendar so they slide with the window', () => {
 		const rows = monthly(24);

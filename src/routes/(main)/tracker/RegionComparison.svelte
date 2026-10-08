@@ -179,7 +179,8 @@
 				regions,
 				basis,
 				viewport,
-				metrics.map((metric) => metric.id)
+				metrics.map((metric) => metric.id),
+				months
 			)
 	);
 	/** Header-chosen units for the Regions table's generation and intensity columns. */
@@ -572,8 +573,15 @@
 									scope="col"
 									class="{pinnedEdgeClass} w-(--region-w) bg-light-warm-grey px-2 text-left text-sm {TABLE_HEADER_CELL}"
 								>
+									<!-- The period every value in the table reads: hovered, pinned
+									     or the latest complete one. -->
 									<div class="ml-2 flex flex-col items-start">
 										<span class="text-xs text-dark-grey">Region</span>
+										<span
+											class="font-mono text-xxs font-light text-mid-grey"
+											data-testid="comparison-table-period"
+											>{period == null ? '' : comparisonPeriod(period, interval)}</span
+										>
 									</div>
 								</th>
 								{#each metrics as metric, index (index)}

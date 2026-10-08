@@ -33,7 +33,7 @@ again returns in the one it had for the visit, and newly shown fuel charts
 default to Proportion. The table and exports follow the selected
 presentation, which is preserved in the URL. A shared gross-demand / source-generation
 selector controls generation proportions; net imports always uses gross demand.
-The shared Regions table controls regional visibility across charts and follows hover, pinned inspection or the latest common complete period (the latest period where every selected region has a value for every displayed chart).
+The shared Regions table controls regional visibility across charts and follows hover, pinned inspection or the latest common complete period (`latestCommonComparisonPeriod`: the latest period where every selected region's current metrics all have a value). Regions without data in view (loading or failed) are left out, and so is a region's metric with no value in the view's latest year (two periods at coarser grains) — a fuel it never had or that ended long ago reads "—" rather than pinning the table to its last month; a feed lagging within that year (real prices awaiting CPI) still holds the table back.
 NSW, QLD, SA, TAS, VIC and WA (WEM) start selected; NEM and All Regions (NEM + WEM)
 are optional. Colours come from the shared region registry. Chart heights and
 panel width persist separately from Timeline; the panel starts closed on mobile.
@@ -193,9 +193,9 @@ narrower than a year of periods (`clampComparisonViewport`). The top nav's range
 on screen with a displayed value, so an unfinished year is never named
 (`comparisonRangeLabel`: `Jan 1999 — Aug 2026`, `1999 — 2025`,
 `FY2000 — FY2026`, `Autumn 2024 — Spring 2025`), and swaps to the hovered
-or pinned period while one is inspected. The Regions table has no period line
-of its own: at rest it holds the latest period every selected region has a
-value for. A pin clears by clicking the period again or pressing Escape. Axis ticks are anchored to the calendar
+or pinned period while one is inspected. The Regions table shows the period
+it reads under its Region heading: the hovered or pinned period, else that
+latest common complete period. A pin clears by clicking the period again or pressing Escape. Axis ticks are anchored to the calendar
 (`comparisonTicks`): monthly rows at the finest month step from January (1,
 2, 3, 6, 12… months) that keeps at most six ticks, coarser rows at each year's
 first row a year step (1, 2, 5…) apart, so a tick keeps its date as the

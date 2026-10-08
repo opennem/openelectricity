@@ -529,28 +529,58 @@ export function comparisonTickLabel(time, viewport) {
 	return utcFormatter(short ? MONTH_LABEL : YEAR_ONLY).format(time);
 }
 
-/** The latest visible period where every selected region has a finite value
- * for every displayed metric — the Regions table's resting inspection period.
+/** How far back from the latest visible period a region's metric must still
+ * report to hold the table to a common period: a year, or two periods at
+ * coarser grains. */
+const CURRENT_SPAN_MONTHS = 12;
+
+/** The Regions table's resting inspection period: the latest visible period
+ * where every selected region's current metrics all have a value, so a feed
+ * that lags by a period or two (real prices await CPI) holds the table back
+ * to a complete row. Only what can report counts: a region without data in
+ * view (loading or failed) is left out, and so is a region's metric with no
+ * value in the latest year of the view — one it never had (Tasmania's coal)
+ * or that ended long ago (South Australia's) — which reads "—" instead of
+ * pinning every region to its last value.
  * @param {Record<string, any[]>} data @param {string[]} regions
  * @param {'demand' | 'generation'} basis @param {{start: number,end: number}} viewport
- * @param {string[]} metricIds - The displayed comparison metrics */
-export function latestCommonComparisonPeriod(data, regions, basis, viewport, metricIds) {
-	if (!regions.length || !metricIds.length) return null;
-	const times = regions.map(
-		(id) =>
-			new Set(
-				(data[id] ?? [])
-					.filter(
-						(row) =>
-							row.time >= viewport.start &&
-							row.time < viewport.end &&
-							metricIds.every((metric) =>
-								Number.isFinite(comparisonMetricValue(row, metric, basis))
-							)
-					)
-					.map((row) => row.time)
+ * @param {string[]} metricIds - The displayed comparison metrics
+ * @param {number} [months] - Months per period (`periodMonths`) */
+export function latestCommonComparisonPeriod(
+	data,
+	regions,
+	basis,
+	viewport,
+	metricIds,
+	months = 1
+) {
+	if (!metricIds.length) return null;
+	/** @param {any} row @param {string} metric */
+	const has = (row, metric) => Number.isFinite(comparisonMetricValue(row, metric, basis));
+	const visible = regions
+		.map((id) =>
+			(data[id] ?? []).filter(
+				(row) =>
+					row.time >= viewport.start &&
+					row.time < viewport.end &&
+					metricIds.some((metric) => has(row, metric))
 			)
+		)
+		.filter((rows) => rows.length);
+	if (!visible.length) return null;
+	const latest = visible.reduce(
+		(max, rows) => rows.reduce((at, row) => Math.max(at, row.time), max),
+		-Infinity
 	);
+	const currentFrom = monthStart(latest, 1 - Math.max(CURRENT_SPAN_MONTHS, 2 * months));
+	const times = visible.map((rows) => {
+		const current = metricIds.filter((metric) =>
+			rows.some((row) => row.time >= currentFrom && has(row, metric))
+		);
+		return new Set(
+			rows.filter((row) => current.every((metric) => has(row, metric))).map((row) => row.time)
+		);
+	});
 	const common = [...times[0]].filter((time) => times.every((set) => set.has(time)));
 	return common.length ? Math.max(...common) : null;
 }
