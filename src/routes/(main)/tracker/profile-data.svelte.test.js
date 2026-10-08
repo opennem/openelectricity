@@ -110,6 +110,51 @@ describe('profile data source', () => {
 		stop();
 	});
 
+	it('refetches its newest readings when a refresh extends today so far', async () => {
+		const api = stubNetworkFetch();
+		const todayStart = profileWindow(nowMs, zone, 7).todayStart;
+		const today = $state({ start: todayStart, end: todayStart + 9 * 3_600_000 });
+		/** @type {ReturnType<typeof createProfileData>} */
+		let source;
+		const stop = $effect.root(() => {
+			source = createProfileData(() => ({
+				region: 'nsw1',
+				zone,
+				group: getGroup('simple'),
+				window: { start: today.start, end: today.end }
+			}));
+		});
+		await settle();
+		expect(api.urls).toHaveLength(1);
+		// @ts-expect-error assigned synchronously inside the root
+		source.refresh();
+		const before = today.end;
+		today.end = before + 3_600_000;
+		await settle();
+		// The last two 5-minute buckets are revisited, and the new hour fetched.
+		const spans = api.urls.slice(1).map((_, i) => {
+			const params = api.params(i + 1);
+			return [params.get('date_start'), params.get('date_end')];
+		});
+		expect(spans[0][0]).toBe(local(before - 10 * 60_000));
+		expect(spans.at(-1)?.[1]).toBe(local(today.end));
+		stop();
+	});
+
+	it('revisits its newest readings on refresh when the window stays put', async () => {
+		const api = stubNetworkFetch();
+		const { source, stop } = harness();
+		await settle();
+		expect(api.urls).toHaveLength(1);
+		source.refresh();
+		await settle();
+		expect(api.urls).toHaveLength(2);
+		const window = profileWindow(nowMs, zone, 7);
+		expect(api.params(1).get('date_start')).toBe(local(window.end - 10 * 60_000));
+		expect(api.params(1).get('date_end')).toBe(local(window.end));
+		stop();
+	});
+
 	it('reports a failed request and retries it on demand', async () => {
 		let fail = true;
 		const api = stubNetworkFetch(() =>

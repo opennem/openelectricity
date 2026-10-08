@@ -6,6 +6,7 @@ describe('tracker layout load', () => {
 	it('seeds analytical state before charts and emissions exclusions initialise', () => {
 		const data = load(
 			/** @type {Parameters<typeof load>[0]} */ ({
+				route: { id: '/(main)/tracker/timeline' },
 				url: new URL(
 					'https://example.test/tracker/timeline?hidden=coal&contribution=demand&transform=proportion&market-transform=changeSince'
 				)
@@ -25,6 +26,7 @@ describe('tracker layout load', () => {
 
 		const data = load(
 			/** @type {Parameters<typeof load>[0]} */ ({
+				route: { id: '/(main)/tracker/timeline' },
 				url: new URL('https://example.test/tracker/timeline')
 			})
 		);
@@ -37,9 +39,26 @@ describe('tracker layout load', () => {
 		expect(data.tablePanelOpen).toBe(true);
 	});
 
+	it('reads the route, so a view switch re-runs it with the current time', () => {
+		let routeRead = false;
+		load(
+			/** @type {Parameters<typeof load>[0]} */ ({
+				route: {
+					get id() {
+						routeRead = true;
+						return '/(main)/tracker/profile';
+					}
+				},
+				url: new URL('https://example.test/tracker/profile')
+			})
+		);
+		expect(routeRead).toBe(true);
+	});
+
 	it('parses chart overlays into the initial page state', () => {
 		const data = load(
 			/** @type {Parameters<typeof load>[0]} */ ({
+				route: { id: '/(main)/tracker/timeline' },
 				url: new URL(
 					'https://example.test/tracker/timeline?overlay=curtailment-wind,demand,renewables'
 				)

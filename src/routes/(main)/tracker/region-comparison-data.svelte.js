@@ -11,6 +11,7 @@ import {
 	comparisonBounds,
 	comparisonSourceActive,
 	comparisonStatus,
+	monthStart,
 	processComparisonEnergy
 } from './region-comparison.js';
 
@@ -22,16 +23,20 @@ import {
  * join, roll-up and status rules are pure (`region-comparison.js`); this
  * module only owns the provider lifecycle.
  *
- * Each region's monthly providers are pinned once to the full history and
- * stay warm; every interval is aggregated from those months.
+ * Each region's monthly providers are pinned to the full history of complete
+ * months up to `now` and stay warm; every interval is aggregated from those
+ * months. `now` moves only when the reader refreshes.
  *
  * Only the selection's interval, filter and regions are derived here: a pan
  * replaces the selection object every frame, and reading it wholesale would
  * rebuild the joined dataset on each frame.
  * @param {() => import('./region-comparison.js').RegionComparisonSelection} selection
- * @param {number} now @param {() => ReturnType<typeof import('$lib/comparison-cpi.js').comparisonCpi>} cpi */
+ * @param {() => number} now @param {() => ReturnType<typeof import('$lib/comparison-cpi.js').comparisonCpi>} cpi */
 export function createRegionComparisonData(selection, now, cpi) {
-	const bounds = comparisonBounds(now);
+	// Primitive bounds, so a refresh within the same month keeps their identity.
+	let boundsStart = $derived(comparisonBounds(now()).start);
+	let boundsEnd = $derived(comparisonBounds(now()).end);
+	let bounds = $derived({ start: boundsStart, end: boundsEnd });
 	let interval = $derived(selection().interval);
 	let filter = $derived(selection().filter);
 
@@ -83,10 +88,11 @@ export function createRegionComparisonData(selection, now, cpi) {
 		const providers = buildProviders(id, () => active);
 		const all = Object.values(providers);
 		$effect(() => {
+			const { start, end } = bounds;
 			if (!active) return;
 			untrack(() => {
 				for (const provider of all) {
-					provider.setViewport(bounds.start, bounds.end - 1);
+					provider.setViewport(start, end - 1);
 					provider.reconcileFetches();
 				}
 			});
@@ -110,13 +116,12 @@ export function createRegionComparisonData(selection, now, cpi) {
 		)
 	);
 	let data = $derived.by(() => {
-		/** Monthly rows arrive in one response, so a pending region is blank until
-		 * it is complete.
+		/** Monthly rows arrive in one response, so a region is blank until its
+		 * first load completes; a refresh or a failed one keeps the months
+		 * already held on screen while the newest are fetched again.
 		 * @param {typeof sources[number]} source @param {HeadlessSeriesProvider} provider */
 		const read = (source, provider) =>
-			!source.enabled() || provider.error || provider.isPending
-				? []
-				: provider.getVisibleRows(bounds.start, bounds.end - 1);
+			source.enabled() ? provider.getVisibleRows(bounds.start, bounds.end - 1) : [];
 		const rows = assembleComparisonMonthly(
 			Object.fromEntries(
 				sources.map((source) => {
@@ -141,7 +146,9 @@ export function createRegionComparisonData(selection, now, cpi) {
 		);
 	});
 	return {
-		bounds,
+		get bounds() {
+			return bounds;
+		},
 		get data() {
 			return data;
 		},
@@ -150,6 +157,19 @@ export function createRegionComparisonData(selection, now, cpi) {
 		},
 		get pending() {
 			return selection().regions.some((id) => status[id].pending);
+		},
+		/** The reader asked for fresh data: every shown region revisits its two
+		 * newest complete months past caches, as Timeline revisits its newest
+		 * buckets. Call after moving `now`, so a new month is fetched too. */
+		refresh() {
+			const tailStart = monthStart(bounds.end, -2);
+			for (const source of sources) {
+				if (!source.enabled()) continue;
+				for (const provider of source.all) {
+					provider.invalidateTail(tailStart, { force: true });
+					provider.reconcileFetches();
+				}
+			}
 		},
 		/** @param {string} id */
 		retry(id) {

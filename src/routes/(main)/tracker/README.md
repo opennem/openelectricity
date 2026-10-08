@@ -757,8 +757,26 @@ and retry limits remain in force.
 
 Pausing serialises exact `start`/`end` bounds, so copy/reload and Back/Forward
 preserve the choice without a second live-state URL flag; selecting a preset
-resumes following its latest window. Time-of-day analysis has nothing to
-refresh.
+resumes following its latest window.
+
+The range readout keeps its place at the end of the top nav at every width.
+To make room, the Region pill shows its short name (NEM, VIC, WA…) below `lg`
+(1440px), and below `md` (1024px) the view switcher folds into a dropdown at the
+same point the range presets do; past that, the readout truncates rather than
+squeezing the controls. Each view passes the shell one `status` object
+(`TrackerRangeStatus`).
+
+Profile and Compare refresh the same way (readout, `R`, Options menu) and
+likewise never poll; the top-nav loader shows while any source on screen is
+fetching. A refresh moves the view's "now" to the present (`session.reanchor`).
+Profile's sources each fetch their two newest 5-minute buckets afresh, its full
+days roll past midnight and Show today extends to the latest readings.
+Compare's shown regions fetch their two newest complete months afresh, and a
+new month joins once one completes; loaded months stay on screen while that
+happens (a region is blank only until its first load). Each view is
+its own route, and the tracker layout's load reads the route, so switching
+views starts the next view's session at the current time rather than the
+first view's.
 
 The tracker's single-key shortcuts (`tracker-shortcuts.js`, bare keys ignored
 while typing) are `R` refresh, `M` show/hide metrics, `F` full screen (desktop

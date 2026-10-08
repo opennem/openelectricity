@@ -11,6 +11,7 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
+	import RangeStatus from './RangeStatus.svelte';
 	import { X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
@@ -42,7 +43,7 @@
 	 *   notice?: string,
 	 *   regionSelect?: boolean,
 	 *   controls?: import('svelte').Snippet,
-	 *   status?: import('svelte').Snippet,
+	 *   status?: import('./types.js').TrackerRangeStatus,
 	 *   menu?: import('svelte').Snippet<[{ close: () => void }]>,
 	 *   downloadItems: Array<{ key: string, label: string, disabled?: boolean }>,
 	 *   ondownloaditem: (key: string) => void,
@@ -167,7 +168,9 @@
 				{#snippet rest()}
 					{#if isFullscreen}<div class="h-8 shrink-0 border-l border-warm-grey"></div>{/if}
 					<div class="flex min-w-0 flex-1 items-center gap-4" data-testid="tracker-top-nav">
-						<div class="hidden shrink-0 sm:block">
+						<!-- Like the range bar's presets, the view switcher folds into a
+						     dropdown below `md`, where the bar is too cramped. -->
+						<div class="hidden shrink-0 md:block">
 							<Switch
 								buttons={viewOptions}
 								selected={view}
@@ -179,7 +182,7 @@
 								aria-label="Analysis view"
 							/>
 						</div>
-						<div class="shrink-0 sm:hidden">
+						<div class="shrink-0 md:hidden">
 							<FilterSelect
 								selected={view}
 								options={viewOptions}
@@ -212,7 +215,7 @@
 							{@render controls?.()}
 						</div>
 					</div>
-					{@render status?.()}
+					{#if status}<RangeStatus {...status} />{/if}
 				{/snippet}
 
 				{#snippet options()}

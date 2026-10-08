@@ -106,6 +106,14 @@ export function createTrackerSession(initial, onchange) {
 		setClock(nowMs) {
 			clockMs = nowMs;
 		},
+		/** The reader asked for fresh data on a view that reads "now" directly
+		 * rather than through connected charts (Profile): its full days and
+		 * today-so-far move to the present. Timeline uses `refresh`.
+		 * @param {number} nowMs */
+		reanchor(nowMs) {
+			clockMs = nowMs;
+			anchorEnd = Math.max(anchorEnd, nowMs);
+		},
 		/** The reader asked for fresh data. Every connected chart revisits its two
 		 * newest native buckets for late observations and open-bucket revisions, and
 		 * a following timeline also advances to now; paused windows keep their bounds.

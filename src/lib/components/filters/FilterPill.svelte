@@ -2,9 +2,11 @@
 	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
 
 	/**
-	 * Pill-shaped filter trigger button.
+	 * Pill-shaped filter trigger button. `shortLabel` replaces the label below
+	 * `lg` (1440px), for pills in crowded bars (the tracker's Region: "NEM").
 	 * @type {{
 	 *   label: string,
+	 *   shortLabel?: string,
 	 *   badge?: number | string | null,
 	 *   active?: boolean,
 	 *   open?: boolean,
@@ -16,6 +18,7 @@
 	 */
 	let {
 		label,
+		shortLabel = undefined,
 		badge = null,
 		active = false,
 		open = false,
@@ -41,7 +44,12 @@
 		? 'border-dark-grey'
 		: ''}"
 >
-	<span>{label}</span>
+	{#if shortLabel}
+		<span class="lg:hidden">{shortLabel}</span>
+		<span class="hidden lg:inline">{label}</span>
+	{:else}
+		<span>{label}</span>
+	{/if}
 
 	{#if badge}
 		<span

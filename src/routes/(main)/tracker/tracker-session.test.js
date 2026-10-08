@@ -6,6 +6,20 @@ import { parseTrackerUrl } from './tracker-url.js';
 const nowMs = new Date('2026-09-06T00:00:00Z').getTime();
 const initial = { ...parseTrackerUrl(new URLSearchParams(), { nowMs }), nowMs };
 
+describe('reanchor', () => {
+	it('moves the clock and anchor to now, never backwards, without history', () => {
+		const changed = vi.fn();
+		const session = createTrackerSession(initial, changed);
+		const later = nowMs + 26 * 3_600_000;
+		session.reanchor(later);
+		expect(session.anchorEnd).toBe(later);
+		expect(session.clockMs).toBe(later);
+		session.reanchor(nowMs);
+		expect(session.anchorEnd).toBe(later);
+		expect(changed).not.toHaveBeenCalled();
+	});
+});
+
 describe('Tracker navigation', () => {
 	it('restores full history without writing', () => {
 		const changed = vi.fn();

@@ -7,7 +7,6 @@
 	import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 	import ListOrdered from '@lucide/svelte/icons/list-ordered';
 	import Rows3 from '@lucide/svelte/icons/rows-3';
-	import { untrack } from 'svelte';
 	import { bisectLeft } from 'd3-array';
 	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
 	import { fade } from 'svelte/transition';
@@ -90,7 +89,7 @@
 	let months = $derived(periodMonths(interval, filter));
 	const source = createRegionComparisonData(
 		() => selection,
-		untrack(() => session.clockMs),
+		() => session.anchorEnd,
 		() => cpi
 	);
 	let display = $derived(selection.display);
@@ -283,6 +282,12 @@
 	}
 	export function isLoading() {
 		return source.pending;
+	}
+	/** The reader asked for fresh data: complete months up to now, with the
+	 * newest fetched again. Nothing refreshes on its own. */
+	export function refresh() {
+		session.reanchor(Date.now());
+		source.refresh();
 	}
 </script>
 

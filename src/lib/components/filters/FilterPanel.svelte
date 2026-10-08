@@ -21,6 +21,7 @@
 	 * the panel and counts as inside for outside-click dismissal.
 	 * @type {{
 	 *   label: string,
+	 *   shortLabel?: string,
 	 *   badge?: number | string | null,
 	 *   active?: boolean,
 	 *   compact?: boolean,
@@ -36,6 +37,8 @@
 	 */
 	let {
 		label,
+		/** The pill's label below `lg` (see FilterPill). */
+		shortLabel = undefined,
 		badge = null,
 		active = false,
 		compact = false,
@@ -92,6 +95,7 @@
 	{:else}
 		<FilterPill
 			{label}
+			{shortLabel}
 			{badge}
 			{active}
 			open={showPanel}

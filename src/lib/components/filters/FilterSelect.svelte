@@ -14,7 +14,9 @@
 	 * shows it dimmed and unselectable. Consecutive options sharing a `group`
 	 * sit under that subheader (an ARIA group), and `selectedLabel` names the
 	 * option on the pill where its list label leans on the subheader ("Bars"
-	 * under "Radial" shows as "Radial bars"). A `footer` snippet renders below the
+	 * under "Radial" shows as "Radial bars"); an option's `shortLabel` replaces
+	 * it on the pill below `lg` ("NEM" for the National Electricity Market).
+	 * A `footer` snippet renders below the
 	 * list for controls that modify the choice rather than being one. A
 	 * `trigger` snippet replaces the pill (see FilterPanel).
 	 *
@@ -22,7 +24,7 @@
 	 * pick-one control that should look like the Region pill.
 	 */
 
-	/** @typedef {{ value: string, label: string, selectedLabel?: string, disabled?: boolean }} SelectOption */
+	/** @typedef {{ value: string, label: string, selectedLabel?: string, shortLabel?: string, disabled?: boolean }} SelectOption */
 
 	/**
 	 * @type {{
@@ -119,6 +121,7 @@
 
 <FilterPanel
 	label={selectedOption.selectedLabel ?? selectedOption.label}
+	shortLabel={selectedOption.shortLabel}
 	active={defaultValue !== null && selected !== defaultValue}
 	{compact}
 	{disabled}

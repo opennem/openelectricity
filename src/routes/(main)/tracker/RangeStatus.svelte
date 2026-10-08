@@ -4,21 +4,26 @@
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 
 	/**
-	 * RangeStatus — the top-nav readout for the timeline and profile views:
-	 * the selected range label, replaced by the hovered or keyboard-inspected
-	 * period while a chart is being inspected, and by the loader while data
-	 * updates. With `onrefresh` the readout is a button: hovering it says when
-	 * the data last updated, and tapping it refreshes (the timeline fetches
-	 * nothing on its own). Without it, the readout is a plain label.
+	 * RangeStatus — the top-nav readout for every tracker view: the selected
+	 * range label, replaced by the hovered or keyboard-inspected period while
+	 * a chart is being inspected, and by the loader while data updates. With
+	 * `onrefresh` the readout is a button: hovering it says when the data last
+	 * updated, and tapping it refreshes (no view fetches on its own). Without
+	 * it, the readout is a plain label.
 	 *
-	 * @type {{ label: string, inspectLabel?: string, loading: boolean,
-	 *   updatedLabel?: string, onrefresh?: () => void }}
+	 * It keeps its place at every width: below `lg` the Region pill shortens
+	 * and below `md` the view switcher and range presets fold into dropdowns
+	 * to make room. Below `md` it takes at most 40% of the bar and truncates,
+	 * so a long custom range never squeezes the controls out; it never drops
+	 * below the loader's width.
+	 *
+	 * @type {import('./types.js').TrackerRangeStatus}
 	 */
 	let { label, inspectLabel = undefined, loading, updatedLabel = undefined, onrefresh } = $props();
 </script>
 
 <div
-	class="range-status relative flex w-0 shrink-0 items-center self-stretch overflow-hidden lg:w-auto lg:min-w-[36px]"
+	class="range-status relative flex min-w-[36px] max-w-[40%] items-center self-stretch overflow-hidden md:max-w-none md:shrink-0"
 	data-loading={loading}
 	data-inspecting={inspectLabel !== undefined}
 	data-testid="tracker-range-status"
@@ -29,24 +34,31 @@
 			side="bottom"
 		>
 			{#snippet trigger({ props })}
+				<!-- Focusable while loading: hiding or disabling a focused button
+				     strands keyboard focus, so taps are ignored instead. The visible
+				     date leads its accessible name. -->
 				<button
-					{...mergeProps(props, { onclick: onrefresh })}
+					{...mergeProps(props, {
+						onclick: () => {
+							if (!loading) onrefresh();
+						}
+					})}
 					type="button"
-					class="range-label hidden h-full items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey lg:flex"
-					disabled={loading}
-					aria-hidden={loading}
-					aria-label="Refresh data"
+					class="range-label flex h-full min-w-0 items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+					aria-disabled={loading}
 					data-testid="tracker-range-label"
 				>
-					{inspectLabel ?? label}
+					<span class="truncate">{inspectLabel ?? label}</span><span class="sr-only"
+						>, refresh data</span
+					>
 				</button>
 			{/snippet}
 		</Tooltip>
 	{:else}
 		<span
-			class="range-label hidden h-full items-center whitespace-nowrap px-4 text-sm font-bold text-dark-grey lg:flex"
+			class="range-label flex h-full min-w-0 items-center whitespace-nowrap px-4 text-sm font-bold text-dark-grey"
 			aria-hidden={loading}
-			data-testid="tracker-range-label">{inspectLabel ?? label}</span
+			data-testid="tracker-range-label"><span class="truncate">{inspectLabel ?? label}</span></span
 		>
 	{/if}
 	<div
@@ -82,16 +94,7 @@
 	[data-loading='false'] .range-loader :global(svg) {
 		animation: none;
 	}
-	@media (max-width: 1439px) {
-		.range-status {
-			transition: width 240ms ease;
-		}
-		.range-status[data-loading='true'] {
-			width: 36px;
-		}
-	}
 	@media (prefers-reduced-motion: reduce) {
-		.range-status,
 		.range-label,
 		.range-loader {
 			transition: none;

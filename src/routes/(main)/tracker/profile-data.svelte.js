@@ -77,6 +77,10 @@ export function createProfileDemand(options) {
 	return boundedSource(provider, () => options().window);
 }
 
+/** The newest native buckets a refresh revisits: two 5-minute intervals,
+ * as Timeline's refresh does. */
+const TAIL_MS = 2 * 5 * 60_000;
+
 /**
  * Serve a headless provider's rows for exactly the selected window.
  * @param {ReturnType<typeof createHeadlessSeriesProvider>} provider
@@ -119,6 +123,13 @@ function boundedSource(provider, getWindow) {
 			return error;
 		},
 		retry() {
+			provider.reconcileFetches();
+		},
+		/** Fetch the newest readings of the window last requested again,
+		 * bypassing response caches: its last intervals may have been
+		 * incomplete. A window that then moves fetches only what it adds. */
+		refresh() {
+			provider.invalidateTail(requested.end - TAIL_MS, { force: true });
 			provider.reconcileFetches();
 		}
 	};

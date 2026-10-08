@@ -12,7 +12,6 @@
 	import { OptionsMenuItem } from '$lib/components/ui/options-menu';
 	import TrackerShell from '../TrackerShell.svelte';
 	import TrackerCanvas from '../TrackerCanvas.svelte';
-	import RangeStatus from '../RangeStatus.svelte';
 	import { createMetricsVisibilityPreference } from '../metrics-visibility.svelte.js';
 	import { TRACKER_SHORTCUTS } from '../tracker-shortcuts.js';
 	import { createTrackerPage } from '../tracker-page.js';
@@ -138,6 +137,13 @@
 	downloadXlsxDisabled={!canvas || canvas.isExportPending()}
 	shortcuts={SHORTCUTS}
 	onshortcut={handleShortcut}
+	status={{
+		label: session.rangeLabel,
+		inspectLabel: canvas?.getInspectLabel(),
+		loading,
+		updatedLabel,
+		onrefresh: refreshData
+	}}
 >
 	{#snippet controls()}
 		<ChartRangeBar
@@ -158,16 +164,6 @@
 			onrangeselect={session.selectRange}
 			ondaterangechange={session.selectDates}
 			onintervalchange={session.selectInterval}
-		/>
-	{/snippet}
-
-	{#snippet status()}
-		<RangeStatus
-			label={session.rangeLabel}
-			inspectLabel={canvas?.getInspectLabel()}
-			{loading}
-			{updatedLabel}
-			onrefresh={refreshData}
 		/>
 	{/snippet}
 

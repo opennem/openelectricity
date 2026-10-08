@@ -282,3 +282,14 @@
  */
 
 export {};
+
+/**
+ * The range readout a view hands its shell, which shows it at the end of the
+ * top nav at every width.
+ * @typedef {Object} TrackerRangeStatus
+ * @property {string} label - The selected range
+ * @property {string} [inspectLabel] - The hovered or inspected period, replacing the label
+ * @property {boolean} loading - Data on screen is updating
+ * @property {string} [updatedLabel] - When the data last updated
+ * @property {() => void} [onrefresh] - Makes the readout a refresh button
+ */

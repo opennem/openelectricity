@@ -506,6 +506,14 @@
 		byDemand ? buildDailyProfile(demandData.rows, DEMAND_GROSS_SERIES_ID, window) : null
 	);
 	let tablePending = $derived(powerData.pending || (byDemand && demandData.pending));
+	/** Every source on screen, Show today's and the table's demand included:
+	 * the top-nav loader reports any of them, so a refresh always shows. */
+	let viewPending = $derived(
+		(breakdown ? gridPending : powerData.pending) ||
+			(showToday && (powerToday.pending || (showPrice && priceToday.pending))) ||
+			(byDemand && demandData.pending)
+	);
+	const viewLoading = createLoadingNotice(() => viewPending);
 	let tableError = $derived(powerData.error ?? (byDemand ? demandData.error : null));
 	/** Some breakdown styles swap the table's window columns for their own
 	 * average-power columns: percentile bands show each technology's range,
@@ -604,9 +612,19 @@
 	export function getControls() {
 		return controls;
 	}
-	/** The navigation and both cards share this visual loading lifecycle. */
+	/** The reader asked for fresh data: every shown source revisits its
+	 * newest readings past caches, and the window moves to the latest full
+	 * days and today so far. Nothing refreshes on its own; disabled sources
+	 * ignore it. */
+	export function refresh() {
+		for (const source of [powerData, priceData, demandData, powerToday, priceToday]) {
+			source.refresh();
+		}
+		session.reanchor(Date.now());
+	}
+	/** The top-nav loader: any source the view shows. */
 	export function isLoading() {
-		return breakdown ? gridLoading.active : stackLoading.active;
+		return viewLoading.active;
 	}
 	/** The selected complete days, for the top-nav range readout. */
 	export function getRangeLabel() {
