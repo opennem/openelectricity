@@ -16,7 +16,8 @@ function harness(search = '') {
 	);
 	const { start, end } = session.window;
 	const marketData = makeProvider();
-	const providers = makeProviders({ marketData });
+	const intensityData = makeProvider();
+	const providers = makeProviders({ marketData, intensityData });
 	const state = $state({
 		ready: true,
 		inspectTime: /** @type {number | undefined} */ (undefined),
@@ -49,7 +50,7 @@ function harness(search = '') {
 		inspectTime: () => state.inspectTime,
 		ianaTimeZone: () => session.ianaTimeZone
 	});
-	return { session, state, table, marketData, providers };
+	return { session, state, table, marketData, intensityData, providers };
 }
 
 describe('tracker table owner', () => {
@@ -90,6 +91,26 @@ describe('tracker table owner', () => {
 			flushSync();
 			expect(table.valuesPending).toBe(false);
 			expect(table.accepted?.key).toContain('q2');
+		});
+		stop();
+	});
+	it('never waits on or reports the metrics strip’s intensity feed', () => {
+		const stop = $effect.root(() => {
+			const { table, intensityData, marketData } = harness();
+			intensityData.isPending = true;
+			intensityData.error = 'Intensity failed';
+			flushSync();
+			expect(table.valuesPending).toBe(false);
+			expect(table.feedsError).toBeNull();
+			expect(table.accepted?.rows.map((row) => row.id)).toEqual(['coal', 'pumps']);
+			// Its own feeds still hold it, and report their failure.
+			marketData.error = 'Market failed';
+			flushSync();
+			expect(table.valuesPending).toBe(true);
+			expect(table.feedsError).toBe('Market failed');
+			table.retryFeeds();
+			expect(marketData.reconciled).toBe(1);
+			expect(intensityData.reconciled).toBe(0);
 		});
 		stop();
 	});

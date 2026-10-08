@@ -622,3 +622,11 @@ export function comparisonYDomain(rows, regions, viewport, curve = 'straight') {
 	}
 	return computeYDomain([{ _min: min, _max: max }]);
 }
+
+/** Whether a selection change replaces the periods themselves (a new interval
+ * or calendar filter), which unpins an inspected period: panning, zooming and
+ * every other change keep the pin, as the README promises.
+ * @param {Partial<RegionComparisonSelection>} change */
+export function changesComparisonPeriods(change) {
+	return 'interval' in change || 'filter' in change;
+}

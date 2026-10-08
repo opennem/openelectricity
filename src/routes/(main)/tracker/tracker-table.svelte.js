@@ -203,20 +203,20 @@ export function createTrackerTable(opts) {
 	// Accepted table
 	// ============================================
 
+	/** The feeds behind the table — not the metrics strip's intensity feed,
+	 *  whose failure or delay must not hold or fault the table. Disabled
+	 *  feeds are never pending. */
+	const tableFeeds = [marketData, mvData, emissionsData, demandData, curtailmentData, shareData];
+	let feedsPending = $derived(tableFeeds.some((feed) => feed.isPending));
+	let feedsError = $derived(tableFeeds.find((feed) => feed.error)?.error ?? null);
+
 	/** Identity of the values on screen: the generation query and its percentage basis. */
 	let key = $derived(JSON.stringify([opts.queryKey(), contributionMode]));
 	let accepted = $state.raw(/** @type {AcceptedTable | null} */ (null));
 	// A latch rather than a derivation: the previous table must survive while
 	// the next is pending, and only a fully settled candidate may replace it.
 	$effect(() => {
-		if (
-			!tablePanelOpen ||
-			!opts.ready() ||
-			opts.providers.pending ||
-			opts.providers.error ||
-			!tableRows
-		)
-			return;
+		if (!tablePanelOpen || !opts.ready() || feedsPending || feedsError || !tableRows) return;
 		accepted = {
 			key,
 			group,
@@ -228,7 +228,7 @@ export function createTrackerTable(opts) {
 		};
 	});
 	let valuesPending = $derived(
-		!opts.ready() || opts.providers.pending || !!opts.providers.error || accepted?.key !== key
+		!opts.ready() || feedsPending || !!feedsError || accepted?.key !== key
 	);
 	/** Visibility stays responsive while the values are held through a refresh. */
 	let displayedRows = $derived(
@@ -340,6 +340,14 @@ export function createTrackerTable(opts) {
 		},
 		get valuesPending() {
 			return valuesPending;
+		},
+		/** The first failure among the table's own feeds. */
+		get feedsError() {
+			return feedsError;
+		},
+		/** Retry the table's own feeds. */
+		retryFeeds() {
+			for (const feed of tableFeeds) feed.reconcileFetches();
 		},
 		get displayedRows() {
 			return displayedRows;

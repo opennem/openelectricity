@@ -68,6 +68,7 @@
 		comparisonDisplay,
 		normaliseComparisonDisplay,
 		comparisonPeriod,
+		changesComparisonPeriods,
 		comparisonRangeLabel,
 		clampComparisonViewport,
 		latestCommonComparisonPeriod
@@ -231,7 +232,9 @@
 	let tooltip = $derived(!desktop.current || !panelOpen);
 	/** @param {Partial<import('./region-comparison.js').RegionComparisonSelection>} change @param {'push'|'replace'|null} [history] */
 	function select(change, history = 'push') {
-		hover = focus = null;
+		// The pointer's period goes stale with any change; a pin only with its periods.
+		hover = null;
+		if (changesComparisonPeriods(change)) focus = null;
 		session.select('regionComparison', { ...selection, ...change }, history);
 	}
 	// Regions table: a percentage of the container, remembered locally; small

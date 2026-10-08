@@ -18,6 +18,7 @@ import {
 	comparisonBounds,
 	comparisonPeriod,
 	comparisonChartRows,
+	changesComparisonPeriods,
 	DEFAULT_COMPARISON_REGIONS,
 	joinComparisonComponents,
 	latestCommonComparisonPeriod,
@@ -572,4 +573,12 @@ it('bounds step and smooth curves at viewport edges without clipping their segme
 	expect(comparisonYDomain(rows, ['nsw'], { start: 5, end: 8 }, 'step')).toEqual([0, 110]);
 	expect(comparisonYDomain(rows, ['nsw'], { start: 5, end: 8 }, 'smooth')).toEqual([0, 110]);
 	expect(comparisonYDomain(rows, ['nsw'], { start: 5, end: 8 }, 'straight')).toEqual([0, 55]);
+});
+
+it('a Compare pin clears only when the periods themselves change', () => {
+	expect(changesComparisonPeriods({ start: 1, end: 2 })).toBe(false);
+	expect(changesComparisonPeriods({ regions: ['nsw1'] })).toBe(false);
+	expect(changesComparisonPeriods({ charts: ['intensity'] })).toBe(false);
+	expect(changesComparisonPeriods({ interval: 'fy' })).toBe(true);
+	expect(changesComparisonPeriods({ filter: null })).toBe(true);
 });

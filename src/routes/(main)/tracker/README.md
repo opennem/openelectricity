@@ -204,7 +204,7 @@ on screen with a displayed value, so an unfinished year is never named
 `FY2000 — FY2026`, `Autumn 2024 — Spring 2025`), and swaps to the hovered
 or pinned period while one is inspected. The Regions table shows the period
 it reads under its Region heading: the hovered or pinned period, else that
-latest common complete period. A pin clears by clicking the period again or pressing Escape. Axis ticks are anchored to the calendar
+latest common complete period. A pin clears by clicking the period again or pressing Escape; it survives panning, zooming and other selection changes, and clears only when the periods themselves change (a new interval or calendar filter, `changesComparisonPeriods`). Axis ticks are anchored to the calendar
 (`comparisonTicks`): monthly rows at the finest month step from January (1,
 2, 3, 6, 12… months) that keeps at most six ticks, coarser rows at each year's
 first row a year step (1, 2, 5…) apart, so a tick keeps its date as the
@@ -704,7 +704,10 @@ as the curtailment overlays). The emissions pair reads one
 headless `emissions_intensity` components feed (`providers.intensityData`),
 collapsed to the visible technologies, so both show whichever mode the
 Emissions chart is in; the feed shares the chart's request when the chart
-shows intensity, and retries from the strip. On daily and longer
+shows intensity, and retries from the strip. It is the strip's alone: the
+fuel-tech table waits on, reports and retries only its own feeds (market pair,
+market value, emissions, demand, curtailment, share; `table.feedsError`,
+`table.retryFeeds`), so a slow or failed intensity feed never holds the table. On daily and longer
 grains, where a bucket holds MWh, a Net energy pair leads the strip and net
 power reads each bucket's average MW (MWh ÷ bucket length, from
 `getIntervalHours`). Sub-daily grains show power only: a 5- or 30-minute

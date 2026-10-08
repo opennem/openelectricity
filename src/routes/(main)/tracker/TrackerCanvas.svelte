@@ -437,7 +437,7 @@
 			tablePanelOpen,
 			hiddenSeries,
 			pending,
-			error: required.some((name) => !!data.state(name).error) || (needsTable && !!providers.error)
+			error: required.some((name) => !!data.state(name).error) || (needsTable && !!table.feedsError)
 		};
 	}
 </script>
@@ -699,10 +699,10 @@
 			focusColumns={focusColumn ? [focusColumn] : []}
 			focusRow={hoveredSeries}
 			valuesPending={tableValuesPending}
-			error={data.state('generation').error ?? providers.error}
+			error={data.state('generation').error ?? table.feedsError}
 			onretry={() => {
 				generationChart?.reconcileFetches();
-				providers.retry();
+				table.retryFeeds();
 			}}
 			basis={displayedTable?.basis ?? range.activeMetric}
 			rooftopInterpolation={range.displayInterval === '5m'}
