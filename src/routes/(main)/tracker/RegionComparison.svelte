@@ -10,6 +10,7 @@
 	import { bisectLeft } from 'd3-array';
 	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
 	import { fade } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
 	import { MediaQuery } from 'svelte/reactivity';
 	import IntervalControls from '$lib/components/charts/v2/IntervalControls.svelte';
 	import ComparisonChartToggles from './ComparisonChartToggles.svelte';
@@ -51,7 +52,8 @@
 	import {
 		benchmarkComparisonRegions,
 		isRankableComparisonMetric,
-		rankedComparisonRegions
+		rankedComparisonRegions,
+		rankedRegionOrder
 	} from './comparison-displays.js';
 	import { CONTRIBUTION_OPTIONS, RENEWABLES_DOCS, contributionLabel } from './tracker-model.js';
 	import { createRegionComparisonData } from './region-comparison-data.svelte.js';
@@ -170,7 +172,35 @@
 			hoverMetric ? [hoverMetric] : []
 		)
 	);
-	const LAST_REGION = COMPARISON_REGIONS[COMPARISON_REGIONS.length - 1].value;
+	/** While Ranks shows, the table follows a card's ranking: the hovered
+	 * card's when it ranks, else the first ranked card. */
+	let rankMetric = $derived.by(() => {
+		if (display !== 'ranks') return null;
+		const rankable = metrics.filter((metric) => isRankableComparisonMetric(metric.id));
+		return rankable.find((metric) => metric.id === hoverMetric)?.id ?? rankable[0]?.id ?? null;
+	});
+	/** Table rows: the list order, or that card's ranks at the table's period. */
+	let tableRegions = $derived.by(() => {
+		if (!rankMetric || period == null) return COMPARISON_REGIONS;
+		const metric = rankMetric;
+		const order = rankedRegionOrder(
+			COMPARISON_REGIONS.map((region) => region.value),
+			regions,
+			(id) =>
+				comparisonMetricValue(
+					source.data[id]?.find((row) => row.time === period),
+					metric,
+					basis
+				)
+		);
+		return order.map(
+			(id) =>
+				/** @type {(typeof COMPARISON_REGIONS)[number]} */ (
+					COMPARISON_REGIONS.find((region) => region.value === id)
+				)
+		);
+	});
+	let lastRegion = $derived(tableRegions.at(-1)?.value);
 	let period = $derived(
 		hover ??
 			focus ??
@@ -619,12 +649,14 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each COMPARISON_REGIONS as region (region.value)}
+							{#each tableRegions as region (region.value)}
 								{@const selected = regions.includes(region.value)}
 								{@const label = splitTableLabel(region.label)}
 								{@const row = source.data[region.value]?.find((row) => row.time === period)}
 								{@const focused = region.value === hoverRegion}
+								<!-- Rows glide into a Ranks card's order as it changes. -->
 								<tr
+									animate:flip={{ duration: reducedMotion.current ? 0 : 250 }}
 									data-focused={focused || undefined}
 									class="{TABLE_ROW} {selected ? '' : 'opacity-50'} {focused
 										? 'bg-light-warm-grey'
@@ -670,7 +702,7 @@
 											class={valueCellClass(cell, last, 'py-1.5', focused, columnFocus[index])}
 											style:box-shadow={valueCellEdges(focused, columnFocus[index], {
 												last,
-												lastRow: region.value === LAST_REGION
+												lastRow: region.value === lastRegion
 											})}>{cell}</td
 										>
 									{/each}

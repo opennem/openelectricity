@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	benchmarkComparisonRegions,
 	benchmarkRankRows,
-	formatBenchmarkRank,
+	rankedRegionOrder,
 	isRankableComparisonMetric,
 	rankComparisonRows,
 	rankedComparisonRegions
@@ -63,14 +63,66 @@ describe('comparison displays', () => {
 			['_all', 'au']
 		);
 		expect(placed[0]).toMatchObject({ time: 0, _all: 1.5, au: 2 });
+		expect(placed[0].labels).toEqual({ _all: '#1–2', au: '#2' });
 		expect(placed[1]).toMatchObject({ _all: 0.5, au: 3.5 });
+		expect(placed[1].labels).toEqual({ _all: 'above #1', au: 'below #3' });
 		// Nothing to place against, or no value of its own.
 		expect(placed[2]).toMatchObject({ _all: null, au: null });
+		expect(placed[2].labels).toEqual({});
 	});
-	it('reads a reference place as a rank, a range or an end', () => {
-		expect(formatBenchmarkRank(2, 6)).toBe('#2');
-		expect(formatBenchmarkRank(2.5, 6)).toBe('#2–3');
-		expect(formatBenchmarkRank(0.5, 6)).toBe('above #1');
-		expect(formatBenchmarkRank(6.5, 6)).toBe('below #6');
+	it('counts only the regions reporting that period', () => {
+		// Three selected, one reporting: below it is "below #1", not "#1–2".
+		const [placed] = benchmarkRankRows(
+			[row(0, { nsw1: 5, qld1: null, vic1: null, au: 3 })],
+			['nsw1', 'qld1', 'vic1'],
+			['au']
+		);
+		expect(placed).toMatchObject({ au: 1.5, labels: { au: 'below #1' } });
+	});
+	it('reads tied ranks as they are drawn', () => {
+		// 10, 10, 5 rank #1, #1, #3: a reference at 7 sits between #1 and #3.
+		const ranked = ['nsw1', 'qld1', 'vic1'];
+		const [between, tied, last] = benchmarkRankRows(
+			[
+				row(0, { nsw1: 10, qld1: 10, vic1: 5, au: 7 }),
+				row(1, { nsw1: 10, qld1: 10, vic1: 5, au: 10 }),
+				row(2, { nsw1: 10, qld1: 10, vic1: 10, au: 7 })
+			],
+			ranked,
+			['au']
+		);
+		expect(between).toMatchObject({ au: 2, labels: { au: '#1–3' } });
+		expect(tied).toMatchObject({ au: 1, labels: { au: '#1' } });
+		expect(last).toMatchObject({ au: 1.5, labels: { au: 'below #1' } });
+	});
+	describe('the Regions table in rank order', () => {
+		const order = ['au', '_all', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem'];
+		/** @param {Record<string, number | null>} values */
+		const at = (values) => (/** @type {string} */ id) => values[id] ?? null;
+
+		it('ranks the states, slots NEM in by its line, then the rest', () => {
+			const selected = ['_all', 'nsw1', 'qld1', 'tas1', 'vic1'];
+			expect(
+				rankedRegionOrder(
+					order,
+					selected,
+					at({ nsw1: 28, qld1: 30, tas1: 98, vic1: null, _all: 36 })
+				)
+			).toEqual(['tas1', '_all', 'qld1', 'nsw1', 'vic1', 'au', 'sa1', 'wem']);
+		});
+
+		it('keeps the list order with nothing to rank', () => {
+			expect(rankedRegionOrder(order, ['_all'], at({ _all: 36 }))).toEqual(order);
+		});
+
+		it('keeps ties in list order, with a tied reference after them', () => {
+			expect(
+				rankedRegionOrder(
+					order,
+					['_all', 'nsw1', 'qld1', 'sa1'],
+					at({ nsw1: 10, qld1: 5, sa1: 10, _all: 10 })
+				)
+			).toEqual(['nsw1', 'sa1', '_all', 'qld1', 'au', 'tas1', 'vic1', 'wem']);
+		});
 	});
 });

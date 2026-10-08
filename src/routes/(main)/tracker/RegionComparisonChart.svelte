@@ -8,11 +8,7 @@
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { inspectionStep } from './comparison-inspection.js';
-	import {
-		benchmarkRankRows,
-		formatBenchmarkRank,
-		rankComparisonRows
-	} from './comparison-displays.js';
+	import { benchmarkRankRows, rankComparisonRows } from './comparison-displays.js';
 	import {
 		COMPARISON_REGIONS,
 		comparisonPeriod,
@@ -126,7 +122,6 @@
 		chart.formatTooltipX = (date) => comparisonPeriod(Number(date), interval);
 	});
 	$effect(() => {
-		const count = regions.length;
 		chart.overlayLines =
 			shape === 'rank'
 				? benchmarks.map((id) => ({
@@ -137,7 +132,8 @@
 						dasharray: '4 3',
 						label: SERIES_LABELS[id],
 						tooltipUnit: '',
-						formatTooltipValue: (/** @type {number} */ place) => formatBenchmarkRank(place, count),
+						// That period's own ranks, which the plotted place alone can't carry.
+						formatTooltipValue: (/** @type {number} */ _place, row) => row?.labels?.[id] ?? '',
 						// Hovering a reference names its row in the Regions table.
 						hoverable: true
 					}))

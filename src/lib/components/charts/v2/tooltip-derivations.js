@@ -318,6 +318,7 @@ export function buildOverlayRows(chart, activeData) {
 		const absolute = !chart.usesCustomProportion ? overlay.absoluteTooltipValue : undefined;
 		const amountRow = absolute ? overlayRowAtTime(absolute.data, time) : undefined;
 		const percentage = row?.[overlay.valueKey];
+		const format = overlay.formatTooltipValue;
 		addRow({
 			key: `overlay-line:${overlay.id}`,
 			label: overlay.label ?? overlay.id,
@@ -327,7 +328,9 @@ export function buildOverlayRows(chart, activeData) {
 				? defaultUnit
 				: (overlay.tooltipUnit ?? (overlay.scale === 'percent' ? '%' : defaultUnit)),
 			kind: 'line',
-			formatter: absolute ? undefined : overlay.formatTooltipValue,
+			// The overlay's own row too, for labels a value alone can't carry.
+			formatter:
+				absolute || !format ? undefined : (/** @type {number} */ value) => format(value, row),
 			formattedPercentage: absolute
 				? typeof percentage === 'number' && Number.isFinite(percentage)
 					? (overlay.formatTooltipValue ?? percentageFormat.format)(percentage)

@@ -304,7 +304,7 @@ export default class ChartStore {
 	 *  A `hoverable` line reports its `id` as the series hover key, as a stack
 	 *  path does. `dasharray` dashes the line (an SVG stroke-dasharray), e.g. a
 	 *  reference drawn among the series rather than one of them.
-	 *  @type {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, dasharray?: string, hoverable?: boolean, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string, absoluteTooltipValue?: { data: any[], valueKey: string } }>} */
+	 *  @type {Array<{ id: string, data: any[], valueKey: string, colour: string, scale?: 'y' | 'percent', strokeWidth?: number, dasharray?: string, hoverable?: boolean, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number, row?: Record<string, any>) => string, absoluteTooltipValue?: { data: any[], valueKey: string } }>} */
 	overlayLines = $state.raw([]);
 
 	/** Hatched area bands stacked on top of the rendered stack from an

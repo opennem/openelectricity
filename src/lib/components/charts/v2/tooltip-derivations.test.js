@@ -397,6 +397,23 @@ describe('buildOverlayRows', () => {
 		expect(rows.map((row) => row.kind)).toEqual(['area', 'area', 'line', 'line']);
 	});
 
+	it('hands overlay line formatters their own row', () => {
+		const chart = makeChart({
+			overlayLines: [
+				{
+					id: 'nem',
+					label: 'NEM',
+					data: [{ time: 100, nem: 2, labels: { nem: '#1–3' } }],
+					valueKey: 'nem',
+					colour: '#333',
+					formatTooltipValue: (/** @type {number} */ _value, /** @type {any} */ row) =>
+						row?.labels?.nem ?? ''
+				}
+			]
+		});
+		expect(buildOverlayRows(chart, { time: 100 })[0].formattedValue).toBe('#1–3');
+	});
+
 	it('uses the chart tooltip formatter for overlays without their own formatter', () => {
 		const chart = makeChart({
 			formatTooltipY: (/** @type {number} */ value) => `tip:${value.toFixed(0)}`,

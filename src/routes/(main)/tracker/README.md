@@ -156,9 +156,18 @@ reshaping lives in `comparison-displays.js`.
   so they are dashed reference lines (v2 overlay lines with `dasharray`)
   placed among the ranks by `benchmarkRankRows`: on the rank they tie, or
   halfway between the ranks either side, read as `#4–5`, `above #1` or
-  `below #6` (`formatBenchmarkRank`). Hovering a reference names its row in
+  `below #6`. Labels come from that period's competition ranks among the
+  regions reporting then, not the selection's size: one of three reporting
+  gives `below #1`, and 10, 10, 5 with a reference at 7 gives `#1–3`. The
+  tooltip reads each period's label from the overlay row (v2 overlay
+  formatters receive the row). Hovering a reference names its row in
   the table. With only NEM or All Regions selected, a ranked card asks for a
-  state or WEM.
+  state or WEM. While Ranks shows, the Regions table's rows follow a card's
+  ranking at the table's period (`rankedRegionOrder`): the hovered card's
+  when it ranks, else the first ranked card. NEM and All Regions sit where
+  their line does; then selected regions without a value, then unselected
+  ones. Rows glide between orders (`animate:flip`, instant with reduced
+  motion), and keep the list order when nothing ranks that period.
 
 `RegionTooltip` is the floating tooltip of the custom displays (heatmap and
 panels), styled as Stratum's.
