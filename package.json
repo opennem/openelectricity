@@ -98,9 +98,6 @@
 		"test:e2e": "playwright test",
 		"test:e2e:ui": "playwright test --ui",
 		"test:e2e:debug": "playwright test --headed",
-		"data:fetch-power": "node scripts/solar-heatmap/fetch-power.js",
-		"data:build-solar": "node scripts/solar-heatmap/build.js",
-		"data:export-solar-csv": "node scripts/solar-heatmap/export-csv.js",
 		"cpi:refresh": "node --env-file-if-exists=.env scripts/refresh-cpi.mjs"
 	},
 	"type": "module"
