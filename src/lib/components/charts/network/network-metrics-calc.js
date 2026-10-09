@@ -75,8 +75,8 @@ export function pairedShare(rows, numeratorKey, denominatorKey) {
 	for (const row of rows) {
 		const n = row[numeratorKey];
 		const d = row[denominatorKey];
-		const nOk = typeof n === 'number' && !isNaN(n);
-		const dOk = typeof d === 'number' && !isNaN(d);
+		const nOk = isFiniteNumber(n);
+		const dOk = isFiniteNumber(d);
 		if (nOk && dOk) {
 			numerator += n;
 			denominator += d;
@@ -99,7 +99,7 @@ export function meanSeries(rows, key) {
 	let count = 0;
 	for (const row of rows) {
 		const val = row[key];
-		if (typeof val === 'number' && !isNaN(val)) {
+		if (isFiniteNumber(val)) {
 			sum += val;
 			count++;
 		}
@@ -150,7 +150,7 @@ export function maxSeries(rows, key) {
 	let best = null;
 	for (const row of rows) {
 		const val = row[key];
-		if (typeof val === 'number' && !isNaN(val) && (!best || val > best.value)) {
+		if (isFiniteNumber(val) && (!best || val > best.value)) {
 			best = { value: val, time: row.time };
 		}
 	}

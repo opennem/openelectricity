@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { replaySessionSampleRate, resolveSentryDsn, sentryEnvironment } from './config.js';
+import { replaySessionSampleRate, resolveSentryDsn } from './config.js';
 
 const DSN = 'https://public@o0.ingest.sentry.io/0';
 
@@ -11,19 +11,6 @@ describe('resolveSentryDsn', () => {
 	it('treats a missing or blank DSN as off', () => {
 		expect(resolveSentryDsn({})).toBeNull();
 		expect(resolveSentryDsn({ PUBLIC_SENTRY_DSN: '  ' })).toBeNull();
-	});
-});
-
-describe('sentryEnvironment', () => {
-	it.each([
-		['localhost', 'development'],
-		['openelectricity.localhost', 'development'],
-		['dev.openelectricity.org.au', 'staging'],
-		['abc123.opennem-app.pages.dev', 'preview'],
-		['opennem-app.pages.dev', 'production'],
-		['openelectricity.org.au', 'production']
-	])('%s reports as %s', (hostname, environment) => {
-		expect(sentryEnvironment(hostname)).toBe(environment);
 	});
 });
 

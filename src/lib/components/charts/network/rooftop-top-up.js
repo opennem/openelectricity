@@ -1,4 +1,5 @@
-const HALF_HOUR = 30 * 60_000;
+/** A rooftop forecast slot. */
+export const HALF_HOUR_MS = 30 * 60_000;
 
 /**
  * Top-up of rooftop solar power from a forecast. Rooftop
@@ -39,7 +40,7 @@ export function topUpRooftopPower(source, forecast) {
 		while (slot + 1 < forecast.length && forecast[slot + 1].time <= row.time) slot++;
 		const covering = forecast[slot];
 		// Only the slot whose half-hour covers the row; a gap stays a gap.
-		if (!covering || covering.time > row.time || row.time - covering.time >= HALF_HOUR) continue;
+		if (!covering || covering.time > row.time || row.time - covering.time >= HALF_HOUR_MS) continue;
 		const reported = Number.isFinite(row[group]) ? row[group] : 0;
 		output[index] = { ...row, [group]: reported + covering.value };
 		changed = true;

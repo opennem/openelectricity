@@ -43,14 +43,12 @@ function completeSum(row, keys) {
  * and back — so a metric can be read in either basis. `skip` leaves out one
  * bucket by its time: a part-filled total can't stand beside full ones.
  * @param {Snapshot | null} snapshot @param {string[]} keys
- * @param {Array<Record<string, any>>} [rows] @param {(time: number) => number} [scaleAt]
- * @param {number | null} [skip] */
+ * @param {{ rows?: Array<Record<string, any>>, scaleAt?: (time: number) => number,
+ * skip?: number | null }} [options] - `rows` defaults to the snapshot's own */
 export function windowExtrema(
 	snapshot,
 	keys,
-	rows = snapshot?.data ?? [],
-	scaleAt = () => 1,
-	skip = null
+	{ rows = snapshot?.data ?? [], scaleAt = () => 1, skip = null } = {}
 ) {
 	/** @type {Extreme | null} */
 	let min = null;
@@ -125,7 +123,7 @@ export function buildWindowMetrics({
 						unit: 'MWh',
 						description:
 							'Selected technologies, including imports and subtracting loads, per bucket.',
-						...windowExtrema(generation, visible(generation), undefined, undefined, openBucket)
+						...windowExtrema(generation, visible(generation), { skip: openBucket })
 					}
 				]
 			: []),
@@ -135,19 +133,16 @@ export function buildWindowMetrics({
 			unit: 'MW',
 			description:
 				'Selected technologies, including imports and subtracting loads. Average power per bucket on daily and longer grains.',
-			...windowExtrema(
-				generation,
-				visible(generation),
-				generation?.data,
-				basis === 'energy' ? (time) => 1 / bucketHours(time) : undefined
-			)
+			...windowExtrema(generation, visible(generation), {
+				scaleAt: basis === 'energy' ? (time) => 1 / bucketHours(time) : undefined
+			})
 		},
 		{
 			id: 'demand',
 			label: 'Demand',
 			unit: basis === 'energy' ? 'MWh' : 'MW',
 			description: 'Regional operational demand, independent of technology selection.',
-			...windowExtrema(demand, ['demand'], undefined, undefined, openBucket)
+			...windowExtrema(demand, ['demand'], { skip: openBucket })
 		},
 		{
 			id: 'renewables',
@@ -177,9 +172,10 @@ export function buildWindowMetrics({
 					: priceMetric === 'market_value'
 						? visible(market)
 						: (market?.seriesNames ?? []),
-				priceRatio ? ratios(market, deriveVwPriceDisplayRows) : market?.data,
-				undefined,
-				priceMetric === 'market_value' ? openBucket : null
+				{
+					rows: priceRatio ? ratios(market, deriveVwPriceDisplayRows) : market?.data,
+					skip: priceMetric === 'market_value' ? openBucket : null
+				}
 			)
 		},
 		// The emissions pair reads one components feed: tonnes per bucket, and the
@@ -189,14 +185,16 @@ export function buildWindowMetrics({
 			label: 'Emissions',
 			unit: 'tCO₂e',
 			description: 'Emissions from selected technologies.',
-			...windowExtrema(emissions, ['emissions'], undefined, undefined, openBucket)
+			...windowExtrema(emissions, ['emissions'], { skip: openBucket })
 		},
 		{
 			id: 'intensity',
 			label: 'Intensity',
 			unit: 'kgCO₂e/MWh',
 			description: 'Emissions per unit of energy from selected technologies.',
-			...windowExtrema(emissions, ['intensity'], ratios(emissions, deriveIntensityDisplayRows))
+			...windowExtrema(emissions, ['intensity'], {
+				rows: ratios(emissions, deriveIntensityDisplayRows)
+			})
 		},
 		// Official curtailment series, one row each, in the window's basis.
 		{
@@ -204,14 +202,14 @@ export function buildWindowMetrics({
 			label: 'Solar curtailment',
 			unit: basis === 'energy' ? 'MWh' : 'MW',
 			description: 'Utility solar curtailed in the region, independent of technology selection.',
-			...windowExtrema(curtailment, ['curtailment_solar'], undefined, undefined, openBucket)
+			...windowExtrema(curtailment, ['curtailment_solar'], { skip: openBucket })
 		},
 		{
 			id: 'curtailment_wind',
 			label: 'Wind curtailment',
 			unit: basis === 'energy' ? 'MWh' : 'MW',
 			description: 'Wind curtailed in the region, independent of technology selection.',
-			...windowExtrema(curtailment, ['curtailment_wind'], undefined, undefined, openBucket)
+			...windowExtrema(curtailment, ['curtailment_wind'], { skip: openBucket })
 		}
 	];
 }

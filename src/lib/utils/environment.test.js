@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isNonProductionHost, isOpenElectricityHost } from './environment.js';
+import { hostEnvironment, isNonProductionHost, isOpenElectricityHost } from './environment.js';
 
 describe('isNonProductionHost', () => {
 	it('flags local development hosts', () => {
@@ -36,5 +36,18 @@ describe('isOpenElectricityHost', () => {
 		expect(isOpenElectricityHost('google.com')).toBe(false);
 		expect(isOpenElectricityHost('')).toBe(false);
 		expect(isOpenElectricityHost(undefined)).toBe(false);
+	});
+});
+
+describe('hostEnvironment', () => {
+	it.each([
+		['localhost', 'development'],
+		['openelectricity.localhost', 'development'],
+		['dev.openelectricity.org.au', 'staging'],
+		['abc123.opennem-app.pages.dev', 'preview'],
+		['opennem-app.pages.dev', 'production'],
+		['openelectricity.org.au', 'production']
+	])('%s reports as %s', (hostname, environment) => {
+		expect(hostEnvironment(hostname)).toBe(environment);
 	});
 });

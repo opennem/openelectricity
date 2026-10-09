@@ -60,7 +60,7 @@ describe('tracker providers', () => {
 			['curtailment', 'demand', 'emissions', 'market_value', 'renewable_share', 'renewables'].sort()
 		);
 		expect(providers.pending).toBe(false);
-		expect(providers.error).toBeNull();
+		expect(providers.all.every((provider) => !provider.error)).toBe(true);
 		stop();
 	});
 
@@ -99,16 +99,11 @@ describe('tracker providers', () => {
 		stop();
 	});
 
-	it('serves the renewables share from the official series at native grains and retries everything', async () => {
-		const api = stubNetworkFetch();
+	it('serves the renewables share from the official series at native grains', async () => {
+		stubNetworkFetch();
 		const { providers, stop } = harness();
 		await settle();
 		expect(providers.renewablesSource).toBe(providers.shareData);
-		const before = api.urls.length;
-		providers.retry();
-		await settle();
-		// Reconciling a settled window fetches nothing new.
-		expect(api.urls.length).toBe(before);
 		stop();
 	});
 });

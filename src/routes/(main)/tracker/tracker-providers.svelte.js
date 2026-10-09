@@ -129,12 +129,6 @@ export function createTrackerProviders(opts) {
 		get pending() {
 			return all.some((provider) => provider.isPending);
 		},
-		get error() {
-			return all.find((provider) => provider.error)?.error ?? null;
-		},
-		retry() {
-			for (const provider of all) provider.reconcileFetches();
-		},
 		/** The provider behind the renewables share: rolling windows derive it
 		 *  from 12-month sums of the market pair; native grains use the
 		 *  official share series. Overlays, metrics and retries all follow it. */

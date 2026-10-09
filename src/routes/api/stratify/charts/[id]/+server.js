@@ -92,9 +92,11 @@ export async function PATCH({ request, params }) {
 		author: { userId: auth.userId ?? null, userEmail: auth.userEmail ?? null }
 	});
 
-	// Publishing records the owner's name as the public byline.
+	// Publishing records the owner's name as the public byline: once, on the
+	// change to published, not on every later save of a published chart.
 	if (
 		values.status === 'published' &&
+		chart.status !== 'published' &&
 		(result.outcome === 'saved' || result.outcome === 'unchanged')
 	) {
 		await recordAuthorName(client, params.id, chart.userId);

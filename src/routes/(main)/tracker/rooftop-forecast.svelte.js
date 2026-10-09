@@ -1,7 +1,6 @@
 import { untrack } from 'svelte';
+import { HALF_HOUR_MS } from '$lib/components/charts/network/rooftop-top-up.js';
 import { forecastQuery, forecastRows } from './rooftop-forecast.js';
-
-const HALF_HOUR_MS = 30 * 60_000;
 
 /**
  * The rooftop solar forecast for the Tracker scope, fetched outside the chart
@@ -19,7 +18,6 @@ const HALF_HOUR_MS = 30 * 60_000;
 export function createRooftopForecast(opts) {
 	/** @typedef {{ region: string, rows: Array<{ time: number, value: number }>, runTime: number | null }} LoadedForecast */
 	let loaded = $state.raw(/** @type {LoadedForecast | null} */ (null));
-	let error = $state(/** @type {Error | null} */ (null));
 	let request = $derived(
 		opts.enabled() ? `${opts.region()}|${Math.floor(opts.clock() / HALF_HOUR_MS)}` : null
 	);
@@ -34,11 +32,10 @@ export function createRooftopForecast(opts) {
 			.then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
 			.then((json) => {
 				loaded = { region: /** @type {string} */ (region), ...forecastRows(json.response) };
-				error = null;
 			})
 			.catch((err) => {
-				if (err?.name === 'AbortError') return;
-				error = err instanceof Error ? err : new Error(String(err));
+				// Optional data: without it the chart shows reported values only.
+				if (err?.name !== 'AbortError') console.warn('Rooftop forecast unavailable:', err);
 			});
 		return () => controller.abort();
 	});
@@ -50,9 +47,6 @@ export function createRooftopForecast(opts) {
 		},
 		get runTime() {
 			return current?.runTime ?? null;
-		},
-		get error() {
-			return error;
 		}
 	};
 }

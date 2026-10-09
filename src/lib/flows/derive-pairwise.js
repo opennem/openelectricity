@@ -124,8 +124,9 @@ export function derivePairwiseFlows(
 			'SA1->VIC1': sa === null ? null : -sa,
 			'TAS1->VIC1': tas === null ? null : -tas
 		};
+		const beforeLoop = Date.parse(ts) < NSW_SA_LOOP_FROM_MS;
 		for (const key of PAIRWISE_KEYS) {
-			series[key].push(isCorridorDetermined(key, ts) ? row[key] : null);
+			series[key].push(beforeLoop || !LOOP_KEYS.has(key) ? row[key] : null);
 		}
 	}
 

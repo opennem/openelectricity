@@ -21,7 +21,7 @@
 import { oeClient } from '$lib/server/oe-client.js';
 import { transformOeToStatsData } from '$lib/oe-api/transform';
 import { processPower7d } from '$lib/server/tracker/process-power-7d';
-import { NEM_OFFSET_MS } from '$lib/flows/nem-time.js';
+import { toNetworkNaive } from '$lib/components/charts/v2/network-time.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STEP_MS = 5 * 60 * 1000; // OE fetch interval (5m)
@@ -37,7 +37,7 @@ const MAX_FILL_SLOTS = 5;
  * @param {number} ms
  */
 function toNemLocal(ms) {
-	return new Date(ms + NEM_OFFSET_MS).toISOString().slice(0, 19);
+	return toNetworkNaive(ms, '+10:00');
 }
 
 /**

@@ -1,19 +1,21 @@
 import { env } from '$env/dynamic/public';
-import { resolveFeedbackDsn } from '$lib/feedback/feedback-context.js';
+import { resolveSentryDsn } from '$lib/sentry/config.js';
 import {
 	MAX_ENVELOPE_BYTES,
 	envelopeHeaderSummary,
 	tunnelTarget
-} from '$lib/server/feedback-tunnel.js';
+} from '$lib/server/sentry-tunnel.js';
 
 /**
- * Sentry feedback tunnel: the browser SDK posts envelopes here (its `tunnel`
- * option) so ad blockers don't stop feedback, and they are forwarded to our
- * Sentry project only. The reader's IP and headers are not passed on.
- * See `$lib/server/feedback-tunnel.js`.
+ * Sentry relay: the browser SDK posts every envelope (errors, replays,
+ * feedback) here through its `tunnel` option, so ad blockers don't drop them,
+ * and they are forwarded to our Sentry project only. On whenever a Sentry DSN
+ * is set, as the browser client is; feedback's own switch only gates its UI.
+ * The reader's IP and headers are not passed on. See
+ * `$lib/server/sentry-tunnel.js`.
  */
 export async function POST({ request }) {
-	const dsn = resolveFeedbackDsn(env);
+	const dsn = resolveSentryDsn(env);
 	if (!dsn) return new Response(null, { status: 404 });
 
 	const declared = Number(request.headers.get('content-length'));

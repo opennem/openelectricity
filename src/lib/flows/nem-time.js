@@ -6,7 +6,7 @@
  * dropping the `Z` yields the naive NEM-local string the API wants.
  */
 
-import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
+import { offsetMsFromOffset, toNetworkNaive } from '$lib/components/charts/v2/network-time.js';
 
 export const HOURS_MS = 3600_000;
 
@@ -24,10 +24,9 @@ export const NEM_OFFSET_MS = offsetMsFromOffset('+10:00');
  * @returns {{ dateStart: string, dateEnd: string }}
  */
 export function nemNaiveRange(msBack, offset = '+10:00') {
-	const offsetMs = offsetMsFromOffset(offset);
 	const nowMs = Date.now();
 	return {
-		dateStart: new Date(nowMs + offsetMs - msBack).toISOString().slice(0, 19),
-		dateEnd: new Date(nowMs + offsetMs).toISOString().slice(0, 19)
+		dateStart: toNetworkNaive(nowMs - msBack, offset),
+		dateEnd: toNetworkNaive(nowMs, offset)
 	};
 }

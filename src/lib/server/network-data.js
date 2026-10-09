@@ -147,14 +147,14 @@ export function parseNetworkDataParams(searchParams) {
 	if (region === 'au' && metric === 'price') {
 		return { error: 'A national spot price is not available.' };
 	}
-	// AEMO forecasts NEM rooftop PV only; 'au' would silently serve NEM alone.
-	if (metric === 'rooftop_forecast' && (region === 'au' || region === 'wem')) {
-		return { error: 'Rooftop solar forecasts are only available for the NEM.' };
-	}
 	const rangeError = apiRangeLimitError(interval, dateStart, dateEnd);
 	if (rangeError) return { error: rangeError };
 
 	const { networkId, networkRegion } = regionToNetwork(region);
+	// AEMO forecasts NEM rooftop PV only; 'au' would silently serve NEM alone.
+	if (metric === 'rooftop_forecast' && networkId !== 'NEM') {
+		return { error: 'Rooftop solar forecasts are only available for the NEM.' };
+	}
 	return {
 		params: {
 			region,

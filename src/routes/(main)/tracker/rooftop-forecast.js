@@ -10,33 +10,29 @@
  */
 
 import { getFuelTechColour } from '$lib/components/charts/colours.js';
-import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
+import { toNetworkNaive } from '$lib/components/charts/v2/network-time.js';
+import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
+import { HALF_HOUR_MS } from '$lib/components/charts/network/rooftop-top-up.js';
 
 export const FORECAST_LABEL = 'Rooftop solar forecast';
 /** Rooftop solar's own colour: the forecast extends that band. */
 export const FORECAST_COLOUR = getFuelTechColour('solar_rooftop');
 
-const HALF_HOUR_MS = 30 * 60_000;
 /** Reaches back past the latest rooftop reading, which can lag by half an hour. */
 const LOOKBACK_MS = 2 * 3_600_000;
 
-/** AEMO forecasts rooftop PV for the NEM and its regions only. */
-const NEM_SCOPES = new Set(['_all', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']);
-
-/** @param {string} region */
+/** AEMO forecasts rooftop PV for the NEM and its regions only.
+ * @param {string} region */
 export function hasRooftopForecast(region) {
-	return NEM_SCOPES.has(region);
+	return regionToNetwork(region).networkId === 'NEM';
 }
-
-/** @param {number} ms @param {number} offset */
-const naive = (ms, offset) => new Date(ms + offset).toISOString().slice(0, 19);
 
 /**
  * An AEMO run time as local HH:mm, for the table footnote.
  * @param {number} ms @param {string} timeZone
  */
 export function formatRunTime(ms, timeZone) {
-	return naive(ms, offsetMsFromOffset(timeZone)).slice(11, 16);
+	return toNetworkNaive(ms, timeZone).slice(11, 16);
 }
 
 /**
@@ -46,7 +42,6 @@ export function formatRunTime(ms, timeZone) {
  * @param {string} region @param {number} nowMs @param {string} timeZone
  */
 export function forecastQuery(region, nowMs, timeZone) {
-	const offset = offsetMsFromOffset(timeZone);
 	const slot = Math.floor(nowMs / HALF_HOUR_MS) * HALF_HOUR_MS;
 	const start = Math.floor((nowMs - LOOKBACK_MS) / HALF_HOUR_MS) * HALF_HOUR_MS;
 	const end = slot + HALF_HOUR_MS;
@@ -54,8 +49,8 @@ export function forecastQuery(region, nowMs, timeZone) {
 		region,
 		metric: 'rooftop_forecast',
 		interval: '30m',
-		date_start: naive(start, offset),
-		date_end: naive(end, offset)
+		date_start: toNetworkNaive(start, timeZone),
+		date_end: toNetworkNaive(end, timeZone)
 	}).toString();
 }
 

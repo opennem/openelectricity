@@ -10,7 +10,6 @@
 	import Nav from '$lib/components/Nav.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import GlobalBanner from '$lib/components/GlobalBanner.svelte';
-	import FloatingFeedbackButton from '$lib/components/feedback/FloatingFeedbackButton.svelte';
 	// import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
 	import { showThemeSwitcher } from '$lib/stores/theme';
@@ -182,8 +181,6 @@
 	<div class={chromeMobileHidden ? 'max-tablet:hidden' : ''}>
 		<Footer />
 	</div>
-	<!-- Feedback once the main nav's icon has scrolled away. -->
-	<FloatingFeedbackButton />
 {/if}
 
 {#if updated.current}

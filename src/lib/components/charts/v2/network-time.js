@@ -95,6 +95,18 @@ export function toNetworkDateString(ms, offset) {
 }
 
 /**
+ * YYYY-MM-DDTHH:mm:ss for the given instant in the network's local time —
+ * the timezone-naive form the OE API expects.
+ *
+ * @param {number} ms - epoch ms
+ * @param {string | undefined | null} offset - network offset, e.g. '+10:00'
+ * @returns {string}
+ */
+export function toNetworkNaive(ms, offset) {
+	return new Date(ms + offsetMsFromOffset(offset)).toISOString().slice(0, 19);
+}
+
+/**
  * An instant in the network's local time, offset included:
  * "2026-07-01 14:30:00+10:00". Exact for both networks — NEM (+10:00) and
  * WEM (+08:00) are fixed-offset, no DST. The data exporters' timestamp format.

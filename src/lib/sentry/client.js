@@ -1,6 +1,7 @@
 import { browser, version } from '$app/environment';
 import { env } from '$env/dynamic/public';
-import { replaySessionSampleRate, resolveSentryDsn, sentryEnvironment } from './config.js';
+import { hostEnvironment } from '$lib/utils/environment.js';
+import { replaySessionSampleRate, resolveSentryDsn } from './config.js';
 
 /**
  * The browser's one Sentry client: JavaScript errors, session replay and the
@@ -20,7 +21,7 @@ import { replaySessionSampleRate, resolveSentryDsn, sentryEnvironment } from './
  * ad blockers don't drop it.
  */
 
-/** @typedef {typeof import('@sentry/browser')} SentrySdk */
+/** @typedef {typeof import('./sdk.js')} SentrySdk */
 
 /** @type {Promise<SentrySdk | null> | null} */
 let loading = null;
@@ -37,15 +38,16 @@ const MAX_EARLY_ERRORS = 10;
 export function loadSentry() {
 	const dsn = browser ? resolveSentryDsn(env) : null;
 	if (!dsn) return Promise.resolve(null);
-	loading ??= import('@sentry/browser')
+	loading ??= import('./sdk.js')
 		.then((Sentry) => {
-			const environment = sentryEnvironment(window.location.hostname);
+			const environment = hostEnvironment(window.location.hostname);
 			Sentry.init({
 				dsn,
 				// Same-origin relay: ad blockers stop requests to *.ingest.sentry.io.
 				tunnel: '/api/feedback',
-				// Binary envelopes (screenshots, replays) go out untyped, and
-				// SvelteKit's Node adapter drops untyped bodies, so label them.
+				// Binary envelopes (screenshots, replays) go out untyped, and SvelteKit's
+				// Node adapter (vite dev and preview; not Cloudflare) drops untyped
+				// bodies before any handler runs, so label every envelope.
 				transportOptions: { headers: { 'Content-Type': 'application/x-sentry-envelope' } },
 				release: `openelectricity@${version}`,
 				environment,

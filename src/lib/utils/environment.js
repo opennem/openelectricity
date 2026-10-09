@@ -1,22 +1,30 @@
 /**
- * Returns true if the given hostname is a non-production environment:
- * local development, the staging site (`dev.openelectricity.org.au`),
- * or a Cloudflare Pages preview deployment.
+ * The environment a hostname belongs to: local development (including the
+ * per-project `*.localhost` dev hosts), the staging site
+ * (`dev.openelectricity.org.au`), a Cloudflare Pages preview, or production.
  *
  * Cloudflare Pages serves production at `<project>.pages.dev` (3 labels)
  * and previews at `<hash-or-branch>.<project>.pages.dev` (4+ labels),
  * so the extra subdomain distinguishes a preview from production.
  *
  * @param {string | undefined | null} hostname
+ * @returns {'development' | 'staging' | 'preview' | 'production'}
+ */
+export function hostEnvironment(hostname) {
+	const h = (hostname ?? '').toLowerCase();
+	if (h === 'localhost' || h === '127.0.0.1' || h.endsWith('.localhost')) return 'development';
+	if (h.startsWith('dev.')) return 'staging';
+	if (h.endsWith('.pages.dev') && h.split('.').length > 3) return 'preview';
+	return 'production';
+}
+
+/**
+ * Whether a hostname is anything but production (`hostEnvironment`).
+ * @param {string | undefined | null} hostname
  * @returns {boolean}
  */
 export function isNonProductionHost(hostname) {
-	if (!hostname) return false;
-	const h = hostname.toLowerCase();
-	if (h === 'localhost' || h === '127.0.0.1') return true;
-	if (h.startsWith('dev.')) return true;
-	if (h.endsWith('.pages.dev') && h.split('.').length > 3) return true;
-	return false;
+	return !!hostname && hostEnvironment(hostname) !== 'production';
 }
 
 /**

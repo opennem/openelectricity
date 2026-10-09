@@ -15,22 +15,6 @@ export function resolveSentryDsn(env) {
 }
 
 /**
- * Sentry environment for a hostname: local development (including the
- * per-project `*.localhost` dev hosts), the `dev.` staging site, Cloudflare
- * Pages previews (`<hash>.<project>.pages.dev`), or production.
- * @param {string} hostname
- */
-export function sentryEnvironment(hostname) {
-	const host = hostname.toLowerCase();
-	if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost')) {
-		return 'development';
-	}
-	if (host.startsWith('dev.')) return 'staging';
-	if (host.endsWith('.pages.dev') && host.split('.').length > 3) return 'preview';
-	return 'production';
-}
-
-/**
  * Share of sessions recorded in full. Development records every session so
  * replay can be checked locally; elsewhere 1% keeps the replay quota and the
  * relay's request volume in hand. Sessions with an error are always kept

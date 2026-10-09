@@ -51,7 +51,6 @@
 	let systemSnapshot = $state(null);
 
 	// Derived loading states
-	let hasRegionData = $derived(Boolean(systemSnapshot));
 	let hasArticles = $derived(articles && articles.length > 0);
 
 	// Staggered chart rendering - load charts one at a time to avoid blocking
@@ -302,7 +301,7 @@
 <div bind:this={snapshotSection} class="md:bg-light-warm-grey">
 	<div class="container max-w-none lg:container">
 		<div class="flex flex-col md:flex-row justify-between py-16 md:py-32">
-			{#if hasRegionData && SystemSnapshotComponent}
+			{#if systemSnapshot && SystemSnapshotComponent}
 				<SystemSnapshotComponent title={map_title} {flows} {prices} snapshot={systemSnapshot} />
 			{:else}
 				<!-- Map skeleton -->

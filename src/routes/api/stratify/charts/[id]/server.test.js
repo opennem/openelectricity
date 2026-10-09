@@ -70,6 +70,12 @@ describe('PATCH /api/stratify/charts/:id', () => {
 		expect(mocks.setFields).toHaveBeenCalledWith('chart-1', { authorName: 'Ada Lovelace' });
 	});
 
+	it('does not look the name up again when a published chart is re-saved', async () => {
+		mocks.fetch.mockResolvedValue({ _id: 'chart-1', userId: 'user-1', status: 'published' });
+		await patch({ baseRev: 'rev-1', fields: { status: 'published' } });
+		expect(mocks.findUserName).not.toHaveBeenCalled();
+	});
+
 	it('leaves the byline alone on ordinary saves', async () => {
 		await patch({ baseRev: 'rev-1', fields: { title: 'Renamed' } });
 		expect(mocks.findUserName).not.toHaveBeenCalled();

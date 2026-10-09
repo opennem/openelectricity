@@ -6,12 +6,15 @@
 	import { getNavItems } from '$lib/components/nav/nav-items.js';
 	import { isNonProductionHost } from '$lib/utils/environment.js';
 	import FeedbackIconButton from '$lib/components/feedback/FeedbackIconButton.svelte';
+	import FloatingFeedbackButton from '$lib/components/feedback/FloatingFeedbackButton.svelte';
 
 	// The global Nav only shows on windowed pages, so its links to
 	// fullscreen-by-default pages (/facilities) open in windowed mode.
 	let navItems = getNavItems($dataTrackerLink, parsedFeatureFlags, { windowed: true });
 
 	let mobileNavActive = $state(false);
+	/** The header the floating Feedback icon watches. */
+	let header = $state(/** @type {HTMLElement | undefined} */ (undefined));
 	/** @type {string | null} */
 	let activeDropdown = $state(null);
 
@@ -23,7 +26,10 @@
 	});
 </script>
 
-<header class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid text-base" data-main-nav>
+<header
+	bind:this={header}
+	class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid text-base"
+>
 	<div class="max-w-none px-10 md:px-16 flex items-center justify-between h-full">
 		<div
 			class="absolute md:relative flex items-center gap-6"
@@ -189,6 +195,11 @@
 		</button>
 	</div>
 </header>
+
+<!-- Feedback once this header (and its icon) scrolls away. -->
+{#if header}
+	<FloatingFeedbackButton target={header} />
+{/if}
 
 <style lang="postcss">
 	/* burger menu states */

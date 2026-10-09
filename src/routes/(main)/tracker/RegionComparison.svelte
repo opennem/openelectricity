@@ -74,6 +74,9 @@
 		latestCommonComparisonPeriod
 	} from './region-comparison.js';
 
+	/** Comparison regions by value, for ids that come back from rankings and errors. */
+	const REGION_BY_ID = new Map(COMPARISON_REGIONS.map((region) => [region.value, region]));
+
 	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>, cpi: ReturnType<typeof import('$lib/comparison-cpi.js').comparisonCpi>}} */
 	let { session, cpi } = $props();
 	let selection = $derived(normaliseRegionComparison(session.selection.regionComparison));
@@ -195,10 +198,7 @@
 				)
 		);
 		return order.map(
-			(id) =>
-				/** @type {(typeof COMPARISON_REGIONS)[number]} */ (
-					COMPARISON_REGIONS.find((region) => region.value === id)
-				)
+			(id) => /** @type {(typeof COMPARISON_REGIONS)[number]} */ (REGION_BY_ID.get(id))
 		);
 	});
 	let lastRegion = $derived(tableRegions.at(-1)?.value);
@@ -407,13 +407,10 @@
 				role="alert"
 				class="mb-3 flex items-center justify-between gap-3 rounded-lg border border-warm-grey bg-white p-4 text-xs"
 			>
-				<span
-					>{COMPARISON_REGIONS.find((r) => r.value === id)?.label}: {source.status[id].error}</span
-				>
+				<span>{REGION_BY_ID.get(id)?.label}: {source.status[id].error}</span>
 				<button
 					class="rounded border border-mid-warm-grey px-3 py-2"
-					onclick={() => source.retry(id)}
-					>Retry {COMPARISON_REGIONS.find((r) => r.value === id)?.label}</button
+					onclick={() => source.retry(id)}>Retry {REGION_BY_ID.get(id)?.label}</button
 				>
 			</div>
 		{/each}

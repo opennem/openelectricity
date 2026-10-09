@@ -1,3 +1,4 @@
+import { tick } from 'svelte';
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import { loadSentry } from '$lib/sentry/client.js';
@@ -22,7 +23,7 @@ import {
  */
 
 /** @typedef {'idle' | 'loading' | 'open' | 'error'} FeedbackStatus */
-/** @typedef {NonNullable<ReturnType<typeof import('@sentry/browser').getFeedback>>} FeedbackIntegration */
+/** @typedef {NonNullable<ReturnType<typeof import('$lib/sentry/feedback-sdk.js').getFeedback>>} FeedbackIntegration */
 /** @typedef {Awaited<ReturnType<FeedbackIntegration['createForm']>>} FeedbackForm */
 
 /** Form copy (UK English) and look. Name, email and screenshot are optional. */
@@ -77,20 +78,19 @@ const SEND_ICON = encodeURIComponent(
  * moves it last) with a send icon, in Space Grotesk like the site's form
  * controls; and focus shown on the field's own
  * border, as form-elements/TextInput does, rather than an outline that
- * doubles it. Sentry adds more of its own styles as the dialog and screenshot
- * tool open, after this sheet, so every rule is scoped under `.form` to
- * outrank its single-class rules whatever the order. */
+ * doubles it. Adopted by the form's shadow root (`addFormLayout`), so it
+ * cascades after every `<style>` Sentry adds there, whenever it adds them. */
 const FORM_LAYOUT_CSS = `
-.form .btn { font-family: 'Space Grotesk', sans-serif; }
-.form .btn-group { grid-template-columns: 1fr 1fr; }
-.form .btn--primary {
+.btn { font-family: 'Space Grotesk', sans-serif; }
+.btn-group { grid-template-columns: 1fr 1fr; }
+.btn--primary {
 	order: 1;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
 }
-.form .btn--primary::before {
+.btn--primary::before {
 	content: '';
 	width: 16px;
 	height: 16px;
@@ -98,7 +98,7 @@ const FORM_LAYOUT_CSS = `
 	background-color: currentColor;
 	mask: url("data:image/svg+xml,${SEND_ICON}") center / contain no-repeat;
 }
-.form .form__input:focus-visible { outline: none; border-color: #353535; }
+.form__input:focus-visible { outline: none; border-color: #353535; }
 
 /* Open beside the control that opened it (data-origin, set on open): top
    right sliding down from the nav's icon, bottom right (Sentry's default
@@ -119,7 +119,9 @@ const FORM_LAYOUT_CSS = `
 	.dialog .dialog__content { animation: none; }
 }
 `;
-const FORM_LAYOUT_STYLE_ID = 'oe-feedback-layout';
+/** Built once, on first open (`CSSStyleSheet` is browser-only). */
+/** @type {CSSStyleSheet | null} */
+let formLayoutSheet = null;
 
 function readDsn() {
 	return browser ? resolveFeedbackDsn(env) : null;
@@ -127,10 +129,13 @@ function readDsn() {
 
 /**
  * Return focus to the control that opened the form, if it is still on screen
- * (a closed mobile menu hides it).
+ * (a closed mobile menu hides it). Waits for the DOM to catch up with the
+ * closed form first: a control can be inert while the form is open (the
+ * floating button) and can't take focus until that clears.
  * @param {HTMLElement | null | undefined} trigger
  */
-function restoreFocus(trigger) {
+async function restoreFocus(trigger) {
+	await tick();
 	if (trigger?.isConnected && trigger.getClientRects().length > 0) trigger.focus();
 }
 
@@ -169,11 +174,14 @@ function createFeedback() {
 	 */
 	function addFormLayout() {
 		const root = document.getElementById(FORM_HOST_ID)?.shadowRoot;
-		if (!root || root.getElementById(FORM_LAYOUT_STYLE_ID)) return;
-		const style = document.createElement('style');
-		style.id = FORM_LAYOUT_STYLE_ID;
-		style.textContent = FORM_LAYOUT_CSS;
-		root.appendChild(style);
+		if (!root) return;
+		if (!formLayoutSheet) {
+			formLayoutSheet = new CSSStyleSheet();
+			formLayoutSheet.replaceSync(FORM_LAYOUT_CSS);
+		}
+		if (!root.adoptedStyleSheets.includes(formLayoutSheet)) {
+			root.adoptedStyleSheets = [...root.adoptedStyleSheets, formLayoutSheet];
+		}
 	}
 
 	/**
@@ -199,14 +207,14 @@ function createFeedback() {
 
 	/** Add the feedback integration to the shared client, once. */
 	function load() {
-		integration ??= loadSentry()
-			.then((Sentry) => {
+		integration ??= Promise.all([loadSentry(), import('$lib/sentry/feedback-sdk.js')])
+			.then(([Sentry, { feedbackIntegration, getFeedback }]) => {
 				if (!Sentry) throw new Error('Sentry is not available.');
-				Sentry.addIntegration(Sentry.feedbackIntegration(FORM_OPTIONS));
+				Sentry.addIntegration(feedbackIntegration(FORM_OPTIONS));
 				Sentry.getClient()?.on('beforeSendFeedback', (event) =>
 					applyFeedbackContext(event, context)
 				);
-				const loaded = Sentry.getFeedback();
+				const loaded = getFeedback();
 				if (!loaded) throw new Error('Sentry feedback integration is unavailable.');
 				return loaded;
 			})

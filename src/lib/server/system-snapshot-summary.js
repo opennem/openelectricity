@@ -1,6 +1,7 @@
 import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
 import { contributionSeries } from '$lib/components/charts/network/contribution.js';
 import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
+import { regionsNemOnlyOptions, regionsWithShortLabels } from '$lib/regions.js';
 
 /**
  * Per-region System Snapshot figures from raw OE v4 responses.
@@ -31,15 +32,10 @@ const sourceGroups = new Set(
 	contributionSeries(Object.keys(group.fuelTechs), loadGroupsFor(group), 'generation')
 );
 
-/** OE region code → snapshot row id. */
-const REGION_IDS = /** @type {const} */ ({
-	NSW1: 'NSW',
-	QLD1: 'QLD',
-	SA1: 'SA',
-	TAS1: 'TAS',
-	VIC1: 'VIC'
-});
-export const NEM_SNAPSHOT_REGIONS = Object.values(REGION_IDS);
+/** Snapshot row ids for the NEM regions (NSW, QLD, SA, TAS, VIC). */
+export const NEM_SNAPSHOT_REGIONS = regionsNemOnlyOptions
+	.filter((option) => option.value !== '_all')
+	.map((option) => option.shortLabel);
 
 /** @typedef {Array<[string, number | null]>} OeSeries */
 /** @typedef {{ metric: string, results?: Array<{ columns?: { region?: string, fueltech?: string }, data?: OeSeries }> }} OeEntry */
@@ -73,8 +69,19 @@ function ratio(numerator, denominator, scale) {
  * @param {{ columns?: { region?: string } }} result @param {string | undefined} fallback
  */
 function rowIdFor(result, fallback) {
-	const region = result.columns?.region ?? '';
-	return /** @type {Record<string, string>} */ (REGION_IDS)[region] ?? fallback;
+	const region = result.columns?.region?.toLowerCase();
+	return (region && region !== '_all' ? regionsWithShortLabels[region] : undefined) ?? fallback;
+}
+
+/**
+ * The Detailed group a fuel-tech result belongs to, or undefined for one
+ * outside the grouping and for the aggregate `battery`, which nets the
+ * charging/discharging splits and would double-count them.
+ * @param {{ columns?: { fueltech?: string } }} result
+ */
+function groupFor(result) {
+	const fuelTech = result.columns?.fueltech;
+	return fuelTech && fuelTech !== 'battery' ? groupOf.get(fuelTech) : undefined;
 }
 
 /** @param {OeSeries | undefined} data */
@@ -136,8 +143,7 @@ export function summariseAnnual(generation, renewables, fallback) {
 		if (entry.metric !== 'emissions' && entry.metric !== 'energy') continue;
 		for (const result of entry.results ?? []) {
 			const id = rowIdFor(result, fallback);
-			const fuelTech = result.columns?.fueltech;
-			const groupId = fuelTech && fuelTech !== 'battery' ? groupOf.get(fuelTech) : undefined;
+			const groupId = groupFor(result);
 			if (!id || !groupId) continue;
 			const value = sumFinite(result.data);
 			const region = (totals[id] ??= { emissions: 0, energy: 0, generation: 0 });
@@ -208,8 +214,7 @@ export function summariseLive(power, proportions) {
 		if (entry.metric !== 'power') continue;
 		for (const result of entry.results ?? []) {
 			const id = rowIdFor(result, undefined);
-			const fuelTech = result.columns?.fueltech;
-			const groupId = fuelTech && fuelTech !== 'battery' ? groupOf.get(fuelTech) : undefined;
+			const groupId = groupFor(result);
 			const at = id ? latest.get(id) : undefined;
 			if (!id || !at || !groupId || !sourceGroups.has(groupId)) continue;
 			const value = valueAt(result.data, at.time);

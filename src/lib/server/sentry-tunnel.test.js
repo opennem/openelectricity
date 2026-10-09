@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { envelopeEndpoint, tunnelTarget } from './feedback-tunnel.js';
+import { envelopeEndpoint, tunnelTarget } from './sentry-tunnel.js';
 
 const DSN = 'https://abc123@o402615.ingest.us.sentry.io/4512223945555968';
 const ENDPOINT = 'https://o402615.ingest.us.sentry.io/api/4512223945555968/envelope/';
