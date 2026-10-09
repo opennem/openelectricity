@@ -59,9 +59,11 @@ pnpm run doppler-dev     # runs vite dev with secrets injected from Doppler
 
 `doppler-dev`, `doppler-build`, and `doppler-preview` are maintainer conveniences that wrap their plain counterparts in `doppler run --`. The plain scripts (with a local `.env`) remain the canonical path for contributors and forks — no Doppler account required.
 
-#### User feedback (Sentry, optional)
+#### Sentry: errors, session replay and feedback (optional)
 
-The "Feedback" controls (a corner button on content pages and the Tracker, and an item in the fullscreen navigation menu) open Sentry's feedback form. They stay hidden unless both `PUBLIC_SENTRY_DSN` and `PUBLIC_FEEDBACK_ENABLED=true` are set, so most contributors can leave them blank. To try the form locally, put a DSN for your own Sentry project in `.env` and set the switch to `true`. Maintainers set both in the Doppler config and in the Cloudflare environment. The SDK loads only when the form is first opened and sends feedback alone — no error, tracing or replay collection (`src/lib/feedback/feedback.svelte.js`).
+With `PUBLIC_SENTRY_DSN` set, the browser reports JavaScript errors and records session replays (1% of sessions, every session in development; text and media masked), keeping the minute before any error. The "Feedback" controls (a corner button on content pages, the Tracker, Facilities and Scenarios, and an item in the fullscreen navigation menu) open Sentry's feedback form and also need `PUBLIC_FEEDBACK_ENABLED=true`. Leave both blank to turn it all off; to try it locally, use a DSN for your own Sentry project. Maintainers set both in the Doppler config and in the Cloudflare environment.
+
+The SDK is a separate chunk loaded once the page is idle, so it doesn't slow first render (`src/lib/sentry/client.js`). Everything goes through a same-origin relay, `/api/feedback`, so ad blockers don't stop it; the relay forwards only envelopes addressed to the configured project.
 
 ## Commands
 

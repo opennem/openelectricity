@@ -14,10 +14,14 @@
 {#if isPublicDocumentation}
 	{@render children?.()}
 {:else}
-	<LoginGate redirectUrl={signInRedirect} title="Sign in">
-		{#snippet header()}
-			<StratifyHeader />
-		{/snippet}
-		{@render children?.()}
-	</LoginGate>
+	<!-- Admin-only: draft charts, collaborators' names and emails. Masked in
+	     Sentry session replays; display: contents leaves the layout alone. -->
+	<div class="contents" data-sentry-mask>
+		<LoginGate redirectUrl={signInRedirect} title="Sign in">
+			{#snippet header()}
+				<StratifyHeader />
+			{/snippet}
+			{@render children?.()}
+		</LoginGate>
+	</div>
 {/if}

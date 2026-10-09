@@ -1,6 +1,8 @@
+import { resolveSentryDsn } from '$lib/sentry/config.js';
+
 /**
- * Pure helpers for the Sentry feedback form: whether it is configured, which
- * environment a host reports as, and the page context attached to each
+ * Pure helpers for the Sentry feedback form: whether it is configured, where
+ * it shows, and the page context attached to each
  * submission. The browser-only controller lives in `./feedback.svelte.js`.
  */
 
@@ -39,28 +41,25 @@ export const FEEDBACK_PARAM_ALLOW_LIST = /** @type {const} */ ([
 	'fullscreen'
 ]);
 
-/**
- * App pages whose charts, maps and controls reach the viewport edges, in
- * windowed and fullscreen mode alike. They offer feedback from their
- * navigation menu rather than the floating corner button.
- */
-const APP_PAGE_PREFIXES = ['/facilities', '/facility', '/scenarios', '/studio'];
+/** App views that show the corner button in windowed and fullscreen mode. */
+const APP_VIEW_PREFIXES = ['/tracker', '/facilities', '/scenarios'];
+
+/** Pages that offer feedback from their navigation menu instead. */
+const MENU_ONLY_PREFIXES = ['/facility', '/studio'];
 
 /** @param {string} pathname @param {string} prefix */
 const isUnder = (pathname, prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`);
 
 /**
- * How a page shows the floating "Feedback" button: `labelled` on content
- * pages, `compact` (icon only, in either mode) on the Tracker, or `null` where
- * the page offers feedback from its menu instead.
+ * Whether a page shows the floating "Feedback" button: content pages, and
+ * the Tracker, Facilities and Scenarios in either mode. Facility pages,
+ * Studio and other fullscreen views use their menu item.
  * @param {string} pathname
  * @param {boolean} fullscreen
- * @returns {'labelled' | 'compact' | null}
  */
-export function floatingFeedbackMode(pathname, fullscreen) {
-	if (isUnder(pathname, '/tracker')) return 'compact';
-	if (fullscreen || APP_PAGE_PREFIXES.some((prefix) => isUnder(pathname, prefix))) return null;
-	return 'labelled';
+export function showsFloatingFeedback(pathname, fullscreen) {
+	if (APP_VIEW_PREFIXES.some((prefix) => isUnder(pathname, prefix))) return true;
+	return !fullscreen && !MENU_ONLY_PREFIXES.some((prefix) => isUnder(pathname, prefix));
 }
 
 /**
@@ -78,24 +77,8 @@ export function floatingFeedbackMode(pathname, fullscreen) {
  * @returns {string | null}
  */
 export function resolveFeedbackDsn(env) {
-	const dsn = env.PUBLIC_SENTRY_DSN?.trim();
+	const dsn = resolveSentryDsn(env);
 	return env.PUBLIC_FEEDBACK_ENABLED === 'true' && dsn ? dsn : null;
-}
-
-/**
- * Sentry environment for a hostname: local development (including the
- * per-project `*.localhost` dev hosts), the `dev.` staging site, Cloudflare
- * Pages previews (`<hash>.<project>.pages.dev`), or production.
- * @param {string} hostname
- */
-export function feedbackEnvironment(hostname) {
-	const host = hostname.toLowerCase();
-	if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost')) {
-		return 'development';
-	}
-	if (host.startsWith('dev.')) return 'staging';
-	if (host.endsWith('.pages.dev') && host.split('.').length > 3) return 'preview';
-	return 'production';
 }
 
 /**

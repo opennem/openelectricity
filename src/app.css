@@ -413,10 +413,53 @@
 	background-size: 24px 24px;
 }
 
-/* Sentry's feedback form renders in a shadow root under this host; its
-   styles read the font from this custom property. */
+/* Sentry's feedback form, in OE's design tokens (see /studio/design-system).
+   It renders in a shadow root under this host: page styles on the host
+   override the form's own :host defaults, and custom properties inherit in.
+   Pixel values, since the page's 10px root would shrink rem-based ones. */
 #sentry-feedback {
 	--font-family: 'DM Sans', sans-serif;
+	--font-size: 14px;
+	--foreground: #353535; /* dark-grey */
+	--background: #ffffff;
+	--accent-foreground: #ffffff;
+	--accent-background: #000000; /* black */
+	--success-color: #353535;
+	--error-color: #c74523; /* red */
+	--border: 1px solid #c6c6c6; /* mid-warm-grey */
+	--box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+	/* Focus in dark-grey, not red: the textarea is focused on open, and red
+	   reads as an error here. Red is kept for real errors (--error-color). */
+	--outline: 1px solid #353535;
+
+	/* Floating chrome: 10px corners, white, warm hairline, shadow-lg. */
+	--dialog-border-radius: 10px;
+	--dialog-padding: 24px;
+	--dialog-header-weight: 600;
+
+	/* Inputs as form-elements/TextInput. */
+	--input-border-radius: 4px;
+	--input-font-weight: 400;
+	--input-placeholder-color: #6a6a6a; /* mid-grey */
+	/* No outline ring: focus darkens the field's own border instead (see the
+	   form stylesheet in src/lib/feedback/feedback.svelte.js). */
+	--input-focus-outline: none;
+
+	/* Buttons: rounded-md; primary black with white text, secondary outlined. */
+	--button-border-radius: 4px;
+	--button-font-weight: 500;
+	--button-primary-font-weight: 500;
+	--button-padding: 8px 16px;
+	--button-background: #ffffff;
+	--button-hover-background: #f1f0ed; /* warm-grey */
+	--button-color: #353535;
+	--button-border: 1px solid #c6c6c6;
+	--button-primary-border-radius: 4px;
+	--button-primary-background: #000000;
+	--button-primary-hover-background: #353535; /* dark-grey */
+	--button-primary-color: #ffffff;
+	--button-primary-hover-color: #ffffff;
+	--button-primary-border: 1px solid #000000;
 }
 
 /* The dotted grid behind fullscreen pages. */

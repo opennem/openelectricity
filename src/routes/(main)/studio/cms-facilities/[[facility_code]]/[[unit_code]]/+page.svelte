@@ -479,7 +479,7 @@
 				{/if}
 				<span class="ml-auto"></span>
 				{#if clerkState.user}
-					<span class="text-[10px] text-mid-grey"
+					<span class="text-[10px] text-mid-grey" data-sentry-mask
 						>{clerkState.user.primaryEmailAddress?.emailAddress}</span
 					>
 					<button
