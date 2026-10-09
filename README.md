@@ -61,7 +61,7 @@ pnpm run doppler-dev     # runs vite dev with secrets injected from Doppler
 
 #### Sentry: errors, session replay and feedback (optional)
 
-With `PUBLIC_SENTRY_DSN` set, the browser reports JavaScript errors and records session replays (1% of sessions, every session in development; text and media masked), keeping the minute before any error. The "Feedback" controls (a corner button on content pages, the Tracker, Facilities and Scenarios, and an item in the fullscreen navigation menu) open Sentry's feedback form and also need `PUBLIC_FEEDBACK_ENABLED=true`. Leave both blank to turn it all off; to try it locally, use a DSN for your own Sentry project. Maintainers set both in the Doppler config and in the Cloudflare environment.
+With `PUBLIC_SENTRY_DSN` set, the browser reports JavaScript errors and records session replays (1% of sessions, every session in development; text and media masked), keeping the minute before any error. The "Feedback" controls (an icon after About in the main navigation, beside the menu toggle on mobile, a floating icon once the navigation scrolls away, and before the options menu in the fullscreen Tracker, Facilities and facility pages; also an item in the fullscreen navigation menu) open Sentry's feedback form and also need `PUBLIC_FEEDBACK_ENABLED=true`. Leave both blank to turn it all off; to try it locally, use a DSN for your own Sentry project. Maintainers set both in the Doppler config and in the Cloudflare environment.
 
 The SDK is a separate chunk loaded once the page is idle, so it doesn't slow first render (`src/lib/sentry/client.js`). Everything goes through a same-origin relay, `/api/feedback`, so ad blockers don't stop it; the relay forwards only envelopes addressed to the configured project.
 

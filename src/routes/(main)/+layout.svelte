@@ -11,7 +11,6 @@
 	import Footer from '$lib/components/Footer.svelte';
 	import GlobalBanner from '$lib/components/GlobalBanner.svelte';
 	import FloatingFeedbackButton from '$lib/components/feedback/FloatingFeedbackButton.svelte';
-	import { showsFloatingFeedback } from '$lib/feedback/feedback-context.js';
 	// import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
 	import { showThemeSwitcher } from '$lib/stores/theme';
@@ -55,10 +54,6 @@
 	});
 
 	let currentRoute = $derived(page.url.pathname);
-	// Content pages, plus the Tracker, Facilities and Scenarios in either mode;
-	// other pages offer feedback from their navigation menu (see
-	// showsFloatingFeedback).
-	let showFloatingFeedback = $derived(showsFloatingFeedback(currentRoute, isFullscreen));
 	// let isRecordsRoute = $derived(currentRoute.includes('/records'));
 	// let feedbackButtonRef = $state();
 	// let feedbackButtonPosition = $derived(feedbackButtonRef?.getBoundingClientRect());
@@ -187,9 +182,7 @@
 	<div class={chromeMobileHidden ? 'max-tablet:hidden' : ''}>
 		<Footer />
 	</div>
-{/if}
-
-{#if showFloatingFeedback}
+	<!-- Feedback once the main nav's icon has scrolled away. -->
 	<FloatingFeedbackButton />
 {/if}
 

@@ -49,7 +49,7 @@
 	let backButtonClass = $derived(isFullscreen ? 'size-9 -m-0.5' : 'size-10 -m-1');
 </script>
 
-<FullscreenFilterBar {isFullscreen} routeKey="detail">
+<FullscreenFilterBar {isFullscreen} routeKey="detail" feedback>
 	{#snippet back()}
 		<!-- History back when there is any; otherwise reopen /facilities with
 		     this facility's pane selected. -->

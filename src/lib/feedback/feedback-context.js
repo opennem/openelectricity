@@ -1,8 +1,8 @@
 import { resolveSentryDsn } from '$lib/sentry/config.js';
 
 /**
- * Pure helpers for the Sentry feedback form: whether it is configured, where
- * it shows, and the page context attached to each
+ * Pure helpers for the Sentry feedback form: whether it is configured and the
+ * page context attached to each
  * submission. The browser-only controller lives in `./feedback.svelte.js`.
  */
 
@@ -40,27 +40,6 @@ export const FEEDBACK_PARAM_ALLOW_LIST = /** @type {const} */ ([
 	'year_max',
 	'fullscreen'
 ]);
-
-/** App views that show the corner button in windowed and fullscreen mode. */
-const APP_VIEW_PREFIXES = ['/tracker', '/facilities', '/scenarios'];
-
-/** Pages that offer feedback from their navigation menu instead. */
-const MENU_ONLY_PREFIXES = ['/facility', '/studio'];
-
-/** @param {string} pathname @param {string} prefix */
-const isUnder = (pathname, prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`);
-
-/**
- * Whether a page shows the floating "Feedback" button: content pages, and
- * the Tracker, Facilities and Scenarios in either mode. Facility pages,
- * Studio and other fullscreen views use their menu item.
- * @param {string} pathname
- * @param {boolean} fullscreen
- */
-export function showsFloatingFeedback(pathname, fullscreen) {
-	if (APP_VIEW_PREFIXES.some((prefix) => isUnder(pathname, prefix))) return true;
-	return !fullscreen && !MENU_ONLY_PREFIXES.some((prefix) => isUnder(pathname, prefix));
-}
 
 /**
  * @typedef {Object} FeedbackContext

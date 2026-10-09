@@ -1,4 +1,6 @@
 <script>
+	import FeedbackIconButton from '$lib/components/feedback/FeedbackIconButton.svelte';
+
 	/**
 	 * FullscreenFilterBar — shared chrome for the filter bar at the top of
 	 * /facilities, /facility/[code] and /tracker. Owns the outer flex
@@ -31,6 +33,7 @@
 	 *   paddingX?: string,
 	 *   bgClass?: string,
 	 *   optionsSpacingClass?: string,
+	 *   feedback?: boolean,
 	 *   back?: import('svelte').Snippet,
 	 *   stable?: import('svelte').Snippet,
 	 *   rest?: import('svelte').Snippet,
@@ -44,6 +47,8 @@
 		paddingX = 'px-4',
 		bgClass = 'tablet:bg-light-warm-grey/75',
 		optionsSpacingClass,
+		// Fullscreen views have no main nav, so Feedback sits before the divider.
+		feedback = false,
 		back,
 		stable,
 		rest,
@@ -80,6 +85,12 @@
 			</div>
 		{/if}
 	</div>
+	<!-- No margin of its own: the options block's left margin matches its left
+	     padding, so Feedback and the options button sit equally either side of
+	     the divider (both buttons share the same padding). -->
+	{#if feedback && isFullscreen}
+		<FeedbackIconButton />
+	{/if}
 	{#if options}
 		<div
 			class="flex items-center tablet:border-l tablet:border-warm-grey {optionsSpacingClass ??

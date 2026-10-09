@@ -1,29 +1,45 @@
 <script>
-	import { MessageSquareShare } from '@lucide/svelte';
-	import { feedback } from '$lib/feedback/feedback.svelte.js';
-	import FeedbackGate from './FeedbackGate.svelte';
+	import { fly } from 'svelte/transition';
+	import { MediaQuery, createSubscriber } from 'svelte/reactivity';
+	import FeedbackIconButton from './FeedbackIconButton.svelte';
 
 	/**
-	 * Corner "Feedback" button: icon only on small screens, labelled from `md`
-	 * up. The layout decides where it shows (`showsFloatingFeedback`).
-	 * @type {{ class?: string }}
+	 * Floating "Feedback" icon for windowed pages: slides in from the right at
+	 * the bottom-right once the main nav (and its Feedback icon) has scrolled
+	 * out of view, and back out when the nav returns. The main nav marks its
+	 * header with `data-main-nav`.
 	 */
-	let { class: className = '' } = $props();
+
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+
+	/** Last observed visibility of the main nav; read through `navOutOfView`. */
+	let outOfView = false;
+	// Observe only while something reads it; the observer is the source.
+	const subscribe = createSubscriber((update) => {
+		const nav = document.querySelector('[data-main-nav]');
+		if (!nav) return;
+		const observer = new IntersectionObserver(([entry]) => {
+			outOfView = !entry.isIntersecting;
+			update();
+		});
+		observer.observe(nav);
+		return () => observer.disconnect();
+	});
+	const navOutOfView = () => {
+		subscribe();
+		return outOfView;
+	};
 </script>
 
-<FeedbackGate>
-	<button
-		type="button"
-		class="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full font-space text-sm font-medium text-white shadow-md transition-colors disabled:cursor-wait px-4 py-3 md:px-5 {feedback.status ===
-		'error'
-			? 'bg-red hover:bg-red/90'
-			: 'bg-black hover:bg-dark-grey'} {className}"
-		disabled={feedback.status === 'loading'}
-		aria-label={feedback.label}
-		title={feedback.label}
-		onclick={(event) => feedback.open(event.currentTarget)}
+{#if navOutOfView()}
+	<div
+		class="fixed bottom-6 right-6 z-50"
+		transition:fly={{ x: 96, duration: reducedMotion.current ? 0 : 250 }}
 	>
-		<MessageSquareShare size={18} aria-hidden="true" />
-		<span class="hidden md:inline">{feedback.label}</span>
-	</button>
-</FeedbackGate>
+		<FeedbackIconButton
+			class="flex size-[56px] items-center justify-center rounded-full bg-black text-white shadow-md transition-colors hover:bg-dark-grey cursor-pointer"
+			iconClass="size-[24px] text-white"
+			tooltip={false}
+		/>
+	</div>
+{/if}

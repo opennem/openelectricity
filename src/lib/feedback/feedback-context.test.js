@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	applyFeedbackContext,
 	buildFeedbackContext,
-	resolveFeedbackDsn,
-	showsFloatingFeedback
+	resolveFeedbackDsn
 } from './feedback-context.js';
 
 const DSN = 'https://public@o0.ingest.sentry.io/0';
@@ -24,33 +23,6 @@ describe('resolveFeedbackDsn', () => {
 		expect(resolveFeedbackDsn({ PUBLIC_SENTRY_DSN: '  ', PUBLIC_FEEDBACK_ENABLED: 'true' })).toBe(
 			null
 		);
-	});
-});
-
-describe('showsFloatingFeedback', () => {
-	it.each(['/', '/about', '/analysis/some-article', '/records', '/facilities-explained'])(
-		'shows on content page %s',
-		(pathname) => expect(showsFloatingFeedback(pathname, false)).toBe(true)
-	);
-
-	it.each(['/tracker', '/tracker/compare', '/facilities', '/scenarios'])(
-		'shows on app view %s, windowed or fullscreen',
-		(pathname) => {
-			expect(showsFloatingFeedback(pathname, false)).toBe(true);
-			expect(showsFloatingFeedback(pathname, true)).toBe(true);
-		}
-	);
-
-	it.each(['/facility/ABC1', '/studio', '/studio/design-system'])(
-		'leaves %s to its menu',
-		(pathname) => {
-			expect(showsFloatingFeedback(pathname, false)).toBe(false);
-			expect(showsFloatingFeedback(pathname, true)).toBe(false);
-		}
-	);
-
-	it('leaves other fullscreen views to their menu', () => {
-		expect(showsFloatingFeedback('/about', true)).toBe(false);
 	});
 });
 

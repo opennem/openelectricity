@@ -409,7 +409,7 @@
 {/if}
 
 <div class="hidden tablet:block">
-	<FullscreenFilterBar {isFullscreen} routeKey="list" paddingX="px-8">
+	<FullscreenFilterBar {isFullscreen} routeKey="list" paddingX="px-8" feedback>
 		{#snippet stable()}
 			{#if isFullscreen}
 				<FullscreenNavDropdown label="Facilities" />

@@ -155,7 +155,10 @@
 				{isFullscreen}
 				routeKey="tracker"
 				stableName="filter-bar-stable-tracker"
-				optionsSpacingClass="tablet:pl-4"
+				// Fullscreen uses the bar's default spacing, as Facilities and the facility
+				// page do, so the options group doesn't shift between them.
+				optionsSpacingClass={isFullscreen ? undefined : 'tablet:pl-4'}
+				feedback
 				paddingX="px-8"
 				bgClass="bg-light-warm-grey/75"
 			>

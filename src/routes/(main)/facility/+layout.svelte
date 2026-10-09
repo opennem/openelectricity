@@ -28,6 +28,7 @@
 	import FacilityPickerBar from './[code]/_components/FacilityPickerBar.svelte';
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
+	import FeedbackIconButton from '$lib/components/feedback/FeedbackIconButton.svelte';
 	import { ArrowLeft } from '@lucide/svelte';
 	import { backToFacilities } from './_utils/back-navigation.js';
 
@@ -253,7 +254,11 @@
 							<ArrowLeft size={24} class="shrink-0" />
 						</button>
 					</div>
-					<div class="tablet:hidden absolute top-3 right-3 z-30">
+					<div class="tablet:hidden absolute top-3 right-3 z-30 flex items-center gap-2">
+						<FeedbackIconButton
+							class="{floatingCircleClass} cursor-pointer"
+							iconClass="size-5 text-white"
+						/>
 						<!-- No fullscreen toggle here — this menu is mobile-only, and
 						     mobile is always fullscreen. -->
 						<PageOptionsMenu

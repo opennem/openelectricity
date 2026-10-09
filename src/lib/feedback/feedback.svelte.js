@@ -99,6 +99,25 @@ const FORM_LAYOUT_CSS = `
 	mask: url("data:image/svg+xml,${SEND_ICON}") center / contain no-repeat;
 }
 .form .form__input:focus-visible { outline: none; border-color: #353535; }
+
+/* Open beside the control that opened it (data-origin, set on open): top
+   right sliding down from the nav's icon, bottom right (Sentry's default
+   place) sliding up from the floating one. Phones and the screenshot editor
+   keep Sentry's full-screen layout. */
+@media (min-width: 601px) {
+	:host([data-origin='top']) .dialog__position:not(:has(.editor)) { inset: 0 0 auto auto; }
+}
+:host([data-origin='top']) .dialog[open] .dialog__content {
+	animation: oe-feedback-down 0.25s ease-out;
+}
+:host([data-origin='bottom']) .dialog[open] .dialog__content {
+	animation: oe-feedback-up 0.25s ease-out;
+}
+@keyframes oe-feedback-down { from { transform: translateY(-24px); opacity: 0; } }
+@keyframes oe-feedback-up { from { transform: translateY(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+	.dialog .dialog__content { animation: none; }
+}
 `;
 const FORM_LAYOUT_STYLE_ID = 'oe-feedback-layout';
 
@@ -155,6 +174,19 @@ function createFeedback() {
 		style.id = FORM_LAYOUT_STYLE_ID;
 		style.textContent = FORM_LAYOUT_CSS;
 		root.appendChild(style);
+	}
+
+	/**
+	 * Which way the form opens: from the top when its control is in the upper
+	 * half of the viewport (the nav), otherwise from the bottom (the floating
+	 * button). Read by the form stylesheet's `:host([data-origin])` rules.
+	 * @param {HTMLElement | null | undefined} trigger
+	 */
+	function setOrigin(trigger) {
+		const host = document.getElementById(FORM_HOST_ID);
+		if (!host) return;
+		const fromTop = !!trigger && trigger.getBoundingClientRect().top < window.innerHeight / 2;
+		host.dataset.origin = fromTop ? 'top' : 'bottom';
 	}
 
 	/** Re-adding the same listener is a no-op, so this is safe on every open. */
@@ -257,6 +289,7 @@ function createFeedback() {
 			closeForm = close;
 			form.appendToDom();
 			addFormLayout();
+			setOrigin(trigger);
 			form.open();
 			status = 'open';
 		} catch (err) {

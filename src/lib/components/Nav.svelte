@@ -5,6 +5,7 @@
 	import { fly } from 'svelte/transition';
 	import { getNavItems } from '$lib/components/nav/nav-items.js';
 	import { isNonProductionHost } from '$lib/utils/environment.js';
+	import FeedbackIconButton from '$lib/components/feedback/FeedbackIconButton.svelte';
 
 	// The global Nav only shows on windowed pages, so its links to
 	// fullscreen-by-default pages (/facilities) open in windowed mode.
@@ -22,7 +23,7 @@
 	});
 </script>
 
-<header class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid text-base">
+<header class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid text-base" data-main-nav>
 	<div class="max-w-none px-10 md:px-16 flex items-center justify-between h-full">
 		<div
 			class="absolute md:relative flex items-center gap-6"
@@ -130,7 +131,25 @@
 					{/if}
 				{/if}
 			{/each}
+
+			<!-- Desktop: icon-only Feedback right of the last link (About). -->
+			<div class="hidden md:flex items-center">
+				<FeedbackIconButton
+					class="p-1.5 -mx-1.5 rounded-md text-mid-grey hover:text-black hover:bg-light-warm-grey transition-colors cursor-pointer"
+					iconClass="size-[18px]"
+				/>
+			</div>
 		</nav>
+
+		<!-- Mobile: left of the menu toggle; hidden while the menu is open. -->
+		{#if !mobileNavActive}
+			<div class="md:hidden absolute right-[58px] flex items-center">
+				<FeedbackIconButton
+					class="p-1.5 rounded-md text-dark-grey cursor-pointer"
+					iconClass="size-[21px]"
+				/>
+			</div>
+		{/if}
 
 		<button
 			aria-label="Toggle mobile navigation"
