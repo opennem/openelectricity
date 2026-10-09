@@ -1,7 +1,9 @@
 <script>
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { fly } from 'svelte/transition';
+	import { feedback } from '$lib/feedback/feedback.svelte.js';
 	import { portal } from '$lib/actions/portal.js';
 	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 	import { dataTrackerLink, parsedFeatureFlags } from '$lib/stores/app';
@@ -26,6 +28,15 @@
 		...getNavItems($dataTrackerLink, parsedFeatureFlags)
 	]);
 
+	// "Feedback" follows the links when configured. Checked after mount:
+	// the feedback environment is browser-only (see feedback.svelte.js).
+	let feedbackAvailable = $state(false);
+	onMount(() => {
+		feedbackAvailable = feedback.configured;
+	});
+	let feedbackIndex = $derived(feedbackAvailable ? navItems.length : -1);
+	let itemCount = $derived(navItems.length + (feedbackAvailable ? 1 : 0));
+
 	let isOpen = $state(false);
 	let activeIndex = $state(0);
 
@@ -46,6 +57,12 @@
 	function toggleMenu() {
 		if (isOpen) closeMenu();
 		else openMenu();
+	}
+
+	// Close the menu first; focus returns to the trigger when the form closes.
+	function openFeedback() {
+		closeMenu();
+		feedback.open(triggerRef);
 	}
 
 	/** @param {MouseEvent} e */
@@ -81,16 +98,20 @@
 		}
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			activeIndex = (activeIndex + 1) % navItems.length;
+			activeIndex = (activeIndex + 1) % itemCount;
 			return;
 		}
 		if (e.key === 'ArrowUp') {
 			e.preventDefault();
-			activeIndex = (activeIndex - 1 + navItems.length) % navItems.length;
+			activeIndex = (activeIndex - 1 + itemCount) % itemCount;
 			return;
 		}
 		if (e.key === 'Enter') {
 			e.preventDefault();
+			if (activeIndex === feedbackIndex) {
+				openFeedback();
+				return;
+			}
 			const item = navItems[activeIndex];
 			if (item) {
 				closeMenu();
@@ -156,6 +177,22 @@
 					{item.name}
 				</a>
 			{/each}
+			{#if feedbackAvailable}
+				<div class="my-1 border-t border-warm-grey" role="separator"></div>
+				<button
+					type="button"
+					onclick={openFeedback}
+					onmouseenter={() => (activeIndex = feedbackIndex)}
+					disabled={feedback.status === 'loading'}
+					class="block w-full text-left px-4 py-2 text-sm cursor-pointer transition-colors disabled:cursor-wait {activeIndex ===
+					feedbackIndex
+						? 'bg-light-warm-grey'
+						: ''} {feedback.status === 'error' ? 'text-red' : 'text-mid-grey'}"
+					role="menuitem"
+				>
+					{feedback.label}
+				</button>
+			{/if}
 		</div>
 	{/if}
 </div>

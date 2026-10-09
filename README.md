@@ -59,6 +59,10 @@ pnpm run doppler-dev     # runs vite dev with secrets injected from Doppler
 
 `doppler-dev`, `doppler-build`, and `doppler-preview` are maintainer conveniences that wrap their plain counterparts in `doppler run --`. The plain scripts (with a local `.env`) remain the canonical path for contributors and forks — no Doppler account required.
 
+#### User feedback (Sentry, optional)
+
+The "Feedback" controls (a corner button on content pages and the Tracker, and an item in the fullscreen navigation menu) open Sentry's feedback form. They stay hidden unless both `PUBLIC_SENTRY_DSN` and `PUBLIC_FEEDBACK_ENABLED=true` are set, so most contributors can leave them blank. To try the form locally, put a DSN for your own Sentry project in `.env` and set the switch to `true`. Maintainers set both in the Doppler config and in the Cloudflare environment. The SDK loads only when the form is first opened and sends feedback alone — no error, tracing or replay collection (`src/lib/feedback/feedback.svelte.js`).
+
 ## Commands
 
 | Command                    | Description                                                                |

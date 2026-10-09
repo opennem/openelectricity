@@ -10,6 +10,8 @@
 	import Nav from '$lib/components/Nav.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import GlobalBanner from '$lib/components/GlobalBanner.svelte';
+	import FloatingFeedbackButton from '$lib/components/feedback/FloatingFeedbackButton.svelte';
+	import { floatingFeedbackMode } from '$lib/feedback/feedback-context.js';
 	// import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
 	import { showThemeSwitcher } from '$lib/stores/theme';
@@ -53,6 +55,10 @@
 	});
 
 	let currentRoute = $derived(page.url.pathname);
+	// Labelled on content pages, compact on the Tracker; other fullscreen views
+	// and app pages offer feedback from their navigation menu (see
+	// floatingFeedbackMode).
+	let floatingFeedback = $derived(floatingFeedbackMode(currentRoute, isFullscreen));
 	// let isRecordsRoute = $derived(currentRoute.includes('/records'));
 	// let feedbackButtonRef = $state();
 	// let feedbackButtonPosition = $derived(feedbackButtonRef?.getBoundingClientRect());
@@ -181,6 +187,10 @@
 	<div class={chromeMobileHidden ? 'max-tablet:hidden' : ''}>
 		<Footer />
 	</div>
+{/if}
+
+{#if floatingFeedback}
+	<FloatingFeedbackButton compact={floatingFeedback === 'compact'} />
 {/if}
 
 {#if updated.current}

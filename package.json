@@ -16,6 +16,7 @@
 		"@resvg/resvg-js": "^2.6.2",
 		"@sanity/client": "^7.20.0",
 		"@sanity/image-url": "^2.1.1",
+		"@sentry/browser": "^11.5.0",
 		"@svelte-put/clickoutside": "^4.0.0",
 		"@svelte-put/shortcut": "^4.1.0",
 		"@sveltejs/adapter-cloudflare": "^7.2.8",

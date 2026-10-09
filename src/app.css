@@ -413,6 +413,12 @@
 	background-size: 24px 24px;
 }
 
+/* Sentry's feedback form renders in a shadow root under this host; its
+   styles read the font from this custom property. */
+#sentry-feedback {
+	--font-family: 'DM Sans', sans-serif;
+}
+
 /* The dotted grid behind fullscreen pages. */
 @utility gridline-bg {
 	background-image: radial-gradient(circle, #d5d4d1 1px, transparent 1px);
