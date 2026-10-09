@@ -18,16 +18,10 @@
  *  - OE also returns a net `battery` series (= discharging − charging) alongside
  *    the charging/discharging split; we drop it to avoid double-counting.
  */
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { oeClient } from '$lib/server/oe-client.js';
 import { transformOeToStatsData } from '$lib/oe-api/transform';
 import { processPower7d } from '$lib/server/tracker/process-power-7d';
 import { NEM_OFFSET_MS } from '$lib/flows/nem-time.js';
-
-const oe = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STEP_MS = 5 * 60 * 1000; // OE fetch interval (5m)
@@ -107,7 +101,7 @@ export async function GET({ url }) {
 	const now = Date.now();
 
 	try {
-		const { response } = await oe.getNetworkData(
+		const { response } = await oeClient.getNetworkData(
 			/** @type {any} */ ('NEM'),
 			/** @type {any} */ (['power']),
 			/** @type {any} */ ({

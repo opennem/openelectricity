@@ -1,10 +1,5 @@
-import { OpenElectricityClient, NoDataFound } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
+import { NoDataFound } from 'openelectricity';
+import { oeClient } from '$lib/server/oe-client.js';
 
 // `mode=live` is the latest 5-min power reading (MW). Restricted to NEM
 // because WEM publishes with a 12+ h lag, which makes "live" misleading.
@@ -38,7 +33,7 @@ let facilitiesCache = null;
 async function loadFacilities() {
 	if (facilitiesCache && facilitiesCache.expires > Date.now()) return facilitiesCache;
 
-	const { response } = await client.getFacilities({
+	const { response } = await oeClient.getFacilities({
 		status_id: /** @type {any} */ (['operating', 'committed'])
 	});
 
@@ -86,7 +81,7 @@ function chunk(arr, size) {
 async function fetchChunk(network, codes, dateStart, metric, interval) {
 	if (!codes.length) return [];
 	try {
-		const r = await client.getFacilityData(network, codes, /** @type {any} */ ([metric]), {
+		const r = await oeClient.getFacilityData(network, codes, /** @type {any} */ ([metric]), {
 			interval: /** @type {any} */ (interval),
 			dateStart
 		});

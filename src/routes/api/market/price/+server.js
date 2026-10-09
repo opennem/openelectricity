@@ -1,10 +1,4 @@
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
+import { oeClient } from '$lib/server/oe-client.js';
 
 export async function GET({ url, setHeaders }) {
 	const networkCode = /** @type {import('openelectricity').NetworkCode} */ (
@@ -24,7 +18,7 @@ export async function GET({ url, setHeaders }) {
 			network_region: networkRegion
 		};
 
-		const { response } = await client.getMarket(
+		const { response } = await oeClient.getMarket(
 			networkCode,
 			[/** @type {import('openelectricity').MarketMetric} */ ('price')],
 			options

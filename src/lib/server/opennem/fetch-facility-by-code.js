@@ -1,9 +1,11 @@
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 
 /**
- * Fetch a single facility by code via the raw OE API. The current SDK's
- * getFacilities() doesn't expose a facility_code filter, but the underlying
- * endpoint accepts it. OE returns native unit statuses, including commissioning.
+ * Fetch a single facility by code via the raw OE API — the one OE call that
+ * bypasses `$lib/server/oe-client.js`. The SDK's getFacilities() (as of 0.10.0)
+ * has no facility_code filter and its request() is private, but the endpoint
+ * accepts the filter; move this onto the client once the SDK exposes it. OE
+ * returns native unit statuses, including commissioning.
  *
  * @param {string} code
  * @returns {Promise<any | null>}

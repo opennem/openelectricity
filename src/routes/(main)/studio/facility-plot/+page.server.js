@@ -5,13 +5,7 @@
  * for the Observable Plot multi-chart sync demo.
  */
 
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
+import { oeClient } from '$lib/server/oe-client.js';
 
 const FACILITY_CODES = ['BAYSW', 'GULLRGWF'];
 
@@ -21,7 +15,7 @@ const FACILITY_CODES = ['BAYSW', 'GULLRGWF'];
  */
 export async function load({ fetch }) {
 	try {
-		const { response: facilitiesResponse } = await client.getFacilities({
+		const { response: facilitiesResponse } = await oeClient.getFacilities({
 			status_id: ['operating']
 		});
 

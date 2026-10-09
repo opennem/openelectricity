@@ -1,5 +1,4 @@
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { oeClient } from '$lib/server/oe-client.js';
 
 import { transformOeToStatsData } from './transform';
 import { fetchLegacyOpenNemFueltechStats } from './fetch-legacy-energy.server';
@@ -9,11 +8,6 @@ import {
 	lastCompleteMonthIso,
 	trimStatsDataToLastDate
 } from './renewables-month.js';
-
-const oe = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 // Full available history in a single request — the OE API no longer caps the
 // 1M-interval range (previously 10000 days), and NEM data starts Jan 1999.
@@ -71,22 +65,22 @@ export async function fetchRenewablesInput(fetchFn) {
 			fueltechEnergyRes,
 			legacyFueltechStats
 		] = await Promise.all([
-			oe.getMarket(
+			oeClient.getMarket(
 				/** @type {any} */ (calls[0].network),
 				/** @type {any} */ (calls[0].metrics),
 				/** @type {any} */ (calls[0].options)
 			),
-			oe.getMarket(
+			oeClient.getMarket(
 				/** @type {any} */ (calls[1].network),
 				/** @type {any} */ (calls[1].metrics),
 				/** @type {any} */ (calls[1].options)
 			),
-			oe.getNetworkData(
+			oeClient.getNetworkData(
 				/** @type {any} */ (calls[2].network),
 				/** @type {any} */ (calls[2].metrics),
 				/** @type {any} */ (calls[2].options)
 			),
-			oe.getNetworkData(
+			oeClient.getNetworkData(
 				/** @type {any} */ (calls[3].network),
 				/** @type {any} */ (calls[3].metrics),
 				/** @type {any} */ (calls[3].options)
@@ -161,17 +155,17 @@ export async function fetchRenewablesInput(fetchFn) {
 export async function fetchHomepageRenewablesInput() {
 	try {
 		const [generationRenewableRes, demandGrossRes, fueltechEnergyRes] = await Promise.all([
-			oe.getMarket(
+			oeClient.getMarket(
 				/** @type {any} */ ('NEM'),
 				/** @type {any} */ (['generation_renewable_energy']),
 				/** @type {any} */ ({ interval: '1M', dateStart: RENEWABLES_DATE_START })
 			),
-			oe.getMarket(
+			oeClient.getMarket(
 				/** @type {any} */ ('NEM'),
 				/** @type {any} */ (['demand_gross_energy']),
 				/** @type {any} */ ({ interval: '1M', dateStart: RENEWABLES_DATE_START })
 			),
-			oe.getNetworkData(
+			oeClient.getNetworkData(
 				/** @type {any} */ ('NEM'),
 				/** @type {any} */ (['energy']),
 				/** @type {any} */ ({

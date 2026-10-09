@@ -4,17 +4,11 @@
  * facilities have a Sanity photo vs fall back to the branded card.
  */
 
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { oeClient } from '$lib/server/oe-client.js';
 import { client as sanityClient } from '$lib/sanity';
 
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
-
 export async function load() {
-	const facilitiesPromise = client
+	const facilitiesPromise = oeClient
 		.getFacilities()
 		.then((r) =>
 			(r.response.data || [])

@@ -1,11 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { OpenElectricityClient, NoDataFound } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
+import { NoDataFound } from 'openelectricity';
+import { oeClient } from '$lib/server/oe-client.js';
 
 export async function GET({ params, url, setHeaders }) {
 	const { code } = params;
@@ -60,7 +55,7 @@ export async function GET({ params, url, setHeaders }) {
 			options.dateEnd = dateEnd;
 		}
 
-		const { response } = await client.getFacilityData(
+		const { response } = await oeClient.getFacilityData(
 			networkId,
 			code,
 			/** @type {any} */ (metricParams),

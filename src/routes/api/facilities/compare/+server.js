@@ -1,11 +1,6 @@
-import { OpenElectricityClient, NoDataFound } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { NoDataFound } from 'openelectricity';
+import { oeClient } from '$lib/server/oe-client.js';
 import { apiRangeLimitError } from '$lib/oe-api/data-limits.js';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 const VALID_INTERVALS = new Set(['5m', '1h', '1d', '7d', '1M', '3M', '1y']);
 const VALID_METRICS = new Set(['power', 'energy']);
@@ -51,7 +46,7 @@ export async function GET({ url, setHeaders }) {
 	if ('error' in query) return Response.json({ error: query.error }, { status: 400 });
 
 	try {
-		const { response } = await client.getFacilityData(
+		const { response } = await oeClient.getFacilityData(
 			/** @type {import('openelectricity').NetworkCode} */ (query.networkId),
 			query.facilityCodes,
 			[/** @type {'power'|'energy'} */ (query.metric)],

@@ -9,6 +9,8 @@ near the route.
 
 - Use the existing `src/routes/api/facilities/[code]/power/+server.js` convention
   as the closest reference.
+- Call OE through the shared `oeClient` from `$lib/server/oe-client.js`; do not
+  construct another `OpenElectricityClient` or fetch the API URL directly.
 - Validate parameters and valid metric/interval combinations before calling OE.
 - Add suitable `Cache-Control` headers (five minutes is a reasonable default
   for 5-minute data; longer for aggregates).

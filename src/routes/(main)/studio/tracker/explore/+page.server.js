@@ -1,16 +1,10 @@
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
+import { oeClient } from '$lib/server/oe-client.js';
 
 export async function load({ setHeaders }) {
 	/** @type {any[]} */
 	let facilities = [];
 	try {
-		const { response } = await client.getFacilities();
+		const { response } = await oeClient.getFacilities();
 		facilities = (response.data ?? [])
 			.map((facility) => ({
 				code: facility.code,

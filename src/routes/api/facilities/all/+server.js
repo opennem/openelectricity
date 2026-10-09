@@ -10,15 +10,9 @@
  */
 
 import { json } from '@sveltejs/kit';
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { oeClient } from '$lib/server/oe-client.js';
 import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
 import { PLAY_STATUSES } from '$lib/facilities/filters.js';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 // Shares the page load's keyed server cache, so a play fetch and a page load
 // with the same statuses serve each other within the TTL.
@@ -31,7 +25,7 @@ export async function GET({ setHeaders }) {
 		let facilitiesResponse = null;
 
 		try {
-			const { response } = await client.getFacilities({
+			const { response } = await oeClient.getFacilities({
 				fueltech_id: [],
 				status_id: PLAY_STATUSES
 			});

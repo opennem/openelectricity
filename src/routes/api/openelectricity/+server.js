@@ -1,11 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-
-let client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
+import { oeClient } from '$lib/server/oe-client.js';
 
 export async function GET({ url, setHeaders }) {
 	let { searchParams } = url;
@@ -69,7 +63,7 @@ export async function GET({ url, setHeaders }) {
 	if (dataType === 'network') {
 		let networkMetric = /** @type {import('openelectricity').DataMetric} */ (metric);
 		let start = performance.now();
-		res = await client.getNetworkData(networkId, [networkMetric], clientOptions);
+		res = await oeClient.getNetworkData(networkId, [networkMetric], clientOptions);
 		let end = performance.now();
 		let responseTime = end - start;
 
@@ -77,7 +71,7 @@ export async function GET({ url, setHeaders }) {
 	} else {
 		let marketMetric = /** @type {import('openelectricity').MarketMetric} */ (metric);
 		let start = performance.now();
-		res = await client.getMarket(networkId, [marketMetric], clientOptions);
+		res = await oeClient.getMarket(networkId, [marketMetric], clientOptions);
 		let end = performance.now();
 		let responseTime = end - start;
 

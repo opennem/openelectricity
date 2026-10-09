@@ -1,11 +1,5 @@
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
 import { client as sanityClient } from '$lib/sanity';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 const SANITY_FACILITY_QUERY = `*[_type == "facility" && code == $code][0]{
 	_id, code, name, website, wikipedia, wikidata_id, osm_way_id, npiId, location,
@@ -40,13 +34,9 @@ export async function load({ params }) {
 	}
 
 	// Fetch from OE API and Sanity CMS in parallel
-	// Note: client.getFacilities() doesn't support facility_code filtering,
-	// so we use client.request() to access the endpoint directly
 	const [oeResult, sanityFacility] = await Promise.all([
-		client
-			.request(`/facilities/?facility_code=${code}`)
-			.then((json) => {
-				const facility = json?.data?.[0];
+		fetchFacilityByCode(code)
+			.then((facility) => {
 				if (!facility) return null;
 				return {
 					...facility,

@@ -28,9 +28,8 @@
  * See $lib/server/facilities-server-cache.js for caching implementation
  */
 
-import { OpenElectricityClient } from 'openelectricity';
+import { oeClient } from '$lib/server/oe-client.js';
 import { redirect } from '@sveltejs/kit';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
 import { expandFuelTechs } from './_utils/fuel-tech-map.js';
 import { fetchFacilityPhotos } from './_utils/fetch-facility-photos.js';
@@ -45,11 +44,6 @@ import { parseSelection, isDefaultSelection } from '$lib/facilities/filter-optio
 // Codes with a committed `static/og/facility/<code>.jpg`; lets the Tiles view show
 // the build-generated card and fall back to a live card for the rest.
 import cardCodes from '$lib/server/og/facility-card-codes.json';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 /**
  * @param {any[] | null} facilities
@@ -117,7 +111,7 @@ export async function load({ url }) {
 		let facilitiesResponse = null;
 
 		try {
-			const { response } = await client.getFacilities({
+			const { response } = await oeClient.getFacilities({
 				fueltech_id: fuelTechIds,
 				status_id: statuses
 			});

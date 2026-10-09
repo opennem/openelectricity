@@ -1,10 +1,5 @@
-import { OpenElectricityClient, NoDataFound } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
+import { NoDataFound } from 'openelectricity';
+import { oeClient } from '$lib/server/oe-client.js';
 
 const CATEGORIES = /** @type {const} */ ([
 	'air_pollutant',
@@ -30,7 +25,7 @@ const CATEGORIES = /** @type {const} */ ([
  */
 async function fetchCategory(category) {
 	try {
-		const r = await client.getFacilityPollution({
+		const r = await oeClient.getFacilityPollution({
 			pollutant_category: /** @type {any} */ ([category])
 		});
 		return r.response.data ?? [];

@@ -4,14 +4,8 @@
  * Fetches facility data from OE API and Sanity CMS for side-by-side comparison.
  */
 
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { oeClient } from '$lib/server/oe-client.js';
 import { client as sanityClient } from '$lib/sanity';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 const SANITY_FACILITY_QUERY = `*[_type == "facility" && code == $code][0]{
 	_id, code, name, website, wikipedia, wikidata_id, osm_way_id, npiId, location,
@@ -68,7 +62,7 @@ export async function load({ url, fetch }) {
 	};
 
 	try {
-		const { response: facilitiesResponse } = await client.getFacilities({
+		const { response: facilitiesResponse } = await oeClient.getFacilities({
 			status_id: ['operating']
 		});
 

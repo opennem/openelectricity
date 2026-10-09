@@ -1,15 +1,9 @@
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { oeClient } from '$lib/server/oe-client.js';
 import {
 	hasBidirectionalBattery,
 	filterDerivedBatteryUnits,
 	getFacilityCapacity
 } from '$lib/facilities/units.js';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 /**
  * @typedef {Object} FacilityListItem
@@ -29,7 +23,7 @@ const client = new OpenElectricityClient({
 let facilitiesPromise = null;
 function getFacilitiesList() {
 	if (!facilitiesPromise) {
-		facilitiesPromise = client
+		facilitiesPromise = oeClient
 			.getFacilities()
 			.then((r) =>
 				(r.response.data || [])

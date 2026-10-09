@@ -167,8 +167,8 @@ importers:
         specifier: ^2.3.0
         version: 2.3.0
       openelectricity:
-        specifier: ^0.9.1
-        version: 0.9.1
+        specifier: ^0.10.0
+        version: 0.10.0
       postcss:
         specifier: ^8.5.9
         version: 8.5.14
@@ -3313,8 +3313,8 @@ packages:
     resolution: {integrity: sha512-MVHddDVweXZF3awtlAS+6pgKLlm/JgxZ90+/NBurBoQctVOOB/zDdVjcyPzQ+0laDGbsWgrRkflI65sQeOgT9Q==}
     engines: {node: '>=8'}
 
-  openelectricity@0.9.1:
-    resolution: {integrity: sha512-XFoQI/fHzIBP6PaT/2WFwSQphjVR2Bjyv2+oRTFf/Tux+MaH5eHZ5nn3YyVh1tjFfwT1CZy0tMpTBWekkiHRFg==}
+  openelectricity@0.10.0:
+    resolution: {integrity: sha512-bEKIDLKisPpXhSXE/GSU94LYkelxbcxMwPiz0cgxoeo3i4L8xk8VLTyYbNTXSxyMkU+mWcZaUmaovNK7tmK7Ew==}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -7289,7 +7289,7 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openelectricity@0.9.1:
+  openelectricity@0.10.0:
     dependencies:
       dayjs: 1.11.20
 

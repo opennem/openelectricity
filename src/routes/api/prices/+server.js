@@ -1,5 +1,5 @@
-import { OpenElectricityClient, NoDataFound } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { NoDataFound } from 'openelectricity';
+import { oeClient } from '$lib/server/oe-client.js';
 import { createSwrCache } from '$lib/server/swr-cache';
 import {
 	collectRegionSeriesAligned,
@@ -7,11 +7,6 @@ import {
 	trimToLastCompleteRow
 } from '$lib/flows/derive-pairwise.js';
 import { HOURS_MS, nemNaiveRange } from '$lib/flows/nem-time.js';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 /** One dispatch-ish interval — matches the route's public max-age. */
 const FRESH_MS = 5 * 60 * 1000;
@@ -35,7 +30,7 @@ async function fetchPricesPayload() {
 	const { dateStart, dateEnd } = nemNaiveRange(HOURS_MS);
 
 	try {
-		const { response } = await client.getMarket('NEM', ['price'], {
+		const { response } = await oeClient.getMarket('NEM', ['price'], {
 			interval: '5m',
 			primaryGrouping: 'network_region',
 			dateStart,

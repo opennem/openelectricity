@@ -1,11 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { OpenElectricityClient, NoDataFound } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
+import { NoDataFound } from 'openelectricity';
+import { oeClient } from '$lib/server/oe-client.js';
 
 const DEFAULT_CATEGORIES = ['air_pollutant', 'water_pollutant', 'heavy_metal', 'organic'];
 
@@ -21,7 +16,7 @@ const DEFAULT_CATEGORIES = ['air_pollutant', 'water_pollutant', 'heavy_metal', '
  */
 async function fetchCategory(code, category) {
 	try {
-		const r = await client.getFacilityPollution({
+		const r = await oeClient.getFacilityPollution({
 			facility_code: [code],
 			pollutant_category: /** @type {any} */ ([category])
 		});

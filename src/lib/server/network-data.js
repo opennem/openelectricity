@@ -6,8 +6,8 @@
  * `/api/admin/network-cache/*` inspects and refreshes the same cache.
  */
 
-import { OpenElectricityClient, NoDataFound } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { NoDataFound } from 'openelectricity';
+import { oeClient } from '$lib/server/oe-client.js';
 import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 import { MARKET_METRIC_NAMES } from '$lib/components/charts/network/market-metric-names.js';
 import { apiRangeLimitError } from '$lib/oe-api/data-limits.js';
@@ -19,11 +19,6 @@ import {
 } from '$lib/server/network-cache-registry.js';
 import { auUpstreamRanges, mergeAuResponses } from '$lib/server/network-data-au.js';
 import { isHistoricalWindow } from '$lib/utils/date-range.js';
-
-const client = new OpenElectricityClient({
-	apiKey: PUBLIC_OE_API_KEY,
-	baseUrl: PUBLIC_OE_API_URL
-});
 
 export const NETWORK_DATA_KEY_PREFIX = 'https://edge-cache.openelectricity.org.au/network-data-v1';
 
@@ -334,7 +329,7 @@ async function fetchNetworkResponse({
 			network_region: networkRegion
 		};
 		if (primaryGrouping === 'network_region') options.primaryGrouping = 'network_region';
-		const { response } = await client.getMarket(networkId, marketMetrics, options);
+		const { response } = await oeClient.getMarket(networkId, marketMetrics, options);
 		return response;
 	}
 
@@ -347,7 +342,7 @@ async function fetchNetworkResponse({
 		secondaryGrouping: ['fueltech']
 	};
 	if (primaryGrouping === 'network_region') options.primaryGrouping = 'network_region';
-	const generationRequest = client
+	const generationRequest = oeClient
 		.getNetworkData(networkId, dataMetricsFor(metric, interval), options)
 		.then((result) => result.response);
 
@@ -367,7 +362,7 @@ async function fetchNetworkResponse({
 
 	// Flow availability must not make the core generation chart unavailable.
 	// A missing or failed flow leg degrades to the generation-only response.
-	const flowRequest = client
+	const flowRequest = oeClient
 		.getMarket('NEM', MARKET_METRIC_NAMES[flowMetric], flowOptions)
 		.then((result) => result?.response ?? null)
 		.catch((err) => {
