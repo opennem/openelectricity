@@ -138,8 +138,17 @@ describe('tracker URLs', () => {
 			emissionsMode: 'intensity',
 			overlays: [],
 			tablePanelOpen: true,
+			rooftopForecast: true,
 			fullscreen: true
 		});
+	});
+
+	it('shows the rooftop forecast by default and writes only its opt-out', () => {
+		const shown = roundTrip({ region: '_all', rooftopForecast: true });
+		expect(shown.url.searchParams.has('forecast')).toBe(false);
+		const hidden = roundTrip({ region: '_all', rooftopForecast: false });
+		expect(hidden.url.searchParams.get('forecast')).toBe('0');
+		expect(hidden.parsed.rooftopForecast).toBe(false);
 	});
 
 	it('round trips non-default navigation state', () => {

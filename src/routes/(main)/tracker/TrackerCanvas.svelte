@@ -38,6 +38,8 @@
 	} from './tracker-overlays.js';
 	import { formatTrackerPercentageValue } from './table-format.js';
 	import { createTrackerProviders } from './tracker-providers.svelte.js';
+	import { createRooftopForecast } from './rooftop-forecast.svelte.js';
+	import { hasRooftopForecast } from './rooftop-forecast.js';
 	import { createTableColumnsPreference } from './table-columns.svelte.js';
 	import { chartTableColumn } from './table-columns.js';
 	import { createTrackerTable } from './tracker-table.svelte.js';
@@ -159,6 +161,21 @@
 		needsWindowMetrics: () => showMetrics
 	});
 	const { marketData, demandData, curtailmentData } = providers;
+	/** AEMO's rooftop forecast tops up the lagging rooftop band to the latest
+	 *  data time: NEM scopes, absolute power views. */
+	let forecastAvailable = $derived(
+		hasRooftopForecast(region) && !energyMetric && !showContributions
+	);
+	/** Only while the timeline follows now; a paused window has no lag to fill. */
+	let forecastShown = $derived(
+		forecastAvailable && session.selection.rooftopForecast && session.following
+	);
+	const rooftopForecast = createRooftopForecast({
+		region: () => region,
+		enabled: () => forecastShown,
+		clock: () => session.clockMs,
+		timeZone: () => timeZone
+	});
 	const data = createTrackerData({
 		session: untrack(() => session),
 		priceMetric: () => priceMetric,
@@ -561,6 +578,7 @@
 				chartHeightPx={heightPx}
 				generationUnitOptions
 				interpolateRooftop
+				rooftopForecast={forecastShown ? rooftopForecast.rows : null}
 				dataTransform={session.selection.generationTransform}
 				ondatatransformchange={(value) => session.select('generationTransform', value)}
 				createProportionContext={chartContributionContext}
@@ -723,6 +741,11 @@
 			oncurtailmenttoggle={toggleCurtailment}
 			ondemandlinetoggle={(exclusive) => toggleOverlay('demand', exclusive)}
 			onrenewableslinetoggle={(exclusive) => toggleOverlay('renewables', exclusive)}
+			rooftopForecast={forecastAvailable
+				? { active: session.selection.rooftopForecast, runTime: rooftopForecast.runTime, timeZone }
+				: null}
+			onforecasttoggle={() =>
+				session.select('rooftopForecast', !session.selection.rooftopForecast, 'replace')}
 			onshowall={showAllSeries}
 			onclose={dock.close}
 		/>

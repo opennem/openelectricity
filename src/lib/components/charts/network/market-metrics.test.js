@@ -18,8 +18,10 @@ import {
 describe('market metric config', () => {
 	const publicMetrics = Object.keys(MARKET_METRIC_NAMES);
 
-	// Price renders through NetworkChart's dedicated price arm.
-	const UNCHARTED_METRICS = ['price'];
+	// Price renders through NetworkChart's dedicated price arm; the rooftop
+	// forecast is a Tracker overlay past now, which a market chart (clamped to
+	// now) could never show.
+	const UNCHARTED_METRICS = ['price', 'rooftop_forecast'];
 
 	it('covers every charted public metric', () => {
 		const missing = publicMetrics.filter(

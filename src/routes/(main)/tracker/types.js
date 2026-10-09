@@ -54,6 +54,8 @@
  * @property {EmissionsMode} emissionsMode
  * @property {TrackerOverlay[]} overlays
  * @property {boolean} tablePanelOpen
+ * @property {boolean} rooftopForecast - AEMO's rooftop solar forecast topping up the
+ *   lagging rooftop band to the latest data time (default on; NEM scopes in power mode only)
  * @property {boolean} fullscreen
  */
 
@@ -147,6 +149,9 @@
  * @property {(id: string, exclusive?: boolean) => void} [oncurtailmenttoggle]
  * @property {(exclusive?: boolean) => void} [ondemandlinetoggle]
  * @property {(exclusive?: boolean) => void} [onrenewableslinetoggle]
+ * @property {{ active: boolean, runTime: number | null, timeZone: string } | null} [rooftopForecast]
+ *   - The rooftop solar forecast toggle row, where the scope has a forecast
+ * @property {() => void} [onforecasttoggle]
  */
 
 /**

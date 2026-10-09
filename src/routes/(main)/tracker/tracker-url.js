@@ -29,6 +29,7 @@
  * - `overlay`   — comma-separated generation-chart overlays (demand,
  *                 renewables, curtailment-solar, curtailment-wind)
  * - `table`     — `0` when the fuel-tech panel is closed
+ * - `forecast`  — `0` hides the rooftop solar forecast (shown by default)
  * - `fullscreen`— `false` opts out of the fullscreen chrome
  * - `compare-*` — Compare (`/tracker/compare`) controls, see
  *                 `region-comparison.js`: `compare-display=heatmap` for the
@@ -181,6 +182,7 @@ export function normaliseTrackerState(value) {
 		emissionsMode: normaliseEmissionsMode(value.emissionsMode),
 		overlays: normaliseTrackerOverlays(value.overlays),
 		tablePanelOpen: value.tablePanelOpen !== false,
+		rooftopForecast: value.rooftopForecast !== false,
 		fullscreen: value.fullscreen !== false
 	};
 }
@@ -215,6 +217,7 @@ export function parseTrackerUrl(params, context) {
 		emissionsMode: params.get('emissions'),
 		overlays: (params.get('overlay') ?? '').split(','),
 		tablePanelOpen: params.get('table') !== '0',
+		rooftopForecast: params.get('forecast') !== '0',
 		fullscreen: params.get('fullscreen') !== 'false'
 	});
 }
@@ -265,6 +268,7 @@ export function applyTrackerUrl(url, state) {
 	set('emissions', next.emissionsMode === 'volume' ? 'volume' : null);
 	set('overlay', next.overlays.length ? next.overlays.join(',') : null);
 	set('table', next.tablePanelOpen ? null : '0');
+	set('forecast', next.rooftopForecast ? null : '0');
 	// Table columns are a localStorage preference now; drop the retired param.
 	params.delete('columns');
 	// The breakdown draws every technology, every day, with no spot price, and

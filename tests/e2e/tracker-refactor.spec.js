@@ -153,8 +153,8 @@ for (const group of ['detailed', 'simple']) {
 			`/tracker/timeline?start=${start}&end=${end}&interval=5m&group=${group}&hidden=${hidden}&table=1`
 		);
 		const note = page.locator('#rooftop-interpolation-note');
-		await expect(note).toContainText('linearly interpolated');
-		await expect(note).toContainText('retain reported values');
+		await expect(note).toContainText('interpolate between readings');
+		await expect(note).toContainText('chart only');
 		const solarRow = page
 			.getByTestId('fuel-tech-row')
 			.filter({ hasText: group === 'detailed' ? 'Rooftop' : 'Solar' })

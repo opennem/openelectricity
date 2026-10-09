@@ -64,6 +64,20 @@ describe('parseNetworkDataParams', () => {
 		expect(parse('region=au&metric=price')).toEqual({
 			error: 'A national spot price is not available.'
 		});
+		for (const region of ['au', 'wem']) {
+			expect(parse(`region=${region}&metric=rooftop_forecast&interval=30m`)).toEqual({
+				error: 'Rooftop solar forecasts are only available for the NEM.'
+			});
+		}
+	});
+
+	it('accepts the rooftop forecast on its native 30m grain with a future end', () => {
+		const result = parse(
+			'region=sa1&metric=rooftop_forecast&interval=30m&date_start=2026-10-09T10:00:00&date_end=2026-10-10T00:30:00'
+		);
+		expect(result).toMatchObject({
+			params: { metric: 'rooftop_forecast', interval: '30m', networkRegion: 'SA1' }
+		});
 	});
 
 	it('rejects over-wide fine-grained ranges via the API limits', () => {

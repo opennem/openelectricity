@@ -26,6 +26,7 @@
 		DEMAND_LINE_COLOUR,
 		RENEWABLES_LINE_COLOUR
 	} from './tracker-overlays.js';
+	import { FORECAST_COLOUR, FORECAST_LABEL, formatRunTime } from './rooftop-forecast.js';
 	import {
 		EMPTY_CELL,
 		energyDisplayPrefix,
@@ -132,7 +133,9 @@
 		onunitchange,
 		oncurtailmenttoggle,
 		ondemandlinetoggle,
-		onrenewableslinetoggle
+		onrenewableslinetoggle,
+		rooftopForecast = null,
+		onforecasttoggle
 	} = $props();
 
 	let scrollLeft = $state(0);
@@ -322,6 +325,22 @@
 	let sourceRows = $derived(rows.filter((row) => !row.isLoad).map(fuelTechRow));
 	let loadRows = $derived(rows.filter((row) => row.isLoad).map(fuelTechRow));
 	let curtailmentToggleRows = $derived(curtailmentRows.map(curtailmentRow));
+	/** The forecast has no reported values, so its row is a toggle only. */
+	let forecastToggleRows = $derived(
+		rooftopForecast
+			? [
+					{
+						key: 'rooftop-forecast',
+						label: FORECAST_LABEL,
+						active: rooftopForecast.active,
+						activate: () => onforecasttoggle?.(),
+						swatch: /** @type {Swatch} */ ({ kind: 'solid', colour: FORECAST_COLOUR }),
+						cells: emptyCells,
+						testId: 'rooftop-forecast-row'
+					}
+				]
+			: []
+	);
 	let summaryRows = $derived(
 		overlaySummary
 			? [
@@ -349,7 +368,13 @@
 
 	/** The table's bottom row, where a focused column's outline closes. */
 	let lastRowKey = $derived(
-		[...sourceRows, ...loadRows, ...curtailmentToggleRows, ...summaryRows].at(-1)?.key
+		[
+			...sourceRows,
+			...loadRows,
+			...curtailmentToggleRows,
+			...forecastToggleRows,
+			...summaryRows
+		].at(-1)?.key
 	);
 
 	/** ⌘/Ctrl-activation solos a row instead of toggling it.
@@ -607,6 +632,7 @@
 			{@render section('Sources', sourceRows)}
 			{@render section('Loads', loadRows)}
 			{@render section('Curtailment', curtailmentToggleRows)}
+			{@render section('Forecast', forecastToggleRows)}
 
 			{#if summaryRows.length}
 				<tbody class="[&>tr:first-child>td]:border-t-2 [&>tr:first-child>td]:border-t-dark-grey">
@@ -622,24 +648,30 @@
 
 	<!-- Outside the table: a colspan footnote would scroll with the strip. -->
 	<TableFootnotes>
-		{#if showRooftopNote}
-			<li id="rooftop-interpolation-note">
-				Rooftop solar: 5-minute charts use linearly interpolated half-hour readings. Tables,
-				metrics, comparisons and exports retain reported values.
-			</li>
-		{/if}
 		<li>
 			{#if contributionMode === 'demand'}
-				Gross-demand shares may not total 100% due to losses and imports.
+				Gross-demand shares may not total 100% (losses and imports).
 			{:else}
 				Generation shares exclude loads and imports.
 			{/if}
 		</li>
-		<li>Emissions intensity: each technology's emissions divided by its generation.</li>
+		<li>Emissions intensity: each technology's emissions ÷ its generation.</li>
+		{#if showRooftopNote || rooftopForecast?.active}
+			<li id="rooftop-interpolation-note">
+				Rooftop solar is reported half-hourly, up to 30 minutes late.
+				{#if showRooftopNote}
+					5-minute charts interpolate between readings (chart only).
+				{/if}
+				{#if rooftopForecast?.active}
+					AEMO's forecast{rooftopForecast.runTime !== null
+						? ` (issued ${formatRunTime(rooftopForecast.runTime, rooftopForecast.timeZone)})`
+						: ''} fills in until the next reading.
+				{/if}
+			</li>
+		{/if}
 		{#if showPartialNote}
 			<li id={PARTIAL_NOTE_ID}>
-				* Covers only the periods with market value or emissions data: some periods in this window
-				have generation without them yet.
+				* Excludes periods whose market value or emissions data hasn't arrived yet.
 			</li>
 		{/if}
 		{#each notes as note (note)}

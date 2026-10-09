@@ -33,5 +33,8 @@ export const MARKET_METRIC_NAMES = {
 	// Renewables-share inputs (homepage methodology: renewables ÷ gross demand).
 	// Fetched headlessly for the tracker's metrics grid — never charted directly.
 	renewables: ['generation_renewable', 'demand_gross'],
-	renewables_energy: ['generation_renewable_energy', 'demand_gross_energy']
+	renewables_energy: ['generation_renewable_energy', 'demand_gross_energy'],
+	// AEMO's rooftop PV forecast (NEM only, native 30m, ~8 days ahead) — the
+	// one metric whose window may end in the future.
+	rooftop_forecast: ['solar_rooftop_forecast']
 };

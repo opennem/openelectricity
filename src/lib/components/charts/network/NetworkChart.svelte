@@ -33,6 +33,7 @@
 	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 	import { processNetworkData } from './process-network-data.js';
 	import { interpolateRooftopPower } from './rooftop-interpolation.js';
+	import { topUpRooftopPower } from './rooftop-top-up.js';
 	import {
 		processEmissionsIntensity,
 		selectIntensityComponents,
@@ -92,6 +93,9 @@
 	 *   the largest visible positive stack reaches six MWh digits.
 	 * @property {boolean} [useDivergingStack] - Stack positive/negative independently
 	 * @property {boolean} [interpolateRooftop] - Interpolate repeated rooftop power for 5m rendering only; snapshots retain reported values
+	 * @property {Array<{ time: number, value: number }> | null} [rooftopForecast] - Forecast
+	 *   slots that top up rooftop power after its latest reading, up to the newest
+	 *   row, in both the chart and the published snapshot. Null when off
 	 * @property {import('../v2/ChartOptions.svelte.js').DataTransformType} [dataTransform] - Optional controlled transform; omitted consumers keep local options
 	 * @property {(value: import('../v2/ChartOptions.svelte.js').DataTransformType) => void} [ondatatransformchange] - User choices only, not restoration
 	 * @property {(rows: TimeSeriesData[], names: string[]) => import('../v2/ChartStore.svelte.js').ProportionContext} [createProportionContext] - Optional display-grain percentage calculation
@@ -162,6 +166,7 @@
 		generationUnitOptions = false,
 		useDivergingStack = false,
 		interpolateRooftop = false,
+		rooftopForecast = null,
 		dataTransform,
 		ondatatransformchange,
 		createProportionContext,
@@ -295,12 +300,16 @@
 			loadsToInvert: panelKind === 'emissions' ? [] : loadGroupsToInvert,
 			getColour: getFuelTechColour,
 			metricFilter: targetMetric,
-			retainRooftopPower: interpolateRooftop && targetMetric === 'power' && targetInterval === '5m',
+			retainRooftopPower:
+				targetMetric === 'power' &&
+				((interpolateRooftop && targetInterval === '5m') || topsUpRooftop),
 			networkTimezone: tz
 		};
 		return (/** @type {any} */ resp) => processNetworkData(resp, cfg);
 	}
 
+	// A boolean, so new forecast slots don't rebuild the processor (and reprocess the cache).
+	let topsUpRooftop = $derived(rooftopForecast !== null);
 	let processResponseFn = $derived.by(() => createResponseProcessor(metric, interval));
 
 	/**
@@ -383,10 +392,20 @@
 			? selectIntensityComponents(source, excludedFuelTechGroups)
 			: source;
 	});
-	// Derived once per cache revision, independently of viewport/hover changes.
-	// The original cache remains the source for summaries, comparisons and CSV/XLSX.
-	let displayCache = $derived.by(() => {
+	// The rows behind both the chart and the published snapshot (table,
+	// metrics, CSV/XLSX): rooftop topped up from the forecast where its
+	// readings lag the other fuel techs.
+	let snapshotCache = $derived.by(() => {
 		const source = selectedCache;
+		return source && metric === 'power' && rooftopForecast?.length
+			? topUpRooftopPower(source, rooftopForecast)
+			: source;
+	});
+	// Derived once per cache revision, independently of viewport/hover changes.
+	// Interpolation is display-only: summaries, comparisons and CSV/XLSX keep
+	// the snapshot cache's half-hour rooftop values.
+	let displayCache = $derived.by(() => {
+		const source = snapshotCache;
 		return source &&
 			interpolateRooftop &&
 			metric === 'power' &&
@@ -833,7 +852,7 @@
 		const currentBucketFilter = bucketFilter;
 		const sums = sumsForDisplay;
 		const manager = dataManager;
-		const source = selectedCache;
+		const source = snapshotCache;
 		const callback = onvisibledata;
 		const queryKey = currentQueryKey;
 		const state = getQueryState();

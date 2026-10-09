@@ -79,7 +79,7 @@ export function cacheKeyFor({ region, metric, interval, dateStart, dateEnd, prim
 }
 
 export const VALID_REGIONS = new Set(['au', '_all', 'wem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']);
-export const VALID_INTERVALS = new Set(['5m', '1h', '1d', '7d', '1M', '3M', '1y']);
+export const VALID_INTERVALS = new Set(['5m', '30m', '1h', '1d', '7d', '1M', '3M', '1y']);
 const VALID_DATA_METRICS = new Set([
 	'power',
 	'energy',
@@ -146,6 +146,10 @@ export function parseNetworkDataParams(searchParams) {
 	}
 	if (region === 'au' && metric === 'price') {
 		return { error: 'A national spot price is not available.' };
+	}
+	// AEMO forecasts NEM rooftop PV only; 'au' would silently serve NEM alone.
+	if (metric === 'rooftop_forecast' && (region === 'au' || region === 'wem')) {
+		return { error: 'Rooftop solar forecasts are only available for the NEM.' };
 	}
 	const rangeError = apiRangeLimitError(interval, dateStart, dateEnd);
 	if (rangeError) return { error: rangeError };
