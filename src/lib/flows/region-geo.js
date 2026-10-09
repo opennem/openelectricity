@@ -19,11 +19,12 @@
  *
  * CAUTION: AEMO's September 2025 Interconnector Capabilities edition records
  * Project EnergyConnect stage 1 (SA–NSW, 150 MW each way) as commissioned.
- * PEC closes the NSW–VIC–SA cycle, which compromises the tree-topology flow
- * derivation in derive-pairwise.js — any PEC flow is misattributed to the
- * SA–VIC and NSW–VIC corridors. This registry is the single place to extend
- * once the OE API grows a pairwise metric (PEC's transmission-line features
- * are objectids 3059–3062, currently excluded).
+ * PEC closes the NSW–VIC–SA cycle (registered by AEMO from 1 October 2026),
+ * so the net-position derivation in derive-pairwise.js can no longer split
+ * SA–VIC, NSW–VIC or NSW–SA: those corridors have no value from that date.
+ * This registry is the single place to extend once the OE API grows a
+ * pairwise metric (PEC's transmission-line features are objectids 3059–3062,
+ * currently excluded).
  */
 
 import { displayCode } from './format.js';

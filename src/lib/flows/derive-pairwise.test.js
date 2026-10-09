@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	derivePairwiseFlows,
+	isCorridorDetermined,
 	toLegacyPayload,
 	collectRegionSeriesAligned,
 	trimToLastCompleteRow
@@ -98,6 +99,38 @@ describe('derivePairwiseFlows', () => {
 		expect(timestamps).toEqual([T1, T2]);
 		expect(series['NSW1->QLD1']).toEqual([20, 10]);
 	});
+
+	it('nulls the SA–VIC–NSW loop corridors once NSW1–SA1 opens', () => {
+		const LOOP = '2026-10-09T11:40:00+10:00';
+		const atLoop = liveSample.map((entry) => ({
+			...entry,
+			results: entry.results.map((result) => ({
+				...result,
+				data: result.data.map(([, value]) => [LOOP, value])
+			}))
+		}));
+		const { series } = derivePairwiseFlows(atLoop);
+
+		// QLD and TAS each trade over one corridor: still exact
+		expect(series['NSW1->QLD1'][0]).toBeCloseTo(-1028.59766, 4);
+		expect(series['TAS1->VIC1'][0]).toBeCloseTo(217.89844, 4);
+		// SA's position no longer says how much went via VIC rather than NSW
+		expect(series['SA1->VIC1'][0]).toBeNull();
+		expect(series['NSW1->VIC1'][0]).toBeNull();
+	});
+});
+
+describe('isCorridorDetermined', () => {
+	it('keeps the loop corridors determined only before 1 October 2026 (NEM time)', () => {
+		expect(isCorridorDetermined('SA1->VIC1', '2026-09-30T23:55:00+10:00')).toBe(true);
+		expect(isCorridorDetermined('SA1->VIC1', '2026-10-01T00:00:00+10:00')).toBe(false);
+		expect(isCorridorDetermined('NSW1->VIC1', '2026-10-01T00:00:00+10:00')).toBe(false);
+	});
+
+	it('keeps single-corridor regions determined throughout', () => {
+		expect(isCorridorDetermined('NSW1->QLD1', '2026-10-09T11:40:00+10:00')).toBe(true);
+		expect(isCorridorDetermined('TAS1->VIC1', '2026-10-09T11:40:00+10:00')).toBe(true);
+	});
 });
 
 describe('toLegacyPayload', () => {
@@ -134,6 +167,12 @@ describe('trimToLastCompleteRow', () => {
 	it('returns input unchanged when no complete row exists', () => {
 		const trimmed = trimToLastCompleteRow([T1], { a: [null], b: [1] });
 		expect(trimmed.timestamps).toEqual([T1]);
+	});
+
+	it('ignores series not expected at a timestamp, such as undetermined corridors', () => {
+		const series = { a: [1, 2, null], b: [null, null, null] };
+		const trimmed = trimToLastCompleteRow(['t1', 't2', 't3'], series, (name) => name !== 'b');
+		expect(trimmed.timestamps).toEqual(['t1', 't2']);
 	});
 });
 

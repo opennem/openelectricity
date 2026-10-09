@@ -3,6 +3,7 @@ import { oeClient } from '$lib/server/oe-client.js';
 import { createSwrCache } from '$lib/server/swr-cache';
 import {
 	derivePairwiseFlows,
+	isCorridorDetermined,
 	toLegacyPayload,
 	trimToLastCompleteRow
 } from '$lib/flows/derive-pairwise.js';
@@ -17,10 +18,12 @@ const FRESH_MS = 5 * 60 * 1000;
  * The legacy stats flows endpoint this route used to proxy has been
  * decommissioned, and v4 has no pairwise interconnector metric — so this
  * adapter fetches per-region `flow_imports`/`flow_exports` and derives the
- * four corridor flows exactly via the NEM's tree topology (see
- * `$lib/flows/derive-pairwise.js`). The response keeps the legacy payload
- * shape (`{ data: [{ code: 'NSW1->QLD1', history: { last, data } }] }`), so
- * the homepage system-snapshot and the tracker consume it unchanged. Positive
+ * corridor flows from the net positions (see `$lib/flows/derive-pairwise.js`):
+ * exact for QLD–NSW and TAS–VIC, null for SA–VIC and NSW–VIC since the
+ * NSW1–SA1 interconnector closed a loop on 1 October 2026. The response keeps
+ * the legacy payload shape
+ * (`{ data: [{ code: 'NSW1->QLD1', history: { last, data } }] }`), so the
+ * homepage system-snapshot and the tracker consume it unchanged. Positive
  * values flow in the key's direction.
  *
  * The upstream query is SWR-cached: the data is identical for every caller
@@ -44,7 +47,11 @@ async function fetchFlowsPayload() {
 		});
 
 		const derived = derivePairwiseFlows(response.data);
-		const { timestamps, series } = trimToLastCompleteRow(derived.timestamps, derived.series);
+		const { timestamps, series } = trimToLastCompleteRow(
+			derived.timestamps,
+			derived.series,
+			isCorridorDetermined
+		);
 		return toLegacyPayload(timestamps, series);
 	} catch (err) {
 		if (err instanceof NoDataFound) return { data: [] };
@@ -54,7 +61,7 @@ async function fetchFlowsPayload() {
 }
 
 const cache = createSwrCache({
-	edgeCacheKey: 'https://cache.openelectricity.org.au/internal/interconnector-flows-v1',
+	edgeCacheKey: 'https://cache.openelectricity.org.au/internal/interconnector-flows-v2',
 	fetcher: fetchFlowsPayload,
 	isFresh: (_payload, storedAt) => Date.now() - storedAt < FRESH_MS,
 	// Never cache error envelopes or empty windows — a transient failure must

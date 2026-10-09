@@ -210,8 +210,14 @@
 		showTooltip = false;
 	}
 
-	// function to check if the value is a number
-	const isNumber = (/** @type {number} */ val) => !isNaN(val);
+	/** Each corridor's label position, and its arrow for a positive (key
+	 * direction) and a negative flow. */
+	const FLOW_LABELS = [
+		{ key: 'NSW1->QLD1', x: 360, y: 215, positive: 'up', negative: 'down' },
+		{ key: 'NSW1->VIC1', x: 346, y: 300, positive: 'down', negative: 'up' },
+		{ key: 'TAS1->VIC1', x: 353, y: 365, positive: 'up', negative: 'down' },
+		{ key: 'SA1->VIC1', x: 301, y: 308, positive: 'right', negative: 'left' }
+	];
 </script>
 
 <svelte:window onmousemove={mousemove} />
@@ -289,66 +295,27 @@
 		<MapLabel text={nswText} colour={getStateTextColour('NSW')} x={360} y={276} /><!-- NSW -->
 
 		{#if modeLive && flows}
-			<!-- FLOWS -->
-			<g
-				role="group"
-				use:popperRef
-				onmouseenter={() => flowEnter('NSW1->QLD1', flows['NSW1->QLD1'])}
-				onmouseleave={flowLeave}
-			>
-				<Flow
-					scale={FLOW_SCALE}
-					direction={flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
-					flow={isNumber(flows['NSW1->QLD1']) ? absRound(flows['NSW1->QLD1']) : '—'}
-					x={360}
-					y={215}
-				/><!-- QLD <-> NSW -->
-			</g>
-
-			<g
-				role="group"
-				use:popperRef
-				onmouseenter={() => flowEnter('NSW1->VIC1', flows['NSW1->VIC1'])}
-				onmouseleave={flowLeave}
-			>
-				<Flow
-					scale={FLOW_SCALE}
-					direction={flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
-					flow={isNumber(flows['NSW1->VIC1']) ? absRound(flows['NSW1->VIC1']) : '—'}
-					x={346}
-					y={300}
-				/><!-- VIC <-> NSW -->
-			</g>
-
-			<g
-				role="group"
-				use:popperRef
-				onmouseenter={() => flowEnter('TAS1->VIC1', flows['TAS1->VIC1'])}
-				onmouseleave={flowLeave}
-			>
-				<Flow
-					scale={FLOW_SCALE}
-					direction={flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
-					flow={isNumber(flows['TAS1->VIC1']) ? absRound(flows['TAS1->VIC1']) : '—'}
-					x={353}
-					y={365}
-				/><!-- VIC <-> TAS -->
-			</g>
-
-			<g
-				role="group"
-				use:popperRef
-				onmouseenter={() => flowEnter('SA1->VIC1', flows['SA1->VIC1'])}
-				onmouseleave={flowLeave}
-			>
-				<Flow
-					scale={FLOW_SCALE}
-					direction={flows['SA1->VIC1'] > 0 ? 'right' : 'left'}
-					flow={isNumber(flows['SA1->VIC1']) ? absRound(flows['SA1->VIC1']) : '—'}
-					x={301}
-					y={308}
-				/><!-- VIC <-> SA -->
-			</g>
+			<!-- FLOWS: a corridor without a value is left off rather than drawn as
+			     zero — SA–VIC and NSW–VIC since the NSW1–SA1 loop closed -->
+			{#each FLOW_LABELS as label (label.key)}
+				{@const value = flows[label.key]}
+				{#if Number.isFinite(value)}
+					<g
+						role="group"
+						use:popperRef
+						onmouseenter={() => flowEnter(label.key, value)}
+						onmouseleave={flowLeave}
+					>
+						<Flow
+							scale={FLOW_SCALE}
+							direction={value > 0 ? label.positive : label.negative}
+							flow={absRound(value)}
+							x={label.x}
+							y={label.y}
+						/>
+					</g>
+				{/if}
+			{/each}
 		{/if}
 	{/if}
 </svg>

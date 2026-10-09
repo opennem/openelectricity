@@ -107,6 +107,10 @@
 			: 'Avg. past 12 months'
 	);
 	let mapModeRows = $derived(/** @type {any} */ (rows)[mapMode]);
+	/** Corridors with a value; SA–VIC and NSW–VIC have none since the NSW1–SA1 loop. */
+	let crossBorderFlows = $derived(
+		Object.entries(flows.regionFlows).filter(([, value]) => Number.isFinite(value))
+	);
 	let getPrice = $derived((/** @type {string} */ state) => {
 		return prices.regionPrices[`${state}1`]
 			? auDollar.format(prices.regionPrices[`${state}1`])
@@ -229,7 +233,7 @@
 				<div class="md:hidden">
 					<h5 class="text-left mt-8">Cross Border Export</h5>
 					<div class="grid grid-cols-2 gap-4">
-						{#each Object.entries(flows.regionFlows) as [regionFlow, value] (regionFlow)}
+						{#each crossBorderFlows as [regionFlow, value] (regionFlow)}
 							<CrossBorderExport regions={regionFlow} {value} />
 						{/each}
 					</div>

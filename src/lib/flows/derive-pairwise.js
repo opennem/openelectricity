@@ -18,10 +18,31 @@
  * Verified against live data: the API's per-region values are exactly
  * self-consistent (e.g. QLD's exports equal NSW's imports to the sample), so
  * the derivation is exact, not an approximation.
+ *
+ * From 1 October 2026 the NSW1–SA1 interconnector (Project EnergyConnect)
+ * closes an SA–VIC–NSW loop: five corridors against four independent net
+ * positions, so SA→VIC and NSW→VIC (and NSW–SA itself) are no longer
+ * determined. Those samples are null rather than a guessed split; QLD and TAS
+ * still trade over one corridor each, so theirs stay exact.
  */
 
 /** Directed corridor keys in the legacy payload order. */
 export const PAIRWISE_KEYS = ['NSW1->QLD1', 'NSW1->VIC1', 'SA1->VIC1', 'TAS1->VIC1'];
+
+/** First interval of the NSW1–SA1 interconnector (AEMO registration). */
+export const NSW_SA_LOOP_FROM_MS = Date.parse('2026-10-01T00:00:00+10:00');
+
+/** Corridors inside the SA–VIC–NSW loop, undetermined once it closes. */
+const LOOP_KEYS = new Set(['NSW1->VIC1', 'SA1->VIC1']);
+
+/**
+ * Whether net positions determine a corridor's flow at a timestamp.
+ * @param {string} key - Directed corridor key, e.g. 'SA1->VIC1'
+ * @param {string} timestamp - ISO timestamp with offset
+ */
+export function isCorridorDetermined(key, timestamp) {
+	return !LOOP_KEYS.has(key) || Date.parse(timestamp) < NSW_SA_LOOP_FROM_MS;
+}
 
 /**
  * Collect per-region series for one metric out of a v4 market response.
@@ -62,7 +83,8 @@ function collectRegionSeries(apiData, metric) {
  * @param {{ importsMetric?: string, exportsMetric?: string }} [options]
  * @returns {{ timestamps: string[], series: Record<string, (number | null)[]> }}
  *   Timestamps sorted ascending; a derived sample is null when any region it
- *   depends on is missing that timestamp.
+ *   depends on is missing that timestamp, or when the corridor is undetermined
+ *   (`isCorridorDetermined`).
  */
 export function derivePairwiseFlows(
 	apiData,
@@ -95,10 +117,16 @@ export function derivePairwiseFlows(
 		const tas = net('TAS1', ts);
 		const vic = net('VIC1', ts);
 
-		series['NSW1->QLD1'].push(qld);
-		series['SA1->VIC1'].push(sa === null ? null : -sa);
-		series['TAS1->VIC1'].push(tas === null ? null : -tas);
-		series['NSW1->VIC1'].push(vic === null || sa === null || tas === null ? null : vic + sa + tas);
+		/** @type {Record<string, number | null>} */
+		const row = {
+			'NSW1->QLD1': qld,
+			'NSW1->VIC1': vic === null || sa === null || tas === null ? null : vic + sa + tas,
+			'SA1->VIC1': sa === null ? null : -sa,
+			'TAS1->VIC1': tas === null ? null : -tas
+		};
+		for (const key of PAIRWISE_KEYS) {
+			series[key].push(isCorridorDetermined(key, ts) ? row[key] : null);
+		}
 	}
 
 	return { timestamps, series };
@@ -113,14 +141,17 @@ export function derivePairwiseFlows(
  *
  * @param {string[]} timestamps
  * @param {Record<string, (number | null)[]>} series
+ * @param {(name: string, timestamp: string) => boolean} [isExpected] - Whether a
+ *   series should have a value at a timestamp (default: always); a series that
+ *   shouldn't, such as an undetermined corridor, doesn't hold the row back
  * @returns {{ timestamps: string[], series: Record<string, (number | null)[]> }}
  */
-export function trimToLastCompleteRow(timestamps, series) {
+export function trimToLastCompleteRow(timestamps, series, isExpected = () => true) {
 	const names = Object.keys(series);
 	if (names.length === 0) return { timestamps, series };
 
 	for (let i = timestamps.length - 1; i >= 0; i--) {
-		if (names.every((name) => series[name][i] != null)) {
+		if (names.every((name) => !isExpected(name, timestamps[i]) || series[name][i] != null)) {
 			if (i === timestamps.length - 1) return { timestamps, series };
 			return {
 				timestamps: timestamps.slice(0, i + 1),

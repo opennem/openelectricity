@@ -5,11 +5,13 @@
  * system-snapshot map and the tracker's grid-live store — both read only the
  * latest sample, so the full histories are deliberately not passed through.
  *
- * @typedef {{ code: string, history: { last: string, data: number[] } }} StatsSeries
+ * @typedef {{ code: string, history: { last: string, data: (number | null)[] } }} StatsSeries
  */
 
 /**
- * Latest value per series code.
+ * Latest value per series code. A series without one (e.g. a corridor the
+ * flow derivation can't determine) is left out, so consumers read a missing
+ * key as "no value" rather than a null that looks like a number.
  * @param {StatsSeries[] | null | undefined} jsonData
  * @returns {Record<string, number>}
  */
@@ -17,7 +19,8 @@ function latestByCode(jsonData) {
 	/** @type {Record<string, number>} */
 	const latest = {};
 	for (const series of jsonData ?? []) {
-		latest[series.code] = series.history.data[series.history.data.length - 1];
+		const value = series.history.data[series.history.data.length - 1];
+		if (typeof value === 'number' && Number.isFinite(value)) latest[series.code] = value;
 	}
 	return latest;
 }

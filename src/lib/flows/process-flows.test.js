@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { processFlowsJson, processPricesJson } from './process-flows.js';
 
-/** @param {string} code @param {number[]} data @param {string} [last] */
+/** @param {string} code @param {(number | null)[]} data @param {string} [last] */
 const flowSeries = (code, data, last = '2026-07-24T12:30:00+10:00') => ({
 	code,
 	history: { last, data }
@@ -16,6 +16,14 @@ describe('processFlowsJson', () => {
 
 		expect(result.regionFlows).toEqual({ 'NSW1->QLD1': 320, 'SA1->VIC1': 55 });
 		expect(result.dispatchDateTimeString).toBe('2026-07-24T12:30:00+10:00');
+	});
+
+	it('leaves out a corridor without a latest value', () => {
+		const result = processFlowsJson([
+			flowSeries('NSW1->QLD1', [100, 320]),
+			flowSeries('SA1->VIC1', [-40, null])
+		]);
+		expect(result.regionFlows).toEqual({ 'NSW1->QLD1': 320 });
 	});
 
 	it('preserves signed (negative) flows', () => {
