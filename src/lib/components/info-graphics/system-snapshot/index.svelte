@@ -1,6 +1,4 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { format, isToday } from 'date-fns';
 	import { scaleLinear } from 'd3-scale';
 
@@ -9,7 +7,6 @@
 
 	import ColourLegend from './ColourLegend.svelte';
 	import CrossBorderExport from './CrossBorderExport.svelte';
-	import { regionGenerationTotal, regionRenewablesTotal, regionEmissionsTotal } from './helpers.js';
 
 	import { carbonIntensityColour } from '$lib/stores/theme';
 
@@ -18,13 +15,12 @@
 	 * @property {string} [title] - export let data;
 	 * @property {any} flows
 	 * @property {any} prices
-	 * @property {any} regionPower
-	 * @property {any} regionEnergy
-	 * @property {any} regionEmissions
+	 * @property {any} snapshot - `/api/system-snapshot`: per-region `live` and
+	 *   `annual` figures (generation, renewables %, annual intensity)
 	 */
 
 	/** @type {Props} */
-	let { title = '', flows, prices, regionPower, regionEnergy, regionEmissions } = $props();
+	let { title = '', flows, prices, snapshot } = $props();
 
 	const rows = {
 		live: [
@@ -60,20 +56,7 @@
 		]
 	};
 
-	/** @type {Record<string, number>} */
-	let intensity = $state({});
 	const intensityScale = scaleLinear().domain([0, 900]).range([0, 100]);
-
-	/**
-	 * @param {Record<string, number>} emissionsTotal
-	 * @param {Record<string, number>} generationTotal
-	 */
-	function updateIntensity(emissionsTotal, generationTotal) {
-		rows.annual.forEach((/** @type {any} */ row) => {
-			/** @type {any} */ (intensity)[row.id] =
-				/** @type {any} */ (emissionsTotal)[row.id] / /** @type {any} */ (generationTotal)[row.id];
-		});
-	}
 
 	// Track map mode and data
 	let mapMode = $state(/** @type {'live' | 'annual'} */ ('annual'));
@@ -95,48 +78,26 @@
 		maximumFractionDigits: 0
 	});
 
-	/**
-	 * @param {string} state
-	 */
-	function getRenewablePercent(state) {
-		return Math.round(
-			/** @type {any} */ ((renewablesTotal)[state] / /** @type {any} */ (generationTotal)[state]) *
-				100
-		);
+	/** @param {number | null | undefined} value */
+	function formatFigure(value) {
+		return Number.isFinite(value) ? auNumber.format(/** @type {number} */ (value)) : '—';
+	}
+
+	/** @param {number | null | undefined} value */
+	function formatPercent(value) {
+		return Number.isFinite(value) ? `${Math.round(/** @type {number} */ (value))}%` : '—';
 	}
 
 	let hoverRegion = $state();
 
-	// function getCarbonIntensity(state) {
-	// 	return Math.round(emissionsTotal[state] / generationTotal[state]);
-	// }
-	// $: mapData = data[mapMode];
-	let liveMode = $derived(/** @type {string} */ (mapMode) === 'live');
-	let generationTotal = $derived(
-		regionGenerationTotal(
-			liveMode
-				? rows.live.map((/** @type {any} */ d) => d.id)
-				: rows.annual.map((/** @type {any} */ d) => d.id),
-			liveMode ? regionPower : regionEnergy
+	/** @type {Record<string, { generation?: number | null, renewables?: number | null }>} */
+	let regionFigures = $derived(snapshot?.[mapMode]?.regions ?? {});
+	/** @type {Record<string, number | null>} */
+	let intensity = $derived(
+		Object.fromEntries(
+			rows.annual.map((row) => [row.id, snapshot?.annual?.regions?.[row.id]?.intensity ?? null])
 		)
 	);
-	let renewablesTotal = $derived(
-		regionRenewablesTotal(
-			liveMode
-				? rows.live.map((/** @type {any} */ d) => d.id)
-				: rows.annual.map((/** @type {any} */ d) => d.id),
-			liveMode ? regionPower : regionEnergy
-		)
-	);
-	let emissionsTotal = $derived(
-		regionEmissionsTotal(
-			!liveMode ? rows.annual.map((/** @type {any} */ d) => d.id) : [],
-			!liveMode ? regionEmissions : []
-		)
-	);
-	run(() => {
-		updateIntensity(emissionsTotal, generationTotal);
-	});
 	let dispatchTime = $derived(Date.parse(flows.dispatchDateTimeString));
 	let dispatch = $derived(
 		/** @type {string} */ (mapMode) === 'live'
@@ -224,34 +185,34 @@
 									{getPrice(row.id)}
 								</td>
 								<td class="py-3 text-sm text-right">
-									{auNumber.format(generationTotal[row.id])}
+									{formatFigure(regionFigures[row.id]?.generation)}
 								</td>
 								<td class="py-3 text-sm text-right">
-									{getRenewablePercent(row.id)}%
+									{formatPercent(regionFigures[row.id]?.renewables)}
 								</td>
 							{/if}
 
 							{#if mapMode === 'annual'}
 								<td class="py-3 text-sm text-right pl-6 md:pl-0">
-									{auNumber.format(intensity[row.id])}
+									{formatFigure(intensity[row.id])}
 								</td>
 
 								<td class="py-3 pl-3 md:pl-6">
 									<div
 										class="h-4 border border-black"
 										style:background-color={/** @type {any} */ ($carbonIntensityColour)(
-											intensity[row.id]
+											intensity[row.id] ?? 0
 										)}
-										style:width={`${intensityScale(intensity[row.id])}px`}
+										style:width={`${intensityScale(intensity[row.id] ?? 0)}px`}
 									></div>
 								</td>
 
 								<td class="py-3 text-sm text-right">
-									{auNumber.format(generationTotal[row.id])}
+									{formatFigure(regionFigures[row.id]?.generation)}
 								</td>
 
 								<td class="py-3 text-sm text-right">
-									{getRenewablePercent(row.id)}%
+									{formatPercent(regionFigures[row.id]?.renewables)}
 								</td>
 							{/if}
 						</tr>

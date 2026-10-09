@@ -46,16 +46,12 @@
 	let prices = $derived(data.prices);
 	let tracker7dProcessed = $derived(data.tracker7dProcessed);
 
-	// Client-side fetched data (these APIs make multiple external calls that can timeout on Cloudflare SSR)
+	// Fetched client-side when the System Snapshot section scrolls into view
 	/** @type {any} */
-	let regionPower = $state(null);
-	/** @type {any} */
-	let regionEnergy = $state(null);
-	/** @type {any} */
-	let regionEmissions = $state(null);
+	let systemSnapshot = $state(null);
 
 	// Derived loading states
-	let hasRegionData = $derived(regionPower && regionEnergy && regionEmissions);
+	let hasRegionData = $derived(Boolean(systemSnapshot));
 	let hasArticles = $derived(articles && articles.length > 0);
 
 	// Staggered chart rendering - load charts one at a time to avoid blocking
@@ -141,15 +137,11 @@
 			(entries) => {
 				if (entries[0].isIntersecting) {
 					Promise.all([
-						fetch('/api/region-power').then((r) => (r.ok ? r.json() : null)),
-						fetch('/api/region-energy').then((r) => (r.ok ? r.json() : null)),
-						fetch('/api/region-emissions').then((r) => (r.ok ? r.json() : null)),
+						fetch('/api/system-snapshot').then((r) => (r.ok ? r.json() : null)),
 						import('$lib/components/info-graphics/system-snapshot/index.svelte')
 					])
-						.then(([power, energy, emissions, module]) => {
-							regionPower = power;
-							regionEnergy = energy;
-							regionEmissions = emissions;
+						.then(([snapshot, module]) => {
+							systemSnapshot = snapshot;
 							SystemSnapshotComponent = module.default;
 						})
 						.catch((e) => {
@@ -311,14 +303,7 @@
 	<div class="container max-w-none lg:container">
 		<div class="flex flex-col md:flex-row justify-between py-16 md:py-32">
 			{#if hasRegionData && SystemSnapshotComponent}
-				<SystemSnapshotComponent
-					title={map_title}
-					{flows}
-					{prices}
-					{regionPower}
-					{regionEnergy}
-					{regionEmissions}
-				/>
+				<SystemSnapshotComponent title={map_title} {flows} {prices} snapshot={systemSnapshot} />
 			{:else}
 				<!-- Map skeleton -->
 				<div class="w-full md:w-1/2 space-y-4">

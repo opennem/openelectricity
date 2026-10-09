@@ -36,8 +36,8 @@ export async function load({ fetch, platform }) {
 	}));
 
 	// Fetch all data sources in parallel for better performance
-	// Note: region-power, region-energy, region-emissions are fetched client-side
-	// because they make multiple external API calls that can timeout on Cloudflare
+	// Note: the System Snapshot (/api/system-snapshot) is fetched client-side when
+	// its section scrolls into view, keeping it off the initial page load
 	const [homepageData, articles, flows, prices, tracker7dProcessed] = await Promise.all([
 		client.fetch(
 			`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, records_title, analysis_title, goals_title, goals}`
