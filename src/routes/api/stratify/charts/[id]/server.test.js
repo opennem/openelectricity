@@ -4,16 +4,26 @@ const mocks = vi.hoisted(() => ({
 	fetch: vi.fn(),
 	verifyAdmin: vi.fn(),
 	findAdminIds: vi.fn(),
-	saveChartFields: vi.fn()
+	findUserName: vi.fn(),
+	saveChartFields: vi.fn(),
+	setFields: vi.fn()
 }));
 
 vi.mock('$lib/sanity-cms.js', () => ({
-	createCmsClient: () => ({ fetch: mocks.fetch })
+	createCmsClient: () => ({
+		fetch: mocks.fetch,
+		patch: (/** @type {string} */ id) => ({
+			set: (/** @type {Record<string, unknown>} */ values) => ({
+				commit: async () => mocks.setFields(id, values)
+			})
+		})
+	})
 }));
 
 vi.mock('$lib/auth/clerk-server.js', () => ({
 	verifyAdmin: mocks.verifyAdmin,
-	findAdminIds: mocks.findAdminIds
+	findAdminIds: mocks.findAdminIds,
+	findUserName: mocks.findUserName
 }));
 
 vi.mock('$lib/server/stratify/save-chart.js', async (importOriginal) => ({
@@ -49,6 +59,30 @@ describe('PATCH /api/stratify/charts/:id', () => {
 			userId: 'user-1',
 			userEmail: 'a@example.com'
 		});
+		mocks.findUserName.mockReset().mockResolvedValue('Ada Lovelace');
+		mocks.setFields.mockReset();
+	});
+
+	it("records the owner's name as the byline when the chart is published", async () => {
+		const response = await patch({ baseRev: 'rev-1', fields: { status: 'published' } });
+		expect(response.status).toBe(200);
+		expect(mocks.findUserName).toHaveBeenCalledWith('user-1');
+		expect(mocks.setFields).toHaveBeenCalledWith('chart-1', { authorName: 'Ada Lovelace' });
+	});
+
+	it('leaves the byline alone on ordinary saves', async () => {
+		await patch({ baseRev: 'rev-1', fields: { title: 'Renamed' } });
+		expect(mocks.findUserName).not.toHaveBeenCalled();
+		expect(mocks.setFields).not.toHaveBeenCalled();
+	});
+
+	it('still publishes when the name lookup fails', async () => {
+		mocks.findUserName.mockRejectedValue(new Error('Clerk down'));
+		const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+		const response = await patch({ baseRev: 'rev-1', fields: { status: 'published' } });
+		expect(response.status).toBe(200);
+		expect(mocks.setFields).not.toHaveBeenCalled();
+		errors.mockRestore();
 	});
 
 	it('saves changed fields against the base revision, keeping null and zero values', async () => {

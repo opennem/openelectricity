@@ -18,10 +18,7 @@ export async function load({ url, setHeaders }) {
 			client.fetch(`count(*[_type == "stratifyChart" && status == "published"])`)
 		),
 		client.fetch(
-			`*[_type == "stratifyChart" && status == "published"] | order(publishedAt desc)[${start}...${end}]{
-				...,
-				"userEmail": userEmail
-			}`
+			`*[_type == "stratifyChart" && status == "published"] | order(publishedAt desc)[${start}...${end}]`
 		)
 	]);
 
@@ -29,7 +26,8 @@ export async function load({ url, setHeaders }) {
 		charts: charts.map((/** @type {Record<string, any>} */ chart) => ({
 			...normaliseChart(chart),
 			publishedAt: chart.publishedAt,
-			userEmail: chart.userEmail
+			// The byline is the author's name; their email never reaches a public page.
+			authorName: chart.authorName ?? null
 		})),
 		pagination: {
 			currentPage: page,

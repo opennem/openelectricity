@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { decodeChartFields } from '$lib/stratify/chart-data.js';
 import { findAdminIds } from '$lib/auth/clerk-server.js';
 import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
+import { recordAuthorName } from '$lib/server/stratify/author-name.js';
 import { canAccess } from '$lib/stratify/chart-permissions.js';
 import { pickChartFields, saveChartFields } from '$lib/server/stratify/save-chart.js';
 import { deleteChartWithRevisions } from '$lib/server/stratify/revisions.js';
@@ -68,7 +69,7 @@ async function withAdminStatus(collaborators) {
 export async function PATCH({ request, params }) {
 	const loaded = await loadChartForRequest(request, params.id, 'edit');
 	if (loaded.response) return loaded.response;
-	const { client, auth, access } = loaded;
+	const { client, auth, access, chart } = loaded;
 
 	const body = await request.json();
 	const isFieldSave = typeof body?.fields === 'object' && body.fields !== null;
@@ -90,6 +91,14 @@ export async function PATCH({ request, params }) {
 		values,
 		author: { userId: auth.userId ?? null, userEmail: auth.userEmail ?? null }
 	});
+
+	// Publishing records the owner's name as the public byline.
+	if (
+		values.status === 'published' &&
+		(result.outcome === 'saved' || result.outcome === 'unchanged')
+	) {
+		await recordAuthorName(client, params.id, chart.userId);
+	}
 
 	switch (result.outcome) {
 		case 'not-found':

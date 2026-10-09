@@ -92,3 +92,16 @@ export async function searchAdmins(query, { limit = 10 } = {}) {
 		})
 		.filter((admin) => admin.email);
 }
+
+/**
+ * A user's display name (first and last name, else username), or null when
+ * Clerk has neither. Used for public bylines, which never show an email.
+ * @param {string} userId
+ * @returns {Promise<string | null>}
+ */
+export async function findUserName(userId) {
+	const clerk = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
+	const user = await clerk.users.getUser(userId);
+	const name = [user.firstName, user.lastName].filter(Boolean).join(' ');
+	return name || user.username || null;
+}

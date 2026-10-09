@@ -20,7 +20,8 @@ export async function load({ params, setHeaders }) {
 		chart: {
 			...normaliseChart(chart),
 			publishedAt: chart.publishedAt,
-			userEmail: chart.userEmail
+			// The byline is the author's name; their email never reaches a public page.
+			authorName: chart.authorName ?? null
 		}
 	};
 }

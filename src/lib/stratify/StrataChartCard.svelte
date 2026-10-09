@@ -65,7 +65,9 @@
 			class="flex items-center justify-between px-6 py-3 border-b border-warm-grey bg-light-warm-grey"
 		>
 			<div class="min-w-0">
-				<span class="text-xs text-mid-grey">{chart.userEmail}</span>
+				{#if chart.authorName}
+					<span class="text-xs text-mid-grey">{chart.authorName}</span>
+				{/if}
 				<time class="block text-xs text-mid-grey">
 					{new Date(chart.publishedAt).toLocaleDateString('en-AU', {
 						day: 'numeric',

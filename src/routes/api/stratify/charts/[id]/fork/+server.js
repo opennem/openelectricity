@@ -23,6 +23,7 @@ export async function POST({ request, params }) {
 		status: _status,
 		publishedAt: _publishedAt,
 		collaborators: _collaborators,
+		authorName: _authorName,
 		...chartFields
 	} = source;
 
