@@ -2832,6 +2832,20 @@
 			"name": "Gunnedah"
 		}
 	},
+	"GNWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 346,
+			"status": "committed",
+			"region": "SA",
+			"name": "Goyder North"
+		}
+	},
 	"GOESF1": {
 		"v": 1,
 		"photo": null,
@@ -4067,8 +4081,8 @@
 				"solar_utility"
 			],
 			"dominant": "solar_utility",
-			"capacity": 106,
-			"status": "commissioning",
+			"capacity": 80,
+			"status": "operating",
 			"region": "VIC",
 			"name": "Lancaster"
 		}
@@ -5876,6 +5890,20 @@
 			"name": "Earthpower"
 		}
 	},
+	"PMMWF": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"wind"
+			],
+			"dominant": "wind",
+			"capacity": 489,
+			"status": "committed",
+			"region": "WEM",
+			"name": "Parron Maam Marang"
+		}
+	},
 	"PORTLATT": {
 		"v": 1,
 		"photo": null,
@@ -6588,7 +6616,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 120,
-			"status": "commissioning",
+			"status": "operating",
 			"region": "SA",
 			"name": "Summerfield 1"
 		}
@@ -7364,6 +7392,20 @@
 			"status": "retired",
 			"region": "SA",
 			"name": "Tea Tree Gully"
+		}
+	},
+	"TEEBARBESS": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 400,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Teebar"
 		}
 	},
 	"TEMPB": {
@@ -8476,7 +8518,7 @@
 			"name": "Woolnorth"
 		}
 	},
-	"WOORBESS": {
+	"WOORB": {
 		"v": 1,
 		"photo": null,
 		"data": {
@@ -8485,7 +8527,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 350,
-			"status": "committed",
+			"status": "commissioning",
 			"region": "VIC",
 			"name": "Wooreen"
 		}
