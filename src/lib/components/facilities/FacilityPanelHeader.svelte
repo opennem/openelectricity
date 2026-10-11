@@ -28,6 +28,7 @@
 	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 	import { deriveCard } from '$lib/og/facility-card-data.js';
 	import { retiredHatch } from '$lib/og/retired-hatch.js';
+	import { formatLocalDateLabel, latestTimestamp } from '$lib/utils/local-date-label.js';
 	import { facilityPhotoSrc } from '$lib/facilities/facility-photo.js';
 
 	/**
@@ -89,22 +90,13 @@
 	});
 
 	/** Latest closure_date across units — only meaningful when fully retired. */
-	let retiredDateLabel = $derived.by(() => {
-		let latest = /** @type {string | null} */ (null);
-		for (const u of filteredUnits) {
-			const d = /** @type {string | null | undefined} */ (u.closure_date);
-			if (!d) continue;
-			if (!latest || d > latest) latest = d;
-		}
-		if (!latest) return null;
-		const parsed = new Date(latest);
-		if (Number.isNaN(parsed.getTime())) return latest;
-		return parsed.toLocaleDateString('en-AU', {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
-	});
+	let retiredDateLabel = $derived.by(() =>
+		formatLocalDateLabel(
+			latestTimestamp(
+				filteredUnits.map((u) => /** @type {string | null | undefined} */ (u.closure_date))
+			)
+		)
+	);
 
 	let regionLabel = $derived(
 		facility ? getRegionLongLabel(facility.network_id, facility.network_region) : ''
