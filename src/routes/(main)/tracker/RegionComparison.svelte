@@ -1,6 +1,5 @@
 <script>
 	import Select from '$lib/components/form-elements/Select.svelte';
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
 	import LayoutGrid from '@lucide/svelte/icons/layout-grid';
@@ -472,6 +471,11 @@
 
 {#snippet controls()}
 	<ComparisonChartToggles selected={selection.charts} onchange={(charts) => select({ charts })} />
+	<div
+		class="h-8 shrink-0 border-l border-warm-grey"
+		role="separator"
+		aria-orientation="vertical"
+	></div>
 	<!-- Timeline's interval pill, 12-month rolling switch and calendar-period
 	     filter; a filter the new grain cannot keep is dropped. -->
 	<IntervalControls
@@ -572,10 +576,7 @@
 					<!-- Ranks ranks ratios; volumes, which mostly measure a region's
 					     size, stay lines, badged. -->
 					{@const ranked = display === 'ranks' && isRankableComparisonMetric(metric.id)}
-					<!-- Options before the chart switcher, at the right of the header. -->
-					{@const presentations = comparisonPresentations(metric.chart).toSorted(
-						(a, b) => Number(a.control === 'tabs') - Number(b.control === 'tabs')
-					)}
+					{@const presentations = comparisonPresentations(metric.chart)}
 					{@const chartId = comparisonChartId(metric.id)}
 					{#snippet comparePanel()}
 						<ComparePanel
@@ -593,31 +594,17 @@
 						/>
 					{/snippet}
 					{#snippet cardControls()}
-						<!-- Each presentation axis the chart varies along: proportion or
-						     generation, official or excluding batteries, nominal or real. -->
+						<!-- Each presentation axis the chart varies along: nominal or real. -->
 						{#each presentations as axis (axis.key)}
-							{#if axis.control === 'tabs'}
-								<SwitchTabs
-									compact
-									ariaLabel="{metric.label} basis"
-									buttons={axis.labels.map((label, index) => ({
-										label,
-										value: comparisonPresentation(metric.id, axis.key, index === 1)
-									}))}
-									selected={metric.id}
-									onChange={(id) => swapChart(metric.id, id)}
-								/>
-							{:else}
-								<CardToggle
-									label={axis.label}
-									checked={!!metric[axis.key] !== !!axis.checkedWhenOff}
-									onchange={() =>
-										swapChart(
-											metric.id,
-											comparisonPresentation(metric.id, axis.key, !metric[axis.key])
-										)}
-								/>
-							{/if}
+							<CardToggle
+								label={axis.label}
+								checked={!!metric[axis.key] !== !!axis.checkedWhenOff}
+								onchange={() =>
+									swapChart(
+										metric.id,
+										comparisonPresentation(metric.id, axis.key, !metric[axis.key])
+									)}
+							/>
 						{/each}
 						{#if metric.id === 'price_real'}
 							<span class="text-xs text-mid-grey">{cpi.reference} dollars</span>
@@ -896,17 +883,11 @@
 				</div>
 				<TableFootnotes>
 					<li>Ratios use period totals; market values are weighted by generation.</li>
-					{#if metrics.some((metric) => metric.fuel === 'renewables' && !metric.exBatteries)}
+					{#if metrics.some((metric) => metric.fuel === 'renewables')}
 						<li>
 							<a href={RENEWABLES_DOCS.href} target="_blank" rel="noreferrer" class="underline"
 								>{RENEWABLES_DOCS.label}</a
 							>
-						</li>
-					{/if}
-					{#if metrics.some((metric) => metric.exBatteries)}
-						<li>
-							Renewables excl. batteries sum solar, wind, hydro and bioenergy, without battery
-							discharge or pumping; hydro includes pumped-hydro output.
 						</li>
 					{/if}
 					<li>

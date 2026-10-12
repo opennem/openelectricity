@@ -9,10 +9,11 @@
 
 	/**
 	 * Compare's chart picker in the top nav: one multi-select dropdown per
-	 * group (Emissions, Generation, Prices). Ticking a chart shows or hides it at once (`immediate`), so the
-	 * panel's button is Done; ⌘/Ctrl-click keeps that chart alone within its
-	 * group. A chart switched off and back on returns in the presentation it
-	 * had (generation, excluding batteries, nominal) for this visit.
+	 * group (Emissions, Proportion, Generation, Prices). Ticking a chart shows
+	 * or hides it at once (`immediate`), so the panel's button is Done;
+	 * ⌘/Ctrl-click keeps that chart alone within its group. A chart switched
+	 * off and back on returns in the presentation it had (nominal or real) for
+	 * this visit.
 	 *
 	 * @type {{ selected: string[], onchange: (charts: string[]) => void }}
 	 */

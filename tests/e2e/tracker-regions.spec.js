@@ -30,8 +30,8 @@ async function closeChartOptions(page) {
 }
 
 /**
- * A chart's option in its group's Charts dropdown (Emissions, Generation,
- * Prices), opening that dropdown and closing any other first.
+ * A chart's option in its group's Charts dropdown (Emissions, Proportion,
+ * Generation, Prices), opening that dropdown and closing any other first.
  * @param {import('@playwright/test').Page} page @param {string} group @param {string} name
  */
 async function chartOption(page, group, name) {
@@ -140,7 +140,8 @@ test('view routes reset query settings while history restores each view and its 
 	await regionsReady(page);
 	const nav = page.getByTestId('tracker-top-nav');
 	await expect(nav.getByRole('button', { name: 'Month', exact: true })).toBeVisible();
-	await expect(nav.getByRole('separator')).toHaveCount(1);
+	// After the view switcher, and between the chart picker and the interval.
+	await expect(nav.getByRole('separator')).toHaveCount(2);
 	await nav.getByRole('button', { name: 'Profile', exact: true }).click();
 	await expect(page).toHaveURL(/\/tracker\/profile$/);
 	await pickNavOption(page, 'Window', '7 days', '28 days');
@@ -379,15 +380,19 @@ test('two charts start visible and the charts strip controls charts, table and e
 		'aria-pressed',
 		'true'
 	);
-	await expect(await chartOption(page, 'Generation', 'Renewables')).toHaveAttribute(
+	await expect(await chartOption(page, 'Proportion', 'Renewables')).toHaveAttribute(
 		'aria-pressed',
 		'true'
+	);
+	await expect(await chartOption(page, 'Generation', 'Renewables')).toHaveAttribute(
+		'aria-pressed',
+		'false'
 	);
 	await page.screenshot({ path: 'test-results/tracker-chart-strip.png' });
 	// Each tick shows or hides its chart at once; Done only closes the panel.
 	await (await chartOption(page, 'Emissions', 'Intensity')).click();
 	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(1);
-	await (await chartOption(page, 'Generation', 'Renewables')).click();
+	await (await chartOption(page, 'Proportion', 'Renewables')).click();
 	await expect(page.getByText('No charts selected. Choose charts in the top nav.')).toBeVisible();
 	await expect(regionsTable(page).getByRole('columnheader')).toHaveCount(1);
 	await (await chartOption(page, 'Prices', 'Wind value')).click();
@@ -545,45 +550,45 @@ test('comparison charts reuse timeline options, retain curve and units, and shar
 	await page.screenshot({ path: 'test-results/tracker-comparison-chart-options.png' });
 });
 
-test('fuel chart toggles share one picker entry and persist presentation through history', async ({
+test('proportion and generation are separate picker entries that persist through history', async ({
 	page
 }) => {
 	const data = await regionsFixture(page);
 	await page.goto('/tracker/compare');
 	await regionsReady(page);
 	const requests = data.requests.length;
-	await page.getByRole('tab', { name: 'Generation', exact: true }).click();
+	// No Proportion / Generation tabs: each is its own chart.
+	await expect(page.getByRole('tab', { name: 'Generation', exact: true })).toHaveCount(0);
+	await (await chartOption(page, 'Generation', 'Renewables')).click();
 	await expect(
 		page.getByRole('heading', { name: 'Renewables generation', exact: true })
+	).toBeVisible();
+	await expect(
+		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
 	).toBeVisible();
 	await expect(regionRow(page, 'New South Wales')).toContainText('31');
-	await expect(page).toHaveURL(/compare-charts=intensity,renewables-generation/);
-	await expect(await chartOption(page, 'Generation', 'Renewables')).toHaveCount(1);
-	await (await chartOption(page, 'Generation', 'Wind')).click();
+	await expect(page).toHaveURL(/compare-charts=intensity,renewables,renewables-generation/);
+	await (await chartOption(page, 'Proportion', 'Wind')).click();
 	await expect(page.getByRole('heading', { name: 'Wind proportion', exact: true })).toBeVisible();
-	await expect(
-		page.getByRole('heading', { name: 'Renewables generation', exact: true })
-	).toBeVisible();
+	await expect(page).toHaveURL(/compare-charts=intensity,renewables,wind,renewables-generation/);
+	// The same responses serve proportions and generation.
 	expect(data.requests.length).toBe(requests);
-	// Off and on again, a chart returns in the presentation it had.
-	const renewables = await chartOption(page, 'Generation', 'Renewables');
-	await renewables.click();
-	await expect(page.getByRole('heading', { name: /^Renewables/ })).toHaveCount(0);
-	await renewables.click();
+	// Proportion's Renewables entry hides only the proportion chart.
+	await (await chartOption(page, 'Proportion', 'Renewables')).click();
+	await expect(
+		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
+	).toHaveCount(0);
 	await expect(
 		page.getByRole('heading', { name: 'Renewables generation', exact: true })
 	).toBeVisible();
 	await closeChartOptions(page);
-	await page.goBack();
-	await page.goBack();
 	await page.screenshot({ path: 'test-results/tracker-comparison-combined.png', fullPage: true });
 	await page.reload();
 	await regionsReady(page);
 	await expect(
 		page.getByRole('heading', { name: 'Renewables generation', exact: true })
 	).toBeVisible();
-	await page.goBack();
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
+	await expect(page.getByRole('heading', { name: 'Wind proportion', exact: true })).toBeVisible();
 	await page.goBack();
 	await expect(
 		page.getByRole('heading', { name: 'Renewables proportion', exact: true })
@@ -703,39 +708,28 @@ test('intervals match Timeline: grains, a rolling switch and a calendar-period f
 	await expect(page.getByRole('switch', { name: '12-mth rolling sum' })).toHaveCount(0);
 });
 
-test('the renewables card switches between official renewables and renewables excluding batteries', async ({
-	page
-}) => {
+test('renewables cards chart the official series and link its guide', async ({ page }) => {
 	const data = await regionsFixture(page);
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker/compare');
 	await regionsReady(page);
 	const requests = data.requests.length;
-	const exBatteries = page.getByRole('switch', { name: 'Excl. batteries', exact: true });
-	await expect(exBatteries).not.toBeChecked();
-	// The official footnote links OE's renewables guide, as the Renewables metric does.
+	await expect(page.getByRole('switch', { name: 'Excl. batteries', exact: true })).toHaveCount(0);
+	// The footnote links OE's renewables guide, as the Renewables metric does.
+	const guide = page.getByRole('link', { name: 'How renewable energy is calculated', exact: true });
+	await expect(guide).toHaveAttribute(
+		'href',
+		'https://docs.openelectricity.org.au/guides/renewables/'
+	);
+	// Generation shows beside the proportion; the same responses serve both.
+	await (await chartOption(page, 'Generation', 'Renewables')).click();
+	await closeChartOptions(page);
+	await expect(page).toHaveURL(/compare-charts=intensity,renewables,renewables-generation/);
 	await expect(
-		page.getByRole('link', { name: 'How renewable energy is calculated', exact: true })
-	).toHaveAttribute('href', 'https://docs.openelectricity.org.au/guides/renewables/');
-	await exBatteries.click();
-	await expect(page).toHaveURL(/compare-charts=intensity,renewables-ex-batteries/);
-	await expect(
-		page.getByRole('heading', { name: 'Renewables proportion excl. batteries', exact: true })
+		page.getByRole('heading', { name: 'Renewables generation', exact: true })
 	).toBeVisible();
-	await expect(
-		regionsTable(page).getByRole('columnheader', { name: /Renewables excl. batteries/ })
-	).toBeVisible();
-	await expect(
-		page.getByText(/Renewables excl. batteries sum solar, wind, hydro and bioenergy/)
-	).toBeVisible();
-	// Generation keeps excluding batteries; the same responses serve both.
-	await page.getByRole('tab', { name: 'Generation', exact: true }).click();
-	await expect(page).toHaveURL(/compare-charts=intensity,renewables-generation-ex-batteries/);
-	await expect(exBatteries).toBeChecked();
+	await expect(guide).toHaveCount(1);
 	expect(data.requests.length).toBe(requests);
-	await page.goBack();
-	await page.goBack();
-	await expect(exBatteries).not.toBeChecked();
 });
 
 test('charts float their own tooltips while the desktop table is closed, prices as the table reads them', async ({

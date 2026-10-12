@@ -20,16 +20,14 @@ const labels = {
 	hydro: 'Hydro'
 };
 /**
- * Every metric Compare can draw. Each belongs to one picker `chart`, whose own
- * id names its default presentation, and is one presentation of it along the
- * `PRESENTATIONS` axes: `generation` rather than proportion; `exBatteries`,
- * summing OE's renewable fuel technologies (`RENEWABLE_FUELS`) rather than the
- * official `generation_renewable_energy`, which counts battery discharge; or
- * `nominal` rather than inflation-adjusted dollars. Picker entries, URL names
- * and each card's header switches all follow from these fields.
+ * Every metric Compare can draw, in picker and card order. Each belongs to one
+ * picker `chart`, whose own id names its default presentation, and is one
+ * presentation of it along the `PRESENTATIONS` axes (`nominal` rather than
+ * inflation-adjusted dollars). A fuel's proportion and its generation are
+ * separate charts, in the Proportion and Generation groups. Picker entries,
+ * URL names and each card's header switches all follow from these fields.
  * @typedef {{id: string, chart: string, label: string, shortLabel: string, group: string,
- *   kind: string, fuel?: string, chip?: string, generation?: boolean, exBatteries?: boolean,
- *   nominal?: boolean}} ComparisonMetric
+ *   kind: string, fuel?: string, chip?: string, nominal?: boolean}} ComparisonMetric
  */
 /** @type {ComparisonMetric[]} */
 export const COMPARISON_METRICS = [
@@ -50,27 +48,6 @@ export const COMPARISON_METRICS = [
 		group: 'Emissions',
 		kind: 'emissions'
 	},
-	...generation.map((fuel) => ({
-		id: `${fuel}_generation`,
-		chart: `${fuel}_share`,
-		generation: true,
-		fuel,
-		label: `${labels[fuel]} generation`,
-		shortLabel: labels[fuel],
-		group: 'Generation',
-		kind: 'energy'
-	})),
-	{
-		id: 'renewables_generation_ex_batteries',
-		chart: 'renewables_share',
-		generation: true,
-		exBatteries: true,
-		fuel: 'renewables',
-		label: 'Renewables generation excl. batteries',
-		shortLabel: 'Renewables excl. batteries',
-		group: 'Generation',
-		kind: 'energy'
-	},
 	{
 		id: 'net_imports_share',
 		chart: 'net_imports_share',
@@ -88,16 +65,15 @@ export const COMPARISON_METRICS = [
 		group: 'Proportion',
 		kind: 'share'
 	})),
-	{
-		id: 'renewables_share_ex_batteries',
-		chart: 'renewables_share',
-		exBatteries: true,
-		fuel: 'renewables',
-		label: 'Renewables proportion excl. batteries',
-		shortLabel: 'Renewables excl. batteries',
-		group: 'Proportion',
-		kind: 'share'
-	},
+	...generation.map((fuel) => ({
+		id: `${fuel}_generation`,
+		chart: `${fuel}_generation`,
+		fuel,
+		label: `${labels[fuel]} generation`,
+		shortLabel: labels[fuel],
+		group: 'Generation',
+		kind: 'energy'
+	})),
 	...['solar', 'wind', 'hydro', 'gas', 'coal'].map((fuel) => ({
 		id: `${fuel}_value`,
 		chart: `${fuel}_value`,
@@ -137,18 +113,15 @@ export function comparisonChartId(id) {
 	return METRICS_BY_ID.get(id)?.chart ?? id;
 }
 
-/** @typedef {'generation' | 'exBatteries' | 'nominal'} PresentationKey */
+/** @typedef {'nominal'} PresentationKey */
 /**
- * The axes a chart's presentations switch along, as its card header shows
- * them: proportion or generation tabs, and toggles. `checkedWhenOff` toggles
- * read the other way round (inflation adjusted is the default).
- * @type {Array<{key: PresentationKey, control: 'tabs', labels: [string, string]} |
- *   {key: PresentationKey, control: 'toggle', label: string, checkedWhenOff?: boolean}>}
+ * The axes a chart's presentations switch along, each a toggle in its card
+ * header. `checkedWhenOff` toggles read the other way round (inflation
+ * adjusted is the default).
+ * @type {Array<{key: PresentationKey, label: string, checkedWhenOff?: boolean}>}
  */
 export const PRESENTATIONS = [
-	{ key: 'generation', control: 'tabs', labels: ['Proportion', 'Generation'] },
-	{ key: 'exBatteries', control: 'toggle', label: 'Excl. batteries' },
-	{ key: 'nominal', control: 'toggle', label: 'Inflation adjusted', checkedWhenOff: true }
+	{ key: 'nominal', label: 'Inflation adjusted', checkedWhenOff: true }
 ];
 /** The presentation axes a chart varies along. @param {string} chart */
 export function comparisonPresentations(chart) {
@@ -171,15 +144,14 @@ export function comparisonPresentation(id, key, on) {
 	return match?.id ?? id;
 }
 /** The picker's charts, in card order, each by its default presentation:
- * a short chip `label` within its `group` (Emissions, Generation, Prices),
- * with the full name as its `title`. */
+ * a short chip `label` within its `group` (Emissions, Proportion, Generation,
+ * Prices), with the full name as its `title`. */
 export const COMPARISON_CHART_OPTIONS = COMPARISON_METRICS.filter(
 	(metric) => metric.id === metric.chart
 ).map((metric) => ({
 	...metric,
 	label: metric.chip ?? metric.shortLabel,
-	title: metric.id === 'price_real' ? 'Volume-weighted price' : metric.label,
-	group: metric.kind === 'share' ? 'Generation' : metric.group
+	title: metric.id === 'price_real' ? 'Volume-weighted price' : metric.label
 }));
 export const COMPARISON_METRIC_GROUPS = [
 	...new Set(COMPARISON_CHART_OPTIONS.map((metric) => metric.group))
@@ -201,7 +173,7 @@ export function selectComparisonCharts(chartIds, current, remembered = {}) {
 }
 /** A chart's URL name: its id hyphenated, with proportions named by their
  * subject alone (`intensity`, `renewables`, `solar-wind-generation`,
- * `renewables-ex-batteries`, `net-imports`, `price-real`).
+ * `net-imports`, `price-real`).
  * @param {string} id */
 export function comparisonChartSlug(id) {
 	return id.replace('_share', '').replaceAll('_', '-');
@@ -228,18 +200,7 @@ export function comparisonUnit(id, basis, base = false) {
 	if (metric.kind === 'price') return '$/MWh';
 	return `% ${id === 'net_imports_share' || basis === 'demand' ? 'demand' : 'generation'}`;
 }
-export const FUEL_COMPONENTS = ['solar', 'wind', 'hydro', 'bioenergy', 'gas', 'coal'];
-/** OE's renewable fuel technologies (its `renewable=true` grouping): solar
- * (utility and rooftop), wind, hydro (pumped-hydro output included, as OE
- * classes it) and bioenergy — no battery discharge or pumping. */
-export const RENEWABLE_FUELS = ['solar', 'wind', 'hydro', 'bioenergy'];
-const RENEWABLE_ENERGY_KEYS = RENEWABLE_FUELS.map((fuel) => `${fuel}_energy`);
-/** Renewables excluding batteries, or null when any of its fuels is missing.
- * @param {Record<string, any> | undefined} row */
-function renewablesExBatteries(row) {
-	const values = RENEWABLE_ENERGY_KEYS.map((key) => row?.[key]);
-	return values.every(Number.isFinite) ? values.reduce((a, b) => a + b, 0) : null;
-}
+export const FUEL_COMPONENTS = ['solar', 'wind', 'hydro', 'gas', 'coal'];
 /** Display value for the Regions table and stripes tooltips: one decimal,
  * energy in GWh, missing readings as an em dash.
  * @param {number | null | undefined} value @param {string} id */
@@ -469,9 +430,7 @@ export function comparisonMetricValue(row, id, basis) {
 	const fuel = metric.fuel;
 	const energy =
 		fuel === 'renewables'
-			? metric.exBatteries
-				? renewablesExBatteries(row)
-				: row?.renewables
+			? row?.renewables
 			: fuel === 'solar_wind'
 				? sum(row?.solar_energy, row?.wind_energy)
 				: row?.[`${fuel}_energy`];

@@ -108,15 +108,13 @@ test.describe('Chart card header', () => {
 		await expect(card(page, 'Generation').getByTestId('series-legend')).toHaveCount(0);
 	});
 
-	test('Compare cards key their regions and use the compact header toggles', async ({ page }) => {
+	test('Compare cards key their regions while the Regions table is closed', async ({ page }) => {
 		await regionsFixture(page);
 		await page.setViewportSize({ width: 1440, height: 1000 });
 		await page.goto('/tracker/compare?compare-table=0');
 		const renewables = card(page, 'Renewables proportion');
 		await expect(renewables.locator('.path-line').first()).toHaveAttribute('d', /^M/);
 		await expect(renewables.getByTestId('series-legend')).toBeVisible();
-		const exBatteries = renewables.getByRole('switch', { name: 'Excl. batteries', exact: true });
-		await expect(exBatteries).toHaveAttribute('aria-checked', 'false');
 		await page.getByRole('button', { name: 'Show regions table' }).click();
 		await expect(renewables.getByTestId('series-legend')).toHaveCount(0);
 	});
