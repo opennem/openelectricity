@@ -22,6 +22,8 @@
 	 * card container, between cards. The height is passed to `children` as a
 	 * snippet parameter and persists to localStorage under `heightStorageKey`
 	 * (share one key across a split pair so toggling keeps the chosen height).
+	 * Until resized, the card follows its default as it changes: `defaultHeightPx`,
+	 * or taller to fill `fillHeightPx` (the space for the card and its handle).
 	 *
 	 * @type {{
 	 *   title: string,
@@ -33,6 +35,7 @@
 	 *   loading?: boolean,
 	 *   heightStorageKey?: string,
 	 *   defaultHeightPx?: number,
+	 *   fillHeightPx?: number,
 	 *   minHeightPx?: number,
 	 *   maxHeightPx?: number,
 	 *   actions?: import('svelte').Snippet,
@@ -52,6 +55,7 @@
 		loading = false,
 		heightStorageKey = '',
 		defaultHeightPx = 260,
+		fillHeightPx = 0,
 		minHeightPx = 120,
 		maxHeightPx = 800,
 		actions,
@@ -63,12 +67,29 @@
 
 	const height = createDockedPanel({
 		axis: 'y',
-		initial: untrack(() => defaultHeightPx),
+		initial: () => Math.max(defaultHeightPx, fitHeightPx),
 		min: () => minHeightPx,
 		max: () => maxHeightPx,
 		storageKey: untrack(() => heightStorageKey) || undefined
 	});
 	let heightPx = $derived(height.size);
+
+	/** The handle (or spacer) under the card: `h-4`. */
+	const HANDLE_PX = 16;
+	/** The card's height beyond its chart: header, padding, a readout strip. */
+	let chromePx = $state(0);
+	/** The chart height that fits the card and its handle into `fillHeightPx`. */
+	let fitHeightPx = $derived(fillHeightPx && chromePx ? fillHeightPx - chromePx - HANDLE_PX : 0);
+
+	/** Measured after layout, so the chart height read is the one drawn.
+	 * @type {import('svelte/attachments').Attachment<HTMLElement>} */
+	function measureChrome(section) {
+		const observer = new ResizeObserver(() => {
+			chromePx = section.offsetHeight - heightPx;
+		});
+		observer.observe(section);
+		return () => observer.disconnect();
+	}
 </script>
 
 {#snippet headerActions()}
@@ -107,6 +128,7 @@
 	     card pads its header and body instead, like the scenarios' mini
 	     charts. -->
 	<section
+		{@attach fillHeightPx ? measureChrome : undefined}
 		data-tracker-png={png ? JSON.stringify(png) : undefined}
 		class="overflow-hidden rounded-lg border bg-white transition-colors {highlighted ||
 		(engaged && !mini)

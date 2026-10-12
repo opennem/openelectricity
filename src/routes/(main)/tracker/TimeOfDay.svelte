@@ -466,6 +466,8 @@
 	 * either chart) picks the row, as on Timeline, and stands out on both. */
 	let hoveredCard = $state(/** @type {string | null} */ (null));
 	let dialHovered = $state(false);
+	/** The chart column's visible height: the stacked area's default fills it. */
+	let canvasHeight = $state(0);
 	let stackSeries = $state(/** @type {string | null} */ (null));
 	/** @param {string} key @param {boolean} hovered */
 	function hoverCard(key, hovered) {
@@ -892,6 +894,7 @@
 		resizeLabel="Resize table panel"
 		railLabel="Show fuel tech table"
 		bind:engaged={panZoomEngaged}
+		bind:canvasHeight
 		pngContext={`${regionLabel} · ${window.dates[0]} to ${window.lastDate} · UTC${zone} · ${group.label}`}
 	>
 		{#if !breakdown}
@@ -912,6 +915,8 @@
 				engaged={panZoomEngaged}
 				heightStorageKey="tracker-profile-height-stack"
 				defaultHeightPx={320}
+				fillHeightPx={canvasHeight}
+				maxHeightPx={1200}
 			>
 				{#snippet children(heightPx)}
 					{#if stackUnavailable}

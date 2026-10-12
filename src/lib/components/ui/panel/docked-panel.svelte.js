@@ -9,13 +9,15 @@ import { createResizeControl } from './resize-control.svelte.js';
  * Size units are the caller's: pixels, or a percentage of a container when
  * `scale` converts pointer pixels. The effective size is clamped to the live
  * bounds, so a remembered size still fits after the viewport shrinks. A saved
- * size is restored after mount so server and first client paint agree.
+ * size is restored after mount so server and first client paint agree. A
+ * getter `initial` is a live default, followed until the size is resized or
+ * restored.
  *
  * Must be called during component init.
  *
  * @param {{
  *   axis?: 'x' | 'y',
- *   initial: number,
+ *   initial: number | (() => number),
  *   min: () => number,
  *   max: () => number,
  *   storageKey?: string,
@@ -30,8 +32,15 @@ import { createResizeControl } from './resize-control.svelte.js';
  */
 export function createDockedPanel(opts) {
 	const axis = opts.axis ?? 'x';
-	let size = $state(opts.initial);
-	let effectiveSize = $derived(Math.min(opts.max(), Math.max(opts.min(), size)));
+	const { initial } = opts;
+	/** Null until resized or restored: the size follows `initial` until then. */
+	let size = $state(/** @type {number | null} */ (null));
+	let effectiveSize = $derived(
+		Math.min(
+			opts.max(),
+			Math.max(opts.min(), size ?? (typeof initial === 'function' ? initial() : initial))
+		)
+	);
 	let opener = $state(/** @type {HTMLButtonElement | undefined} */ (undefined));
 	let closer = $state(/** @type {HTMLButtonElement | undefined} */ (undefined));
 
@@ -65,7 +74,10 @@ export function createDockedPanel(opts) {
 		scale: opts.scale,
 		inverted: opts.inverted,
 		step: opts.step,
-		commit: () => remember(size)
+		// A click without a drag leaves a live default free to follow.
+		commit: () => {
+			if (size !== null) remember(size);
+		}
 	});
 
 	/** Apply the change, then hand keyboard focus to the control that appears.

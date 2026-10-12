@@ -32,7 +32,8 @@
 	 *
 	 * The panel snippets receive the docked-panel controller so the panel's
 	 * close control and the rail's opener can take part in the focus hand-off
-	 * (`bind:closeButton={dock.closer}`).
+	 * (`bind:closeButton={dock.closer}`). `canvasHeight` reports the chart
+	 * column's visible height inside its padding, for charts that fill it.
 	 *
 	 * @type {{
 	 *   config: import('./types.js').TrackerSplitConfig,
@@ -42,6 +43,7 @@
 	 *   resizeLabel: string,
 	 *   railLabel: string,
 	 *   engaged?: boolean,
+	 *   canvasHeight?: number,
 	 *   pngContext?: string,
 	 *   children: import('svelte').Snippet,
 	 *   panel: import('svelte').Snippet<[import('./types.js').TrackerDock]>,
@@ -57,6 +59,7 @@
 		resizeLabel,
 		railLabel,
 		engaged = $bindable(false),
+		canvasHeight = $bindable(0),
 		pngContext = undefined,
 		children,
 		panel,
@@ -145,6 +148,9 @@
 			: 'pr-4 md:pr-6'}"
 		use:clickoutside={{ event: 'pointerdown', options: true }}
 		onclickoutside={() => (engaged = false)}
+		bind:contentRect={
+			null, (/** @type {DOMRectReadOnly | undefined} */ rect) => (canvasHeight = rect?.height ?? 0)
+		}
 	>
 		{@render children()}
 	</div>
