@@ -4,7 +4,7 @@
 		comparisonMetric,
 		formatComparisonCell
 	} from './comparison-metrics.js';
-	import { onDestroy, untrack } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { inspectionStep } from './comparison-inspection.js';
@@ -63,7 +63,6 @@
 	} = $props();
 	const chart = new ChartStore({
 		key: Symbol('region-comparison'),
-		title: untrack(() => metric),
 		chartType: 'line',
 		timeZone: 'UTC',
 		hideDataOptions: true,
@@ -77,6 +76,8 @@
 	// A region's line takes the pointer, naming its row in the Regions table;
 	// the hovered region stands out on every card while the others recede.
 	chart.chartStyles.lineHitWidth = 10;
+	chart.chartStyles.strokeWidth = 2;
+	chart.chartStyles.highlightStrokeWidth = 2.5;
 	chart.chartOptions.allowHoverHighlight = true;
 	/** @type {ReturnType<typeof comparisonChartUnits>} */
 	const RANK_UNITS = { baseUnit: '', prefix: '', display: '', allowed: [] };
@@ -123,7 +124,6 @@
 	$effect(() => {
 		chart.seriesData = rows;
 		chart.seriesNames = regions;
-		chart.title = definition.shortLabel;
 		chart.formatTooltipX = (date) => comparisonPeriod(Number(date), interval);
 	});
 	$effect(() => {

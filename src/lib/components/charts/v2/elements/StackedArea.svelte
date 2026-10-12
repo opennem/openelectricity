@@ -26,8 +26,9 @@
 	 * @property {*} [curveType] - D3 curve type
 	 * @property {Object.<string, string>} [seriesColours] - Map of series id to colour
 	 * @property {string | null} [highlightId] - Currently highlighted series id
-	 * @property {string} [strokeWidth] - Line stroke width
+	 * @property {number} [strokeWidth] - Line stroke width
 	 * @property {Record<string, number>} [strokeWidths] - Line display: per-series widths over `strokeWidth`
+	 * @property {number | null} [highlightStrokeWidth] - Line display: the highlighted series' width
 	 * @property {number} [lineHitWidth] - Line display: the line within half this width (px) of
 	 *   the pointer, at the hovered time, reports its series key on hover; 0 leaves the lines inert
 	 * @property {boolean} [showLineDots] - Show dots on line chart
@@ -51,8 +52,9 @@
 		curveType = curveLinear,
 		seriesColours = {},
 		highlightId = null,
-		strokeWidth = '1.5',
+		strokeWidth = 1.5,
 		strokeWidths = {},
+		highlightStrokeWidth = null,
 		lineHitWidth = 0,
 		showLineDots = false,
 		dotRadius = 3,
@@ -130,6 +132,11 @@
 			.defined((/** @type {any} */ d) => d.value !== null && !isNaN(d.value))
 	);
 
+	/** @param {any} d - Data item with key or group */
+	function isHighlighted(d) {
+		return highlightId === d.key || highlightId === d.group;
+	}
+
 	/**
 	 * Calculate opacity based on highlight state
 	 * @param {any} d - Data item with key or group
@@ -138,7 +145,7 @@
 	 */
 	function getOpacity(d, normalOpacity, dimmedOpacity) {
 		if (!highlightId) return normalOpacity;
-		return highlightId === d.key || highlightId === d.group ? normalOpacity : dimmedOpacity;
+		return isHighlighted(d) ? normalOpacity : dimmedOpacity;
 	}
 
 	/**
@@ -266,7 +273,10 @@
 			{@const seriesKey = d.key || d.group}
 			{@const path = lineGen(d.values)}
 			{@const stroke = seriesColours[$z(d)]}
-			{@const width = strokeWidths[$z(d)] ?? strokeWidth}
+			{@const width =
+				highlightStrokeWidth !== null && highlightId && isHighlighted(d)
+					? highlightStrokeWidth
+					: (strokeWidths[$z(d)] ?? strokeWidth)}
 			{@const op = getOpacity(d, 1, 0.5)}
 
 			<!-- Optional dots for line chart -->

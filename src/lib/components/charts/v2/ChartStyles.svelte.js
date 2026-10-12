@@ -94,8 +94,12 @@ export default class ChartStyles {
 	zeroValueStroke = $state('#33333344');
 
 	// Line chart styling
-	/** @type {string} */
-	strokeWidth = $state('2px');
+	/** Line charts: the default line width (px). @type {number} */
+	strokeWidth = $state(1.5);
+
+	/** Line charts: the hovered line's width (px) while hover highlighting
+	 *  dims the others; null keeps its usual width. @type {number | null} */
+	highlightStrokeWidth = $state(null);
 
 	/** @type {string} */
 	strokeArray = $state('4');

@@ -283,9 +283,11 @@
 					</h3>
 					{#if hosted}
 						<span class="flex items-baseline gap-1.5 whitespace-nowrap">
-							<span class="font-space text-xxs uppercase tracking-wide text-mid-grey"
-								>{hosted.chart.title}</span
-							>
+							{#if hosted.chart.title}
+								<span class="font-space text-xxs uppercase tracking-wide text-mid-grey"
+									>{hosted.chart.title}</span
+								>
+							{/if}
 							<ChartHeaderUnit chart={hosted.chart} />
 						</span>
 					{/if}
