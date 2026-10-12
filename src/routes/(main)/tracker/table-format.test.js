@@ -8,7 +8,7 @@ import {
 	formatTablePercentage,
 	formatTablePower,
 	formatTablePrice,
-	formatTrackerPercentageValue,
+	formatPercentageValue,
 	splitTableLabel
 } from './table-format.js';
 
@@ -50,10 +50,10 @@ describe('formatTablePercentage', () => {
 	});
 });
 
-describe('formatTrackerPercentageValue', () => {
+describe('formatPercentageValue', () => {
 	it('keeps one decimal while leaving the unit to the tooltip', () => {
-		expect(formatTrackerPercentageValue(10)).toBe('10.0');
-		expect(formatTrackerPercentageValue(67.89)).toBe('67.9');
+		expect(formatPercentageValue(10)).toBe('10.0');
+		expect(formatPercentageValue(67.89)).toBe('67.9');
 	});
 });
 

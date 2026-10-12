@@ -12,15 +12,28 @@ import { networkQueryKey } from '$lib/components/charts/network/network-query.js
 export function createTrackerData(opts) {
 	/** @type {Partial<Record<ChartKey, Snapshot>>} */
 	let snapshots = $state.raw({});
+	/** Each held snapshot's series identity (`seriesKey` when published). */
+	/** @type {Partial<Record<ChartKey, string>>} */
+	let identities = $state.raw({});
 	const names = /** @type {const} */ (['generation', 'market', 'emissions']);
 	/** @param {ChartKey} name */
 	function queryKey(name) {
+		return keyFor(name, opts.session.window);
+	}
+	/** The chart's query without its window: what a snapshot shows, wherever
+	 * the reader has panned to.
+	 * @param {ChartKey} name */
+	function seriesKey(name) {
+		return keyFor(name, { start: 0, end: 0 });
+	}
+	/** @param {ChartKey} name @param {{start: number, end: number}} window */
+	function keyFor(name, window) {
 		const { region, group, bucketFilter } = opts.session.selection;
 		return networkQueryKey({
 			region,
 			group,
 			bucketFilter,
-			...opts.session.window,
+			...window,
 			metric:
 				name === 'generation'
 					? opts.session.range.activeMetric
@@ -46,14 +59,25 @@ export function createTrackerData(opts) {
 		const snapshot = snapshots[name];
 		return snapshot?.queryKey === queryKey(name) ? snapshot : null;
 	}
+	/** The latest snapshot of the chart's series, from this window or an
+	 * earlier one (a pan away): null once the region, grouping, metric,
+	 * interval or filter changes. Comparisons read it, so a pan never blanks
+	 * them; everything that must match the window reads `current`.
+	 * @param {ChartKey} name */
+	function latest(name) {
+		return identities[name] === seriesKey(name) ? (snapshots[name] ?? null) : null;
+	}
 	return {
 		queryKey,
+		seriesKey,
 		state,
 		current,
+		latest,
 		/** @param {ChartKey} name @param {Snapshot} snapshot */
 		publish(name, snapshot) {
 			if (snapshot.queryKey !== queryKey(name)) return;
 			snapshots = { ...snapshots, [name]: snapshot };
+			identities = { ...identities, [name]: seriesKey(name) };
 		},
 		/** @param {ChartKey} name */
 		ready(name) {

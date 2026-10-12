@@ -1,10 +1,18 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { inflateRawSync } from 'node:zlib';
 import {
 	card,
+	closeDownloads,
+	csvHeader,
 	download,
+	downloadRows,
+	downloadText,
+	downloadWorkbook,
+	expectDownloadsMatchCharts,
 	expectNoHorizontalScroll,
+	openDownloads,
+	workbookSheetNames,
+	workbookXml,
 	navPill,
 	openOptions,
 	pickNavOption,
@@ -93,22 +101,6 @@ async function chartsSettled(page) {
 	await expect(page.getByTestId('tracker-loading')).toHaveCount(0);
 }
 
-/** Read a generated XLSX's XML via its ZIP directory, without a second spreadsheet library. */
-function workbookXml(buffer, wanted) {
-	for (let offset = 0; offset < buffer.length - 46; offset++) {
-		if (buffer.readUInt32LE(offset) !== 0x02014b50) continue;
-		const length = buffer.readUInt16LE(offset + 28);
-		const name = buffer.subarray(offset + 46, offset + 46 + length).toString();
-		if (name !== wanted) continue;
-		const size = buffer.readUInt32LE(offset + 20);
-		const local = buffer.readUInt32LE(offset + 42);
-		const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
-		const content = buffer.subarray(start, start + size);
-		return (buffer.readUInt16LE(offset + 10) === 8 ? inflateRawSync(content) : content).toString();
-	}
-	throw new Error(`Missing workbook entry: ${wanted}`);
-}
-
 for (const group of ['detailed', 'simple']) {
 	test(`rooftop interpolation is display-only and disclosed in ${group} grouping`, async ({
 		page
@@ -165,7 +157,7 @@ for (const group of ['detailed', 'simple']) {
 		const tooltip = await hoverGeneration(page);
 		await expect(tooltip).toContainText(group === 'detailed' ? '310' : '510');
 		await expect(card(page, 'Generation')).toHaveAttribute(
-			'data-tracker-png',
+			'data-chart-png',
 			/Rooftop solar.*interpolated/
 		);
 		await trackerReady(page);
@@ -194,7 +186,7 @@ for (const group of ['detailed', 'simple']) {
 		);
 		await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
 		await expect(note).toHaveCount(0);
-		await expect(card(page, 'Generation')).not.toHaveAttribute('data-tracker-png', /interpolated/);
+		await expect(card(page, 'Generation')).not.toHaveAttribute('data-chart-png', /interpolated/);
 	});
 }
 
@@ -468,7 +460,7 @@ test('tracker slides one nav logo in place of the date range and overlays charts
 	await expect(loader.locator('svg')).toHaveAttribute('viewBox', '70 6 24 16');
 	const rangeStatus = page.getByTestId('tracker-range-status');
 	const rangeLabel = page.getByTestId('tracker-range-label');
-	const overlays = page.getByTestId('tracker-loading-overlay');
+	const overlays = page.getByTestId('card-loading-overlay');
 	await expect(rangeStatus.getByTestId('tracker-loading')).toBeVisible();
 	await expect(rangeLabel).toHaveCSS('opacity', '0');
 	await expect(overlays).toHaveCount(4);
@@ -478,7 +470,7 @@ test('tracker slides one nav logo in place of the date range and overlays charts
 		await expect(overlay).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.65)');
 	}
 	const metrics = page.getByRole('region', { name: 'Window metrics' });
-	await expect(metrics.getByTestId('tracker-loading-overlay')).toHaveCount(0);
+	await expect(metrics.getByTestId('card-loading-overlay')).toHaveCount(0);
 	await expect(
 		page.locator('[data-testid="chart-loading"], [data-testid="table-loading"]')
 	).toHaveCount(0);
@@ -552,7 +544,7 @@ test('shared loading waits for table-only data after charts settle and fits mobi
 	await expect
 		.poll(() =>
 			page
-				.getByTestId('tracker-loading-overlay')
+				.getByTestId('card-loading-overlay')
 				.first()
 				.evaluate((el) => getComputedStyle(el, '::after').animationName)
 		)
@@ -938,7 +930,7 @@ test('PNG exports selected Stratum layers, legends and edited captions as the ex
 	await page.goto('/tracker/timeline?region=nsw1&range=7d&table=0');
 	await trackerReady(page);
 	await expect
-		.poll(() => card(page, 'Generation').getAttribute('data-tracker-png'))
+		.poll(() => card(page, 'Generation').getAttribute('data-chart-png'))
 		.toContain('"ready":true');
 	// Record canvas text to verify provenance and legends in the bitmap, not just UI copy.
 	await page.evaluate(() => {
@@ -1016,7 +1008,7 @@ test('PNG prevents held-frame export and freezes readiness until reopened', asyn
 	await expect(dialog.getByRole('button', { name: 'Download PNG' })).toBeDisabled();
 	api.release();
 	await expect
-		.poll(() => card(page, 'Market').getAttribute('data-tracker-png'))
+		.poll(() => card(page, 'Market').getAttribute('data-chart-png'))
 		.toContain('"ready":true');
 	await expect(dialog.getByRole('checkbox', { name: /Market/ })).toBeDisabled();
 	await dialog.getByRole('button', { name: 'Close', exact: true }).click();
@@ -1033,7 +1025,7 @@ test('PNG captures average-day charts and fits a narrow screen', async ({ page }
 	await page.goto('/tracker/profile?profile-end=2026-08-31');
 	// Stacked exports its one card: the stacked area (the radial bars sit in the
 	// table panel).
-	await expect(page.locator('[data-tracker-png]')).toHaveCount(1);
+	await expect(page.locator('[data-chart-png]')).toHaveCount(1);
 	const dialog = await openPng(page);
 	await expect(dialog.getByRole('checkbox')).toHaveCount(1);
 	await expect(dialog.getByRole('button', { name: 'Download PNG' })).toBeEnabled();
@@ -1053,7 +1045,7 @@ test('PNG excludes confirmed empty charts while keeping ready charts selectable'
 	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await expect(card(page, 'Market').getByText('No data for this range.')).toBeVisible();
 	await expect
-		.poll(() => card(page, 'Generation').getAttribute('data-tracker-png'))
+		.poll(() => card(page, 'Generation').getAttribute('data-chart-png'))
 		.toContain('"ready":true');
 	const dialog = await openPng(page);
 	await expect(dialog.getByRole('checkbox', { name: /Market/ })).toBeDisabled();
@@ -1071,21 +1063,37 @@ test('PNG supports percentage overlays and comparisons without refetching and ca
 		`/tracker/timeline?start=${a}&end=${b + 86_400_000}&interval=30m&table=0&transform=proportion&contribution=demand&overlay=demand`
 	);
 	await expect
-		.poll(() => card(page, 'Generation').getAttribute('data-tracker-png'))
+		.poll(() => card(page, 'Generation').getAttribute('data-chart-png'))
 		.toContain('"ready":true');
 	await card(page, 'Generation')
-		.getByRole('button', { name: 'Compare dates', exact: true })
+		.getByRole('button', { name: 'Compare Generation', exact: true })
 		.click();
-	await expect(
-		page
-			.getByRole('region', { name: 'Two-date comparison' })
-			.getByRole('button', { name: 'Download comparison CSV' })
-	).toBeEnabled();
+	await expect
+		.poll(() =>
+			page
+				.getByRole('region', { name: 'Generation comparison' })
+				.locator('[data-chart-png]')
+				.getAttribute('data-chart-png')
+		)
+		.toContain('"ready":true');
 	const metadata = await card(page, 'Generation')
 		.locator('[data-chart-image]')
+		.first()
 		.getAttribute('data-chart-image');
 	expect(metadata).toContain('% of gross demand');
 	expect(metadata).toContain('Demand');
+	// Let the charts' idle warming (background prefetch) finish first.
+	let seen = -1;
+	await expect
+		.poll(
+			() => {
+				const settled = api.requests.length === seen;
+				seen = api.requests.length;
+				return settled;
+			},
+			{ intervals: [750] }
+		)
+		.toBe(true);
 	const count = api.requests.length;
 	await page.evaluate(() => {
 		window.__originalContext = HTMLCanvasElement.prototype.getContext;
@@ -1106,82 +1114,155 @@ test('PNG supports percentage overlays and comparisons without refetching and ca
 	expect(api.requests.length).toBe(count);
 });
 
-test('two-date comparison uses signed displayed values, Stratum bars, CSV and history without fetching', async ({
+test('compare mode halves the chart, picks A and B by clicking it and slides a panel in', async ({
+	page
+}, testInfo) => {
+	await trackerFixture(page, { contributions: true, comparisonGrowth: true });
+	const a = Date.parse('2026-08-01T00:00:00+10:00');
+	const b = a + 86_400_000;
+	await page.goto(`/tracker/timeline?start=${a}&end=${b + 86_400_000}&interval=30m&table=0`);
+	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
+	const generation = card(page, 'Generation');
+	const plot = generation.locator('.stratum-chart-area').first();
+	const fullHeight = await plot.evaluate((el) => el.getBoundingClientRect().height);
+	const toggle = generation.getByRole('button', { name: 'Compare Generation', exact: true });
+	await toggle.click();
+	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+	const panel = page.getByRole('region', { name: 'Generation comparison' });
+	await expect(panel).toBeVisible();
+	await expect
+		.poll(() => plot.evaluate((el) => el.getBoundingClientRect().height))
+		.toBeLessThan(fullHeight * 0.7);
+	expect(await plot.evaluate((el) => el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(
+		150
+	);
+	// Opens on the first and last buckets in view, A armed.
+	const url = () => new URL(page.url()).searchParams;
+	await expect.poll(() => url().get('compare')).toBe('generation');
+	expect(url().get('compare-a')).toBe(String(a));
+	await expect(panel.getByTestId('compare-slot-a').getByRole('button').first()).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(generation.locator('.time-markers text', { hasText: /^A$/ })).toHaveCount(1);
+	// Two clicks set A then B, without engaging pan and zoom.
+	const box = /** @type {{x: number, y: number, width: number, height: number}} */ (
+		await plot.boundingBox()
+	);
+	await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.6);
+	await expect.poll(() => url().get('compare-a')).not.toBe(String(a));
+	await page.mouse.click(box.x + box.width * 0.7, box.y + box.height * 0.6);
+	await expect
+		.poll(() => Number(url().get('compare-b')))
+		.toBeGreaterThan(Number(url().get('compare-a')));
+	await expect(generation.getByRole('button', { name: 'Enable pan and zoom' })).toBeVisible();
+	// The armed slot's ghost follows this chart's own pointer only: a time
+	// pinned elsewhere (a metrics-strip extreme), which every chart's hover
+	// shows, leaves it hidden.
+	const ghost = generation.locator('.time-markers g[data-png-exclude]');
+	await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+	await expect(ghost).toHaveCount(1);
+	await page.getByTestId('metric-generation-max').click();
+	await page.mouse.move(0, 0);
+	await expect(generation.locator('line.line-x')).toHaveCount(1);
+	await expect(ghost).toHaveCount(0);
+	await page.getByTestId('metric-generation-max').click();
+	await expect(panel.getByTestId('compare-slot-a').getByRole('button').first()).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	// Steppers and the keyboard move a slot one bucket at a time.
+	const pickedA = Number(url().get('compare-a'));
+	await panel.getByRole('button', { name: 'Next interval for A' }).click();
+	await expect.poll(() => Number(url().get('compare-a'))).toBe(pickedA + 1_800_000);
+	await panel.getByTestId('compare-slot-a').getByRole('button').first().press('ArrowLeft');
+	await expect.poll(() => Number(url().get('compare-a'))).toBe(pickedA);
+	await page.screenshot({ path: testInfo.outputPath('compare-mode.png'), fullPage: true });
+	// Closing returns the chart to its height.
+	await toggle.click();
+	await expect(panel).toBeHidden();
+	await expect.poll(() => url().has('compare')).toBe(false);
+	await expect
+		.poll(() => plot.evaluate((el) => el.getBoundingClientRect().height))
+		.toBeCloseTo(fullHeight, 0);
+});
+
+test('a composition comparison lists signed changes by technology, with CSV and history, without fetching', async ({
 	page
 }, testInfo) => {
 	const api = await trackerFixture(page, { contributions: true, comparisonGrowth: true });
 	const a = Date.parse('2026-08-01T00:00:00+10:00');
 	const b = a + 86_400_000;
-	await page.goto(`/tracker/timeline?start=${a}&end=${b + 86_400_000}&interval=30m&table=0`);
-	await expect(page.getByTestId('metric-generation-min')).toBeEnabled();
-	await card(page, 'Generation')
-		.getByRole('button', { name: 'Compare dates', exact: true })
-		.click();
-	const panel = page.getByRole('region', { name: 'Two-date comparison' });
-	await expect(panel.getByRole('combobox', { name: 'Date A', exact: true })).toBeEnabled();
-	await panel.getByRole('combobox', { name: 'Date A', exact: true }).selectOption(String(a));
-	await panel.getByRole('combobox', { name: 'Date B', exact: true }).selectOption(String(b));
+	await page.goto(
+		`/tracker/timeline?start=${a}&end=${b + 86_400_000}&interval=30m&table=0&compare=generation&compare-a=${a}&compare-b=${b}`
+	);
+	const panel = page.getByRole('region', { name: 'Generation comparison' });
 	const coal = panel
 		.getByRole('row')
 		.filter({ has: page.getByRole('rowheader', { name: 'Coal', exact: true }) });
-	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100.0%']);
+	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '+100', '+100.0%']);
 	const load = panel
 		.getByRole('row')
 		.filter({ has: page.getByRole('rowheader', { name: 'Battery (Charging)', exact: true }) });
-	await expect(load.getByRole('cell')).toHaveText(['-400', '-800', '-400', '-100.0%']);
+	// Loads read as consumption: charging −400 → −800 MW is a rise of 400.
+	await expect(load.getByRole('cell')).toHaveText(['400', '800', '+400', '+100.0%']);
+	// One change list, loads among the sources and tagged, each row a diverging bar.
+	await expect(panel.locator('svg text', { hasText: 'Sources' })).toHaveCount(0);
 	await expect(
-		panel
-			.getByRole('rowgroup', { name: 'Sources' })
-			.getByRole('rowheader', { name: 'Coal', exact: true })
+		panel.locator('[data-row="battery_charging"] tspan', { hasText: 'load' })
 	).toBeVisible();
-	await expect(
-		panel
-			.getByRole('rowgroup', { name: 'Loads' })
-			.getByRole('rowheader', { name: 'Battery (Charging)', exact: true })
-	).toBeVisible();
-	await expect(
-		panel
-			.getByRole('rowgroup', { name: 'Sources' })
-			.getByRole('rowheader', { name: 'Battery (Charging)', exact: true })
-	).toHaveCount(0);
-	const axisLabels = panel.locator('.x-axis-rotated text');
-	await expect(axisLabels.first()).toBeVisible();
-	expect(await axisLabels.first().evaluate((el) => getComputedStyle(el).fill)).toBe(
-		'rgb(53, 53, 53)'
+	await expect(panel.getByTestId('compare-row')).toHaveCount(4);
+	// By default, the largest rise first.
+	await expect(panel.getByTestId('compare-row').first()).toHaveAttribute(
+		'data-row',
+		'battery_charging'
 	);
-
-	await expect(panel.locator('.stratum-chart .stacked-bar rect')).toHaveCount(4);
-	await panel.locator('.stacked-bar rect').first().hover();
-	await expect(panel.locator('.stratum-chart')).toContainText('Wind');
-	await panel.getByRole('button', { name: 'Coal', exact: true }).focus();
-	await expect(panel.locator('.stratum-chart')).toContainText('Coal');
+	await expect(panel.getByTestId('compare-row').last()).toHaveAttribute('data-row', 'coal');
+	await panel.getByRole('tab', { name: 'Stack order' }).click();
+	await expect(panel.getByTestId('compare-row').first()).toHaveAttribute('data-row', 'wind');
+	// Let the charts' idle warming (background prefetch) finish first: it is
+	// not the comparison's traffic.
+	let seen = -1;
+	await expect
+		.poll(
+			() => {
+				const settled = api.requests.length === seen;
+				seen = api.requests.length;
+				return settled;
+			},
+			{ intervals: [750] }
+		)
+		.toBe(true);
 	const requestCount = api.requests.length;
-	const csvDownload = page.waitForEvent('download');
-	await panel.getByRole('button', { name: 'Download comparison CSV' }).click();
-	const csv = await readFile(await (await csvDownload).path(), 'utf8');
+	const csv = await downloadText(await download(page, 'Generation comparison'));
 	expect(csv).toContain('Change B − A (MW)');
-	expect(csv).toContain(',-400,-800,-400,-100');
+	expect(csv).toContain('Load (as consumption)');
+	expect(csv).toContain(',true,');
+	expect(csv).toContain(',400,800,400,100');
 	await panel.getByRole('button', { name: 'Swap A and B' }).click();
 	await expect(coal.getByRole('cell')).toHaveText(['200', '100', '-100', '-50.0%']);
 	await page.goBack();
-	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100.0%']);
+	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '+100', '+100.0%']);
 	expect(api.requests.length).toBe(requestCount);
 	const link = page.url();
 	await page.reload();
-	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100.0%']);
+	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '+100', '+100.0%']);
 	expect(page.url()).toBe(link);
 	await panel.scrollIntoViewIfNeeded();
-	await page.screenshot({ path: testInfo.outputPath('two-date-comparison.png'), fullPage: true });
+	await page.screenshot({
+		path: testInfo.outputPath('composition-comparison.png'),
+		fullPage: true
+	});
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(panel).toBeVisible();
 	await expectNoHorizontalScroll(page);
 	await page.screenshot({
-		path: testInfo.outputPath('two-date-comparison-mobile.png'),
+		path: testInfo.outputPath('composition-comparison-mobile.png'),
 		fullPage: true
 	});
 });
 
-test('comparison rejects stale range dates and waits for failed or missing generation', async ({
+test('older compare=1 links open Generation; failed and out-of-view dates, and a new range closes it', async ({
 	page
 }) => {
 	const api = await trackerFixture(page, { fail: 'power' });
@@ -1190,27 +1271,36 @@ test('comparison rejects stale range dates and waits for failed or missing gener
 	await page.goto(
 		`/tracker/timeline?region=wem&start=${a}&end=${b + 86_400_000}&interval=30m&table=0&compare=1&compare-a=${a}&compare-b=${b}`
 	);
-	const panel = page.getByRole('region', { name: 'Two-date comparison' });
+	const panel = page.getByRole('region', { name: 'Generation comparison' });
 	await expect(panel).toContainText('Comparison unavailable');
-	await expect(panel.getByRole('button', { name: 'Download comparison CSV' })).toBeDisabled();
 	const retry = card(page, 'Generation').getByRole('button', { name: 'Retry', exact: true });
 	// Wait for bounded automatic retries to finish before recovering the fixture.
 	// Otherwise an in-flight automatic retry can succeed and remove this button.
 	await expect(retry).toBeVisible();
 	api.recover();
 	await retry.click();
-	await expect(panel.getByRole('button', { name: 'Download comparison CSV' })).toBeEnabled();
-	await expect(panel).toContainText('UTC+08:00');
+	await expect(panel.getByTestId('compare-row').first()).toBeVisible();
+	// A new range closes compare mode: A and B described the old one.
 	await page.getByRole('button', { name: '3D', exact: true }).click();
-	await expect(panel).toContainText('Select two available intervals');
-	await expect(panel.getByRole('button', { name: 'Download comparison CSV' })).toBeDisabled();
-	await expect(panel.locator('.stratum-chart')).toHaveCount(0);
-	await panel.getByRole('button', { name: 'Close comparison' }).click();
+	await expect(panel).toBeHidden();
+	expect(new URL(page.url()).searchParams.has('compare')).toBe(false);
+	// Dates the chart never drew say so, with a way back to them.
+	await page.goto(
+		`/tracker/timeline?region=wem&start=${b + 86_400_000}&end=${b + 3 * 86_400_000}&interval=30m&table=0&compare=generation&compare-a=${a}&compare-b=${b}`
+	);
+	await expect(panel.getByTestId('compare-slot-a')).toContainText('not in view');
+	await expect(panel.getByRole('button', { name: 'Use nearest dates' })).toBeVisible();
+	await panel.getByRole('button', { name: 'Show in chart' }).click();
+	await expect(panel.getByTestId('compare-row').first()).toBeVisible();
+	await expect(panel.getByTestId('compare-slot-a')).not.toContainText('not in view');
+	await card(page, 'Generation')
+		.getByRole('button', { name: 'Compare Generation', exact: true })
+		.click();
 	await expect(panel).toBeHidden();
 	expect(new URL(page.url()).searchParams.has('compare-a')).toBe(false);
 });
 
-test('comparison uses raw energy despite timeline transforms and follows visibility and grouping', async ({
+test('single-line cards compare as value tiles and stacks as change lists, absolute despite transforms', async ({
 	page
 }) => {
 	await trackerFixture(page, { contributions: true, comparisonGrowth: true });
@@ -1219,25 +1309,37 @@ test('comparison uses raw energy despite timeline transforms and follows visibil
 	const a = Date.parse('2026-08-01T00:00:00+10:00');
 	const b = a + 86_400_000;
 	await page.goto(
-		`/tracker/timeline?start=${start}&end=${end}&interval=1d&table=0&transform=proportion&hidden=wind&compare=1&compare-a=${a}&compare-b=${b}`
+		`/tracker/timeline?start=${start}&end=${end}&interval=1d&table=0&transform=proportion&hidden=wind&compare=generation,market,emissions&compare-a=${a}&compare-b=${b}`
 	);
-	const panel = page.getByRole('region', { name: 'Two-date comparison' });
-	await expect(panel.getByRole('combobox', { name: 'Date A', exact: true })).toBeEnabled();
-	const coal = panel
+	const generation = page.getByRole('region', { name: 'Generation comparison' });
+	const coal = generation
 		.getByRole('row')
 		.filter({ has: page.getByRole('rowheader', { name: 'Coal', exact: true }) });
-	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '100', '100.0%']);
-	await expect(panel.getByRole('columnheader', { name: 'A MWh', exact: true })).toBeVisible();
-	await expect(panel.getByRole('rowheader', { name: 'Wind', exact: true })).toHaveCount(0);
-	const csvDownload = page.waitForEvent('download');
-	await panel.getByRole('button', { name: 'Download comparison CSV' }).click();
-	expect(await readFile(await (await csvDownload).path(), 'utf8')).toContain('Change B − A (MWh)');
+	await expect(coal.getByRole('cell')).toHaveText(['100', '200', '+100', '+100.0%']);
+	await expect(generation.getByRole('rowheader', { name: 'Wind', exact: true })).toHaveCount(0);
+	expect(await downloadText(await download(page, 'Generation comparison'))).toContain(
+		'Change B − A (MWh)'
+	);
+	// Spot price and intensity are one line: tiles over the window's range.
+	await expect(
+		page.getByRole('region', { name: 'Market comparison' }).getByTestId('compare-tile')
+	).toHaveCount(2);
+	await expect(
+		page.getByRole('region', { name: 'Emissions comparison' }).getByTestId('compare-range')
+	).toBeVisible();
+	// Every comparing card marks the shared A and B.
+	for (const title of ['Generation', 'Market', 'Emissions'])
+		await expect(card(page, title).locator('.time-markers text', { hasText: /^B$/ })).toHaveCount(
+			1
+		);
 	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
 	await page.getByRole('radio', { name: 'Detailed', exact: true }).click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
-	await expect(panel.getByRole('rowheader', { name: 'Coal (Black)', exact: true })).toBeVisible();
-	await expect(panel.getByRole('rowheader', { name: 'Wind', exact: true })).toBeVisible();
-	await expect(panel.getByRole('combobox', { name: 'Date A', exact: true })).toHaveValue(String(a));
+	await expect(
+		generation.getByRole('rowheader', { name: 'Coal (Black)', exact: true })
+	).toBeVisible();
+	await expect(generation.getByRole('rowheader', { name: 'Wind', exact: true })).toBeVisible();
+	expect(new URL(page.url()).searchParams.get('compare-a')).toBe(String(a));
 });
 
 test('timeline cards outline their table column and series highlight their row', async ({
@@ -1882,13 +1984,28 @@ test('time-of-day profiles keep requests bounded and reproduce selections and CS
 	await pickNavOption(page, 'Interval', '30 min', '5 min');
 	await expect(page).toHaveURL(/profile-interval=5m/);
 	expect(api.requests).toHaveLength(fetched);
-	const csv = await readFile(await (await download(page, 'Profile')).path(), 'utf8');
+	// Each card downloads what its percentile bands draw, at the 5-minute slots.
+	const rows = await expectDownloadsMatchCharts(page, [
+		'Wind',
+		'Coal',
+		'Spot price',
+		'Fuel tech table'
+	]);
+	expect(rows.map((row) => row.id)).toEqual([
+		'profile-wind',
+		'profile-coal',
+		'profile-price',
+		'table'
+	]);
+	const coal = await download(page, 'Coal');
+	expect(coal.suggestedFilename()).toBe('tracker-wem-time-of-day-coal-2026-08-31.csv');
+	const csv = await downloadText(coal);
 	expect(csv.trim().split(/\r?\n/)).toHaveLength(289);
-	expect(csv).toContain(',00:05,');
-	// Each series' average and day count, then every day's value; spot price last.
-	expect(csv).toMatch(/average \(MW\),[^,]+ days,[^,]+ 2026-08-04 \(MW\)/);
-	expect(csv).toContain('Spot price average ($/MWh),Spot price days,Spot price 2026-08-04 ($/MWh)');
-	expect(csv).toMatch(/AWST \(UTC\+08:00\),00:00,(100|200),28,/);
+	expect(csv.split('\n')[0]).toBe(
+		'Time of day (UTC+08:00),10th percentile (MW),25th percentile (MW),Median (MW),75th percentile (MW),90th percentile (MW),Average (MW)'
+	);
+	expect(csv).toContain('\n00:05,100,100,100,100,100,100');
+	expect(await csvHeader(await download(page, 'Spot price'))).toContain('Median ($/MWh)');
 	// The last day uses the app's date picker; its calendar's reset returns to
 	// the latest complete days.
 	await page.getByRole('button', { name: 'Open calendar' }).click();
@@ -1947,15 +2064,22 @@ async function pickProfileLastDay(page, date) {
 	await expect(calendar).toHaveCount(0);
 }
 
-/** The options menu offers only the profile CSV in Profile, enabled once it can export.
- * @param {import('@playwright/test').Page} page @param {boolean} enabled */
-async function expectProfileDownload(page, enabled) {
-	const menu = await openOptions(page);
-	const item = menu.getByRole('button', { name: 'Profile', exact: true });
-	await (enabled ? expect(item).toBeEnabled() : expect(item).toBeDisabled());
-	await expect(menu.getByRole('button', { name: /workbook/ })).toHaveCount(0);
-	await page.getByRole('button', { name: 'Options', exact: true }).click();
-	await expect(menu).toBeHidden();
+/** The Download data dialog lists the breakdown cards on screen, and only
+ * those with data become downloadable; the workbook builds from those.
+ * @param {import('@playwright/test').Page} page
+ * @param {{listed: string[], ready: string[]}} expected */
+async function expectProfileDownloads(page, { listed, ready }) {
+	const charts = async () =>
+		(await downloadRows(page)).filter((row) => row.id !== 'table' && row.state !== 'loading');
+	await expect.poll(async () => (await charts()).map((row) => row.label)).toEqual(listed);
+	expect((await charts()).filter((row) => row.state === 'ready').map((row) => row.label)).toEqual(
+		ready
+	);
+	const workbook = (await openDownloads(page)).getByRole('button', {
+		name: 'Download all charts XLSX'
+	});
+	await (ready.length ? expect(workbook).toBeEnabled() : expect(workbook).toBeDisabled());
+	await closeDownloads(page);
 }
 
 test('time-of-day failures and empty results remain explicit and never export a pending series', async ({
@@ -1964,12 +2088,15 @@ test('time-of-day failures and empty results remain explicit and never export a 
 	const api = await trackerFixture(page, { fail: 'power' });
 	await page.goto('/tracker/profile?profile-display=breakdown&profile-end=2026-08-31');
 	await expect(page.getByRole('alert')).toContainText('Fixture failure');
-	await expectProfileDownload(page, false);
+	await expectProfileDownloads(page, { listed: [], ready: [] });
 	api.recover();
 	await page.getByRole('button', { name: 'Retry profile' }).click();
 	await expect(page.getByRole('alert')).toHaveCount(0);
 	await expect(page.getByRole('group', { name: /interactive chart$/ }).first()).toBeVisible();
-	await expectProfileDownload(page, true);
+	await expectProfileDownloads(page, {
+		listed: ['Wind', 'Coal', 'Spot price'],
+		ready: ['Wind', 'Coal', 'Spot price']
+	});
 	await trackerFixture(page, { empty: 'power' });
 	// Use a new window so the successful response cache cannot satisfy it.
 	await pickProfileLastDay(page, '2026-07-31');
@@ -1977,7 +2104,10 @@ test('time-of-day failures and empty results remain explicit and never export a 
 	await expect(page.getByRole('group', { name: /interactive chart$/ }).last()).toHaveAccessibleName(
 		'Spot price interactive chart'
 	);
-	await expectProfileDownload(page, true);
+	await expectProfileDownloads(page, {
+		listed: ['Wind', 'Coal', 'Spot price'],
+		ready: ['Spot price']
+	});
 });
 
 test('copied analytical links restore hidden sources, contribution, transforms and emissions exclusions', async ({
@@ -2335,7 +2465,7 @@ test('explicit ranges push history and back/forward restore the range', async ({
 	await expect(card(page, 'Generation').getByText('Energy', { exact: true })).toBeVisible();
 });
 
-test('CSV can export an independent ready dataset while a workbook waits for all datasets', async ({
+test('CSV can export an independent ready chart while the workbook waits for every chart', async ({
 	page
 }) => {
 	const source = await trackerFixture(page, { hold: 'price' });
@@ -2343,31 +2473,32 @@ test('CSV can export an independent ready dataset while a workbook waits for all
 	// The generation snapshot publishes independently of the held market response.
 	// A client request proves hydration without waiting on the held chart.
 	await expect.poll(() => source.requests.includes('power')).toBe(true);
-	const menu = await openOptions(page);
-	await expect(
-		menu.getByRole('button', { name: 'Everything (one workbook)', exact: true })
-	).toBeDisabled();
-	await expect(menu.getByRole('button', { name: 'Generation', exact: true })).toBeEnabled();
-	const independent = page.waitForEvent('download');
-	await menu.getByRole('button', { name: 'Generation', exact: true }).click();
-	expect((await independent).suggestedFilename()).toContain('generation');
+	const dialog = await openDownloads(page);
+	await expect(dialog.getByRole('button', { name: 'Download all charts XLSX' })).toBeDisabled();
+	await expect(dialog.getByTestId('download-workbook')).toContainText('Waiting for charts to load');
+	await expect(dialog.locator('[data-download-id="market"]')).toContainText('Loading…');
+	const independent = await download(page, 'Generation');
+	expect(independent.suggestedFilename()).toContain('generation');
 	source.release();
 	await trackerReady(page);
 	// Wait for publication through a visible table after opening it.
 	await page.getByRole('button', { name: 'Show fuel tech table' }).click();
 	await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
 	await trackerReady(page);
-	const csv = await download(page, 'Generation');
-	const content = await readFile(await csv.path(), 'utf8');
+	const content = await downloadText(await download(page, 'Generation'));
 	expect(content).toContain('(MW)');
 	expect(content.split('\n').length).toBeGreaterThan(2);
 	expect(content).toMatch(/\+10:00/);
 	await trackerReady(page);
-	const workbook = await download(page, 'Everything (one workbook)');
-	const bytes = await readFile(await workbook.path());
-	const index = workbookXml(bytes, 'xl/workbook.xml');
-	for (const name of ['Summary', 'Generation', 'Market', 'Emissions', 'Fuel tech table'])
-		expect(index).toContain(`name="${name}"`);
+	const workbook = await downloadWorkbook(page);
+	expect(await workbookSheetNames(workbook)).toEqual([
+		'Summary',
+		'Generation',
+		'Market',
+		'Emissions',
+		'Fuel tech table'
+	]);
+	const bytes = await readFile(/** @type {string} */ (await workbook.path()));
 	expect(workbookXml(bytes, 'xl/worksheets/sheet2.xml')).toContain('<v>100</v>');
 });
 
@@ -2389,16 +2520,17 @@ test('reopening the table waits for its providers before enabling its export', a
 	await page.goto('/tracker/timeline?region=nsw1&table=0');
 	await trackerReady(page);
 	await page.getByRole('button', { name: 'Show fuel tech table' }).click();
-	await openOptions(page);
-	const tableDownload = page
-		.getByRole('menu')
-		.getByRole('button', { name: 'Fuel tech table', exact: true });
+	const dialog = await openDownloads(page);
+	const tableDownload = dialog.getByRole('button', {
+		name: 'Download Fuel tech table CSV',
+		exact: true
+	});
 	await expect(tableDownload).toBeDisabled();
 	source.release();
 	await expect(tableDownload).toBeEnabled();
 	const saved = page.waitForEvent('download');
 	await tableDownload.click();
-	expect(await readFile(await (await saved).path(), 'utf8')).toContain('Demand,summary,');
+	expect(await downloadText(await saved)).toContain('Demand,summary,');
 });
 
 test('phone/tablet layouts remain usable', async ({ page }, testInfo) => {
@@ -2429,7 +2561,7 @@ test('frontend options reuse cached responses without flashing loading overlays'
 			const activations = records.filter(
 				(record) =>
 					record.oldValue === 'false' &&
-					record.target.getAttribute('data-testid') === 'tracker-loading-overlay'
+					record.target.getAttribute('data-testid') === 'card-loading-overlay'
 			);
 			document.documentElement.dataset.loadingFlashes = String(
 				Number(document.documentElement.dataset.loadingFlashes) + activations.length
@@ -2578,7 +2710,7 @@ for (const interval of ['30m', '1d']) {
 				const activated = records.filter(
 					(record) =>
 						record.oldValue === 'false' &&
-						record.target.getAttribute('data-testid') === 'tracker-loading-overlay'
+						record.target.getAttribute('data-testid') === 'card-loading-overlay'
 				);
 				document.documentElement.dataset.loadingFlashes = String(
 					Number(document.documentElement.dataset.loadingFlashes) + activated.length

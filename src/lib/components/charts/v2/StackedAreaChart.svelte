@@ -24,6 +24,7 @@
 		StepHoverBand,
 		Annotations
 	} from './elements';
+	import TimeMarkers from './elements/TimeMarkers.svelte';
 	import NetTotalLine from './elements/NetTotalLine.svelte';
 	import OverlayLine from './elements/OverlayLine.svelte';
 	import OverlayArea from './elements/OverlayArea.svelte';
@@ -380,6 +381,19 @@
 				{/if}
 			</g>
 		</Svg>
+
+		<!-- Comparison markers (A / B): exported, unlike the hover layer above -->
+		{#if chart.timeMarkers.length}
+			<Svg pointerEvents={false}>
+				<TimeMarkers
+					markers={chart.timeMarkers}
+					armed={chart.timeMarkerArmed}
+					hoverTime={chart.pointerInside ? chart.hoverTime : undefined}
+					band={chart.timeMarkerBand}
+					stepData={isStepMode ? chart.seriesScaledData : null}
+				/>
+			</Svg>
+		{/if}
 
 		<!-- Axes (skipped entirely for sparkline-style minis) -->
 		{#if styles.showAxes}

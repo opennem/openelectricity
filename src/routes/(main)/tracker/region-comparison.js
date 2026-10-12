@@ -15,6 +15,7 @@ import {
 import { allRegionsOption, regionOptions } from '$lib/regions.js';
 import { withTrackerLabel } from './tracker-regions.js';
 import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
+import { normaliseCardComparison } from '$lib/components/charts/card/compare/chart-compare.js';
 import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
 import { contributionSeries } from '$lib/components/charts/network/contribution.js';
 import { processEmissionsIntensity } from '$lib/components/charts/network/process-emissions-intensity.js';
@@ -118,9 +119,30 @@ export function comparisonDisplayFromSlug(slug) {
 }
 /** `filter` keeps one calendar period of the interval's grain each year — a
  * month, season, quarter or half (Timeline's calendar-period filter ids).
- * @typedef {{charts: string[], display: ComparisonDisplay, interval: string, filter: string | null, regions: string[], basis: 'demand' | 'generation', start: number | null, end: number | null, table: boolean | null}} RegionComparisonSelection */
+ * `dates` is compare mode: the cards (picker chart ids) comparing two
+ * periods, and the A / B periods they share (UTC month starts).
+ * @typedef {{charts: string[], display: ComparisonDisplay, interval: string, filter: string | null, regions: string[], basis: 'demand' | 'generation', start: number | null, end: number | null, table: boolean | null, dates: ComparisonDates | null}} RegionComparisonSelection */
+/** @typedef {{cards: string[], a: number | null, b: number | null}} ComparisonDates */
 /** Unvalidated input (URL values, callers): `display` is any string until normalised.
- * @typedef {Partial<Omit<RegionComparisonSelection, 'display'>> & {display?: string}} RegionComparisonInput */
+ * @typedef {Partial<Omit<RegionComparisonSelection, 'display' | 'dates'>> & {display?: string, dates?: unknown}} RegionComparisonInput */
+/** A comparison period from untrusted input: a UTC month start from the
+ * data floor on, as a number or `YYYY-MM`.
+ * @param {unknown} value @returns {number | null} */
+export function comparisonMonth(value) {
+	const match = typeof value === 'string' ? /^(\d{4})-(0[1-9]|1[0-2])$/.exec(value) : null;
+	const time = match
+		? Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)
+		: typeof value === 'number'
+			? value
+			: NaN;
+	return Number.isFinite(time) && time >= EARLIEST_DATA_MS && monthStart(time) === time
+		? time
+		: null;
+}
+/** A comparison period's URL form, `YYYY-MM`. @param {number} time */
+export function comparisonMonthSlug(time) {
+	return new Date(time).toISOString().slice(0, 7);
+}
 /** @param {RegionComparisonInput | null | undefined} value @returns {RegionComparisonSelection} */
 export function normaliseRegionComparison(value = undefined) {
 	const regions = Array.isArray(value?.regions)
@@ -151,7 +173,17 @@ export function normaliseRegionComparison(value = undefined) {
 		basis: value?.basis === 'generation' ? 'generation' : 'demand',
 		start: validWindow ? start : null,
 		end: validWindow ? end : null,
-		table: typeof value?.table === 'boolean' ? value.table : null
+		table: typeof value?.table === 'boolean' ? value.table : null,
+		// Only the shown charts can compare.
+		dates: normaliseCardComparison(
+			value?.dates,
+			COMPARISON_CHART_OPTIONS.map(({ id }) => id).filter((id) =>
+				(Array.isArray(value?.charts) ? value.charts : DEFAULT_COMPARISON_CHARTS)
+					.map((entry) => comparisonChartId(comparisonChartFromSlug(String(entry))))
+					.includes(id)
+			),
+			comparisonMonth
+		)
 	};
 }
 
@@ -169,7 +201,16 @@ export function parseRegionComparison(params) {
 		basis: params.get('compare-basis') === 'generation' ? 'generation' : 'demand',
 		start: Number(params.get('compare-start')),
 		end: Number(params.get('compare-end')),
-		table: params.has('compare-table') ? params.get('compare-table') !== '0' : null
+		table: params.has('compare-table') ? params.get('compare-table') !== '0' : null,
+		dates: params.has('compare-dates')
+			? {
+					cards: (params.get('compare-dates') ?? '')
+						.split(',')
+						.map((slug) => comparisonChartId(comparisonChartFromSlug(slug))),
+					a: params.get('compare-date-a'),
+					b: params.get('compare-date-b')
+				}
+			: null
 	});
 }
 /** @param {URLSearchParams} params @param {RegionComparisonInput | undefined} selection */
@@ -190,7 +231,10 @@ export function applyRegionComparison(params, selection) {
 		'compare-basis': state.basis === 'demand' ? '' : state.basis,
 		'compare-start': state.start == null ? '' : String(state.start),
 		'compare-end': state.end == null ? '' : String(state.end),
-		'compare-table': state.table == null ? '' : state.table ? '1' : '0'
+		'compare-table': state.table == null ? '' : state.table ? '1' : '0',
+		'compare-dates': state.dates?.cards.map(comparisonChartSlug).join(',') ?? '',
+		'compare-date-a': state.dates?.a == null ? '' : comparisonMonthSlug(state.dates.a),
+		'compare-date-b': state.dates?.b == null ? '' : comparisonMonthSlug(state.dates.b)
 	};
 	for (const [key, value] of Object.entries(values)) {
 		if (value || (['compare-regions', 'compare-charts'].includes(key) && value === ''))
@@ -621,6 +665,15 @@ export function comparisonYDomain(rows, regions, viewport, curve = 'straight') {
 		}
 	}
 	return computeYDomain([{ _min: min, _max: max }]);
+}
+
+/** Whether a selection change closes compare mode: another display,
+ * interval, calendar filter or set of charts (a picker change or a
+ * presentation switch) redraws the cards, so A and B no longer describe
+ * them. Pan and zoom, regions and the percentage basis leave it open.
+ * @param {Partial<RegionComparisonSelection>} change */
+export function closesComparisonDates(change) {
+	return ['display', 'interval', 'filter', 'charts'].some((key) => key in change);
 }
 
 /** Whether a selection change replaces the periods themselves (a new interval

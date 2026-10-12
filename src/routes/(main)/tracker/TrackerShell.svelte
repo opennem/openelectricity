@@ -2,8 +2,11 @@
 	/**
 	 * Tracker page chrome shared by every view route: the filter bar (view
 	 * switcher, region and the view's own controls and status), options menu,
-	 * notices, PNG export and shortcuts. Each view page composes it around its
-	 * canvas and supplies what differs through snippets and download props.
+	 * notices, PNG export, the "Download data" dialog and shortcuts. Each view
+	 * page composes it around its canvas and supplies what differs through
+	 * snippets and props. Charts and panels register their own downloads with
+	 * the shell's registry (`chart-downloads.svelte.js`); the page supplies
+	 * only the workbook's Summary rows and the file names.
 	 */
 
 	import { building } from '$app/environment';
@@ -12,7 +15,7 @@
 	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import RangeStatus from './RangeStatus.svelte';
-	import { X } from '@lucide/svelte';
+	import { Download, X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
@@ -34,6 +37,11 @@
 	import { TRACKER_VIEWS, trackerView } from './tracker-url.js';
 	import PngExport from './PngExport.svelte';
 	import { capturePngSnapshot, settleChartAnimations } from './png-export.js';
+	import DownloadDataModal from '$lib/components/charts/card/DownloadDataModal.svelte';
+	import {
+		createChartDownloads,
+		setChartDownloads
+	} from '$lib/components/charts/card/chart-downloads.svelte.js';
 
 	/**
 	 * @type {{
@@ -45,10 +53,8 @@
 	 *   controls?: import('svelte').Snippet,
 	 *   status?: import('./types.js').TrackerRangeStatus,
 	 *   menu?: import('svelte').Snippet<[{ close: () => void }]>,
-	 *   downloadItems: Array<{ key: string, label: string, disabled?: boolean }>,
-	 *   ondownloaditem: (key: string) => void,
-	 *   ondownloadxlsx?: () => void | Promise<void>,
-	 *   downloadXlsxDisabled?: boolean,
+	 *   downloadSummary: () => Array<[string, string]>,
+	 *   downloadFileName: (id: string | null, extension: 'csv' | 'xlsx') => string,
 	 *   shortcuts?: Array<{ label: string, keys: string[] }>,
 	 *   onshortcut?: (id: import('./tracker-shortcuts.js').TrackerShortcut) => void,
 	 *   children: import('svelte').Snippet
@@ -63,10 +69,8 @@
 		controls,
 		status,
 		menu,
-		downloadItems,
-		ondownloaditem,
-		ondownloadxlsx,
-		downloadXlsxDisabled = false,
+		downloadSummary,
+		downloadFileName,
 		shortcuts = [],
 		onshortcut,
 		children
@@ -113,8 +117,20 @@
 		}
 	}
 
+	const downloads = setChartDownloads(
+		createChartDownloads({
+			timeZone: () => session.timeZone,
+			fileName: (id, extension) => downloadFileName(id, extension),
+			summary: () => downloadSummary(),
+			sourceUrl: () => shareUrl().href,
+			onnotice: (message) => (notice = message)
+		})
+	);
+
 	/** @param {KeyboardEvent} event */
 	function handleKeydown(event) {
+		// The dialog owns the keyboard while open (Escape closes it).
+		if (downloads.open) return;
 		if (event.key === 'Escape') {
 			if (showShortcuts) {
 				event.preventDefault();
@@ -224,13 +240,16 @@
 						onfullscreenchange={() => toggleFullscreenMode(isFullscreen)}
 						oncopylink={copyLink}
 						showCopyLink
-						{downloadItems}
-						{downloadXlsxDisabled}
-						{ondownloaditem}
-						{ondownloadxlsx}
 						onshowshortcuts={() => (showShortcuts = !showShortcuts)}
 					>
 						{#snippet extraSections({ close })}
+							<OptionsMenuItem
+								icon={Download}
+								onclick={() => {
+									close();
+									downloads.open = true;
+								}}>Download data</OptionsMenuItem
+							>
 							<OptionsMenuItem
 								onclick={() => {
 									close();
@@ -284,6 +303,8 @@
 {#if pngSnapshot}
 	<PngExport snapshot={pngSnapshot} onclose={() => (pngSnapshot = null)} />
 {/if}
+
+<DownloadDataModal {downloads} />
 
 <ShortcutsToast
 	visible={showShortcuts}

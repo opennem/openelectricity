@@ -1,4 +1,6 @@
 import { expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { inflateRawSync } from 'node:zlib';
 import { MARKET_METRIC_NAMES } from '../../../src/lib/components/charts/network/market-metric-names.js';
 
 /**
@@ -418,17 +420,141 @@ export async function openOptions(page) {
 }
 
 /**
- * Trigger a dataset export from the Options menu and return the download.
+ * Open Options → Download data and return the dialog. Reuses the dialog when
+ * it is already open.
  * @param {Page} page
- * @param {string} label Menu button label, e.g. `'Generation'` or
- *   `'Everything (one workbook)'`.
+ */
+export async function openDownloads(page) {
+	const dialog = page.getByRole('dialog', { name: 'Download data' });
+	if (await dialog.isVisible()) return dialog;
+	const menu = await openOptions(page);
+	await menu.getByRole('button', { name: 'Download data', exact: true }).click();
+	await expect(dialog).toBeVisible();
+	return dialog;
+}
+
+/** @param {Page} page */
+export async function closeDownloads(page) {
+	const dialog = page.getByRole('dialog', { name: 'Download data' });
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	// The pointer still rests where the menu's item was, over the metrics
+	// strip; move it off so a strip tooltip can't cover the Options button.
+	await page.mouse.move(0, 0);
+}
+
+/**
+ * The dialog's CSV rows: each listed chart's label, id and state, in order.
+ * @param {Page} page
+ */
+export async function downloadRows(page) {
+	const dialog = await openDownloads(page);
+	return dialog.getByTestId('download-row').evaluateAll((rows) =>
+		rows.map((row) => ({
+			label: row.querySelector('p')?.textContent?.trim() ?? '',
+			id: row.getAttribute('data-download-id') ?? '',
+			state: row.getAttribute('data-state') ?? ''
+		}))
+	);
+}
+
+/**
+ * Download one chart's CSV from the Download data dialog, once it is ready,
+ * and close the dialog.
+ * @param {Page} page
+ * @param {string} label The chart's row label, e.g. `'Generation'`.
  * @returns {Promise<Download>}
  */
 export async function download(page, label) {
-	const menu = await openOptions(page);
+	const dialog = await openDownloads(page);
+	const button = dialog.getByRole('button', { name: `Download ${label} CSV`, exact: true });
+	await expect(button).toBeEnabled();
 	const result = page.waitForEvent('download');
-	await menu.getByRole('button', { name: label, exact: true }).click();
-	return result;
+	await button.click();
+	const file = await result;
+	await closeDownloads(page);
+	return file;
+}
+
+/**
+ * Download the "All charts" workbook from the dialog and close it.
+ * @param {Page} page
+ * @returns {Promise<Download>}
+ */
+export async function downloadWorkbook(page) {
+	const dialog = await openDownloads(page);
+	const button = dialog.getByRole('button', { name: 'Download all charts XLSX', exact: true });
+	await expect(button).toBeEnabled();
+	const result = page.waitForEvent('download');
+	await button.click();
+	const file = await result;
+	await closeDownloads(page);
+	return file;
+}
+
+/** @param {Download} file */
+export async function downloadText(file) {
+	return readFile(/** @type {string} */ (await file.path()), 'utf8');
+}
+
+/** A CSV download's header cells (no quoted commas in tracker headers but
+ * series labels, which are re-joined). @param {Download} file */
+export async function csvHeader(file) {
+	const [line] = (await downloadText(file)).split('\n');
+	return line.match(/("([^"]|"")*"|[^,]+)/g)?.map((cell) => cell.replace(/^"|"$/g, '')) ?? [];
+}
+
+/** Read a generated XLSX's XML via its ZIP directory, without a second spreadsheet library.
+ * @param {Buffer} buffer @param {string} wanted */
+export function workbookXml(buffer, wanted) {
+	for (let offset = 0; offset < buffer.length - 46; offset++) {
+		if (buffer.readUInt32LE(offset) !== 0x02014b50) continue;
+		const length = buffer.readUInt16LE(offset + 28);
+		const name = buffer.subarray(offset + 46, offset + 46 + length).toString();
+		if (name !== wanted) continue;
+		const size = buffer.readUInt32LE(offset + 20);
+		const local = buffer.readUInt32LE(offset + 42);
+		const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
+		const content = buffer.subarray(start, start + size);
+		return (buffer.readUInt16LE(offset + 10) === 8 ? inflateRawSync(content) : content).toString();
+	}
+	throw new Error(`Missing workbook entry: ${wanted}`);
+}
+
+/** A workbook download's sheet names, in order. @param {Download} file */
+export async function workbookSheetNames(file) {
+	const xml = workbookXml(
+		await readFile(/** @type {string} */ (await file.path())),
+		'xl/workbook.xml'
+	);
+	return [...xml.matchAll(/<sheet [^>]*name="([^"]*)"/g)].map((match) =>
+		match[1].replaceAll('&amp;', '&')
+	);
+}
+
+/**
+ * The Download data dialog lists exactly the charts and panels on screen:
+ * its rows are `labels`, in the page's order, every registered element on
+ * the page has a row (and no row lacks one), and every chart the PNG export
+ * would capture can be downloaded. Leaves the dialog open.
+ * @param {Page} page
+ * @param {string[]} labels
+ */
+export async function expectDownloadsMatchCharts(page, labels) {
+	await hydrated(page);
+	await expect.poll(async () => (await downloadRows(page)).map((row) => row.label)).toEqual(labels);
+	const rows = await downloadRows(page);
+	const onPage = await page
+		.locator('main [data-chart-download]')
+		.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-chart-download')));
+	expect(rows.map((row) => row.id)).toEqual(onPage);
+	const charts = await page
+		.locator('main [data-chart-png]')
+		.evaluateAll((nodes) =>
+			nodes.map((node) => JSON.parse(node.getAttribute('data-chart-png') ?? '{}').id)
+		);
+	for (const id of charts) expect(onPage).toContain(id);
+	return rows;
 }
 
 /**

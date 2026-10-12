@@ -335,6 +335,15 @@ chart.seriesColours = { ... };
 chart.seriesLabels = { ... };
 ```
 
+**Time markers.** `chart.timeMarkers` (`[{ id, time, label }]`) draws a
+labelled vertical line per marker over the plot — a dark line with a letter
+chip at the top, kept inside the plot at its edges — and a chip with an arrow
+at the plot's edge for a marker outside the view. `timeMarkerBand` faintly
+shades between the first two, and `timeMarkerArmed` names the marker the
+next click sets: a dashed ghost of it follows the hover. Unlike `focusTime`,
+markers need no matching row, and they are kept in PNG exports (the ghost is
+not). The tracker's compare mode draws its A and B with them.
+
 ### StratumChart
 
 The main chart component for stacked area/bar charts:
@@ -368,6 +377,7 @@ The main chart component for stacked area/bar charts:
 | `enablePan`                   | `boolean`                                                              | `false`       | Enable pan/zoom gestures (pointer + wheel) via InteractionLayer                                                                                                                                                                                                                                                 |
 | `panZoomMode`                 | `'always' \| 'tap-to-engage'`                                          | `'always'`    | `'always'` keeps pan/zoom active whenever `enablePan` is true (existing behaviour). `'tap-to-engage'` renders a hover hint pill and gates pan/zoom behind `engaged` — the first tap engages, subsequent gestures work normally. A "Scroll to zoom · Esc to exit" pill appears at the bottom-right while engaged |
 | `engaged`                     | `boolean`                                                              | `false`       | Bindable engagement state for `'tap-to-engage'` mode. Set to `true` by the first tap and back to `false` by the parent (e.g. ESC or click-outside). Ignored when `panZoomMode === 'always'`                                                                                                                     |
+| `engageOnTap`                 | `boolean`                                                              | `true`        | `'tap-to-engage'` only: off, a tap on the idle chart reaches `onfocus` instead of engaging, and pan/zoom engages from the ✥ toggle or the idle-wheel hint — for a chart whose clicks pick something (a comparison's A and B)                                                                                    |
 | `loadingRanges`               | `Array<{start, end}>`                                                  | `[]`          | Time ranges currently being fetched (shaded overlay)                                                                                                                                                                                                                                                            |
 | `viewDomain`                  | `[number, number] \| null`                                             | `null`        | Explicit time domain for InteractionLayer coordinate mapping                                                                                                                                                                                                                                                    |
 | `resizable`                   | `boolean`                                                              | `false`       | Show a vertical resize handle below the chart (`ChartResizeHandle`)                                                                                                                                                                                                                                             |
@@ -388,6 +398,19 @@ The main chart component for stacked area/bar charts:
 | `header`                      | `Snippet`                                                              | -             | Custom header snippet (replaces ChartHeader)                                                                                                                                                                                                                                                                    |
 | `tooltip`                     | `Snippet`                                                              | -             | Custom tooltip snippet — rendered in `strip` / `compact-strip` / `compact-card` modes                                                                                                                                                                                                                           |
 | `footer`                      | `Snippet`                                                              | -             | Footer snippet rendered below the chart                                                                                                                                                                                                                                                                         |
+
+#### Hosted headers
+
+A container can draw a chart's header in its own: create a host with
+`createChartHeaderHost()` and set it with `setChartHeaderHost(host)` (from
+`chart-header-host.svelte.js`). A StratumChart inside it that would show the
+default `ChartHeader` (`showHeader` and no `header` snippet) instead hands
+over its header props — chart, `showOptions`, zoom handlers and limits, the
+pan/zoom toggle and engagement — as getters while mounted, and draws no bar.
+The host renders them with the same pieces `ChartHeader` uses:
+`ChartHeaderUnit`, `ChartOptionsMenu` (`align="right"` anchors the flyout
+under a header's right edge) and `ChartPanZoomButtons` (`size="md"` for 28px
+buttons). The tracker's `ChartCard` is the host in this codebase.
 
 #### Tooltip modes
 
@@ -935,6 +958,10 @@ src/lib/components/charts/v2/
 ├── GroupedBarChart.svelte      # Grouped bar chart
 ├── MiniCharts.svelte           # Small-multiples grid of StratumCharts
 ├── ChartHeader.svelte          # Title + options row above the chart
+├── ChartHeaderUnit.svelte      # The unit beside the title (proportion basis / prefix cycle)
+├── ChartOptionsMenu.svelte     # ⋮ button + ChartControls flyout
+├── ChartPanZoomButtons.svelte  # ✥ tap-to-engage toggle + − / + zoom
+├── chart-header-host.svelte.js # Lets a container (tracker cards) draw the chart's header
 ├── ChartControls.svelte        # Chart type / transform toggles
 ├── ChartTooltip.svelte         # Built-in "strip" tooltip above the chart
 ├── ChartTooltipCompactStrip.svelte # Built-in "compact-strip" single-line tooltip

@@ -7,6 +7,17 @@ import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
 import { DEFAULT_RANGE_DAYS, normaliseRange, customRangeDates } from './tracker-model.js';
 import { normaliseTrackerState } from './tracker-url.js';
 
+/**
+ * Choices that redraw the charts over other periods or as other charts — the
+ * region, the calendar filter and the Market and Emissions tabs — close
+ * compare mode, as an explicit range pick does (`chooseRange`) and a pan or
+ * zoom that switches the grain (`keepingGrain`): its A and B no longer
+ * describe what is drawn. Units, curves, pan and zoom within a grain,
+ * visibility, grouping and transforms leave it open.
+ * @type {ReadonlyArray<keyof import('./types.js').TrackerUrlState>}
+ */
+const CLOSES_COMPARISON = ['region', 'bucketFilter', 'priceMode', 'emissionsMode'];
+
 /** Per-page selection and range ownership: each view route creates its own,
  * so switching views starts a fresh session. Browser history is an injected
  * side effect.
@@ -73,9 +84,23 @@ export function createTrackerSession(initial, onchange) {
 	}
 	applyRange(initial.range);
 
+	/** The grain the charts draw at. A pan or zoom can switch it (5 min → 30
+	 * min, power → energy), leaving a comparison's A and B on buckets the
+	 * charts no longer draw, so that closes compare mode.
+	 * @param {() => void} change */
+	function keepingGrain(change) {
+		const grain = () => `${range.activeMetric}|${range.activeInterval}|${range.displayInterval}`;
+		const before = grain();
+		change();
+		if (selection.comparison && grain() !== before)
+			selection = normaliseTrackerState({ ...selection, comparison: null });
+	}
+
 	/** @param {() => void} change */
 	function chooseRange(change) {
 		gestureActive = false;
+		// A new range closes compare mode: its A and B described the old one.
+		selection = normaliseTrackerState({ ...selection, comparison: null });
 		change();
 		settleWindow();
 		onchange('push');
@@ -187,6 +212,9 @@ export function createTrackerSession(initial, onchange) {
 			selection = normaliseTrackerState({
 				...selection,
 				...(key === 'group' && value !== selection.group ? { hiddenSeries: [] } : {}),
+				...(CLOSES_COMPARISON.includes(key) && value !== selection[key]
+					? { comparison: null }
+					: {}),
 				[key]: value
 			});
 			if (history) onchange(history);
@@ -213,14 +241,16 @@ export function createTrackerSession(initial, onchange) {
 		/** @param {{start: number, end: number}} value
 		 * @param {import('$lib/components/charts/facility/chart-range-control.svelte.js').RangeControlChart | null | undefined} source */
 		moveViewport(value, source) {
-			range.handleDerivedViewportChange(value, source);
+			keepingGrain(() => range.handleDerivedViewportChange(value, source));
 		},
 		/** @param {{start: number, end: number}} value */
 		settleViewport(value) {
 			gestureActive = false;
-			// Button zoom settles before the chart emits its reactive viewport change.
-			range.handleDerivedViewportChange(value);
-			range.handleViewportSettle(value);
+			keepingGrain(() => {
+				// Button zoom settles before the chart emits its reactive viewport change.
+				range.handleDerivedViewportChange(value);
+				range.handleViewportSettle(value);
+			});
 			settleWindow();
 			onchange('replace');
 		}

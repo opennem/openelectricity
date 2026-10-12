@@ -158,3 +158,6 @@ export function normaliseRange(value) {
 export function customRangeDates(range) {
 	return { start: new Date(range.startMs).toISOString(), end: new Date(range.endMs).toISOString() };
 }
+
+/** Timeline's cards that can compare, in card order. */
+export const TIMELINE_COMPARE_CARDS = /** @type {const} */ (['generation', 'market', 'emissions']);

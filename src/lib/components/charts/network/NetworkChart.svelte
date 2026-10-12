@@ -125,6 +125,10 @@
 	 *   before an emissions-intensity ratio is calculated.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode]
 	 * @property {boolean} [panZoomEngaged]
+	 * @property {boolean} [engageOnTap] - Off, a tap on the idle chart reaches
+	 *   `onfocuschange` instead of engaging pan/zoom (a comparison picking A and B)
+	 * @property {{markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null} [timeMarkers]
+	 *   - Labelled markers over the plot (a comparison's A and B); see the store's `timeMarkers`
 	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
 	 * @property {boolean} [nightShading] - Shade nighttime bands like the homepage
 	 *   7-day chart; only renders at sub-daily grain, coarser grains clear it
@@ -185,6 +189,8 @@
 		excludedFuelTechGroups = /** @type {string[]} */ ([]),
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
+		engageOnTap = true,
+		timeMarkers = null,
 		minDateMs = EARLIEST_DATA_MS,
 		nightShading = false,
 		resizable = false,
@@ -1002,6 +1008,13 @@
 		if (chartStore.focusTime !== focusTime) chartStore.setFocus(focusTime);
 	});
 
+	$effect(() => {
+		if (!chartStore) return;
+		chartStore.timeMarkers = timeMarkers?.markers ?? [];
+		chartStore.timeMarkerArmed = timeMarkers?.armed ?? null;
+		chartStore.timeMarkerBand = !!timeMarkers?.band;
+	});
+
 	/** @param {number} time */
 	function handleFocus(time) {
 		if (isPanning) return;
@@ -1110,6 +1123,7 @@
 			enablePan={true}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
+			{engageOnTap}
 			viewDomain={null}
 			loadingRanges={showLoadingIndicator ? (dataManager?.loadingRanges ?? []) : []}
 			{resizable}

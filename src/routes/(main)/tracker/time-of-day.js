@@ -1,11 +1,9 @@
-import {
-	networkTimeZoneLabel,
-	offsetMsFromOffset
-} from '$lib/components/charts/v2/network-time.js';
+import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
 import { quantileSorted } from 'd3-array';
 import { DEMAND_GROSS_SERIES_ID } from '$lib/components/charts/network/market-series-ids.js';
 import { averageProfileRows, profileRows } from './profile-chart.js';
 import { buildFuelTechTableRows } from './table-model.js';
+import { contributionLabel } from './tracker-model.js';
 
 const DAY = 86_400_000;
 
@@ -338,52 +336,267 @@ export function averageDayTableRows({
 	});
 }
 
-/** The selected profiles as an export dataset for the shared CSV serialiser:
- * a row per time-of-day slot with each series' average and the days behind it, plus
- * every day's value when `daily` (the Breakdown).
+// ============================================
+// Downloads
+// ============================================
+
+/** @typedef {import('./types.js').ExportColumn} ExportColumn */
+/** @typedef {import('./types.js').ExportDataset} ExportDataset */
+/** @typedef {ReturnType<typeof buildDailyProfile>} DailyProfile */
+
+/** The slot column: the synthetic day's clock in network time.
+ * @param {string} heading @param {string} timeZone @returns {ExportColumn} */
+const clockColumn = (heading, timeZone) => ({
+	key: 'label',
+	header: `${heading} (UTC${timeZone})`,
+	type: 'string'
+});
+/** @param {string} key @param {string} header @returns {ExportColumn} */
+const numberColumn = (key, header) => ({ key, header, type: 'number' });
+/** One column per day of the window. @param {string[]} dates @param {string} unit */
+const dayColumns = (dates, unit) =>
+	dates.map((date, day) => numberColumn(`day:${day}`, `${date} (${unit})`));
+/** A slot's value on each day. @param {DailyProfile[number]} slot */
+const dayValues = (slot) =>
+	Object.fromEntries(slot.values.map((value, day) => [`day:${day}`, value]));
+
+/**
+ * One Profile Breakdown card's download, shaped like its style draws it:
+ * - `lines`: the average, the days behind it and every day (+ today)
+ * - `bands`: the 10th–90th percentiles and median the bands plot, the
+ *   average the strip reads (+ today)
+ * - `ridgeline`: every day's curve and the average (+ today)
+ * - `radial`: the hourly averages the bars ring the dial with (+ today)
+ * - `heatmap`: every day's ring
+ * Values keep their sign — the shape styles draw loads (charging, pumping)
+ * outward, but a load's power is negative.
  * @param {{
- *   series: Array<{label: string, unit: string, profile: ReturnType<typeof buildDailyProfile>}>,
+ *   series: {key: string, label: string, unit: string, profile: DailyProfile, today: DailyProfile | null},
+ *   style: ReturnType<typeof normaliseProfileStyle>,
  *   dates: string[],
- *   daily: boolean,
- *   region: string,
  *   timeZone: string
- * }} context
- * @returns {import('./types.js').ExportDataset} */
-export function profileDataset({ series, dates, daily, region, timeZone }) {
+ * }} input
+ * @returns {ExportDataset}
+ */
+export function profileCardDataset({ series, style, dates, timeZone }) {
+	const { key, label, unit, profile, today } = series;
+	const todayColumn = today ? [numberColumn('today', `Today (${unit})`)] : [];
+	/** @param {ExportColumn[]} columns @param {Array<Record<string, any>>} rows @returns {ExportDataset} */
+	const result = (columns, rows) => ({ key: `profile-${key}`, title: label, columns, rows });
+	if (style === 'radial') {
+		const hours = hourlyProfile(profile);
+		const todayHours = today ? hourlyProfile(today) : null;
+		return result(
+			[clockColumn('Hour', timeZone), numberColumn('average', `Average (${unit})`), ...todayColumn],
+			hours.map((hour, i) => ({
+				label: hour.label,
+				average: hour.average,
+				...(todayHours ? { today: todayHours[i].average } : {})
+			}))
+		);
+	}
+	const clock = clockColumn('Time of day', timeZone);
+	/** @param {number} i */
+	const todayAt = (i) => (today ? { today: today[i]?.average ?? null } : {});
+	if (style === 'bands') {
+		const levels = profilePercentiles(profile);
+		return result(
+			[
+				clock,
+				numberColumn('p10', `10th percentile (${unit})`),
+				numberColumn('p25', `25th percentile (${unit})`),
+				numberColumn('p50', `Median (${unit})`),
+				numberColumn('p75', `75th percentile (${unit})`),
+				numberColumn('p90', `90th percentile (${unit})`),
+				numberColumn('average', `Average (${unit})`),
+				...todayColumn
+			],
+			profile.map((slot, i) => {
+				const { p10, p25, p50, p75, p90 } = levels[i];
+				return { label: slot.label, p10, p25, p50, p75, p90, average: slot.average, ...todayAt(i) };
+			})
+		);
+	}
+	if (style === 'heatmap') {
+		return result(
+			[clock, ...dayColumns(dates, unit)],
+			profile.map((slot) => ({ label: slot.label, ...dayValues(slot) }))
+		);
+	}
+	const lines = style !== 'ridgeline';
+	return result(
+		[
+			clock,
+			numberColumn('average', `Average (${unit})`),
+			...(lines ? [numberColumn('days', 'Days with data')] : []),
+			...dayColumns(dates, unit),
+			...todayColumn
+		],
+		profile.map((slot, i) => ({
+			label: slot.label,
+			average: slot.average,
+			...(lines ? { days: slot.days } : {}),
+			...dayValues(slot),
+			...todayAt(i)
+		}))
+	);
+}
+
+/**
+ * The Stacked display's average day: each visible technology's own slot
+ * average, in stack order. (The chart leaves a slot of the whole stack empty
+ * where any technology is missing; the download keeps every known value.)
+ * @param {{ series: Array<{key: string, label: string, profile: DailyProfile}>, timeZone: string }} input
+ * @returns {ExportDataset}
+ */
+export function profileStackDataset({ series, timeZone }) {
 	return {
-		key: 'profile',
-		title: 'Profile',
+		key: 'profile-stack',
+		title: 'Average day',
 		columns: [
-			{ key: 'region', header: 'Region', type: 'string' },
-			{ key: 'timeZone', header: 'Network time', type: 'string' },
-			{ key: 'label', header: 'Time of day', type: 'string' },
-			...series.flatMap(({ label, unit }, s) => [
-				{
-					key: `${s}:average`,
-					header: `${label} average (${unit})`,
-					type: /** @type {const} */ ('number')
-				},
-				{ key: `${s}:days`, header: `${label} days`, type: /** @type {const} */ ('number') },
-				...(daily
-					? dates.map((date, d) => ({
-							key: `${s}:${d}`,
-							header: `${label} ${date} (${unit})`,
-							type: /** @type {const} */ ('number')
-						}))
-					: [])
-			])
+			clockColumn('Time of day', timeZone),
+			...series.map(({ key, label }) => numberColumn(key, `${label} (MW)`))
 		],
 		rows: (series[0]?.profile ?? []).map((slot, i) => ({
-			region,
-			timeZone: networkTimeZoneLabel(timeZone),
 			label: slot.label,
-			...Object.fromEntries(
-				series.flatMap(({ profile }, s) => [
-					[`${s}:average`, profile[i].average],
-					[`${s}:days`, profile[i].days],
-					...(daily ? dates.map((_, d) => [`${s}:${d}`, profile[i].values[d]]) : [])
-				])
-			)
+			...Object.fromEntries(series.map(({ key, profile }) => [key, profile[i].average]))
 		}))
 	};
+}
+
+/**
+ * The Stacked display's "Average by hour" dial: each visible technology's
+ * hourly average, read as energy (an hour's average MW is its MWh), signed.
+ * @param {{ series: Array<{key: string, label: string, profile: DailyProfile}>, timeZone: string }} input
+ * @returns {ExportDataset}
+ */
+export function profileHourlyDataset({ series, timeZone }) {
+	const hours = series.map(({ profile }) => hourlyProfile(profile));
+	return {
+		key: 'profile-dial',
+		title: 'Average by hour',
+		columns: [
+			clockColumn('Hour', timeZone),
+			...series.map(({ key, label }) => numberColumn(key, `${label} (MWh)`))
+		],
+		rows: Array.from({ length: 24 }, (_, hour) => ({
+			label: hours[0]?.[hour].label ?? `${String(hour).padStart(2, '0')}:00`,
+			...Object.fromEntries(series.map(({ key }, s) => [key, hours[s][hour].average]))
+		}))
+	};
+}
+
+/**
+ * Profile's fuel-tech table as displayed: Energy, Av power and Contribution,
+ * or the style's own power columns in their place (the percentile range, or
+ * the average and each day), with the table's magnitudes for the power
+ * columns.
+ * @param {{
+ *   rows: Array<import('./types.js').FuelTechTableRow & {powerValues?: Record<string, number | null>}>,
+ *   powerColumns?: Array<{key: string, label: string}>,
+ *   contributionMode: import('./types.js').ContributionMode
+ * }} input
+ * @returns {ExportDataset | null}
+ */
+export function profileTableDataset({ rows, powerColumns, contributionMode }) {
+	if (!rows.length) return null;
+	/** @type {ExportColumn[]} */
+	const valueColumns = powerColumns
+		? powerColumns.map(({ key, label }) =>
+				numberColumn(`power:${key}`, `${/^\d{4}-\d{2}-\d{2}$/.test(key) ? key : label} (MW)`)
+			)
+		: [
+				numberColumn('energyMWh', 'Energy (MWh)'),
+				numberColumn('avPowerMW', 'Av power (MW)'),
+				numberColumn('contributionPct', `Contribution (${contributionLabel(contributionMode)})`)
+			];
+	const ordered = [...rows.filter((row) => !row.isLoad), ...rows.filter((row) => row.isLoad)];
+	return {
+		key: 'table',
+		title: 'Fuel tech table',
+		columns: [
+			{ key: 'label', header: 'Technology', type: 'string' },
+			{ key: 'type', header: 'Type', type: 'string' },
+			...valueColumns,
+			{ key: 'hidden', header: 'Hidden', type: 'boolean' }
+		],
+		rows: ordered.map((row) => ({
+			label: row.label,
+			type: row.isLoad ? 'load' : 'source',
+			energyMWh: row.energyMWh,
+			avPowerMW: row.avPowerMW,
+			contributionPct: row.contributionPct,
+			...Object.fromEntries(
+				(powerColumns ?? []).map(({ key }) => [`power:${key}`, row.powerValues?.[key] ?? null])
+			),
+			hidden: row.hidden
+		}))
+	};
+}
+
+/**
+ * Profile's workbook Summary rows; the shell adds the provenance. `hidden`
+ * holds the labels of the groups the table hides; `tableSlot` the slot the
+ * table inspects (hovered or pinned), if any.
+ * @param {{
+ *   region: string,
+ *   dates: string[],
+ *   interval: string,
+ *   breakdown: boolean,
+ *   style: ReturnType<typeof normaliseProfileStyle>,
+ *   today: boolean,
+ *   groupLabel: string,
+ *   contributionMode: import('./types.js').ContributionMode,
+ *   hidden: string[],
+ *   tableSlot?: string,
+ *   timeZone: string
+ * }} input
+ * @returns {Array<[string, string]>}
+ */
+export function profileSummaryRows({
+	region,
+	dates,
+	interval,
+	breakdown,
+	style,
+	today,
+	groupLabel,
+	contributionMode,
+	hidden,
+	tableSlot,
+	timeZone
+}) {
+	/** @type {Array<[string, string]>} */
+	const rows = [
+		['View', 'Profile'],
+		['Region', region],
+		['Days', `${dates[0]} to ${dates.at(-1)} (${dates.length} complete days)`],
+		[
+			'Interval',
+			PROFILE_INTERVAL_OPTIONS.find((option) => option.value === interval)?.label ?? interval
+		],
+		['Display', breakdown ? 'Breakdown' : 'Stacked']
+	];
+	if (breakdown) {
+		rows.push([
+			'Style',
+			PROFILE_STYLE_OPTIONS.find((option) => option.value === style)?.label ?? style
+		]);
+		if (today && style !== 'heatmap')
+			rows.push(['Today', 'Today so far, beside the complete days']);
+	}
+	rows.push(
+		['Fuel tech grouping', groupLabel],
+		['Contribution basis', contributionLabel(contributionMode)],
+		['Timezone', `UTC${timeZone} — times of day are network-local`]
+	);
+	if (hidden.length) rows.push(['Hidden groups', `${hidden.join(', ')} — left out, as drawn`]);
+	rows.push(
+		['Table values', tableSlot ? `The ${tableSlot} slot` : 'The whole day'],
+		[
+			'Method',
+			'Each slot averages the days with data; percentiles interpolate linearly (PERCENTILE.INC); loads are negative'
+		]
+	);
+	return rows;
 }

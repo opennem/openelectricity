@@ -10,13 +10,17 @@ import {
 	buildAverageDayStack,
 	normaliseProfileDays,
 	normaliseProfileEnd,
+	profileCardDataset,
 	profileChartPart,
-	profileDataset,
 	profileFocusColumns,
+	profileHourlyDataset,
+	profileStackDataset,
+	profileSummaryRows,
+	profileTableDataset,
 	profileWindow,
 	todayWindow
 } from './time-of-day.js';
-import { datasetToCsv } from './tracker-export.js';
+import { datasetToCsv } from '$lib/components/charts/card/export-dataset.js';
 import { applyTrackerUrl, parseTrackerUrl } from './tracker-url.js';
 import { PROFILE_DAY_START, PROFILE_SLOT_MS } from './profile-chart.js';
 
@@ -320,39 +324,253 @@ describe('time-of-day aggregation', () => {
 		const profile = buildDailyProfile([{ time: window.start, other: 100 }], 'power', window);
 		expect(profile.every((row) => row.average === null && row.days === 0)).toBe(true);
 	});
-	it('exports each picked series, every day in multi-line, without zero-filling blanks', () => {
-		const coal = buildDailyProfile([{ time: window.start, coal: 100 }], 'coal', window);
-		const price = buildDailyProfile([{ time: window.start, price: 50 }], 'price', window);
-		const series = [
-			{ label: 'Coal, black', unit: 'MW', profile: coal },
-			{ label: 'Spot price', unit: '$/MWh', profile: price }
-		];
-		const average = datasetToCsv(
-			profileDataset({
-				series,
-				dates: window.dates,
-				daily: false,
-				region: 'NEM',
-				timeZone: '+10:00'
-			}),
-			'+10:00'
-		);
-		expect(average.split('\n')).toHaveLength(49);
-		expect(average.split('\n')[0]).toBe(
-			'Region,Network time,Time of day,"Coal, black average (MW)","Coal, black days",Spot price average ($/MWh),Spot price days'
-		);
-		expect(average).toContain('NEM,AEST (UTC+10:00),00:00,100,1,50,1');
-		expect(average).toContain('NEM,AEST (UTC+10:00),00:30,,0,,0');
-		const daily = profileDataset({
-			series,
-			dates: window.dates,
-			daily: true,
-			region: 'NEM',
+});
+
+describe('profile downloads', () => {
+	const window = profileWindow(nowMs, '+10:00', 7);
+	const { dates } = window;
+	const rows = [
+		{ time: window.start, coal: 100, charging: -20 },
+		{ time: window.start + day, coal: 300, charging: -40 }
+	];
+	const coal = buildDailyProfile(rows, 'coal', window);
+	const charging = buildDailyProfile(rows, 'charging', window);
+	const today = buildDailyProfile(
+		[{ time: window.todayStart, coal: 250 }],
+		'coal',
+		todayWindow(window)
+	);
+	const series = { key: 'coal', label: 'Coal', unit: 'MW', profile: coal, today: null };
+	const load = { key: 'charging', label: 'Charging', unit: 'MW', profile: charging, today: null };
+	/** @param {import('./types.js').ExportDataset | null} dataset */
+	const headers = (dataset) => dataset?.columns.map((column) => column.header);
+	const dayHeaders = dates.map((date) => `${date} (MW)`);
+
+	it('multi-line: the average, its days and every day, plus today when drawn', () => {
+		const lines = profileCardDataset({ series, style: 'lines', dates, timeZone: '+10:00' });
+		expect(lines.key).toBe('profile-coal');
+		expect(lines.title).toBe('Coal');
+		expect(headers(lines)).toEqual([
+			'Time of day (UTC+10:00)',
+			'Average (MW)',
+			'Days with data',
+			...dayHeaders
+		]);
+		expect(lines.rows).toHaveLength(48);
+		expect(lines.rows[0]).toMatchObject({
+			label: '00:00',
+			average: 200,
+			days: 2,
+			'day:0': 100,
+			'day:1': 300,
+			'day:2': null
+		});
+		const withToday = profileCardDataset({
+			series: { ...series, today },
+			style: 'lines',
+			dates,
 			timeZone: '+10:00'
 		});
-		expect(daily.columns).toHaveLength(3 + 2 * (2 + window.dates.length));
-		expect(daily.columns[5].header).toBe(`Coal, black ${window.dates[0]} (MW)`);
-		expect(daily.rows[0]).toMatchObject({ '0:average': 100, '0:0': 100, '0:1': null });
+		expect(headers(withToday)?.at(-1)).toBe('Today (MW)');
+		expect(withToday.rows[0].today).toBe(250);
+		expect(withToday.rows[1].today).toBeNull();
+	});
+
+	it('percentile bands: the percentiles and median the bands plot, and the average', () => {
+		const bands = profileCardDataset({ series, style: 'bands', dates, timeZone: '+10:00' });
+		expect(headers(bands)).toEqual([
+			'Time of day (UTC+10:00)',
+			'10th percentile (MW)',
+			'25th percentile (MW)',
+			'Median (MW)',
+			'75th percentile (MW)',
+			'90th percentile (MW)',
+			'Average (MW)'
+		]);
+		const { p10, p25, p50, p75, p90 } = profilePercentiles(coal)[0];
+		expect(bands.rows[0]).toEqual({ label: '00:00', p10, p25, p50, p75, p90, average: 200 });
+		expect(bands.rows[0]).toMatchObject({ p10: 120, p50: 200, p90: 280 });
+	});
+
+	it('ridgeline: every day’s curve and the average, loads kept negative', () => {
+		const ridgeline = profileCardDataset({
+			series: load,
+			style: 'ridgeline',
+			dates,
+			timeZone: '+10:00'
+		});
+		expect(headers(ridgeline)).toEqual(['Time of day (UTC+10:00)', 'Average (MW)', ...dayHeaders]);
+		expect(ridgeline.rows[0]).toMatchObject({ average: -30, 'day:0': -20, 'day:1': -40 });
+	});
+
+	it('radial bars: the hourly averages around the dial, loads kept negative', () => {
+		const radial = profileCardDataset({
+			series: { ...load, today: null },
+			style: 'radial',
+			dates,
+			timeZone: '+08:00'
+		});
+		expect(headers(radial)).toEqual(['Hour (UTC+08:00)', 'Average (MW)']);
+		expect(radial.rows).toHaveLength(24);
+		expect(radial.rows[0]).toEqual({ label: '00:00', average: hourlyProfile(charging)[0].average });
+		expect(radial.rows[0].average).toBe(-30);
+		const withToday = profileCardDataset({
+			series: { ...series, today },
+			style: 'radial',
+			dates,
+			timeZone: '+10:00'
+		});
+		expect(withToday.rows[0]).toEqual({ label: '00:00', average: 200, today: 250 });
+	});
+
+	it('radial heatmap: every day’s ring, with no average or today', () => {
+		const heatmap = profileCardDataset({
+			series: { ...load, today },
+			style: 'heatmap',
+			dates,
+			timeZone: '+10:00'
+		});
+		expect(headers(heatmap)).toEqual(['Time of day (UTC+10:00)', ...dayHeaders]);
+		expect(heatmap.rows[0]).toMatchObject({ label: '00:00', 'day:0': -20, 'day:1': -40 });
+		expect(heatmap.rows[0]).not.toHaveProperty('today');
+	});
+
+	it('stacked: each visible technology’s own average day, in stack order', () => {
+		const stack = profileStackDataset({
+			series: [
+				{ key: 'coal', label: 'Coal', profile: coal },
+				{ key: 'charging', label: 'Charging', profile: charging }
+			],
+			timeZone: '+10:00'
+		});
+		expect(headers(stack)).toEqual(['Time of day (UTC+10:00)', 'Coal (MW)', 'Charging (MW)']);
+		expect(stack.rows[0]).toEqual({ label: '00:00', coal: 200, charging: -30 });
+		// A technology missing from a slot leaves its own cell empty, not the row.
+		expect(stack.rows[1]).toEqual({ label: '00:30', coal: null, charging: null });
+	});
+
+	it('average by hour: each technology’s hourly energy, signed', () => {
+		const dial = profileHourlyDataset({
+			series: [{ key: 'charging', label: 'Charging', profile: charging }],
+			timeZone: '+10:00'
+		});
+		expect(headers(dial)).toEqual(['Hour (UTC+10:00)', 'Charging (MWh)']);
+		expect(dial.rows).toHaveLength(24);
+		expect(dial.rows[0]).toEqual({ label: '00:00', charging: -30 });
+	});
+
+	it('fuel-tech table: the shown columns, sources before loads', () => {
+		const tableRows = /** @type {any[]} */ ([
+			{
+				id: 'charging',
+				label: 'Charging',
+				isLoad: true,
+				hidden: false,
+				energyMWh: -5,
+				avPowerMW: -10,
+				contributionPct: null,
+				powerValues: { p10: 15, p50: 30, average: 30, [dates[0]]: 20 }
+			},
+			{
+				id: 'coal',
+				label: 'Coal',
+				isLoad: false,
+				hidden: true,
+				energyMWh: 50,
+				avPowerMW: 100,
+				contributionPct: 90,
+				powerValues: { p10: 120, p50: 200, average: 200, [dates[0]]: 100 }
+			}
+		]);
+		const plain = profileTableDataset({ rows: tableRows, contributionMode: 'demand' });
+		expect(headers(plain)).toEqual([
+			'Technology',
+			'Type',
+			'Energy (MWh)',
+			'Av power (MW)',
+			'Contribution (% demand)',
+			'Hidden'
+		]);
+		expect(plain?.rows.map((row) => [row.label, row.type, row.hidden])).toEqual([
+			['Coal', 'source', true],
+			['Charging', 'load', false]
+		]);
+		const bands = profileTableDataset({
+			rows: tableRows,
+			powerColumns: [
+				{ key: 'p10', label: '10%' },
+				{ key: 'p50', label: 'Median' }
+			],
+			contributionMode: 'demand'
+		});
+		expect(headers(bands)).toEqual(['Technology', 'Type', '10% (MW)', 'Median (MW)', 'Hidden']);
+		expect(bands?.rows[1]).toMatchObject({ 'power:p10': 15, 'power:p50': 30 });
+		const days = profileTableDataset({
+			rows: tableRows,
+			powerColumns: [
+				{ key: 'average', label: 'Average' },
+				{ key: dates[0], label: formatProfileDay(dates[0]) }
+			],
+			contributionMode: 'generation'
+		});
+		expect(headers(days)?.slice(2, 4)).toEqual(['Average (MW)', `${dates[0]} (MW)`]);
+		expect(profileTableDataset({ rows: [], contributionMode: 'demand' })).toBeNull();
+	});
+
+	it('writes clock labels as text, never synthetic dates', () => {
+		const csv = datasetToCsv(
+			profileCardDataset({ series, style: 'radial', dates, timeZone: '+10:00' }),
+			'+10:00'
+		);
+		expect(csv.split('\n').slice(0, 3)).toEqual([
+			'Hour (UTC+10:00),Average (MW)',
+			'00:00,200',
+			'01:00,'
+		]);
+	});
+
+	it('summarises the display, style and table slot', () => {
+		const summary = Object.fromEntries(
+			profileSummaryRows({
+				region: 'NEM',
+				dates,
+				interval: '30m',
+				breakdown: true,
+				style: 'bands',
+				today: true,
+				groupLabel: 'Simplified',
+				contributionMode: 'demand',
+				hidden: ['Coal'],
+				tableSlot: '00:00–00:30',
+				timeZone: '+10:00'
+			})
+		);
+		expect(summary).toMatchObject({
+			View: 'Profile',
+			Display: 'Breakdown',
+			Style: 'Percentile bands',
+			Interval: '30 min',
+			'Hidden groups': 'Coal — left out, as drawn',
+			'Table values': 'The 00:00–00:30 slot'
+		});
+		expect(summary.Today).toBeDefined();
+		const stacked = Object.fromEntries(
+			profileSummaryRows({
+				region: 'NEM',
+				dates,
+				interval: '5m',
+				breakdown: false,
+				style: 'bands',
+				today: true,
+				groupLabel: 'Simplified',
+				contributionMode: 'generation',
+				hidden: [],
+				timeZone: '+10:00'
+			})
+		);
+		expect(stacked).not.toHaveProperty('Style');
+		expect(stacked).not.toHaveProperty('Today');
+		expect(stacked['Table values']).toBe('The whole day');
 	});
 });
 

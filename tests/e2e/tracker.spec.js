@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { card, collectPageErrors, download, hydrated, openOptions } from './helpers/tracker.js';
+import {
+	card,
+	collectPageErrors,
+	download,
+	downloadWorkbook,
+	hydrated,
+	openDownloads
+} from './helpers/tracker.js';
 
 /**
  * The navigation server-renders before the canvas is interactive. Wait for
@@ -308,21 +315,22 @@ test.describe('Tracker options menu', () => {
 			.toBe('generation');
 	});
 
-	test('datasets download as CSV and as one XLSX workbook', async ({ page }) => {
+	test('charts download as CSV and as one XLSX workbook', async ({ page }) => {
 		await page.goto('/tracker/timeline?table=1');
 		await waitForHydration(page);
 		// The table renders from the generation snapshot — once it has rows,
 		// the export context is populated.
 		await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible({ timeout: 30000 });
 
-		const menu = await openOptions(page);
-		await expect(menu.getByRole('button', { name: 'Fuel tech table', exact: true })).toBeVisible();
-		const csvDownload = page.waitForEvent('download');
-		await menu.getByRole('button', { name: 'Generation', exact: true }).click();
-		expect((await csvDownload).suggestedFilename()).toBe('tracker-nem-generation-3d.csv');
+		const dialog = await openDownloads(page);
+		await expect(
+			dialog.getByRole('button', { name: 'Download Fuel tech table CSV', exact: true })
+		).toBeVisible();
+		const csv = await download(page, 'Generation');
+		expect(csv.suggestedFilename()).toBe('tracker-nem-generation-3d.csv');
 
-		const xlsxDownload = await download(page, 'Everything (one workbook)');
-		expect(xlsxDownload.suggestedFilename()).toBe('tracker-nem-3d.xlsx');
+		const xlsx = await downloadWorkbook(page);
+		expect(xlsx.suggestedFilename()).toBe('tracker-nem-3d.xlsx');
 	});
 });
 

@@ -14,7 +14,8 @@
 	 *   viewport: {start: number, end: number}, domain: [number, number], ticks: Date[],
 	 *   hover: number | null, focus: number | null, highlighted: boolean,
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
-	 *   onhoverregion: (region: string | null) => void}} */
+	 *   onhoverregion: (region: string | null) => void,
+	 *   timeMarkers?: {markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null}} */
 	let {
 		region,
 		regions,
@@ -28,7 +29,8 @@
 		highlighted,
 		onhover,
 		onfocus,
-		onhoverregion
+		onhoverregion,
+		timeMarkers = null
 	} = $props();
 
 	const GHOST = '#D9D9D9';
@@ -83,6 +85,13 @@
 		else chart.setHover(hover);
 		if (focus == null) chart.clearFocus();
 		else chart.setFocus(focus);
+	});
+
+	// A comparison's A / B markers.
+	$effect(() => {
+		chart.timeMarkers = timeMarkers?.markers ?? [];
+		chart.timeMarkerArmed = timeMarkers?.armed ?? null;
+		chart.timeMarkerBand = !!timeMarkers?.band;
 	});
 
 	/** The inspected period's value, or the latest on screen. */

@@ -195,7 +195,7 @@
 				onclose={dock.close}
 				class="flex min-w-[var(--panel-slide-width,0)] flex-1 bg-white {overlaid
 					? 'border-l border-warm-grey shadow-xl'
-					: ''}"
+					: 'border-l border-mid-warm-grey/40'}"
 			>
 				{#snippet header()}
 					{#if panelHeader}{@render panelHeader(dock)}{:else}<span class="hidden"></span>{/if}

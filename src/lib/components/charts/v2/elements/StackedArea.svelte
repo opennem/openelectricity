@@ -334,8 +334,11 @@
 		{#if lineHitWidth > 0}
 			<!-- One target over the plot: the line nearest the pointer at the
 			     hovered time, within half the hit width, names its series. -->
+			<!-- `data-series-hit`: it reports its own clicks (onpointerup), so the
+			     interaction layer's click handler skips it. -->
 			<rect
 				class="line-hit"
+				data-series-hit
 				role="presentation"
 				width={$width}
 				height={$height}

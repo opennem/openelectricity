@@ -19,6 +19,7 @@ import {
 	comparisonPeriod,
 	comparisonChartRows,
 	changesComparisonPeriods,
+	closesComparisonDates,
 	DEFAULT_COMPARISON_REGIONS,
 	joinComparisonComponents,
 	latestCommonComparisonPeriod,
@@ -29,11 +30,12 @@ import {
 	sumComparisonNetworks
 } from './region-comparison.js';
 import {
-	comparisonExportDataset,
+	comparisonChartDataset,
 	comparisonFileName,
-	comparisonWorkbook,
-	regionComparisonCsv
+	comparisonSummaryRows,
+	comparisonTableDataset
 } from './region-comparison-export.js';
+import { datasetToCsv } from '$lib/components/charts/card/export-dataset.js';
 import { comparisonMetricValue } from './comparison-metrics.js';
 import { parseTrackerUrl, applyTrackerUrl } from './tracker-url.js';
 
@@ -56,9 +58,17 @@ describe('region comparison calculations', () => {
 		const rows = comparisonChartRows(data, ['nsw1'], 'renewables_generation', 'demand', 1);
 		expect(rows).toHaveLength(3);
 		expect(rows[1].nsw1).toBeNull();
-		const state = normaliseRegionComparison({ regions: ['nsw1'], interval: '1M' });
 		expect(
-			comparisonExportDataset(data, state, { start, end: Date.UTC(2025, 0) }).rows
+			comparisonChartDataset({
+				data,
+				regions: ['nsw1'],
+				metric: 'renewables_generation',
+				basis: 'demand',
+				interval: '1M',
+				months: 1,
+				viewport: { start, end: Date.UTC(2025, 0) },
+				display: 'charts'
+			})?.rows
 		).toHaveLength(2);
 	});
 	it('uses weighted component ratios, including demand shares above 100%', () => {
@@ -410,6 +420,12 @@ describe('region comparison navigation and export', () => {
 		expect(comparisonFileName(normaliseRegionComparison({}), viewport, 'xlsx')).toBe(
 			'tracker-regions-12mr-2024-01-to-2024-12.xlsx'
 		);
+		expect(comparisonFileName(state, viewport, 'csv', 'regions-intensity')).toBe(
+			'tracker-regions-intensity-1m-2024-01-to-2024-12.csv'
+		);
+		expect(comparisonFileName(state, viewport, 'csv', 'regions-table')).toBe(
+			'tracker-regions-table-1m-2024-01-to-2024-12.csv'
+		);
 	});
 	it('clamps copied future windows and short ranges to available complete history', () => {
 		const bounds = { start, end: Date.UTC(2026, 0) };
@@ -518,21 +534,144 @@ describe('region comparison navigation and export', () => {
 		expect(restored.profileDays).toBe(14);
 		expect(restored.regionComparison?.interval).toBe('1M');
 	});
-	it('exports period, region, base units and the chosen denominator with blank missing values', () => {
-		const state = normaliseRegionComparison({
-			regions: ['nsw1'],
+});
+
+describe('region comparison downloads', () => {
+	const viewport = { start, end: Date.UTC(2025, 0) };
+	/** Three months where NSW is dirtiest, then Victoria. @returns {Record<string, any[]>} */
+	const ranked = () => ({
+		nsw1: monthly(3).map((row) => ({ ...row, emissions: 800, energy_mwh: 1000 })),
+		vic1: monthly(3).map((row) => ({ ...row, emissions: 600, energy_mwh: 1000 })),
+		_all: monthly(3).map((row) => ({ ...row, emissions: 700, energy_mwh: 1000 }))
+	});
+	/** @param {Partial<Parameters<typeof comparisonChartDataset>[0]>} overrides */
+	const chart = (overrides) =>
+		comparisonChartDataset({
+			data: ranked(),
+			regions: ['nsw1', 'vic1', '_all'],
+			metric: 'intensity',
+			basis: 'demand',
 			interval: '1M',
-			charts: ['intensity', 'renewables_share']
+			months: 1,
+			viewport,
+			display: 'charts',
+			...overrides
 		});
-		const data = { nsw1: [{ ...monthly(1)[0], emissions: null }] };
-		const dataset = comparisonExportDataset(data, state, { start, end: Date.UTC(2025, 0) });
-		const csv = regionComparisonCsv(dataset);
-		expect(csv).toContain('Carbon intensity (kgCO2e/MWh)');
-		expect(csv).toContain('gross demand (%)');
-		expect(csv).toContain('Jan 2024,New South Wales,,150');
-		const sheets = comparisonWorkbook(dataset, 'https://example.com/tracker?view=compare', state);
-		expect(sheets).toHaveLength(2);
-		expect(sheets[1].data[1][3]).toEqual({ value: 150, type: Number });
+	/** @param {import('./types.js').ExportDataset | null} dataset */
+	const headers = (dataset) => dataset?.columns.map((column) => column.header);
+
+	it('Trends, Panels and Heatmap: each selected region’s value per period', () => {
+		for (const display of ['charts', 'panels', 'stripes']) {
+			const dataset = chart({ display });
+			expect(dataset?.key).toBe('regions-intensity');
+			expect(dataset?.title).toBe('Carbon intensity');
+			expect(headers(dataset)).toEqual([
+				'Period',
+				'New South Wales (kgCO2e/MWh)',
+				'Victoria (kgCO2e/MWh)',
+				'National Electricity Market (kgCO2e/MWh)'
+			]);
+			expect(dataset?.rows[0]).toEqual({
+				period: 'Jan 2024',
+				'value:nsw1': 800,
+				'value:vic1': 600,
+				'value:_all': 700
+			});
+		}
+	});
+
+	it('keeps only the periods on screen with a value, blank where missing', () => {
+		const data = { nsw1: [{ ...monthly(1)[0], emissions: null }, ...monthly(3).slice(1)] };
+		const dataset = chart({
+			data,
+			regions: ['nsw1'],
+			viewport: { start: Date.UTC(2024, 0), end: Date.UTC(2024, 2) }
+		});
+		expect(dataset?.rows.map((row) => row.period)).toEqual(['Feb 2024']);
+		const shares = chart({ data, regions: ['nsw1'], metric: 'renewables_share' });
+		expect(headers(shares)).toEqual(['Period', 'New South Wales (% gross demand)']);
+		expect(datasetToCsv(/** @type {any} */ (shares), '+10:00').split('\n')[1]).toBe('Jan 2024,150');
+	});
+
+	it('Ranks: the states’ ranks, where NEM falls among them, then the values', () => {
+		const dataset = chart({ display: 'ranks' });
+		expect(headers(dataset)).toEqual([
+			'Period',
+			'New South Wales rank',
+			'Victoria rank',
+			'National Electricity Market place',
+			'New South Wales (kgCO2e/MWh)',
+			'Victoria (kgCO2e/MWh)',
+			'National Electricity Market (kgCO2e/MWh)'
+		]);
+		expect(dataset?.rows[0]).toMatchObject({
+			'rank:nsw1': 1,
+			'rank:vic1': 2,
+			'place:_all': '#1–2'
+		});
+	});
+
+	it('Ranks: volumes stay values, and nothing to rank draws nothing', () => {
+		const volume = chart({ display: 'ranks', metric: 'emissions' });
+		expect(headers(volume)?.[1]).toBe('New South Wales (tCO2e)');
+		expect(chart({ display: 'ranks', regions: ['_all'] })).toBeNull();
+		expect(chart({ data: {} })).toBeNull();
+	});
+
+	it('Regions table: every region in table order at the table’s period', () => {
+		const table = comparisonTableDataset({
+			data: ranked(),
+			tableRegions: ['vic1', 'nsw1', 'qld1'],
+			selected: ['nsw1', 'vic1'],
+			metrics: ['intensity', 'renewables_share'],
+			basis: 'generation',
+			period: Date.UTC(2024, 1),
+			interval: '1M'
+		});
+		expect(headers(table)).toEqual([
+			'Period',
+			'Region',
+			'Compared',
+			'Intensity (kgCO2e/MWh)',
+			'Renewables (% source generation)'
+		]);
+		expect(table?.rows.map((row) => [row.region, row.selected, row['value:intensity']])).toEqual([
+			['Victoria', true, 600],
+			['New South Wales', true, 800],
+			['Queensland', false, null]
+		]);
+		expect(table?.rows[0].period).toBe('Feb 2024');
+		expect(
+			comparisonTableDataset({
+				data: {},
+				tableRegions: [],
+				selected: [],
+				metrics: [],
+				basis: 'demand',
+				period: null,
+				interval: '1M'
+			})
+		).toBeNull();
+	});
+
+	it('summarises the display, charts and regions', () => {
+		const summary = Object.fromEntries(
+			comparisonSummaryRows(
+				normaliseRegionComparison({
+					regions: ['nsw1'],
+					display: 'ranks',
+					charts: ['intensity']
+				}),
+				'2026'
+			)
+		);
+		expect(summary).toMatchObject({
+			View: 'Compare',
+			Display: 'Ranks',
+			Charts: 'Carbon intensity',
+			Regions: 'New South Wales',
+			'CPI reference': '2026'
+		});
 	});
 });
 
@@ -581,4 +720,16 @@ it('a Compare pin clears only when the periods themselves change', () => {
 	expect(changesComparisonPeriods({ charts: ['intensity'] })).toBe(false);
 	expect(changesComparisonPeriods({ interval: 'fy' })).toBe(true);
 	expect(changesComparisonPeriods({ filter: null })).toBe(true);
+});
+
+it('closes compare mode on a new display, interval, filter or set of charts only', () => {
+	for (const change of [
+		{ display: 'ranks' },
+		{ interval: '1y' },
+		{ filter: 'winter' },
+		{ charts: ['intensity'] }
+	])
+		expect(closesComparisonDates(/** @type {any} */ (change))).toBe(true);
+	for (const change of [{ start: 1, end: 2 }, { regions: ['nsw1'] }, { basis: 'generation' }])
+		expect(closesComparisonDates(/** @type {any} */ (change))).toBe(false);
 });

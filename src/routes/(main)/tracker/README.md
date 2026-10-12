@@ -234,8 +234,10 @@ default), `compare-filter` (Timeline's calendar-period ids: `jan`…`dec`,
 `summer`…, `q1`…, `h1`/`h2`, validated against the grain), `compare-regions` (short names `nsw,qld,sa,tas,vic,wem,nem,au`;
 an empty value intentionally selects none),
 `compare-charts` (hyphenated names such as `intensity,renewables,solar-generation,price-real`;
-empty selects none), `compare-basis`, `compare-start` / `compare-end`, and
-`compare-table`. Defaults are omitted. Older links with the full ids
+empty selects none), `compare-basis`, `compare-start` / `compare-end`,
+`compare-table`, and compare mode's `compare-dates` (the comparing cards'
+chart names) with `compare-date-a` / `compare-date-b` (`YYYY-MM`; Timeline's
+own `compare-a` / `compare-b` are epoch ms). Defaults are omitted. Older links with the full ids
 (`nsw1`, `solar_generation`) still parse. Every Tracker list parameter
 (`hidden`, `overlay` and the two above) is written with bare commas
 (`readableQuery` in `tracker-url.js`), never `%2C`. Explicit view switches navigate to the bare view route, so every query
@@ -246,9 +248,9 @@ a divider after the switcher. Switching views is a route change, so the site's
 filter-bar view transition slides the incoming controls in from the left and
 the chart body cross-fades. The view switcher is named for the transition
 (`SwitchWithIcons` `transitionName`), so it holds still while its thumb slides
-to the new view. CSV/XLSX export
-the visible metrics for selected regions and visible periods, in base units with
-the percentage denominator stated. PNG uses the existing Stratum capture flow, extended to the stripes' own SVG.
+to the new view. Each chart card downloads its metric for the selected regions
+over the visible periods (ranks too, under Ranks), in base units with the
+percentage denominator stated; the Regions table downloads as shown. PNG uses the existing Stratum capture flow, extended to the stripes' own SVG.
 
 ### Timeline and profile composition
 
@@ -257,11 +259,12 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
 - **`timeline/`, `profile/`, `compare/+page.svelte`** — one route per view
   (`TRACKER_VIEWS` in `tracker-url.js` lists them with their labels and route
   ids). Each composes `TrackerShell` around its canvas and owns what differs: its
-  filter-bar controls and range status, extra menu items, shortcuts and
-  downloads. Compare's `+page.server.js` loads the CPI series only there.
+  filter-bar controls and range status, extra menu items, shortcuts and the
+  workbook's Summary rows and file names. Compare's `+page.server.js` loads the CPI series only there.
 - **`TrackerShell.svelte`** — the chrome every view shares: view switcher,
-  region select, options menu (copy link, PNG export, downloads), notices,
-  fullscreen and the shortcuts toast. Its `<main>` gains `data-hydrated` once
+  region select, options menu (copy link, PNG export, Download data), notices,
+  fullscreen and the shortcuts toast. It owns the download registry and the
+  "Download data" dialog (see Data export). Its `<main>` gains `data-hydrated` once
   mounted: the server-rendered charts already contain svgs, so automation waits
   for this marker before clicking (a click on the SSR skeleton is lost).
 - **`tracker-page.js`** — `createTrackerPage()` builds a view page's session
@@ -501,11 +504,14 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   and negatives inward, the hub and titles read the net total and the hidden
   table gains a column per layer; the breakdown passes a single layer. The hub is a
   third of the radius.
-- **`DateComparison.svelte`** / **`comparison.js`** — compare two accepted
-  generation display buckets using Stratum's categorical bars, a signed-value
-  table and CSV. No separate fetch or data manager. Rows carry `isLoad` by the
-  fuel-tech table's rule (a listed load group, or a negative reading), and the
-  table uses the shared `table-styles.js`.
+- **Chart cards** live in `$lib/components/charts/card/` (shared with
+  `/facility/[code]`; see its README): `ChartCard`, the table view, the
+  download registry and dialog, the export dataset serialisers and compare
+  mode. The tracker keeps its own datasets (`tracker-export.js`) and compare
+  sources (`chart-compare-sources.js`).
+- **Compare mode** (`$lib/components/charts/card/compare/`,
+  `chart-compare-sources.js`) — any chart card can compare two of its buckets; see
+  [Compare mode](#compare-mode).
 - **`tracker-providers.svelte.js`** — enables and coordinates the six optional
   headless providers through their existing shared request/cache lifecycle.
 - **`tracker-data.svelte.js`** — accepts producer-tagged snapshots only for
@@ -540,6 +546,39 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   URL-owned overlays: canonical `overlay=` order, the demand/renewables line
   colours and the curtailment bands (ids, labels, colours, stacking order).
   The canvas, the table swatches and the URL codec all read it.
+- **`ChartCard.svelte`** — every chart sits in one card with one header, on
+  a subtle diagonal gradient from warm grey to light warm grey:
+  - Row 1: the chart's ⋮ options (its flyout opens under the header's left
+    edge), the title (the card's heading), the chart's own title and unit,
+    then on the right the card's actions — Table (a table view), CSV (the
+    card's download, as the "Download data" dialog gives it) and Enlarge
+    (radial and heatmap cards), 28px icon buttons with tooltips like the
+    chart's own — and the chart's pan/zoom (✥, − / +;
+    unlike the grey bar elsewhere, − / + stay while pan/zoom is engaged,
+    `keepZoomWhileEngaged`). A StratumChart inside a card hands its toolbar over
+    through a chart header host (`$lib/components/charts/v2/chart-header-host.svelte.js`)
+    instead of drawing its grey `ChartHeader` bar; the card composes the same
+    pieces (`ChartHeaderUnit`, `ChartOptionsMenu`, `ChartPanZoomButtons`).
+  - Row 2, when a card has them: `legend` on the left, `controls` on the
+    right — `CardToggle` options (Excl. batteries, Inflation adjusted…)
+    before the compact `SwitchTabs` chart switcher.
+  - **Compare** (`compare` prop): a Compare button (⇄ arrows) before Table
+    turns the card's compare mode on and off — see [Compare mode](#compare-mode).
+  - **Legends only where nothing else keys the colours**
+    (`chart-legend.js`, `SeriesLegend.svelte`): the stacked charts (Timeline's
+    Generation, market value and emissions volume; Profile's stack) list
+    their visible series, top of the stack first, plus Generation's overlays,
+    while the fuel-tech table is closed; Compare's Trends and Ranks list the
+    regions while the Regions table is closed. Panels and stripes label their
+    regions in the chart; the heatmap always shows its colour scale.
+  - **The table view** (`ChartDataTable.svelte`) renders the card's download
+    dataset — the CSV's columns and rows — over the chart, mounted only while
+    toggled on. The chart stays mounted underneath (`invisible`, `inert`), so
+    its data, viewport and the fuel-tech table carry on. Only the rows in view
+    render; the header row and first column stay pinned; each number column
+    keeps one precision (`datasetColumnPlaces`, `formatDatasetCell`), while
+    the CSV keeps full precision. The chart's toolbar steps aside, and pan/zoom
+    is released, while the table shows.
 - **Split toggles** flip `metric`/`chartKind` props on the single mounted
   chart instance — no remount, so `isSwitchingData` veils the previous frame
   and the response LRU makes toggling back near-instant. For the `au` scope
@@ -634,32 +673,145 @@ the percentage denominator stated. PNG uses the existing Stratum capture flow, e
   decimals in tonnes). Av price has one unit, so its header is static. A
   header choice pins that column until the page reloads; it is session state,
   not URL or localStorage, because the defaults follow the window's scale.
-- **Data export** (`tracker-export.js`) — the options (⋮) menu's "Download as
-  CSV" rows (Generation, Market, Emissions, and the Fuel tech table while its
-  panel is open) and a single "Download as XLSX" workbook (a Summary sheet —
-  region, range, interval, timezone, grouping, modes, hidden groups, source
-  URL — then one sheet per dataset). Download actions remain disabled until their own datasets are ready; a CSV
-  can become available before the full workbook. Both serialisers share one
-  `ExportDataset` shape built from the canvas's `getExportContext()`, which
-  packages the settled chart snapshots (all three charts pass `onvisibledata`;
-  snapshots are tagged at the producer with their complete query identity and
-  only exported while current) and the table rows. Every series exports regardless
-  of the chart hide toggles; the intensity line inherits the chart's excluded
-  groups. Values are base units (MW/MWh, $, $/MWh, tCO2e, kgCO2e/MWh) with the
-  unit in the header; the volume-weighted price and intensity lines are
-  re-derived from their exported components. Drawing-only calendar-band
-  closing points are omitted. Every view exports through the same
-  `ExportDataset` shape and `datasetToCsv`: the profile and the two-date
-  comparison build theirs in the pure `time-of-day.js` and `comparison.js`
-  modules, and `trackerFileName` names every download (time-of-day, date
-  comparison and region comparison included) with the NEM's `_all` scope
-  written as `nem`. Zone labels come from `networkTimeZoneLabel`, so every
-  export states the zone as "AEST (UTC+10:00)". Timestamps are
-  network-local —
-  offset-suffixed text in CSV, real date-time cells in XLSX. The workbook
-  writer (`write-excel-file`, via `$lib/utils/download-xlsx.js`) is imported
-on demand so it stays off the page bundle. Filenames:
-`tracker-<region>-<dataset>-<range>.csv`/`tracker-<region>-<range>.xlsx`.
+- **Data export** — the options (⋮) menu's single **Download data** item opens
+  `DownloadDataModal` (`$lib/components/charts/card/`): a "Download as CSV" row for every chart and panel
+  on screen, each with a download button, then a "Download as XLSX" row for
+  the "All charts" workbook (a Summary sheet, then one sheet per listed chart
+  with data, named as the dialog lists it).
+  - **What's listed is what's rendered.** `TrackerShell` creates a registry
+    (`chart-downloads.svelte.js`, which also builds the CSVs and the
+    workbook) and puts it in context. `ChartCard`'s
+    `download` prop, `FuelTechPanel`'s and the `chartDownload` attachment
+    (each open compare panel, Profile's stacked dial, Compare's Regions
+    panel) register an element while it is mounted and drop it on unmount;
+    the dialog lists them in screen order (`orderByDocument`). Each source
+    is read lazily when the dialog shows (id, label, state, dataset), so a
+    row follows its card live, and a dataset is built only on click. Ids
+    match the PNG export's, and registered elements carry
+    `data-chart-download`, which the e2e checks compare with the dialog.
+  - **States.** A row's button is enabled only when its chart is `ready`;
+    `loading`, `empty` ("No data") and `error` say so. The workbook builds
+    once nothing is loading or failed (`workbookAvailability`); empty charts
+    are left out and named on its Summary. A chart's CSV can download before
+    the workbook can.
+  - **Timeline** (`tracker-export.js`, `timelineDataset`): each card as drawn —
+    Generation's visible series, then the drawn overlays joined on its times
+    (Demand, Renewables (% of gross demand), each curtailment band); Market's
+    tab (spot price; volume-weighted price with its market value and energy;
+    or market value's visible series); Emissions' tab (intensity with its
+    emissions and energy, re-derived as the chart does; or volume's visible
+    series); the fuel-tech table while its panel is open; each open compare
+    panel, after its chart (`compareDataset`: the series at A and B, the
+    change and, for relative changes, the percentage; base units, with the
+    region, network time and interval). Values are base units (MW/MWh, $, $/MWh,
+    tCO2e, kgCO2e/MWh) with the unit in the header, whatever the chart's
+    prefix or proportion / change-since view (the Summary notes it). Each
+    card is ready on its own current snapshot; Generation also waits for its
+    overlays' feeds. Drawing-only calendar-band closing points are omitted.
+  - **Profile** (`time-of-day.js`): the Stacked area (`profileStackDataset`:
+    each visible technology's own slot average), the "Average by hour" dial
+    while the table is open (`profileHourlyDataset`, MWh), the table
+    (`profileTableDataset`: the columns it shows, including a style's own
+    power columns) and each Breakdown card in its style
+    (`profileCardDataset`): Multi-line — average, days with data and every
+    day; Percentile bands — the 10th–90th percentiles, median and average;
+    Ridgeline — average and every day; Radial bars — hourly averages;
+    Radial heatmap — every day. Today joins every style that draws it. Clock
+    labels are text headed with the zone (`Time of day (UTC+10:00)`), and
+    values keep their sign: the shape styles draw loads outward, the
+    downloads don't flip them.
+  - **Compare** (`region-comparison-export.js`): each card as its display
+    draws it (`comparisonChartDataset`) — a value column per selected region,
+    or under Ranks each state's rank, where NEM and All Regions fall
+    (`#2–3`) and the values ranked — over the visible periods with a value,
+    and the Regions table at its period (`comparisonTableDataset`).
+  - CSV and XLSX share one `ExportDataset` shape (`datasetToCsv`,
+    `datasetToSheet`; `buildWorkbookSheets` with `uniqueSheetNames` for
+    Excel's 31-character, case-insensitive names). Timestamps are
+    network-local — offset-suffixed text in CSV, real date-time cells in
+    XLSX. The workbook writer (`write-excel-file`, via
+    `$lib/utils/download-xlsx.js`) is imported on demand so it stays off the
+    page bundle. `trackerFileName` names every download, with the NEM's
+    `_all` scope written as `nem`: `tracker-nem-generation-3d.csv` /
+    `tracker-nem-3d.xlsx`, `tracker-wem-time-of-day-coal-2026-08-31.csv`,
+    `tracker-regions-intensity-1m-2024-01-to-2024-12.csv`.
+
+## Compare mode
+
+Any `ChartCard` can compare two of its buckets. The card header's **Compare**
+button (⇄ arrows, before Table) switches it on: the chart tweens to half its
+height (at least 160px; the halved height is a resizable, remembered size of
+its own, `<heightStorageKey>-compare`) while the compare panel slides down
+inside the card, under the chart, both over 220ms (instant with reduced
+motion). Cards whose height is their content (Panels, Heatmap) keep it.
+Switching it off returns the chart to its height. Wired on Timeline's three
+cards and every `/tracker/compare` card; Profile can join by handing its cards
+a source.
+
+- **Picking A and B.** The panel opens on the first and last buckets in view,
+  with A armed. A click on the chart sets the armed slot and arms the other,
+  so two clicks set A then B; while a card compares, its clicks never engage
+  pan and zoom (`engageOnTap`, off; ✥ still does) or pin a time. The A / B bar
+  (`ComparePicker`) shows each slot's bucket in the chart's tooltip format,
+  with ‹ › steppers (← / → on a focused slot, Shift for ten), a swap button
+  and a hint naming the slot the next click sets. Picks and swaps push
+  history; stepping replaces it. The armed slot is page state.
+- **Markers.** The chart draws A and B as dark lines with letter chips and a
+  faint band between them (the v2 store's `timeMarkers`), an edge arrow when
+  one lies outside the view, and a dashed ghost of the armed slot under the
+  pointer. They are kept in PNG exports. The heatmap outlines A's and B's
+  cells instead.
+- **Shared A and B.** Every comparing card on a page shows the same A and B;
+  open and closed is per card. Closing the last card drops the comparison.
+- **What closes it.** Anything that redraws the charts over other periods or
+  as other charts closes every comparison on the page. On Timeline that is a
+  range preset, custom dates, the interval, the calendar filter, the region,
+  or the Market and Emissions tabs (`CLOSES_COMPARISON` and `chooseRange` in
+  `tracker-session.svelte.js`). On Compare it is the display, the interval,
+  the calendar filter, or the charts, a presentation switch included
+  (`closesComparisonDates`). On Timeline a pan or zoom that switches the
+  grain (5 min → 30 min, power → energy) closes it too (`keepingGrain`):
+  A and B were buckets the charts no longer draw. Units, curves, pan and
+  zoom within a grain, show / hide, grouping, transforms, regions and the
+  percentage basis leave it open.
+- **Unavailable dates.** A date the chart never drew reads "not in view",
+  with **Show in chart** (Timeline: pans to cover A and B) and **Use nearest
+  date**. Dates are never silently swapped.
+- **Per chart** (`chart-compare-sources.js` builds each card's
+  `CompareSource`, Timeline's on the shared `stackCompareSource` /
+  `lineCompareSource`; `ComparePanel` draws it by kind):
+  - _Composition_ — Generation, Market value, Emissions volume: the net total
+    (A, B, change, %; sources less loads), then one change list
+    (`CompareChangeList`): a row per visible technology, each with A, B
+    (narrow cards drop them), a diverging bar of its change about a centre
+    zero line on one shared scale, the change and the %. Loads (the
+    fuel-tech table's rule: a listed load group or a negative reading) read
+    as consumption — signs inverted and tagged "load" — so charging and
+    pumping rank and compare alongside the sources. Where the chart drew a
+    bucket, a technology without a reading in it (solar before it was built)
+    compares as 0; a bucket the chart never drew stays missing. Rows run from
+    the largest rise to the largest fall (_Largest change_, the default), so
+    the bars step down one diagonal, or in _Stack order_. Region lists use
+    the same order. Hovering a row highlights its fuel-tech table row. The
+    CSV matches the panel, with a `Load (as consumption)` column.
+  - _Single line_ — spot price, volume-weighted price, intensity: A and B
+    value tiles either side of the change (`CompareValueTiles`), over a range
+    strip placing both between the window's low and high, with its mean
+    (spot price) or the ratio of its window sums (VW price, intensity, both
+    derived from their components as the chart does).
+  - _Lines_ (regions) — every Compare card: a slope chart (`CompareSlopeChart`, on
+    the shared Stratum line chart; A always on the left) beside a change list
+    per region; hovering a line or row names the region to the Regions table.
+    Shares change in percentage points (no %). Under Ranks it is a bump
+    chart, NEM and All Regions dashed among the ranks, and changes read
+    ▲2 / ▼1 places. Under Heatmap the list alone, with A's and B's shades
+    on the heatmap's scale as chips just right of their values.
+- **Downloads.** Each open panel registers its own download after its
+  chart's (`<card>-comparison`, `tracker-nem-generation-comparison-<a>-to-<b>.csv`,
+  `tracker-regions-<metric>-comparison-<a>-to-<b>.csv`) and its own PNG.
+  A visually hidden table carries every value for assistive technology.
+- **Floating-point noise** (ratios and rolling sums of the same readings)
+  reads as no change, never `-0.0` (`compareValues`, `formatSignedChange`).
 
 ## Window metrics
 
@@ -818,8 +970,8 @@ The latest reading does not guarantee complete coverage of every technology.
 
 Options → Export PNG opens a frozen preview of the current view. Choose ready
 charts, edit the title/description, then download that exact preview. Timeline
-generation, market and emissions charts, an open two-date comparison, and
-time-of-day plots are supported. The image includes the Open Electricity logo,
+generation, market and emissions charts, every open compare panel (with the
+A / B markers on its chart), and time-of-day plots are supported. The image includes the Open Electricity logo,
 visible-series/overlay legends, units, date window, interval, grouping, calendar
 filter, network time zone, attribution and generation timestamp. Displayed
 transforms, negative stacks, chart size, profile zoom and hidden series are retained;
@@ -915,43 +1067,31 @@ for every chart and the table; gross demand and today load only when shown. Scop
 the prior consumer, and identity checks prevent stale displays/exports. Shared
 response caching, deduplication and bounded retry/error handling remain in use.
 View, interval, series (once loaded), visibility and chart-interaction changes do
-not refetch. The options menu's downloads follow the view: in Profile it offers a
-single **Profile** CSV of the shown display (`profileDataset`: a row per slot
-with each series' average and available-day count, in base units — every
-technology when Stacked; the shown technologies and spot price, plus every
-day's value, when Breakdown) and no workbook. PNG export offers the stack, or
-each breakdown card. Spot price loads only in Breakdown.
+not refetch. Download data lists the view's charts (see Data export): the
+stack, table and hourly dial when Stacked; each technology and spot price,
+shaped by the style, and the table, when Breakdown; and the workbook. PNG
+export offers the stack, or each breakdown card. Spot price loads only in Breakdown.
 
 ### Timeline selections
 
-The Generation card's **Compare dates** action opens a two-interval comparison.
-A and B come from the current displayed generation buckets, with the same network
-timezone and interval labels as the chart. The first opening selects the earliest
-and latest available buckets; dropdowns allow exact selection and swapping.
-Changing range, interval or filter never silently substitutes another date:
-unavailable selections remain labelled and cannot export until both are present.
-Synthetic calendar-band closing rows are excluded; rolling values remain rolling
-interval values, not independent window sums. Open/partial buckets remain partial.
+Any Timeline card can compare two of its buckets (see
+[Compare mode](#compare-mode)). Values are absolute MW/MWh (or $, $/MWh,
+tCO₂e, kgCO₂e/MWh), whatever the chart's proportion or change-since view;
+the comparison follows grouping and hidden technologies, and displays the
+generation chart's unit prefix. Differences are signed B − A; relative
+change is (B − A) / |A| × 100, so negative loads keep a meaningful signed
+direction. Missing readings stay unavailable; a zero baseline has no
+percentage, while a fall to zero from a non-zero baseline remains valid.
+Synthetic calendar-band closing rows are never offered; rolling values
+remain rolling interval values, and open buckets remain partial.
 
-Values are absolute MW/MWh, regardless of timeline percentage/change transforms.
-The comparison follows grouping and hidden technologies, and displays the main
-generation chart's unit prefix. The comparison table matches the main table's
-header/row typography, colour swatches, muted label qualifiers and Sources/Loads
-sections using the same load-group classification. A, B and change values reuse
-its power/energy formatters; percentage changes use its one-decimal formatter.
-Category-axis labels use dark grey for contrast. Differences are signed B − A; relative change is
-(B − A) / |A| × 100, so negative loads retain a meaningful signed direction. Missing
-readings remain unavailable; a zero baseline has no percentage, while a fall to
-zero from a non-zero baseline remains valid. CSV uses base MW/MWh and includes
-region, network timezone, interval and both date labels. Bar hover and keyboard
-focus on table technology buttons inspect values through the shared Stratum tooltip.
-
-`compare=1`, `compare-a` and `compare-b` persist the open state and exact epoch-ms
-bucket starts through copied URLs, reload and history. Dates do not trigger
-off-screen fetches; change the timeline range to bring other dates into scope.
-Only query-matching, ready generation snapshots are consumed. Loading, failed or
-stale generation cannot display/export old comparison values. Market/table-provider
-failures do not block an otherwise ready generation comparison.
+`compare=generation,market,emissions` (the comparing cards, in card order;
+the earlier `compare=1` opens Generation), `compare-a` and `compare-b`
+persist the comparison and its exact epoch-ms bucket starts through copied
+URLs, reload and history. Dates never trigger off-screen fetches. Only
+query-matching generation snapshots, or rows the chart drew at A or B since
+its series last changed (`compare-pins.svelte.js`), are read: loading or
+failed charts cannot show or export old values.
 
 `region` (`_all`, the NEM) · `range`/`start`+`end`/`interval` via the shared
 `range-params.js` (default 3-day preset; the tracker opts into the
@@ -1170,8 +1310,12 @@ through the URL schema above.
 
 Every pure module has a colocated vitest suite (`thing.js` → `thing.test.js`):
 URL codec, model, overlays, visibility, table model and formatting, window
-metrics, comparison metrics, date and region comparisons, exports, PNG layout,
-live follow, prefetch, time of day and the profile chart adapter.
+metrics, comparison metrics, compare mode (`chart-compare`, its sources and
+pins), region comparisons, exports (every
+chart's download shape per tab, style and display), the download registry's
+ordering and workbook rules, PNG layout, live follow, prefetch, time of day
+and the profile chart adapter. `chart-downloads.svelte.test.js` (in the card kit) covers
+registration, screen order, live sources and attachment stability.
 `page-load.test.js`, `tracker-session.test.js` and `tracker-data.test.js`
 cover the page load and the rune-based state owners that use only `$state` and
 `$derived`.
@@ -1191,9 +1335,15 @@ failure roll-up and retry.
 Live-data E2E smoke: `tests/e2e/tracker.spec.js`. Deterministic response-order,
 failure/retry, empty-data, history, resize, export-content and responsive checks:
 `tests/e2e/tracker-refactor.spec.js`; region comparison flows:
-`tests/e2e/tracker-regions.spec.js`. The specs share `tests/e2e/helpers/tracker.js`:
-the OE-shaped response synthesisers (`trackerFixture`, `regionsFixture`), the
-hydration wait, card/table locators, the options-menu download flow and the
+`tests/e2e/tracker-regions.spec.js`; "Download data" correspondence for every
+view, tab, display and style: `tests/e2e/tracker-downloads.spec.js`; the
+chart card header (the hosted toolbar, header CSV, table view matching the
+CSV, legends): `tests/e2e/tracker-card-header.spec.js`. The specs
+share `tests/e2e/helpers/tracker.js`: the OE-shaped response synthesisers
+(`trackerFixture`, `regionsFixture`), the hydration wait, card/table locators,
+the Download data dialog flow (`download`, `downloadWorkbook`,
+`workbookSheetNames`, and `expectDownloadsMatchCharts`, which checks the
+dialog's rows against the page's registered elements and PNG charts) and the
 horizontal-scroll check.
 
 ## Deferred

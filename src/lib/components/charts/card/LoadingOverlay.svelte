@@ -6,7 +6,7 @@
 <div
 	class="loading-overlay pointer-events-none absolute inset-0 z-30 overflow-hidden"
 	data-active={active}
-	data-testid="tracker-loading-overlay"
+	data-testid="card-loading-overlay"
 	aria-hidden="true"
 ></div>
 

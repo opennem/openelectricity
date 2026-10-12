@@ -5,6 +5,8 @@
 	import { slide } from 'svelte/transition';
 	import TrackerSplitLayout, { FUEL_TECH_SPLIT } from './TrackerSplitLayout.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
+	import SeriesLegend from './SeriesLegend.svelte';
+	import { seriesLegendItems } from './chart-legend.js';
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
 	import { rangeSlugFor } from '$lib/components/charts/facility/range-params.js';
 	import {
@@ -20,23 +22,31 @@
 	import { RENEWABLES_SERIES_ID } from '$lib/components/charts/network/market-series-ids.js';
 	import { toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 	import { hasSpotPrice, regionLabel } from './tracker-regions.js';
-	import ChartCard from './ChartCard.svelte';
+	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
 	import ReadingFreshness from './ReadingFreshness.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
 	import FuelTechOptions from './FuelTechOptions.svelte';
-	import DateComparison from './DateComparison.svelte';
+	import ComparePanel from '$lib/components/charts/card/compare/ComparePanel.svelte';
 	import WindowMetrics from './WindowMetrics.svelte';
-	import { comparisonBuckets } from './comparison.js';
+	import {
+		defaultComparePair,
+		compareTimeMarkers,
+		pickCompareTime,
+		toggleCompareCard
+	} from '$lib/components/charts/card/compare/chart-compare.js';
+	import { timelineCompareSource } from './chart-compare-sources.js';
+	import { compareBuckets } from '$lib/components/charts/card/compare/snapshot-sources.js';
+	import { createComparePins } from '$lib/components/charts/card/compare/compare-pins.svelte.js';
 	import { createTrackerPrefetchPlan } from './tracker-prefetch.js';
 	import { createLoadingNotice } from './tracker-loading.svelte.js';
-	import { resolvePriceMode } from './tracker-model.js';
+	import { resolvePriceMode, TIMELINE_COMPARE_CARDS } from './tracker-model.js';
 	import {
 		CURTAILMENT_SERIES,
 		curtailmentOverlayFor,
 		DEMAND_LINE_COLOUR,
 		RENEWABLES_LINE_COLOUR
 	} from './tracker-overlays.js';
-	import { formatTrackerPercentageValue } from './table-format.js';
+	import { formatPercentageValue } from './table-format.js';
 	import { createTrackerProviders } from './tracker-providers.svelte.js';
 	import { createRooftopForecast } from './rooftop-forecast.svelte.js';
 	import { hasRooftopForecast } from './rooftop-forecast.js';
@@ -46,10 +56,17 @@
 	import { createTrackerData } from './tracker-data.svelte.js';
 	import { createTrackerMetrics } from './tracker-metrics.svelte.js';
 	import { toggleOverlayVisibility, toggleSeriesVisibility } from './tracker-visibility.js';
+	import {
+		exportFileName,
+		timelineDataset,
+		timelineSummaryRows,
+		trackerFileName
+	} from './tracker-export.js';
 
 	/** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
 	/** @typedef {import('./types.js').GenerationSnapshot} GenerationSnapshot */
 	/** @typedef {import('./types.js').TrackerExportContext} TrackerExportContext */
+	/** @typedef {import('./types.js').DownloadState} DownloadState */
 	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>,
 	 * showMetrics?: boolean}} */
 	let { session, showMetrics = true } = $props();
@@ -203,9 +220,107 @@
 		priceMetric: () => priceMetric,
 		holdFrame: () => chartsHoldFrame
 	});
-	function openComparison() {
-		const buckets = comparisonBuckets(data.ready('generation') ? data.current('generation') : null);
-		session.select('comparison', { a: buckets[0]?.time ?? null, b: buckets.at(-1)?.time ?? null });
+
+	// ---- Compare mode (`chart-compare.js`) ----
+	// Any card can compare two of its buckets; the comparing cards share one
+	// A and B (URL state), drawn as markers on each. A click on a comparing
+	// chart sets the armed slot instead of pinning a time.
+	let comparePair = $derived({ a: comparison?.a ?? null, b: comparison?.b ?? null });
+	let comparingCards = $derived(comparison?.cards ?? []);
+	/** Which slot the next click on a comparing chart sets: page state only. */
+	let armed = $state(
+		/** @type {import('$lib/components/charts/card/compare/chart-compare.js').CompareSlot} */ ('a')
+	);
+	let compareMarkers = $derived(compareTimeMarkers(comparePair, armed));
+	const comparePins = Object.fromEntries(
+		TIMELINE_COMPARE_CARDS.map((card) => [
+			card,
+			createComparePins({
+				identity: () => data.seriesKey(card),
+				snapshot: () => data.latest(card),
+				pair: () => comparePair
+			})
+		])
+	);
+	/** @param {TimelineCard} card */
+	function cardMetric(card) {
+		return card === 'generation'
+			? range.activeMetric
+			: card === 'market'
+				? priceMetric
+				: emissionsMetric;
+	}
+	/** @param {TimelineCard} card */
+	function compareSource(card) {
+		return timelineCompareSource(card, data.latest(card), {
+			metric: cardMetric(card),
+			hidden:
+				card === 'generation' ||
+				(card === 'market' && priceIsMarketValue) ||
+				(card === 'emissions' && !emissionsIsIntensity)
+					? hiddenSeries
+					: [],
+			loadIds: loadGroupsFor(getGroup(group)),
+			prefix: generationDisplayPrefix,
+			held: comparePins[card].rows,
+			region,
+			zone: timeZone,
+			interval: range.displayInterval,
+			formatTime: getTimeFormatPolicy(range.displayInterval, ianaTimeZone).formatTooltip
+		});
+	}
+	/** @param {TimelineCard} card @param {boolean} open */
+	function setCompareOpen(card, open) {
+		if (open && !comparison) armed = 'a';
+		const times = compareBuckets(data.latest(card)).map((row) => row.time);
+		session.select(
+			'comparison',
+			toggleCompareCard(comparison, card, open, defaultComparePair(times))
+		);
+	}
+	/** @param {import('$lib/components/charts/card/compare/chart-compare.js').ComparePair} pair @param {'push' | 'replace'} history */
+	function changeComparePair(pair, history) {
+		if (comparison) session.select('comparison', { ...comparison, ...pair }, history);
+	}
+	/** A click (or Enter) on a comparing chart. @param {number | undefined} time */
+	function pickCompare(time) {
+		if (time === undefined) return;
+		const next = pickCompareTime(comparePair, armed, time);
+		armed = next.armed;
+		changeComparePair(next.pair, 'push');
+	}
+	/** Pan and zoom the charts to show A and B, keeping the span when it fits. */
+	function revealCompare() {
+		const times = [comparePair.a, comparePair.b].filter((time) => time !== null);
+		if (!times.length) return;
+		const low = Math.min(...times);
+		const high = Math.max(...times);
+		const span = Math.max(viewWindow.end - viewWindow.start, (high - low) * 1.2);
+		const centre = (low + high) / 2;
+		session.settleViewport({ start: centre - span / 2, end: centre + span / 2 });
+	}
+	/** The chart props a comparing card swaps in: its clicks pick A / B, and
+	 * the shared pin gives way to the markers.
+	 * @param {TimelineCard} card */
+	function compareChartProps(card) {
+		if (!comparingCards.includes(card)) return { timeMarkers: null, engageOnTap: true };
+		return {
+			focusTime: undefined,
+			onfocuschange: pickCompare,
+			timeMarkers: compareMarkers,
+			engageOnTap: false
+		};
+	}
+	/** `tracker-nem-generation-comparison-2026-10-01-to-2026-10-08.csv`
+	 * @param {TimelineCard} card */
+	function compareFileName(card) {
+		const day = (/** @type {number | null} */ time) => toNetworkDateString(time ?? 0, timeZone);
+		return trackerFileName({
+			scope: region,
+			dataset: `${card}-comparison`,
+			range: `${day(comparePair.a)}-to-${day(comparePair.b)}`,
+			extension: 'csv'
+		});
 	}
 	let displayRowOpts = $derived(table.displayRowOpts);
 	let tableRowIds = $derived(table.rowIds);
@@ -236,15 +351,17 @@
 		return trackerLoading;
 	}
 	let contributionDemandReady = $derived(!marketData.isPending && !marketData.error);
+	/** The feeds the generation chart's percentages and overlays draw from. */
+	let overlayProviders = $derived([
+		...(needsContributionDemand || (overlays.includes('renewables') && isRollingDisplay)
+			? [marketData]
+			: []),
+		...(overlays.includes('demand') ? [providers.demandData] : []),
+		...(overlays.includes('renewables') && !isRollingDisplay ? [providers.shareData] : []),
+		...(overlays.some((id) => id.startsWith('curtailment-')) ? [providers.curtailmentData] : [])
+	]);
 	let imageProvidersReady = $derived(
-		[
-			...(needsContributionDemand || (overlays.includes('renewables') && isRollingDisplay)
-				? [marketData]
-				: []),
-			...(overlays.includes('demand') ? [providers.demandData] : []),
-			...(overlays.includes('renewables') && !isRollingDisplay ? [providers.shareData] : []),
-			...(overlays.some((id) => id.startsWith('curtailment-')) ? [providers.curtailmentData] : [])
-		].every((provider) => !provider.isPending && !provider.error)
+		overlayProviders.every((provider) => !provider.isPending && !provider.error)
 	);
 	let contributionDemandRows = $derived(
 		needsContributionDemand && contributionDemandReady
@@ -321,7 +438,7 @@
 				colour: RENEWABLES_LINE_COLOUR,
 				scale: 'percent',
 				tooltipUnit: '%',
-				formatTooltipValue: formatTrackerPercentageValue,
+				formatTooltipValue: formatPercentageValue,
 				absoluteTooltipValue: {
 					data: marketData.getDisplayRows(start, end, displayRowOpts),
 					valueKey: RENEWABLES_SERIES_ID
@@ -344,6 +461,29 @@
 	});
 
 	let visibility = $derived({ hiddenSeries, overlays, rowIds: tableRowIds });
+
+	// The stacked charts' colour keys, while the fuel-tech table that keys
+	// them is closed. Single-line views (price, intensity) need none.
+	let generationLegend = $derived(
+		tablePanelOpen
+			? []
+			: seriesLegendItems({
+					snapshot: data.current('generation'),
+					hidden: hiddenSeries,
+					lines: overlayLines,
+					areas: overlayAreas
+				})
+	);
+	let marketLegend = $derived(
+		tablePanelOpen || !priceIsMarketValue
+			? []
+			: seriesLegendItems({ snapshot: data.current('market'), hidden: hiddenSeries })
+	);
+	let emissionsLegend = $derived(
+		tablePanelOpen || emissionsIsIntensity
+			? []
+			: seriesLegendItems({ snapshot: data.current('emissions'), hidden: hiddenSeries })
+	);
 
 	/** Solo pushes one history entry; a plain overlay toggle replaces (see README).
 	 * @param {TrackerOverlay} overlay @param {boolean} [exclusive] */
@@ -410,26 +550,53 @@
 		})
 	);
 
-	/** The chart datasets and table an export needs.
-	 * @param {import('./types.js').ExportDatasetKey | 'xlsx'} requested */
-	function exportNeeds(requested) {
-		const names = /** @type {const} */ (['generation', 'market', 'emissions']);
+	/** Where a chart card's download stands. Each card is ready on its own
+	 * snapshot (which never describes a stale query), and generation also
+	 * waits for the feeds its overlays draw from.
+	 * @param {TimelineCard} name @returns {DownloadState} */
+	function chartState(name) {
+		if (data.state(name).error) return 'error';
+		if (
+			!data.ready(name) ||
+			(name === 'generation' && overlayProviders.some((provider) => provider.isPending))
+		)
+			return 'loading';
+		return data.current(name)?.data.length ? 'ready' : 'empty';
+	}
+
+	/** @returns {DownloadState} */
+	function tableState() {
+		if (data.state('generation').error || table.feedsError) return 'error';
+		if (tableValuesPending) return 'loading';
+		return displayedRows?.length ? 'ready' : 'empty';
+	}
+	/** Each card's download. Read lazily, by the open dialog: the state and
+	 * data describe the card as it is then.
+	 * @param {import('./types.js').ExportDatasetKey} key */
+	function downloadFor(key) {
 		return {
-			required: requested === 'xlsx' ? names : names.filter((name) => name === requested),
-			needsTable: requested === 'table' || (requested === 'xlsx' && tablePanelOpen)
+			get state() {
+				return key === 'table' ? tableState() : chartState(key);
+			},
+			dataset: () => timelineDataset(key, exportContext())
 		};
 	}
-	/** Whether an export is still waiting on data — cheap enough for menu state.
-	 * @param {import('./types.js').ExportDatasetKey | 'xlsx'} [requested] */
-	export function isExportPending(requested = 'xlsx') {
-		const { required, needsTable } = exportNeeds(requested);
-		return required.some((name) => !data.ready(name)) || (needsTable && tableValuesPending);
+
+	/** The workbook's Summary rows. */
+	export function downloadSummary() {
+		return timelineSummaryRows(exportContext());
 	}
-	/** @param {import('./types.js').ExportDatasetKey | 'xlsx'} [requested]
-	 * @returns {Omit<TrackerExportContext, 'sourceUrl' | 'generatedAtMs'> & {error: boolean}} */
-	export function getExportContext(requested = 'xlsx') {
-		const { required, needsTable } = exportNeeds(requested);
-		const pending = isExportPending(requested);
+	/** `tracker-nem-generation-3d.csv`, or `tracker-nem-3d.xlsx` for the workbook.
+	 * @param {string | null} id @param {'csv' | 'xlsx'} extension */
+	export function downloadFileName(id, extension) {
+		return exportFileName(
+			{ region, rangeSlug: rangeSlugFor(range) },
+			extension === 'xlsx' ? 'xlsx' : (id ?? '')
+		);
+	}
+	/** Everything the downloads read, at the moment one is built.
+	 * @returns {TrackerExportContext} */
+	function exportContext() {
 		return {
 			region,
 			regionLabel: regionLabel(region),
@@ -453,8 +620,11 @@
 			overlaySummary: displayedTable?.overlaySummary ?? null,
 			tablePanelOpen,
 			hiddenSeries,
-			pending,
-			error: required.some((name) => !!data.state(name).error) || (needsTable && !!table.feedsError)
+			generationTransform: session.selection.generationTransform,
+			marketValueTransform: session.selection.marketValueTransform,
+			overlayLines,
+			overlayAreas,
+			rooftopForecast: forecastShown
 		};
 	}
 </script>
@@ -482,6 +652,36 @@
 		filtered={!!bucketFilter}
 	/>
 {/snippet}
+{#snippet generationKey()}<SeriesLegend
+		items={generationLegend}
+		label="Generation legend"
+	/>{/snippet}
+{#snippet marketKey()}<SeriesLegend items={marketLegend} label="Market legend" />{/snippet}
+{#snippet emissionsKey()}<SeriesLegend items={emissionsLegend} label="Emissions legend" />{/snippet}
+{#snippet comparePanel(/** @type {TimelineCard} */ card)}
+	<ComparePanel
+		source={compareSource(card)}
+		pair={comparePair}
+		{armed}
+		pending={!data.state(card).error && !data.latest(card)}
+		error={data.state(card).error}
+		id="{card}-comparison"
+		label="{card === 'generation'
+			? 'Generation'
+			: card === 'market'
+				? 'Market'
+				: 'Emissions'} comparison"
+		fileName={() => compareFileName(card)}
+		hovered={hoveredSeries}
+		onhover={hoverSeries}
+		onarm={(slot) => (armed = slot)}
+		onchange={changeComparePair}
+		onreveal={revealCompare}
+	/>
+{/snippet}
+{#snippet generationCompare()}{@render comparePanel('generation')}{/snippet}
+{#snippet marketCompare()}{@render comparePanel('market')}{/snippet}
+{#snippet emissionsCompare()}{@render comparePanel('emissions')}{/snippet}
 {#snippet generationFreshness()}{@render freshness('generation')}{/snippet}
 {#snippet marketFreshness()}{@render freshness('market')}{/snippet}
 {#snippet emissionsFreshness()}{@render freshness('emissions')}{/snippet}
@@ -525,6 +725,8 @@
 		onhover={(hovered) => hoverCard('generation', hovered)}
 		loading={trackerLoading}
 		status={generationFreshness}
+		download={downloadFor('generation')}
+		legend={generationLegend.length ? generationKey : undefined}
 		png={{
 			id: 'generation',
 			label: 'Generation',
@@ -544,15 +746,12 @@
 		engaged={panZoomEngaged}
 		heightStorageKey="tracker-chart-height-generation"
 		defaultHeightPx={320}
+		compare={{
+			open: comparingCards.includes('generation'),
+			onopenchange: (open) => setCompareOpen('generation', open),
+			panel: generationCompare
+		}}
 	>
-		{#snippet actions()}
-			<button
-				class="text-xs underline"
-				aria-expanded={!!comparison}
-				onclick={() => (comparison ? session.select('comparison', null) : openComparison())}
-				>Compare dates</button
-			>
-		{/snippet}
 		{#snippet children(heightPx)}
 			{#if showContributions || (needsContributionDemand && marketData.error)}
 				<p class="px-3 py-1 text-xs text-mid-grey" role="status">
@@ -588,27 +787,11 @@
 				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, generationChart)}
 				onvisibledata={handleGenerationData}
+				{...compareChartProps('generation')}
 				bind:panZoomEngaged
 			/>
 		{/snippet}
 	</ChartCard>
-
-	{#if comparison}
-		<DateComparison
-			{group}
-			snapshot={data.ready('generation') ? data.current('generation') : null}
-			selection={comparison}
-			hidden={hiddenSeries}
-			pending={!data.state('generation').error && !data.ready('generation')}
-			error={data.state('generation').error}
-			{region}
-			zone={timeZone}
-			interval={range.displayInterval}
-			energy={energyMetric}
-			prefix={generationDisplayPrefix}
-			onchange={(value) => session.select('comparison', value)}
-		/>
-	{/if}
 
 	<ChartCard
 		title="Market"
@@ -616,6 +799,8 @@
 		onhover={(hovered) => hoverCard('market', hovered)}
 		loading={trackerLoading}
 		status={marketFreshness}
+		download={downloadFor('market')}
+		legend={marketLegend.length ? marketKey : undefined}
 		png={{
 			id: 'market',
 			label: 'Market',
@@ -623,10 +808,17 @@
 		}}
 		engaged={panZoomEngaged}
 		heightStorageKey="tracker-chart-height-price"
+		compare={{
+			open: comparingCards.includes('market'),
+			onopenchange: (open) => setCompareOpen('market', open),
+			panel: marketCompare
+		}}
 	>
-		{#snippet actions()}
+		{#snippet controls()}
 			{#if regionHasSpotPrice}
 				<SwitchTabs
+					compact
+					ariaLabel="Market chart"
 					buttons={[
 						{ label: 'Price', value: 'price' },
 						{ label: 'Market value', value: 'market_value' }
@@ -658,6 +850,7 @@
 				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, priceChart)}
 				onvisibledata={handlePriceData}
+				{...compareChartProps('market')}
 				bind:panZoomEngaged
 			/>
 		{/snippet}
@@ -669,6 +862,8 @@
 		onhover={(hovered) => hoverCard('emissions', hovered)}
 		loading={trackerLoading}
 		status={emissionsFreshness}
+		download={downloadFor('emissions')}
+		legend={emissionsLegend.length ? emissionsKey : undefined}
 		png={{
 			id: 'emissions',
 			label: 'Emissions',
@@ -676,9 +871,16 @@
 		}}
 		engaged={panZoomEngaged}
 		heightStorageKey="tracker-chart-height-emissions"
+		compare={{
+			open: comparingCards.includes('emissions'),
+			onopenchange: (open) => setCompareOpen('emissions', open),
+			panel: emissionsCompare
+		}}
 	>
-		{#snippet actions()}
+		{#snippet controls()}
 			<SwitchTabs
+				compact
+				ariaLabel="Emissions chart"
 				buttons={[
 					{ label: 'Intensity', value: 'intensity' },
 					{ label: 'Volume', value: 'volume' }
@@ -702,6 +904,7 @@
 				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, emissionsChart)}
 				onvisibledata={handleEmissionsData}
+				{...compareChartProps('emissions')}
 				bind:panZoomEngaged
 			/>
 		{/snippet}
@@ -709,6 +912,7 @@
 
 	{#snippet panel(/** @type {import('./types.js').TrackerDock} */ dock)}
 		<FuelTechPanel
+			download={downloadFor('table')}
 			loading={trackerLoading}
 			options={fuelTechOptions}
 			bind:closeButton={dock.closer}

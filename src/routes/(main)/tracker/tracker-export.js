@@ -1,26 +1,19 @@
 /**
- * Data export for the tracker page — the download catalogue behind the
- * options menu's "Download as CSV" rows and the single XLSX workbook.
+ * Data export for the tracker: Timeline's chart and table datasets, its
+ * workbook Summary rows and every tracker file name. The dataset shape and
+ * its serialisers are shared with other chart cards
+ * (`$lib/components/charts/card/export-dataset.js`).
  *
- * Every export starts from the same `ExportDataset` shape (typed columns +
- * wide rows) built from the canvas's export context, so the CSV and XLSX
- * serialisers never disagree about headers, units or row order. Pure module:
- * no Svelte, no DOM — the page does the downloading.
- *
- * Conventions:
+ * Timeline's conventions:
+ * - Each chart exports what it draws: the active tab's metric, the series
+ *   the table's row toggles leave visible, and the overlays drawn on it.
  * - Values are in base units (MW/MWh, $, $/MWh, tCO2e, kgCO2e/MWh) regardless
- *   of the chart's display prefix; the unit is in the column header.
- * - Every series is exported regardless of the chart's hide toggles — a data
- *   export shouldn't depend on what happens to be visible. The one exception
- *   is inherited: the emissions chart's intensity processor already excludes
- *   hidden groups, so intensity rows reflect that (noted on the Summary).
- * - Timestamps are the network's local time. CSV writes them with the offset
- *   ("2026-07-01 14:30:00+10:00"); XLSX writes a real date-time cell and the
- *   Summary sheet states the zone.
+ *   of the chart's display prefix or proportion / change-since view; the unit
+ *   is in the column header.
+ * - Timestamps are the network's local time; the Summary sheet states the zone.
  */
 
-import { escapeCsv } from '$lib/utils/download-csv.js';
-import { excelDateSerial } from '$lib/utils/download-xlsx.js';
+import { rowTime } from '$lib/components/charts/card/export-dataset.js';
 import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
 import {
 	formatNetworkTimestamp,
@@ -41,39 +34,13 @@ import {
 /** @typedef {import('./types.js').ExportDataset} ExportDataset */
 /** @typedef {import('./types.js').SeriesSnapshot} SeriesSnapshot */
 /** @typedef {import('./types.js').TrackerExportContext} TrackerExportContext */
-/** @typedef {import('$lib/utils/download-xlsx.js').XlsxSheet} XlsxSheet */
-/** @typedef {import('$lib/utils/download-xlsx.js').XlsxCell} XlsxCell */
 
 const TIME_COLUMN = /** @type {const} */ ({ key: 'time', header: 'date', type: 'time' });
 const MARKET_VALUE_ID = 'market_value';
 const EMISSIONS_ID = 'emissions';
 const ENERGY_ID = 'energy_mwh';
-
-/** Excel's sheet-name rules: at most 31 characters, none of []:*?/\ */
-const SHEET_NAME_MAX = 31;
-const SHEET_NAME_ILLEGAL = /[[\]:*?/\\]/g;
-const XLSX_DATE_FORMAT = 'yyyy-mm-dd hh:mm';
-
-// ============================================
-// Catalogue
-// ============================================
-
-/**
- * The rows offered under "Download as CSV". The fuel-tech table only exports
- * while its panel is open — its price/emissions/demand providers don't fetch
- * otherwise, so the columns would be empty.
- *
- * @param {{ tablePanelOpen: boolean }} options
- * @returns {Array<{ key: ExportDatasetKey, label: string }>}
- */
-export function trackerDownloadItems({ tablePanelOpen }) {
-	return [
-		{ key: 'generation', label: 'Generation' },
-		{ key: 'market', label: 'Market' },
-		{ key: 'emissions', label: 'Emissions' },
-		...(tablePanelOpen ? [{ key: /** @type {const} */ ('table'), label: 'Fuel tech table' }] : [])
-	];
-}
+/** The renewables overlay line's id, a share of gross demand at every grain. */
+const RENEWABLES_LINE_ID = 'renewable-share';
 
 // ============================================
 // Labels
@@ -107,25 +74,29 @@ function emissionsModeLabel(metric) {
 }
 
 // ============================================
-// Datasets
+// Timeline datasets
 // ============================================
 
 /**
- * One column per series, headed with the chart's own label plus the unit.
+ * One column per series the chart draws — hidden groups left out — headed
+ * with the chart's own label plus the unit.
  * @param {SeriesSnapshot} snapshot
  * @param {string} unit
+ * @param {string[]} [hidden]
  * @returns {ExportColumn[]}
  */
-function seriesColumns(snapshot, unit) {
-	return snapshot.seriesNames.map((name) => ({
-		key: name,
-		header: headerFor(snapshot.seriesLabels?.[name] ?? name, unit),
-		type: 'number'
-	}));
+function seriesColumns(snapshot, unit, hidden = []) {
+	return snapshot.seriesNames
+		.filter((name) => !hidden.includes(name))
+		.map((name) => ({
+			key: name,
+			header: headerFor(snapshot.seriesLabels?.[name] ?? name, unit),
+			type: 'number'
+		}));
 }
 
 /**
- * @param {ExportDatasetKey} key
+ * @param {string} key
  * @param {string} title
  * @param {ExportColumn[]} columns
  * @param {Array<Record<string, any>>} rows
@@ -139,22 +110,84 @@ function dataset(key, title, columns, rows) {
 	return { key, title, columns: [TIME_COLUMN, ...columns], rows: observations };
 }
 
-/** @param {TrackerExportContext} ctx */
+/**
+ * The generation overlays as extra columns, joined onto the stack's times:
+ * the demand and renewables lines, then each curtailment band. Keys are
+ * prefixed so they can't collide with a series id.
+ * @param {TrackerExportContext} ctx
+ * @returns {Array<{column: ExportColumn, values: Map<number, number | null>}>}
+ */
+function overlayColumns(ctx) {
+	const unit = generationUnit(ctx.basis);
+	/** @param {Array<Record<string, any>>} rows @param {string} valueKey */
+	const byTime = (rows, valueKey) =>
+		new Map(
+			rows.flatMap((row) => {
+				const time = rowTime(row);
+				return time === null ? [] : [[time, row[valueKey] ?? null]];
+			})
+		);
+	return [
+		...ctx.overlayLines.map((line) => ({
+			column: {
+				key: `overlay:${line.id}`,
+				header:
+					line.id === RENEWABLES_LINE_ID
+						? 'Renewables (% of gross demand)'
+						: `${line.label} (${line.scale === 'percent' ? '%' : unit})`,
+				type: /** @type {const} */ ('number')
+			},
+			values: byTime(line.data, line.valueKey)
+		})),
+		...ctx.overlayAreas.flatMap((area) =>
+			area.series.map((series) => ({
+				column: {
+					key: `overlay:${series.id}`,
+					header: `${series.label} (${unit})`,
+					type: /** @type {const} */ ('number')
+				},
+				values: byTime(area.data, series.id)
+			}))
+		)
+	];
+}
+
+/** The stack's visible series, then the overlays drawn over it.
+ * @param {TrackerExportContext} ctx */
 function generationDataset(ctx) {
 	if (!ctx.generation) return null;
+	const overlays = overlayColumns(ctx);
+	const rows = overlays.length
+		? ctx.generation.data.map((row) => {
+				const time = rowTime(row);
+				return {
+					...row,
+					...Object.fromEntries(
+						overlays.map(({ column, values }) => [
+							column.key,
+							time === null ? null : (values.get(time) ?? null)
+						])
+					)
+				};
+			})
+		: ctx.generation.data;
 	return dataset(
 		'generation',
 		'Generation',
-		seriesColumns(ctx.generation, generationUnit(ctx.basis)),
-		ctx.generation.data
+		[
+			...seriesColumns(ctx.generation, generationUnit(ctx.basis), ctx.hiddenSeries),
+			...overlays.map(({ column }) => column)
+		],
+		rows
 	);
 }
 
 /**
- * Market value and spot price export as they arrive. The volume-weighted
- * price chart holds only the components (market value + energy) and derives
- * the line at display time — the export does the same, and keeps the
- * components so the ratio is reproducible.
+ * The Market card's tab. Spot price exports as it arrives; market value
+ * exports the visible series. The volume-weighted price chart holds only
+ * the components (market value + energy) and derives the line at display
+ * time — the export does the same, and keeps the components so the ratio is
+ * reproducible.
  * @param {TrackerExportContext} ctx
  */
 function marketDataset(ctx) {
@@ -176,13 +209,19 @@ function marketDataset(ctx) {
 			rows
 		);
 	}
-	const unit = ctx.priceMetric === 'market_value' ? '$' : '$/MWh';
-	return dataset('market', 'Market', seriesColumns(ctx.price, unit), ctx.price.data);
+	const marketValue = ctx.priceMetric === 'market_value';
+	return dataset(
+		'market',
+		'Market',
+		seriesColumns(ctx.price, marketValue ? '$' : '$/MWh', marketValue ? ctx.hiddenSeries : []),
+		ctx.price.data
+	);
 }
 
 /**
- * Emissions volume exports as it arrives; intensity is derived from the
- * emissions + energy components exactly as the chart draws it.
+ * The Emissions card's tab. Volume exports the visible series; intensity is
+ * derived from the emissions + energy components exactly as the chart draws
+ * it (the chart already excludes hidden groups from both).
  * @param {TrackerExportContext} ctx
  */
 function emissionsDataset(ctx) {
@@ -207,7 +246,7 @@ function emissionsDataset(ctx) {
 	return dataset(
 		'emissions',
 		'Emissions',
-		seriesColumns(ctx.emissions, 'tCO2e'),
+		seriesColumns(ctx.emissions, 'tCO2e', ctx.hiddenSeries),
 		ctx.emissions.data
 	);
 }
@@ -222,7 +261,7 @@ function emissionsDataset(ctx) {
  * @returns {ExportDataset | null}
  */
 function tableDataset(ctx) {
-	if (!ctx.tablePanelOpen || !ctx.tableRows?.length) return null;
+	if (!ctx.tableRows?.length) return null;
 	const contributionHeader = `Contribution (${contributionLabel(ctx.contributionMode)})`;
 	/** @type {ExportColumn[]} */
 	const columns = [
@@ -286,12 +325,13 @@ function tableDataset(ctx) {
 }
 
 /**
- * Build one export dataset, or null while its data hasn't arrived.
+ * One Timeline download as its card draws it, or null while its data
+ * hasn't arrived.
  * @param {ExportDatasetKey} key
  * @param {TrackerExportContext} ctx
  * @returns {ExportDataset | null}
  */
-export function buildExportDataset(key, ctx) {
+export function timelineDataset(key, ctx) {
 	switch (key) {
 		case 'generation':
 			return generationDataset(ctx);
@@ -306,30 +346,29 @@ export function buildExportDataset(key, ctx) {
 	}
 }
 
-/**
- * Every available dataset, in menu order.
- * @param {TrackerExportContext} ctx
- * @returns {ExportDataset[]}
- */
-export function buildExportDatasets(ctx) {
-	return trackerDownloadItems({ tablePanelOpen: ctx.tablePanelOpen })
-		.map((item) => buildExportDataset(item.key, ctx))
-		.filter((item) => item !== null);
-}
-
 // ============================================
 // Summary
 // ============================================
 
+/** @param {TrackerExportContext['generationTransform']} transform */
+function transformNote(transform) {
+	if (transform === 'proportion') return 'Chart shows shares; values exported in base units';
+	if (transform === 'changeSince')
+		return 'Chart shows change since the start; values exported in base units';
+	return '';
+}
+
 /**
- * The workbook's Summary sheet: what was exported, from where, and the
- * caveats a reader needs (timezone, hidden groups).
+ * Timeline's Summary rows: what the charts show and the caveats a reader
+ * needs (timezone, hidden groups, chart transforms). The shell adds the
+ * provenance (sheets, generated time, source URL).
  * @param {TrackerExportContext} ctx
  * @returns {Array<[string, string]>}
  */
-export function summaryRows(ctx) {
+export function timelineSummaryRows(ctx) {
 	/** @type {Array<[string, string]>} */
 	const rows = [
+		['View', 'Timeline'],
 		['Region', ctx.regionLabel],
 		['Range', ctx.rangeLabel],
 		['Interval', ctx.intervalLabel],
@@ -342,139 +381,22 @@ export function summaryRows(ctx) {
 		['Market', marketModeLabel(ctx.priceMetric)],
 		['Emissions', emissionsModeLabel(ctx.emissionsMetric)]
 	];
+	const overlays = [
+		...ctx.overlayLines.map((line) => line.label),
+		...ctx.overlayAreas.flatMap((area) => area.series.map((series) => series.label))
+	];
+	if (overlays.length) rows.push(['Generation overlays', overlays.join(', ')]);
+	const generationNote = transformNote(ctx.generationTransform);
+	if (generationNote) rows.push(['Generation view', generationNote]);
+	const marketNote = ctx.priceMetric === 'market_value' && transformNote(ctx.marketValueTransform);
+	if (marketNote) rows.push(['Market value view', marketNote]);
 	if (ctx.hiddenSeries.length) {
 		const labels = ctx.hiddenSeries.map((id) => ctx.generation?.seriesLabels?.[id] ?? id);
-		rows.push([
-			'Hidden groups',
-			`${labels.join(', ')} — exported in every dataset, but excluded from the intensity line`
-		]);
+		rows.push(['Hidden groups', `${labels.join(', ')} — left out of every chart, as drawn`]);
 	}
-	for (const [label, snapshot] of /** @type {Array<[string, SeriesSnapshot | null]>} */ ([
-		['Generation', ctx.generation],
-		['Market', ctx.price],
-		['Emissions', ctx.emissions]
-	])) {
-		if (snapshot && snapshot.data.length === 0)
-			rows.push([`${label} data`, 'No data in the selected range']);
-	}
-	rows.push(
-		['Generated', formatNetworkTimestamp(ctx.generatedAtMs, ctx.timeZone)],
-		['Source', ctx.sourceUrl]
-	);
+	if (ctx.rooftopForecast)
+		rows.push(['Rooftop forecast', "AEMO's forecast top-up is drawn but not exported"]);
 	return rows;
-}
-
-// ============================================
-// Serialisers
-// ============================================
-
-/** @param {Record<string, any>} row */
-function rowTime(row) {
-	const ms = row.time ?? row.date?.getTime?.();
-	return Number.isFinite(ms) ? /** @type {number} */ (ms) : null;
-}
-
-/**
- * Wide CSV: one header line, then one line per row. Non-finite numbers and
- * missing values become empty cells — never fabricated zeros.
- * @param {ExportDataset} dataset
- * @param {string} timeZone
- * @returns {string}
- */
-export function datasetToCsv(dataset, timeZone) {
-	const lines = [dataset.columns.map((column) => escapeCsv(column.header)).join(',')];
-	for (const row of dataset.rows) {
-		const cells = dataset.columns.map((column) => {
-			const value = row[column.key];
-			switch (column.type) {
-				case 'time': {
-					const ms = rowTime(row);
-					return ms === null ? '' : formatNetworkTimestamp(ms, timeZone);
-				}
-				case 'number':
-					return Number.isFinite(value) ? String(value) : '';
-				case 'boolean':
-					return value == null ? '' : String(Boolean(value));
-				default:
-					return escapeCsv(value);
-			}
-		});
-		lines.push(cells.join(','));
-	}
-	return lines.join('\n');
-}
-
-/** @param {string} name */
-export function sheetName(name) {
-	return name.replace(SHEET_NAME_ILLEGAL, '').trim().slice(0, SHEET_NAME_MAX) || 'Sheet';
-}
-
-/**
- * One worksheet per dataset: bold, frozen header row; date-time cells in the
- * network's wall time; typed numbers so spreadsheets can chart them.
- * @param {ExportDataset} dataset
- * @param {string} timeZone
- * @returns {XlsxSheet}
- */
-export function datasetToSheet(dataset, timeZone) {
-	/** @type {Array<Array<XlsxCell | null>>} */
-	const data = [
-		dataset.columns.map((column) => ({ value: column.header, type: String, fontWeight: 'bold' }))
-	];
-	for (const row of dataset.rows) {
-		data.push(
-			dataset.columns.map((column) => {
-				const value = row[column.key];
-				switch (column.type) {
-					case 'time': {
-						const ms = rowTime(row);
-						return ms === null
-							? null
-							: { value: excelDateSerial(ms, timeZone), type: Number, format: XLSX_DATE_FORMAT };
-					}
-					case 'number':
-						return Number.isFinite(value) ? { value, type: Number } : null;
-					case 'boolean':
-						return value == null ? null : { value: Boolean(value), type: Boolean };
-					default:
-						return value == null || value === '' ? null : { value: String(value), type: String };
-				}
-			})
-		);
-	}
-	return {
-		sheet: sheetName(dataset.title),
-		data,
-		columns: dataset.columns.map((column, index) => ({ width: index === 0 ? 20 : 16 })),
-		stickyRowsCount: 1
-	};
-}
-
-/**
- * @param {Array<[string, string]>} rows
- * @returns {XlsxSheet}
- */
-export function summaryToSheet(rows) {
-	return {
-		sheet: 'Summary',
-		data: rows.map(([label, value]) => [
-			{ value: label, type: String, fontWeight: 'bold' },
-			{ value, type: String }
-		]),
-		columns: [{ width: 20 }, { width: 80 }]
-	};
-}
-
-/**
- * The workbook: Summary first, then every available dataset.
- * @param {TrackerExportContext} ctx
- * @returns {XlsxSheet[]}
- */
-export function buildWorkbookSheets(ctx) {
-	return [
-		summaryToSheet(summaryRows(ctx)),
-		...buildExportDatasets(ctx).map((item) => datasetToSheet(item, ctx.timeZone))
-	];
 }
 
 // ============================================
@@ -491,8 +413,8 @@ function slugify(value) {
 
 /**
  * Every tracker download is named `tracker-<scope>[-<dataset>]-<range>.<ext>`
- * — the timeline datasets, the profile, the date comparison and the region
- * comparison alike. The NEM's `_all` scope reads as `nem`.
+ * — Timeline's charts, each Profile chart, the date comparison and each
+ * Compare chart alike. The NEM's `_all` scope reads as `nem`.
  * @param {{ scope: string, dataset?: string, range: string, extension: 'csv' | 'xlsx' }} parts
  */
 export function trackerFileName({ scope, dataset = '', range, extension }) {
@@ -508,7 +430,7 @@ export function trackerFileName({ scope, dataset = '', range, extension }) {
 /**
  * `tracker-<region>-<dataset>-<range>.csv` or `tracker-<region>-<range>.xlsx`.
  * @param {Pick<TrackerExportContext, 'region' | 'rangeSlug'>} ctx
- * @param {ExportDatasetKey | 'xlsx'} key
+ * @param {string} key - The download's id, or 'xlsx' for the workbook
  */
 export function exportFileName(ctx, key) {
 	return trackerFileName({

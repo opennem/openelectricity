@@ -7,8 +7,14 @@
 import { formatGenerationUnitValue } from '$lib/components/charts/network/generation-units.js';
 import { formatPrice } from '$lib/utils/formatters';
 import { formatSI } from '$lib/utils/si-units.js';
+import {
+	EMPTY_CELL,
+	formatPercentageValue,
+	splitTableLabel
+} from '$lib/components/charts/card/cell-format.js';
 
-export const EMPTY_CELL = '—';
+// Shared with chart cards; re-exported for the tracker's tables.
+export { EMPTY_CELL, formatPercentageValue, splitTableLabel };
 
 /**
  * Format a native MW table aggregate in the selected display prefix. Values
@@ -50,25 +56,13 @@ export function energyDisplayPrefix(maxMWh) {
 }
 
 /**
- * Format a Tracker percentage value without its unit. Tooltips append their
- * unit separately; table cells use the wrapper below.
- *
- * @param {number | null | undefined} value
- * @returns {string}
- */
-export function formatTrackerPercentageValue(value) {
-	if (value == null || !Number.isFinite(value)) return EMPTY_CELL;
-	return formatSI(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-}
-
-/**
  * Format a table percentage with exactly one decimal place.
  *
  * @param {number | null | undefined} value
  * @returns {string}
  */
 export function formatTablePercentage(value) {
-	const formatted = formatTrackerPercentageValue(value);
+	const formatted = formatPercentageValue(value);
 	return formatted === EMPTY_CELL ? formatted : `${formatted}%`;
 }
 
@@ -114,17 +108,4 @@ export function formatTableIntensity(valueKg, displayPrefix = 'k') {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2
 	});
-}
-
-/**
- * Split a series label into its name and parenthesised qualifier — "Battery
- * (Charging)" renders the qualifier in a muted tone.
- *
- * @param {string} label
- * @returns {{ main: string, sub: string }}
- */
-export function splitTableLabel(label) {
-	const index = label.indexOf(' (');
-	if (index === -1) return { main: label, sub: '' };
-	return { main: label.slice(0, index), sub: label.slice(index + 1) };
 }

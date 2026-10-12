@@ -1,7 +1,11 @@
 <script>
 	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
 	import FuelTechTable from './FuelTechTable.svelte';
-	import LoadingOverlay from './LoadingOverlay.svelte';
+	import LoadingOverlay from '$lib/components/charts/card/LoadingOverlay.svelte';
+	import {
+		getChartDownloads,
+		chartDownload
+	} from '$lib/components/charts/card/chart-downloads.svelte.js';
 
 	/** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
 	/** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */
@@ -12,6 +16,8 @@
 	 *
 	 * TrackerCanvas holds the previous snapshot under its shared loading layer.
 	 * Every other table control is forwarded to FuelTechTable untouched.
+	 * `download` lists the table in the page's "Download data" dialog while the
+	 * panel is open.
 	 *
 	 * @type {import('./types.js').FuelTechTableControls & {
 	 *   rows: FuelTechTableRow[] | null,
@@ -26,7 +32,8 @@
 	 *   onclose?: () => void,
 	 *   closeButton?: HTMLButtonElement,
 	 *   options?: import('svelte').Snippet,
-	 *   rooftopInterpolation?: boolean
+	 *   rooftopInterpolation?: boolean,
+	 *   download?: Omit<import('./types.js').DownloadSource, 'id' | 'label'>
 	 * }}
 	 */
 	let {
@@ -42,11 +49,24 @@
 		onclose,
 		closeButton = $bindable(),
 		options,
+		download,
 		...tableControls
 	} = $props();
+	const registerDownload = chartDownload(getChartDownloads(), () => ({
+		id: 'table',
+		label: 'Fuel tech table',
+		state: download?.state ?? 'loading',
+		message: download?.message,
+		dataset: () => download?.dataset() ?? null
+	}));
 </script>
 
-<div id="tracker-table-panel" class="flex h-full min-h-0 flex-col">
+<div
+	id="tracker-table-panel"
+	class="flex h-full min-h-0 flex-col"
+	{@attach download ? registerDownload : undefined}
+	data-chart-download={download ? 'table' : undefined}
+>
 	<TrackerPanelHeader
 		side="right"
 		title="Fuel technologies"

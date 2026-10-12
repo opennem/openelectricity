@@ -118,7 +118,12 @@ describe('Tracker navigation', () => {
 		const changed = vi.fn();
 		const session = createTrackerSession(initial, changed);
 		const applyRange = vi.spyOn(session.range, 'handleRangeSelect');
-		const comparison = { a: nowMs - 86_400_000, b: nowMs - 1_800_000 };
+		/** @type {import('./types.js').TimelineComparison} */
+		const comparison = {
+			cards: ['generation', 'market'],
+			a: nowMs - 86_400_000,
+			b: nowMs - 1_800_000
+		};
 		session.select('comparison', comparison);
 		const selected = session.selection;
 		expect(changed).toHaveBeenCalledWith('push');
@@ -128,6 +133,63 @@ describe('Tracker navigation', () => {
 		expect(session.selection.comparison).toEqual(comparison);
 		expect(changed).not.toHaveBeenCalled();
 		expect(applyRange).not.toHaveBeenCalled();
+	});
+	it('closes compare mode on a new range, region, filter or chart tab, not on other choices', () => {
+		const comparison = /** @type {import('./types.js').TimelineComparison} */ ({
+			cards: ['generation'],
+			a: nowMs - 86_400_000,
+			b: nowMs - 1_800_000
+		});
+		const session = createTrackerSession(initial, () => {});
+		const open = () => session.select('comparison', comparison);
+		for (const keep of /** @type {const} */ ([
+			['group', 'detailed'],
+			['hiddenSeries', ['coal']],
+			['generationTransform', 'proportion'],
+			['overlays', ['demand']],
+			['tablePanelOpen', false]
+		])) {
+			open();
+			session.select(keep[0], /** @type {any} */ (keep[1]));
+			expect(session.selection.comparison).toEqual(comparison);
+		}
+		for (const close of /** @type {const} */ ([
+			['region', 'vic1'],
+			['priceMode', 'market_value'],
+			['emissionsMode', 'volume']
+		])) {
+			open();
+			session.select(close[0], /** @type {any} */ (close[1]));
+			expect(session.selection.comparison).toBeNull();
+		}
+		open();
+		session.select('priceMode', session.selection.priceMode);
+		expect(session.selection.comparison).toEqual(comparison);
+		for (const pick of [() => session.selectRange(7), () => session.selectInterval('1h')]) {
+			open();
+			pick();
+			expect(session.selection.comparison).toBeNull();
+		}
+	});
+	it('keeps compare mode through a pan, and closes it when a zoom switches the grain', () => {
+		const session = createTrackerSession(initial, () => {});
+		session.connect(() => []);
+		const comparison = /** @type {import('./types.js').TimelineComparison} */ ({
+			cards: ['generation'],
+			a: nowMs - 86_400_000,
+			b: nowMs - 1_800_000
+		});
+		session.select('comparison', comparison);
+		const { start, end } = session.window;
+		const grain = `${session.range.activeMetric}|${session.range.displayInterval}`;
+		// A pan within the grain keeps A and B.
+		session.settleViewport({ start: start - 3_600_000, end: end - 3_600_000 });
+		expect(`${session.range.activeMetric}|${session.range.displayInterval}`).toBe(grain);
+		expect(session.selection.comparison).toEqual(comparison);
+		// Zooming out to a year switches the grain: A and B no longer exist.
+		session.settleViewport({ start: end - 365 * 86_400_000, end });
+		expect(`${session.range.activeMetric}|${session.range.displayInterval}`).not.toBe(grain);
+		expect(session.selection.comparison).toBeNull();
 	});
 	it('restores profile selections without changing the timeline and normalises scope switches', () => {
 		const changed = vi.fn();

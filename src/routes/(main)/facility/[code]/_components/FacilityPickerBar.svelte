@@ -1,6 +1,7 @@
 <script>
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
-	import { ArrowLeft, ChevronRight } from '@lucide/svelte';
+	import { ArrowLeft, ChevronRight, Download } from '@lucide/svelte';
+	import { OptionsMenuDivider, OptionsMenuItem } from '$lib/components/ui/options-menu';
 	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
 	import { backToFacilities } from '../../_utils/back-navigation.js';
 	import { windowedHref } from '$lib/utils/fullscreen-mode.js';
@@ -16,8 +17,7 @@
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   onsearchfacilities?: () => void,
-	 *   downloadItems?: Array<{ key: string, label: string }>,
-	 *   ondownloaditem?: (key: string) => void,
+	 *   ondownloaddata?: () => void,
 	 *   showCopyLink?: boolean,
 	 *   searchShortcutKeys?: string[]
 	 * }}
@@ -32,8 +32,7 @@
 		onfullscreenchange,
 		onshowshortcuts,
 		onsearchfacilities,
-		downloadItems = [],
-		ondownloaditem,
+		ondownloaddata,
 		showCopyLink = false,
 		searchShortcutKeys
 	} = $props();
@@ -114,10 +113,21 @@
 			{onfullscreenchange}
 			{onshowshortcuts}
 			{onsearchfacilities}
-			{downloadItems}
-			{ondownloaditem}
 			{showCopyLink}
 			{searchShortcutKeys}
-		/>
+		>
+			{#snippet extraSections({ close })}
+				{#if ondownloaddata}
+					<OptionsMenuItem
+						icon={Download}
+						onclick={() => {
+							close();
+							ondownloaddata();
+						}}>Download data</OptionsMenuItem
+					>
+					<OptionsMenuDivider />
+				{/if}
+			{/snippet}
+		</PageOptionsMenu>
 	{/snippet}
 </FullscreenFilterBar>

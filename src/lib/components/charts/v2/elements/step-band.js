@@ -9,6 +9,8 @@
  * path rendering.
  */
 
+import { indexOfTime } from '../binary-search.js';
+
 /**
  * @typedef {Object} StepBand
  * @property {number} startMs
@@ -34,4 +36,17 @@ export function computeStepBand(index, dataset) {
 	}
 
 	return { startMs, endMs: dataset[index + 1].time };
+}
+
+/**
+ * The middle of the step a time's row draws, in ms — where a marker for that
+ * bucket belongs on a step chart (`curveStepAfter` draws the bucket from its
+ * own time to the next row's). The time itself when it isn't a row.
+ * @param {number} time
+ * @param {Array<{ time: number }>} dataset - Sorted by `time` ascending
+ * @returns {number}
+ */
+export function stepBandCentre(time, dataset) {
+	const band = computeStepBand(indexOfTime(dataset, time), dataset);
+	return band ? (band.startMs + band.endMs) / 2 : time;
 }

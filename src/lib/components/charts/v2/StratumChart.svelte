@@ -10,7 +10,7 @@
 	 * StackedArea's onmousemove is the only SVG-level interaction kept —
 	 * it provides the series key for hover highlighting.
 	 */
-	import { onDestroy } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import ChartHeader from './ChartHeader.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
@@ -23,6 +23,7 @@
 	import ChartResizeHandle from './ChartResizeHandle.svelte';
 	import { InteractionLayer } from './elements';
 	import { chartImageMetadata } from './image-metadata.js';
+	import { getChartHeaderHost } from './chart-header-host.svelte.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -52,6 +53,7 @@
 	 * @property {boolean} [enablePan]
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' gates pan/zoom behind the bindable `engaged` flag — engaged via the header's ✥ toggle, a tap on the chart, or the idle-wheel hint; released by the toggle or Esc.
 	 * @property {boolean} [engaged] - Bindable engagement state for tap-to-engage mode.
+	 * @property {boolean} [engageOnTap] - Whether a tap on an idle tap-to-engage chart engages it (default true). Off, taps reach `onfocus` (a comparison picking A and B) and pan/zoom engages from the toggle or the idle-wheel hint.
 	 * @property {Array<{start: number, end: number}>} [loadingRanges]
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {[number, number] | null} [viewDomain]
@@ -105,6 +107,7 @@
 		enablePan = false,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		engaged = $bindable(false),
+		engageOnTap = true,
 		loadingRanges = [],
 		clampHoverLine = false,
 		viewDomain = null,
@@ -127,6 +130,41 @@
 		tooltip,
 		footer
 	} = $props();
+
+	// Inside a header host (a tracker chart card) the default header's
+	// toolbar is drawn in the host's header instead of a bar of our own.
+	const headerHost = getChartHeaderHost();
+	let hostsHeader = $derived(Boolean(headerHost && showHeader && !header));
+	/** @type {import('./chart-header-host.svelte.js').HostedChartHeader} */
+	const hostedHeader = {
+		get chart() {
+			return chart;
+		},
+		get showOptions() {
+			return showOptions;
+		},
+		get onzoomin() {
+			return zoomMode === 'static' ? onzoomin : undefined;
+		},
+		get onzoomout() {
+			return zoomMode === 'static' ? onzoomout : undefined;
+		},
+		get isAtMinZoom() {
+			return isAtMinZoom;
+		},
+		get isAtMaxZoom() {
+			return isAtMaxZoom;
+		},
+		get showPanZoomToggle() {
+			return zoomMode === 'static' && panZoomMode === 'tap-to-engage' && enablePan;
+		},
+		get panZoomEngaged() {
+			return engaged;
+		},
+		onpanzoomtoggle: () => (engaged = !engaged)
+	};
+	/** @type {import('svelte/attachments').Attachment} */
+	const hostHeader = () => untrack(() => headerHost?.host(hostedHeader));
 
 	let floatingZoomWidth = $state(0);
 	let effectiveDodgeRightPx = $derived(
@@ -231,7 +269,7 @@
 	function handleSeriesClick(data) {
 		if (interactionMode !== 'none') return;
 		// First tap in tap-to-engage mode engages pan/zoom instead of toggling focus.
-		if (panZoomMode === 'tap-to-engage' && enablePan && !engaged) {
+		if (panZoomMode === 'tap-to-engage' && enablePan && engageOnTap && !engaged) {
 			engaged = true;
 			return;
 		}
@@ -245,8 +283,12 @@
 	onkeydowncapture={panZoomMode === 'tap-to-engage' ? handleEngagedKeydown : undefined}
 />
 
-<div class="stratum-chart {className}" data-chart-image={JSON.stringify(chartImageMetadata(chart))}>
-	{#if showHeader}
+<div
+	class="stratum-chart {className}"
+	data-chart-image={JSON.stringify(chartImageMetadata(chart))}
+	{@attach hostsHeader ? hostHeader : undefined}
+>
+	{#if showHeader && !hostsHeader}
 		{#if header}
 			{@render header()}
 		{:else if zoomMode === 'static'}
@@ -323,6 +365,7 @@
 				{enablePan}
 				{panZoomMode}
 				bind:engaged
+				{engageOnTap}
 				{viewDomain}
 				class={chartPadding}
 				bind:interactionMode

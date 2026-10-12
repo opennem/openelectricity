@@ -1,5 +1,5 @@
 <script>
-	import { Download, Check, FileSpreadsheet, Search, Share, ClipboardCheck } from '@lucide/svelte';
+	import { Download, Check, Search, Share, ClipboardCheck } from '@lucide/svelte';
 	import {
 		OptionsMenu,
 		OptionsMenuItem,
@@ -12,10 +12,9 @@
 	 * `downloadItems` + `ondownloaditem` let a host inject extra rows under the
 	 * "Download as CSV" heading — the facility detail layout uses this to surface
 	 * the page's chart exports (Generation, Energy, …) in the header menus.
-	 * `ondownloadxlsx` adds a "Download as XLSX" group with a single row — the
-	 * tracker offers its datasets as one workbook there.
 	 * `extraSections` lets a host prepend its own headed groups (each ending in
-	 * an `OptionsMenuDivider`) — the tracker adds its PNG export action here.
+	 * an `OptionsMenuDivider`) — the tracker adds its "Download data" dialog and
+	 * PNG export actions here.
 	 * @type {{
 	 *   isFullscreen?: boolean,
 	 *   onfullscreenchange?: () => void,
@@ -25,9 +24,6 @@
 	 *   downloadLabel?: string,
 	 *   downloadItems?: Array<{ key: string, label: string, disabled?: boolean }>,
 	 *   ondownloaditem?: (key: string) => void,
-	 *   ondownloadxlsx?: () => void | Promise<void>,
-	 *   downloadXlsxLabel?: string,
-	 *   downloadXlsxDisabled?: boolean,
 	 *   onsearchfacilities?: () => void,
 	 *   showCopyLink?: boolean,
 	 *   showDocumentation?: boolean,
@@ -46,9 +42,6 @@
 		downloadLabel = 'Facilities',
 		downloadItems = [],
 		ondownloaditem,
-		ondownloadxlsx,
-		downloadXlsxLabel = 'Everything (one workbook)',
-		downloadXlsxDisabled = false,
 		onsearchfacilities,
 		showCopyLink = false,
 		showDocumentation = true,
@@ -114,20 +107,6 @@
 					{item.label}
 				</OptionsMenuItem>
 			{/each}
-			<OptionsMenuDivider />
-		{/if}
-
-		{#if ondownloadxlsx}
-			<OptionsMenuHeading icon={FileSpreadsheet}>Download as XLSX</OptionsMenuHeading>
-			<OptionsMenuItem
-				disabled={downloadXlsxDisabled}
-				onclick={() => {
-					ondownloadxlsx();
-					close();
-				}}
-			>
-				{downloadXlsxLabel}
-			</OptionsMenuItem>
 			<OptionsMenuDivider />
 		{/if}
 

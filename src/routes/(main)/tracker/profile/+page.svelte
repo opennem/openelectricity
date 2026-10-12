@@ -1,16 +1,14 @@
 <script>
 	/**
 	 * Tracker Profile — the average day (or each day) by time of day over a
-	 * bounded window, with the profile CSV export.
+	 * bounded window. Each chart and panel registers its own download.
 	 */
 
-	import { downloadCsv } from '$lib/utils/download-csv.js';
 	import { OptionsMenuItem } from '$lib/components/ui/options-menu';
 	import { formatDayMonthTime } from '$lib/components/charts/v2/date-labels.js';
 	import TrackerShell from '../TrackerShell.svelte';
 	import TimeOfDay from '../TimeOfDay.svelte';
 	import { createTrackerPage } from '../tracker-page.js';
-	import { datasetToCsv } from '../tracker-export.js';
 	import { TRACKER_SHORTCUTS } from '../tracker-shortcuts.js';
 
 	/** @type {{ data: import('./$types').PageData }} */
@@ -30,12 +28,6 @@
 	function handleShortcut(id) {
 		if (id === 'refresh') canvas?.refresh();
 	}
-
-	function downloadProfile() {
-		const dataset = canvas?.exportDataset();
-		if (canvas && dataset)
-			downloadCsv(datasetToCsv(dataset, session.timeZone), canvas.exportFileName());
-	}
 </script>
 
 <TrackerShell
@@ -43,8 +35,8 @@
 	{session}
 	{shareUrl}
 	controls={canvas?.getControls()}
-	downloadItems={[{ key: 'profile', label: 'Profile', disabled: !canvas?.canExport() }]}
-	ondownloaditem={downloadProfile}
+	downloadSummary={() => canvas?.downloadSummary() ?? []}
+	downloadFileName={(id, extension) => canvas?.downloadFileName(id, extension) ?? ''}
 	shortcuts={SHORTCUTS}
 	onshortcut={handleShortcut}
 	status={{

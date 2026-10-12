@@ -1,30 +1,19 @@
 <script>
 	/**
 	 * Tracker Timeline — range-driven chart cards beside the fuel-tech table,
-	 * with live refresh, the metrics strip and dataset/workbook exports.
+	 * with live refresh and the metrics strip. Each card registers its own
+	 * download; the canvas supplies the workbook Summary and file names.
 	 */
 
 	import { ChartRangeBar } from '$lib/components/charts/v2';
 	import { formatDayMonthTime } from '$lib/components/charts/v2/date-labels.js';
 	import { MIN_DATE } from '$lib/utils/date-range.js';
-	import { downloadCsv } from '$lib/utils/download-csv.js';
-	import { downloadXlsx } from '$lib/utils/download-xlsx.js';
 	import { OptionsMenuItem } from '$lib/components/ui/options-menu';
 	import TrackerShell from '../TrackerShell.svelte';
 	import TrackerCanvas from '../TrackerCanvas.svelte';
 	import { createMetricsVisibilityPreference } from '../metrics-visibility.svelte.js';
 	import { TRACKER_SHORTCUTS } from '../tracker-shortcuts.js';
 	import { createTrackerPage } from '../tracker-page.js';
-	import {
-		buildExportDataset,
-		buildWorkbookSheets,
-		datasetToCsv,
-		exportFileName,
-		trackerDownloadItems
-	} from '../tracker-export.js';
-
-	/** @typedef {import('../types.js').ExportDatasetKey} ExportDatasetKey */
-	/** @typedef {import('../types.js').TrackerExportContext} TrackerExportContext */
 
 	/** @type {{ data: import('./$types').PageData }} */
 	let { data } = $props();
@@ -34,12 +23,9 @@
 	const SHORTCUTS = TRACKER_SHORTCUTS.filter(({ id }) => id === 'refresh' || id === 'metrics').map(
 		({ label, keys }) => ({ label, keys })
 	);
-	const LOADING_NOTICE = 'Charts are still loading — try again in a moment.';
-	const EMPTY_NOTICE = 'Nothing to export yet.';
 
 	const metricsVisible = createMetricsVisibilityPreference();
 	const range = session.range;
-	let notice = $state('');
 	let canvas = $state.raw(/** @type {TrackerCanvas | undefined} */ (undefined));
 	let loading = $derived(!canvas || canvas.isLoading());
 
@@ -62,63 +48,6 @@
 		if (session.refresh(now, { force: true })) updatedMs = now;
 	}
 
-	let downloadItems = $derived(
-		trackerDownloadItems({ tablePanelOpen: session.selection.tablePanelOpen }).map((item) => ({
-			...item,
-			disabled: !canvas || canvas.isExportPending(item.key)
-		}))
-	);
-
-	/**
-	 * The canvas's settled state plus the page's provenance, or null while
-	 * the charts are mid-switch (the held frame would be stale).
-	 * @returns {TrackerExportContext | null}
-	 */
-	function exportContext(requested = /** @type {ExportDatasetKey | 'xlsx'} */ ('xlsx')) {
-		const context = canvas?.getExportContext(requested);
-		if (!context || context.pending || context.error) {
-			notice = context?.error
-				? 'Some data could not load. Retry it before downloading.'
-				: LOADING_NOTICE;
-			return null;
-		}
-		return {
-			...context,
-			sourceUrl: shareUrl().href,
-			generatedAtMs: Date.now()
-		};
-	}
-
-	/** @param {string} value */
-	function downloadDataset(value) {
-		const key = /** @type {ExportDatasetKey} */ (value);
-		const context = exportContext(key);
-		if (!context) return;
-		const dataset = buildExportDataset(key, context);
-		if (!dataset) {
-			notice = EMPTY_NOTICE;
-			return;
-		}
-		downloadCsv(datasetToCsv(dataset, context.timeZone), exportFileName(context, key));
-	}
-
-	async function downloadWorkbook() {
-		const context = exportContext();
-		if (!context) return;
-		const sheets = buildWorkbookSheets(context);
-		// Summary alone means no dataset has arrived.
-		if (sheets.length < 2) {
-			notice = EMPTY_NOTICE;
-			return;
-		}
-		try {
-			await downloadXlsx(sheets, exportFileName(context, 'xlsx'));
-		} catch (error) {
-			console.error('Tracker workbook export failed', error);
-			notice = 'Could not build the workbook.';
-		}
-	}
-
 	/** @param {import('../tracker-shortcuts.js').TrackerShortcut} id */
 	function handleShortcut(id) {
 		if (id === 'metrics') metricsVisible.toggle();
@@ -130,11 +59,8 @@
 	view="timeline"
 	{session}
 	{shareUrl}
-	bind:notice
-	{downloadItems}
-	ondownloaditem={downloadDataset}
-	ondownloadxlsx={downloadWorkbook}
-	downloadXlsxDisabled={!canvas || canvas.isExportPending()}
+	downloadSummary={() => canvas?.downloadSummary() ?? []}
+	downloadFileName={(id, extension) => canvas?.downloadFileName(id, extension) ?? ''}
 	shortcuts={SHORTCUTS}
 	onshortcut={handleShortcut}
 	status={{

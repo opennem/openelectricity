@@ -1,15 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
-	buildExportDataset,
-	buildExportDatasets,
 	buildWorkbookSheets,
 	datasetToCsv,
-	datasetToSheet,
+	datasetToSheet
+} from '$lib/components/charts/card/export-dataset.js';
+import {
 	exportFileName,
 	headerFor,
-	sheetName,
-	summaryRows,
-	trackerDownloadItems,
+	timelineDataset,
+	timelineSummaryRows,
 	trackerFileName
 } from './tracker-export.js';
 
@@ -105,29 +104,15 @@ function context(overrides = {}) {
 			renewablesSharePct: 16.7
 		},
 		tablePanelOpen: true,
-		hiddenSeries: ['coal'],
-		pending: false,
-		sourceUrl: 'https://openelectricity.org.au/tracker',
-		generatedAtMs: T0 + 2 * HOUR,
+		hiddenSeries: [],
+		generationTransform: 'absolute',
+		marketValueTransform: 'absolute',
+		overlayLines: [],
+		overlayAreas: [],
+		rooftopForecast: false,
 		...overrides
 	};
 }
-
-describe('trackerDownloadItems', () => {
-	it('offers the table only while its panel is open', () => {
-		expect(trackerDownloadItems({ tablePanelOpen: true }).map((item) => item.key)).toEqual([
-			'generation',
-			'market',
-			'emissions',
-			'table'
-		]);
-		expect(trackerDownloadItems({ tablePanelOpen: false }).map((item) => item.key)).toEqual([
-			'generation',
-			'market',
-			'emissions'
-		]);
-	});
-});
 
 describe('headerFor', () => {
 	it('appends the unit unless the label already carries one', () => {
@@ -136,53 +121,116 @@ describe('headerFor', () => {
 	});
 });
 
-describe('buildExportDataset', () => {
+/** @param {import('./types.js').ExportDataset | null} dataset */
+const headers = (dataset) => dataset?.columns.map((column) => column.header);
+
+describe('timelineDataset — Generation', () => {
 	it('omits synthetic calendar-band closing points without changing source data', () => {
 		const ctx = context();
 		if (!ctx.generation) throw new Error('Missing fixture');
 		ctx.generation.data.push({ time: T0 + 2 * HOUR, coal: 110, _bandClose: true });
-		expect(buildExportDataset('generation', ctx)?.rows).toHaveLength(2);
+		expect(timelineDataset('generation', ctx)?.rows).toHaveLength(2);
 		expect(ctx.generation.data).toHaveLength(3);
 	});
 
-	it('labels generation columns by basis and keeps loads negative', () => {
-		const power = buildExportDataset('generation', context());
-		expect(power?.columns.map((column) => column.header)).toEqual([
-			'date',
-			'Coal (MW)',
-			'Solar, utility (MW)',
-			'Pumps (MW)'
-		]);
+	it('labels columns by basis and keeps loads negative', () => {
+		const power = timelineDataset('generation', context());
+		expect(headers(power)).toEqual(['date', 'Coal (MW)', 'Solar, utility (MW)', 'Pumps (MW)']);
 		expect(power?.rows[0].pumps).toBe(-5);
-		const energy = buildExportDataset('generation', context({ basis: 'energy' }));
+		const energy = timelineDataset('generation', context({ basis: 'energy' }));
 		expect(energy?.columns[1].header).toBe('Coal (MWh)');
 	});
 
-	it('returns null while a snapshot is missing', () => {
-		expect(buildExportDataset('generation', context({ generation: null }))).toBeNull();
-		expect(buildExportDataset('market', context({ price: null }))).toBeNull();
-		expect(buildExportDataset('table', context({ tablePanelOpen: false }))).toBeNull();
+	it('leaves out the series the table hides, as the stack does', () => {
+		expect(headers(timelineDataset('generation', context({ hiddenSeries: ['coal'] })))).toEqual([
+			'date',
+			'Solar, utility (MW)',
+			'Pumps (MW)'
+		]);
+		// Every series hidden: nothing is drawn, so nothing downloads.
+		expect(
+			timelineDataset('generation', context({ hiddenSeries: ['coal', 'solar', 'pumps'] }))
+		).toBeNull();
 	});
 
-	it('exports spot price and market value as delivered', () => {
-		const spot = buildExportDataset('market', context());
-		expect(spot?.columns.map((column) => column.header)).toEqual(['date', 'Price ($/MWh)']);
-		const mv = buildExportDataset(
-			'market',
-			context({
-				priceMetric: 'market_value',
-				price: {
-					data: [{ time: T0, coal: 1000 }],
-					seriesNames: ['coal'],
-					seriesLabels: { coal: 'Coal' }
+	it('appends the drawn overlays, joined on the stack’s times', () => {
+		const ctx = context({
+			overlayLines: [
+				{
+					id: 'demand',
+					label: 'Demand',
+					data: [{ time: T0, demand: 130 }],
+					valueKey: 'demand',
+					scale: 'y'
+				},
+				{
+					id: 'renewable-share',
+					label: 'Renewables',
+					data: [
+						{ time: T0, renewable_share: 15.5 },
+						{ time: T0 + HOUR, renewable_share: 18 }
+					],
+					valueKey: 'renewable_share',
+					scale: 'percent'
 				}
-			})
+			],
+			overlayAreas: [
+				{
+					data: [{ date: new Date(T0 + HOUR), curtailment_solar: 7 }],
+					series: [{ id: 'curtailment_solar', label: 'Curtailment (Solar)' }]
+				}
+			]
+		});
+		const generation = timelineDataset('generation', ctx);
+		expect(headers(generation)).toEqual([
+			'date',
+			'Coal (MW)',
+			'Solar, utility (MW)',
+			'Pumps (MW)',
+			'Demand (MW)',
+			'Renewables (% of gross demand)',
+			'Curtailment (Solar) (MW)'
+		]);
+		expect(
+			datasetToCsv(/** @type {any} */ (generation), '+10:00')
+				.split('\n')
+				.slice(1)
+		).toEqual([
+			'2026-07-01 14:30:00+10:00,100.5,20,-5,130,15.5,',
+			'2026-07-01 15:30:00+10:00,110,,-6,,18,7'
+		]);
+	});
+
+	it('returns null while the snapshot is missing', () => {
+		expect(timelineDataset('generation', context({ generation: null }))).toBeNull();
+		expect(timelineDataset('market', context({ price: null }))).toBeNull();
+		expect(timelineDataset('table', context({ tableRows: null }))).toBeNull();
+	});
+});
+
+describe('timelineDataset — Market', () => {
+	it('exports the spot price on the Price tab, whatever the table hides', () => {
+		const spot = timelineDataset('market', context({ hiddenSeries: ['price'] }));
+		expect(headers(spot)).toEqual(['date', 'Price ($/MWh)']);
+	});
+
+	it('exports the visible series on the Market value tab', () => {
+		const price = {
+			data: [{ time: T0, coal: 1000, solar: 50 }],
+			seriesNames: ['coal', 'solar'],
+			seriesLabels: { coal: 'Coal', solar: 'Solar' }
+		};
+		const mv = timelineDataset('market', context({ priceMetric: 'market_value', price }));
+		expect(headers(mv)).toEqual(['date', 'Coal ($)', 'Solar ($)']);
+		const shown = timelineDataset(
+			'market',
+			context({ priceMetric: 'market_value', price, hiddenSeries: ['coal'] })
 		);
-		expect(mv?.columns[1].header).toBe('Coal ($)');
+		expect(headers(shown)).toEqual(['date', 'Solar ($)']);
 	});
 
 	it('derives the volume-weighted price and keeps its components', () => {
-		const vw = buildExportDataset(
+		const vw = timelineDataset(
 			'market',
 			context({
 				priceMetric: 'price_vw',
@@ -196,7 +244,7 @@ describe('buildExportDataset', () => {
 				}
 			})
 		);
-		expect(vw?.columns.map((column) => column.header)).toEqual([
+		expect(headers(vw)).toEqual([
 			'date',
 			'Volume-weighted price ($/MWh)',
 			'Market value ($)',
@@ -205,29 +253,43 @@ describe('buildExportDataset', () => {
 		expect(vw?.rows[0].vw_price).toBe(100);
 		expect(vw?.rows[1].vw_price).toBeNull();
 	});
+});
 
-	it('derives intensity in kg/MWh and exports volume as delivered', () => {
-		const intensity = buildExportDataset('emissions', context());
-		expect(intensity?.columns[1].header).toBe('Emissions intensity (kgCO2e/MWh)');
+describe('timelineDataset — Emissions', () => {
+	it('derives intensity in kg/MWh with its components on the Intensity tab', () => {
+		const intensity = timelineDataset('emissions', context({ hiddenSeries: ['coal'] }));
+		expect(headers(intensity)).toEqual([
+			'date',
+			'Emissions intensity (kgCO2e/MWh)',
+			'Emissions (tCO2e)',
+			'Energy (MWh)'
+		]);
 		expect(intensity?.rows[0].intensity).toBe(500);
 		expect(intensity?.rows[1].intensity).toBeNull();
-
-		const volume = buildExportDataset(
-			'emissions',
-			context({
-				emissionsMetric: 'emissions',
-				emissions: {
-					data: [{ time: T0, coal: 12 }],
-					seriesNames: ['coal'],
-					seriesLabels: { coal: 'Coal' }
-				}
-			})
-		);
-		expect(volume?.columns[1].header).toBe('Coal (tCO2e)');
 	});
 
+	it('exports the visible series on the Volume tab', () => {
+		const emissions = {
+			data: [{ time: T0, coal: 12, gas: 3 }],
+			seriesNames: ['coal', 'gas'],
+			seriesLabels: { coal: 'Coal', gas: 'Gas' }
+		};
+		const volume = timelineDataset(
+			'emissions',
+			context({ emissionsMetric: 'emissions', emissions })
+		);
+		expect(headers(volume)).toEqual(['date', 'Coal (tCO2e)', 'Gas (tCO2e)']);
+		const shown = timelineDataset(
+			'emissions',
+			context({ emissionsMetric: 'emissions', emissions, hiddenSeries: ['gas'] })
+		);
+		expect(headers(shown)).toEqual(['date', 'Coal (tCO2e)']);
+	});
+});
+
+describe('timelineDataset — Fuel tech table', () => {
 	it('lays the table out as sources, loads, curtailment then summaries', () => {
-		const table = buildExportDataset('table', context());
+		const table = timelineDataset('table', context());
 		expect(table?.rows.map((row) => [row.label, row.type])).toEqual([
 			['Coal', 'source'],
 			['Pumps', 'load'],
@@ -235,7 +297,7 @@ describe('buildExportDataset', () => {
 			['Demand', 'summary'],
 			['Renewables', 'summary']
 		]);
-		expect(table?.columns.map((column) => column.header)).toContain('Contribution (% generation)');
+		expect(headers(table)).toContain('Contribution (% generation)');
 		expect(table?.rows[0].fuelTechs).toBe('coal_black coal_brown');
 		expect(table?.rows[0].hidden).toBe(true);
 		expect(table?.columns.slice(2, 4).map((column) => column.header)).toEqual([
@@ -245,24 +307,10 @@ describe('buildExportDataset', () => {
 	});
 });
 
-describe('buildExportDatasets', () => {
-	it('collects every available dataset in menu order', () => {
-		expect(buildExportDatasets(context()).map((dataset) => dataset.key)).toEqual([
-			'generation',
-			'market',
-			'emissions',
-			'table'
-		]);
-		expect(
-			buildExportDatasets(context({ price: null, tablePanelOpen: false })).map((d) => d.key)
-		).toEqual(['generation', 'emissions']);
-	});
-});
-
 describe('datasetToCsv', () => {
 	it('writes network-local timestamps, escaped headers and empty cells for gaps', () => {
 		const csv = datasetToCsv(
-			/** @type {any} */ (buildExportDataset('generation', context())),
+			/** @type {any} */ (timelineDataset('generation', context())),
 			'+10:00'
 		);
 		expect(csv.split('\n')).toEqual([
@@ -273,7 +321,7 @@ describe('datasetToCsv', () => {
 	});
 
 	it('serialises table strings and booleans', () => {
-		const csv = datasetToCsv(/** @type {any} */ (buildExportDataset('table', context())), '+10:00');
+		const csv = datasetToCsv(/** @type {any} */ (timelineDataset('table', context())), '+10:00');
 		expect(csv.split('\n')[1]).toBe(
 			'Coal,source,210.5,105.25,83.4,88.1,true,1234.5,900.2,false,true,coal_black coal_brown'
 		);
@@ -284,7 +332,7 @@ describe('datasetToCsv', () => {
 describe('datasetToSheet', () => {
 	it('writes a bold frozen header and Excel date serials in wall time', () => {
 		const sheet = datasetToSheet(
-			/** @type {any} */ (buildExportDataset('generation', context())),
+			/** @type {any} */ (timelineDataset('generation', context())),
 			'+10:00'
 		);
 		expect(sheet.sheet).toBe('Generation');
@@ -298,37 +346,46 @@ describe('datasetToSheet', () => {
 	});
 });
 
-describe('sheetName', () => {
-	it('strips illegal characters and caps the length', () => {
-		expect(sheetName('Fuel tech: table?')).toBe('Fuel tech table');
-		expect(sheetName('x'.repeat(40))).toHaveLength(31);
-		expect(sheetName('[]')).toBe('Sheet');
-	});
-});
-
-describe('summaryRows / buildWorkbookSheets', () => {
-	it('describes the export and lists hidden groups', () => {
-		const rows = Object.fromEntries(summaryRows(context()));
+describe('timelineSummaryRows', () => {
+	it('describes the charts and lists hidden groups', () => {
+		const rows = Object.fromEntries(timelineSummaryRows(context({ hiddenSeries: ['coal'] })));
+		expect(rows.View).toBe('Timeline');
 		expect(rows.Region).toBe('NEM');
 		expect(rows.Timezone).toContain('AEST (UTC+10:00)');
 		expect(rows.Market).toBe('Spot price ($/MWh)');
 		expect(rows.Emissions).toBe('Intensity (kgCO2e/MWh)');
 		expect(rows['Hidden groups']).toContain('Coal');
-		expect(rows.Generated).toBe('2026-07-01 16:30:00+10:00');
-		expect(Object.fromEntries(summaryRows(context({ hiddenSeries: [] })))).not.toHaveProperty(
-			'Hidden groups'
-		);
+		expect(Object.fromEntries(timelineSummaryRows(context()))).not.toHaveProperty('Hidden groups');
 	});
 
-	it('puts the Summary sheet first', () => {
-		const sheets = buildWorkbookSheets(context());
-		expect(sheets.map((sheet) => sheet.sheet)).toEqual([
-			'Summary',
-			'Generation',
-			'Market',
-			'Emissions',
-			'Fuel tech table'
-		]);
+	it('notes overlays, transforms and the rooftop forecast', () => {
+		const rows = Object.fromEntries(
+			timelineSummaryRows(
+				context({
+					generationTransform: 'proportion',
+					rooftopForecast: true,
+					overlayAreas: [
+						{ data: [], series: [{ id: 'curtailment_wind', label: 'Curtailment (Wind)' }] }
+					]
+				})
+			)
+		);
+		expect(rows['Generation overlays']).toBe('Curtailment (Wind)');
+		expect(rows['Generation view']).toContain('base units');
+		expect(rows['Rooftop forecast']).toContain('not exported');
+	});
+});
+
+describe('buildWorkbookSheets', () => {
+	it('puts Summary first, then a uniquely named sheet per dataset', () => {
+		const generation = /** @type {any} */ (timelineDataset('generation', context()));
+		const sheets = buildWorkbookSheets({
+			summary: [['View', 'Timeline']],
+			datasets: [generation, { ...generation, title: 'generation' }],
+			timeZone: '+10:00'
+		});
+		expect(sheets.map((sheet) => sheet.sheet)).toEqual(['Summary', 'Generation', 'generation (2)']);
+		expect(sheets[0].data[0][1]).toEqual({ value: 'Timeline', type: String });
 	});
 });
 

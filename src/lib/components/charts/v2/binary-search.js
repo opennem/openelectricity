@@ -89,3 +89,18 @@ export function mergeSortedByTime(existing, incoming) {
 
 	return merged;
 }
+
+/**
+ * The rows a chart draws over a window: those starting inside it, plus the
+ * one straddling its start (it began before the window but runs into it).
+ * @template {{ time: number }} Row
+ * @param {Row[]} data - Sorted by time
+ * @param {number} start
+ * @param {number} end
+ * @returns {Row[]}
+ */
+export function windowRows(data, start, end) {
+	const first = bisectTime(data, start);
+	const from = first > 0 && data[first]?.time !== start ? first - 1 : first;
+	return data.slice(from, bisectTimeRight(data, end));
+}

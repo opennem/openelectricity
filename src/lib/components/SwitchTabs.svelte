@@ -11,10 +11,20 @@
 	 * @property {string | number} [selected]
 	 * @property {(value: string) => void} [onChange]
 	 * @property {string} [class]
+	 * @property {boolean} [compact] - 26px tall, for chart-card headers beside
+	 *   their compact toggles
+	 * @property {string} [ariaLabel] - Accessible name for the tab list
 	 */
 
 	/** @type {Props} */
-	let { buttons = [], selected = '', onChange = () => {}, class: className = '' } = $props();
+	let {
+		buttons = [],
+		selected = '',
+		onChange = () => {},
+		class: className = '',
+		compact = false,
+		ariaLabel
+	} = $props();
 
 	let value = $derived(String(selected));
 
@@ -26,12 +36,17 @@
 
 <Tabs.Root {value} onValueChange={handleValueChange} class={className}>
 	<Tabs.List
-		class="inline-flex items-center gap-1 rounded-md bg-light-warm-grey p-1 border border-mid-warm-grey/40"
+		aria-label={ariaLabel}
+		class="inline-flex items-center rounded-md bg-light-warm-grey border border-mid-warm-grey/40 {compact
+			? 'h-[26px] gap-0.5 p-0.5'
+			: 'gap-1 p-1'}"
 	>
 		{#each buttons as { label, value: btnValue } (btnValue)}
 			<Tabs.Trigger
 				value={String(btnValue)}
-				class="px-3 py-1 rounded text-xs text-mid-grey hover:text-dark-grey transition-colors data-[state=active]:bg-white data-[state=active]:text-dark-grey data-[state=active]:shadow-sm cursor-pointer"
+				class="{compact
+					? 'h-full px-2.5'
+					: 'px-3 py-1'} rounded text-xs text-mid-grey hover:text-dark-grey transition-colors data-[state=active]:bg-white data-[state=active]:text-dark-grey data-[state=active]:shadow-sm cursor-pointer"
 			>
 				{label}
 			</Tabs.Trigger>

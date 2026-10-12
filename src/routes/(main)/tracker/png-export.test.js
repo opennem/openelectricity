@@ -10,7 +10,7 @@ import {
 describe('PNG snapshot capture', () => {
 	/** @param {string} inner */
 	const mount = (inner) => {
-		document.body.innerHTML = `<main><section data-png-context="Compare" data-tracker-png='{"id":"regions-share","label":"Renewables","ready":true,"caption":"Monthly"}'>${inner}</section></main>`;
+		document.body.innerHTML = `<main><section data-png-context="Compare" data-chart-png='{"id":"regions-share","label":"Renewables","ready":true,"caption":"Monthly"}'>${inner}</section></main>`;
 		for (const canvas of Array.from(document.querySelectorAll('canvas')))
 			canvas.toDataURL = () => 'data:image/png;base64,AA==';
 		for (const element of Array.from(

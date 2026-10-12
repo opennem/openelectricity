@@ -138,8 +138,8 @@ export function captureChartSvg(chart) {
 /** Freeze metadata and geometry together, before any asynchronous image work.
  * @param {HTMLElement} root @returns {PngSnapshot} */
 export function capturePngSnapshot(root) {
-	const charts = Array.from(root.querySelectorAll('[data-tracker-png]'), (element) => {
-		const eligibility = JSON.parse(element.getAttribute('data-tracker-png') || '{}');
+	const charts = Array.from(root.querySelectorAll('[data-chart-png]'), (element) => {
+		const eligibility = JSON.parse(element.getAttribute('data-chart-png') || '{}');
 		const chart = element.querySelector('[data-chart-image]');
 		const metadata = JSON.parse(chart?.getAttribute('data-chart-image') || '{}');
 		const context = element.closest('[data-png-context]')?.getAttribute('data-png-context');

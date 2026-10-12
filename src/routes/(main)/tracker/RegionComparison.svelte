@@ -1,5 +1,4 @@
 <script>
-	import Toggle from '$lib/components/form-elements/Toggle.svelte';
 	import Select from '$lib/components/form-elements/Select.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
@@ -17,6 +16,8 @@
 	import RegionStripes from './RegionStripes.svelte';
 	import { stripeMax, stripeScale } from './comparison-stripes.js';
 	import StripeLegend from './StripeLegend.svelte';
+	import CardToggle from './CardToggle.svelte';
+	import SeriesLegend from './SeriesLegend.svelte';
 	import {
 		comparisonMetric,
 		comparisonChartId,
@@ -26,7 +27,7 @@
 		comparisonTableColumn,
 		formatComparisonCell
 	} from './comparison-metrics.js';
-	import ChartCard from './ChartCard.svelte';
+	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
 	import { splitTableLabel } from './table-format.js';
 	import {
 		TABLE_HEADER_BUTTON,
@@ -49,6 +50,15 @@
 	import TrackerSplitLayout from './TrackerSplitLayout.svelte';
 	import RegionComparisonChart from './RegionComparisonChart.svelte';
 	import RegionPanels from './RegionPanels.svelte';
+	import ComparePanel from '$lib/components/charts/card/compare/ComparePanel.svelte';
+	import {
+		compareTimeMarkers,
+		defaultComparePair,
+		pickCompareTime,
+		toggleCompareCard
+	} from '$lib/components/charts/card/compare/chart-compare.js';
+	import { regionCompareSource } from './chart-compare-sources.js';
+	import { trackerFileName } from './tracker-export.js';
 	import {
 		benchmarkComparisonRegions,
 		isRankableComparisonMetric,
@@ -57,7 +67,16 @@
 	} from './comparison-displays.js';
 	import { CONTRIBUTION_OPTIONS, RENEWABLES_DOCS, contributionLabel } from './tracker-model.js';
 	import { createRegionComparisonData } from './region-comparison-data.svelte.js';
-	import { comparisonExportDataset } from './region-comparison-export.js';
+	import {
+		comparisonChartDataset,
+		comparisonFileName,
+		comparisonSummaryRows,
+		comparisonTableDataset
+	} from './region-comparison-export.js';
+	import {
+		getChartDownloads,
+		chartDownload
+	} from '$lib/components/charts/card/chart-downloads.svelte.js';
 	import {
 		COMPARISON_REGIONS,
 		COMPARISON_INTERVAL_IDS,
@@ -69,8 +88,10 @@
 		normaliseComparisonDisplay,
 		comparisonPeriod,
 		changesComparisonPeriods,
+		closesComparisonDates,
 		comparisonRangeLabel,
 		clampComparisonViewport,
+		comparisonMonthSlug,
 		latestCommonComparisonPeriod
 	} from './region-comparison.js';
 
@@ -230,12 +251,95 @@
 	// The Regions table is the readout beside the charts. While it is closed,
 	// or overlays them below desktop, the charts carry their own tooltips.
 	let tooltip = $derived(!desktop.current || !panelOpen);
+	/** Whether the cards need their own region key: the Regions table, which
+	 * keys the line colours, is closed, and the display draws coloured lines. */
+	let regionsKeyed = $derived(!panelOpen && (display === 'charts' || display === 'ranks'));
+	let regionLegend = $derived(
+		regions.flatMap((id) => {
+			const region = REGION_BY_ID.get(id);
+			return region
+				? [{ id, label: region.shortLabel ?? region.label, colour: region.colour, line: true }]
+				: [];
+		})
+	);
 	/** @param {Partial<import('./region-comparison.js').RegionComparisonSelection>} change @param {'push'|'replace'|null} [history] */
 	function select(change, history = 'push') {
 		// The pointer's period goes stale with any change; a pin only with its periods.
 		hover = null;
 		if (changesComparisonPeriods(change)) focus = null;
-		session.select('regionComparison', { ...selection, ...change }, history);
+		session.select(
+			'regionComparison',
+			{ ...selection, ...change, ...(closesComparisonDates(change) ? { dates: null } : {}) },
+			history
+		);
+	}
+
+	// ---- Compare mode (`chart-compare.js`) ----
+	// Any card can compare two periods; the comparing cards share one A and B
+	// (URL state), drawn as markers on each. A click on a comparing chart sets
+	// the armed slot instead of pinning a period.
+	let dates = $derived(selection.dates);
+	let comparePair = $derived({ a: dates?.a ?? null, b: dates?.b ?? null });
+	/** Which slot the next click on a comparing chart sets: page state only. */
+	let armed = $state(
+		/** @type {import('$lib/components/charts/card/compare/chart-compare.js').CompareSlot} */ ('a')
+	);
+	let compareMarkers = $derived(compareTimeMarkers(comparePair, armed));
+	/** A card's comparison, as its display draws it.
+	 * @param {string} metric @param {boolean} ranked
+	 * @param {import('./comparison-stripes.js').StripeScale | null} scale */
+	function compareSourceFor(metric, ranked, scale) {
+		return regionCompareSource({
+			data: source.data,
+			regions: ranked ? rankedRegions : regions,
+			benchmarks: ranked ? benchmarkRegions : [],
+			metric,
+			basis,
+			interval,
+			months,
+			rank: ranked,
+			colourOf: scale?.colour ?? null,
+			cpiReference: cpi.reference
+		});
+	}
+	/** Opening starts at the first and last periods on screen (all history's
+	 * when none are), or keeps the page's A and B when a card already compares.
+	 * @param {string} chart - The picker chart id @param {boolean} open
+	 * @param {string} metric @param {boolean} ranked */
+	function setCompareOpen(chart, open, metric, ranked) {
+		if (open && !dates) armed = 'a';
+		const times = compareSourceFor(metric, ranked, null).times;
+		const inView = times.filter((time) => time >= viewport.start && time < viewport.end);
+		select({
+			dates: toggleCompareCard(
+				dates,
+				chart,
+				open,
+				defaultComparePair(inView.length ? inView : times)
+			)
+		});
+	}
+	/** @param {import('$lib/components/charts/card/compare/chart-compare.js').ComparePair} pair @param {'push' | 'replace'} history */
+	function changeComparePair(pair, history) {
+		if (dates) select({ dates: { ...dates, ...pair } }, history);
+	}
+	/** A click (or Enter) on a comparing chart. @param {number | null} time */
+	function pickCompare(time) {
+		if (time === null) return;
+		const next = pickCompareTime(comparePair, armed, time);
+		armed = next.armed;
+		changeComparePair(next.pair, 'push');
+	}
+	/** `tracker-regions-intensity-comparison-2010-01-to-2025-01.csv` @param {string} metric */
+	function compareFileName(metric) {
+		/** @param {number | null} time */
+		const month = (time) => (time === null ? '' : comparisonMonthSlug(time));
+		return trackerFileName({
+			scope: 'regions',
+			dataset: `${metric}-comparison`,
+			range: `${month(comparePair.a)}-to-${month(comparePair.b)}`,
+			extension: 'csv'
+		});
 	}
 	// Regions table: a percentage of the container, remembered locally; small
 	// screens overlay it instead.
@@ -278,19 +382,70 @@
 			.filter(Boolean)
 			.join(' · ')
 	);
-	let ready = $derived(!source.pending && valueTimes.length > 0);
-	/** Whether any selected region has a value to export. */
-	export function canExport() {
-		return ready;
+	// Downloads: each chart card as its display draws it, and the Regions table
+	// while open, register their own.
+	const downloads = getChartDownloads();
+	/** A chart card's download over the periods on screen.
+	 * @param {string} id - The card's metric */
+	function metricDownload(id) {
+		const dataset = () =>
+			comparisonChartDataset({
+				data: source.data,
+				regions,
+				metric: id,
+				basis,
+				interval,
+				months,
+				viewport,
+				display,
+				cpiReference: cpi.reference
+			});
+		return {
+			get state() {
+				if (source.pending) return /** @type {const} */ ('loading');
+				return dataset() ? /** @type {const} */ ('ready') : /** @type {const} */ ('empty');
+			},
+			get message() {
+				return display === 'ranks' && isRankableComparisonMetric(id) && !rankedRegions.length
+					? 'Select a state or WEM to rank'
+					: undefined;
+			},
+			dataset
+		};
 	}
-	export function exportDataset() {
-		return ready ? comparisonExportDataset(source.data, selection, viewport, cpi.reference) : null;
+	const registerTable = chartDownload(downloads, () => ({
+		id: 'regions-table',
+		label: 'Regions table',
+		state: source.pending ? 'loading' : period == null ? 'empty' : 'ready',
+		dataset: () =>
+			comparisonTableDataset({
+				data: source.data,
+				tableRegions: tableRegions.map((region) => region.value),
+				selected: regions,
+				metrics: metrics.map((metric) => metric.id),
+				basis,
+				period,
+				interval,
+				cpiReference: cpi.reference
+			})
+	}));
+	/** The workbook's Summary rows. */
+	export function downloadSummary() {
+		return /** @type {Array<[string, string]>} */ ([
+			...comparisonSummaryRows(selection, cpi.reference),
+			['Table period', period == null ? 'None' : comparisonPeriod(period, interval)]
+		]);
 	}
-	export function getSelection() {
-		return selection;
-	}
-	export function getViewport() {
-		return viewport;
+	/** `tracker-regions-<chart>-<interval>-<first>-to-<last>.csv`, or the
+	 * workbook's `tracker-regions-<interval>-<first>-to-<last>.xlsx`.
+	 * @param {string | null} id @param {'csv' | 'xlsx'} extension */
+	export function downloadFileName(id, extension) {
+		return comparisonFileName(
+			selection,
+			viewport,
+			extension,
+			extension === 'csv' ? (id ?? '') : ''
+		);
 	}
 	export function getControls() {
 		return controls;
@@ -432,7 +587,71 @@
 					<!-- Ranks ranks ratios; volumes, which mostly measure a region's
 					     size, stay lines, badged. -->
 					{@const ranked = display === 'ranks' && isRankableComparisonMetric(metric.id)}
+					<!-- Options before the chart switcher, at the right of the header. -->
+					{@const presentations = comparisonPresentations(metric.chart).toSorted(
+						(a, b) => Number(a.control === 'tabs') - Number(b.control === 'tabs')
+					)}
+					{@const chartId = comparisonChartId(metric.id)}
+					{@const comparing = !!dates?.cards.includes(chartId)}
+					{#snippet comparePanel()}
+						<ComparePanel
+							source={compareSourceFor(metric.id, ranked, scale)}
+							pair={comparePair}
+							{armed}
+							pending={source.pending && !regions.some((id) => source.data[id]?.length)}
+							id="regions-{metric.id}-comparison"
+							label="{metric.label} comparison"
+							fileName={() => compareFileName(metric.id)}
+							hovered={hoverRegion ?? undefined}
+							onhover={(id) => (hoverRegion = id ?? null)}
+							onarm={(slot) => (armed = slot)}
+							onchange={changeComparePair}
+						/>
+					{/snippet}
+					{#snippet cardControls()}
+						<!-- Each presentation axis the chart varies along: proportion or
+						     generation, official or excluding batteries, nominal or real. -->
+						{#each presentations as axis (axis.key)}
+							{#if axis.control === 'tabs'}
+								<SwitchTabs
+									compact
+									ariaLabel="{metric.label} basis"
+									buttons={axis.labels.map((label, index) => ({
+										label,
+										value: comparisonPresentation(metric.id, axis.key, index === 1)
+									}))}
+									selected={metric.id}
+									onChange={(id) => swapChart(metric.id, id)}
+								/>
+							{:else}
+								<CardToggle
+									label={axis.label}
+									checked={!!metric[axis.key] !== !!axis.checkedWhenOff}
+									onchange={() =>
+										swapChart(
+											metric.id,
+											comparisonPresentation(metric.id, axis.key, !metric[axis.key])
+										)}
+								/>
+							{/if}
+						{/each}
+						{#if metric.id === 'price_real'}
+							<span class="text-xs text-mid-grey">{cpi.reference} dollars</span>
+						{/if}
+					{/snippet}
+					<!-- The heatmap's colour scale always; the lines' regions while the
+					     Regions table, which keys them, is closed. Panels and stripes
+					     label each region in the chart. -->
+					{#snippet cardLegend()}
+						{#if scale}
+							<StripeLegend {scale} metric={metric.id} />
+						{:else}
+							<SeriesLegend items={regionLegend} label="{metric.label} regions" />
+						{/if}
+					{/snippet}
 					<ChartCard
+						controls={presentations.length || metric.id === 'price_real' ? cardControls : undefined}
+						legend={scale || (regionsKeyed && regionLegend.length) ? cardLegend : undefined}
 						title={metric.label}
 						badge={ranked ? '1 = highest' : display === 'ranks' ? 'Not rankable' : ''}
 						defaultHeightPx={320}
@@ -443,6 +662,12 @@
 						engaged={descriptor.panZoom ? panZoomEngaged : false}
 						highlighted={hoverMetric === metric.id}
 						onhover={(hovered) => hoverCard(metric.id, hovered)}
+						download={metricDownload(metric.id)}
+						compare={{
+							open: comparing,
+							onopenchange: (open) => setCompareOpen(chartId, open, metric.id, ranked),
+							panel: comparePanel
+						}}
 						png={{
 							id: `regions-${metric.id}`,
 							label: metric.label,
@@ -453,38 +678,6 @@
 									: caption
 						}}
 					>
-						{#snippet actions()}
-							{#if scale}
-								<StripeLegend {scale} metric={metric.id} />
-							{/if}
-							<!-- Each presentation axis the chart varies along: proportion or
-							     generation, official or excluding batteries, nominal or real. -->
-							{#each comparisonPresentations(metric.chart) as axis (axis.key)}
-								{#if axis.control === 'tabs'}
-									<SwitchTabs
-										buttons={axis.labels.map((label, index) => ({
-											label,
-											value: comparisonPresentation(metric.id, axis.key, index === 1)
-										}))}
-										selected={metric.id}
-										onChange={(id) => swapChart(metric.id, id)}
-									/>
-								{:else}
-									<Toggle
-										label={axis.label}
-										checked={!!metric[axis.key] !== !!axis.checkedWhenOff}
-										onclick={() =>
-											swapChart(
-												metric.id,
-												comparisonPresentation(metric.id, axis.key, !metric[axis.key])
-											)}
-									/>
-								{/if}
-							{/each}
-							{#if metric.id === 'price_real'}
-								<span class="text-xs text-mid-grey">{cpi.reference} dollars</span>
-							{/if}
-						{/snippet}
 						{#snippet children(height)}
 							{#if scale}
 								<RegionStripes
@@ -500,13 +693,16 @@
 									{tooltip}
 									onhoverregion={(region) => (hoverRegion = region)}
 									{hover}
-									{focus}
+									focus={comparing ? null : focus}
 									onhover={(time) => {
 										hover = time;
 									}}
-									onfocus={(time) => {
-										focus = time;
-									}}
+									onfocus={comparing
+										? pickCompare
+										: (time) => {
+												focus = time;
+											}}
+									timeMarkers={comparing ? compareMarkers : null}
 									onviewport={moveViewport}
 								/>
 							{:else if display === 'panels'}
@@ -523,13 +719,16 @@
 									{hoverRegion}
 									onhoverregion={(region) => (hoverRegion = region)}
 									{hover}
-									{focus}
+									focus={comparing ? null : focus}
 									onhover={(time) => {
 										hover = time;
 									}}
-									onfocus={(time) => {
-										focus = time;
-									}}
+									onfocus={comparing
+										? pickCompare
+										: (time) => {
+												focus = time;
+											}}
+									timeMarkers={comparing ? compareMarkers : null}
 									onviewport={moveViewport}
 								/>
 							{:else if ranked && !rankedRegions.length}
@@ -554,14 +753,18 @@
 									{hoverRegion}
 									onhoverregion={(region) => (hoverRegion = region)}
 									bind:engaged={panZoomEngaged}
+									engageOnTap={!comparing}
 									{hover}
-									{focus}
+									focus={comparing ? null : focus}
 									onhover={(time) => {
 										hover = time;
 									}}
-									onfocus={(time) => {
-										focus = time;
-									}}
+									onfocus={comparing
+										? pickCompare
+										: (time) => {
+												focus = time;
+											}}
+									timeMarkers={comparing ? compareMarkers : null}
 									onviewport={moveViewport}
 								/>
 							{/if}
@@ -586,7 +789,7 @@
 		{/snippet}
 		{#snippet rail()}{@render tableOptions()}{/snippet}
 		{#snippet panel()}
-			<div class="[--region-w:240px]">
+			<div class="[--region-w:240px]" {@attach registerTable} data-chart-download="regions-table">
 				<div
 					bind:this={tableScroller}
 					onscroll={(event) => (tableScrollLeft = event.currentTarget.scrollLeft)}

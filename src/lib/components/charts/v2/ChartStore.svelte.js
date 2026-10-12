@@ -539,6 +539,27 @@ export default class ChartStore {
 		this.#activeRow(this.seriesProportionData, this.focusCategory, this.focusTime)
 	);
 
+	/**
+	 * Labelled vertical markers at exact times (a comparison's A and B), drawn
+	 * over the plot with a letter chip each and, with `timeMarkerBand`, a faint
+	 * band between the first two. `timeMarkerArmed` names the marker the next
+	 * click sets: a ghost of it follows the hover. Unlike `focusTime`, markers
+	 * need no matching row and are kept in PNG exports (the ghost is not).
+	 * @type {Array<{id: string, time: number, label: string}>}
+	 */
+	timeMarkers = $state.raw([]);
+
+	/** @type {string | null} */
+	timeMarkerArmed = $state(null);
+
+	timeMarkerBand = $state(false);
+
+	/** Whether the pointer is over this chart's plot (`InteractionLayer`):
+	 * hover time can arrive from a synced peer chart or a pinned time, but
+	 * only a pointer here should drive what follows it (the armed marker's
+	 * ghost). */
+	pointerInside = $state(false);
+
 	// CSV export
 	seriesCsvData = $derived.by(() => {
 		if (!this.seriesData?.length) return '';

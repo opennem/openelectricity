@@ -37,7 +37,9 @@
 	 *   onhoverregion: (region: string | null) => void,
 	 *   hover: number | null, focus: number | null,
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
-	 *   onviewport: (start: number, end: number, settled: boolean) => void}} */
+	 *   onviewport: (start: number, end: number, settled: boolean) => void,
+	 *   timeMarkers?: {markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null
+	 * }} */
 	let {
 		data,
 		regions,
@@ -54,7 +56,8 @@
 		focus,
 		onhover,
 		onfocus,
-		onviewport
+		onviewport,
+		timeMarkers = null
 	} = $props();
 
 	const TOP = 8;
@@ -102,6 +105,14 @@
 					x: x(inspected),
 					width: (nextPeriodStart(inspected, months) - inspected) * pxPerMs
 				}
+	);
+	/** A comparison's A / B: each period's cells outlined, lettered at the top. */
+	let markerCells = $derived(
+		(timeMarkers?.markers ?? []).map((marker) => ({
+			...marker,
+			x: x(marker.time),
+			width: (nextPeriodStart(marker.time, months) - marker.time) * pxPerMs
+		}))
 	);
 	/** Pointer position inside the wrapper, for the tooltip and hovered row. */
 	let pointer = $state(/** @type {{x: number, y: number} | null} */ (null));
@@ -350,6 +361,30 @@
 						pointer-events="none"
 					/>
 				{/if}
+			</g>
+			<g clip-path={`url(#${clipId})`} pointer-events="none">
+				{#each markerCells as marker (marker.id)}
+					{@const centre = marker.x + marker.width / 2}
+					<rect
+						x={marker.x}
+						y={TOP}
+						width={Math.max(1, marker.width)}
+						height={rowsHeight}
+						fill="none"
+						stroke="#353535"
+						stroke-width="2"
+					/>
+					<rect x={centre - 7} y={TOP + 1} width="14" height="13" rx="3" fill="#353535" />
+					<text
+						x={centre}
+						y={TOP + 7.5}
+						dy="0.35em"
+						text-anchor="middle"
+						fill="white"
+						font-size="9"
+						font-weight="600">{marker.label}</text
+					>
+				{/each}
 			</g>
 			<g transform={`translate(0 ${TOP + rowsHeight})`} clip-path={`url(#${clipId})`}>
 				{#each axis as cell (cell.time)}

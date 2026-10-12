@@ -13,7 +13,9 @@
 	import { color as d3Colour } from 'd3-color';
 	import { formatDateRange } from '$lib/components/charts/v2/date-labels.js';
 	import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
-	import ChartCard from './ChartCard.svelte';
+	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
+	import SeriesLegend from './SeriesLegend.svelte';
+	import { seriesLegendItems } from './chart-legend.js';
 	import FuelTechOptions from './FuelTechOptions.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
 	import ProfileChart from './ProfileChart.svelte';
@@ -35,6 +37,10 @@
 	import { DEFAULT_TABLE_COLUMNS, PERCENTILE_TABLE_COLUMNS } from './table-columns.js';
 	import { hasSpotPrice, regionLabel as regionLabelFor } from './tracker-regions.js';
 	import { trackerFileName } from './tracker-export.js';
+	import {
+		getChartDownloads,
+		chartDownload
+	} from '$lib/components/charts/card/chart-downloads.svelte.js';
 	import { toggleSeriesVisibility } from './tracker-visibility.js';
 	import { OE_RED } from './tracker-overlays.js';
 	import {
@@ -51,9 +57,13 @@
 		normaliseProfileDays,
 		normaliseProfileDisplay,
 		normaliseProfileInterval,
+		profileCardDataset,
 		profileChartPart,
-		profileDataset,
 		profileFocusColumns,
+		profileHourlyDataset,
+		profileStackDataset,
+		profileSummaryRows,
+		profileTableDataset,
 		profileWindow,
 		todayWindow,
 		PROFILE_DAY_OPTIONS,
@@ -121,6 +131,10 @@
 		lastDate ? `Average over ${days} full days` : `Average over last ${days} full days`
 	);
 	let stackMeta = $derived(powerData.meta);
+	/** The stack's colour key, while the fuel-tech table that keys it is closed. */
+	let stackLegend = $derived(
+		selection.tablePanelOpen ? [] : seriesLegendItems({ snapshot: stackMeta, hidden })
+	);
 	let layers = $derived(buildAverageDayStack(powerData.rows, stackMeta?.seriesNames ?? [], window));
 	let stackAvailable = $derived(
 		layers.some((layer) => layer.points.some((point) => point.y1 !== null))
@@ -651,38 +665,95 @@
 	export function getInspectLabel() {
 		return inspectRange && `${profileClock(inspectRange.start)}–${profileClock(inspectRange.end)}`;
 	}
-	/** Whether the shown display can export: the stack's technologies, or the
-	 * breakdown's picked series. */
-	export function canExport() {
-		return breakdown
-			? !gridPending && !gridError && gridAvailable
-			: !powerData.pending && !powerData.error && stackAvailable;
+	// Downloads: every card and panel on screen registers its own (the stack,
+	// each breakdown card, the table and the stacked dial), shaped as it draws.
+	const downloads = getChartDownloads();
+	/** The stacked display's visible technologies, in stack order, with their
+	 * signed profiles. */
+	let visibleStack = $derived(
+		(stackMeta?.seriesNames ?? [])
+			.filter((name) => !hidden.includes(name))
+			.map((name) => ({
+				key: name,
+				label: stackMeta?.seriesLabels[name] ?? name,
+				profile: techProfiles.get(name) ?? []
+			}))
+	);
+	/** @returns {import('./types.js').DownloadState} */
+	function stackState() {
+		if (powerData.pending) return 'loading';
+		if (powerData.error) return 'error';
+		return stackAvailable ? 'ready' : 'empty';
 	}
-	/** The shown display as a CSV dataset: every technology's average day, or the
-	 * picked series (every day too in multi-line). Null until it can export. */
-	export function exportDataset() {
-		if (!canExport()) return null;
-		const series = breakdown
-			? picked.map(({ label, unit, profile }) => ({ label, unit, profile }))
-			: (stackMeta?.seriesNames ?? []).map((name) => ({
-					label: stackMeta?.seriesLabels[name] ?? name,
-					unit: 'MW',
-					profile: buildDailyProfile(powerData.rows, name, window)
-				}));
-		return profileDataset({
-			series,
-			dates: window.dates,
-			daily: breakdown,
+	const stackDownload = {
+		get state() {
+			return stackState();
+		},
+		dataset: () => profileStackDataset({ series: visibleStack, timeZone: zone })
+	};
+	const registerDial = chartDownload(downloads, () => ({
+		id: 'profile-dial',
+		label: STACK_DIAL_TITLE,
+		state: stackState(),
+		dataset: () => profileHourlyDataset({ series: visibleStack, timeZone: zone })
+	}));
+	/** A breakdown card's download, from its series' signed profile.
+	 * @param {string} key */
+	function cardDownload(key) {
+		const series = () => picked.find((candidate) => candidate.key === key);
+		return {
+			/** @returns {import('./types.js').DownloadState} */
+			get state() {
+				if (gridPending || todayPending) return 'loading';
+				return series()?.profile.some((slot) => slot.average !== null) ? 'ready' : 'empty';
+			},
+			dataset() {
+				const shown = series();
+				return shown
+					? profileCardDataset({ series: shown, style, dates: window.dates, timeZone: zone })
+					: null;
+			}
+		};
+	}
+
+	const tableDownload = {
+		get state() {
+			if (tableError) return /** @type {const} */ ('error');
+			if (tablePending) return /** @type {const} */ ('loading');
+			return tableRows?.length ? /** @type {const} */ ('ready') : /** @type {const} */ ('empty');
+		},
+		dataset: () =>
+			profileTableDataset({
+				rows: tableRows ?? [],
+				powerColumns: tablePowerColumns,
+				contributionMode
+			})
+	};
+	/** The workbook's Summary rows. */
+	export function downloadSummary() {
+		return profileSummaryRows({
 			region: regionLabel,
+			dates: window.dates,
+			interval,
+			breakdown,
+			style,
+			today: showToday,
+			groupLabel: group.label,
+			contributionMode,
+			hidden: hidden.map((name) => stackMeta?.seriesLabels[name] ?? name),
+			tableSlot: getInspectLabel(),
 			timeZone: zone
 		});
 	}
-	export function exportFileName() {
+	/** `tracker-<region>-time-of-day-<chart>-<last day>.csv`, or the workbook's
+	 * `tracker-<region>-time-of-day-<last day>.xlsx`.
+	 * @param {string | null} id @param {'csv' | 'xlsx'} extension */
+	export function downloadFileName(id, extension) {
 		return trackerFileName({
 			scope: region,
-			dataset: 'time-of-day',
+			dataset: ['time-of-day', id?.replace(/^profile-/, '')].filter(Boolean).join('-'),
 			range: window.lastDate,
-			extension: 'csv'
+			extension
 		});
 	}
 </script>
@@ -777,6 +848,8 @@
      Energy column (`dialHovered`). -->
 {#snippet stackDial()}
 	<div
+		{@attach registerDial}
+		data-chart-download="profile-dial"
 		role="group"
 		aria-label={STACK_DIAL_TITLE}
 		class="mx-4 mt-4 overflow-hidden rounded-md border border-warm-grey pb-4 [--dial-max:300px]"
@@ -885,6 +958,9 @@
 		</section>
 	</div>
 {/if}
+{#snippet stackKey()}
+	<SeriesLegend items={stackLegend} label="Average day legend" />
+{/snippet}
 <section aria-label="Profile analysis" aria-busy={gridPending} class="flex min-h-0 flex-1 flex-col">
 	<TrackerSplitLayout
 		config={FUEL_TECH_SPLIT}
@@ -906,6 +982,8 @@
 				highlighted={hoveredCard === 'stack'}
 				onhover={(hovered) => hoverCard('stack', hovered)}
 				loading={stackLoading.active}
+				download={stackDownload}
+				legend={stackLegend.length ? stackKey : undefined}
 				png={{
 					id: 'profile-stack',
 					label: windowTitle,
@@ -969,6 +1047,7 @@
 						title={card.price ? 'Market' : card.label}
 						mini={Boolean(card.radial || card.heatmap)}
 						loading={gridLoading.active}
+						download={cardDownload(card.key)}
 						png={{
 							id: `profile-${card.key}`,
 							label: card.label,
@@ -1053,6 +1132,7 @@
 
 		{#snippet panel(/** @type {import('./types.js').TrackerDock} */ dock)}
 			<FuelTechPanel
+				download={tableDownload}
 				bind:closeButton={dock.closer}
 				onclose={dock.close}
 				options={fuelTechOptions}

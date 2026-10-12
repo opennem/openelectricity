@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
 import {
 	card,
 	collectPageErrors,
 	download,
+	downloadText,
+	downloadWorkbook,
+	expectDownloadsMatchCharts,
 	expectNoHorizontalScroll,
 	hydrated,
 	navPill,
@@ -94,10 +96,10 @@ test('metric and percentage switches reuse requests, preserve URL state and expo
 	await page.getByTitle('Show % generation', { exact: true }).click();
 	await expect(regionRow(page, 'New South Wales')).toContainText('75');
 	expect(data.requests.length).toBe(count);
-	const file = await download(page, 'Region comparison');
-	const csv = await readFile(await file.path(), 'utf8');
-	expect(csv).toContain('source generation (%)');
-	expect(csv).toContain('New South Wales');
+	const file = await download(page, 'Renewables proportion');
+	expect(file.suggestedFilename()).toMatch(/^tracker-regions-renewables-share-/);
+	const csv = await downloadText(file);
+	expect(csv.split('\n')[0]).toMatch(/^Period,New South Wales \(% source generation\),/);
 	await page.reload();
 	await regionsReady(page);
 
@@ -242,15 +244,22 @@ test('empty results display a clear state and disable CSV and workbook exports',
 	page
 }) => {
 	await regionsFixture(page, { empty: true });
+	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker/compare');
 	await expect(
 		page.getByText('No completed regional data available for this selection.')
 	).toBeVisible();
-	await openOptions(page);
-	await expect(page.getByRole('button', { name: 'Region comparison', exact: true })).toBeDisabled();
-	await expect(
-		page.getByRole('button', { name: 'Everything (one workbook)', exact: true })
-	).toBeDisabled();
+	const rows = await expectDownloadsMatchCharts(page, [
+		'Carbon intensity',
+		'Renewables proportion',
+		'Regions table'
+	]);
+	expect(rows.map((row) => row.state)).toEqual(['empty', 'empty', 'empty']);
+	const dialog = page.getByRole('dialog', { name: 'Download data' });
+	for (const button of await dialog.getByTestId('download-row').getByRole('button').all())
+		await expect(button).toBeDisabled();
+	await expect(dialog.getByRole('button', { name: 'Download all charts XLSX' })).toBeDisabled();
+	await expect(dialog.getByTestId('download-workbook')).toContainText('No chart data to download');
 });
 
 test('live comparison renders regional history and exports a workbook', async ({ page }) => {
@@ -276,7 +285,7 @@ test('live comparison renders regional history and exports a workbook', async ({
 	).toHaveCount(6);
 	await page.screenshot({ path: 'test-results/tracker-regions-live.png', fullPage: true });
 	await inspectLatestPoints(page, /^12 months to/);
-	const workbook = await download(page, 'Everything (one workbook)');
+	const workbook = await downloadWorkbook(page);
 	expect(workbook.suggestedFilename()).toMatch(
 		/^tracker-regions-[a-z0-9]+-\d{4}-\d{2}-to-\d{4}-\d{2}\.xlsx$/
 	);
@@ -391,9 +400,10 @@ test('two charts start visible and the charts strip controls charts, table and e
 	const adjusted = page.getByRole('switch', { name: 'Inflation adjusted', exact: true });
 	await expect(adjusted).toBeChecked();
 	await expect(page.getByRole('link', { name: 'ABS All Groups CPI' })).toBeVisible();
-	const realCsv = await readFile(await (await download(page, 'Region comparison')).path(), 'utf8');
-	expect(realCsv).toContain('Volume-weighted price (inflation adjusted)');
-	expect(realCsv).toContain('dollars');
+	const realCsv = await downloadText(
+		await download(page, 'Volume-weighted price (inflation adjusted)')
+	);
+	expect(realCsv.split('\n')[0]).toMatch(/^Period,New South Wales \(\$\/MWh; [^)]+ dollars\),/);
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(adjusted).toBeVisible();
 	await expectNoHorizontalScroll(page);
@@ -411,8 +421,11 @@ test('two charts start visible and the charts strip controls charts, table and e
 	await expect(adjusted).not.toBeChecked();
 	await expect(regionRow(page, 'New South Wales')).toContainText('50');
 	expect(data.requests.length).toBe(requests);
-	const csv = await readFile(await (await download(page, 'Region comparison')).path(), 'utf8');
-	expect(csv.split('\n')[0]).toBe('Period,Region,Wind value ($/MWh),Volume-weighted price ($/MWh)');
+	const csv = await downloadText(await download(page, 'Wind value'));
+	expect(csv.split('\n')[0]).toMatch(/^Period,New South Wales \(\$\/MWh\),/);
+	expect(await downloadText(await download(page, 'Volume-weighted price'))).toMatch(
+		/^Period,New South Wales \(\$\/MWh\),/
+	);
 	await page.reload();
 	await expect(
 		page.getByRole('heading', { name: 'Wind value', exact: true, level: 3 })
@@ -438,10 +451,10 @@ test('comparison Y axis rescales on zoom and pan as an offscreen peak enters or 
 	await page.goto(
 		`/tracker/compare?compare-charts=generation&compare-regions=nsw1&compare-interval=1M&compare-start=${Date.UTC(2020, 0)}&compare-end=${Date.UTC(2026, 8)}`
 	);
-	const chart = page.getByRole('group', {
-		name: 'Renewables generation comparison chart',
-		exact: true
-	});
+	// The card: the chart's zoom buttons sit in the card's header.
+	const chart = page
+		.getByRole('group', { name: 'Renewables generation comparison chart', exact: true })
+		.locator('xpath=ancestor::section[1]');
 	await expect(chart.locator('.path-line')).toHaveAttribute('d', /^M/);
 	const maximumTick = () =>
 		chart
@@ -471,18 +484,16 @@ test('comparison charts reuse timeline options, retain curve and units, and shar
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker/compare?compare-charts=intensity,generation');
 	await regionsReady(page);
-	const intensity = page.getByRole('group', {
-		name: 'Carbon intensity comparison chart',
-		exact: true
-	});
+	// The cards: each chart's toolbar (options, pan and zoom) sits in its card's header.
+	/** @param {string} name */
+	const chartCard = (name) =>
+		page.getByRole('group', { name, exact: true }).locator('xpath=ancestor::section[1]');
+	const intensity = chartCard('Carbon intensity comparison chart');
 	// Rolling months open on all history, so there is nothing further to zoom out to.
 	await expect(intensity.getByRole('button', { name: 'Zoom out', exact: true })).toBeDisabled();
 	const zoomOut = intensity.getByRole('button', { name: 'Zoom out', exact: true });
 	while (await zoomOut.isEnabled()) await zoomOut.click();
-	const energy = page.getByRole('group', {
-		name: 'Renewables generation comparison chart',
-		exact: true
-	});
+	const energy = chartCard('Renewables generation comparison chart');
 	await expect(
 		intensity.getByRole('button', { name: 'Enable pan and zoom', exact: true })
 	).toBeVisible();
@@ -517,8 +528,9 @@ test('comparison charts reuse timeline options, retain curve and units, and shar
 	await expect(
 		intensity.getByRole('button', { name: 'Disable pan and zoom', exact: true })
 	).toBeVisible();
-	await expect(energy.getByRole('button', { name: 'Zoom in', exact: true })).toHaveCount(0);
-	await expect(energy.locator('xpath=ancestor::section[1]')).toHaveClass(/border-dark-grey/);
+	// A card keeps its zoom buttons while pan/zoom is engaged.
+	await expect(energy.getByRole('button', { name: 'Zoom in', exact: true })).toBeVisible();
+	await expect(energy).toHaveClass(/border-dark-grey/);
 	await page.keyboard.press('Escape');
 	await expect(
 		energy.getByRole('button', { name: 'Enable pan and zoom', exact: true })
@@ -981,4 +993,81 @@ test('ranks order the states and WEM by ratio, with NEM as a reference and volum
 	);
 	await expect(page.getByText('Select a state or WEM to rank.', { exact: false })).toBeVisible();
 	expect(errors).toEqual([]);
+});
+
+test('compare mode on a regions card: a slope or bump chart beside each region’s change, kept in the URL', async ({
+	page
+}, testInfo) => {
+	await regionsFixture(page, { variedShares: true });
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto(
+		'/tracker/compare?compare-charts=intensity,renewables&compare-display=ranks&compare-regions=nsw,qld,sa,tas,vic,wem,nem&compare-table=0'
+	);
+	await expect(
+		page.getByText('Complete periods · monthly source data', { exact: true })
+	).toBeVisible();
+	const renewables = card(page, 'Renewables proportion');
+	await renewables
+		.getByRole('button', { name: 'Compare Renewables proportion', exact: true })
+		.click();
+	const panel = page.getByRole('region', { name: 'Renewables proportion comparison' });
+	await expect(panel.getByTestId('compare-slope')).toBeVisible();
+	// Six ranked states and WEM, then the NEM placed among them.
+	await expect(panel.getByTestId('compare-table-row')).toHaveCount(7);
+	const tasmania = panel
+		.getByRole('row')
+		.filter({ has: page.getByRole('rowheader', { name: 'Tasmania', exact: true }) });
+	await expect(tasmania.getByRole('cell').nth(1)).toHaveText('#1');
+	const url = () => new URL(page.url()).searchParams;
+	await expect.poll(() => url().get('compare-dates')).toBe('renewables');
+	expect(url().get('compare-date-a')).toMatch(/^\d{4}-\d{2}$/);
+	expect(url().get('compare-date-b')).toMatch(/^\d{4}-\d{2}$/);
+	await expect(renewables.locator('.time-markers text', { hasText: /^B$/ })).toHaveCount(1);
+	await page.screenshot({ path: testInfo.outputPath('regions-compare-ranks.png'), fullPage: true });
+
+	// Trends: shares change in percentage points.
+	const query = page.url().split('?')[1].replace('compare-display=ranks', 'compare-display=charts');
+	await page.goto(`/tracker/compare?${query}`);
+	await expect(panel.getByTestId('compare-slope')).toBeVisible();
+	await expect(panel.locator('svg text', { hasText: 'pp' }).first()).toBeVisible();
+	// One click sets one slot: A, then B (the line hit area must not report
+	// the click twice).
+	const plot = page
+		.getByRole('group', { name: /Renewables proportion comparison chart/ })
+		.locator('.stratum-chart-area')
+		.first();
+	const box = /** @type {{x: number, y: number, width: number, height: number}} */ (
+		await plot.boundingBox()
+	);
+	const before = { a: url().get('compare-date-a'), b: url().get('compare-date-b') };
+	await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.5);
+	await expect.poll(() => url().get('compare-date-a')).not.toBe(before.a);
+	expect(url().get('compare-date-b')).toBe(before.b);
+	const pickedA = url().get('compare-date-a');
+	await page.mouse.click(box.x + box.width * 0.7, box.y + box.height * 0.5);
+	await expect.poll(() => url().get('compare-date-b')).not.toBe(before.b);
+	expect(url().get('compare-date-a')).toBe(pickedA);
+	expect(String(url().get('compare-date-b')) > String(pickedA)).toBe(true);
+	// Heatmap: colour chips beside the values, the periods outlined on the stripes.
+	await page.goto(
+		`/tracker/compare?${query.replace('compare-display=charts', 'compare-display=heatmap')}`
+	);
+	await expect(panel.getByTestId('compare-row').first()).toBeVisible();
+	await expect(panel.getByTestId('compare-slope')).toHaveCount(0);
+	await expect(renewables.locator('svg text', { hasText: /^A$/ }).first()).toBeVisible();
+	await expectNoHorizontalScroll(page);
+	// Closing the last comparing card drops the dates.
+	const toggle = renewables.getByRole('button', {
+		name: 'Compare Renewables proportion',
+		exact: true
+	});
+	await toggle.click();
+	await expect(panel).toBeHidden();
+	await expect.poll(() => url().has('compare-dates')).toBe(false);
+	// Switching display closes compare mode.
+	await toggle.click();
+	await expect(panel).toBeVisible();
+	await page.getByRole('button', { name: 'Ranks', exact: true }).click();
+	await expect(panel).toBeHidden();
+	await expect.poll(() => url().has('compare-dates')).toBe(false);
 });

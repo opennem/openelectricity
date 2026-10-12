@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	bisectTime,
 	bisectTimeRight,
+	windowRows,
 	indexOfTime,
 	mergeSortedByTime,
 	nearestIndexOfTime
@@ -115,5 +116,15 @@ describe('nearestIndexOfTime', () => {
 	it('handles empty and single-row data', () => {
 		expect(nearestIndexOfTime([], 10)).toBe(-1);
 		expect(nearestIndexOfTime([{ time: 5 }], 999)).toBe(0);
+	});
+});
+
+describe('windowRows', () => {
+	const rows = [{ time: 0 }, { time: 30 }, { time: 60 }, { time: 90 }];
+	it('keeps the rows inside the window and the one straddling its start', () => {
+		expect(windowRows(rows, 40, 90).map((row) => row.time)).toEqual([30, 60, 90]);
+		expect(windowRows(rows, 30, 60).map((row) => row.time)).toEqual([30, 60]);
+		expect(windowRows(rows, -10, 20).map((row) => row.time)).toEqual([0]);
+		expect(windowRows([], 0, 10)).toEqual([]);
 	});
 });

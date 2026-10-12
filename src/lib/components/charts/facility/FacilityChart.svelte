@@ -40,7 +40,7 @@
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportsettle] - Fired once when a pan/zoom gesture comes to rest — parents apply grain switches here
 	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
-	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
+	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
 	 * @property {boolean} [showAnnotations] - Whether to show capacity reference lines (default: false)
 	 * @property {boolean} [showHeader] - Whether to show the chart title/header bar (default: true)
 	 * @property {boolean} [showOptions] - Whether to show the chart options (download, etc) in the header (default: true)
@@ -64,6 +64,10 @@
 	 * @property {number | Array<any> | ((ticks: any[]) => any[])} [yTicks] - Y-axis ticks passed through to AxisY: a count, an explicit array, or a function that thins the scale's default ticks. Omit for the AxisY default (4).
 	 * @property {boolean} [bundleDerivedMetrics] - Fetch via the combined `metric=<metric>,market_value,emissions` URL so this chart shares one request with the financial/emissions providers mounted alongside it. Only enable when those providers are present (the facility detail page); off elsewhere to avoid pulling unused metrics.
 	 * @property {boolean} [prefetchRanges] - Whether to background-prefetch the 7-day power and 1-year energy ranges after the initial load (default: true). Disable for compact consumers (e.g. the unit detail sheet) where the prefetch would duplicate the main page's cache.
+	 * @property {{markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null} [timeMarkers] - A comparison's A / B markers over the plot (the store's `timeMarkers`)
+	 * @property {boolean} [engageOnTap] - Off, a tap on the idle chart picks instead of engaging pan/zoom
+	 * @property {(time: number) => void} [onpick] - When given, a click (or Enter) on the plot reports
+	 *   its time here instead of pinning it — a chart card's compare mode picking A and B
 	 * @property {string[]} [hiddenUnitCodes] - Unit codes whose series are hidden from the chart (e.g. toggled off in the units panel). Mapped to `<metric>_<code>` series ids on the chart store.
 	 */
 
@@ -109,7 +113,10 @@
 		yTicks = undefined,
 		bundleDerivedMetrics = false,
 		prefetchRanges = true,
-		hiddenUnitCodes = []
+		hiddenUnitCodes = [],
+		timeMarkers = null,
+		engageOnTap = true,
+		onpick
 	} = $props();
 
 	// ============================================
@@ -508,7 +515,8 @@
 			callback({
 				data: rows,
 				seriesNames: meta.seriesNames,
-				seriesLabels: meta.seriesLabels
+				seriesLabels: meta.seriesLabels,
+				seriesColours: meta.seriesColours
 			});
 		}, 300);
 
@@ -607,9 +615,21 @@
 	 */
 	function handleFocus(time) {
 		if (isPanning) return;
+		if (onpick) {
+			onpick(time);
+			return;
+		}
 		chartStore?.toggleFocus(time);
 		onfocuschange?.(chartStore?.focusTime);
 	}
+
+	// A comparison's A / B markers (`ChartCard`'s compare mode).
+	$effect(() => {
+		if (!chartStore) return;
+		chartStore.timeMarkers = timeMarkers?.markers ?? [];
+		chartStore.timeMarkerArmed = timeMarkers?.armed ?? null;
+		chartStore.timeMarkerBand = !!timeMarkers?.band;
+	});
 
 	// Sync externally-driven focus time (from peer charts) into the local chart
 	// store. Gated on `onfocuschange` for the same reason as the hover effect above.
@@ -683,6 +703,7 @@
 			{enablePan}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
+			{engageOnTap}
 			viewDomain={null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
 			{resizable}

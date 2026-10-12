@@ -235,6 +235,59 @@ describe('tracker URLs', () => {
 		).toBe('ranks');
 	});
 
+	it('round-trips Timeline compare mode: its cards and their shared A and B', () => {
+		const a = Date.parse('2026-08-01T00:00:00Z');
+		const b = a + 86_400_000;
+		const state = parseTrackerUrl(new URLSearchParams(), context);
+		const url = applyTrackerUrl(new URL('https://example.test/tracker'), {
+			...state,
+			comparison: { cards: ['market', 'generation'], a, b }
+		});
+		expect(url.search).toContain('compare=generation,market');
+		expect(parseTrackerUrl(url.searchParams, context).comparison).toEqual({
+			cards: ['generation', 'market'],
+			a,
+			b
+		});
+		applyTrackerUrl(url, state);
+		for (const key of ['compare', 'compare-a', 'compare-b'])
+			expect(url.searchParams.has(key)).toBe(false);
+	});
+
+	it('opens Generation from the earlier compare=1 links and drops unknown cards', () => {
+		const a = Date.parse('2026-08-01T00:00:00Z');
+		expect(
+			parseTrackerUrl(new URLSearchParams(`compare=1&compare-a=${a}&compare-b=bad`), context)
+				.comparison
+		).toEqual({ cards: ['generation'], a, b: null });
+		expect(parseTrackerUrl(new URLSearchParams('compare=table,mars'), context).comparison).toBe(
+			null
+		);
+	});
+
+	it('round-trips Compare mode on the compare view without touching Timeline’s', () => {
+		const params = new URLSearchParams(
+			'compare-charts=intensity,renewables&compare-dates=renewables,coal&compare-date-a=2010-01&compare-date-b=2025-07'
+		);
+		const parsed = parseTrackerUrl(params, context);
+		expect(parsed.regionComparison.dates).toEqual({
+			cards: ['renewables_share'],
+			a: Date.UTC(2010, 0, 1),
+			b: Date.UTC(2025, 6, 1)
+		});
+		expect(parsed.comparison).toBeNull();
+		const url = applyTrackerUrl(new URL('https://example.test/tracker'), parsed);
+		expect(url.searchParams.get('compare-dates')).toBe('renewables');
+		expect(url.searchParams.get('compare-date-a')).toBe('2010-01');
+		expect(url.searchParams.get('compare-date-b')).toBe('2025-07');
+		expect(url.searchParams.has('compare')).toBe(false);
+		const bad = parseTrackerUrl(
+			new URLSearchParams('compare-dates=intensity&compare-date-a=1990-01&compare-date-b=2025-13'),
+			context
+		);
+		expect(bad.regionComparison.dates).toEqual({ cards: ['intensity'], a: null, b: null });
+	});
+
 	it('writes lists with bare commas, which parse as the encoded form did', () => {
 		const url = applyTrackerUrl(new URL('https://example.test/tracker'), {
 			...parseTrackerUrl(new URLSearchParams(), context),

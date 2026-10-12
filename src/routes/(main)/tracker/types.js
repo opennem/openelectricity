@@ -32,6 +32,18 @@
  */
 
 /**
+ * Timeline's compare mode: the cards showing a comparison panel, in card
+ * order, and the A / B every one of them compares (`chart-compare.js`).
+ * @typedef {{cards: Array<'generation' | 'market' | 'emissions'>, a: number | null, b: number | null}} TimelineComparison
+ */
+
+/** @typedef {import('$lib/components/charts/card/types.js').CompareDeltaMode} CompareDeltaMode */
+
+/** @typedef {import('$lib/components/charts/card/types.js').CompareSeries} CompareSeries */
+
+/** @typedef {import('$lib/components/charts/card/types.js').CompareSource} CompareSource */
+
+/**
  * Navigation state carried by the URL (plus `nowMs`, added by the page load).
  * @typedef {Object} TrackerUrlState
  * @property {string} region
@@ -43,7 +55,8 @@
  * @property {'5m' | '30m'} profileInterval - Profile time-of-day slot length
  * @property {7 | 14 | 28} profileDays
  * @property {string} profileEnd - Last complete local day, or empty for relative yesterday
- * @property {import('./comparison.js').Comparison | null} comparison - Exact displayed interval starts, or null when closed
+ * @property {TimelineComparison | null} comparison - The cards in compare mode and their shared A / B
+ *   (exact displayed interval starts), or null when no card compares
  * @property {string[]} hiddenSeries - Hidden group IDs, validated against the grouping
  * @property {ContributionMode} contributionMode
  * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
@@ -164,35 +177,23 @@
  */
 
 /**
- * The timeline datasets the options menu can export, in menu order.
+ * The timeline's chart and table downloads.
  * @typedef {'generation' | 'market' | 'emissions' | 'table'} ExportDatasetKey
  */
 
-/**
- * One export column. `time` columns hold epoch ms and are formatted per
- * output (network-local text in CSV, a date-time cell in XLSX).
- * @typedef {Object} ExportColumn
- * @property {string} key - Row property
- * @property {string} header - Column header, unit included
- * @property {'time' | 'number' | 'string' | 'boolean'} type
- */
+/** @typedef {import('$lib/components/charts/card/types.js').ExportColumn} ExportColumn */
+
+/** @typedef {import('$lib/components/charts/card/types.js').ExportDataset} ExportDataset */
+
+/** @typedef {import('$lib/components/charts/card/types.js').DownloadState} DownloadState */
+
+/** @typedef {import('$lib/components/charts/card/types.js').DownloadSource} DownloadSource */
 
 /**
- * A tabular dataset ready for either serialiser. Every tracker view exports
- * through this shape — the timeline datasets, the fuel-tech table, the
- * time-of-day profile, the two-date comparison and the region comparison.
- * @typedef {Object} ExportDataset
- * @property {ExportDatasetKey | 'profile' | 'comparison' | 'regions'} key
- * @property {string} title
- * @property {ExportColumn[]} columns
- * @property {Array<Record<string, any>>} rows
- */
-
-/**
- * Everything the exporters need, packaged by the canvas (`getExportContext`)
- * and completed by the page (`sourceUrl`, `generatedAtMs`). Chart snapshots
- * are null until they describe the CURRENT region, grouping and metric — the
- * canvas keeps stale frames for display but never hands them to an export.
+ * Everything Timeline's downloads need, packaged by the canvas
+ * (`exportContext`). Chart snapshots are null until they describe the
+ * CURRENT region, grouping and metric — the canvas keeps stale frames for
+ * display but never hands them to a download.
  * @typedef {Object} TrackerExportContext
  * @property {string} region
  * @property {string} regionLabel
@@ -216,9 +217,13 @@
  * @property {OverlaySummary | null} overlaySummary
  * @property {boolean} tablePanelOpen - The table's providers only fetch while open
  * @property {string[]} hiddenSeries - Group ids toggled off in the charts
- * @property {boolean} pending - Charts are mid-switch; the held frame is stale
- * @property {string} sourceUrl
- * @property {number} generatedAtMs
+ * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
+ * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} marketValueTransform
+ * @property {Array<{id: string, label: string, data: Array<Record<string, any>>, valueKey: string, scale?: string}>} overlayLines
+ *   - Lines drawn over the generation stack (demand, renewables share)
+ * @property {Array<{data: Array<Record<string, any>>, series: Array<{id: string, label: string}>}>} overlayAreas
+ *   - Bands drawn over the generation stack (curtailment)
+ * @property {boolean} rooftopForecast - The rooftop forecast top-up is drawn
  */
 
 /**

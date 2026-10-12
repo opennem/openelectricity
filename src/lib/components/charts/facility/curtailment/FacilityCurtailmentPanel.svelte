@@ -20,11 +20,15 @@
 	 * `reconcileFetches`. The page lists it in the controller's `charts`, which
 	 * owns the echo suppression for every chart at once; gestures here report
 	 * back through `onviewportchange` / `onviewportsettle`.
+	 *
+	 * The panel is a `ChartCard` like its siblings: the page hands it the
+	 * card's `download` and `compare`, the comparison's `timeMarkers` and
+	 * `onpick` (a click picks A / B instead of pinning), and reads what it draws
+	 * through `onvisibledata`.
 	 */
 
-	import { Info } from '@lucide/svelte';
 	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
 	import { curtailmentMetric } from '$lib/components/charts/network/market-metrics.js';
 	import {
 		facilityCurtailmentScope,
@@ -41,8 +45,11 @@
 	 * @property {string} displayInterval - Display interval for aggregation
 	 * @property {number} viewStart
 	 * @property {number} viewEnd
-	 * @property {string} [cardClass] - Section card chrome from the page
-	 * @property {string} [chartHeight]
+	 * @property {import('svelte').ComponentProps<typeof ChartCard>['download']} [download]
+	 * @property {import('svelte').ComponentProps<typeof ChartCard>['compare']} [compare]
+	 * @property {{markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null} [timeMarkers]
+	 * @property {(time: number) => void} [onpick]
+	 * @property {(snapshot: import('$lib/components/charts/card/types.js').ChartSnapshot) => void} [onvisibledata]
 	 * @property {number | undefined} [hoverTime]
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
@@ -61,8 +68,11 @@
 		displayInterval,
 		viewStart,
 		viewEnd,
-		cardClass = '',
-		chartHeight = 'h-[160px]',
+		download,
+		compare,
+		timeMarkers = null,
+		onpick,
+		onvisibledata,
 		hoverTime = undefined,
 		onhoverchange,
 		onviewportchange,
@@ -92,47 +102,42 @@
 </script>
 
 {#if scope}
-	<!-- `pb-3` stands in for the 12px resize-handle strip that closes out every
-	     sibling chart card (Generation, Market, Emissions). This chart is a fixed
-	     compact context strip, so it has no handle — without the padding its axis
-	     would sit flush against the card edge. -->
-	<section class="{cardClass} pb-3">
-		<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
-			<h3 class="m-0 text-sm font-semibold text-dark-grey">
-				<Tooltip
-					text={scope.note}
-					learnMoreHref={CURTAILMENT_DOCS_HREF}
-					class="inline-flex cursor-help items-center gap-1"
-				>
-					{scope.label}
-					<Info class="size-4.5 text-mid-grey" />
-				</Tooltip>
-			</h3>
-			<span class="px-2 py-0.5 rounded bg-dark-grey text-white text-xs">
-				{scope.regionName}
-			</span>
-		</div>
-
-		{#if viewStart && viewEnd}
-			<NetworkChart
-				bind:this={chart}
-				region={scope.region}
-				metric={curtailmentMetric(scope.kind, basis)}
-				{interval}
-				{displayInterval}
-				{timeZone}
-				title="Curtailment"
-				{chartHeight}
-				showContainer={false}
-				tooltipMode="floating"
-				{hoverTime}
-				{hiddenSeriesNames}
-				{onhoverchange}
-				{onviewportchange}
-				{onviewportsettle}
-				panZoomMode="tap-to-engage"
-				bind:panZoomEngaged
-			/>
-		{/if}
-	</section>
+	<ChartCard
+		title={scope.label}
+		info={{ text: scope.note, href: CURTAILMENT_DOCS_HREF }}
+		badge={scope.regionName}
+		engaged={panZoomEngaged}
+		heightStorageKey="facility-chart-height-curtailment"
+		defaultHeightPx={160}
+		{download}
+		{compare}
+	>
+		{#snippet children(heightPx)}
+			{#if viewStart && viewEnd}
+				<NetworkChart
+					bind:this={chart}
+					region={scope.region}
+					metric={curtailmentMetric(scope.kind, basis)}
+					{interval}
+					{displayInterval}
+					{timeZone}
+					title="Curtailment"
+					chartHeightPx={heightPx}
+					showContainer={false}
+					tooltipMode="floating"
+					{hoverTime}
+					{hiddenSeriesNames}
+					{onhoverchange}
+					{onviewportchange}
+					{onviewportsettle}
+					{onvisibledata}
+					{timeMarkers}
+					engageOnTap={!onpick}
+					onfocuschange={onpick && ((time) => time !== undefined && onpick(time))}
+					panZoomMode="tap-to-engage"
+					bind:panZoomEngaged
+				/>
+			{/if}
+		{/snippet}
+	</ChartCard>
 {/if}

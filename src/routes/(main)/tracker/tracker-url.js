@@ -31,6 +31,9 @@
  * - `table`     — `0` when the fuel-tech panel is closed
  * - `forecast`  — `0` hides the rooftop solar forecast (shown by default)
  * - `fullscreen`— `false` opts out of the fullscreen chrome
+ * - `compare`   — Timeline cards in compare mode (`generation,market,emissions`;
+ *                 `1`, the earlier spelling, opens Generation), with
+ *                 `compare-a` / `compare-b` the shared A and B (epoch ms)
  * - `compare-*` — Compare (`/tracker/compare`) controls, see
  *                 `region-comparison.js`: `compare-display=heatmap` for the
  *                 heatmap display, `compare-interval` (Timeline's All-range
@@ -38,7 +41,9 @@
  *                 (a calendar period of the grain), `compare-regions` (short names: `nsw`,
  *                 `wem`, `nem`, `au`…), `compare-charts` (hyphenated names:
  *                 `renewables`, `solar-generation`, `price-real`…),
- *                 `compare-basis`, `compare-start`/`compare-end`, `compare-table`
+ *                 `compare-basis`, `compare-start`/`compare-end`, `compare-table`,
+ *                 `compare-dates` (cards in compare mode) with
+ *                 `compare-date-a` / `compare-date-b` (`YYYY-MM`)
  *
  * Lists are comma-separated and written with bare commas (`readableQuery`).
  */
@@ -66,14 +71,15 @@ import {
 	normaliseProfileStyle
 } from './time-of-day.js';
 import { hasSpotPrice, TRACKER_REGION_VALUES } from './tracker-regions.js';
-import { normaliseComparison } from './comparison.js';
+import { normaliseCardComparison } from '$lib/components/charts/card/compare/chart-compare.js';
 import {
 	DEFAULT_GROUP,
 	DEFAULT_RANGE_DAYS,
 	DEFAULT_REGION,
 	isAllTierRange,
 	normaliseEmissionsMode,
-	normaliseRange
+	normaliseRange,
+	TIMELINE_COMPARE_CARDS
 } from './tracker-model.js';
 
 /** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
@@ -168,7 +174,7 @@ export function normaliseTrackerState(value) {
 		profileToday: value.profileToday === true || value.profileToday === '1',
 		profileDays: normaliseProfileDays(value.profileDays),
 		profileEnd: normaliseProfileEnd(value.profileEnd),
-		comparison: normaliseComparison(value.comparison),
+		comparison: normaliseCardComparison(value.comparison, TIMELINE_COMPARE_CARDS),
 		hiddenSeries: normaliseHiddenSeries(value.hiddenSeries, group),
 		contributionMode: normaliseContributionMode(value.contributionMode),
 		generationTransform: normaliseDataTransform(value.generationTransform),
@@ -203,10 +209,14 @@ export function parseTrackerUrl(params, context) {
 		profileToday: params.get('profile-today'),
 		profileDays: params.get('profile-days'),
 		profileEnd: params.get('profile-end'),
-		comparison:
-			params.get('compare') === '1'
-				? { a: params.get('compare-a'), b: params.get('compare-b') }
-				: null,
+		comparison: params.has('compare')
+			? {
+					// `1` is the Generation-only comparison's earlier spelling.
+					cards: params.get('compare') === '1' ? ['generation'] : params.get('compare')?.split(','),
+					a: params.get('compare-a'),
+					b: params.get('compare-b')
+				}
+			: null,
 		hiddenSeries: (params.get('hidden') ?? '').split(','),
 		contributionMode: params.get('contribution'),
 		generationTransform: params.get('transform'),
@@ -235,7 +245,7 @@ export function applyTrackerUrl(url, state) {
 	/** @param {string} key @param {string | null} value */
 	const set = (key, value) => (value ? params.set(key, value) : params.delete(key));
 
-	set('compare', next.comparison ? '1' : null);
+	set('compare', next.comparison ? next.comparison.cards.join(',') : null);
 	for (const side of /** @type {const} */ (['a', 'b'])) {
 		const time = next.comparison?.[side];
 		set(`compare-${side}`, time == null ? null : String(time));
@@ -293,7 +303,7 @@ export function applyTrackerUrl(url, state) {
 /**
  * The query as written to the address bar. Form encoding escapes every comma,
  * but a comma is a legal query character, so lists (`hidden`, `overlay`,
- * `compare-regions`, `compare-charts`) read `nsw,qld,vic`, not `nsw%2Cqld%2Cvic`.
+ * `compare-regions`, `compare-charts`, `compare`, `compare-dates`) read `nsw,qld,vic`, not `nsw%2Cqld%2Cvic`.
  * Parsing decodes both spellings alike.
  * @param {URLSearchParams} params
  */

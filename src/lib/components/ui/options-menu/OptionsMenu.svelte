@@ -42,6 +42,13 @@
 		isOpen = false;
 	}
 
+	/** Close after an item is chosen. Focus returns to the trigger, as a menu
+	 * button's does, so a dialog the item opens restores focus there on close. */
+	function closeFromItem() {
+		close();
+		triggerRef?.focus();
+	}
+
 	/** @param {MouseEvent} e */
 	function handleDocumentClick(e) {
 		const target = /** @type {Node} */ (e.target);
@@ -78,7 +85,7 @@
 			role="menu"
 		>
 			{#if sections}
-				{@render sections({ close })}
+				{@render sections({ close: closeFromItem })}
 			{/if}
 
 			{#if onfullscreenchange}
@@ -87,7 +94,7 @@
 					kbd="F"
 					onclick={() => {
 						onfullscreenchange?.();
-						close();
+						closeFromItem();
 					}}
 				>
 					{isFullscreen ? 'Exit full screen' : 'Enter full screen'}
@@ -100,7 +107,7 @@
 					kbd="?"
 					onclick={() => {
 						onshowshortcuts?.();
-						close();
+						closeFromItem();
 					}}
 				>
 					Keyboard shortcuts

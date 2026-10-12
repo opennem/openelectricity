@@ -28,7 +28,8 @@
 	 *   tooltip: boolean, hover: number | null, focus: number | null, hoverRegion: string | null,
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
 	 *   onhoverregion: (region: string | null) => void,
-	 *   onviewport: (start: number, end: number, settled: boolean) => void}} */
+	 *   onviewport: (start: number, end: number, settled: boolean) => void,
+	 *   timeMarkers?: {markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null}} */
 	let {
 		data,
 		regions,
@@ -45,7 +46,8 @@
 		onhover,
 		onfocus,
 		onhoverregion,
-		onviewport
+		onviewport,
+		timeMarkers = null
 	} = $props();
 
 	const inspectionHintId = $props.id();
@@ -133,6 +135,7 @@
 				{onhover}
 				{onfocus}
 				{onhoverregion}
+				{timeMarkers}
 			/>
 		{/each}
 		{#if tooltip && inspected != null}

@@ -29,7 +29,8 @@
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import FeedbackIconButton from '$lib/components/feedback/FeedbackIconButton.svelte';
-	import { ArrowLeft } from '@lucide/svelte';
+	import { ArrowLeft, Download } from '@lucide/svelte';
+	import { OptionsMenuDivider, OptionsMenuItem } from '$lib/components/ui/options-menu';
 	import { backToFacilities } from './_utils/back-navigation.js';
 
 	/**
@@ -61,17 +62,17 @@
 	let regionLabel = $derived(regionDef?.longLabel ?? '');
 	let regionShortLabel = $derived(regionDef?.label ?? '');
 
-	/** Chart CSV exports registered by the facility page — the chart data lives
-	 *  in the page, but the options menus that surface the downloads (desktop
-	 *  picker bar + mobile floating kebab) are layout chrome, so the page pushes
-	 *  its entries up through this context handle (same shape as the
+	/** The facility page's "Download data" dialog — the charts and their
+	 *  downloads live in the page, but the options menus that open it (desktop
+	 *  picker bar + mobile floating kebab) are layout chrome, so the page hands
+	 *  its opener up through this context handle (same shape as the
 	 *  `layout-fullscreen` precedent in the main layout). */
-	/** @type {{ items: Array<{ key: string, label: string }>, download: (key: string) => void } | null} */
-	let chartDownloads = $state(null);
+	/** @type {(() => void) | null} */
+	let openChartDownloads = $state(null);
 	setContext('facility-chart-downloads', {
-		/** @param {{ items: Array<{ key: string, label: string }>, download: (key: string) => void }} value */
-		set: (value) => (chartDownloads = value),
-		clear: () => (chartDownloads = null)
+		/** @param {() => void} open */
+		set: (open) => (openChartDownloads = open),
+		clear: () => (openChartDownloads = null)
 	});
 
 	let showShortcutsToast = $state(false);
@@ -208,8 +209,7 @@
 				onfullscreenchange={toggleFullscreen}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onsearchfacilities={openLeftPanelAndFocus}
-				downloadItems={chartDownloads?.items ?? []}
-				ondownloaditem={(key) => chartDownloads?.download(key)}
+				ondownloaddata={openChartDownloads ?? undefined}
 				showCopyLink
 				searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
 			/>
@@ -264,13 +264,24 @@
 						<PageOptionsMenu
 							onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 							onsearchfacilities={openLeftPanelAndFocus}
-							downloadItems={chartDownloads?.items ?? []}
-							ondownloaditem={(key) => chartDownloads?.download(key)}
 							showCopyLink
 							searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
 							triggerClass="{floatingCircleClass} cursor-pointer"
 							iconClass="size-6 text-white"
-						/>
+						>
+							{#snippet extraSections({ close })}
+								{#if openChartDownloads}
+									<OptionsMenuItem
+										icon={Download}
+										onclick={() => {
+											close();
+											openChartDownloads?.();
+										}}>Download data</OptionsMenuItem
+									>
+									<OptionsMenuDivider />
+								{/if}
+							{/snippet}
+						</PageOptionsMenu>
 					</div>
 					{@render children()}
 					{#if navigating.to && navigating.to.url.pathname.startsWith('/facility/') && navigating.to.url.pathname !== navigating.from?.url.pathname}

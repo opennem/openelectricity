@@ -44,15 +44,38 @@
 		CHARTS_FRACTION_MAX
 	} from './_utils/charts-fraction.js';
 	import { sectionCardClass } from '$lib/components/charts/v2/section-card.js';
+	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
+	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
+	import DownloadDataModal from '$lib/components/charts/card/DownloadDataModal.svelte';
+	import ComparePanel from '$lib/components/charts/card/compare/ComparePanel.svelte';
+	import {
+		createChartDownloads,
+		setChartDownloads
+	} from '$lib/components/charts/card/chart-downloads.svelte.js';
+	import {
+		compareTimeMarkers,
+		defaultComparePair,
+		pickCompareTime,
+		toggleCompareCard
+	} from '$lib/components/charts/card/compare/chart-compare.js';
+	import { compareBuckets } from '$lib/components/charts/card/compare/snapshot-sources.js';
+	import { createComparePins } from '$lib/components/charts/card/compare/compare-pins.svelte.js';
+	import {
+		FACILITY_CARDS,
+		FACILITY_CARD_TITLES,
+		facilityCardDataset,
+		facilityCardState,
+		facilityCompareSource,
+		facilityFileName,
+		facilitySummaryRows
+	} from '$lib/components/charts/facility/facility-cards.js';
+	import { unitSeriesIds } from '$lib/components/charts/facility/unit-analysis.js';
+	import { hiddenCurtailmentSeries } from '$lib/components/charts/facility/curtailment/scope.js';
 	import {
 		parseRangeParams,
 		applyRangeParams,
 		rangeSlugFor
 	} from '$lib/components/charts/facility/range-params.js';
-	import {
-		chartDownloadItems,
-		downloadChartCsv
-	} from '$lib/components/charts/facility/facility-csv.js';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -107,6 +130,8 @@
 	/** @param {string} mode */
 	function setBatteryMode(mode) {
 		if (mode === batteryMode) return;
+		// Another unit set: a comparison's units no longer match.
+		closeCompare();
 		batteryMode = /** @type {'net' | 'split'} */ (mode);
 		// Unit codes differ between the net and split sets.
 		hiddenUnitCodes = defaultHiddenUnitCodes(activeFacility?.units);
@@ -133,8 +158,15 @@
 	let summaryData = $state.raw(null);
 	/** @type {{ rows: any[], seriesNames: string[] } | null} */
 	let emissionsData = $state.raw(null);
-	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
+	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string>, seriesColours: Record<string, string> } | null} */
 	let intervalData = $state.raw(null);
+	/** What the Curtailment, Market and Emissions charts draw (whichever of a
+	 *  pair shows): their cards' downloads and comparisons read them, as
+	 *  Generation's read `intervalData`.
+	 *  @typedef {import('$lib/components/charts/card/types.js').ChartSnapshot} ChartSnapshot */
+	let curtailmentSnapshot = $state.raw(/** @type {ChartSnapshot | null} */ (null));
+	let marketSnapshot = $state.raw(/** @type {ChartSnapshot | null} */ (null));
+	let emissionsSnapshot = $state.raw(/** @type {ChartSnapshot | null} */ (null));
 
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let powerChart = $state(undefined);
@@ -188,14 +220,6 @@
 	 *  +/- zoom buttons) engages and releases them together. */
 	let panZoomEngaged = $state(false);
 
-	/** Chart section cards pick up a darker border while pan/zoom is engaged, so
-	 *  the mode is visible at every chart in the stack — not just at the toggle.
-	 *  `!` so the engaged colour reliably beats sectionCardClass's own
-	 *  border-mid-warm-grey/40 (class order doesn't decide CSS conflicts). */
-	let chartCardClass = $derived(
-		`${sectionCardClass} transition-[border-color] duration-200${panZoomEngaged ? ' !border-dark-grey' : ''}`
-	);
-
 	/** Which chart of the Market pair to show. Default: price (the derived
 	 *  $/MWh line — what most viewers come to a facility page for). */
 	/** @type {'price' | 'mv'} */
@@ -232,31 +256,207 @@
 
 	let rangeSlug = $derived(rangeSlugFor(range));
 
-	/** The chart CSV downloads surface in the header nav's options menus (desktop
-	 *  picker bar + mobile floating kebab). The layout owns those menus but the
-	 *  chart data lives here, so the page registers its entries through the
-	 *  layout's context handle. */
-	const chartDownloads = getContext('facility-chart-downloads');
+	let intervalLabel = $derived(
+		getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval
+	);
 
-	/** @param {string} key */
-	function handleChartDownload(key) {
-		downloadChartCsv(key, {
-			intervalData,
-			summaryData,
-			emissionsData,
-			facility: activeFacility,
-			metric: range.activeMetric,
-			timeZone,
-			fileCode: selectedFacility?.code,
-			rangeSlug
-		});
+	// ---- Chart cards: downloads and compare mode ----
+
+	/** @typedef {import('$lib/components/charts/facility/facility-cards.js').FacilityCard} FacilityCard */
+	/** What each card's chart draws. @param {FacilityCard} card */
+	function snapshotOf(card) {
+		if (card === 'generation') return intervalData;
+		if (card === 'curtailment') return curtailmentSnapshot;
+		return card === 'market' ? marketSnapshot : emissionsSnapshot;
+	}
+	/** A card's selection: the basis, its tab and the series the units panel hides.
+	 * @param {FacilityCard} card
+	 * @returns {import('$lib/components/charts/facility/facility-cards.js').FacilityCardView} */
+	function cardView(card) {
+		const metric =
+			card === 'generation'
+				? range.activeMetric
+				: card === 'market'
+					? 'market_value'
+					: card === 'emissions'
+						? 'emissions'
+						: '';
+		const loads = (activeFacility?.units ?? [])
+			.filter((/** @type {any} */ unit) => unit.dispatch_type === 'LOAD')
+			.map((/** @type {any} */ unit) => unit.code);
+		return {
+			basis: range.activeMetric,
+			marketTab: activeMarketTab,
+			emissionsTab: activeEmissionsTab,
+			hidden:
+				card === 'curtailment'
+					? hiddenCurtailmentSeries(selectedFacility, hiddenUnitCodes)
+					: unitSeriesIds(metric, hiddenUnitCodes),
+			loadIds: unitSeriesIds(metric, loads)
+		};
 	}
 
+	/** The page's "Download data" dialog lists every card while mounted
+	 *  (`chart-downloads.svelte.js`); the header's options menus open it. The
+	 *  layout owns those menus, so the page hands it the opener through context. */
+	const downloads = setChartDownloads(
+		createChartDownloads({
+			timeZone: () => timeZone,
+			fileName: (id, extension) =>
+				facilityFileName(selectedFacility?.code ?? '', rangeSlug, id, extension),
+			summary: () =>
+				facilitySummaryRows({
+					facility: selectedFacility,
+					rangeLabel: dateRangeLabel,
+					intervalLabel,
+					timeZone
+				}),
+			sourceUrl: () => window.location.href
+		})
+	);
+	const chartDownloads = getContext('facility-chart-downloads');
 	$effect(() => {
-		const items = chartDownloadItems({ showEmissions: hasEmittingUnits });
-		chartDownloads?.set({ items, download: handleChartDownload });
+		chartDownloads?.set(() => (downloads.open = true));
 		return () => chartDownloads?.clear();
 	});
+	/** A card's download: its chart's data as drawn. @param {FacilityCard} card */
+	function cardDownload(card) {
+		return {
+			// The card's key names its download and file (`<code>-<key>-<range>.csv`).
+			id: card,
+			get state() {
+				return facilityCardState(card, snapshotOf(card), cardView(card));
+			},
+			dataset: () => facilityCardDataset(card, snapshotOf(card), cardView(card))
+		};
+	}
+
+	// Any card can compare two of its buckets; the comparing cards share one
+	// A and B, drawn as markers on each, and a click on a comparing chart sets
+	// the armed slot instead of pinning a time. Choosing another range,
+	// interval, tab, battery view or facility closes it.
+	let comparison = $state.raw(
+		/** @type {{cards: FacilityCard[], a: number | null, b: number | null} | null} */ (null)
+	);
+	let comparePair = $derived.by(() => {
+		if (!comparison) return { a: null, b: null };
+		if (comparison.a !== null || comparison.b !== null) return { a: comparison.a, b: comparison.b };
+		// Opened before its chart reported: the first and last buckets once it does.
+		const times = compareBuckets(snapshotOf(comparison.cards[0])).map((row) => row.time);
+		return defaultComparePair(times);
+	});
+	/** Which slot the next click on a comparing chart sets. */
+	let armed = $state(
+		/** @type {import('$lib/components/charts/card/compare/chart-compare.js').CompareSlot} */ ('a')
+	);
+	let compareMarkers = $derived(compareTimeMarkers(comparePair, armed));
+	/** Rows a chart drew at A or B, held while it pans (and its series stay the same). */
+	const comparePins = Object.fromEntries(
+		FACILITY_CARDS.map((card) => [
+			card,
+			createComparePins({
+				identity: () =>
+					[
+						selectedFacility?.code,
+						batteryMode,
+						range.activeMetric,
+						range.activeInterval,
+						range.displayInterval,
+						card === 'market' ? activeMarketTab : card === 'emissions' ? activeEmissionsTab : ''
+					].join('|'),
+				snapshot: () => snapshotOf(card),
+				pair: () => comparePair
+			})
+		])
+	);
+	function closeCompare() {
+		comparison = null;
+	}
+	/** @param {FacilityCard} card @param {boolean} open */
+	function setCompareOpen(card, open) {
+		if (open && !comparison) armed = 'a';
+		const times = compareBuckets(snapshotOf(card)).map((row) => row.time);
+		comparison = toggleCompareCard(comparison, card, open, defaultComparePair(times));
+	}
+	/** @param {import('$lib/components/charts/card/compare/chart-compare.js').ComparePair} pair */
+	function changeComparePair(pair) {
+		if (comparison) comparison = { ...comparison, ...pair };
+	}
+	/** A click (or Enter) on a comparing chart. @param {number} time */
+	function pickCompare(time) {
+		const next = pickCompareTime(comparePair, armed, time);
+		armed = next.armed;
+		changeComparePair(next.pair);
+	}
+	/** Pan and zoom the charts to show A and B, keeping the span when it fits. */
+	function revealCompare() {
+		const times = [comparePair.a, comparePair.b].filter((time) => time !== null);
+		if (!times.length) return;
+		const low = Math.min(...times);
+		const high = Math.max(...times);
+		const span = Math.max(viewEnd - viewStart, (high - low) * 1.2);
+		const centre = (low + high) / 2;
+		const next = { start: centre - span / 2, end: centre + span / 2 };
+		viewport.change(next);
+		viewport.settle(next);
+	}
+	/** @param {FacilityCard} card */
+	const comparing = (card) => !!comparison?.cards.includes(card);
+	/** The chart props a comparing card swaps in. @param {FacilityCard} card */
+	function compareChartProps(card) {
+		return comparing(card)
+			? { timeMarkers: compareMarkers, engageOnTap: false, onpick: pickCompare }
+			: { timeMarkers: null, engageOnTap: true, onpick: undefined };
+	}
+	let compareFormatTime = $derived(
+		getTimeFormatPolicy(range.displayInterval, ianaTimeZone).formatTooltip
+	);
+	/** `<code>-<card>-comparison-<a>-to-<b>.csv` @param {FacilityCard} card */
+	function compareFileName(card) {
+		const day = (/** @type {number | null} */ time) => toNetworkDateString(time ?? 0, timeZone);
+		return facilityFileName(
+			selectedFacility?.code ?? '',
+			`${day(comparePair.a)}-to-${day(comparePair.b)}`,
+			`${card}-comparison`,
+			'csv'
+		);
+	}
+	/** The grain the charts draw at. A pan or zoom can switch it (5 min → 30
+	 *  min, power → energy), leaving a comparison's A and B on buckets the
+	 *  charts no longer draw, so that closes compare mode. */
+	const grainOf = () => `${range.activeMetric}|${range.activeInterval}|${range.displayInterval}`;
+	/** @param {() => void} change */
+	function keepingGrain(change) {
+		const before = grainOf();
+		change();
+		if (comparison && grainOf() !== before) closeCompare();
+	}
+	/** The charts' viewport changes and settles, through the grain check. */
+	const viewport = {
+		/** @param {{start: number, end: number}} next @param {any} [source] */
+		change: (next, source = null) =>
+			keepingGrain(() => range.handleDerivedViewportChange(next, source)),
+		/** @param {{start: number, end: number}} next */
+		settle: (next) => keepingGrain(() => range.handleViewportSettle(next))
+	};
+	/** The chart range bar's picks close compare mode first. */
+	const rangeBar = {
+		/** @param {number} days */
+		select: (days) => {
+			closeCompare();
+			range.handleRangeSelect(days);
+		},
+		/** @param {any} dates */
+		dates: (dates) => {
+			closeCompare();
+			range.handleDateRangeChange(dates);
+		},
+		/** @param {string} value */
+		interval: (value) => {
+			closeCompare();
+			range.handleIntervalChange(value);
+		}
+	};
 
 	/** @type {HTMLElement | undefined} */
 	let splitContainerEl = $state(undefined);
@@ -361,6 +561,10 @@
 		summaryData = null;
 		emissionsData = null;
 		intervalData = null;
+		curtailmentSnapshot = null;
+		marketSnapshot = null;
+		emissionsSnapshot = null;
+		comparison = null;
 		// Battery view + unit toggles are per-facility state. A ?unit= deep link
 		// naming a derived split unit opens in split view (it only exists there).
 		batteryMode = untrack(() => {
@@ -462,6 +666,34 @@
 	jsonLd={data.schemaJsonLd}
 />
 
+{#snippet comparePanel(/** @type {FacilityCard} */ card)}
+	<ComparePanel
+		source={facilityCompareSource(card, snapshotOf(card), {
+			...cardView(card),
+			held: comparePins[card].rows,
+			formatTime: compareFormatTime,
+			facilityCode: selectedFacility?.code ?? '',
+			zone: timeZone,
+			interval: range.displayInterval
+		})}
+		pair={comparePair}
+		{armed}
+		pending={!snapshotOf(card)}
+		id="{card}-comparison"
+		label="{FACILITY_CARD_TITLES[card]} comparison"
+		fileName={() => compareFileName(card)}
+		onarm={(slot) => (armed = slot)}
+		onchange={changeComparePair}
+		onreveal={revealCompare}
+	/>
+{/snippet}
+{#snippet generationCompare()}{@render comparePanel('generation')}{/snippet}
+{#snippet curtailmentCompare()}{@render comparePanel('curtailment')}{/snippet}
+{#snippet marketCompare()}{@render comparePanel('market')}{/snippet}
+{#snippet emissionsCompare()}{@render comparePanel('emissions')}{/snippet}
+
+<DownloadDataModal {downloads} />
+
 <!-- Morph target — pairs with the /facilities detail panel
      (view-transition-name: facility-hero) so the whole panel expands into the
      full page on navigation. -->
@@ -531,9 +763,9 @@
 									showIntervalDropdown={true}
 									variant="expanded"
 									pending={range.rangeSwitchPending}
-									onrangeselect={range.handleRangeSelect}
-									ondaterangechange={range.handleDateRangeChange}
-									onintervalchange={range.handleIntervalChange}
+									onrangeselect={rangeBar.select}
+									ondaterangechange={rangeBar.dates}
+									onintervalchange={rangeBar.interval}
 								/>
 							</div>
 							<div class="border-t border-mid-warm-grey/40">
@@ -558,76 +790,87 @@
 							use:clickoutside={{ event: 'pointerdown', options: true }}
 							onclickoutside={() => (panZoomEngaged = false)}
 						>
-							<!-- Generation -->
-							<section class={chartCardClass}>
-								<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
-									<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
-									<span class="rounded bg-light-warm-grey px-2 py-0.5 text-xs text-dark-grey">
-										{getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval}
-									</span>
-								</div>
-								<!-- Chart stays mounted while loading so it self-fetches; it fades
+							<ChartCard
+								title="Generation"
+								badge={intervalLabel}
+								engaged={panZoomEngaged}
+								heightStorageKey="facility-chart-height-generation"
+								defaultHeightPx={267}
+								minHeightPx={160}
+								maxHeightPx={700}
+								download={cardDownload('generation')}
+								compare={{
+									open: comparing('generation'),
+									onopenchange: (open) => setCompareOpen('generation', open),
+									panel: generationCompare
+								}}
+							>
+								{#snippet children(heightPx)}
+									<!-- Chart stays mounted while loading so it self-fetches; it fades
 									     in once data arrives, with a skeleton overlaid until then. -->
-								<div class="relative">
-									<div
-										class="transition-opacity duration-500 ease-out {chartReady
-											? 'opacity-100'
-											: 'opacity-0'}"
-									>
-										<FacilityChart
-											bind:this={powerChart}
-											facility={activeFacility}
-											powerData={data.powerData}
-											{timeZone}
-											{dateStart}
-											{dateEnd}
-											interval={range.activeInterval}
-											metric={range.activeMetric}
-											displayInterval={range.displayInterval}
-											chartHeight="h-[267px]"
-											title={range.activeMetric === 'energy' ? 'Energy' : 'Power'}
-											tooltipMode="floating"
-											showContainer={false}
-											{hoverTime}
-											onhoverchange={handleHoverChange}
-											onviewportchange={(r) => range.handleDerivedViewportChange(r, powerChart)}
-											onviewportsettle={range.handleViewportSettle}
-											onloadcomplete={handlePowerLoadComplete}
-											onvisibledata={(d) => {
-												intervalData = d;
-												range.settle();
-											}}
-											panZoomMode="tap-to-engage"
-											bind:panZoomEngaged
-											bundleDerivedMetrics
-											{hiddenUnitCodes}
-										/>
-									</div>
-									{#if showEmptyState}
+									<div class="relative">
 										<div
-											class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center pointer-events-none"
+											class="transition-opacity duration-500 ease-out {chartReady
+												? 'opacity-100'
+												: 'opacity-0'}"
 										>
-											<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
-												<LineChart size={24} strokeWidth={1.5} />
+											<FacilityChart
+												bind:this={powerChart}
+												facility={activeFacility}
+												powerData={data.powerData}
+												{timeZone}
+												{dateStart}
+												{dateEnd}
+												interval={range.activeInterval}
+												metric={range.activeMetric}
+												displayInterval={range.displayInterval}
+												chartHeightPx={heightPx}
+												resizable={false}
+												title={range.activeMetric === 'energy' ? 'Energy' : 'Power'}
+												tooltipMode="floating"
+												showContainer={false}
+												{hoverTime}
+												onhoverchange={handleHoverChange}
+												onviewportchange={(r) => viewport.change(r, powerChart)}
+												onviewportsettle={viewport.settle}
+												onloadcomplete={handlePowerLoadComplete}
+												onvisibledata={(d) => {
+													intervalData = d;
+													range.settle();
+												}}
+												panZoomMode="tap-to-engage"
+												bind:panZoomEngaged
+												bundleDerivedMetrics
+												{hiddenUnitCodes}
+												{...compareChartProps('generation')}
+											/>
+										</div>
+										{#if showEmptyState}
+											<div
+												class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center pointer-events-none"
+											>
+												<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
+													<LineChart size={24} strokeWidth={1.5} />
+												</div>
+												<p class="m-0 text-sm font-medium text-dark-grey">No data available</p>
 											</div>
-											<p class="m-0 text-sm font-medium text-dark-grey">No data available</p>
-										</div>
-									{:else if !chartReady}
-										<div
-											class="absolute inset-0 flex items-end gap-1.5 px-6 pb-6 pt-8 pointer-events-none"
-											out:fade={{ duration: 300 }}
-											aria-hidden="true"
-										>
-											{#each SKELETON_BARS as h, i (i)}
-												<div
-													class="flex-1 rounded-t bg-light-warm-grey animate-pulse"
-													style="height: {h}%"
-												></div>
-											{/each}
-										</div>
-									{/if}
-								</div>
-							</section>
+										{:else if !chartReady}
+											<div
+												class="absolute inset-0 flex items-end gap-1.5 px-6 pb-6 pt-8 pointer-events-none"
+												out:fade={{ duration: 300 }}
+												aria-hidden="true"
+											>
+												{#each SKELETON_BARS as h, i (i)}
+													<div
+														class="flex-1 rounded-t bg-light-warm-grey animate-pulse"
+														style="height: {h}%"
+													></div>
+												{/each}
+											</div>
+										{/if}
+									</div>
+								{/snippet}
+							</ChartCard>
 
 							{#if !showEmptyState}
 								<!-- Regional curtailment for this facility's fuel tech — directly
@@ -643,12 +886,20 @@
 									displayInterval={range.displayInterval}
 									{viewStart}
 									{viewEnd}
-									cardClass={chartCardClass}
+									download={cardDownload('curtailment')}
+									compare={{
+										open: comparing('curtailment'),
+										onopenchange: (open) => setCompareOpen('curtailment', open),
+										panel: curtailmentCompare
+									}}
+									timeMarkers={comparing('curtailment') ? compareMarkers : null}
+									onpick={comparing('curtailment') ? pickCompare : undefined}
+									onvisibledata={(snapshot) => (curtailmentSnapshot = snapshot)}
 									{hoverTime}
 									{hiddenUnitCodes}
 									onhoverchange={handleHoverChange}
-									onviewportchange={(r) => range.handleDerivedViewportChange(r, curtailmentPanel)}
-									onviewportsettle={range.handleViewportSettle}
+									onviewportchange={(r) => viewport.change(r, curtailmentPanel)}
+									onviewportsettle={viewport.settle}
 									bind:panZoomEngaged
 								/>
 
@@ -664,38 +915,65 @@
 									{hiddenUnitCodes}
 									onhoverchange={handleHoverChange}
 									onsummarydata={(d) => (summaryData = d)}
-									onviewportchange={range.handleDerivedViewportChange}
-									onviewportsettle={range.handleViewportSettle}
+									onviewportchange={viewport.change}
+									onviewportsettle={viewport.settle}
 									reconcileSeq={range.reconcileSeq}
 								>
-									<section class={chartCardClass}>
-										<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
-											<h3 class="m-0 text-sm font-semibold text-dark-grey">Market</h3>
+									<ChartCard
+										title="Market"
+										engaged={panZoomEngaged}
+										heightStorageKey="facility-chart-height-market"
+										defaultHeightPx={267}
+										minHeightPx={120}
+										maxHeightPx={700}
+										download={cardDownload('market')}
+										compare={{
+											open: comparing('market'),
+											onopenchange: (open) => setCompareOpen('market', open),
+											panel: marketCompare
+										}}
+									>
+										{#snippet controls()}
 											<SwitchTabs
+												compact
+												ariaLabel="Market chart"
 												buttons={[
 													{ label: 'Price', value: 'price' },
-													{ label: 'Market Value', value: 'mv' }
+													{ label: 'Market value', value: 'mv' }
 												]}
 												selected={activeMarketTab}
-												onChange={(v) => (activeMarketTab = /** @type {'price' | 'mv'} */ (v))}
+												onChange={(v) => {
+													// Another chart: its comparison and snapshot no longer apply.
+													closeCompare();
+													marketSnapshot = null;
+													activeMarketTab = /** @type {'price' | 'mv'} */ (v);
+												}}
 											/>
-										</div>
-										{#if viewStart && viewEnd}
-											{#if activeMarketTab === 'price'}
-												<FacilityPriceChart
-													showContainer={false}
-													panZoomMode="tap-to-engage"
-													bind:panZoomEngaged
-												/>
-											{:else}
-												<FacilityMarketValueChart
-													showContainer={false}
-													panZoomMode="tap-to-engage"
-													bind:panZoomEngaged
-												/>
+										{/snippet}
+										{#snippet children(heightPx)}
+											{#if viewStart && viewEnd}
+												{#if activeMarketTab === 'price'}
+													<FacilityPriceChart
+														showContainer={false}
+														chartHeightPx={heightPx}
+														panZoomMode="tap-to-engage"
+														bind:panZoomEngaged
+														onvisibledata={(snapshot) => (marketSnapshot = snapshot)}
+														{...compareChartProps('market')}
+													/>
+												{:else}
+													<FacilityMarketValueChart
+														showContainer={false}
+														chartHeightPx={heightPx}
+														panZoomMode="tap-to-engage"
+														bind:panZoomEngaged
+														onvisibledata={(snapshot) => (marketSnapshot = snapshot)}
+														{...compareChartProps('market')}
+													/>
+												{/if}
 											{/if}
-										{/if}
-									</section>
+										{/snippet}
+									</ChartCard>
 								</FacilityFinancialDataProvider>
 
 								{#if hasEmittingUnits}
@@ -711,39 +989,64 @@
 										{hiddenUnitCodes}
 										onhoverchange={handleHoverChange}
 										onsummarydata={(d) => (emissionsData = d)}
-										onviewportchange={range.handleDerivedViewportChange}
-										onviewportsettle={range.handleViewportSettle}
+										onviewportchange={viewport.change}
+										onviewportsettle={viewport.settle}
 										reconcileSeq={range.reconcileSeq}
 									>
-										<section class={chartCardClass}>
-											<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
-												<h3 class="m-0 text-sm font-semibold text-dark-grey">Emissions</h3>
+										<ChartCard
+											title="Emissions"
+											engaged={panZoomEngaged}
+											heightStorageKey="facility-chart-height-emissions"
+											defaultHeightPx={267}
+											minHeightPx={120}
+											maxHeightPx={700}
+											download={cardDownload('emissions')}
+											compare={{
+												open: comparing('emissions'),
+												onopenchange: (open) => setCompareOpen('emissions', open),
+												panel: emissionsCompare
+											}}
+										>
+											{#snippet controls()}
 												<SwitchTabs
+													compact
+													ariaLabel="Emissions chart"
 													buttons={[
 														{ label: 'Intensity', value: 'intensity' },
 														{ label: 'Volume', value: 'volume' }
 													]}
 													selected={activeEmissionsTab}
-													onChange={(v) =>
-														(activeEmissionsTab = /** @type {'intensity' | 'volume'} */ (v))}
+													onChange={(v) => {
+														closeCompare();
+														emissionsSnapshot = null;
+														activeEmissionsTab = /** @type {'intensity' | 'volume'} */ (v);
+													}}
 												/>
-											</div>
-											{#if viewStart && viewEnd}
-												{#if activeEmissionsTab === 'volume'}
-													<FacilityEmissionsVolumeChart
-														showContainer={false}
-														panZoomMode="tap-to-engage"
-														bind:panZoomEngaged
-													/>
-												{:else}
-													<FacilityEmissionsIntensityChart
-														showContainer={false}
-														panZoomMode="tap-to-engage"
-														bind:panZoomEngaged
-													/>
+											{/snippet}
+											{#snippet children(heightPx)}
+												{#if viewStart && viewEnd}
+													{#if activeEmissionsTab === 'volume'}
+														<FacilityEmissionsVolumeChart
+															showContainer={false}
+															chartHeightPx={heightPx}
+															panZoomMode="tap-to-engage"
+															bind:panZoomEngaged
+															onvisibledata={(snapshot) => (emissionsSnapshot = snapshot)}
+															{...compareChartProps('emissions')}
+														/>
+													{:else}
+														<FacilityEmissionsIntensityChart
+															showContainer={false}
+															chartHeightPx={heightPx}
+															panZoomMode="tap-to-engage"
+															bind:panZoomEngaged
+															onvisibledata={(snapshot) => (emissionsSnapshot = snapshot)}
+															{...compareChartProps('emissions')}
+														/>
+													{/if}
 												{/if}
-											{/if}
-										</section>
+											{/snippet}
+										</ChartCard>
 									</FacilityEmissionsDataProvider>
 								{/if}
 							{/if}

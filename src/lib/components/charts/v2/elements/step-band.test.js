@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeStepBand } from './step-band.js';
+import { computeStepBand, stepBandCentre } from './step-band.js';
 
 describe('computeStepBand', () => {
 	it('returns [T_i, T_{i+1}) for an interior point', () => {
@@ -42,5 +42,19 @@ describe('computeStepBand', () => {
 		const dataset = [{ time: 0 }, { time: 10 }];
 		expect(computeStepBand(-1, dataset)).toBeNull();
 		expect(computeStepBand(5, dataset)).toBeNull();
+	});
+});
+
+describe('stepBandCentre', () => {
+	const rows = [{ time: 0 }, { time: 100 }, { time: 300 }];
+	it('puts a bucket in the middle of its step', () => {
+		expect(stepBandCentre(0, rows)).toBe(50);
+		expect(stepBandCentre(100, rows)).toBe(200);
+		// The last step is as wide as the one before it.
+		expect(stepBandCentre(300, rows)).toBe(400);
+	});
+	it('leaves a time that is not a row where it is', () => {
+		expect(stepBandCentre(150, rows)).toBe(150);
+		expect(stepBandCentre(5, [{ time: 5 }])).toBe(5);
 	});
 });

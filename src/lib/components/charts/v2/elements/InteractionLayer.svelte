@@ -27,6 +27,7 @@
 	 * @property {boolean} [enablePan] - Enable pan/zoom gestures
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' gates pan/zoom behind the bindable `engaged` flag — the first tap engages instead of toggling focus.
 	 * @property {boolean} [engaged] - Bindable engagement state for tap-to-engage mode.
+	 * @property {boolean} [engageOnTap] - Whether a tap on an idle tap-to-engage chart engages it (default). Off, the tap reaches `onfocus` instead, and pan/zoom engages only from the toggle or the idle-wheel hint — for a chart whose clicks pick something (a comparison's A and B).
 	 * @property {[number, number] | null} [viewDomain] - Explicit time domain (category charts)
 	 * @property {string} [class] - CSS classes for the wrapper div
 	 * @property {'none' | 'hover' | 'mouse-pan' | 'touch-pan'} [interactionMode] - Current mode (bindable)
@@ -49,6 +50,7 @@
 		enablePan = false,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		engaged = $bindable(false),
+		engageOnTap = true,
 		viewDomain = null,
 		class: className = '',
 		interactionMode = $bindable('none'),
@@ -424,12 +426,14 @@
 	}
 
 	function handleMouseEnter() {
+		chart.pointerInside = true;
 		refreshRect();
 		// Scroll doesn't bubble — capture catches ancestor scroll containers too.
 		window.addEventListener('scroll', handleScrollWhileHovered, { passive: true, capture: true });
 	}
 
 	function handleMouseLeave() {
+		chart.pointerInside = false;
 		window.removeEventListener('scroll', handleScrollWhileHovered, { capture: true });
 		if (interactionMode !== 'none') return;
 		chart.clearHover();
@@ -441,12 +445,14 @@
 	 */
 	function handleClick(event) {
 		if (interactionMode !== 'none') return;
-		// StackedArea handles clicks on SVG paths via onpointerup — skip to avoid double-toggle
+		// StackedArea handles clicks on its paths and its line hit area
+		// (`data-series-hit`) via onpointerup — skip them, or one click focuses
+		// twice (a toggle undone, or a comparison's A and B set together).
 		const target = /** @type {Element} */ (event.target);
-		if (target.tagName === 'path') return;
+		if (target.tagName === 'path' || target.hasAttribute('data-series-hit')) return;
 
 		// First tap in tap-to-engage mode engages pan/zoom instead of setting focus.
-		if (panZoomMode === 'tap-to-engage' && !engaged) {
+		if (panZoomMode === 'tap-to-engage' && engageOnTap && !engaged) {
 			engaged = true;
 			return;
 		}
@@ -552,6 +558,7 @@
 		observer.observe(target);
 		return () => {
 			observer.disconnect();
+			chart.pointerInside = false;
 			window.removeEventListener('scroll', handleScrollWhileHovered, { capture: true });
 		};
 	});
