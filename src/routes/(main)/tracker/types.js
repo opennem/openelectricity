@@ -163,9 +163,8 @@
  * @property {(id: string, exclusive?: boolean) => void} [oncurtailmenttoggle]
  * @property {(exclusive?: boolean) => void} [ondemandlinetoggle]
  * @property {(exclusive?: boolean) => void} [onrenewableslinetoggle]
- * @property {{ active: boolean, runTime: number | null, timeZone: string } | null} [rooftopForecast]
- *   - The rooftop solar forecast toggle row, where the scope has a forecast
- * @property {() => void} [onforecasttoggle]
+ * @property {{ runTime: number | null, timeZone: string } | null} [rooftopForecast]
+ *   - The rooftop solar forecast's run, while it's drawn (for the table note)
  */
 
 /**

@@ -901,11 +901,7 @@
 			oncurtailmenttoggle={toggleCurtailment}
 			ondemandlinetoggle={(exclusive) => toggleOverlay('demand', exclusive)}
 			onrenewableslinetoggle={(exclusive) => toggleOverlay('renewables', exclusive)}
-			rooftopForecast={forecastAvailable
-				? { active: session.selection.rooftopForecast, runTime: rooftopForecast.runTime, timeZone }
-				: null}
-			onforecasttoggle={() =>
-				session.select('rooftopForecast', !session.selection.rooftopForecast, 'replace')}
+			rooftopForecast={forecastShown ? { runTime: rooftopForecast.runTime, timeZone } : null}
 			onshowall={showAllSeries}
 			onclose={dock.close}
 		/>
