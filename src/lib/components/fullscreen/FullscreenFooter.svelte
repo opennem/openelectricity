@@ -1,12 +1,17 @@
 <script>
 	import { version } from '$app/environment';
-	import { Maximize2 } from '@lucide/svelte';
+	import { AppWindow, BookOpen, Maximize2, ScrollText } from '@lucide/svelte';
+	import ApiStatus from '$lib/components/ApiStatus.svelte';
+	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 
 	/**
 	 * FullscreenFooter — the small chrome strip pinned to the bottom of a
-	 * fullscreen card. In fullscreen mode it shows the build version and a link
-	 * back to the home page; otherwise it shows an "Enter full screen" button
-	 * that calls `onenterfullscreen` (kbd hint: F).
+	 * fullscreen card. In fullscreen mode (where the site Footer is hidden) it
+	 * stands in for it: build version, API status and data sources on the left;
+	 * Platform / Docs / License icon links and a link back to the home page on
+	 * the right.
+	 * Otherwise it shows an "Enter full screen" button that calls
+	 * `onenterfullscreen` (kbd hint: F).
 	 *
 	 * @type {{
 	 *   isFullscreen: boolean,
@@ -14,24 +19,68 @@
 	 * }}
 	 */
 	let { isFullscreen, onenterfullscreen } = $props();
+
+	const iconLinks = [
+		{ href: 'https://platform.openelectricity.org.au/', title: 'Platform', icon: AppWindow },
+		{ href: 'https://docs.openelectricity.org.au/', title: 'Documentation', icon: BookOpen },
+		{ href: 'https://platform.openelectricity.org.au/license', title: 'License', icon: ScrollText }
+	];
+
+	const sources = [
+		{ href: 'https://www.aemo.com.au/', label: 'AEMO' },
+		{ href: 'https://apvi.org.au/', label: 'APVI' }
+	];
 </script>
 
 <footer
-	class="shrink-0 border-t border-warm-grey bg-light-warm-grey/40 px-4 py-2 flex items-center justify-between gap-3"
+	class="relative z-10 shrink-0 border-t border-warm-grey bg-light-warm-grey/40 shadow-[0_-10px_15px_-3px_rgb(0_0_0/0.05)] px-4 py-2 flex items-center justify-between gap-3 text-xs"
 >
 	{#if isFullscreen}
-		<span class="text-[10px] text-mid-grey font-mono">v{version}</span>
-		<a href="/" class="text-[10px] text-dark-grey no-underline hover:text-red">
-			Open Electricity
-		</a>
+		<div class="flex items-center gap-4 min-w-0">
+			<span class="text-mid-grey font-mono">v{version}</span>
+			<ApiStatus variant="compact" />
+			<div class="flex items-center gap-1">
+				{#each sources as { href, label } (href)}
+					<a
+						{href}
+						title="Source: {label}"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-dark-grey no-underline bg-white border border-warm-grey rounded px-1.5 py-0.5 leading-none hover:text-red hover:border-red hover:no-underline"
+						>{label}</a
+					>
+				{/each}
+			</div>
+		</div>
+		<div class="flex items-center gap-4 shrink-0">
+			<div class="flex items-center gap-2">
+				{#each iconLinks as { href, title, icon: Icon } (href)}
+					<Tooltip text={title}>
+						{#snippet trigger({ props })}
+							<a
+								{...props}
+								{href}
+								aria-label={title}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-mid-grey hover:text-red"
+							>
+								<Icon size={14} />
+							</a>
+						{/snippet}
+					</Tooltip>
+				{/each}
+			</div>
+			<a href="/" class="text-dark-grey no-underline hover:text-red">Open Electricity</a>
+		</div>
 	{:else}
 		<span></span>
 		<button
 			onclick={() => onenterfullscreen?.()}
-			class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-1.5 cursor-pointer transition-colors"
+			class="text-mid-grey hover:text-dark-grey flex items-center gap-1.5 cursor-pointer transition-colors"
 			title="Enter full screen"
 		>
-			<Maximize2 size={12} />
+			<Maximize2 size={14} />
 			<span>Enter full screen</span>
 			<kbd
 				class="text-[10px] text-dark-grey bg-white border border-warm-grey rounded px-1.5 py-0.5 leading-none"
