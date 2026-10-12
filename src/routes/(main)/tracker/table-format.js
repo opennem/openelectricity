@@ -7,14 +7,7 @@
 import { formatGenerationUnitValue } from '$lib/components/charts/network/generation-units.js';
 import { formatPrice } from '$lib/utils/formatters';
 import { formatSI } from '$lib/utils/si-units.js';
-import {
-	EMPTY_CELL,
-	formatPercentageValue,
-	splitTableLabel
-} from '$lib/components/charts/card/cell-format.js';
-
-// Shared with chart cards; re-exported for the tracker's tables.
-export { EMPTY_CELL, formatPercentageValue, splitTableLabel };
+import { EMPTY_CELL, formatPercentageValue } from '$lib/components/charts/card/cell-format.js';
 
 /**
  * Format a native MW table aggregate in the selected display prefix. Values

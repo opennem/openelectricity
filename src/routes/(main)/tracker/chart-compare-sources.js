@@ -20,8 +20,8 @@ import {
 	formatSignedChange
 } from '$lib/components/charts/card/compare/chart-compare.js';
 import {
-	compareBuckets,
 	componentSums,
+	largestVisible,
 	lineCompareSource,
 	stackCompareSource
 } from '$lib/components/charts/card/compare/snapshot-sources.js';
@@ -34,9 +34,9 @@ import {
 	formatTableEmissions,
 	formatTableEnergy,
 	formatTableIntensity,
-	formatTablePower,
-	formatPercentageValue
+	formatTablePower
 } from './table-format.js';
+import { formatPercentageValue } from '$lib/components/charts/card/cell-format.js';
 import { comparisonMetric, comparisonUnit, formatComparisonCell } from './comparison-metrics.js';
 import { benchmarkRankRows, rankComparisonRows } from './comparison-displays.js';
 import { COMPARISON_REGIONS, comparisonChartRows, comparisonPeriod } from './region-comparison.js';
@@ -44,7 +44,7 @@ import { comparisonValueUnit } from './region-comparison-export.js';
 
 /** @typedef {import('./types.js').CompareSource} CompareSource */
 /** @typedef {import('./types.js').GenerationSnapshot} GenerationSnapshot */
-/** @typedef {'generation' | 'market' | 'emissions'} TimelineCard */
+/** @typedef {import('./types.js').TimelineCard} TimelineCard */
 
 const ABSOLUTE_NOTE = 'Values are absolute; the chart’s proportion and change views do not apply.';
 
@@ -147,13 +147,7 @@ export function timelineCompareSource(card, snapshot, context) {
 			note: ABSOLUTE_NOTE
 		});
 	}
-	const largest = Math.max(
-		0,
-		...compareBuckets(snapshot).flatMap((row) =>
-			snapshot.seriesNames.filter((id) => !hidden.includes(id)).map((id) => Math.abs(row[id] ?? 0))
-		)
-	);
-	const tonnes = tonnesPrefix(largest);
+	const tonnes = tonnesPrefix(largestVisible(snapshot, hidden));
 	return stackCompareSource(snapshot, {
 		...stack,
 		title: 'Emissions comparison',

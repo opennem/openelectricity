@@ -15,7 +15,7 @@
 	 *   hover: number | null, focus: number | null, highlighted: boolean,
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
 	 *   onhoverregion: (region: string | null) => void,
-	 *   timeMarkers?: {markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null}} */
+	 *   timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void}} */
 	let {
 		region,
 		regions,
@@ -30,7 +30,8 @@
 		onhover,
 		onfocus,
 		onhoverregion,
-		timeMarkers = null
+		timeMarkers = null,
+		onpick
 	} = $props();
 
 	const GHOST = '#D9D9D9';
@@ -87,13 +88,6 @@
 		else chart.setFocus(focus);
 	});
 
-	// A comparison's A / B markers.
-	$effect(() => {
-		chart.timeMarkers = timeMarkers?.markers ?? [];
-		chart.timeMarkerArmed = timeMarkers?.armed ?? null;
-		chart.timeMarkerBand = !!timeMarkers?.band;
-	});
-
 	/** The inspected period's value, or the latest on screen. */
 	let value = $derived.by(() => {
 		const inspected = hover ?? focus;
@@ -147,5 +141,7 @@
 			onhoverregion(null);
 		}}
 		onfocus={(time) => onfocus(focus === time ? null : time)}
+		{onpick}
+		{timeMarkers}
 	/>
 </div>

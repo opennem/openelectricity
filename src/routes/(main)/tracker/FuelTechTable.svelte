@@ -28,16 +28,15 @@
 	} from './tracker-overlays.js';
 	import { FORECAST_COLOUR, FORECAST_LABEL, formatRunTime } from './rooftop-forecast.js';
 	import {
-		EMPTY_CELL,
 		energyDisplayPrefix,
 		formatTableEmissions,
 		formatTableEnergy,
 		formatTableIntensity,
 		formatTablePercentage,
 		formatTablePower,
-		formatTablePrice,
-		splitTableLabel
+		formatTablePrice
 	} from './table-format.js';
+	import { EMPTY_CELL, splitTableLabel } from '$lib/components/charts/card/cell-format.js';
 
 	/** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
 	/** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */

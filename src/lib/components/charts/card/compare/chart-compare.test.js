@@ -84,10 +84,10 @@ describe('compareRows and totals', () => {
 	it('keeps the source order and reads loads as consumption, like the fuel-tech table files them', () => {
 		const rows = compareRows(source(), { a, b });
 		expect(rows).toMatchObject([
-			{ id: 'coal', a: 100, b: 0, delta: -100, percent: -100, isLoad: false, sign: 1 },
+			{ id: 'coal', a: 100, b: 0, delta: -100, percent: -100, isLoad: false },
 			{ id: 'wind', a: null, b: 30, delta: null, isLoad: false },
 			// Charging −40 → −20 MW reads as 40 → 20: less consumption, a fall.
-			{ id: 'load', a: 40, b: 20, delta: -20, percent: -50, isLoad: true, sign: -1 }
+			{ id: 'load', a: 40, b: 20, delta: -20, percent: -50, isLoad: true }
 		]);
 		const listed = source({
 			series: [{ id: 'coal', label: 'Coal', colour: '#000', isLoad: true }]

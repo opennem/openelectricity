@@ -3,6 +3,7 @@ import {
 	datasetColumnPlaces,
 	datasetToCsv,
 	formatDatasetCell,
+	headerFor,
 	seriesDataset,
 	sheetName,
 	uniqueSheetNames
@@ -116,5 +117,13 @@ describe('seriesDataset', () => {
 		]);
 		expect(dataset?.rows).toHaveLength(1);
 		expect(seriesDataset({ key: 'k', title: 't', unit: 'MW', snapshot: null })).toBeNull();
+	});
+});
+
+describe('headerFor', () => {
+	it('appends the unit unless the label already ends with it', () => {
+		expect(headerFor('Coal', 'MW')).toBe('Coal (MW)');
+		expect(headerFor('Price ($/MWh)', '$/MWh')).toBe('Price ($/MWh)');
+		expect(headerFor('Battery (Charging)', 'MW')).toBe('Battery (Charging) (MW)');
 	});
 });

@@ -38,7 +38,8 @@
 	 *   hover: number | null, focus: number | null,
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
 	 *   onviewport: (start: number, end: number, settled: boolean) => void,
-	 *   timeMarkers?: {markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null
+	 *   timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null,
+	 *   onpick?: (time: number) => void
 	 * }} */
 	let {
 		data,
@@ -57,7 +58,8 @@
 		onhover,
 		onfocus,
 		onviewport,
-		timeMarkers = null
+		timeMarkers = null,
+		onpick
 	} = $props();
 
 	const TOP = 8;
@@ -270,7 +272,10 @@
 		}
 		if (event.button !== 0) return;
 		const period = periodAt(localPoint(event).x);
-		if (period != null) onfocus(focus === period ? null : period);
+		if (period == null) return;
+		// A comparison picks the period; otherwise a click pins (or unpins) it.
+		if (onpick) onpick(period);
+		else onfocus(focus === period ? null : period);
 	}
 	function handlePointerLeave() {
 		if (drag?.moved) return;
@@ -304,7 +309,11 @@
 		if (event.key !== 'Escape') event.preventDefault();
 		setPointer(null);
 		if ('hover' in step) onhover(step.hover ?? null);
-		if ('focus' in step) onfocus(step.focus ?? null);
+		if ('focus' in step) {
+			// Enter picks while comparing, as a click does.
+			if (onpick && step.focus != null) onpick(step.focus);
+			else onfocus(step.focus ?? null);
+		}
 	}
 </script>
 

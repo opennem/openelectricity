@@ -53,7 +53,8 @@
 	 * @property {boolean} [enablePan]
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' gates pan/zoom behind the bindable `engaged` flag — engaged via the header's ✥ toggle, a tap on the chart, or the idle-wheel hint; released by the toggle or Esc.
 	 * @property {boolean} [engaged] - Bindable engagement state for tap-to-engage mode.
-	 * @property {boolean} [engageOnTap] - Whether a tap on an idle tap-to-engage chart engages it (default true). Off, taps reach `onfocus` (a comparison picking A and B) and pan/zoom engages from the toggle or the idle-wheel hint.
+	 * @property {(time: number) => void} [onpick] - Clicks pick a time instead of pinning it (a comparison's A and B): a click (or tap, or Enter) reports its time here, and a tap on an idle tap-to-engage chart picks rather than engages (pan/zoom engages from the ✥ toggle or the idle-wheel hint)
+	 * @property {import('./time-markers.js').TimeMarkerSet | null} [timeMarkers] - Labelled markers over the plot (a comparison's A and B)
 	 * @property {Array<{start: number, end: number}>} [loadingRanges]
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {[number, number] | null} [viewDomain]
@@ -107,7 +108,8 @@
 		enablePan = false,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		engaged = $bindable(false),
-		engageOnTap = true,
+		onpick,
+		timeMarkers = null,
 		loadingRanges = [],
 		clampHoverLine = false,
 		viewDomain = null,
@@ -268,15 +270,26 @@
 	 */
 	function handleSeriesClick(data) {
 		if (interactionMode !== 'none') return;
-		// First tap in tap-to-engage mode engages pan/zoom instead of toggling focus.
-		if (panZoomMode === 'tap-to-engage' && enablePan && engageOnTap && !engaged) {
+		// First tap in tap-to-engage mode engages pan/zoom instead of toggling
+		// focus — unless clicks pick.
+		if (panZoomMode === 'tap-to-engage' && enablePan && !onpick && !engaged) {
 			engaged = true;
 			return;
 		}
-		if (data?.time) {
-			onfocus ? onfocus(data.time) : chart.toggleFocus(data.time);
-		}
+		if (data?.time) handleFocus(data.time);
 	}
+
+	/** A click on the plot: picked, reported, or pinned locally.
+	 * @param {number} time */
+	function handleFocus(time) {
+		if (onpick) onpick(time);
+		else if (onfocus) onfocus(time);
+		else chart.toggleFocus(time);
+	}
+
+	/** The pointer is over the plot: only then does the armed marker's ghost
+	 * follow the hover (a synced or pinned hover never moves it). */
+	let pointerInside = $state(false);
 </script>
 
 <svelte:window
@@ -365,13 +378,14 @@
 				{enablePan}
 				{panZoomMode}
 				bind:engaged
-				{engageOnTap}
+				engageOnTap={!onpick}
+				bind:pointerInside
 				{viewDomain}
 				class={chartPadding}
 				bind:interactionMode
 				{onhover}
 				{onhoverend}
-				{onfocus}
+				onfocus={handleFocus}
 				{onpanstart}
 				{onpan}
 				{onpanend}
@@ -395,6 +409,8 @@
 						onpointerup={handleSeriesClick}
 						{enablePan}
 						{loadingRanges}
+						{timeMarkers}
+						ghostTime={pointerInside ? chart.hoverTime : undefined}
 					/>
 				{:else}
 					<div

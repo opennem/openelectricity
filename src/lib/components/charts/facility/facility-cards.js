@@ -13,9 +13,10 @@
 import { networkTimeZoneLabel } from '$lib/components/charts/v2/network-time.js';
 import { getRegionLongLabel } from '$lib/facilities/filters.js';
 import { formatGenerationUnitValue } from '$lib/components/charts/network/generation-units.js';
+import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
 import { seriesDataset } from '$lib/components/charts/card/export-dataset.js';
 import {
-	compareBuckets,
+	largestVisible,
 	lineCompareSource,
 	stackCompareSource
 } from '$lib/components/charts/card/compare/snapshot-sources.js';
@@ -89,13 +90,16 @@ export function facilityCardDataset(card, snapshot, view) {
 
 /**
  * Where a card's download stands: loading until its chart reports, then
- * ready with data or empty.
+ * ready with data or empty — answered without building the dataset (the
+ * card reads it on every change).
  * @param {FacilityCard} card @param {ChartSnapshot | null} snapshot @param {FacilityCardView} view
  * @returns {import('$lib/components/charts/card/types.js').DownloadState}
  */
 export function facilityCardState(card, snapshot, view) {
 	if (!snapshot) return 'loading';
-	return facilityCardDataset(card, snapshot, view) ? 'ready' : 'empty';
+	const hidden = stacked(card, view) ? view.hidden : [];
+	const drawn = snapshot.seriesNames.some((id) => !hidden.includes(id));
+	return drawn && snapshot.data.some(isObservationRow) ? 'ready' : 'empty';
 }
 
 /**
@@ -180,15 +184,7 @@ export function facilityCompareSource(card, snapshot, context) {
 			format: (value) => formatGenerationUnitValue(value, 'k', 'k')
 		});
 	}
-	const largest = Math.max(
-		0,
-		...compareBuckets(snapshot).flatMap((row) =>
-			snapshot.seriesNames
-				.filter((id) => !context.hidden.includes(id))
-				.map((id) => Math.abs(row[id] ?? 0))
-		)
-	);
-	const tonnes = tonnesPrefix(largest);
+	const tonnes = tonnesPrefix(largestVisible(snapshot, context.hidden));
 	return stackCompareSource(snapshot, {
 		...shared,
 		title: 'Emissions comparison',

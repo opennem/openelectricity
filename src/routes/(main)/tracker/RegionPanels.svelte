@@ -29,7 +29,7 @@
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
 	 *   onhoverregion: (region: string | null) => void,
 	 *   onviewport: (start: number, end: number, settled: boolean) => void,
-	 *   timeMarkers?: {markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null}} */
+	 *   timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void}} */
 	let {
 		data,
 		regions,
@@ -47,7 +47,8 @@
 		onfocus,
 		onhoverregion,
 		onviewport,
-		timeMarkers = null
+		timeMarkers = null,
+		onpick
 	} = $props();
 
 	const inspectionHintId = $props.id();
@@ -101,7 +102,11 @@
 		if (event.key !== 'Escape') event.preventDefault();
 		pointer = null;
 		if ('hover' in step) onhover(step.hover ?? null);
-		if ('focus' in step) onfocus(step.focus ?? null);
+		if ('focus' in step) {
+			// Enter picks while comparing, as a click does.
+			if (onpick && step.focus != null) onpick(step.focus);
+			else onfocus(step.focus ?? null);
+		}
 	}
 </script>
 
@@ -136,6 +141,7 @@
 				{onfocus}
 				{onhoverregion}
 				{timeMarkers}
+				{onpick}
 			/>
 		{/each}
 		{#if tooltip && inspected != null}

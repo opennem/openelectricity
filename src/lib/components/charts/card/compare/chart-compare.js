@@ -17,16 +17,17 @@ import { EMPTY_CELL, formatPercentageValue } from '../cell-format.js';
  * One series' comparison. `delta` is signed B − A (or places moved, positive
  * = up, under `rank`); `percent` is relative change and only exists in the
  * `relative` mode. A composition's loads (charging, pumping) read as
- * consumption — their signs inverted (`sign` −1), so they compare and rank
+ * consumption — their signs inverted (`isLoad`), so they compare and rank
  * alongside the sources.
  * @typedef {{id: string, label: string, colour: string, isLoad: boolean, dashed: boolean,
- *   sign: 1 | -1, a: number | null, b: number | null, delta: number | null, percent: number | null}} CompareRow
+ *   a: number | null, b: number | null, delta: number | null, percent: number | null}} CompareRow
  */
 
 export const COMPARE_SLOTS = /** @type {const} */ (['a', 'b']);
 
-/** @param {unknown} value @returns {number | null} */
-const finite = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
+/** A finite number, or null. @param {unknown} value @returns {number | null} */
+export const finite = (value) =>
+	typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 /** A difference as small as floating-point noise in its operands is no change:
  * ratios and rolling sums of the same readings rarely subtract to exactly zero.
@@ -87,7 +88,6 @@ export function compareRows(source, pair) {
 			colour: series.colour,
 			dashed: !!series.dashed,
 			isLoad,
-			sign,
 			...compareValues(signed(finite(first)), signed(finite(second)), source.deltaMode)
 		};
 	});
@@ -104,7 +104,10 @@ export function compareTotals(rows) {
 	/** @param {CompareSlot} side */
 	const total = (side) =>
 		rows.length && rows.every((row) => row[side] !== null)
-			? rows.reduce((sum, row) => sum + row.sign * /** @type {number} */ (row[side]), 0)
+			? rows.reduce(
+					(sum, row) => sum + (row.isLoad ? -1 : 1) * /** @type {number} */ (row[side]),
+					0
+				)
 			: null;
 	return {
 		...compareValues(total('a'), total('b')),

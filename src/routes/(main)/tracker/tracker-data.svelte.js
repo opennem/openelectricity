@@ -1,6 +1,6 @@
 import { networkQueryKey } from '$lib/components/charts/network/network-query.js';
 
-/** @typedef {'generation' | 'market' | 'emissions'} ChartKey */
+/** @typedef {import('./types.js').TimelineCard} ChartKey */
 /** @typedef {import('./types.js').GenerationSnapshot} Snapshot */
 
 /** Query-aware publication. Held frames are for presentation only; consumers

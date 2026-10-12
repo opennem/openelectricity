@@ -751,13 +751,13 @@ a source.
 - **Picking A and B.** The panel opens on the first and last buckets in view,
   with A armed. A click on the chart sets the armed slot and arms the other,
   so two clicks set A then B; while a card compares, its clicks never engage
-  pan and zoom (`engageOnTap`, off; ✥ still does) or pin a time. The A / B bar
+  pan and zoom (the chart's `onpick`; ✥ still does) or pin a time. The A / B bar
   (`ComparePicker`) shows each slot's bucket in the chart's tooltip format,
   with ‹ › steppers (← / → on a focused slot, Shift for ten), a swap button
   and a hint naming the slot the next click sets. Picks and swaps push
   history; stepping replaces it. The armed slot is page state.
 - **Markers.** The chart draws A and B as dark lines with letter chips and a
-  faint band between them (the v2 store's `timeMarkers`), an edge arrow when
+  faint band between them (StratumChart's `timeMarkers`), an edge arrow when
   one lies outside the view, and a dashed ghost of the armed slot under the
   pointer. They are kept in PNG exports. The heatmap outlines A's and B's
   cells instead.

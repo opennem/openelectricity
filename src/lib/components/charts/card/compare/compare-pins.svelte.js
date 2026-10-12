@@ -1,3 +1,5 @@
+import { indexOfTime } from '$lib/components/charts/v2/binary-search.js';
+
 /**
  * Compare pins — the rows a Timeline chart drew at the comparison's A and B,
  * held while its series stay the same. A chart's snapshot covers only the
@@ -27,7 +29,10 @@ export function createComparePins(input) {
 		const next = {};
 		for (const time of [a, b]) {
 			if (time === null) continue;
-			const row = snapshot?.data.find((entry) => entry.time === time) ?? previous[time];
+			const index = snapshot
+				? indexOfTime(/** @type {Array<{time: number}>} */ (snapshot.data), time)
+				: -1;
+			const row = (index >= 0 ? snapshot?.data[index] : undefined) ?? previous[time];
 			if (row) next[time] = row;
 		}
 		held = { identity, rows: next };

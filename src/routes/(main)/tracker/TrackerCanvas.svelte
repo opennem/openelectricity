@@ -28,12 +28,7 @@
 	import FuelTechOptions from './FuelTechOptions.svelte';
 	import ComparePanel from '$lib/components/charts/card/compare/ComparePanel.svelte';
 	import WindowMetrics from './WindowMetrics.svelte';
-	import {
-		defaultComparePair,
-		compareTimeMarkers,
-		pickCompareTime,
-		toggleCompareCard
-	} from '$lib/components/charts/card/compare/chart-compare.js';
+	import { createCompareMode } from '$lib/components/charts/card/compare/compare-mode.svelte.js';
 	import { timelineCompareSource } from './chart-compare-sources.js';
 	import { compareBuckets } from '$lib/components/charts/card/compare/snapshot-sources.js';
 	import { createComparePins } from '$lib/components/charts/card/compare/compare-pins.svelte.js';
@@ -46,7 +41,7 @@
 		DEMAND_LINE_COLOUR,
 		RENEWABLES_LINE_COLOUR
 	} from './tracker-overlays.js';
-	import { formatPercentageValue } from './table-format.js';
+	import { formatPercentageValue } from '$lib/components/charts/card/cell-format.js';
 	import { createTrackerProviders } from './tracker-providers.svelte.js';
 	import { createRooftopForecast } from './rooftop-forecast.svelte.js';
 	import { hasRooftopForecast } from './rooftop-forecast.js';
@@ -118,7 +113,7 @@
 	let emissionsIsIntensity = $derived(emissionsMode === 'intensity');
 	let energyMetric = $derived(range.activeMetric === 'energy');
 
-	/** @typedef {'generation' | 'market' | 'emissions'} TimelineCard */
+	/** @typedef {import('./types.js').TimelineCard} TimelineCard */
 	/** The chart card under the pointer, and the series under it on that card:
 	 * as on the Profile breakdown, the table outlines the card's column and
 	 * highlights the series' row, and the card's border darkens. */
@@ -221,24 +216,24 @@
 		holdFrame: () => chartsHoldFrame
 	});
 
-	// ---- Compare mode (`chart-compare.js`) ----
+	// ---- Compare mode (`compare-mode.svelte.js`) ----
 	// Any card can compare two of its buckets; the comparing cards share one
-	// A and B (URL state), drawn as markers on each. A click on a comparing
-	// chart sets the armed slot instead of pinning a time.
-	let comparePair = $derived({ a: comparison?.a ?? null, b: comparison?.b ?? null });
-	let comparingCards = $derived(comparison?.cards ?? []);
-	/** Which slot the next click on a comparing chart sets: page state only. */
-	let armed = $state(
-		/** @type {import('$lib/components/charts/card/compare/chart-compare.js').CompareSlot} */ ('a')
-	);
-	let compareMarkers = $derived(compareTimeMarkers(comparePair, armed));
+	// A and B (URL state), drawn as markers on each, and a click on a
+	// comparing chart picks instead of pinning a time.
+	const compare = createCompareMode({
+		read: () => comparison,
+		write: (next, history) => session.select('comparison', next, history),
+		times: (card) => compareBuckets(data.latest(card)).map((row) => row.time),
+		viewport: () => viewWindow,
+		reveal: (next) => session.settleViewport(next)
+	});
 	const comparePins = Object.fromEntries(
 		TIMELINE_COMPARE_CARDS.map((card) => [
 			card,
 			createComparePins({
 				identity: () => data.seriesKey(card),
 				snapshot: () => data.latest(card),
-				pair: () => comparePair
+				pair: () => compare.pair
 			})
 		])
 	);
@@ -269,48 +264,6 @@
 			formatTime: getTimeFormatPolicy(range.displayInterval, ianaTimeZone).formatTooltip
 		});
 	}
-	/** @param {TimelineCard} card @param {boolean} open */
-	function setCompareOpen(card, open) {
-		if (open && !comparison) armed = 'a';
-		const times = compareBuckets(data.latest(card)).map((row) => row.time);
-		session.select(
-			'comparison',
-			toggleCompareCard(comparison, card, open, defaultComparePair(times))
-		);
-	}
-	/** @param {import('$lib/components/charts/card/compare/chart-compare.js').ComparePair} pair @param {'push' | 'replace'} history */
-	function changeComparePair(pair, history) {
-		if (comparison) session.select('comparison', { ...comparison, ...pair }, history);
-	}
-	/** A click (or Enter) on a comparing chart. @param {number | undefined} time */
-	function pickCompare(time) {
-		if (time === undefined) return;
-		const next = pickCompareTime(comparePair, armed, time);
-		armed = next.armed;
-		changeComparePair(next.pair, 'push');
-	}
-	/** Pan and zoom the charts to show A and B, keeping the span when it fits. */
-	function revealCompare() {
-		const times = [comparePair.a, comparePair.b].filter((time) => time !== null);
-		if (!times.length) return;
-		const low = Math.min(...times);
-		const high = Math.max(...times);
-		const span = Math.max(viewWindow.end - viewWindow.start, (high - low) * 1.2);
-		const centre = (low + high) / 2;
-		session.settleViewport({ start: centre - span / 2, end: centre + span / 2 });
-	}
-	/** The chart props a comparing card swaps in: its clicks pick A / B, and
-	 * the shared pin gives way to the markers.
-	 * @param {TimelineCard} card */
-	function compareChartProps(card) {
-		if (!comparingCards.includes(card)) return { timeMarkers: null, engageOnTap: true };
-		return {
-			focusTime: undefined,
-			onfocuschange: pickCompare,
-			timeMarkers: compareMarkers,
-			engageOnTap: false
-		};
-	}
 	/** `tracker-nem-generation-comparison-2026-10-01-to-2026-10-08.csv`
 	 * @param {TimelineCard} card */
 	function compareFileName(card) {
@@ -318,7 +271,7 @@
 		return trackerFileName({
 			scope: region,
 			dataset: `${card}-comparison`,
-			range: `${day(comparePair.a)}-to-${day(comparePair.b)}`,
+			range: `${day(compare.pair.a)}-to-${day(compare.pair.b)}`,
 			extension: 'csv'
 		});
 	}
@@ -640,7 +593,7 @@
 	/>
 {/snippet}
 
-{#snippet freshness(name = /** @type {'generation' | 'market' | 'emissions'} */ ('generation'))}
+{#snippet freshness(name = /** @type {TimelineCard} */ ('generation'))}
 	<ReadingFreshness
 		snapshot={data.current(name)}
 		now={session.clockMs}
@@ -661,8 +614,8 @@
 {#snippet comparePanel(/** @type {TimelineCard} */ card)}
 	<ComparePanel
 		source={compareSource(card)}
-		pair={comparePair}
-		{armed}
+		pair={compare.pair}
+		armed={compare.armed}
 		pending={!data.state(card).error && !data.latest(card)}
 		error={data.state(card).error}
 		id="{card}-comparison"
@@ -674,9 +627,9 @@
 		fileName={() => compareFileName(card)}
 		hovered={hoveredSeries}
 		onhover={hoverSeries}
-		onarm={(slot) => (armed = slot)}
-		onchange={changeComparePair}
-		onreveal={revealCompare}
+		onarm={compare.arm}
+		onchange={compare.change}
+		onreveal={compare.reveal}
 	/>
 {/snippet}
 {#snippet generationCompare()}{@render comparePanel('generation')}{/snippet}
@@ -747,8 +700,8 @@
 		heightStorageKey="tracker-chart-height-generation"
 		defaultHeightPx={320}
 		compare={{
-			open: comparingCards.includes('generation'),
-			onopenchange: (open) => setCompareOpen('generation', open),
+			open: compare.comparing('generation'),
+			onopenchange: (open) => compare.toggle('generation', open),
 			panel: generationCompare
 		}}
 	>
@@ -787,7 +740,8 @@
 				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, generationChart)}
 				onvisibledata={handleGenerationData}
-				{...compareChartProps('generation')}
+				timeMarkers={compare.timeMarkers('generation')}
+				onpick={compare.onpick('generation')}
 				bind:panZoomEngaged
 			/>
 		{/snippet}
@@ -809,8 +763,8 @@
 		engaged={panZoomEngaged}
 		heightStorageKey="tracker-chart-height-price"
 		compare={{
-			open: comparingCards.includes('market'),
-			onopenchange: (open) => setCompareOpen('market', open),
+			open: compare.comparing('market'),
+			onopenchange: (open) => compare.toggle('market', open),
 			panel: marketCompare
 		}}
 	>
@@ -850,7 +804,8 @@
 				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, priceChart)}
 				onvisibledata={handlePriceData}
-				{...compareChartProps('market')}
+				timeMarkers={compare.timeMarkers('market')}
+				onpick={compare.onpick('market')}
 				bind:panZoomEngaged
 			/>
 		{/snippet}
@@ -872,8 +827,8 @@
 		engaged={panZoomEngaged}
 		heightStorageKey="tracker-chart-height-emissions"
 		compare={{
-			open: comparingCards.includes('emissions'),
-			onopenchange: (open) => setCompareOpen('emissions', open),
+			open: compare.comparing('emissions'),
+			onopenchange: (open) => compare.toggle('emissions', open),
 			panel: emissionsCompare
 		}}
 	>
@@ -904,7 +859,8 @@
 				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, emissionsChart)}
 				onvisibledata={handleEmissionsData}
-				{...compareChartProps('emissions')}
+				timeMarkers={compare.timeMarkers('emissions')}
+				onpick={compare.onpick('emissions')}
 				bind:panZoomEngaged
 			/>
 		{/snippet}

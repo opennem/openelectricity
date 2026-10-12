@@ -87,7 +87,8 @@ test.describe('Timeline downloads', () => {
 
 	test('list each open comparison after its chart', async ({ page }) => {
 		await trackerFixture(page);
-		// Opened from a link without dates, so the reader picks them.
+		// Opened from a link without dates: A and B default to the chart's
+		// first and last buckets.
 		await page.goto('/tracker/timeline?region=nsw1&table=0&compare=generation');
 		await trackerReady(page);
 		await expectDownloadsMatchCharts(page, [
@@ -96,11 +97,10 @@ test.describe('Timeline downloads', () => {
 			'Market',
 			'Emissions'
 		]);
-		// Listed as soon as it shows, downloadable once two dates are chosen.
 		const dialog = await openDownloads(page);
-		await expect(dialog.locator('[data-download-id="generation-comparison"]')).toContainText(
-			'Choose two dates with data'
-		);
+		await expect(
+			dialog.getByRole('button', { name: 'Download Generation comparison CSV', exact: true })
+		).toBeEnabled();
 		await closeDownloads(page);
 		const panel = page.getByRole('region', { name: 'Generation comparison' });
 		await panel.getByRole('button', { name: 'Next interval for A' }).click();

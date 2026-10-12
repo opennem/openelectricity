@@ -27,6 +27,7 @@
 	 * @property {boolean} [enablePan] - Enable pan/zoom gestures
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' gates pan/zoom behind the bindable `engaged` flag — the first tap engages instead of toggling focus.
 	 * @property {boolean} [engaged] - Bindable engagement state for tap-to-engage mode.
+	 * @property {boolean} [pointerInside] - Bindable: the pointer is over this plot (hover time can also arrive from a synced peer or a pinned time)
 	 * @property {boolean} [engageOnTap] - Whether a tap on an idle tap-to-engage chart engages it (default). Off, the tap reaches `onfocus` instead, and pan/zoom engages only from the toggle or the idle-wheel hint — for a chart whose clicks pick something (a comparison's A and B).
 	 * @property {[number, number] | null} [viewDomain] - Explicit time domain (category charts)
 	 * @property {string} [class] - CSS classes for the wrapper div
@@ -51,6 +52,7 @@
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		engaged = $bindable(false),
 		engageOnTap = true,
+		pointerInside = $bindable(false),
 		viewDomain = null,
 		class: className = '',
 		interactionMode = $bindable('none'),
@@ -426,14 +428,14 @@
 	}
 
 	function handleMouseEnter() {
-		chart.pointerInside = true;
+		pointerInside = true;
 		refreshRect();
 		// Scroll doesn't bubble — capture catches ancestor scroll containers too.
 		window.addEventListener('scroll', handleScrollWhileHovered, { passive: true, capture: true });
 	}
 
 	function handleMouseLeave() {
-		chart.pointerInside = false;
+		pointerInside = false;
 		window.removeEventListener('scroll', handleScrollWhileHovered, { capture: true });
 		if (interactionMode !== 'none') return;
 		chart.clearHover();
@@ -558,7 +560,7 @@
 		observer.observe(target);
 		return () => {
 			observer.disconnect();
-			chart.pointerInside = false;
+			pointerInside = false;
 			window.removeEventListener('scroll', handleScrollWhileHovered, { capture: true });
 		};
 	});

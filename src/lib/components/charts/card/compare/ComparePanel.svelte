@@ -74,7 +74,7 @@
 	function slotState(time) {
 		if (time === null) return 'unset';
 		if (!source) return pending ? 'ok' : 'missing';
-		return times.includes(time) || source.has?.(time) ? 'ok' : 'missing';
+		return (source.has ? source.has(time) : times.includes(time)) ? 'ok' : 'missing';
 	}
 	let states = $derived({ a: slotState(pair.a), b: slotState(pair.b) });
 	let ready = $derived(!!source && !error && states.a === 'ok' && states.b === 'ok');

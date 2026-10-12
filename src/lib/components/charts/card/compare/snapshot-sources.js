@@ -13,7 +13,7 @@
  */
 
 import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
-import { formatSignedChange } from './chart-compare.js';
+import { finite, formatSignedChange } from './chart-compare.js';
 
 /** @typedef {import('../types.js').ChartSnapshot} ChartSnapshot */
 /** @typedef {import('../types.js').CompareSource} CompareSource */
@@ -59,12 +59,9 @@ function lookup(snapshot, held) {
 		/** @param {number} time */
 		rowAt: (time) => byTime.get(time) ?? held[time],
 		/** @param {number} time */
-		has: (time) => time in held
+		has: (time) => byTime.has(time) || time in held
 	};
 }
-
-/** @param {unknown} value @returns {number | null} */
-const finite = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
 
 /**
  * A stack's comparison: its visible series, top of the stack first, loads
@@ -138,14 +135,26 @@ export function lineCompareSource(snapshot, options) {
 		return row ? finite(read(row, id)) : null;
 	};
 	const single = ids.length === 1;
-	const values = single
-		? buckets.map((row) => finite(read(row, ids[0]))).filter((entry) => entry !== null)
-		: [];
-	const reference = !values.length
+	// One pass over the window: its low, high and mean (a single line only).
+	let min = Infinity;
+	let max = -Infinity;
+	let sum = 0;
+	let count = 0;
+	if (single) {
+		for (const row of buckets) {
+			const entry = finite(read(row, ids[0]));
+			if (entry === null) continue;
+			min = Math.min(min, entry);
+			max = Math.max(max, entry);
+			sum += entry;
+			count++;
+		}
+	}
+	const reference = !count
 		? null
 		: options.reference
 			? finite(options.reference(buckets))
-			: values.reduce((sum, entry) => sum + entry, 0) / values.length;
+			: sum / count;
 	return {
 		kind: single ? 'single' : 'lines',
 		title: options.title,
@@ -166,10 +175,10 @@ export function lineCompareSource(snapshot, options) {
 		format,
 		formatDelta: (entry) => formatSignedChange(entry, format),
 		formatTime: options.formatTime,
-		window: values.length
+		window: count
 			? {
-					min: Math.min(...values),
-					max: Math.max(...values),
+					min,
+					max,
 					reference,
 					referenceLabel: options.referenceLabel ?? 'Mean'
 				}
@@ -191,4 +200,22 @@ export function componentSums(rows, keys) {
 			rows.reduce((sum, row) => (Number.isFinite(row[key]) ? sum + row[key] : sum), 0)
 		])
 	);
+}
+
+/**
+ * The largest magnitude a stack's visible series reach over its drawn
+ * buckets (0 without any): what sizes a unit prefix such as kt or Mt.
+ * @param {ChartSnapshot | null} snapshot @param {string[]} [hidden]
+ */
+export function largestVisible(snapshot, hidden = []) {
+	if (!snapshot) return 0;
+	const ids = snapshot.seriesNames.filter((id) => !hidden.includes(id));
+	let largest = 0;
+	for (const row of compareBuckets(snapshot)) {
+		for (const id of ids) {
+			const value = finite(row[id]);
+			if (value !== null) largest = Math.max(largest, Math.abs(value));
+		}
+	}
+	return largest;
 }

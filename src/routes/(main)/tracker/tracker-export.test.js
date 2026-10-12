@@ -6,7 +6,6 @@ import {
 } from '$lib/components/charts/card/export-dataset.js';
 import {
 	exportFileName,
-	headerFor,
 	timelineDataset,
 	timelineSummaryRows,
 	trackerFileName
@@ -113,13 +112,6 @@ function context(overrides = {}) {
 		...overrides
 	};
 }
-
-describe('headerFor', () => {
-	it('appends the unit unless the label already carries one', () => {
-		expect(headerFor('Coal', 'MW')).toBe('Coal (MW)');
-		expect(headerFor('Price ($/MWh)', '$/MWh')).toBe('Price ($/MWh)');
-	});
-});
 
 /** @param {import('./types.js').ExportDataset | null} dataset */
 const headers = (dataset) => dataset?.columns.map((column) => column.header);

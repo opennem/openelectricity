@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
-	EMPTY_CELL,
 	energyDisplayPrefix,
 	formatTableEmissions,
 	formatTableEnergy,
 	formatTableIntensity,
 	formatTablePercentage,
 	formatTablePower,
-	formatTablePrice,
+	formatTablePrice
+} from './table-format.js';
+import {
+	EMPTY_CELL,
 	formatPercentageValue,
 	splitTableLabel
-} from './table-format.js';
+} from '$lib/components/charts/card/cell-format.js';
 
 describe('formatTablePower', () => {
 	it('keeps one decimal strictly inside the displayed -10 to 10 range', () => {

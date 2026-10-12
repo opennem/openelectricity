@@ -7,6 +7,7 @@ import {
 	COMPARISON_REGIONS,
 	comparisonChartRows,
 	comparisonDisplay,
+	comparisonMonthSlug,
 	comparisonPeriod
 } from './region-comparison.js';
 import {
@@ -209,11 +210,10 @@ export function comparisonSummaryRows(state, cpiReference) {
  * @param {RegionComparisonSelection} state @param {{start:number,end:number}} viewport
  * @param {'csv' | 'xlsx'} extension @param {string} [download] - A download's id */
 export function comparisonFileName(state, viewport, extension, download = '') {
-	const period = (/** @type {number} */ ms) => new Date(ms).toISOString().slice(0, 7);
 	return trackerFileName({
 		scope: 'regions',
 		dataset: [download.replace(/^regions-/, ''), state.interval].filter(Boolean).join('-'),
-		range: `${period(viewport.start)}-to-${period(viewport.end - 1)}`,
+		range: `${comparisonMonthSlug(viewport.start)}-to-${comparisonMonthSlug(viewport.end - 1)}`,
 		extension
 	});
 }

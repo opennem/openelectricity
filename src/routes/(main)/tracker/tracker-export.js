@@ -13,7 +13,7 @@
  * - Timestamps are the network's local time; the Summary sheet states the zone.
  */
 
-import { rowTime } from '$lib/components/charts/card/export-dataset.js';
+import { headerFor, rowTime } from '$lib/components/charts/card/export-dataset.js';
 import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
 import {
 	formatNetworkTimestamp,
@@ -45,16 +45,6 @@ const RENEWABLES_LINE_ID = 'renewable-share';
 // ============================================
 // Labels
 // ============================================
-
-/**
- * "Label (unit)" — unless the label already carries a parenthesised unit,
- * as the spot-price series does ("Price ($/MWh)").
- * @param {string} label
- * @param {string} unit
- */
-export function headerFor(label, unit) {
-	return /\([^()]*\)\s*$/.test(label) ? label : `${label} (${unit})`;
-}
 
 /** @param {TrackerExportContext['basis']} basis */
 function generationUnit(basis) {

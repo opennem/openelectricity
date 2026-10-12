@@ -8,10 +8,10 @@
 	 */
 
 	import { StratumChart } from '$lib/components/charts/v2';
-	import { windowRows } from '$lib/components/charts/v2/binary-search.js';
+	import { syncCardChart } from './card-chart.svelte.js';
 	import { getFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 
-	/** @type {{ showContainer?: boolean, showHeader?: boolean, showOptions?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean, resizable?: boolean, chartHeightPx?: number, timeMarkers?: {markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null, engageOnTap?: boolean, onpick?: (time: number) => void, onvisibledata?: (snapshot: import('$lib/components/charts/card/types.js').ChartSnapshot) => void }} */
+	/** @type {{ showContainer?: boolean, showHeader?: boolean, showOptions?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean, resizable?: boolean, chartHeightPx?: number, timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void, onvisibledata?: (snapshot: import('$lib/components/charts/card/types.js').ChartSnapshot) => void }} */
 	let {
 		showContainer = true,
 		showHeader = true,
@@ -22,7 +22,6 @@
 		resizable = true,
 		chartHeightPx = 0,
 		timeMarkers = null,
-		engageOnTap = true,
 		onpick,
 		onvisibledata
 	} = $props();
@@ -45,11 +44,6 @@
 
 	/** @param {number} time */
 	function handleFocus(time) {
-		// A chart card in compare mode picks A / B with the click instead.
-		if (onpick) {
-			onpick(time);
-			return;
-		}
 		ctx?.priceChartStore?.toggleFocus(time);
 		ctx?.onfocuschange?.(ctx?.priceChartStore?.focusTime);
 	}
@@ -91,34 +85,14 @@
 			store.setFocus(t);
 		}
 	});
-	// Inside a chart card the card owns the height (and its resize handle).
-	$effect(() => {
-		if (chartHeightPx && priceChartStore) priceChartStore.chartStyles.chartHeightPx = chartHeightPx;
-	});
-
-	// A comparison's A / B markers (`ChartCard`'s compare mode).
-	$effect(() => {
-		const store = priceChartStore;
-		if (!store) return;
-		store.timeMarkers = timeMarkers?.markers ?? [];
-		store.timeMarkerArmed = timeMarkers?.armed ?? null;
-		store.timeMarkerBand = !!timeMarkers?.band;
-	});
-	// What the chart draws over the window (the bucket straddling its start
-	// included, as the generation chart reports it): its card's download and
-	// comparison read it.
-	$effect(() => {
-		const store = priceChartStore;
-		if (!onvisibledata || !store || !viewStart || !viewEnd) return;
-		onvisibledata({
-			data: windowRows(store.seriesData, viewStart, viewEnd),
-			seriesNames: store.seriesNames,
-			seriesLabels: store.seriesLabels,
-			seriesColours: store.seriesColours,
-			start: viewStart,
-			end: viewEnd
-		});
-	});
+	// Inside a chart card: the card's height, and what the chart draws.
+	syncCardChart(() => ({
+		store: priceChartStore,
+		chartHeightPx,
+		viewStart,
+		viewEnd,
+		onvisibledata
+	}));
 </script>
 
 {#if ctx && priceChartStore}
@@ -133,7 +107,8 @@
 			enablePan={hasViewportHandler}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
-			{engageOnTap}
+			{onpick}
+			{timeMarkers}
 			viewDomain={null}
 			onpanstart={ctx.handlePanStart}
 			onpan={ctx.handlePan}

@@ -152,7 +152,10 @@
 		}
 	};
 	const registerDownload = chartDownload(downloads, () => source);
-	let ready = $derived(source.state === 'ready');
+	// Read once per change: a source's state can take real work to answer.
+	let downloadState = $derived(source.state);
+	let ready = $derived(downloadState === 'ready');
+	let downloadMessage = $derived(downloadStatus({ state: downloadState, message: source.message }));
 
 	let tableShown = $state(false);
 	let tableDataset = $derived(tableShown && ready ? source.dataset() : null);
@@ -330,7 +333,7 @@
 							</button>
 						</Tooltip>
 						<Tooltip
-							text={ready ? 'Download CSV' : `Download CSV — ${downloadStatus(source)}`}
+							text={ready ? 'Download CSV' : `Download CSV — ${downloadMessage}`}
 							class="inline-flex"
 						>
 							<button
@@ -397,7 +400,7 @@
 						dataset={tableDataset}
 						label={source.label}
 						timeZone={downloads?.timeZone ?? '+10:00'}
-						status={downloadStatus(source)}
+						status={downloadMessage}
 					/>
 				</div>
 			{/if}
@@ -445,9 +448,10 @@
 </div>
 
 <style>
-	/* While the pointer is on a chart card, the page's other cards dim a
-	   little, so the one being read stands forward. */
-	:global(body:has(.chart-card:hover) .chart-card:not(:hover) > section) {
+	/* While the pointer is on a chart card, its sibling cards dim a little,
+	   so the one being read stands forward. Scoped to the cards' parent, so a
+	   hover elsewhere on the page re-checks nothing. */
+	:global(:has(> .chart-card:hover) > .chart-card:not(:hover) > section) {
 		opacity: 0.7;
 	}
 </style>

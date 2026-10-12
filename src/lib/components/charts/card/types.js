@@ -97,8 +97,9 @@
  * @property {(value: number | null) => string} [colourOf] - The colour a value takes (heatmap chips)
  * @property {{min: number, max: number, reference: number | null, referenceLabel: string} | null} [window]
  *   - A single line's visible range and reference (mean or window ratio)
- * @property {(time: number) => boolean} [has] - Whether a bucket outside `times` still
- *   has values (one the chart has drawn before, held while it pans)
+ * @property {(time: number) => boolean} [has] - Whether a bucket has values: one in
+ *   `times`, or one the chart drew before, held while it pans (without it, `times`
+ *   answers)
  * @property {string} [note] - What the values are, under the comparison
  * @property {Array<{key: string, header: string, value: string}>} [context] - Leading export columns
  */

@@ -52,12 +52,7 @@
 		createChartDownloads,
 		setChartDownloads
 	} from '$lib/components/charts/card/chart-downloads.svelte.js';
-	import {
-		compareTimeMarkers,
-		defaultComparePair,
-		pickCompareTime,
-		toggleCompareCard
-	} from '$lib/components/charts/card/compare/chart-compare.js';
+	import { createCompareMode } from '$lib/components/charts/card/compare/compare-mode.svelte.js';
 	import { compareBuckets } from '$lib/components/charts/card/compare/snapshot-sources.js';
 	import { createComparePins } from '$lib/components/charts/card/compare/compare-pins.svelte.js';
 	import {
@@ -69,7 +64,8 @@
 		facilityFileName,
 		facilitySummaryRows
 	} from '$lib/components/charts/facility/facility-cards.js';
-	import { unitSeriesIds } from '$lib/components/charts/facility/unit-analysis.js';
+	import { analyzeUnits, unitSeriesIds } from '$lib/components/charts/facility/unit-analysis.js';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { hiddenCurtailmentSeries } from '$lib/components/charts/facility/curtailment/scope.js';
 	import {
 		parseRangeParams,
@@ -263,6 +259,10 @@
 	// ---- Chart cards: downloads and compare mode ----
 
 	/** @typedef {import('$lib/components/charts/facility/facility-cards.js').FacilityCard} FacilityCard */
+	/** The units the charts draw as loads (charging, pumping), as they class them. */
+	let loadUnitCodes = $derived(
+		activeFacility ? analyzeUnits(activeFacility, getFuelTechColour).loadCodes : []
+	);
 	/** What each card's chart draws. @param {FacilityCard} card */
 	function snapshotOf(card) {
 		if (card === 'generation') return intervalData;
@@ -281,9 +281,6 @@
 					: card === 'emissions'
 						? 'emissions'
 						: '';
-		const loads = (activeFacility?.units ?? [])
-			.filter((/** @type {any} */ unit) => unit.dispatch_type === 'LOAD')
-			.map((/** @type {any} */ unit) => unit.code);
 		return {
 			basis: range.activeMetric,
 			marketTab: activeMarketTab,
@@ -292,7 +289,7 @@
 				card === 'curtailment'
 					? hiddenCurtailmentSeries(selectedFacility, hiddenUnitCodes)
 					: unitSeriesIds(metric, hiddenUnitCodes),
-			loadIds: unitSeriesIds(metric, loads)
+			loadIds: unitSeriesIds(metric, loadUnitCodes)
 		};
 	}
 
@@ -338,18 +335,16 @@
 	let comparison = $state.raw(
 		/** @type {{cards: FacilityCard[], a: number | null, b: number | null} | null} */ (null)
 	);
-	let comparePair = $derived.by(() => {
-		if (!comparison) return { a: null, b: null };
-		if (comparison.a !== null || comparison.b !== null) return { a: comparison.a, b: comparison.b };
-		// Opened before its chart reported: the first and last buckets once it does.
-		const times = compareBuckets(snapshotOf(comparison.cards[0])).map((row) => row.time);
-		return defaultComparePair(times);
+	const compare = createCompareMode({
+		read: () => comparison,
+		write: (next) => (comparison = next),
+		times: (card) => compareBuckets(snapshotOf(card)).map((row) => row.time),
+		viewport: () => ({ start: viewStart, end: viewEnd }),
+		reveal: (next) => {
+			viewport.change(next);
+			viewport.settle(next);
+		}
 	});
-	/** Which slot the next click on a comparing chart sets. */
-	let armed = $state(
-		/** @type {import('$lib/components/charts/card/compare/chart-compare.js').CompareSlot} */ ('a')
-	);
-	let compareMarkers = $derived(compareTimeMarkers(comparePair, armed));
 	/** Rows a chart drew at A or B, held while it pans (and its series stay the same). */
 	const comparePins = Object.fromEntries(
 		FACILITY_CARDS.map((card) => [
@@ -365,48 +360,12 @@
 						card === 'market' ? activeMarketTab : card === 'emissions' ? activeEmissionsTab : ''
 					].join('|'),
 				snapshot: () => snapshotOf(card),
-				pair: () => comparePair
+				pair: () => compare.pair
 			})
 		])
 	);
 	function closeCompare() {
 		comparison = null;
-	}
-	/** @param {FacilityCard} card @param {boolean} open */
-	function setCompareOpen(card, open) {
-		if (open && !comparison) armed = 'a';
-		const times = compareBuckets(snapshotOf(card)).map((row) => row.time);
-		comparison = toggleCompareCard(comparison, card, open, defaultComparePair(times));
-	}
-	/** @param {import('$lib/components/charts/card/compare/chart-compare.js').ComparePair} pair */
-	function changeComparePair(pair) {
-		if (comparison) comparison = { ...comparison, ...pair };
-	}
-	/** A click (or Enter) on a comparing chart. @param {number} time */
-	function pickCompare(time) {
-		const next = pickCompareTime(comparePair, armed, time);
-		armed = next.armed;
-		changeComparePair(next.pair);
-	}
-	/** Pan and zoom the charts to show A and B, keeping the span when it fits. */
-	function revealCompare() {
-		const times = [comparePair.a, comparePair.b].filter((time) => time !== null);
-		if (!times.length) return;
-		const low = Math.min(...times);
-		const high = Math.max(...times);
-		const span = Math.max(viewEnd - viewStart, (high - low) * 1.2);
-		const centre = (low + high) / 2;
-		const next = { start: centre - span / 2, end: centre + span / 2 };
-		viewport.change(next);
-		viewport.settle(next);
-	}
-	/** @param {FacilityCard} card */
-	const comparing = (card) => !!comparison?.cards.includes(card);
-	/** The chart props a comparing card swaps in. @param {FacilityCard} card */
-	function compareChartProps(card) {
-		return comparing(card)
-			? { timeMarkers: compareMarkers, engageOnTap: false, onpick: pickCompare }
-			: { timeMarkers: null, engageOnTap: true, onpick: undefined };
 	}
 	let compareFormatTime = $derived(
 		getTimeFormatPolicy(range.displayInterval, ianaTimeZone).formatTooltip
@@ -416,7 +375,7 @@
 		const day = (/** @type {number | null} */ time) => toNetworkDateString(time ?? 0, timeZone);
 		return facilityFileName(
 			selectedFacility?.code ?? '',
-			`${day(comparePair.a)}-to-${day(comparePair.b)}`,
+			`${day(compare.pair.a)}-to-${day(compare.pair.b)}`,
 			`${card}-comparison`,
 			'csv'
 		);
@@ -676,15 +635,15 @@
 			zone: timeZone,
 			interval: range.displayInterval
 		})}
-		pair={comparePair}
-		{armed}
+		pair={compare.pair}
+		armed={compare.armed}
 		pending={!snapshotOf(card)}
 		id="{card}-comparison"
 		label="{FACILITY_CARD_TITLES[card]} comparison"
 		fileName={() => compareFileName(card)}
-		onarm={(slot) => (armed = slot)}
-		onchange={changeComparePair}
-		onreveal={revealCompare}
+		onarm={compare.arm}
+		onchange={compare.change}
+		onreveal={compare.reveal}
 	/>
 {/snippet}
 {#snippet generationCompare()}{@render comparePanel('generation')}{/snippet}
@@ -800,8 +759,8 @@
 								maxHeightPx={700}
 								download={cardDownload('generation')}
 								compare={{
-									open: comparing('generation'),
-									onopenchange: (open) => setCompareOpen('generation', open),
+									open: compare.comparing('generation'),
+									onopenchange: (open) => compare.toggle('generation', open),
 									panel: generationCompare
 								}}
 							>
@@ -842,7 +801,8 @@
 												bind:panZoomEngaged
 												bundleDerivedMetrics
 												{hiddenUnitCodes}
-												{...compareChartProps('generation')}
+												timeMarkers={compare.timeMarkers('generation')}
+												onpick={compare.onpick('generation')}
 											/>
 										</div>
 										{#if showEmptyState}
@@ -888,12 +848,12 @@
 									{viewEnd}
 									download={cardDownload('curtailment')}
 									compare={{
-										open: comparing('curtailment'),
-										onopenchange: (open) => setCompareOpen('curtailment', open),
+										open: compare.comparing('curtailment'),
+										onopenchange: (open) => compare.toggle('curtailment', open),
 										panel: curtailmentCompare
 									}}
-									timeMarkers={comparing('curtailment') ? compareMarkers : null}
-									onpick={comparing('curtailment') ? pickCompare : undefined}
+									timeMarkers={compare.timeMarkers('curtailment')}
+									onpick={compare.onpick('curtailment')}
 									onvisibledata={(snapshot) => (curtailmentSnapshot = snapshot)}
 									{hoverTime}
 									{hiddenUnitCodes}
@@ -928,8 +888,8 @@
 										maxHeightPx={700}
 										download={cardDownload('market')}
 										compare={{
-											open: comparing('market'),
-											onopenchange: (open) => setCompareOpen('market', open),
+											open: compare.comparing('market'),
+											onopenchange: (open) => compare.toggle('market', open),
 											panel: marketCompare
 										}}
 									>
@@ -959,7 +919,8 @@
 														panZoomMode="tap-to-engage"
 														bind:panZoomEngaged
 														onvisibledata={(snapshot) => (marketSnapshot = snapshot)}
-														{...compareChartProps('market')}
+														timeMarkers={compare.timeMarkers('market')}
+														onpick={compare.onpick('market')}
 													/>
 												{:else}
 													<FacilityMarketValueChart
@@ -968,7 +929,8 @@
 														panZoomMode="tap-to-engage"
 														bind:panZoomEngaged
 														onvisibledata={(snapshot) => (marketSnapshot = snapshot)}
-														{...compareChartProps('market')}
+														timeMarkers={compare.timeMarkers('market')}
+														onpick={compare.onpick('market')}
 													/>
 												{/if}
 											{/if}
@@ -1002,8 +964,8 @@
 											maxHeightPx={700}
 											download={cardDownload('emissions')}
 											compare={{
-												open: comparing('emissions'),
-												onopenchange: (open) => setCompareOpen('emissions', open),
+												open: compare.comparing('emissions'),
+												onopenchange: (open) => compare.toggle('emissions', open),
 												panel: emissionsCompare
 											}}
 										>
@@ -1032,7 +994,8 @@
 															panZoomMode="tap-to-engage"
 															bind:panZoomEngaged
 															onvisibledata={(snapshot) => (emissionsSnapshot = snapshot)}
-															{...compareChartProps('emissions')}
+															timeMarkers={compare.timeMarkers('emissions')}
+															onpick={compare.onpick('emissions')}
 														/>
 													{:else}
 														<FacilityEmissionsIntensityChart
@@ -1041,7 +1004,8 @@
 															panZoomMode="tap-to-engage"
 															bind:panZoomEngaged
 															onvisibledata={(snapshot) => (emissionsSnapshot = snapshot)}
-															{...compareChartProps('emissions')}
+															timeMarkers={compare.timeMarkers('emissions')}
+															onpick={compare.onpick('emissions')}
 														/>
 													{/if}
 												{/if}

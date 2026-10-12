@@ -49,6 +49,8 @@
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
 	 * @property {boolean} [hideAnnotationsOnMobile] - Hide annotations on mobile viewports
+	 * @property {import('./time-markers.js').TimeMarkerSet | null} [timeMarkers] - A comparison's A / B markers
+	 * @property {number | undefined} [ghostTime] - Where the armed marker's ghost sits: this chart's own pointer
 	 * @property {boolean} [tightAxisClip] - When true, clip axis content (gridlines, labels) to the exact chart area rather than the default expanded region that gives axis labels 15 px of overflow on each side. Use for compact charts where gridlines shouldn't extend past the chart edges.
 	 */
 
@@ -68,12 +70,18 @@
 		clampHoverLine = false,
 		animate = false,
 		hideAnnotationsOnMobile = false,
-		tightAxisClip = false
+		tightAxisClip = false,
+		timeMarkers = null,
+		ghostTime = undefined
 	} = $props();
 
 	// Get chart styles
 	let styles = $derived(chart.chartStyles);
 	let id = $derived(styles.htmlId);
+
+	// A comparison's markers stand in for the pinned time: a chart shows one
+	// or the other.
+	let pinnedTime = $derived(timeMarkers?.markers.length ? undefined : chart.focusTime);
 
 	// Determine if curve type is step (for band hover + axis alignment)
 	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
@@ -334,7 +342,7 @@
 					<StepHoverBand
 						dataset={chart.seriesScaledData}
 						hoverTime={chart.hoverTime}
-						focusTime={chart.focusTime}
+						focusTime={pinnedTime}
 					/>
 				{:else}
 					<!-- Continuous mode: vertical line + dots -->
@@ -358,7 +366,7 @@
 						</g>
 					{/if}
 
-					{#if chart.focusData}
+					{#if chart.focusData && pinnedTime !== undefined}
 						<g transition:hoverFade>
 							<LineX
 								xValue={chart.focusData}
@@ -383,13 +391,13 @@
 		</Svg>
 
 		<!-- Comparison markers (A / B): exported, unlike the hover layer above -->
-		{#if chart.timeMarkers.length}
+		{#if timeMarkers?.markers.length}
 			<Svg pointerEvents={false}>
 				<TimeMarkers
-					markers={chart.timeMarkers}
-					armed={chart.timeMarkerArmed}
-					hoverTime={chart.pointerInside ? chart.hoverTime : undefined}
-					band={chart.timeMarkerBand}
+					markers={timeMarkers.markers}
+					armed={timeMarkers.armed ?? null}
+					hoverTime={ghostTime}
+					band={!!timeMarkers.band}
 					stepData={isStepMode ? chart.seriesScaledData : null}
 				/>
 			</Svg>

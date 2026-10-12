@@ -47,7 +47,7 @@
 	 * @property {number} viewEnd
 	 * @property {import('svelte').ComponentProps<typeof ChartCard>['download']} [download]
 	 * @property {import('svelte').ComponentProps<typeof ChartCard>['compare']} [compare]
-	 * @property {{markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null} [timeMarkers]
+	 * @property {import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} [timeMarkers]
 	 * @property {(time: number) => void} [onpick]
 	 * @property {(snapshot: import('$lib/components/charts/card/types.js').ChartSnapshot) => void} [onvisibledata]
 	 * @property {number | undefined} [hoverTime]
@@ -132,8 +132,7 @@
 					{onviewportsettle}
 					{onvisibledata}
 					{timeMarkers}
-					engageOnTap={!onpick}
-					onfocuschange={onpick && ((time) => time !== undefined && onpick(time))}
+					{onpick}
 					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
 				/>

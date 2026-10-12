@@ -335,14 +335,16 @@ chart.seriesColours = { ... };
 chart.seriesLabels = { ... };
 ```
 
-**Time markers.** `chart.timeMarkers` (`[{ id, time, label }]`) draws a
+**Time markers.** `StratumChart`'s `timeMarkers` prop (a `TimeMarkerSet`,
+`time-markers.js`: `{ markers: [{ id, time, label }], armed?, band? }`) draws a
 labelled vertical line per marker over the plot — a dark line with a letter
-chip at the top, kept inside the plot at its edges — and a chip with an arrow
-at the plot's edge for a marker outside the view. `timeMarkerBand` faintly
-shades between the first two, and `timeMarkerArmed` names the marker the
-next click sets: a dashed ghost of it follows the hover. Unlike `focusTime`,
-markers need no matching row, and they are kept in PNG exports (the ghost is
-not). The tracker's compare mode draws its A and B with them.
+chip at the top, kept inside the plot at its edges, centred in its step on a
+step chart — and a chip with an arrow at the plot's edge for a marker outside
+the view. `band` faintly shades between the first two, and `armed` names the
+marker the next click sets: a dashed ghost of it follows the pointer while it
+is over the chart. Unlike `focusTime`, markers need no matching row, and they
+are kept in PNG exports (the ghost is not). While markers show, the chart
+hides its pinned focus line. The compare mode draws its A and B with them.
 
 ### StratumChart
 
@@ -377,7 +379,7 @@ The main chart component for stacked area/bar charts:
 | `enablePan`                   | `boolean`                                                              | `false`       | Enable pan/zoom gestures (pointer + wheel) via InteractionLayer                                                                                                                                                                                                                                                 |
 | `panZoomMode`                 | `'always' \| 'tap-to-engage'`                                          | `'always'`    | `'always'` keeps pan/zoom active whenever `enablePan` is true (existing behaviour). `'tap-to-engage'` renders a hover hint pill and gates pan/zoom behind `engaged` — the first tap engages, subsequent gestures work normally. A "Scroll to zoom · Esc to exit" pill appears at the bottom-right while engaged |
 | `engaged`                     | `boolean`                                                              | `false`       | Bindable engagement state for `'tap-to-engage'` mode. Set to `true` by the first tap and back to `false` by the parent (e.g. ESC or click-outside). Ignored when `panZoomMode === 'always'`                                                                                                                     |
-| `engageOnTap`                 | `boolean`                                                              | `true`        | `'tap-to-engage'` only: off, a tap on the idle chart reaches `onfocus` instead of engaging, and pan/zoom engages from the ✥ toggle or the idle-wheel hint — for a chart whose clicks pick something (a comparison's A and B)                                                                                    |
+| `onpick`                      | `(time) => void`                                                       | -             | Clicks pick a time instead of pinning it: on `'tap-to-engage'`, a tap on the idle chart reaches `onpick` rather than engaging, and pan/zoom engages from the ✥ toggle or the idle-wheel hint — for a chart whose clicks pick something (a comparison's A and B)                                                 |
 | `loadingRanges`               | `Array<{start, end}>`                                                  | `[]`          | Time ranges currently being fetched (shaded overlay)                                                                                                                                                                                                                                                            |
 | `viewDomain`                  | `[number, number] \| null`                                             | `null`        | Explicit time domain for InteractionLayer coordinate mapping                                                                                                                                                                                                                                                    |
 | `resizable`                   | `boolean`                                                              | `false`       | Show a vertical resize handle below the chart (`ChartResizeHandle`)                                                                                                                                                                                                                                             |

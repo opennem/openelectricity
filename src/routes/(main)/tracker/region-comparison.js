@@ -155,35 +155,28 @@ export function normaliseRegionComparison(value = undefined) {
 	const interval = COMPARISON_INTERVAL_IDS.includes(String(value?.interval))
 		? String(value?.interval)
 		: '12mr';
+	const charts = Array.isArray(value?.charts)
+		? COMPARISON_CHART_OPTIONS.flatMap(({ id }) => {
+				const selected = value.charts
+					?.map(comparisonChartFromSlug)
+					.find((entry) => comparisonChartId(entry) === id);
+				return selected ? [selected] : [];
+			})
+		: [...DEFAULT_COMPARISON_CHARTS];
 	return {
 		interval,
 		filter: isValidBucketFilter(bucketFilterKindFor(interval), value?.filter)
 			? String(value?.filter)
 			: null,
 		regions,
-		charts: Array.isArray(value?.charts)
-			? COMPARISON_CHART_OPTIONS.flatMap(({ id }) => {
-					const selected = value.charts
-						?.map(comparisonChartFromSlug)
-						.find((entry) => comparisonChartId(entry) === id);
-					return selected ? [selected] : [];
-				})
-			: [...DEFAULT_COMPARISON_CHARTS],
+		charts,
 		display: normaliseComparisonDisplay(value?.display),
 		basis: value?.basis === 'generation' ? 'generation' : 'demand',
 		start: validWindow ? start : null,
 		end: validWindow ? end : null,
 		table: typeof value?.table === 'boolean' ? value.table : null,
 		// Only the shown charts can compare.
-		dates: normaliseCardComparison(
-			value?.dates,
-			COMPARISON_CHART_OPTIONS.map(({ id }) => id).filter((id) =>
-				(Array.isArray(value?.charts) ? value.charts : DEFAULT_COMPARISON_CHARTS)
-					.map((entry) => comparisonChartId(comparisonChartFromSlug(String(entry))))
-					.includes(id)
-			),
-			comparisonMonth
-		)
+		dates: normaliseCardComparison(value?.dates, charts.map(comparisonChartId), comparisonMonth)
 	};
 }
 

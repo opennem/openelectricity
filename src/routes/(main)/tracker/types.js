@@ -32,14 +32,15 @@
  */
 
 /**
- * Timeline's compare mode: the cards showing a comparison panel, in card
- * order, and the A / B every one of them compares (`chart-compare.js`).
- * @typedef {{cards: Array<'generation' | 'market' | 'emissions'>, a: number | null, b: number | null}} TimelineComparison
+ * Timeline's three chart cards.
+ * @typedef {'generation' | 'market' | 'emissions'} TimelineCard
  */
 
-/** @typedef {import('$lib/components/charts/card/types.js').CompareDeltaMode} CompareDeltaMode */
-
-/** @typedef {import('$lib/components/charts/card/types.js').CompareSeries} CompareSeries */
+/**
+ * Timeline's compare mode: the cards showing a comparison panel, in card
+ * order, and the A / B every one of them compares (`chart-compare.js`).
+ * @typedef {{cards: TimelineCard[], a: number | null, b: number | null}} TimelineComparison
+ */
 
 /** @typedef {import('$lib/components/charts/card/types.js').CompareSource} CompareSource */
 

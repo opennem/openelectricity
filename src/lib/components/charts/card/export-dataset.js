@@ -226,6 +226,16 @@ export function buildWorkbookSheets({ summary, datasets, timeZone }) {
 }
 
 /**
+ * A value column's header, "Label (unit)" — unless the label already ends
+ * with its unit ("Price ($/MWh)"). A qualifier ("Battery (Charging)") still
+ * takes the unit.
+ * @param {string} label @param {string} unit
+ */
+export function headerFor(label, unit) {
+	return label.endsWith(`(${unit})`) ? label : `${label} (${unit})`;
+}
+
+/**
  * A chart's download as drawn: a time column, then a column per series not
  * hidden (in the chart's order, headed "Label (unit)"), over its observed
  * rows — never a synthetic calendar-band closing row. Null without data.
@@ -245,12 +255,9 @@ export function seriesDataset({ key, title, snapshot, unit, hidden = [] }) {
 	const columns = snapshot.seriesNames
 		.filter((id) => !hidden.includes(id))
 		.map((id) => {
-			const label = snapshot.seriesLabels[id] ?? id;
 			return {
 				key: id,
-				// A label may carry its own unit ("Price ($/MWh)"); a qualifier
-				// ("MACARTH1 (Wind)") still takes the unit.
-				header: label.endsWith(`(${unit})`) ? label : `${label} (${unit})`,
+				header: headerFor(snapshot.seriesLabels[id] ?? id, unit),
 				type: 'number'
 			};
 		});

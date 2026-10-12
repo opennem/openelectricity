@@ -28,7 +28,7 @@
 		formatComparisonCell
 	} from './comparison-metrics.js';
 	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
-	import { splitTableLabel } from './table-format.js';
+	import { splitTableLabel } from '$lib/components/charts/card/cell-format.js';
 	import {
 		TABLE_HEADER_BUTTON,
 		TABLE_HEADER_CELL,
@@ -51,12 +51,8 @@
 	import RegionComparisonChart from './RegionComparisonChart.svelte';
 	import RegionPanels from './RegionPanels.svelte';
 	import ComparePanel from '$lib/components/charts/card/compare/ComparePanel.svelte';
-	import {
-		compareTimeMarkers,
-		defaultComparePair,
-		pickCompareTime,
-		toggleCompareCard
-	} from '$lib/components/charts/card/compare/chart-compare.js';
+	import { windowRows } from '$lib/components/charts/v2/binary-search.js';
+	import { createCompareMode } from '$lib/components/charts/card/compare/compare-mode.svelte.js';
 	import { regionCompareSource } from './chart-compare-sources.js';
 	import { trackerFileName } from './tracker-export.js';
 	import {
@@ -274,17 +270,10 @@
 		);
 	}
 
-	// ---- Compare mode (`chart-compare.js`) ----
+	// ---- Compare mode (`compare-mode.svelte.js`) ----
 	// Any card can compare two periods; the comparing cards share one A and B
-	// (URL state), drawn as markers on each. A click on a comparing chart sets
-	// the armed slot instead of pinning a period.
-	let dates = $derived(selection.dates);
-	let comparePair = $derived({ a: dates?.a ?? null, b: dates?.b ?? null });
-	/** Which slot the next click on a comparing chart sets: page state only. */
-	let armed = $state(
-		/** @type {import('$lib/components/charts/card/compare/chart-compare.js').CompareSlot} */ ('a')
-	);
-	let compareMarkers = $derived(compareTimeMarkers(comparePair, armed));
+	// (URL state), drawn as markers on each, and a click on a comparing chart
+	// picks instead of pinning a period.
 	/** A card's comparison, as its display draws it.
 	 * @param {string} metric @param {boolean} ranked
 	 * @param {import('./comparison-stripes.js').StripeScale | null} scale */
@@ -302,34 +291,20 @@
 			cpiReference: cpi.reference
 		});
 	}
-	/** Opening starts at the first and last periods on screen (all history's
-	 * when none are), or keeps the page's A and B when a card already compares.
-	 * @param {string} chart - The picker chart id @param {boolean} open
-	 * @param {string} metric @param {boolean} ranked */
-	function setCompareOpen(chart, open, metric, ranked) {
-		if (open && !dates) armed = 'a';
-		const times = compareSourceFor(metric, ranked, null).times;
-		const inView = times.filter((time) => time >= viewport.start && time < viewport.end);
-		select({
-			dates: toggleCompareCard(
-				dates,
-				chart,
-				open,
-				defaultComparePair(inView.length ? inView : times)
-			)
-		});
-	}
-	/** @param {import('$lib/components/charts/card/compare/chart-compare.js').ComparePair} pair @param {'push' | 'replace'} history */
-	function changeComparePair(pair, history) {
-		if (dates) select({ dates: { ...dates, ...pair } }, history);
-	}
-	/** A click (or Enter) on a comparing chart. @param {number | null} time */
-	function pickCompare(time) {
-		if (time === null) return;
-		const next = pickCompareTime(comparePair, armed, time);
-		armed = next.armed;
-		changeComparePair(next.pair, 'push');
-	}
+	const compare = createCompareMode({
+		read: () => selection.dates,
+		write: (next, history) => select({ dates: next }, history),
+		// A and B start at the first and last periods on screen (all
+		// history's when none are).
+		times: (chart) => {
+			const metric = metrics.find((entry) => comparisonChartId(entry.id) === chart);
+			if (!metric) return [];
+			const ranked = display === 'ranks' && isRankableComparisonMetric(metric.id);
+			const times = compareSourceFor(metric.id, ranked, null).times;
+			const inView = times.filter((time) => time >= viewport.start && time < viewport.end);
+			return inView.length ? inView : times;
+		}
+	});
 	/** `tracker-regions-intensity-comparison-2010-01-to-2025-01.csv` @param {string} metric */
 	function compareFileName(metric) {
 		/** @param {number | null} time */
@@ -337,7 +312,7 @@
 		return trackerFileName({
 			scope: 'regions',
 			dataset: `${metric}-comparison`,
-			range: `${month(comparePair.a)}-to-${month(comparePair.b)}`,
+			range: `${month(compare.pair.a)}-to-${month(compare.pair.b)}`,
 			extension: 'csv'
 		});
 	}
@@ -401,9 +376,19 @@
 				cpiReference: cpi.reference
 			});
 		return {
+			// Answered without building the dataset: the card reads it on every
+			// change, pan frames included.
 			get state() {
 				if (source.pending) return /** @type {const} */ ('loading');
-				return dataset() ? /** @type {const} */ ('ready') : /** @type {const} */ ('empty');
+				if (display === 'ranks' && isRankableComparisonMetric(id) && !rankedRegions.length)
+					return /** @type {const} */ ('empty');
+				const drawn = regions.some((region) =>
+					windowRows(source.data[region] ?? [], viewport.start, viewport.end - 1).some(
+						(row) =>
+							row.time >= viewport.start && Number.isFinite(comparisonMetricValue(row, id, basis))
+					)
+				);
+				return drawn ? /** @type {const} */ ('ready') : /** @type {const} */ ('empty');
 			},
 			get message() {
 				return display === 'ranks' && isRankableComparisonMetric(id) && !rankedRegions.length
@@ -592,20 +577,19 @@
 						(a, b) => Number(a.control === 'tabs') - Number(b.control === 'tabs')
 					)}
 					{@const chartId = comparisonChartId(metric.id)}
-					{@const comparing = !!dates?.cards.includes(chartId)}
 					{#snippet comparePanel()}
 						<ComparePanel
 							source={compareSourceFor(metric.id, ranked, scale)}
-							pair={comparePair}
-							{armed}
+							pair={compare.pair}
+							armed={compare.armed}
 							pending={source.pending && !regions.some((id) => source.data[id]?.length)}
 							id="regions-{metric.id}-comparison"
 							label="{metric.label} comparison"
 							fileName={() => compareFileName(metric.id)}
 							hovered={hoverRegion ?? undefined}
 							onhover={(id) => (hoverRegion = id ?? null)}
-							onarm={(slot) => (armed = slot)}
-							onchange={changeComparePair}
+							onarm={compare.arm}
+							onchange={compare.change}
 						/>
 					{/snippet}
 					{#snippet cardControls()}
@@ -664,8 +648,8 @@
 						onhover={(hovered) => hoverCard(metric.id, hovered)}
 						download={metricDownload(metric.id)}
 						compare={{
-							open: comparing,
-							onopenchange: (open) => setCompareOpen(chartId, open, metric.id, ranked),
+							open: compare.comparing(chartId),
+							onopenchange: (open) => compare.toggle(chartId, open),
 							panel: comparePanel
 						}}
 						png={{
@@ -693,16 +677,15 @@
 									{tooltip}
 									onhoverregion={(region) => (hoverRegion = region)}
 									{hover}
-									focus={comparing ? null : focus}
+									focus={compare.comparing(chartId) ? null : focus}
 									onhover={(time) => {
 										hover = time;
 									}}
-									onfocus={comparing
-										? pickCompare
-										: (time) => {
-												focus = time;
-											}}
-									timeMarkers={comparing ? compareMarkers : null}
+									onfocus={(time) => {
+										focus = time;
+									}}
+									timeMarkers={compare.timeMarkers(chartId)}
+									onpick={compare.onpick(chartId)}
 									onviewport={moveViewport}
 								/>
 							{:else if display === 'panels'}
@@ -719,16 +702,15 @@
 									{hoverRegion}
 									onhoverregion={(region) => (hoverRegion = region)}
 									{hover}
-									focus={comparing ? null : focus}
+									focus={compare.comparing(chartId) ? null : focus}
 									onhover={(time) => {
 										hover = time;
 									}}
-									onfocus={comparing
-										? pickCompare
-										: (time) => {
-												focus = time;
-											}}
-									timeMarkers={comparing ? compareMarkers : null}
+									onfocus={(time) => {
+										focus = time;
+									}}
+									timeMarkers={compare.timeMarkers(chartId)}
+									onpick={compare.onpick(chartId)}
 									onviewport={moveViewport}
 								/>
 							{:else if ranked && !rankedRegions.length}
@@ -753,18 +735,16 @@
 									{hoverRegion}
 									onhoverregion={(region) => (hoverRegion = region)}
 									bind:engaged={panZoomEngaged}
-									engageOnTap={!comparing}
 									{hover}
-									focus={comparing ? null : focus}
+									focus={compare.comparing(chartId) ? null : focus}
 									onhover={(time) => {
 										hover = time;
 									}}
-									onfocus={comparing
-										? pickCompare
-										: (time) => {
-												focus = time;
-											}}
-									timeMarkers={comparing ? compareMarkers : null}
+									onfocus={(time) => {
+										focus = time;
+									}}
+									timeMarkers={compare.timeMarkers(chartId)}
+									onpick={compare.onpick(chartId)}
 									onviewport={moveViewport}
 								/>
 							{/if}

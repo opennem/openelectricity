@@ -28,15 +28,15 @@
 	 * among the regions that period (1 at the top, the Ranks display). With
 	 * ranks, `benchmarks` (NEM, All Regions) are dashed reference lines placed
 	 * among the ranks rather than ranked themselves. `timeMarkers` draws a
-	 * comparison's A / B; while comparing, `engageOnTap` is off so a click
-	 * picks a period instead of engaging pan and zoom.
+	 * comparison's A / B; while comparing, `onpick` takes the clicks (a click
+	 * picks a period instead of pinning it or engaging pan and zoom).
 	 * @type {{data: Record<string, any[]>, regions: string[], metric: string, basis: 'demand' | 'generation', interval: string, months: number,
 	 * shape?: 'line' | 'rank', benchmarks?: string[],
 	 * viewport: {start:number,end:number}, bounds: {start:number,end:number}, height: number,
 	 * tooltip: boolean, engaged: boolean, hover: number | null, focus: number | null, onhover: (time:number | null) => void, onfocus: (time:number | null) => void,
 	 * hoverRegion: string | null, onhoverregion: (region: string | null) => void,
 	 * onviewport: (start:number,end:number,settled:boolean) => void,
-	 * timeMarkers?: {markers: Array<{id: string, time: number, label: string}>, armed?: string | null, band?: boolean} | null, engageOnTap?: boolean}} */
+	 * timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void}} */
 	let {
 		data,
 		regions,
@@ -59,7 +59,7 @@
 		onhoverregion,
 		onviewport,
 		timeMarkers = null,
-		engageOnTap = true
+		onpick
 	} = $props();
 	const chart = new ChartStore({
 		key: Symbol('region-comparison'),
@@ -179,11 +179,6 @@
 		if (focus == null) chart.clearFocus();
 		else chart.setFocus(focus);
 	});
-	$effect(() => {
-		chart.timeMarkers = timeMarkers?.markers ?? [];
-		chart.timeMarkerArmed = timeMarkers?.armed ?? null;
-		chart.timeMarkerBand = !!timeMarkers?.band;
-	});
 	const gestures = createViewportGestures({
 		viewport: () => viewport,
 		apply: (start, end) => onviewport(start, end, false),
@@ -201,7 +196,11 @@
 		if (!step) return;
 		if (event.key !== 'Escape') event.preventDefault();
 		if ('hover' in step) onhover(step.hover ?? null);
-		if ('focus' in step) onfocus(step.focus ?? null);
+		if ('focus' in step) {
+			// Enter picks while comparing, as a click does.
+			if (onpick && step.focus != null) onpick(step.focus);
+			else onfocus(step.focus ?? null);
+		}
 	}
 </script>
 
@@ -216,7 +215,8 @@
 		enablePan
 		panZoomMode="tap-to-engage"
 		bind:engaged
-		{engageOnTap}
+		{onpick}
+		{timeMarkers}
 		zoomMode="static"
 		onpanstart={gestures.handlePanStart}
 		onpan={gestures.handlePan}

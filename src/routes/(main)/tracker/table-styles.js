@@ -1,4 +1,4 @@
-import { EMPTY_CELL } from './table-format.js';
+import { EMPTY_CELL } from '$lib/components/charts/card/cell-format.js';
 
 /** Shared presentation for the Tracker's fuel technology, region and date-comparison tables. */
 export const TABLE_HEADER_CELL = 'border-b border-warm-grey py-3 align-top font-medium';

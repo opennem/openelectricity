@@ -5,18 +5,18 @@ The card every chart sits in on the Tracker (`/tracker/*`) and facility pages
 view and compare mode. Pages bring their charts and data; this folder brings
 the card, the "Download data" dialog and the comparison.
 
-| File                        | What it is                                                                                                                                                                                                                                                 |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ChartCard.svelte`          | The card: title (with an optional ⓘ `info` tooltip), badge, the chart's hosted toolbar (⋮ options, title and unit, ✥ pan/zoom, − / +), Compare / Table / CSV / Enlarge buttons, a legend and controls row, a drag-to-resize height, and the compare panel. |
-| `ChartDataTable.svelte`     | The table view: the card's download dataset over the chart, windowed, with the header row and first column pinned.                                                                                                                                         |
-| `LoadingOverlay.svelte`     | The fading loading veil over a card's body.                                                                                                                                                                                                                |
-| `chart-downloads.svelte.js` | The page's download registry and its downloads: cards register while mounted (`ChartCard`'s `download`, or the `chartDownload` attachment); a source's CSV and the "All charts" workbook.                                                                  |
-| `chart-downloads.js`        | Pure helpers: screen order, a row's status line, workbook availability.                                                                                                                                                                                    |
-| `DownloadDataModal.svelte`  | The "Download data" dialog: a CSV row per registered card, then the workbook. Opened through the registry's `open`.                                                                                                                                        |
-| `export-dataset.js`         | The `ExportDataset` shape's serialisers (CSV, XLSX sheets, the workbook), the table view's cell formatting and `seriesDataset` (a chart's visible series as drawn).                                                                                        |
-| `cell-format.js`            | Shared cell formatters: the em dash, percentages, fixed decimals, compact dollars, tonnes' prefix, a label's qualifier.                                                                                                                                    |
-| `types.js`                  | `ExportDataset`, `DownloadSource`, `ChartSnapshot`, `CompareSource` and friends.                                                                                                                                                                           |
-| `compare/`                  | Compare mode: the engine (`chart-compare.js`), the panel (`ComparePanel` with `ComparePicker`, `CompareChangeList`, `CompareValueTiles`, `CompareSlopeChart`), snapshot sources (`snapshot-sources.js`) and pins (`compare-pins.svelte.js`).               |
+| File                        | What it is                                                                                                                                                                                                                                                                                   |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ChartCard.svelte`          | The card: title (with an optional ⓘ `info` tooltip), badge, the chart's hosted toolbar (⋮ options, title and unit, ✥ pan/zoom, − / +), Compare / Table / CSV / Enlarge buttons, a legend and controls row, a drag-to-resize height, and the compare panel.                                   |
+| `ChartDataTable.svelte`     | The table view: the card's download dataset over the chart, windowed, with the header row and first column pinned.                                                                                                                                                                           |
+| `LoadingOverlay.svelte`     | The fading loading veil over a card's body.                                                                                                                                                                                                                                                  |
+| `chart-downloads.svelte.js` | The page's download registry and its downloads: cards register while mounted (`ChartCard`'s `download`, or the `chartDownload` attachment); a source's CSV and the "All charts" workbook.                                                                                                    |
+| `chart-downloads.js`        | Pure helpers: screen order, a row's status line, workbook availability.                                                                                                                                                                                                                      |
+| `DownloadDataModal.svelte`  | The "Download data" dialog: a CSV row per registered card, then the workbook. Opened through the registry's `open`.                                                                                                                                                                          |
+| `export-dataset.js`         | The `ExportDataset` shape's serialisers (CSV, XLSX sheets, the workbook), the table view's cell formatting and `seriesDataset` (a chart's visible series as drawn).                                                                                                                          |
+| `cell-format.js`            | Shared cell formatters: the em dash, percentages, fixed decimals, compact dollars, tonnes' prefix, a label's qualifier.                                                                                                                                                                      |
+| `types.js`                  | `ExportDataset`, `DownloadSource`, `ChartSnapshot`, `CompareSource` and friends.                                                                                                                                                                                                             |
+| `compare/`                  | Compare mode: the engine (`chart-compare.js`), the panel (`ComparePanel` with `ComparePicker`, `CompareChangeList`, `CompareValueTiles`, `CompareSlopeChart`), snapshot sources (`snapshot-sources.js`), pins (`compare-pins.svelte.js`) and the page controller (`compare-mode.svelte.js`). |
 
 ## Using it on a page
 
@@ -41,12 +41,13 @@ the card, the "Download data" dialog and the comparison.
    charts' `onvisibledata`. Downloads (`seriesDataset`) and comparisons read
    it.
 3. **Compare mode.** Give a card `compare={{ open, onopenchange, panel }}`.
-   The page owns one comparison (`{cards, a, b}`; `toggleCompareCard`,
-   `pickCompareTime`, `compareTimeMarkers`) and an armed slot. A comparing
-   chart gets the markers (`timeMarkers`), `engageOnTap: false` and a pick
-   handler in place of its pin (`onpick`, or `onfocuschange` with no
-   `focusTime` on `NetworkChart`). The panel snippet renders `ComparePanel`
-   with a `CompareSource`:
+   The page keeps one comparison (`{cards, a, b}`) where it likes and hands
+   it to `createCompareMode({ read, write, times })`, which holds the armed
+   slot, defaults A and B to a comparing card's first and last buckets until
+   they are chosen, and gives each chart `timeMarkers={compare.timeMarkers(card)}`
+   and `onpick={compare.onpick(card)}` (props, not a spread: a spread would
+   make every prop the chart reads track the comparison). The panel snippet
+   renders `ComparePanel` with a `CompareSource`:
    - `stackCompareSource(snapshot, …)` for a stack (a net total and one
      change list, loads read as consumption; a drawn bucket's missing
      reading compares as 0);
