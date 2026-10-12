@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { regionsWithColours } from '$lib/regions.js';
 import { processRegionPrices } from './process-region-prices.js';
 
 const T1 = '2026-07-24T14:20:00+10:00';
@@ -43,7 +44,7 @@ describe('processRegionPrices', () => {
 
 	it('colours and labels regions from the shared registry', () => {
 		const result = processRegionPrices(priceResponse);
-		expect(result?.seriesColours.NSW1).toBe('#A078D7');
+		expect(result?.seriesColours.NSW1).toBe(regionsWithColours.nsw1);
 		expect(result?.seriesLabels.NSW1).toBe('NSW');
 	});
 

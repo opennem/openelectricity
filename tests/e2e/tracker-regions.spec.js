@@ -67,7 +67,7 @@ test('defaults, region colours, complete rolling values and synchronised keyboar
 			.getByRole('button', { name: 'Compare New South Wales', exact: true })
 			.locator('span')
 			.first()
-	).toHaveCSS('background-color', 'rgb(160, 120, 215)');
+	).toHaveCSS('background-color', 'rgb(36, 150, 238)');
 	expect(new Set(data.requests.map((request) => request.region)).size).toBe(6);
 	await page.getByRole('button', { name: 'Inspect carbon intensity values' }).focus();
 	await page.keyboard.press('ArrowLeft');

@@ -105,10 +105,7 @@
 		hex: region.colour,
 		note: region.description
 	}));
-	// Only show the secondary colours the region palette doesn't already cover.
-	const secondary = secondaryColours
-		.map((hex, i) => ({ name: `secondary ${i + 1}`, hex }))
-		.filter((item) => !regions.some((r) => r.hex.toLowerCase() === item.hex.toLowerCase()));
+	const secondary = secondaryColours.map((hex, i) => ({ name: `secondary ${i + 1}`, hex }));
 
 	/** @type {Record<string, string>} */
 	const extraLabels = { vre: 'VRE (Wind + Solar)', residual: 'Residual', demand: 'Demand' };
@@ -366,12 +363,17 @@
 		<h3 class="subhead-primary mt-12 mb-4">Accent</h3>
 		<SwatchGrid items={accents} />
 
-		<h3 class="subhead-primary mt-12 mb-4">Categorical &amp; regions</h3>
+		<h3 class="subhead-primary mt-12 mb-4">Regions</h3>
 		<p class="text-sm text-mid-grey max-w-3xl mb-4">
-			The secondary palette serves non-fuel-tech series; region colours reuse it, with NEM as a
-			whole getting its own red.
+			Each region keeps one colour on every chart, map and table; NEM as a whole gets its own red.
 		</p>
-		<SwatchGrid items={[...regions, ...secondary]} />
+		<SwatchGrid items={regions} />
+
+		<h3 class="subhead-primary mt-12 mb-4">Secondary</h3>
+		<p class="text-sm text-mid-grey max-w-3xl mb-4">
+			The categorical palette for non-fuel-tech, non-region series.
+		</p>
+		<SwatchGrid items={secondary} />
 
 		<h3 class="subhead-primary mt-12 mb-4">Sequential scales</h3>
 		<div class="max-w-3xl">

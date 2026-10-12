@@ -13,42 +13,42 @@ export const regionOptions = [
 		label: 'New South Wales',
 		shortLabel: 'NSW',
 		description: 'New South Wales',
-		colour: '#A078D7' // 49A4E8
+		colour: '#2496EE'
 	},
 	{
 		value: 'qld1',
 		label: 'Queensland',
 		shortLabel: 'QLD',
 		description: 'Queensland',
-		colour: '#F480EE' // DC3A33
+		colour: '#842C72'
 	},
 	{
 		value: 'sa1',
 		label: 'South Australia',
 		shortLabel: 'SA',
 		description: 'South Australia',
-		colour: '#069FAF' // f7c41d
+		colour: '#E0AA1E'
 	},
 	{
 		value: 'tas1',
 		label: 'Tasmania',
 		shortLabel: 'TAS',
 		description: 'Tasmania',
-		colour: '#E78114' // 65C7AA
+		colour: '#22A877'
 	},
 	{
 		value: 'vic1',
 		label: 'Victoria',
 		shortLabel: 'VIC',
 		description: 'Victoria',
-		colour: '#4F5FD7' // 153BA5
+		colour: '#4A54D0'
 	},
 	{
 		value: 'wem',
 		label: 'Western Australia',
 		shortLabel: 'WA',
 		description: 'Western Australia',
-		colour: '#BDBCBC'
+		colour: '#C866C2'
 	}
 ];
 

@@ -1,4 +1,5 @@
 import { startOfYear } from 'date-fns';
+import { regionsWithColours } from '$lib/regions.js';
 
 export const modelOptions = [
 	{
@@ -124,37 +125,37 @@ export const regionOptions = [
 		value: '_all',
 		label: 'All Regions',
 		description: 'National Electricity Market',
-		colour: '#e34a33'
+		colour: regionsWithColours._all
 	},
 	{
 		value: 'nsw1',
 		label: 'New South Wales',
 		description: 'New South Wales',
-		colour: '#A078D7' // 49A4E8
+		colour: regionsWithColours.nsw1
 	},
 	{
 		value: 'qld1',
 		label: 'Queensland',
 		description: 'Queensland',
-		colour: '#F480EE' // DC3A33
+		colour: regionsWithColours.qld1
 	},
 	{
 		value: 'sa1',
 		label: 'South Australia',
 		description: 'South Australia',
-		colour: '#069FAF' // f7c41d
+		colour: regionsWithColours.sa1
 	},
 	{
 		value: 'tas1',
 		label: 'Tasmania',
 		description: 'Tasmania',
-		colour: '#E78114' // 65C7AA
+		colour: regionsWithColours.tas1
 	},
 	{
 		value: 'vic1',
 		label: 'Victoria',
 		description: 'Victoria',
-		colour: '#4F5FD7' // 153BA5
+		colour: regionsWithColours.vic1
 	}
 ];
 export const regionsOnly = regionOptions.map((/** @type {any} */ d) => d.value).slice(1);
