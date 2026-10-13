@@ -633,7 +633,8 @@
 		<li>Emissions intensity: each technology's emissions ÷ its generation.</li>
 		{#if showRooftopNote || rooftopForecast}
 			<li id="rooftop-interpolation-note">
-				Rooftop solar is reported half-hourly, up to 30 minutes late.
+				Rooftop solar is reported half-hourly and can arrive an hour or more after other
+				technologies.
 				{#if showRooftopNote}
 					5-minute charts interpolate between readings (chart only).
 				{/if}

@@ -10,6 +10,7 @@ vi.mock('openelectricity', () => ({
 
 import {
 	HISTORICAL_FRESH_MS,
+	LIVE_FORECAST_FRESH_MS,
 	LIVE_FRESH_MS,
 	NETWORK_DATA_KEY_PREFIX,
 	cacheKeyFor,
@@ -133,6 +134,18 @@ describe('describeCacheKey', () => {
 			isHistorical: true,
 			freshMs: HISTORICAL_FRESH_MS
 		});
+	});
+
+	it('refreshes a live rooftop forecast every minute, a closed one as history', () => {
+		expect(describeCacheKey('region=nsw1&metric=rooftop_forecast&interval=30m')).toMatchObject({
+			isHistorical: false,
+			freshMs: LIVE_FORECAST_FRESH_MS
+		});
+		expect(
+			describeCacheKey(
+				'region=nsw1&metric=rooftop_forecast&interval=30m&date_start=2020-01-01&date_end=2020-01-02'
+			)
+		).toMatchObject({ isHistorical: true, freshMs: HISTORICAL_FRESH_MS });
 	});
 });
 

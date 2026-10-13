@@ -53,6 +53,24 @@ describe('topUpRooftopPower', () => {
 		expect(topUpRooftopPower(combined, forecast).data[1].solar).toBe(820);
 	});
 
+	it('fills every row when the latest reading lags by more than an hour', () => {
+		const lagging = {
+			groupFuelTechs: { solar_rooftop: ['solar_rooftop'] },
+			data: [
+				{ time: at(-90), solar_rooftop: 450, _rooftopPower: 450 },
+				...[-60, -30, 0, 25].map((minutes) => ({
+					time: at(minutes),
+					solar_rooftop: null,
+					_rooftopPower: null
+				}))
+			]
+		};
+		const slots = [-90, -60, -30, 0].map((minutes, i) => ({ time: at(minutes), value: 460 + i }));
+		expect(topUpRooftopPower(lagging, slots).data.map((row) => row.solar_rooftop)).toEqual([
+			450, 461, 462, 463, 463
+		]);
+	});
+
 	it('leaves a row whose half-hour has no forecast slot as a gap', () => {
 		const sparse = [{ time: at(-60), value: 400 }];
 		expect(topUpRooftopPower(detailed, sparse)).toBe(detailed);

@@ -13,8 +13,9 @@ import { toNetworkNaive } from '$lib/components/charts/v2/network-time.js';
 import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
 import { HALF_HOUR_MS } from '$lib/components/charts/network/rooftop-top-up.js';
 
-/** Reaches back past the latest rooftop reading, which can lag by half an hour. */
-const LOOKBACK_MS = 2 * 3_600_000;
+/** Reaches back past the latest rooftop reading, which can lag the other fuel
+ * techs by well over an hour (NSW stood 1.5 hours behind on 13 October 2026). */
+const LOOKBACK_MS = 4 * 3_600_000;
 
 /** AEMO forecasts rooftop PV for the NEM and its regions only.
  * @param {string} region */
@@ -32,8 +33,8 @@ export function formatRunTime(ms, timeZone) {
 
 /**
  * `/api/network/data` query for the forecast around now: native 30-minute
- * slots up to the one covering now, half-hour-aligned so every reader in the
- * same half-hour shares the edge-cached response.
+ * slots from four hours back up to the one covering now, half-hour-aligned so
+ * every reader in the same half-hour shares the edge-cached response.
  * @param {string} region @param {number} nowMs @param {string} timeZone
  */
 export function forecastQuery(region, nowMs, timeZone) {

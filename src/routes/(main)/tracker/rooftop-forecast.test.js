@@ -27,8 +27,8 @@ describe('forecastQuery', () => {
 			region: 'sa1',
 			metric: 'rooftop_forecast',
 			interval: '30m',
-			// Two hours back, floored to the half-hour: 10:10 → 10:00.
-			date_start: '2026-10-09T10:00:00',
+			// Four hours back, floored to the half-hour: 08:10 → 08:00.
+			date_start: '2026-10-09T08:00:00',
 			// Up to the slot covering now (12:00), never further ahead.
 			date_end: '2026-10-09T12:30:00'
 		});

@@ -32,6 +32,9 @@
 		stackedProfileRows
 	} from './profile-chart.js';
 	import { createProfileData, createProfileDemand } from './profile-data.svelte.js';
+	import { createRooftopForecast } from './rooftop-forecast.svelte.js';
+	import { hasRooftopForecast } from './rooftop-forecast.js';
+	import { topUpRooftopPower } from '$lib/components/charts/network/rooftop-top-up.js';
 	import { DEMAND_GROSS_SERIES_ID } from '$lib/components/charts/network/market-series-ids.js';
 	import { createLoadingNotice } from './tracker-loading.svelte.js';
 	import { DEFAULT_TABLE_COLUMNS, PERCENTILE_TABLE_COLUMNS } from './table-columns.js';
@@ -165,8 +168,29 @@
 		zone,
 		group,
 		window: todaySoFar,
-		enabled: showToday
+		enabled: showToday,
+		retainRooftopPower: true
 	}));
+	/** AEMO's rooftop forecast tops up today's lagging rooftop readings to the
+	 * latest data time, as on the Timeline: NEM scopes only. */
+	let forecastShown = $derived(
+		showToday && hasRooftopForecast(region) && selection.rooftopForecast
+	);
+	const rooftopForecast = createRooftopForecast({
+		region: () => region,
+		enabled: () => forecastShown,
+		// Today's readings run to the last refresh, not the ticking clock.
+		clock: () => todaySoFar.end,
+		timeZone: () => zone
+	});
+	let todayPowerRows = $derived(
+		forecastShown
+			? topUpRooftopPower(
+					{ data: powerToday.rows, groupFuelTechs: powerToday.meta?.groupFuelTechs },
+					rooftopForecast.rows
+				).data
+			: powerToday.rows
+	);
 	const priceToday = createProfileData(() => ({
 		region,
 		metric: 'price',
@@ -228,7 +252,7 @@
 					colour: stackMeta.seriesColours[key] ?? '#6A6A6A',
 					price: false,
 					profile: techProfiles.get(key) ?? buildDailyProfile(powerData.rows, key, window),
-					today: showToday ? buildDailyProfile(powerToday.rows, key, today) : null
+					today: showToday ? buildDailyProfile(todayPowerRows, key, today) : null
 				}))
 			: []),
 		...(showPrice && priceMeta && priceName
@@ -1145,6 +1169,9 @@
 				tableColumns={DEFAULT_TABLE_COLUMNS}
 				powerColumns={tablePowerColumns}
 				notes={tableNotes}
+				rooftopForecast={forecastShown
+					? { runTime: rooftopForecast.runTime, timeZone: zone }
+					: null}
 				companion={breakdown || stackUnavailable ? undefined : stackDial}
 				focusColumns={breakdown
 					? profileFocusColumns(style, chartPart)

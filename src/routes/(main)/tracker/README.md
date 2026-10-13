@@ -338,7 +338,11 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   only while the line is shown, and never joins the average, stack, table or
   CSV. Its loading shows in the top-nav loader and holds the PNG export; a
   failure shows an alert with "Retry today" beside the toggle, leaving the
-  historical profile on screen. The radial heatmap has no today ring: there the toggle is disabled and
+  historical profile on screen. On NEM scopes, AEMO's rooftop solar forecast
+  tops up today's lagging rooftop readings to the latest data time, as on
+  Timeline (the same `rooftop-forecast.svelte.js` source and
+  `topUpRooftopPower`, keyed on today's last refresh; `forecast=0` turns it
+  off), and the table's footnote names the run. The radial heatmap has no today ring: there the toggle is disabled and
   shows off (Toggle's `disabled`), and today isn't fetched, while the URL keeps
   the choice for the other styles. The breakdown's charts share one hover (`ProfileChart`'s
   `onhoverchange` / `syncHoverTime`), as Timeline's cards do, and the radial

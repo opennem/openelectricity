@@ -24,16 +24,21 @@ export const NETWORK_DATA_KEY_PREFIX = 'https://edge-cache.openelectricity.org.a
 
 /** Refresh live windows every five minutes. */
 export const LIVE_FRESH_MS = 5 * 60 * 1000;
+/** Refresh live rooftop forecasts every minute: each slot reaches the API only
+ * minutes before it is due, and a copy taken earlier lacks it. */
+export const LIVE_FORECAST_FRESH_MS = 60 * 1000;
 /** Refresh historical windows every six hours. */
 export const HISTORICAL_FRESH_MS = 6 * 60 * 60 * 1000;
 
 /**
- * Return the freshness period for a network-local `date_end`.
+ * Return the freshness period for a network-local `date_end` and metric.
  * @param {string | undefined} dateEnd
+ * @param {string} [metric]
  * @returns {number}
  */
-export function freshnessFor(dateEnd) {
-	return isHistoricalWindow(dateEnd) ? HISTORICAL_FRESH_MS : LIVE_FRESH_MS;
+export function freshnessFor(dateEnd, metric) {
+	if (isHistoricalWindow(dateEnd)) return HISTORICAL_FRESH_MS;
+	return metric === 'rooftop_forecast' ? LIVE_FORECAST_FRESH_MS : LIVE_FRESH_MS;
 }
 
 /**
@@ -179,17 +184,18 @@ export function parseNetworkDataParams(searchParams) {
 export function describeCacheKey(canonicalQuery) {
 	const params = new URLSearchParams(canonicalQuery);
 	const dateEnd = params.get('date_end') ?? undefined;
+	const metric = params.get('metric') ?? '';
 	return {
 		cacheKey: `${NETWORK_DATA_KEY_PREFIX}?${canonicalQuery}`,
 		canonicalQuery,
 		region: params.get('region') ?? '',
-		metric: params.get('metric') ?? '',
+		metric,
 		interval: params.get('interval') ?? '',
 		dateStart: params.get('date_start') ?? undefined,
 		dateEnd,
 		primaryGrouping: params.get('primary_grouping') ?? undefined,
 		isHistorical: isHistoricalWindow(dateEnd),
-		freshMs: freshnessFor(dateEnd)
+		freshMs: freshnessFor(dateEnd, metric)
 	};
 }
 

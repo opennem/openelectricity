@@ -14,10 +14,14 @@ import { getFuelTechColour } from '$lib/components/charts/colours.js';
  * share one request; regional spot price is a second source, for the
  * breakdown's last chart.
  *
+ * `retainRooftopPower` keeps each power row's reported rooftop component, so
+ * today's rows can be topped up from AEMO's forecast where readings lag.
+ *
  * Must be called during component init — it registers `$effect`s.
  * @param {() => {region: string, metric?: 'power' | 'price', zone: string,
  * group: ReturnType<typeof import('$lib/components/charts/network/groups.js').getGroup>,
- * window: {start: number, end: number}, enabled?: boolean}} options */
+ * window: {start: number, end: number}, enabled?: boolean,
+ * retainRooftopPower?: boolean}} options */
 export function createProfileData(options) {
 	// Each input derived on its own: a new window (or interval) must not
 	// rebuild the spec, which would replace the manager and refetch.
@@ -26,6 +30,7 @@ export function createProfileData(options) {
 	let zone = $derived(options().zone);
 	let group = $derived(options().group);
 	let enabled = $derived(options().enabled !== false);
+	let retainRooftopPower = $derived(options().retainRooftopPower === true);
 	const provider = createHeadlessSeriesProvider({
 		region: () => region,
 		interval: () => '5m',
@@ -46,6 +51,7 @@ export function createProfileData(options) {
 								groupLabels: group.labels,
 								loadsToInvert: loadGroupsFor(group),
 								getColour: getFuelTechColour,
+								retainRooftopPower,
 								networkTimezone: zone
 							})
 			};

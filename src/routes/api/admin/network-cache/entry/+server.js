@@ -53,7 +53,7 @@ export async function GET({ request, url, platform }) {
 
 	// Local freshness re-derives the period from the key's date_end — the
 	// same classification the public endpoint applies when storing.
-	const freshMs = freshnessFor(parsed.params.dateEnd);
+	const freshMs = freshnessFor(parsed.params.dateEnd, parsed.params.metric);
 	const entry = { storedAt: local.storedAt, freshMs };
 
 	return json(

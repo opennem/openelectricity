@@ -73,7 +73,7 @@ export async function POST({ request, platform }) {
 		// The cache's onRefreshError hook has already recorded last_error; the
 		// previously cached response (if this data centre holds one) survives.
 		const local = await networkDataCache.peek(platform, parsed.canonical);
-		const freshMs = freshnessFor(parsed.params.dateEnd);
+		const freshMs = freshnessFor(parsed.params.dateEnd, parsed.params.metric);
 		return json(
 			{
 				ok: false,

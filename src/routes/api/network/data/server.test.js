@@ -67,6 +67,20 @@ describe('network data endpoint', () => {
 		});
 	});
 
+	it('lets browsers keep a live rooftop forecast only as long as the edge keeps it fresh', async () => {
+		const setHeaders = vi.fn();
+		const response = await request(
+			'region=nsw1&metric=rooftop_forecast&interval=30m&date_start=2099-01-01T10:00:00&date_end=2099-01-01T12:30:00',
+			setHeaders
+		);
+
+		expect(response.status).toBe(200);
+		expect(setHeaders).toHaveBeenCalledWith({
+			'Cache-Control': 'public, max-age=60',
+			'x-oe-cache': 'miss'
+		});
+	});
+
 	it('merges imports and exports into regional NEM generation', async () => {
 		mocks.getNetworkData.mockResolvedValue({
 			response: {

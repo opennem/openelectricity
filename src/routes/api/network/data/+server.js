@@ -54,7 +54,7 @@ export async function GET({ url, setHeaders, platform }) {
 
 	try {
 		const cacheKey = cacheKeyFor(params);
-		const freshMs = freshnessFor(params.dateEnd);
+		const freshMs = freshnessFor(params.dateEnd, metric);
 
 		const { value, status } = await networkDataCache.get(
 			platform,
@@ -65,10 +65,11 @@ export async function GET({ url, setHeaders, platform }) {
 
 		setHeaders({
 			// This header controls browsers; the Cache API handles edge storage.
+			// A live copy is kept no longer than the edge keeps it fresh.
 			'Cache-Control':
 				freshMs === HISTORICAL_FRESH_MS
 					? 'public, max-age=3600, stale-while-revalidate=3600'
-					: 'public, max-age=300',
+					: `public, max-age=${freshMs / 1000}`,
 			'x-oe-cache': status
 		});
 

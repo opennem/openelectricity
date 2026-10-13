@@ -19,7 +19,7 @@ async function settle(ms = 200) {
 	flushSync();
 }
 
-/** @param {Partial<{days: number, enabled: boolean}>} [overrides] */
+/** @param {Partial<{days: number, enabled: boolean, retainRooftopPower: boolean}>} [overrides] */
 function harness(overrides = {}) {
 	const state = $state({
 		days: overrides.days ?? 7,
@@ -33,7 +33,8 @@ function harness(overrides = {}) {
 			zone,
 			group: getGroup('simple'),
 			window: profileWindow(nowMs, zone, state.days),
-			enabled: state.enabled
+			enabled: state.enabled,
+			retainRooftopPower: overrides.retainRooftopPower
 		}));
 	});
 	// @ts-expect-error assigned synchronously inside the root
@@ -77,6 +78,22 @@ describe('profile data source', () => {
 		expect(source.rows.map((row) => row.time)).toEqual([window.start]);
 		expect(source.rows[0].coal).toBe(120);
 		stop();
+	});
+
+	it('keeps the reported rooftop component only when asked, for the forecast top-up', async () => {
+		const window = profileWindow(nowMs, zone, 7);
+		stubNetworkFetch(() =>
+			powerResponse(local(window.start), { solar_utility: 100, solar_rooftop: 400 })
+		);
+		for (const retainRooftopPower of [true, false]) {
+			clearCompletedResponses();
+			const { source, stop } = harness({ retainRooftopPower });
+			await settle();
+			// Simplified folds utility and rooftop into one 'solar' group.
+			expect(source.rows[0].solar).toBe(500);
+			expect(source.rows[0]._rooftopPower).toBe(retainRooftopPower ? 400 : undefined);
+			stop();
+		}
 	});
 
 	it('widens the window by fetching only the missing earlier days', async () => {
