@@ -1413,6 +1413,23 @@ describe('ChartDataManager', () => {
 			await vi.advanceTimersByTimeAsync(200);
 			expect(firstCallDates(fetchSpy).dateEnd).toBe('2026-07-18T00:00:00');
 		});
+
+		it('snaps weekly ranges to the Sunday weeks of the API', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			// A refresh's tail starts mid-week (Thursday 1 Oct 2026): the API clips a
+			// week to date_start, so an unsnapped start returns that week part-summed.
+			const from = new Date('2026-10-01T05:31:47+10:00').getTime();
+			const to = new Date('2026-10-15T14:09:24+10:00').getTime();
+			const weekly = createManager({ interval: '7d', metric: 'energy' });
+			weekly.requestRange(from, to, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(firstCallDates(fetchSpy)).toEqual({
+				dateStart: '2026-09-27T00:00:00',
+				dateEnd: '2026-10-18T00:00:00'
+			});
+		});
 	});
 
 	// ------------------------------------------

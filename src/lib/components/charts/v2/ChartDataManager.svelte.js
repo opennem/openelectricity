@@ -318,11 +318,19 @@ function sharedFetch(url, signal, priority, bypassCache = false) {
 
 /**
  * Snap a timezone-naive local datetime string ('YYYY-MM-DDTHH:mm:ss') down to
- * the start of the bucket containing it. Intervals absent here (5m/1h/7d) are
- * sent unsnapped.
+ * the start of the bucket containing it. Intervals absent here (5m/1h) are
+ * sent unsnapped. Calendar grains must be snapped: the API clips a bucket to
+ * the request's `date_start`, so a mid-bucket start (a refresh's tail) returns
+ * that bucket part-summed, and the merge keeps the part.
  * @type {Record<string, (ds: string) => string>}
  */
 const SNAP_TO_BUCKET_START = {
+	// The API's weeks start on Sunday.
+	'7d': (ds) => {
+		const dayMs = Date.UTC(+ds.slice(0, 4), +ds.slice(5, 7) - 1, +ds.slice(8, 10));
+		const weekday = new Date(dayMs).getUTCDay();
+		return new Date(dayMs - weekday * 86_400_000).toISOString().slice(0, 10) + 'T00:00:00';
+	},
 	'1y': (ds) => ds.slice(0, 4) + '-01-01T00:00:00',
 	'3M': (ds) => {
 		const m = parseInt(ds.slice(5, 7), 10);
@@ -346,7 +354,7 @@ function nextBucketStart(interval, bucketStart) {
 	const months = interval === '1y' ? 12 : interval === '3M' ? 3 : interval === '1M' ? 1 : 0;
 	const next = months
 		? new Date(Date.UTC(year, month0 + months, day))
-		: new Date(Date.UTC(year, month0, day + 1));
+		: new Date(Date.UTC(year, month0, day + (interval === '7d' ? 7 : 1)));
 	return next.toISOString().slice(0, 19);
 }
 
@@ -849,9 +857,11 @@ export default class ChartDataManager {
 						? 92 * DAY_MS
 						: this.interval === '1M'
 							? 31 * DAY_MS
-							: this.interval === '1d'
-								? DAY_MS
-								: 10 * 60 * 1000; // 10 minutes for 5m
+							: this.interval === '7d'
+								? 7 * DAY_MS
+								: this.interval === '1d'
+									? DAY_MS
+									: 10 * 60 * 1000; // 10 minutes for 5m
 
 			if (start < this.#cacheStart) {
 				// No overlap on the left: the existing first bucket is complete, so a
