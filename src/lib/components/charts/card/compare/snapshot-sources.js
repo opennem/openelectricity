@@ -26,6 +26,7 @@ import { finite, formatSignedChange } from './chart-compare.js';
  *   baseUnit: string,
  *   format: (value: number | null) => string,
  *   formatTime: (time: number) => string,
+ *   formatExportTime?: (time: number) => string,
  *   held?: HeldRows,
  *   context?: Array<{key: string, header: string, value: string}>,
  *   note?: string
@@ -102,6 +103,7 @@ export function stackCompareSource(snapshot, options) {
 		format,
 		formatDelta: (value) => formatSignedChange(value, format),
 		formatTime: options.formatTime,
+		formatExportTime: options.formatExportTime,
 		context: options.context,
 		note: options.note
 	};
@@ -175,6 +177,7 @@ export function lineCompareSource(snapshot, options) {
 		format,
 		formatDelta: (entry) => formatSignedChange(entry, format),
 		formatTime: options.formatTime,
+		formatExportTime: options.formatExportTime,
 		window: count
 			? {
 					min,

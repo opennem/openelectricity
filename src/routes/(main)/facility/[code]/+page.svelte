@@ -367,9 +367,7 @@
 	function closeCompare() {
 		comparison = null;
 	}
-	let compareFormatTime = $derived(
-		getTimeFormatPolicy(range.displayInterval, ianaTimeZone).formatTooltip
-	);
+	let comparePolicy = $derived(getTimeFormatPolicy(range.displayInterval, ianaTimeZone));
 	/** `<code>-<card>-comparison-<a>-to-<b>.csv` @param {FacilityCard} card */
 	function compareFileName(card) {
 		const day = (/** @type {number | null} */ time) => toNetworkDateString(time ?? 0, timeZone);
@@ -630,7 +628,8 @@
 		source={facilityCompareSource(card, snapshotOf(card), {
 			...cardView(card),
 			held: comparePins[card].rows,
-			formatTime: compareFormatTime,
+			formatTime: comparePolicy.formatTooltip,
+			formatExportTime: comparePolicy.formatFull,
 			facilityCode: selectedFacility?.code ?? '',
 			zone: timeZone,
 			interval: range.displayInterval

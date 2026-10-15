@@ -9,7 +9,7 @@
  * @typedef {import('./ChartStore.svelte.js').default} ChartStoreLike
  */
 
-import { formatDayMonthYearTime } from './date-labels.js';
+import { formatDayMonthTime, formatDayMonthYearTime, isCurrentLocalYear } from './date-labels.js';
 import { indexOfTime } from './binary-search.js';
 import { getNumberFormat } from '$lib/utils/formatters';
 
@@ -72,14 +72,17 @@ export function getTotalForRow(chart, activeData) {
 
 /**
  * en-AU date-time used as the default tooltip x-format when no consumer
- * formatter is in play.
+ * formatter is in play; the year only when it isn't the current one.
  *
  * @param {Date} date
  * @param {string | undefined} timeZone
  * @returns {string}
  */
 function intlTooltipDate(date, timeZone) {
-	return formatDayMonthYearTime(date, timeZone ?? 'Australia/Brisbane');
+	const zone = timeZone ?? 'Australia/Brisbane';
+	return isCurrentLocalYear(date, zone)
+		? formatDayMonthTime(date, zone)
+		: formatDayMonthYearTime(date, zone);
 }
 
 /**

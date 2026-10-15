@@ -112,6 +112,7 @@ export function facilityCardState(card, snapshot, view) {
  * @param {FacilityCardView & {
  *   held: Record<number, Record<string, any>>,
  *   formatTime: (time: number) => string,
+ *   formatExportTime?: (time: number) => string,
  *   facilityCode: string,
  *   zone: string,
  *   interval: string
@@ -123,6 +124,7 @@ export function facilityCompareSource(card, snapshot, context) {
 	const shared = {
 		held: context.held,
 		formatTime: context.formatTime,
+		formatExportTime: context.formatExportTime,
 		context: [
 			{ key: 'facility', header: 'Facility', value: context.facilityCode },
 			{ key: 'timeZone', header: 'Network time', value: networkTimeZoneLabel(context.zone) },

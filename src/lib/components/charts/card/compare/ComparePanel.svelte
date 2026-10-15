@@ -108,8 +108,9 @@
 			rowHeader: source.rowHeader,
 			unit: source.baseUnit,
 			mode: source.deltaMode,
-			a: labels.a,
-			b: labels.b,
+			// Downloads name A and B with their years, as the screen may not.
+			a: pair.a === null ? '' : (source.formatExportTime ?? source.formatTime)(pair.a),
+			b: pair.b === null ? '' : (source.formatExportTime ?? source.formatTime)(pair.b),
 			context: source.context
 		});
 	}

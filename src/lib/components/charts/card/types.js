@@ -94,6 +94,8 @@
  * @property {(value: number | null) => string} format - A value as displayed, without its unit
  * @property {(value: number | null) => string} formatDelta - A signed change, without its unit
  * @property {(time: number) => string} formatTime - A bucket as the chart's tooltip names it
+ * @property {(time: number) => string} [formatExportTime] - The same, always with its
+ *   year, for the download (`formatTime` when absent)
  * @property {(value: number | null) => string} [colourOf] - The colour a value takes (heatmap chips)
  * @property {{min: number, max: number, reference: number | null, referenceLabel: string} | null} [window]
  *   - A single line's visible range and reference (mean or window ratio)

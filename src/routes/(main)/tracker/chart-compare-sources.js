@@ -67,16 +67,18 @@ const ABSOLUTE_NOTE = 'Values are absolute; the chart’s proportion and change 
  *   region: string,
  *   zone: string,
  *   interval: string,
- *   formatTime: (time: number) => string
+ *   formatTime: (time: number) => string,
+ *   formatExportTime?: (time: number) => string
  * }} context - `held`: rows drawn at A or B before a pan (`compare-pins`)
  * @returns {CompareSource | null}
  */
 export function timelineCompareSource(card, snapshot, context) {
 	if (!snapshot) return null;
-	const { metric, hidden, loadIds, prefix, held, region, zone, interval, formatTime } = context;
+	const { metric, hidden, loadIds, prefix, held, region, zone, interval } = context;
 	const shared = {
 		held,
-		formatTime,
+		formatTime: context.formatTime,
+		formatExportTime: context.formatExportTime,
 		context: [
 			{ key: 'region', header: 'Region', value: region },
 			{ key: 'timeZone', header: 'Network time', value: networkTimeZoneLabel(zone) },

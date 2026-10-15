@@ -22,7 +22,8 @@ import {
 	formatDayMonthYear,
 	formatDayMonthYearTime,
 	formatMonthYear,
-	formatYear
+	formatYear,
+	isCurrentLocalYear
 } from './date-labels.js';
 import { baseIntervalFor } from '$lib/components/charts/facility/range-interval-config.js';
 import { tzAbbreviationFromIana } from './network-time.js';
@@ -53,6 +54,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /**
  * @typedef {Object} TimeFormatPolicy
  * @property {(d: Date | number) => string} formatTooltip - Standalone label for one point
+ *           on screen; dates drop the year when it is the current one
+ * @property {(d: Date | number) => string} formatFull - The same label, always with
+ *           the year: for downloads, which outlive the year they're made in
  * @property {(d: Date | number) => string} formatShort - Compact label for one point;
  *           the year only when it isn't the current one
  * @property {((d: Date | number) => string) | null} bucketTick - Per-bucket axis label,
@@ -73,6 +77,7 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
 		const formatTooltip = (/** @type {Date | number} */ d) => `12 months to ${label(d)}`;
 		return {
 			formatTooltip,
+			formatFull: formatTooltip,
 			formatShort: formatTooltip,
 			bucketTick: rollingBase === '1M' ? null : label
 		};
@@ -89,12 +94,12 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
 							ianaTimeZone,
 							/** @type {'quarter' | 'season' | 'half' | 'fy'} */ (displayInterval)
 						);
-		return { formatTooltip: label, formatShort: label, bucketTick: label };
+		return { formatTooltip: label, formatFull: label, formatShort: label, bucketTick: label };
 	}
 
 	if (displayInterval === '7d') {
-		// A week bucket reads as its inclusive range, with the year so the
-		// label stands alone: "16 — 22 June 2025". Exact arithmetic — the
+		// A week bucket reads as its inclusive range, with the year unless it
+		// is the current one: "16 — 22 June 2025". Exact arithmetic — the
 		// network zones don't observe DST.
 		/** @param {Date | number} d @param {{ alwaysYear?: boolean, yearIfNotCurrent?: boolean }} opts */
 		const week = (d, opts) => {
@@ -104,28 +109,38 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
 			return formatDateRange(start, end, ianaTimeZone, opts);
 		};
 		return {
-			formatTooltip: (d) => week(d, { alwaysYear: true }),
+			formatTooltip: (d) => week(d, { yearIfNotCurrent: true }),
+			formatFull: (d) => week(d, { alwaysYear: true }),
 			formatShort: (d) => week(d, { yearIfNotCurrent: true }),
 			bucketTick: null
 		};
 	}
 
 	if (displayInterval === '1M' || displayInterval === '3M') {
+		// Months and periods keep their year: "Oct" alone doesn't read as a date.
 		const label = (/** @type {Date | number} */ d) => formatMonthYear(d, ianaTimeZone);
-		return { formatTooltip: label, formatShort: label, bucketTick: null };
+		return { formatTooltip: label, formatFull: label, formatShort: label, bucketTick: null };
 	}
 
 	if (displayInterval === '5m' || displayInterval === '30m' || displayInterval === '1h') {
 		return {
-			formatTooltip: (d) => formatDayMonthYearTime(d, ianaTimeZone),
+			formatTooltip: (d) =>
+				isCurrentLocalYear(d, ianaTimeZone)
+					? formatDayMonthTime(d, ianaTimeZone)
+					: formatDayMonthYearTime(d, ianaTimeZone),
+			formatFull: (d) => formatDayMonthYearTime(d, ianaTimeZone),
 			formatShort: (d) => formatDayMonthTime(d, ianaTimeZone),
 			bucketTick: null
 		};
 	}
 
-	// Daily (1d) and anything unknown: full date, no time.
+	// Daily (1d) and anything unknown: the date, no time.
 	return {
-		formatTooltip: (d) => formatDayMonthYear(d, ianaTimeZone),
+		formatTooltip: (d) =>
+			isCurrentLocalYear(d, ianaTimeZone)
+				? formatDayMonth(d, ianaTimeZone)
+				: formatDayMonthYear(d, ianaTimeZone),
+		formatFull: (d) => formatDayMonthYear(d, ianaTimeZone),
 		// formatDayMonth echoes invalid input for axis ticks; a point label stays blank.
 		formatShort: (d) =>
 			formatDayMonthYear(d, ianaTimeZone) ? formatDayMonth(d, ianaTimeZone) : '',
@@ -142,7 +157,8 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
  *   same bucket: "FY2024 — FY2026", "Q1 2025 — Q3 2026", "Winter 2025", "2024".
  * - Months: "Aug 2025 — Aug 2026", collapsing likewise.
  * - Sub-daily with clock times and the (DST-free) zone the times are in:
- *   "19 Aug 2026, 10:00 am — 26 Aug 2026, 10:00 am AEST".
+ *   "19 Aug 2025, 10:00 am — 26 Aug 2025, 10:00 am AEST", without the years
+ *   when both ends fall in the current one ("19 Aug, 10:00 am — …").
  * - Daily/weekly: a plain date range, with the year when it isn't the
  *   current one ("19 — 26 Aug 2025") since the label stands alone.
  *
@@ -150,9 +166,16 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
  * @param {Date | number} end
  * @param {string} displayInterval
  * @param {string} ianaTimeZone
+ * @param {{ referenceDate?: Date | number }} [opts] - "Now", for the current year
  * @returns {string}
  */
-export function formatRangeLabel(start, end, displayInterval, ianaTimeZone) {
+export function formatRangeLabel(
+	start,
+	end,
+	displayInterval,
+	ianaTimeZone,
+	{ referenceDate = new Date() } = {}
+) {
 	const rollingBase = baseIntervalFor(displayInterval);
 	if (
 		COARSE_BUCKET_INTERVALS.has(displayInterval) ||
@@ -170,8 +193,12 @@ export function formatRangeLabel(start, end, displayInterval, ianaTimeZone) {
 	}
 
 	if (displayInterval === '5m' || displayInterval === '30m' || displayInterval === '1h') {
-		const startLabel = formatDayMonthYearTime(start, ianaTimeZone);
-		const endLabel = formatDayMonthYearTime(end, ianaTimeZone);
+		const thisYear =
+			isCurrentLocalYear(start, ianaTimeZone, referenceDate) &&
+			isCurrentLocalYear(end, ianaTimeZone, referenceDate);
+		const format = thisYear ? formatDayMonthTime : formatDayMonthYearTime;
+		const startLabel = format(start, ianaTimeZone);
+		const endLabel = format(end, ianaTimeZone);
 		return `${startLabel} ${RANGE_SEPARATOR} ${endLabel} ${tzAbbreviationFromIana(ianaTimeZone)}`;
 	}
 
@@ -182,6 +209,6 @@ export function formatRangeLabel(start, end, displayInterval, ianaTimeZone) {
 		start instanceof Date ? start : new Date(start),
 		end instanceof Date ? end : new Date(end),
 		ianaTimeZone,
-		{ yearIfNotCurrent: true }
+		{ yearIfNotCurrent: true, referenceDate }
 	);
 }

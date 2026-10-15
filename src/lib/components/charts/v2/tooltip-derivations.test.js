@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
 	getActiveData,
 	getValueKey,
@@ -154,13 +154,27 @@ describe('formatTooltipDate', () => {
 
 	it('formats a time-based chart using DST-free en-AU', () => {
 		const chart = makeChart({ timeZone: 'Australia/Brisbane' });
-		// 2026-03-12 04:30:00 UTC → 14:30 Brisbane (AEST +10, no DST)
-		const date = new Date(Date.UTC(2026, 2, 12, 4, 30));
+		// 2025-03-12 04:30:00 UTC → 14:30 Brisbane (AEST +10, no DST); an
+		// earlier year than the current one, so it carries its year.
+		const date = new Date(Date.UTC(2025, 2, 12, 4, 30));
 		const result = formatTooltipDate(chart, { time: date.getTime(), date });
 		expect(result).toContain('Mar');
-		expect(result).toContain('2026');
+		expect(result).toContain('2025');
 		expect(result).toContain('12');
 		expect(result).toMatch(/14:30|2:30/); // AEST 14:30 (24h) or 2:30 (12h locale)
+	});
+
+	it('drops the year from a time in the current one', () => {
+		vi.useFakeTimers({ now: Date.UTC(2026, 9, 15), toFake: ['Date'] });
+		try {
+			const chart = makeChart({ timeZone: 'Australia/Brisbane' });
+			const date = new Date(Date.UTC(2026, 2, 12, 4, 30));
+			expect(formatTooltipDate(chart, { time: date.getTime(), date })).toMatch(
+				/^12 Mar, 2:30\spm$/
+			);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it('returns empty string for a time chart with no date field', () => {

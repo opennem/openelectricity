@@ -682,7 +682,7 @@
 	/** The selected complete days, for the top-nav range readout. */
 	export function getRangeLabel() {
 		return formatDateRange(new Date(window.start), new Date(window.end - 1), session.ianaTimeZone, {
-			alwaysYear: true
+			yearIfNotCurrent: true
 		});
 	}
 	/** The hovered or pinned slot, replacing the range readout while it lasts. */

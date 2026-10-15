@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import {
 	getTimeFormatPolicy,
 	formatRangeLabel,
@@ -21,18 +21,37 @@ const localMidnight = (
 const clean = (/** @type {string} */ s) => s.replace(/[\u202f\u00a0]/g, ' ');
 
 describe('getTimeFormatPolicy — tooltip labels', () => {
+	// "Now" is 15 Oct 2026: dates this year drop their year on screen.
+	beforeEach(() => vi.useFakeTimers({ now: Date.UTC(2026, 9, 15), toFake: ['Date'] }));
+	afterEach(() => vi.useRealTimers());
+
 	it('renders date + time for sub-daily intervals', () => {
-		// 21 Jan 2026 04:30 UTC → 14:30 Brisbane, 12:30 Perth
-		const t = Date.UTC(2026, 0, 21, 4, 30);
+		// 21 Jan 2025 04:30 UTC → 14:30 Brisbane, 12:30 Perth
+		const t = Date.UTC(2025, 0, 21, 4, 30);
 		for (const di of ['5m', '30m', '1h']) {
-			expect(clean(getTimeFormatPolicy(di, NEM).formatTooltip(t))).toBe('21 Jan 2026, 2:30 pm');
-			expect(clean(getTimeFormatPolicy(di, WEM).formatTooltip(t))).toBe('21 Jan 2026, 12:30 pm');
+			expect(clean(getTimeFormatPolicy(di, NEM).formatTooltip(t))).toBe('21 Jan 2025, 2:30 pm');
+			expect(clean(getTimeFormatPolicy(di, WEM).formatTooltip(t))).toBe('21 Jan 2025, 12:30 pm');
 		}
 	});
 
+	it('drops the current year from dates on screen, but not from downloads', () => {
+		const t = Date.UTC(2026, 0, 21, 4, 30);
+		const power = getTimeFormatPolicy('30m', NEM);
+		expect(clean(power.formatTooltip(t))).toBe('21 Jan, 2:30 pm');
+		expect(clean(power.formatFull(t))).toBe('21 Jan 2026, 2:30 pm');
+		const day = localMidnight(10, 2026, 0, 21);
+		expect(getTimeFormatPolicy('1d', NEM).formatTooltip(day)).toBe('21 Jan');
+		expect(getTimeFormatPolicy('1d', NEM).formatFull(day)).toBe('21 Jan 2026');
+		const week = localMidnight(10, 2026, 5, 15);
+		expect(getTimeFormatPolicy('7d', NEM).formatTooltip(week)).toBe('15 — 21 June');
+		expect(getTimeFormatPolicy('7d', NEM).formatFull(week)).toBe('15 — 21 June 2026');
+		// Months keep the year: "June" alone doesn't read as a date.
+		expect(getTimeFormatPolicy('1M', NEM).formatTooltip(week)).toBe('June 2026');
+	});
+
 	it('renders a full date for daily buckets', () => {
-		const t = localMidnight(10, 2026, 0, 21);
-		expect(getTimeFormatPolicy('1d', NEM).formatTooltip(t)).toBe('21 Jan 2026');
+		const t = localMidnight(10, 2025, 0, 21);
+		expect(getTimeFormatPolicy('1d', NEM).formatTooltip(t)).toBe('21 Jan 2025');
 	});
 
 	it('renders weekly buckets as an inclusive range with the year', () => {
@@ -103,8 +122,8 @@ describe('getTimeFormatPolicy — tooltip labels', () => {
 	});
 
 	it('falls back to a full date for unknown intervals', () => {
-		expect(getTimeFormatPolicy('unknown', NEM).formatTooltip(localMidnight(10, 2026, 0, 21))).toBe(
-			'21 Jan 2026'
+		expect(getTimeFormatPolicy('unknown', NEM).formatTooltip(localMidnight(10, 2025, 0, 21))).toBe(
+			'21 Jan 2025'
 		);
 	});
 });
@@ -210,11 +229,25 @@ describe('formatRangeLabel — interval-aware viewport labels', () => {
 		// 19 Aug 2026 00:00 UTC = 10:00 am Brisbane.
 		const start = Date.UTC(2026, 7, 19);
 		const end = Date.UTC(2026, 7, 26);
-		expect(clean(formatRangeLabel(start, end, '30m', NEM))).toBe(
+		const referenceDate = Date.UTC(2027, 0, 15);
+		expect(clean(formatRangeLabel(start, end, '30m', NEM, { referenceDate }))).toBe(
 			'19 Aug 2026, 10:00 am — 26 Aug 2026, 10:00 am AEST'
 		);
-		expect(clean(formatRangeLabel(start, end, '5m', WEM))).toBe(
+		expect(clean(formatRangeLabel(start, end, '5m', WEM, { referenceDate }))).toBe(
 			'19 Aug 2026, 8:00 am — 26 Aug 2026, 8:00 am AWST'
+		);
+	});
+
+	it('drops the years at sub-daily grains when both ends are this year', () => {
+		const start = Date.UTC(2026, 7, 19);
+		const end = Date.UTC(2026, 7, 26);
+		const referenceDate = Date.UTC(2026, 9, 15);
+		expect(clean(formatRangeLabel(start, end, '30m', NEM, { referenceDate }))).toBe(
+			'19 Aug, 10:00 am — 26 Aug, 10:00 am AEST'
+		);
+		// A range reaching back into last year keeps them.
+		expect(clean(formatRangeLabel(Date.UTC(2025, 11, 30), end, '1h', NEM, { referenceDate }))).toBe(
+			'30 Dec 2025, 10:00 am — 26 Aug 2026, 10:00 am AEST'
 		);
 	});
 

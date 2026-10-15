@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import {
 	formatTooltipDateTime,
 	getPowerAxisTicks,
@@ -13,8 +13,11 @@ const OFFSET = '+10:00';
 const HOUR = 60 * 60 * 1000;
 
 describe('formatTooltipDateTime', () => {
-	// 2026-01-21 04:30 UTC → 14:30 Brisbane
+	// 2026-01-21 04:30 UTC → 14:30 Brisbane, read in a later year so dates
+	// carry theirs (the current year's drop it: time-format-policy.test.js).
 	const date = new Date(Date.UTC(2026, 0, 21, 4, 30));
+	beforeEach(() => vi.useFakeTimers({ now: Date.UTC(2027, 5, 1), toFake: ['Date'] }));
+	afterEach(() => vi.useRealTimers());
 
 	it('includes the time for sub-daily (power) intervals', () => {
 		for (const di of ['5m', '30m', '1h']) {
