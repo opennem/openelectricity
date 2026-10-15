@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { IGNORED_ERRORS, replaySessionSampleRate, resolveSentryDsn } from './config.js';
+import {
+	IGNORED_ERRORS,
+	replaySessionSampleRate,
+	reportsErrors,
+	resolveSentryDsn
+} from './config.js';
 
 const DSN = 'https://public@o0.ingest.sentry.io/0';
 
@@ -54,5 +59,20 @@ describe('IGNORED_ERRORS', () => {
 		]) {
 			expect(ignored(message), message).toBe(false);
 		}
+	});
+});
+
+describe('reportsErrors', () => {
+	const env = { PUBLIC_SENTRY_DSN: 'https://key@example.ingest.sentry.io/1' };
+
+	it('reports wherever Sentry is on, except local development', () => {
+		expect(reportsErrors(env, false)).toBe(true);
+		expect(reportsErrors(env, true)).toBe(false);
+		expect(reportsErrors({}, false)).toBe(false);
+	});
+
+	it('reports in development when asked to', () => {
+		expect(reportsErrors({ ...env, PUBLIC_SENTRY_DEV: 'true' }, true)).toBe(true);
+		expect(reportsErrors({ PUBLIC_SENTRY_DEV: 'true' }, true)).toBe(false);
 	});
 });

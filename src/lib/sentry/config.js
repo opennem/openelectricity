@@ -15,6 +15,19 @@ export function resolveSentryDsn(env) {
 }
 
 /**
+ * Whether JavaScript errors and session replay report: wherever Sentry is on,
+ * except local development (`vite dev`), which would otherwise send every
+ * error from work in progress and (at its full replay rate) trip the relay's
+ * rate limit. Set `PUBLIC_SENTRY_DEV=true` to check them locally. The
+ * feedback form is unaffected.
+ * @param {Record<string, string | undefined>} env - `$env/dynamic/public`
+ * @param {boolean} dev - `$app/environment`'s `dev`
+ */
+export function reportsErrors(env, dev) {
+	return !!resolveSentryDsn(env) && (!dev || env.PUBLIC_SENTRY_DEV === 'true');
+}
+
+/**
  * Share of sessions recorded in full. Development records every session so
  * replay can be checked locally; elsewhere 1% keeps the replay quota and the
  * relay's request volume in hand. Sessions with an error are always kept

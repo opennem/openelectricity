@@ -1,7 +1,12 @@
-import { browser, version } from '$app/environment';
+import { browser, dev, version } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import { hostEnvironment } from '$lib/utils/environment.js';
-import { IGNORED_ERRORS, replaySessionSampleRate, resolveSentryDsn } from './config.js';
+import {
+	IGNORED_ERRORS,
+	replaySessionSampleRate,
+	reportsErrors,
+	resolveSentryDsn
+} from './config.js';
 
 /**
  * The browser's one Sentry client: JavaScript errors, session replay and the
@@ -10,7 +15,9 @@ import { IGNORED_ERRORS, replaySessionSampleRate, resolveSentryDsn } from './con
  * The SDK is a separate chunk loaded once the page is idle, so it never
  * delays the first render; opening feedback loads it at once. Errors raised
  * before then are queued and sent when it starts. Off unless
- * `PUBLIC_SENTRY_DSN` is set.
+ * `PUBLIC_SENTRY_DSN` is set; in local development errors and replay stay
+ * off (the SDK loads only for feedback) unless `PUBLIC_SENTRY_DEV=true`
+ * (`reportsErrors`).
  *
  * Replay records a sampled share of sessions (`replaySessionSampleRate`) and
  * keeps the minute before any error. OE's text, numbers and charts are public
@@ -41,6 +48,7 @@ export function loadSentry() {
 	loading ??= import('./sdk.js')
 		.then((Sentry) => {
 			const environment = hostEnvironment(window.location.hostname);
+			const reporting = reportsErrors(env, dev);
 			Sentry.init({
 				dsn,
 				// Same-origin relay: ad blockers stop requests to *.ingest.sentry.io.
@@ -52,13 +60,17 @@ export function loadSentry() {
 				release: `openelectricity@${version}`,
 				environment,
 				ignoreErrors: IGNORED_ERRORS,
-				integrations: [
-					Sentry.replayIntegration({
-						maskAllText: false,
-						blockAllMedia: false,
-						maskAllInputs: true
-					})
-				],
+				// Feedback has its own hook; this only drops errors.
+				beforeSend: (event) => (reporting ? event : null),
+				integrations: reporting
+					? [
+							Sentry.replayIntegration({
+								maskAllText: false,
+								blockAllMedia: false,
+								maskAllInputs: true
+							})
+						]
+					: [],
 				replaysSessionSampleRate: replaySessionSampleRate(environment),
 				replaysOnErrorSampleRate: 1,
 				// Collect nothing about the reader beyond what they type.
@@ -88,7 +100,7 @@ export function loadSentry() {
  * once it starts.
  */
 export function startSentry() {
-	if (!browser || !resolveSentryDsn(env)) return;
+	if (!browser || !reportsErrors(env, dev)) return;
 	/** @param {ErrorEvent | PromiseRejectionEvent} event */
 	const queue = (event) => captureError('reason' in event ? event.reason : event.error);
 	window.addEventListener('error', queue);
@@ -108,7 +120,7 @@ export function startSentry() {
  * @param {unknown} error
  */
 export function captureError(error) {
-	if (!browser || !resolveSentryDsn(env)) return;
+	if (!browser || !reportsErrors(env, dev)) return;
 	if (loading) {
 		void loading.then((Sentry) => Sentry?.captureException(error));
 	} else if (earlyErrors.length < MAX_EARLY_ERRORS) {
