@@ -1,5 +1,6 @@
 <script>
 	import FilterDropdown from '$lib/components/filters/FilterDropdown.svelte';
+	import { inFilterSheet } from '$lib/components/filters/filter-sheet.js';
 	import {
 		COMPARISON_CHART_OPTIONS,
 		COMPARISON_METRIC_GROUPS,
@@ -28,6 +29,7 @@
 		};
 	});
 
+	const sheet = inFilterSheet();
 	let shown = $derived(selected.map(comparisonChartId));
 	/** Each chart's last presentation, by chart id: a session-only nicety. */
 	const remembered = /** @type {Record<string, string>} */ ({});
@@ -44,7 +46,7 @@
 	}
 </script>
 
-<div role="group" aria-label="Charts" class="flex shrink-0 items-center gap-2">
+{#snippet dropdowns()}
 	{#each GROUPS as { group, ids, options } (group)}
 		<FilterDropdown
 			label={group}
@@ -55,4 +57,13 @@
 			onapply={(chosen) => choose(ids, chosen)}
 		/>
 	{/each}
-</div>
+{/snippet}
+
+<!-- The phone filter sheet lists each group as a section of its own. -->
+{#if sheet}
+	{@render dropdowns()}
+{:else}
+	<div role="group" aria-label="Charts" class="flex shrink-0 items-center gap-2">
+		{@render dropdowns()}
+	</div>
+{/if}

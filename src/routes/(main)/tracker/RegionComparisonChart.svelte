@@ -71,6 +71,8 @@
 	chart.seriesLabels = SERIES_LABELS;
 	chart.seriesColours = SERIES_COLOURS;
 	chart.chartTooltips.showTotal = false;
+	// The range readout names the hovered period.
+	chart.chartTooltips.showDate = false;
 	chart.chartStyles.chartPadding = { top: 0, bottom: 20, left: 0, right: 0 };
 	chart.chartStyles.snapTicks = true;
 	// A region's line takes the pointer, naming its row in the Regions table;

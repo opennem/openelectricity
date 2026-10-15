@@ -2,22 +2,32 @@
 	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
 
 	/**
-	 * Collapsible section for the mobile filter sheet. The selected options show
-	 * as tags under the title (capped, with a "+N more" overflow). The Clear
-	 * action renders inside the expanded body (the header is a single toggle
-	 * button, and nesting buttons is invalid HTML).
+	 * Collapsible section for the phone filter sheets (Facilities' filters,
+	 * and the shared controls in a `filter-sheet.js` subtree). The selected
+	 * options show as tags under the title (capped, with a "+N more"
+	 * overflow). The Clear action renders inside the expanded body (the
+	 * header is a single toggle button, and nesting buttons is invalid HTML).
+	 * `open` is bindable, so a pick-one list can fold its section once a pick
+	 * lands.
 	 * @type {{
 	 *   title: string,
 	 *   tags?: string[],
 	 *   count?: number,
 	 *   clearLabel?: string,
+	 *   open?: boolean,
 	 *   onclear?: () => void,
 	 *   children: import('svelte').Snippet
 	 * }}
 	 */
-	let { title, tags = [], count = 0, clearLabel = 'Clear', onclear, children } = $props();
-
-	let open = $state(false);
+	let {
+		title,
+		tags = [],
+		count = 0,
+		clearLabel = 'Clear',
+		open = $bindable(false),
+		onclear,
+		children
+	} = $props();
 
 	const MAX_TAGS = 3;
 	let shownTags = $derived(tags.slice(0, MAX_TAGS));

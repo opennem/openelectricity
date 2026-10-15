@@ -4,6 +4,7 @@
 	import CalendarIcon from '@lucide/svelte/icons/calendar';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import { inFilterSheet } from '$lib/components/filters/filter-sheet.js';
 	import {
 		hasTouchControls,
 		TOUCH_PILL,
@@ -21,6 +22,10 @@
 	 * the pill's chevron sits. On touch screens the calendar's days and month
 	 * arrows are 40px targets (explicit pixels: the app's rem is 10px), and in
 	 * a touch-controls subtree the input takes the phone pill sizes.
+	 *
+	 * In a phone filter sheet (`filter-sheet.js`) there is no popover: the
+	 * input spans the width and the calendar sits under it, filling the width
+	 * with 40px days, like `DateRangePicker`'s `fill`.
 	 *
 	 * @typedef {Object} Props
 	 * @property {string | null} [date] - Selected date in YYYY-MM-DD format
@@ -46,6 +51,7 @@
 	} = $props();
 
 	const touch = hasTouchControls();
+	const sheet = inFilterSheet();
 
 	/**
 	 * @param {string | null} value
@@ -82,6 +88,85 @@
 	const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-AU';
 </script>
 
+{#snippet calendar()}
+	<DatePicker.Calendar
+		class={sheet ? '' : 'rounded-xl border border-warm-grey bg-white p-3 shadow-lg'}
+	>
+		{#snippet children({ months, weekdays })}
+			<DatePicker.Header class="flex items-center justify-between">
+				<DatePicker.PrevButton
+					class="inline-flex items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey {sheet
+						? 'size-[40px]'
+						: 'size-7 pointer-coarse:size-[40px]'}"
+				>
+					<ChevronLeft class={sheet ? 'size-[18px]' : 'size-4'} />
+				</DatePicker.PrevButton>
+				<DatePicker.Heading class="font-medium text-dark-grey {sheet ? 'text-sm' : 'text-xs'}" />
+				<DatePicker.NextButton
+					class="inline-flex items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey {sheet
+						? 'size-[40px]'
+						: 'size-7 pointer-coarse:size-[40px]'}"
+				>
+					<ChevronRight class={sheet ? 'size-[18px]' : 'size-4'} />
+				</DatePicker.NextButton>
+			</DatePicker.Header>
+
+			<div class="flex flex-col gap-4 pt-3 {sheet ? '' : 'sm:flex-row'}">
+				{#each months as month (month.value)}
+					<DatePicker.Grid class="w-full border-collapse select-none">
+						<DatePicker.GridHead>
+							<DatePicker.GridRow
+								class={sheet ? 'grid grid-cols-7 pb-1' : 'flex w-full justify-between'}
+							>
+								{#each weekdays as day (day)}
+									<DatePicker.HeadCell
+										class="text-center font-medium text-mid-grey {sheet
+											? 'text-xs'
+											: 'w-8 pointer-coarse:w-[40px] text-[10px]'}"
+									>
+										{day.slice(0, 2)}
+									</DatePicker.HeadCell>
+								{/each}
+							</DatePicker.GridRow>
+						</DatePicker.GridHead>
+						<DatePicker.GridBody>
+							{#each month.weeks as weekDates (weekDates)}
+								<DatePicker.GridRow class={sheet ? 'grid grid-cols-7' : 'flex w-full'}>
+									{#each weekDates as day (day)}
+										<DatePicker.Cell
+											date={day}
+											month={month.value}
+											class="relative p-0 text-center {sheet
+												? ''
+												: 'size-8 pointer-coarse:size-[40px]'}"
+										>
+											<DatePicker.Day
+												class="group relative inline-flex items-center justify-center rounded-md text-dark-grey {sheet
+													? 'h-[40px] w-full text-sm'
+													: 'size-8 pointer-coarse:size-[40px] pointer-coarse:text-sm text-xs'} transition-colors hover:bg-light-warm-grey data-[disabled]:pointer-events-none data-[outside-month]:pointer-events-none data-[selected]:bg-dark-grey data-[disabled]:text-warm-grey data-[outside-month]:text-warm-grey data-[selected]:text-white"
+											>
+												<span
+													class="absolute bottom-1 hidden size-1 rounded-full bg-current group-data-[today]:block"
+												></span>
+												{day.day}
+											</DatePicker.Day>
+										</DatePicker.Cell>
+									{/each}
+								</DatePicker.GridRow>
+							{/each}
+						</DatePicker.GridBody>
+					</DatePicker.Grid>
+				{/each}
+			</div>
+			{#if footer}
+				<div class="mt-3 border-t border-warm-grey pt-3">
+					{@render footer({ close: () => (open = false) })}
+				</div>
+			{/if}
+		{/snippet}
+	</DatePicker.Calendar>
+{/snippet}
+
 <DatePicker.Root
 	weekdayFormat="short"
 	calendarLabel={label}
@@ -102,9 +187,11 @@
 			{label}
 		</DatePicker.Label>
 		<DatePicker.Input
-			class="flex select-none items-center whitespace-nowrap rounded-lg border bg-white py-2.5 pl-4 pr-3 text-xs font-medium text-dark-grey transition-colors focus-within:border-dark-grey hover:border-dark-grey {touch
-				? TOUCH_PILL
-				: ''} {active || open ? 'border-dark-grey' : 'border-warm-grey'}"
+			class="flex select-none items-center whitespace-nowrap rounded-lg border bg-white font-medium text-dark-grey transition-colors focus-within:border-dark-grey hover:border-dark-grey {sheet
+				? 'h-[40px] w-full justify-center px-3 text-sm'
+				: `py-2.5 pl-4 pr-3 text-xs ${touch ? TOUCH_PILL : ''}`} {active || open
+				? 'border-dark-grey'
+				: 'border-warm-grey'}"
 		>
 			{#snippet children({ segments })}
 				{#each segments as { part, value: segment }, i (part + i)}
@@ -121,81 +208,26 @@
 						{/if}
 					</div>
 				{/each}
-				<DatePicker.Trigger
-					aria-label="Open calendar"
-					class="ml-1.5 inline-flex items-center justify-center rounded text-mid-grey transition-colors hover:text-dark-grey"
-				>
-					<CalendarIcon class="size-3.5 {touch ? TOUCH_PILL_ICON : ''}" />
-				</DatePicker.Trigger>
+				{#if !sheet}
+					<DatePicker.Trigger
+						aria-label="Open calendar"
+						class="ml-1.5 inline-flex items-center justify-center rounded text-mid-grey transition-colors hover:text-dark-grey"
+					>
+						<CalendarIcon class="size-3.5 {touch ? TOUCH_PILL_ICON : ''}" />
+					</DatePicker.Trigger>
+				{/if}
 			{/snippet}
 		</DatePicker.Input>
 	</div>
 
-	<!-- Portalled so a scrolling nav can't clip it; above the app's sheets. -->
-	<DatePicker.Portal>
-		<DatePicker.Content sideOffset={6} class="z-[10000]">
-			<DatePicker.Calendar class="rounded-xl border border-warm-grey bg-white p-3 shadow-lg">
-				{#snippet children({ months, weekdays })}
-					<DatePicker.Header class="flex items-center justify-between">
-						<DatePicker.PrevButton
-							class="inline-flex size-7 pointer-coarse:size-[40px] items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey"
-						>
-							<ChevronLeft class="size-4" />
-						</DatePicker.PrevButton>
-						<DatePicker.Heading class="text-xs font-medium text-dark-grey" />
-						<DatePicker.NextButton
-							class="inline-flex size-7 pointer-coarse:size-[40px] items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey"
-						>
-							<ChevronRight class="size-4" />
-						</DatePicker.NextButton>
-					</DatePicker.Header>
-
-					<div class="flex flex-col gap-4 pt-3 sm:flex-row">
-						{#each months as month (month.value)}
-							<DatePicker.Grid class="w-full border-collapse select-none">
-								<DatePicker.GridHead>
-									<DatePicker.GridRow class="flex w-full justify-between">
-										{#each weekdays as day (day)}
-											<DatePicker.HeadCell
-												class="w-8 pointer-coarse:w-[40px] text-center text-[10px] font-medium text-mid-grey"
-											>
-												{day.slice(0, 2)}
-											</DatePicker.HeadCell>
-										{/each}
-									</DatePicker.GridRow>
-								</DatePicker.GridHead>
-								<DatePicker.GridBody>
-									{#each month.weeks as weekDates (weekDates)}
-										<DatePicker.GridRow class="flex w-full">
-											{#each weekDates as day (day)}
-												<DatePicker.Cell
-													date={day}
-													month={month.value}
-													class="relative size-8 pointer-coarse:size-[40px] p-0 text-center"
-												>
-													<DatePicker.Day
-														class="group relative inline-flex size-8 pointer-coarse:size-[40px] pointer-coarse:text-sm items-center justify-center rounded-md text-xs text-dark-grey transition-colors hover:bg-light-warm-grey data-[disabled]:pointer-events-none data-[outside-month]:pointer-events-none data-[selected]:bg-dark-grey data-[disabled]:text-warm-grey data-[outside-month]:text-warm-grey data-[selected]:text-white"
-													>
-														<span
-															class="absolute bottom-1 hidden size-1 rounded-full bg-current group-data-[today]:block"
-														></span>
-														{day.day}
-													</DatePicker.Day>
-												</DatePicker.Cell>
-											{/each}
-										</DatePicker.GridRow>
-									{/each}
-								</DatePicker.GridBody>
-							</DatePicker.Grid>
-						{/each}
-					</div>
-					{#if footer}
-						<div class="mt-3 border-t border-warm-grey pt-3">
-							{@render footer({ close: () => (open = false) })}
-						</div>
-					{/if}
-				{/snippet}
-			</DatePicker.Calendar>
-		</DatePicker.Content>
-	</DatePicker.Portal>
+	{#if sheet}
+		<div class="pt-3">{@render calendar()}</div>
+	{:else}
+		<!-- Portalled so a scrolling nav can't clip it; above the app's sheets. -->
+		<DatePicker.Portal>
+			<DatePicker.Content sideOffset={6} class="z-[10000]">
+				{@render calendar()}
+			</DatePicker.Content>
+		</DatePicker.Portal>
+	{/if}
 </DatePicker.Root>

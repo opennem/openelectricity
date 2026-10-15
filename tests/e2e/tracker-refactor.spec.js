@@ -395,23 +395,25 @@ test('window metrics strip shows signed displayed extremes with keyboard chart h
 	await expect(
 		page.locator('[data-tooltip-content]').filter({ hasText: 'Max: 2 Aug,' })
 	).toBeVisible();
-	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
+	// The range readout names the pinned time.
+	await expect(page.getByTestId('tracker-range-label')).toContainText('2 Aug');
 	expect(api.requests.length).toBe(requests);
 	await maximum.click();
 	await page.mouse.move(0, 0);
 	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByTestId('metrics-generation').getByRole('img')).toHaveCount(0);
 	await expect(page.getByTestId('metrics-generation-unit')).toHaveText('MW');
-	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
-	await expect(card(page, 'Market').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
+	// The charts' strips show values; the range readout names the time.
+	const inspected = page.getByTestId('tracker-range-label');
+	await expect(inspected).toContainText('2 Aug');
 	await minimum.hover();
-	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('1 Aug');
+	await expect(inspected).toContainText('1 Aug');
 	await page.mouse.move(0, 0);
-	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
+	await expect(inspected).toContainText('2 Aug');
 	// Hovering the chart leaves the pin alone; clicking to focus a time clears it.
 	const plot = await card(page, 'Generation').locator('.stratum-chart-area').boundingBox();
 	await page.mouse.move(plot.x + plot.width * 0.25, plot.y + plot.height * 0.5);
-	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('1 Aug');
+	await expect(inspected).toContainText('1 Aug');
 	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
 	// The first tap engages pan/zoom; the next pins the hovered time, which replaces the strip's pin.
 	await page.mouse.click(plot.x + plot.width * 0.25, plot.y + plot.height * 0.5);
@@ -423,7 +425,7 @@ test('window metrics strip shows signed displayed extremes with keyboard chart h
 	await maximum.click();
 	await expect(maximum).toHaveAttribute('aria-pressed', 'true');
 	await page.mouse.move(0, 0);
-	await expect(card(page, 'Generation').getByTestId('chart-tooltip-strip')).toContainText('2 Aug');
+	await expect(inspected).toContainText('2 Aug');
 	await maximum.click();
 	await expect(maximum).toHaveAttribute('aria-pressed', 'false');
 	await page.keyboard.press('Escape');
@@ -1626,15 +1628,10 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	const strip = charts.first().getByTestId('chart-tooltip-strip');
 	await expect(strip).toContainText('Av.');
 	await expect(strip).not.toContainText('Median');
-	// Every breakdown chart follows the hovered slot.
-	const slot = (await strip.innerText()).match(/\d\d:\d\d–\d\d:\d\d/)?.[0];
-	expect(slot).toBeTruthy();
-	await expect(charts.nth(1).getByTestId('chart-tooltip-strip')).toContainText(
-		/** @type {string} */ (slot)
-	);
-	await expect(charts.last().getByTestId('chart-tooltip-strip')).toContainText(
-		/** @type {string} */ (slot)
-	);
+	// Every breakdown chart follows the hovered slot, which the range readout names.
+	await expect(page.getByTestId('tracker-range-label')).toContainText(/\d\d:\d\d–\d\d:\d\d/);
+	await expect(charts.nth(1).getByTestId('chart-tooltip-strip')).toContainText('Av.');
+	await expect(charts.last().getByTestId('chart-tooltip-strip')).not.toBeEmpty();
 	const headers = table.getByRole('columnheader');
 	for (const name of ['10%', '25%', 'Median', '75%', '90%'])
 		await expect(headers.filter({ hasText: name })).toHaveCount(1);
@@ -1764,8 +1761,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	const ridgeBox = await ridgelines.first().boundingBox();
 	await page.mouse.move(ridgeBox.x + ridgeBox.width / 2, ridgeBox.y + ridgeBox.height / 2);
 	await expect(readout).toHaveText(/^\d\d:\d\d–\d\d:\d\d$/);
-	const ridgeSlot = await readout.innerText();
-	await expect(page.getByTestId('chart-tooltip-strip').nth(1)).toContainText(ridgeSlot);
+	await expect(page.getByTestId('chart-tooltip-strip').nth(1)).toContainText('Av.');
 	await expect(page.getByTestId('chart-tooltip-strip').first()).toContainText('Av.');
 	await page.mouse.move(0, 0);
 	// The table shows each technology's average and every day.
@@ -2069,7 +2065,8 @@ test('time-of-day switches reset settings, restore history and fit narrow screen
 	await expect(navPill(page, '14 days')).toBeVisible();
 	await expect(stack).toBeVisible();
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(navPill(page, '14 days')).toBeVisible();
+	// Phones keep the filters in the sheet the sticky pill opens.
+	await expect(page.getByTestId('tracker-range-label-sticky')).toBeVisible();
 	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('time-of-day-mobile.png'), fullPage: true });
 	await page.setViewportSize({ width: 1440, height: 1000 });

@@ -1,5 +1,7 @@
 <script>
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
+	import FilterBarGroup from '$lib/components/filters/FilterBarGroup.svelte';
+	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
 	import { DatePicker } from '$lib/components/ui/date-picker';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import ChartArea from '@lucide/svelte/icons/chart-area';
@@ -133,6 +135,8 @@
 	let windowTitle = $derived(
 		lastDate ? `Average over ${days} full days` : `Average over last ${days} full days`
 	);
+	/** The card title on phones, where "Average" would wrap it. */
+	let windowShortTitle = $derived(windowTitle.replace(/^Average/, 'Av.'));
 	let stackMeta = $derived(powerData.meta);
 	/** The stack's colour key, while the fuel-tech table that keys it is closed. */
 	let stackLegend = $derived(
@@ -783,17 +787,26 @@
 </script>
 
 {#snippet controls()}
-	<Switch
-		buttons={PROFILE_DISPLAY_OPTIONS}
-		selected={selection.profileDisplay}
-		compact
-		rounded="rounded-lg"
-		darkSelected
-		aria-label="Profile display"
-		onchange={(option) => session.select('profileDisplay', normaliseProfileDisplay(option.value))}
-	/>
-	<!-- The window and its last day read as one phrase: "7 days to 30/09/2026". -->
-	<div class="flex shrink-0 items-center gap-2">
+	<FilterSheetSection title="Display">
+		<Switch
+			buttons={PROFILE_DISPLAY_OPTIONS}
+			selected={selection.profileDisplay}
+			compact
+			rounded="rounded-lg"
+			darkSelected
+			aria-label="Profile display"
+			onchange={(option) => session.select('profileDisplay', normaliseProfileDisplay(option.value))}
+		/>
+	</FilterSheetSection>
+	{#if breakdown}
+		<FilterBarGroup sheetOnly>
+			<FilterSheetSection title="Today">{@render todayToggle(true)}</FilterSheetSection>
+			<FilterSheetSection title="Chart">{@render styleSwitch(true)}</FilterSheetSection>
+		</FilterBarGroup>
+	{/if}
+	<!-- The window and its last day read as one phrase in the bar: "7 days to
+	     30/09/2026". The phone filter sheet gives each its own section. -->
+	<FilterBarGroup class="flex shrink-0 items-center gap-2">
 		<FilterSelect
 			selected={String(days)}
 			options={PROFILE_DAY_OPTIONS}
@@ -802,30 +815,32 @@
 			compact
 			onchange={(value) => session.select('profileDays', normaliseProfileDays(value))}
 		/>
-		<span class="text-xs text-mid-grey">to</span>
+		<FilterBarGroup barOnly><span class="text-xs text-mid-grey">to</span></FilterBarGroup>
 		<!-- The app's date picker: its border darkens once a past last day is
 		     picked, and its calendar offers the way back to the latest days. -->
-		<DatePicker
-			date={window.lastDate}
-			minDate={PROFILE_MIN_DATE}
-			maxDate={window.maxDate}
-			label="Last day"
-			active={!!selection.profileEnd}
-			onchange={(date) => session.select('profileEnd', date)}
-		>
-			{#snippet footer({ close })}
-				<button
-					type="button"
-					disabled={!selection.profileEnd}
-					class="w-full rounded-lg border border-warm-grey px-3 py-2 text-xs font-medium text-dark-grey transition-colors hover:border-dark-grey disabled:cursor-default disabled:opacity-50 disabled:hover:border-warm-grey"
-					onclick={() => {
-						close();
-						session.select('profileEnd', '');
-					}}>Latest complete days</button
-				>
-			{/snippet}
-		</DatePicker>
-	</div>
+		<FilterSheetSection title="Last day">
+			<DatePicker
+				date={window.lastDate}
+				minDate={PROFILE_MIN_DATE}
+				maxDate={window.maxDate}
+				label="Last day"
+				active={!!selection.profileEnd}
+				onchange={(date) => session.select('profileEnd', date)}
+			>
+				{#snippet footer({ close })}
+					<button
+						type="button"
+						disabled={!selection.profileEnd}
+						class="w-full rounded-lg border border-warm-grey px-3 py-2 text-xs font-medium text-dark-grey transition-colors hover:border-dark-grey disabled:cursor-default disabled:opacity-50 disabled:hover:border-warm-grey"
+						onclick={() => {
+							close();
+							session.select('profileEnd', '');
+						}}>Latest complete days</button
+					>
+				{/snippet}
+			</DatePicker>
+		</FilterSheetSection>
+	</FilterBarGroup>
 	<FilterSelect
 		selected={interval}
 		options={PROFILE_INTERVAL_OPTIONS}
@@ -938,47 +953,63 @@
 	{/if}
 {/snippet}
 
+{#snippet todayToggle(/** @type {boolean} */ spread)}
+	<Toggle
+		compact
+		{spread}
+		label="Show today"
+		checked={showToday}
+		disabled={!todayApplies}
+		onclick={() => session.select('profileToday', !selection.profileToday)}
+	/>
+	{#if todayError}
+		<div role="alert" class="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs">
+			<span class="text-dark-grey">Today's readings couldn't load</span>
+			<button
+				type="button"
+				class="touch-hit rounded border border-mid-warm-grey px-2 py-1 hover:bg-warm-grey"
+				onclick={retryToday}>Retry today</button
+			>
+		</div>
+	{/if}
+{/snippet}
+
+<!-- The breakdown's chart styles: icons in the bar, icons and names in the
+     phone filter sheet, two to a row. -->
+{#snippet styleSwitch(/** @type {boolean} */ labelled)}
+	<Switch
+		buttons={labelled
+			? STYLE_BUTTONS.map(({ tooltip, ...button }) => ({ ...button, label: tooltip }))
+			: STYLE_BUTTONS}
+		selected={style}
+		compact={!labelled}
+		columns={labelled ? 2 : undefined}
+		rounded="rounded-lg"
+		darkSelected
+		aria-label="Style"
+		onchange={(option) => session.select('profileStyle', normaliseProfileStyle(option.value))}
+	/>
+{/snippet}
+
 <!-- Breakdown's own options sit in a bar under the top nav, as Timeline's
-     metrics strip does, sliding open or shut with the display. -->
+     metrics strip does, sliding open or shut with the display. Phones find
+     them in the filter sheet instead. -->
 {#if breakdown}
-	<div class="shrink-0" transition:slide={{ duration: reducedMotion.current ? 0 : 200 }}>
+	<div
+		class="shrink-0 max-tablet:hidden"
+		transition:slide={{ duration: reducedMotion.current ? 0 : 200 }}
+	>
 		<section
 			aria-label="Breakdown options"
 			class="axis-ticks-bg flex items-center gap-4 overflow-x-auto border-b border-warm-grey bg-white px-8 py-2"
 		>
-			<div class="shrink-0 whitespace-nowrap">
-				<Toggle
-					compact
-					label="Show today"
-					checked={showToday}
-					disabled={!todayApplies}
-					onclick={() => session.select('profileToday', !selection.profileToday)}
-				/>
-			</div>
-			{#if todayError}
-				<div role="alert" class="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs">
-					<span class="text-dark-grey">Today's readings couldn't load</span>
-					<button
-						type="button"
-						class="touch-hit rounded border border-mid-warm-grey px-2 py-1 hover:bg-warm-grey"
-						onclick={retryToday}>Retry today</button
-					>
-				</div>
-			{/if}
+			<div class="shrink-0 whitespace-nowrap">{@render todayToggle(false)}</div>
 			<div
 				class="h-8 shrink-0 border-l border-warm-grey"
 				role="separator"
 				aria-orientation="vertical"
 			></div>
-			<Switch
-				buttons={STYLE_BUTTONS}
-				selected={style}
-				compact
-				rounded="rounded-lg"
-				darkSelected
-				aria-label="Style"
-				onchange={(option) => session.select('profileStyle', normaliseProfileStyle(option.value))}
-			/>
+			{@render styleSwitch(false)}
 		</section>
 	</div>
 {/if}
@@ -1003,6 +1034,7 @@
 			     the same average day by slot and by hour, sharing one hover and pin. -->
 			<ChartCard
 				title={windowTitle}
+				shortTitle={windowShortTitle}
 				highlighted={hoveredCard === 'stack'}
 				onhover={(hovered) => hoverCard('stack', hovered)}
 				loading={stackLoading.active}
@@ -1141,7 +1173,7 @@
 				{/each}
 			</div>
 		{:else}
-			<ChartCard title={windowTitle}>
+			<ChartCard title={windowTitle} shortTitle={windowShortTitle}>
 				{@render unavailable(
 					gridError,
 					'Retry profile',

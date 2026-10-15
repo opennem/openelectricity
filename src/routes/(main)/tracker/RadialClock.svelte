@@ -152,11 +152,7 @@
 
 <div class="relative">
 	<DialReadout
-		label={activeHour
-			? `${activeHour.label}–${hourLabel(activeHour.hour + 1)}`
-			: average === null
-				? null
-				: 'Av.'}
+		label={activeHour ? '' : average === null ? null : 'Av.'}
 		value={activeHour ? activeHour.average : average}
 		{unit}
 		note={layers.length > 1 ? 'net' : ''}

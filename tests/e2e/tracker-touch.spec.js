@@ -20,7 +20,7 @@ test.use({
 /** The page's scroll offset: phones scroll the tracker as a document. */
 const pageScrollY = (page) => page.evaluate(() => window.scrollY);
 
-/** A pinned or hovered time in a card's readout strip, e.g. "13 Oct, 11:00 pm"
+/** A pinned or hovered time in the range readout, e.g. "13 Oct, 11:00 pm"
  * (with the year when it isn't the current one). */
 const READOUT_TIME = /\d{1,2} \w+( \d{4})?, \d{1,2}:\d{2}\s?(am|pm)/i;
 
@@ -54,17 +54,19 @@ test('a tap pins a time once and a second tap releases it', async ({ page }) => 
 	const market = card(page, 'Market');
 	await market.scrollIntoViewIfNeeded();
 	const plot = plotSurface(market);
-	const readout = market.getByTestId('chart-tooltip-strip');
+	// The pinned time reads in the range pill, not the chart's strip.
+	const pill = page.getByTestId('tracker-range-status-sticky');
 	await expect(plot.locator('svg').first()).toBeVisible();
 	const box = await plot.boundingBox();
 	const tap = () => page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
 
-	await expect(readout).not.toContainText(READOUT_TIME);
+	await expect(pill).toHaveAttribute('data-inspecting', 'false');
 	await tap();
-	await expect(readout).toContainText(READOUT_TIME);
+	await expect(pill).toHaveAttribute('data-inspecting', 'true');
+	await expect(pill).toContainText(READOUT_TIME);
 	await expect(page.getByRole('button', { name: 'Disable pan and zoom' })).toHaveCount(0);
 	await tap();
-	await expect(readout).not.toContainText(READOUT_TIME);
+	await expect(pill).toHaveAttribute('data-inspecting', 'false');
 });
 
 test('chart cards have no height handles to catch a swipe between them', async ({ page }) => {
@@ -147,53 +149,108 @@ test('a long press on a fuel tech row shows that technology alone', async ({ pag
 	await expect(page.locator('[data-testid="fuel-tech-row"][aria-pressed="true"]')).toHaveCount(1);
 });
 
-test('the filters get their own row; pick-one lists use the native picker', async ({ page }) => {
-	const filters = page.getByTestId('tracker-view-filters');
-	const region = filters.getByRole('combobox', { name: 'Region' });
-	await expect(region).toBeInViewport({ ratio: 1 });
-	const [bar, row] = await Promise.all([
-		page.getByRole('combobox', { name: 'Analysis view' }).boundingBox(),
-		// The pill around the transparent select.
-		region.locator('..').boundingBox()
-	]);
-	expect(row.y).toBeGreaterThan(bar.y + bar.height);
-	// Native-app proportions: 40px pills.
-	expect(Math.round(row.height)).toBe(40);
-
-	await region.selectOption('qld1');
-	await expect(page).toHaveURL(/region=qld1/);
-	await expect(region.locator('..').getByText('QLD', { exact: true })).toBeVisible();
-});
-
-test('a list with its own controls opens as a bottom sheet', async ({ page }) => {
-	// Compare's interval pill has the rolling-sum switch, which needs the
-	// custom panel (Timeline's has none at 3D, so it is native there).
-	await regionsFixture(page);
-	await page.goto('/tracker/compare');
-	await hydrated(page);
-	await page
-		.getByTestId('tracker-view-filters')
-		.getByRole('button', { name: 'Month', exact: true })
-		.tap();
-	const sheet = page.getByRole('heading', { name: 'Interval', exact: true });
+/** Open the phone filter sheet from the sticky pill. */
+async function openFilters(page) {
+	await page.getByTestId('tracker-range-label-sticky').tap();
+	const sheet = page.getByTestId('tracker-filter-sheet');
 	await expect(sheet).toBeVisible();
-	await expect(page.getByRole('listbox', { name: 'Interval' })).toBeVisible();
-	await page.getByRole('button', { name: 'Close Interval' }).tap();
+	return sheet;
+}
+
+test('the sticky pill opens the filters; regions are one switch', async ({ page }) => {
+	// The filters have left the top nav for the sheet.
+	await expect(page.getByTestId('tracker-view-filters')).toBeHidden();
+	const pill = page.getByTestId('tracker-range-label-sticky');
+	await expect(pill).toContainText('NEM');
+	await expect(pill).toHaveAccessibleName(/, change filters$/);
+
+	const sheet = await openFilters(page);
+	const region = (name) => sheet.getByRole('button', { name, exact: true });
+	await expect(region('National Electricity Market')).toHaveAttribute('aria-pressed', 'true');
+	await expect(region('Queensland')).toHaveText('QLD');
+	// Touch-sized segments.
+	const segment = await region('Queensland').boundingBox();
+	expect(Math.round(segment.height)).toBeGreaterThanOrEqual(32);
+
+	// A tap applies at once.
+	await region('Queensland').tap();
+	await expect(page).toHaveURL(/region=qld1/);
+	await expect(region('Queensland')).toHaveAttribute('aria-pressed', 'true');
+	await expect(pill).toContainText('QLD');
+
+	await page.getByRole('button', { name: 'Done' }).tap();
 	await expect(sheet).toBeHidden();
 });
 
-test('Custom… in the range picker opens the date range sheet', async ({ page }) => {
-	const range = page.getByTestId('tracker-view-filters').getByRole('combobox', { name: 'Range' });
-	const before = await range.inputValue();
-	await range.selectOption('custom');
-	await expect(page.getByRole('heading', { name: 'Custom date range' })).toBeVisible();
-	// The picker shows the applied range again, not "Custom…".
-	await expect(range).toHaveValue(before);
-	await page.getByRole('button', { name: 'Close date picker' }).tap();
-	await expect(page.getByRole('heading', { name: 'Custom date range' })).toBeHidden();
+test('range and interval are one tap each, with custom dates beneath', async ({ page }) => {
+	const sheet = await openFilters(page);
+	const pressed = (name) =>
+		expect(sheet.getByRole('button', { name, exact: true })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+	await sheet.getByRole('button', { name: '30D', exact: true }).tap();
+	await expect(page).toHaveURL(/range=30d/);
+	await pressed('30D');
+	// The interval segments follow the range.
+	await pressed('Daily');
+	await sheet.getByRole('button', { name: 'Hourly', exact: true }).tap();
+	await expect(page).toHaveURL(/interval=1h/);
+
+	await sheet.getByRole('button', { name: 'Choose a custom date range' }).tap();
+	await pressed('Choose a custom date range');
+	await expect(sheet.getByText('From', { exact: true })).toBeVisible();
+	// Nothing applies until the dates do.
+	await expect(page).toHaveURL(/range=30d/);
+	await page.getByRole('button', { name: 'Close filters' }).tap();
+	await expect(sheet).toBeHidden();
 });
 
-test('the top nav scrolls away and the range strip stays in view', async ({ page }) => {
+test('controls with options of their own keep them in the sheet', async ({ page }) => {
+	// Compare's interval has the rolling-sum switch; its charts are checkboxes.
+	await regionsFixture(page);
+	await page.goto('/tracker/compare');
+	await hydrated(page);
+	await expect(page.getByRole('region', { name: 'Display options' })).toBeHidden();
+	const sheet = await openFilters(page);
+	await expect(sheet.getByRole('button', { name: 'Queensland', exact: true })).toHaveCount(0);
+	// The display switch moves in, its icons named.
+	const panels = sheet.getByRole('button', { name: 'Panels', exact: true });
+	await expect(panels).toHaveText('Panels');
+	await panels.tap();
+	await expect(page).toHaveURL(/panels/);
+	await expect(sheet.getByRole('button', { name: 'Month', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(sheet.getByRole('switch', { name: '12-mth rolling sum' })).toBeVisible();
+	await sheet.getByRole('button', { name: /^Emissions/ }).tap();
+	await expect(sheet.getByRole('button', { name: 'Intensity', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+});
+
+test('Profile keeps its breakdown options and an inline calendar in the sheet', async ({
+	page
+}) => {
+	await page.goto('/tracker/profile?profile-display=breakdown');
+	await hydrated(page);
+	// The breakdown bar gives way to the sheet on phones.
+	await expect(page.getByRole('region', { name: 'Breakdown options' })).toBeHidden();
+	const sheet = await openFilters(page);
+	await expect(sheet.getByRole('switch', { name: 'Show today' })).toBeVisible();
+	// The chart styles carry their names.
+	const ridgeline = sheet.getByRole('button', { name: 'Ridgeline', exact: true });
+	await expect(ridgeline).toHaveText('Ridgeline');
+	await ridgeline.tap();
+	await expect(page).toHaveURL(/profile-style=ridgeline/);
+	// The last day's calendar is open under its input, no popover.
+	await expect(sheet.locator('[data-bits-day]').first()).toBeVisible();
+	await expect(sheet.getByRole('button', { name: 'Open calendar' })).toHaveCount(0);
+});
+
+test('the top nav scrolls away and the filters pill stays in view', async ({ page }) => {
 	const strip = page.getByTestId('tracker-range-status-sticky');
 	await expect(strip).toBeVisible();
 	await expectNoHorizontalScroll(page);
@@ -202,9 +259,9 @@ test('the top nav scrolls away and the range strip stays in view', async ({ page
 	await expect.poll(() => pageScrollY(page)).toBeGreaterThan(300);
 	await expect(page.getByRole('combobox', { name: 'Analysis view' })).not.toBeInViewport();
 	await expect.poll(async () => Math.round((await strip.boundingBox()).y)).toBe(0);
-	// It is the refresh button, as the top-nav readout is.
+	// It is the filters button.
 	await expect(page.getByTestId('tracker-range-label-sticky')).toHaveAccessibleName(
-		/, refresh data$/
+		/, change filters$/
 	);
 });
 
@@ -221,7 +278,7 @@ test('metrics open as a dialog; a pick pins and marks it on its chart', async ({
 	await expect(dialog).toBeHidden();
 	const market = card(page, 'Market');
 	await expect(market.locator('.time-markers text')).toHaveText(/^Max spot price /);
-	await expect(market.getByTestId('chart-tooltip-strip')).toContainText(READOUT_TIME);
+	await expect(page.getByTestId('tracker-range-label-sticky')).toContainText(READOUT_TIME);
 });
 
 test('a card folds its actions into ⋮ and keys its colours in the footer', async ({ page }) => {

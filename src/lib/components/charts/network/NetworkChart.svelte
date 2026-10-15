@@ -88,6 +88,7 @@
 	 * @property {boolean} [showContainer] - Wrap in bordered/padded container
 	 * @property {boolean} [showHeader] - Show the chart header bar
 	 * @property {'strip' | 'floating' | 'none'} [tooltipMode]
+	 * @property {boolean} [showTooltipDate] - Whether the tooltip names the hovered time (default true; the Tracker shows it in its range readout instead)
 	 * @property {boolean} [generationUnitOptions] - Expose MW/GW for generation
 	 *   power and MWh/GWh/TWh for generation energy. Energy defaults to GWh once
 	 *   the largest visible positive stack reaches six MWh digits.
@@ -167,6 +168,7 @@
 		showContainer = true,
 		showHeader = true,
 		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('floating'),
+		showTooltipDate = true,
 		generationUnitOptions = false,
 		useDivergingStack = false,
 		interpolateRooftop = false,
@@ -589,6 +591,11 @@
 		if (!chartStore) return;
 		chartStore.chartStyles.chartHeightClasses = chartHeight;
 		if (chartHeightPx) chartStore.chartStyles.chartHeightPx = chartHeightPx;
+	});
+
+	// Mirror the tooltip date toggle into the store.
+	$effect(() => {
+		if (chartStore) chartStore.chartTooltips.showDate = showTooltipDate;
 	});
 
 	// Title sync

@@ -7,6 +7,7 @@
 
 	import { MediaQuery } from 'svelte/reactivity';
 	import { ChartRangeBar } from '$lib/components/charts/v2';
+	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
 	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
 	import { formatDayMonthTime } from '$lib/components/charts/v2/date-labels.js';
 	import { MIN_DATE } from '$lib/utils/date-range.js';
@@ -69,6 +70,7 @@
 	onshortcut={handleShortcut}
 	status={{
 		label: canvas?.getRangeLabel() ?? session.rangeLabel,
+		intervalLabel: getIntervalSpec(range.displayInterval)?.label,
 		inspectLabel: canvas?.getInspectLabel(),
 		loading,
 		updatedLabel,

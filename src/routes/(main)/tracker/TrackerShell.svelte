@@ -9,9 +9,11 @@
 	 * only the workbook's Summary rows and the file names.
 	 *
 	 * Phones (below 768px) get touch-sized controls (`touch-controls.js`) and
-	 * scroll the page as a document: the two-row top nav (view switcher and
-	 * menus, then the filters) scrolls away, while the range readout sits in
-	 * a strip at the top of the body that stays in view.
+	 * scroll the page as a document: the one-row top nav (logo menu, view
+	 * dropdown and menus) scrolls away, while a pill summarising the filters
+	 * ("NEM · 9–15 Oct · 30 min") sits at the top of the body and stays in
+	 * view. The pill opens the filters in a sheet (`TrackerFilterSheet`),
+	 * which shows the same Region list and view `controls` as the bar.
 	 */
 
 	import { building } from '$app/environment';
@@ -20,6 +22,7 @@
 	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import RangeStatus from './RangeStatus.svelte';
+	import TrackerFilterSheet from './TrackerFilterSheet.svelte';
 	import { Download, ImageDown, X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
@@ -42,7 +45,7 @@
 	} from '$lib/components/fullscreen';
 	import { BELOW_TABLET_QUERY, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
 	import { shortcutFor } from './tracker-shortcuts.js';
-	import { TRACKER_REGION_TREE } from './tracker-regions.js';
+	import { regionShortLabel, TRACKER_REGION_TREE } from './tracker-regions.js';
 	import { DEFAULT_REGION } from './tracker-model.js';
 	import { TRACKER_VIEWS, trackerView } from './tracker-url.js';
 	import PngExport from './PngExport.svelte';
@@ -99,6 +102,15 @@
 	onMount(() => {
 		hydrated = true;
 	});
+
+	/** Whether the phone filter sheet is open. */
+	let filtersOpen = $state(false);
+	/** The phone pill's line under the range: the other filters. */
+	let filterDetail = $derived(
+		[regionSelect ? regionShortLabel(session.selection.region) : null, status?.intervalLabel]
+			.filter(Boolean)
+			.join(' · ')
+	);
 
 	/** Whether the phone range readout is stuck to the top of the viewport. */
 	let rangeStuck = $state(false);
@@ -211,10 +223,10 @@
 					{#if isFullscreen}
 						<div class="h-8 shrink-0 border-l border-warm-grey max-tablet:hidden"></div>
 					{/if}
-					<!-- Phones: the logo menu and the view dropdown lead the first row,
-					     with the menus at its end, and the filters wrap onto a second
-					     (FullscreenFilterBar's `wrapOnPhone`); the range readout moves
-					     to the body's sticky strip. -->
+					<!-- Phones: the logo menu and the view dropdown lead the row, with
+					     the menus at its end (FullscreenFilterBar's `wrapOnPhone`
+					     flattens the wrappers); the filters move to the sheet the
+					     body's sticky pill opens. -->
 					<div
 						class="flex min-w-0 flex-1 items-center gap-4 max-tablet:contents"
 						data-testid="tracker-top-nav"
@@ -248,14 +260,10 @@
 							role="separator"
 							aria-orientation="vertical"
 						></div>
-						<div class="flex min-w-0 flex-1 items-center gap-4 max-tablet:contents">
-							<!-- Phones: the filters' own row, faded at the right edge when
-							     they scroll. The fade is an overlay beside the scroller, not
-							     a mask on it: a mask would also clip the drop-downs that
-							     open inside it (the range presets). -->
-							<div class="relative flex min-w-0 flex-1 max-tablet:order-last max-tablet:basis-full">
+						<div class="flex min-w-0 flex-1 items-center gap-4 max-tablet:hidden">
+							<div class="relative flex min-w-0 flex-1">
 								<div
-									class="flex min-w-0 flex-1 items-center gap-4 overflow-x-auto py-0.5 max-tablet:pr-8"
+									class="flex min-w-0 flex-1 items-center gap-4 overflow-x-auto py-0.5"
 									data-testid="tracker-view-filters"
 									data-view={view}
 								>
@@ -271,13 +279,9 @@
 									{/if}
 									{@render controls?.()}
 								</div>
-								<div
-									class="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-light-warm-grey tablet:hidden"
-									aria-hidden="true"
-								></div>
 							</div>
 							{#if status}
-								<div class="contents max-tablet:hidden"><RangeStatus {...status} /></div>
+								<RangeStatus {...status} />
 							{/if}
 						</div>
 					</div>
@@ -321,12 +325,18 @@
 		<FullscreenContainer {isFullscreen} phoneScroll class="[view-transition-name:page-body]">
 			<div class="flex min-h-0 flex-1 flex-col bg-light-warm-grey">
 				{#if status}
-					<!-- Phones: the range readout stays in view as the top nav
+					<!-- Phones: the filters pill stays in view as the top nav
 					     scrolls away; it lifts out once stuck to the top (the
 					     marker above it has scrolled off). -->
 					<div class="tablet:hidden" aria-hidden="true" {@attach watchStuck}></div>
-					<div class="pointer-events-none sticky top-0 z-30 h-[54px] shrink-0 tablet:hidden">
-						<RangeStatus {...status} variant="sticky" stuck={rangeStuck} />
+					<div class="pointer-events-none sticky top-0 z-30 h-[68px] shrink-0 tablet:hidden">
+						<RangeStatus
+							{...status}
+							detail={filterDetail}
+							variant="sticky"
+							stuck={rangeStuck}
+							onfilters={() => (filtersOpen = true)}
+						/>
 					</div>
 				{/if}
 				{#if notice}
@@ -368,6 +378,15 @@
 {#if pngSnapshot}
 	<PngExport snapshot={pngSnapshot} onclose={() => (pngSnapshot = null)} />
 {/if}
+
+<TrackerFilterSheet
+	open={filtersOpen}
+	onclose={() => (filtersOpen = false)}
+	region={session.selection.region}
+	{regionSelect}
+	onregionchange={(value) => session.select('region', value)}
+	{controls}
+/>
 
 <DownloadDataModal {downloads} />
 

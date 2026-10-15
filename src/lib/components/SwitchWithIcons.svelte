@@ -2,6 +2,7 @@
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import {
 		hasTouchControls,
+		TOUCH_SWITCH_GRID_TRACK,
 		TOUCH_SWITCH_OPTION,
 		TOUCH_SWITCH_TRACK
 	} from '$lib/components/ui/touch-controls.js';
@@ -11,13 +12,17 @@
 	 * An option with a `tooltip` shows it in the app's `Tooltip` on hover, in
 	 * place of the browser's `title` (e.g. icon-only options naming themselves).
 	 * In a touch-controls subtree it takes the phone sizes below 768px.
-	 * @typedef {{ label?: string, ariaLabel?: string, title?: string, tooltip?: string, value: string | number, icon?: *, size?: string }} Option
+	 * With `columns` the options sit in a grid of that many equal columns,
+	 * wrapping onto more rows (the thumb follows them), for lists too long
+	 * for one row. A `disabled` option is dimmed and can't be picked.
+	 * @typedef {{ label?: string, ariaLabel?: string, title?: string, tooltip?: string, value: string | number, icon?: *, size?: string, disabled?: boolean }} Option
 	 * @typedef {Object} Props
 	 * @property {Option[]} [buttons]
 	 * @property {string | number } [selected]
 	 * @property {boolean} [compact]
 	 * @property {string} [rounded] - Tailwind radius class for the container, thumb and buttons
 	 * @property {boolean} [darkSelected] - Thumb uses a dark fill (matches active filter pills)
+	 * @property {number} [columns] - Lay the options out in a grid of this many columns
 	 * @property {string} [trackClass] - Fill + border colour classes for the track (default: white chip with the filter pills' subtle border)
 	 * @property {string} [transitionName] - Names the track, thumb and options for
 	 *   view transitions, so a switcher that remounts across a route change holds
@@ -32,6 +37,7 @@
 		compact = false,
 		rounded = 'rounded-xl',
 		darkSelected = false,
+		columns = undefined,
 		trackClass = 'bg-white border-warm-grey',
 		transitionName,
 		class: className = '',
@@ -95,7 +101,8 @@
 	bind:this={containerEl}
 	style:view-transition-name={transitionName}
 	{...rest}
-	class={`relative flex md:inline-flex p-1 ${rounded} ${trackClass} border border-solid ${compact ? 'text-xs' : 'text-sm'} ${touch ? TOUCH_SWITCH_TRACK : ''} ${className}`}
+	style:grid-template-columns={columns && `repeat(${columns}, minmax(0, 1fr))`}
+	class={`relative ${columns ? 'grid gap-1' : 'flex md:inline-flex'} p-1 ${rounded} ${trackClass} border border-solid ${compact ? 'text-xs' : 'text-sm'} ${touch ? (columns ? TOUCH_SWITCH_GRID_TRACK : TOUCH_SWITCH_TRACK) : ''} ${className}`}
 >
 	{#if thumbVisible}
 		<div
@@ -122,7 +129,7 @@
 </div>
 
 {#snippet optionButton(
-	/** @type {Option} */ { label, ariaLabel, title, tooltip, value, icon, size },
+	/** @type {Option} */ { label, ariaLabel, title, tooltip, value, icon, size, disabled },
 	/** @type {Record<string, unknown>} */ triggerProps = {}
 )}
 	<button
@@ -135,7 +142,10 @@
 		title={tooltip ? undefined : title}
 		aria-label={ariaLabel ?? label}
 		aria-pressed={isSelected(value)}
-		class="touch-hit z-10 flex w-full gap-3 md:w-auto items-center justify-center whitespace-nowrap cursor-pointer transition-colors duration-200 {rounded} {compact
+		{disabled}
+		class="touch-hit z-10 flex w-full gap-3 {columns
+			? 'min-h-[32px]'
+			: 'md:w-auto'} items-center disabled:cursor-default disabled:opacity-40 justify-center whitespace-nowrap cursor-pointer transition-colors duration-200 {rounded} {compact
 			? 'px-3 py-1.5 md:px-4 md:py-1.5'
 			: 'px-4 py-4 md:px-8 md:py-4'} {touch ? TOUCH_SWITCH_OPTION : ''} {isSelected(value)
 			? darkSelected

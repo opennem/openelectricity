@@ -1,10 +1,13 @@
 <script>
 	import SearchInput from './SearchInput.svelte';
+	import FilterAccordionSection from './FilterAccordionSection.svelte';
 	import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
 	import FilterOptionList from './FilterOptionList.svelte';
+	import { inFilterSheet } from './filter-sheet.js';
 	import {
 		countSelectedLeaves,
 		getLeafValues,
+		getSelectedLabels,
 		isDefaultSelection,
 		toggleInSelection
 	} from '$lib/facilities/filter-options.js';
@@ -24,6 +27,11 @@
 	 * With `immediate`, nothing is staged: every change (a checkbox, Select
 	 * all, Clear) fires `onapply` at once, and the footer button is Done,
 	 * which only closes the panel.
+	 *
+	 * In a phone filter sheet (`filter-sheet.js`) it is the sheet's section
+	 * instead: the checkbox list unfolds under `label`, with the ticked
+	 * options as its tags, and every change applies at once (the sheet is
+	 * the draft-free surface).
 	 * @type {{
 	 *   label: string,
 	 *   options: FilterOption[],
@@ -57,6 +65,7 @@
 		row
 	} = $props();
 
+	const sheet = inFilterSheet();
 	let panelSearchTerm = $state('');
 
 	// The staged selection while the panel is open. Seeded from the committed
@@ -91,69 +100,88 @@
 	let badgeCount = $derived(defaults && atDefault ? 0 : selectedCount);
 </script>
 
-<FilterPanel
-	{label}
-	badge={badgeCount || null}
-	active={defaults ? !atDefault : selectedCount > 0}
-	{compact}
-	panelClass="min-w-[280px]"
-	onopenchange={(open) => {
-		if (open) {
-			draft = [...selected];
-		} else {
-			panelSearchTerm = '';
-		}
-	}}
-	onapply={() => {
-		if (!immediate) onapply?.(draft);
-	}}
-	applyLabel={immediate ? 'Done' : 'Apply'}
->
-	{#snippet footerLeft()}
-		<button
-			type="button"
-			class="text-sm text-dark-grey underline underline-offset-2 hover:text-black cursor-pointer"
-			onclick={() => change(getLeafValues(options))}
-		>
-			Select all
-		</button>
-	{/snippet}
-
-	{#if searchable}
-		<div class="p-3 border-b border-warm-grey">
-			<SearchInput
-				value={panelSearchTerm}
-				placeholder={searchPlaceholder}
-				compact
-				debounceMs={100}
-				onchange={(value) => (panelSearchTerm = value)}
-				class="w-full"
-			/>
-		</div>
-	{/if}
-
-	<div class="px-4 pt-3 pb-1 flex items-center justify-between gap-4">
-		<span class="font-space uppercase text-xxs tracking-wider text-mid-grey">
-			{draftCount} selected
-		</span>
-		<button
-			type="button"
-			class="text-xs text-mid-grey hover:text-dark-grey underline underline-offset-2 transition-colors cursor-pointer"
-			onclick={() => change(defaults ? [...defaults] : [])}
-		>
-			{clearLabel}
-		</button>
-	</div>
-
-	<div class="px-2 py-1 overflow-y-auto" style="max-height: {listMaxHeight}px">
+{#if sheet}
+	<FilterAccordionSection
+		title={label}
+		tags={getSelectedLabels(options, selected)}
+		count={badgeCount}
+		{clearLabel}
+		onclear={() => onapply?.(defaults ? [...defaults] : [])}
+	>
 		<FilterOptionList
 			{options}
-			selected={shown}
+			{selected}
 			{defaultExpanded}
-			searchTerm={panelSearchTerm}
-			dense
-			onchange={(value, isMetaPressed) => change(toggleInSelection(shown, value, isMetaPressed))}
+			onchange={(value, isMetaPressed) =>
+				onapply?.(toggleInSelection(selected, value, isMetaPressed))}
 			{row}
 		/>
-	</div>
-</FilterPanel>
+	</FilterAccordionSection>
+{:else}
+	<FilterPanel
+		{label}
+		badge={badgeCount || null}
+		active={defaults ? !atDefault : selectedCount > 0}
+		{compact}
+		panelClass="min-w-[280px]"
+		onopenchange={(open) => {
+			if (open) {
+				draft = [...selected];
+			} else {
+				panelSearchTerm = '';
+			}
+		}}
+		onapply={() => {
+			if (!immediate) onapply?.(draft);
+		}}
+		applyLabel={immediate ? 'Done' : 'Apply'}
+	>
+		{#snippet footerLeft()}
+			<button
+				type="button"
+				class="text-sm text-dark-grey underline underline-offset-2 hover:text-black cursor-pointer"
+				onclick={() => change(getLeafValues(options))}
+			>
+				Select all
+			</button>
+		{/snippet}
+
+		{#if searchable}
+			<div class="p-3 border-b border-warm-grey">
+				<SearchInput
+					value={panelSearchTerm}
+					placeholder={searchPlaceholder}
+					compact
+					debounceMs={100}
+					onchange={(value) => (panelSearchTerm = value)}
+					class="w-full"
+				/>
+			</div>
+		{/if}
+
+		<div class="px-4 pt-3 pb-1 flex items-center justify-between gap-4">
+			<span class="font-space uppercase text-xxs tracking-wider text-mid-grey">
+				{draftCount} selected
+			</span>
+			<button
+				type="button"
+				class="text-xs text-mid-grey hover:text-dark-grey underline underline-offset-2 transition-colors cursor-pointer"
+				onclick={() => change(defaults ? [...defaults] : [])}
+			>
+				{clearLabel}
+			</button>
+		</div>
+
+		<div class="px-2 py-1 overflow-y-auto" style="max-height: {listMaxHeight}px">
+			<FilterOptionList
+				{options}
+				selected={shown}
+				{defaultExpanded}
+				searchTerm={panelSearchTerm}
+				dense
+				onchange={(value, isMetaPressed) => change(toggleInSelection(shown, value, isMetaPressed))}
+				{row}
+			/>
+		</div>
+	</FilterPanel>
+{/if}

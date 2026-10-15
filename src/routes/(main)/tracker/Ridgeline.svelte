@@ -178,9 +178,7 @@
 
 <div bind:clientWidth={width} class="relative">
 	<ProfileReadout
-		time={hoverSlot !== undefined && hoverTime !== undefined
-			? `${profileClock(hoverTime)}–${profileClock(hoverTime + slotMs)}`
-			: null}
+		time={hoverSlot !== undefined && hoverTime !== undefined ? '' : null}
 		items={hoverSlot === undefined
 			? []
 			: [

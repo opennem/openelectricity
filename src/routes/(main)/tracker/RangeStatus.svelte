@@ -1,5 +1,6 @@
 <script>
 	import { mergeProps } from 'bits-ui';
+	import Settings2 from '@lucide/svelte/icons/settings-2';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 
@@ -19,13 +20,20 @@
 	 *     custom range never squeezes the controls out, and it never drops
 	 *     below the loader's width.
 	 *   - `sticky` (phones) sits at the top of the page body and stays in view
-	 *     as the top nav scrolls away: centred and as wide as its text, flush
-	 *     with the page until it sticks to the top (`stuck`), when it lifts out
-	 *     over the charts as a white pill with a soft shadow. Only the pill
-	 *     takes taps. An inspected period only changes its text. Its test ids
-	 *     carry a `-sticky` suffix so they don't collide with the bar's.
+	 *     as the top nav scrolls away: a centred white pill as wide as its
+	 *     text, the filters icon leading the range over a smaller `detail`
+	 *     line of the other filters ("NEM · 30 min"). With `onfilters` it is
+	 *     the button that opens the phone filter sheet. Once stuck to the top
+	 *     (`stuck`) it lifts out over the charts with a soft shadow. Only the
+	 *     pill takes taps. An inspected period only changes its text. Its test
+	 *     ids carry a `-sticky` suffix so they don't collide with the bar's.
 	 *
-	 * @type {import('./types.js').TrackerRangeStatus & { variant?: 'bar' | 'sticky', stuck?: boolean }}
+	 * @type {import('./types.js').TrackerRangeStatus & {
+	 *   variant?: 'bar' | 'sticky',
+	 *   stuck?: boolean,
+	 *   detail?: string,
+	 *   onfilters?: () => void
+	 * }}
 	 */
 	let {
 		label,
@@ -34,7 +42,9 @@
 		updatedLabel = undefined,
 		onrefresh,
 		variant = 'bar',
-		stuck = false
+		stuck = false,
+		detail = '',
+		onfilters
 	} = $props();
 
 	const sticky = variant === 'sticky';
@@ -44,6 +54,12 @@
 	function refresh() {
 		if (!loading) onrefresh?.();
 	}
+
+	/** The sticky pill's natural width (its border included), measured from an
+	 * unconstrained copy of its content: CSS can't animate `width: auto`, so
+	 * the pill takes this width and eases between widths as the text changes
+	 * (an inspected date replacing the range, say). */
+	let pillWidth = $state(0);
 </script>
 
 {#snippet text()}
@@ -72,19 +88,47 @@
 		data-testid={testId('tracker-range-status')}
 	>
 		<div
-			class="pointer-events-auto relative flex h-[38px] max-w-full items-center overflow-hidden rounded-full border text-dark-grey transition-[background-color,border-color,box-shadow] duration-200 {stuck
-				? 'border-warm-grey bg-white shadow-[0_8px_20px_-10px_rgba(53,53,53,0.45)]'
-				: 'border-transparent bg-transparent'}"
+			class="pointer-events-auto relative flex h-[52px] max-w-full items-center overflow-hidden rounded-full border border-warm-grey bg-white text-dark-grey transition-[width,box-shadow] duration-200 ease-out motion-reduce:transition-none {stuck
+				? 'shadow-[0_8px_20px_-10px_rgba(53,53,53,0.45)]'
+				: ''}"
+			style:width={pillWidth ? `${pillWidth + 2}px` : undefined}
 		>
-			{#if onrefresh}
+			{#if onfilters}
+				<!-- The width source: the content laid out unconstrained, unseen. -->
+				<span
+					class="invisible absolute left-0 top-0 flex w-max items-center gap-3 whitespace-nowrap pl-5 pr-7 tabular-nums"
+					aria-hidden="true"
+					bind:clientWidth={pillWidth}
+				>
+					<span class="size-[18px] shrink-0"></span>
+					<span class="flex flex-col">
+						<span class="text-sm leading-[18px] font-semibold">{inspectLabel ?? label}</span>
+						{#if detail}<span class="text-xs leading-[15px]">{detail}</span>{/if}
+					</span>
+				</span>
 				<button
 					type="button"
-					onclick={refresh}
-					class="range-label flex h-full w-full min-w-0 cursor-pointer items-center justify-center whitespace-nowrap px-5 text-sm font-semibold tabular-nums focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
-					aria-disabled={loading}
+					onclick={onfilters}
+					aria-haspopup="dialog"
+					class="range-label flex h-full w-full min-w-0 cursor-pointer items-center gap-3 whitespace-nowrap pl-5 pr-7 text-left tabular-nums focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
 					data-testid={testId('tracker-range-label')}
 				>
-					{@render text()}<span class="sr-only">, refresh data</span>
+					<Settings2
+						class="size-[18px] shrink-0 text-mid-grey"
+						strokeWidth={1.75}
+						aria-hidden="true"
+					/>
+					<!-- Laid out in full, never truncated: while the pill eases wider the
+					     pill's edge reveals the text. -->
+					<span class="flex shrink-0 flex-col">
+						<span class="text-sm leading-[18px] font-semibold">{inspectLabel ?? label}</span>
+						{#if detail}
+							<span class="text-xs leading-[15px] text-mid-grey"
+								><span class="sr-only">, </span>{detail}</span
+							>
+						{/if}
+					</span>
+					<span class="sr-only">, change filters</span>
 				</button>
 			{:else}
 				<span

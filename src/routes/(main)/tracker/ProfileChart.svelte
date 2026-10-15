@@ -87,6 +87,8 @@
 	chart.chartStyles.snapTicks = true;
 	chart.chartStyles.chartPadding = { top: 12, bottom: 28, left: 0, right: 0 };
 	chart.chartTooltips.showTotal = false;
+	// The range readout names the hovered slot.
+	chart.chartTooltips.showDate = false;
 	chart.maximumFractionDigits = 1;
 	chart.formatTickX = profileClock;
 	/** A faded series, while another is the active one. @param {string} colour */

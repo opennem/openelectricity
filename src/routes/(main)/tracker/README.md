@@ -195,7 +195,10 @@ narrower than a year of periods (`clampComparisonViewport`). The top nav's range
 on screen with a displayed value, so an unfinished year is never named
 (`comparisonRangeLabel`: `Jan 1999 — Aug 2026`, `1999 — 2025`,
 `FY2000 — FY2026`, `Autumn 2024 — Spring 2025`), and swaps to the hovered
-or pinned period while one is inspected. The Regions table shows the period
+or pinned period while one is inspected. Since the readout names it, no
+Tracker tooltip repeats the hovered time (Timeline's `NetworkChart`s take
+`showTooltipDate={false}`; Profile's and Compare's own readouts drop it), so
+the tooltips show values alone. The Regions table shows the period
 it reads under its Region heading: the hovered or pinned period, else that
 latest common complete period. A pin clears by clicking the period again or pressing Escape; it survives panning, zooming and other selection changes, and clears only when the periods themselves change (a new interval or calendar filter, `changesComparisonPeriods`). Axis ticks are anchored to the calendar
 (`comparisonTicks`): monthly rows at the finest month step from January (1,
@@ -367,8 +370,8 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   reads loads as magnitudes. Day and median lines take the pointer through
   Stratum's `hoverable` overlay lines (an invisible 8px hit stroke reporting
   the line's id as the series hover key, as a stack path does). Every linear
-  style's tooltip strip reads the same way (`ProfileReadout`): the slot's time
-  on the left, then today's value (with Show today on) in OE red and the
+  style's tooltip strip reads the same way (`ProfileReadout`; the range readout
+  names the slot): today's value (with Show today on) in OE red and the
   slot's average ("Av."), each a swatch, label and bold value; multi-line adds
   a hovered day after them.
   Stacked shows the stacked radial bars, then the stacked area, sharing one
@@ -556,9 +559,11 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
     through a chart header host (`$lib/components/charts/v2/chart-header-host.svelte.js`)
     instead of drawing its grey `ChartHeader` bar; the card composes the same
     pieces (`ChartHeaderUnit`, `ChartOptionsMenu`, `ChartPanZoomButtons`).
-  - Row 2, when a card has them: `legend` on the left, `controls` on the
-    right — `CardToggle` options (e.g. Inflation adjusted)
-    before the compact `SwitchTabs` chart switcher.
+  - Row 2, when a card has them: `controls` on the right — `CardToggle`
+    options (e.g. Inflation adjusted) before the compact `SwitchTabs` chart
+    switcher.
+  - The `legend`, when a card has one, sits under the chart in the card's
+    footer, at every width.
   - **Compare** (`compare` prop): a Compare button (⇄ arrows) before Table
     turns the card's compare mode on and off — see [Compare mode](#compare-mode).
   - **Legends only where nothing else keys the colours**
@@ -769,25 +774,45 @@ on a fuel tech or region row solos it (`$lib/utils/long-press.js`), as
 
 Below 768px the page scrolls as a document (`FullscreenLayout` and
 `FullscreenContainer`'s `phoneScroll`), so the top bar scrolls away with the
-charts, and the table sheet is fixed to the viewport. The bar wraps onto two
-rows (`FullscreenFilterBar`'s `wrapOnPhone`, which turns its wrappers into
-`display: contents`): the "Tracker" logo menu, the view dropdown and the
-Feedback and options buttons on the first, and the view's filters on the
-second, scrolling sideways with a faded edge when they don't fit. The range
-readout moves out of the bar to the top of the body, where it
-stays in view (`RangeStatus`'s `sticky` variant): centred and as wide as its
-text, flush with the page at rest, it lifts out over the charts as a white pill
-with a soft shadow once stuck to the top (`TrackerShell` watches a marker above it), and a tap refreshes.
+charts, and the table sheet is fixed to the viewport. The bar is one row (the
+"Tracker" logo menu, the view dropdown and the Feedback and options buttons;
+`FullscreenFilterBar`'s `wrapOnPhone` turns its wrappers into
+`display: contents`), and the filters leave it. In their place, a pill at the
+top of the body stays in view (`RangeStatus`'s `sticky` variant): the filters
+icon, then the range over a smaller line of the other filters ("NEM ·
+30 min"). Centred and as wide as its text, it lifts out over the charts with
+a soft shadow once stuck to the top (`TrackerShell` watches a marker above
+it). A tap opens the filters (refresh is in the options menu).
+
+The filters open in a bottom sheet over a dimmed page (`TrackerFilterSheet`),
+in the Facilities filter sheet's chrome: a centred "Filters" title, a round
+✕ and a full-width Done in the footer. It renders the Region switch (All,
+NEM, the five states and WA, four to a row, like the range presets) and then
+the view's own `controls`, the snippet the bar shows from 768px up, in a
+filter-sheet subtree (`$lib/components/filters/filter-sheet.js`), where the
+shared filter controls lay themselves out as the sheet's sections:
+
+- `FilterSelect`: a flat list (the interval, the calendar period, Profile's
+  window) is a segmented switch, one tap to pick, wrapping into rows of up to
+  four; a nested or grouped one is a radio list (`FilterRadioList`) that unfolds under its title
+  (`FilterAccordionSection`), with the picked option as its tag, and folds
+  again once a pick lands.
+- `ChartRangeBar`: the range is the preset switch (1D … All, then the
+  calendar), and picking the calendar opens the custom dates
+  (`DateRangePicker`) beneath it.
+- `FilterDropdown` (Compare's charts): a folding checkbox list.
+- `FilterSheetSection` titles any other control (Profile's display switch and
+  last day), and `FilterBarGroup` drops bar-only layout (a separator, the
+  "to" between the window and its last day).
+
+Every pick applies as it lands, so the charts behind update while the sheet
+is open.
 
 The shell opts its subtree into touch-sized controls (`setTouchControls()`,
 `$lib/components/ui/touch-controls.js`): below 768px pills, segmented switches,
 the date input and the Feedback and options buttons are 40px tall with 14px
-type. Pick-one lists (`FilterSelect`, the range presets) open the phone's own
-picker there (`NativeSelect`: a transparent `<select>` over the pill), with
-"Custom…" opening the date range sheet; lists with their own controls (the
-interval's rolling-sum switch) and multi-select lists (`FilterDropdown`) open
-as a bottom sheet over a backdrop, titled with their list label, where
-long-pressing an option keeps it alone, as ⌘ does. The popovers above 768px
+type, and the view dropdown opens the phone's own picker (`NativeSelect`: a
+transparent `<select>` over the pill). The popovers above 768px
 stay inside the viewport and scroll when taller than the space below their
 trigger (`dropdownPosition`). On touch screens the small controls take a 44px
 tap area without changing size (the `touch-hit` utility in `app.css`), the

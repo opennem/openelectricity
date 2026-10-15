@@ -18,6 +18,7 @@
 	 * @property {string | null} [maxDate] - Latest selectable date in YYYY-MM-DD format
 	 * @property {'sm' | 'md' | 'lg'} [size] - Size variant for the From/To inputs
 	 * @property {number} [numberOfMonths] - Months shown side by side in the calendar
+	 * @property {boolean} [fill] - The calendar fills its container: the week's columns share the width and the days are 40px touch targets (phone sheets; pair with one month)
 	 * @property {(event: DateRangeChangeEvent) => void} [onchange] - Callback when date range changes
 	 */
 
@@ -29,6 +30,7 @@
 		maxDate = null,
 		size = 'md',
 		numberOfMonths = 2,
+		fill = false,
 		onchange
 	} = $props();
 
@@ -317,35 +319,43 @@
 			{/each}
 		</div>
 
-		<!-- Two-month range calendar -->
+		<!-- Range calendar: `numberOfMonths` side by side, or full width with `fill` -->
 		<DateRangePicker.Calendar class="mt-3 border-t border-warm-grey pt-3">
 			{#snippet children({ months, weekdays })}
 				<div class="relative">
 					<DateRangePicker.PrevButton
-						class="absolute left-0 top-0 rounded-md p-1 text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey focus:outline-none"
+						class="absolute left-0 rounded-md text-mid-grey {fill
+							? '-top-2 p-2'
+							: 'top-0 p-1'} transition-colors hover:bg-light-warm-grey hover:text-dark-grey focus:outline-none"
 					>
-						<ChevronLeft class="size-4" />
+						<ChevronLeft class={fill ? 'size-[18px]' : 'size-4'} />
 					</DateRangePicker.PrevButton>
 
 					<DateRangePicker.NextButton
-						class="absolute right-0 top-0 rounded-md p-1 text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey focus:outline-none"
+						class="absolute right-0 rounded-md text-mid-grey {fill
+							? '-top-2 p-2'
+							: 'top-0 p-1'} transition-colors hover:bg-light-warm-grey hover:text-dark-grey focus:outline-none"
 					>
-						<ChevronRight class="size-4" />
+						<ChevronRight class={fill ? 'size-[18px]' : 'size-4'} />
 					</DateRangePicker.NextButton>
 
-					<div class="flex flex-col gap-4 sm:flex-row sm:gap-6">
+					<div class="flex flex-col gap-4 {fill ? '' : 'sm:flex-row sm:gap-6'}">
 						{#each months as month (month.value)}
-							<div>
-								<div class="pb-3 text-center text-xs font-medium text-dark-grey">
+							<div class={fill ? 'w-full' : ''}>
+								<div
+									class="pb-3 text-center font-medium text-dark-grey {fill ? 'text-sm' : 'text-xs'}"
+								>
 									{formatMonthHeading(month.value)}
 								</div>
 
-								<DateRangePicker.Grid class="select-none border-collapse">
+								<DateRangePicker.Grid class="select-none border-collapse {fill ? 'w-full' : ''}">
 									<DateRangePicker.GridHead>
-										<DateRangePicker.GridRow class="flex">
+										<DateRangePicker.GridRow class={fill ? 'grid grid-cols-7 pb-1' : 'flex'}>
 											{#each weekdays as day (day)}
 												<DateRangePicker.HeadCell
-													class="w-8 text-center text-[10px] font-medium text-mid-grey"
+													class="text-center font-medium text-mid-grey {fill
+														? 'text-xs'
+														: 'w-8 text-[10px]'}"
 												>
 													{day.slice(0, 2)}
 												</DateRangePicker.HeadCell>
@@ -355,7 +365,7 @@
 
 									<DateRangePicker.GridBody>
 										{#each month.weeks as weekDates (weekDates)}
-											<DateRangePicker.GridRow class="flex">
+											<DateRangePicker.GridRow class={fill ? 'grid grid-cols-7' : 'flex'}>
 												{#each weekDates as date (date)}
 													<DateRangePicker.Cell
 														{date}
@@ -363,7 +373,9 @@
 														class="relative p-0 text-center"
 													>
 														<DateRangePicker.Day
-															class="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-xs text-dark-grey transition-colors hover:bg-light-warm-grey focus:outline-none data-[disabled]:pointer-events-none data-[outside-month]:pointer-events-none data-[selected]:rounded-none data-[selection-end]:rounded-r-md data-[selection-start]:rounded-l-md data-[highlighted]:bg-light-warm-grey data-[highlighted]:rounded-none data-[selected]:bg-dark-grey data-[disabled]:text-warm-grey data-[outside-month]:text-warm-grey data-[selected]:text-white"
+															class="relative inline-flex items-center justify-center rounded-md text-dark-grey {fill
+																? 'h-[40px] w-full text-sm'
+																: 'h-8 w-8 text-xs'} transition-colors hover:bg-light-warm-grey focus:outline-none data-[disabled]:pointer-events-none data-[outside-month]:pointer-events-none data-[selected]:rounded-none data-[selection-end]:rounded-r-md data-[selection-start]:rounded-l-md data-[highlighted]:bg-light-warm-grey data-[highlighted]:rounded-none data-[selected]:bg-dark-grey data-[disabled]:text-warm-grey data-[outside-month]:text-warm-grey data-[selected]:text-white"
 														>
 															{date.day}
 															{#if isToday(date)}

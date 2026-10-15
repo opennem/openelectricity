@@ -4,14 +4,14 @@
 
 	/**
 	 * The floating tooltip of Compare's custom displays (heatmap, panels):
-	 * the period and unit over one row per region, the hovered region
-	 * emphasised. Styled as Stratum's floating tooltip. It sits beside
+	 * the unit over one row per region, the hovered region emphasised (the
+	 * range readout names the period). Styled as Stratum's floating tooltip. It sits beside
 	 * `anchor`, flipping left or up to stay inside the `width` × `height`
 	 * container it is absolutely positioned in.
-	 * @type {{period: string, unit: string, regions: string[], row: Record<string, any> | undefined,
+	 * @type {{unit: string, regions: string[], row: Record<string, any> | undefined,
 	 *   metric: string, hovered: string | null, anchor: {x: number, y: number},
 	 *   width: number, height: number}} */
-	let { period, unit, regions, row, metric, hovered, anchor, width, height } = $props();
+	let { unit, regions, row, metric, hovered, anchor, width, height } = $props();
 
 	let ownWidth = $state(0);
 	let ownHeight = $state(0);
@@ -46,8 +46,7 @@
 	<div
 		class="mb-1.5 flex items-baseline justify-between gap-3 border-b border-warm-grey/60 pb-1.5 font-light text-mid-grey"
 	>
-		<span>{period}</span>
-		<span class="text-right font-mono">{unit}</span>
+		<span class="font-mono">{unit}</span>
 	</div>
 	<div class="flex flex-col gap-1">
 		{#each rows as entry (entry.id)}

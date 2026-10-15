@@ -21,7 +21,6 @@
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import { OptionsMenu, OptionsMenuItem } from '$lib/components/ui/options-menu';
 	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
-	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
 	import ChartDataTable from './ChartDataTable.svelte';
 	import LoadingOverlay from './LoadingOverlay.svelte';
 	import { downloadStatus } from './chart-downloads.js';
@@ -36,20 +35,22 @@
 	 *   and the chart's pan/zoom (✥, − / +; the zoom buttons stay while
 	 *   pan/zoom is engaged). The chart inside hands its toolbar over through a chart header host (`chart-header-host.svelte.js`), so
 	 *   the card draws one header instead of a header over a grey bar.
-	 * - Row 2, when given: `legend` (`SeriesLegend`, or a colour scale) on
-	 *   the left and `controls` on the right — options (`CardToggle`) before
-	 *   the chart switchers (compact `SwitchTabs`) — wrapping as needed.
+	 * - Row 2, when given: `controls`, on the right — options (`CardToggle`)
+	 *   before the chart switchers (compact `SwitchTabs`) — wrapping as needed.
 	 * - `status` under both (the reading freshness line).
+	 *
+	 * The `legend` (`SeriesLegend`, or a colour scale), when given, sits under
+	 * the chart in the card's footer. (The Tracker passes none while its table,
+	 * which keys the colours, is open.)
 	 *
 	 * In a touch-controls subtree (`touch-controls.js`, the Tracker), phones
 	 * get room for the title: the card's actions (Compare, the table, CSV,
-	 * Enlarge) fold into a ⋮ menu at the header's end, after the zoom buttons,
-	 * and the legend moves under the chart, into the card's footer. The
-	 * actions swap by CSS (the server render is right at every width); the
-	 * legend renders once, placed by width.
+	 * Enlarge) fold into a ⋮ menu at the header's end, after the zoom buttons.
+	 * The actions swap by CSS, so the server render is right at every width.
 	 *
 	 * `info` puts an ⓘ after the title whose tooltip explains the chart (and
-	 * links to more, with `href`).
+	 * links to more, with `href`). `shortTitle` stands in for the title on
+	 * phones (below 768px, by CSS); labels naming the card keep the full one.
 	 *
 	 * `mini` styles a small multiple (radial and heatmap cards): a smaller
 	 * title and a padded body. `onexpand` adds an Enlarge button (the radial
@@ -82,6 +83,7 @@
 	 *
 	 * @type {{
 	 *   title: string,
+	 *   shortTitle?: string,
 	 *   info?: {text: string, href?: string},
 	 *   mini?: boolean,
 	 *   badge?: string,
@@ -107,6 +109,7 @@
 	 */
 	let {
 		title,
+		shortTitle = undefined,
 		info,
 		mini = false,
 		badge = '',
@@ -201,8 +204,6 @@
 	// it would resize the card above instead of scrolling the page.
 	const coarsePointer = new MediaQuery('(pointer: coarse)');
 	const touch = hasTouchControls();
-	const phone = new MediaQuery(BELOW_TABLET_QUERY);
-	let legendInFooter = $derived(touch && phone.current && !!legend);
 	let hasActions = $derived(!!compare || !!(download && downloads) || !!onexpand);
 
 	/** Only a resizable chart halves; a content-height card keeps its size. */
@@ -241,6 +242,14 @@
 	const ACTION_IDLE =
 		'text-mid-grey hover:bg-warm-grey hover:text-dark-grey disabled:cursor-not-allowed disabled:text-mid-warm-grey disabled:hover:bg-transparent';
 </script>
+
+{#snippet titleText()}
+	{#if shortTitle}
+		<span class="max-tablet:hidden">{title}</span><span class="tablet:hidden">{shortTitle}</span>
+	{:else}
+		{title}
+	{/if}
+{/snippet}
 
 <div
 	class="chart-card group/card"
@@ -299,11 +308,11 @@
 								tapToOpen
 								class="inline-flex cursor-help items-center gap-1"
 							>
-								{title}
+								{@render titleText()}
 								<Info class="size-4 text-mid-grey" aria-hidden="true" />
 							</Tooltip>
 						{:else}
-							{title}
+							{@render titleText()}
 						{/if}
 					</h3>
 					{#if hosted}
@@ -462,16 +471,10 @@
 					{/if}
 				</div>
 			</div>
-			{#if controls || (legend && !legendInFooter)}
-				<!-- Legend on the left; the options and switchers on the right (they
-				     stay right when wrapped under a long legend). -->
-				<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-					{#if legend && !legendInFooter}<div class="min-w-0">{@render legend()}</div>{/if}
-					{#if controls}
-						<div class="ml-auto flex flex-wrap items-center justify-end gap-2">
-							{@render controls()}
-						</div>
-					{/if}
+			{#if controls}
+				<!-- The options and switchers, on the right. -->
+				<div class="flex flex-wrap items-center justify-end gap-2">
+					{@render controls()}
 				</div>
 			{/if}
 			{#if status}{@render status()}{/if}
@@ -493,7 +496,7 @@
 			{/if}
 			<LoadingOverlay active={loading} />
 		</div>
-		{#if legend && legendInFooter}
+		{#if legend}
 			<footer
 				class="border-t bg-light-warm-grey/60 px-4 py-3 {mini
 					? 'border-warm-grey'

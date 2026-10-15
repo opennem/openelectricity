@@ -1,6 +1,11 @@
 <script>
+	import FilterAccordionSection from './FilterAccordionSection.svelte';
 	import FilterPanel from './FilterPanel.svelte';
+	import FilterRadioList from './FilterRadioList.svelte';
+	import FilterSheetSection from './FilterSheetSection.svelte';
+	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import NativeSelect from './NativeSelect.svelte';
+	import { inFilterSheet } from './filter-sheet.js';
 	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
 
 	/**
@@ -26,6 +31,13 @@
 	 * platform's own picker (`NativeSelect`) instead of the panel, unless a
 	 * `footer` or `trigger` needs the custom panel or `native={false}` asks for
 	 * it. Both are rendered and CSS picks one, so the server render is right.
+	 *
+	 * In a phone filter sheet (`filter-sheet.js`) it is the sheet's section
+	 * instead, titled `listLabel`. A flat list (no children or groups;
+	 * dividers are dropped) is a segmented switch, one tap to pick, wrapping
+	 * into rows of up to four; a nested or grouped one is a radio list that
+	 * unfolds under the title, with the picked option as its tag, and folds
+	 * again once a pick lands. The `footer` sits under either.
 	 *
 	 * The generalisation of the tracker's RegionDropdown — use this for any
 	 * pick-one control that should look like the Region pill.
@@ -62,18 +74,17 @@
 
 	let flatOptions = $derived(options.flatMap((o) => [o, ...(o.children ?? [])]));
 	let selectedOption = $derived(flatOptions.find((o) => o.value === selected) ?? options[0]);
-	/** Runs of consecutive options under the same `group` (none for ungrouped). */
-	let sections = $derived(
-		options.reduce((runs, option) => {
-			const last = runs.at(-1);
-			if (last && last.group === option.group) last.options.push(option);
-			else runs.push({ group: option.group, options: [option] });
-			return runs;
-		}, /** @type {Array<{ group: string | undefined, options: typeof options }>} */ ([]))
-	);
-	const uid = $props.id();
 	const touch = hasTouchControls();
+	const sheet = inFilterSheet();
+	let sheetSegments = $derived(options.every((o) => !o.children?.length && !o.group));
+	/** One row up to three; four as 2 × 2; then rows of three up to six (the
+	 * interval's longer labels), and of four beyond (a year's months). */
+	let segmentColumns = $derived(
+		options.length <= 3 ? options.length : options.length === 4 ? 2 : options.length <= 6 ? 3 : 4
+	);
 	let nativeOnPhone = $derived(touch && native && !footer && !trigger);
+	/** Whether the filter sheet's section is unfolded. */
+	let sheetOpen = $state(false);
 	let pillLabel = $derived(selectedOption.selectedLabel ?? selectedOption.label);
 	let active = $derived(defaultValue !== null && selected !== defaultValue);
 
@@ -87,51 +98,6 @@
 	}
 </script>
 
-{#snippet optionRow(/** @type {SelectOption} */ option, /** @type {() => void} */ close)}
-	{@const isSelected = option.value === selected}
-	<button
-		type="button"
-		role="option"
-		aria-selected={isSelected}
-		disabled={option.disabled}
-		class="w-full flex items-center gap-5 rounded-md disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent {isSelected
-			? 'text-black'
-			: 'text-mid-grey'} hover:bg-warm-grey cursor-pointer px-2 py-2"
-		onclick={() => handleSelect(option.value, close)}
-	>
-		<span class="flex-1 text-left truncate">{option.label}</span>
-		<span
-			class="flex size-[15px] shrink-0 items-center justify-center rounded-full border {isSelected
-				? 'border-mid-grey'
-				: 'border-mid-warm-grey'}"
-			aria-hidden="true"
-		>
-			{#if isSelected}<span class="size-[9px] rounded-full bg-dark-grey"></span>{/if}
-		</span>
-	</button>
-{/snippet}
-
-{#snippet optionItem(
-	/** @type {SelectOption & { children?: SelectOption[], divider?: boolean }} */ option,
-	/** @type {() => void} */ close
-)}
-	<li class="whitespace-nowrap">
-		{@render optionRow(option, close)}
-		{#if option.children && option.children.length > 0}
-			<ul class="ml-4 border-l border-warm-grey pl-1" role="none">
-				{#each option.children as child (child.value)}
-					<li class="whitespace-nowrap">
-						{@render optionRow(child, close)}
-					</li>
-				{/each}
-			</ul>
-		{/if}
-		{#if option.divider}
-			<div class="my-1 h-px bg-warm-grey" role="separator"></div>
-		{/if}
-	</li>
-{/snippet}
-
 {#snippet panel()}
 	<FilterPanel
 		label={pillLabel}
@@ -143,29 +109,14 @@
 		{trigger}
 	>
 		{#snippet children(close)}
-			<ul class="flex flex-col text-sm px-2 py-2" role="listbox" aria-label={listLabel}>
-				{#each sections as section, index (index)}
-					{#if section.group}
-						<li role="presentation">
-							<div
-								id="{uid}-group-{index}"
-								class="px-2 pb-1 pt-3 text-xxs font-medium uppercase tracking-wider text-dark-grey"
-							>
-								{section.group}
-							</div>
-							<ul role="group" aria-labelledby="{uid}-group-{index}">
-								{#each section.options as option (option.value)}
-									{@render optionItem(option, close)}
-								{/each}
-							</ul>
-						</li>
-					{:else}
-						{#each section.options as option (option.value)}
-							{@render optionItem(option, close)}
-						{/each}
-					{/if}
-				{/each}
-			</ul>
+			<div class="px-2 py-2">
+				<FilterRadioList
+					{options}
+					{selected}
+					label={listLabel}
+					onselect={(value) => handleSelect(value, close)}
+				/>
+			</div>
 			{#if footer}
 				<div class="border-t border-warm-grey px-2 py-2 text-sm">{@render footer(close)}</div>
 			{/if}
@@ -173,7 +124,39 @@
 	</FilterPanel>
 {/snippet}
 
-{#if nativeOnPhone}
+{#if sheet && sheetSegments}
+	<FilterSheetSection title={listLabel}>
+		<Switch
+			buttons={options.map((o) => ({ label: o.label, value: o.value, disabled: o.disabled }))}
+			{selected}
+			columns={segmentColumns}
+			rounded="rounded-lg"
+			darkSelected
+			aria-label={listLabel}
+			onchange={(option) => {
+				if (option.value !== selected) onchange?.(option.value);
+			}}
+		/>
+		{#if footer}
+			<div class="text-sm">{@render footer(() => {})}</div>
+		{/if}
+	</FilterSheetSection>
+{:else if sheet}
+	<FilterAccordionSection title={listLabel} tags={[pillLabel]} bind:open={sheetOpen}>
+		<FilterRadioList
+			{options}
+			{selected}
+			label={listLabel}
+			mode="radiogroup"
+			onselect={(value) => handleSelect(value, () => (sheetOpen = false))}
+		/>
+		{#if footer}
+			<div class="mt-2 border-t border-warm-grey pt-2 text-sm">
+				{@render footer(() => (sheetOpen = false))}
+			</div>
+		{/if}
+	</FilterAccordionSection>
+{:else if nativeOnPhone}
 	<NativeSelect
 		class="tablet:hidden"
 		{selected}

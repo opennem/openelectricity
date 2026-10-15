@@ -2,7 +2,7 @@
 	/**
 	 * Chart Tooltip Component (strip variant)
 	 *
-	 * Renders a fixed strip above the chart (two lines in narrow cards) showing the active row's
+	 * Renders a fixed strip above the chart (two lines in narrow cards, one without a date) showing the active row's
 	 * date, the single hovered series value, and an optional total. Shares
 	 * derivation logic with `ChartTooltipFloating.svelte` via
 	 * `tooltip-derivations.js`.
@@ -40,11 +40,14 @@
 	let activeColour = $derived(valueKey ? chart.seriesColours[valueKey] : undefined);
 	let activeLabel = $derived(valueKey ? chart.seriesLabels[valueKey] : undefined);
 	let formattedDate = $derived(getFormattedX(chart, activeData));
+	/** Without a date the strip is one line at every width: narrow cards
+	 * reserve a second line only for the date to sit above the values. */
+	let dateless = $derived(chart.chartTooltips.showDate === false);
 </script>
 
 <div data-testid="chart-tooltip-strip" class="tooltip-container {className}">
 	{#if activeData}
-		<div class="tooltip-row {contentClass} text-xs">
+		<div class="tooltip-row {contentClass} text-xs" class:dateless>
 			<!-- Date -->
 			{#if formattedDate}
 				<span class="px-3 py-1 font-light bg-white/40">
@@ -80,7 +83,7 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="tooltip-row {contentClass} text-xs text-mid-grey">
+		<div class="tooltip-row {contentClass} text-xs text-mid-grey" class:dateless>
 			{defaultText}
 		</div>
 	{/if}
@@ -100,7 +103,7 @@
 		max-width: 100%;
 	}
 	@container (max-width: 460px) {
-		.tooltip-row {
+		.tooltip-row:not(.dateless) {
 			height: 42px;
 			flex-direction: column;
 			align-items: flex-end;

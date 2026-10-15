@@ -43,6 +43,7 @@
 	onshortcut={handleShortcut}
 	status={{
 		label: canvas?.getRangeLabel() ?? '',
+		intervalLabel: canvas?.getIntervalLabel(),
 		inspectLabel: canvas?.getInspectLabel(),
 		loading: !!canvas?.isLoading(),
 		updatedLabel,

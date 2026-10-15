@@ -4,8 +4,8 @@
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import IntervalControls from './IntervalControls.svelte';
-	import NativeSelect from '$lib/components/filters/NativeSelect.svelte';
-	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
+	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
+	import { inFilterSheet } from '$lib/components/filters/filter-sheet.js';
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import { portal } from '$lib/actions/portal.js';
 	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
@@ -101,23 +101,28 @@
 			ariaLabel: 'Choose a custom date range'
 		}
 	];
+	// The filter sheet's calendar segment takes the phone's icon size.
+	const sheetSwitchButtons = switchButtons.map((button) =>
+		button.value === 'custom' ? { ...button, size: 'size-[18px]' } : button
+	);
 	let switchSelected = $derived(selectedRange ?? (isCustomActive ? 'custom' : ''));
 
 	const belowTablet = new MediaQuery(BELOW_TABLET_QUERY);
-	// Touch-sized subtrees pick the range with the phone's own picker there,
-	// "Custom…" opening the date sheet. A custom range already applied is
-	// listed as itself, with "Change dates…" to reopen the sheet (a picker
-	// reports no change when its current option is picked again).
-	const touch = hasTouchControls();
-	let nativeRangeOptions = $derived([
-		...RANGE_PRESETS.map((p) => ({ value: String(p.days), label: p.label })),
-		...(isCustomActive
-			? [
-					{ value: 'custom-applied', label: 'Custom' },
-					{ value: 'custom', label: 'Change dates…' }
-				]
-			: [{ value: 'custom', label: 'Custom…' }])
-	]);
+
+	// In a phone filter sheet the range is the preset switch in its own
+	// section, the custom dates opening beneath it once the calendar is picked
+	// (and staying while a custom range is applied); the interval follows as
+	// its sections.
+	const sheet = inFilterSheet();
+	/** Custom picked in the sheet, its dates not yet applied. */
+	let customChosen = $state(false);
+	let sheetRangeSelected = $derived(customChosen ? 'custom' : switchSelected);
+
+	/** @param {{ value: string }} option */
+	function handleSheetRange({ value }) {
+		customChosen = value === 'custom';
+		if (!customChosen) handlePresetClick(Number(value));
+	}
 
 	let rangeMenuOpen = $state(false);
 	let pickerOpen = $state(false);
@@ -247,27 +252,38 @@
 {/snippet}
 
 {#snippet smallControls()}
-	{#if touch}
-		<NativeSelect
-			class="tablet:hidden {pending ? 'animate-pulse' : ''}"
-			selected={isCustomActive ? 'custom-applied' : String(selectedRange ?? '')}
-			options={nativeRangeOptions}
-			label={currentRangeLabel}
-			listLabel="Range"
-			compact
-			onchange={(value) => {
-				if (value === 'custom') sheetOpen = true;
-				else if (value !== 'custom-applied') handlePresetClick(Number(value));
-			}}
-		/>
-		<div class="contents max-tablet:hidden">{@render rangeDropdown()}</div>
-	{:else}
-		{@render rangeDropdown()}
-	{/if}
+	{@render rangeDropdown()}
 	{@render intervalControls()}
 {/snippet}
 
-{#if variant === 'expanded'}
+{#if sheet}
+	<FilterSheetSection title="Range">
+		<SwitchWithIcons
+			buttons={sheetSwitchButtons}
+			selected={sheetRangeSelected}
+			rounded="rounded-lg"
+			darkSelected
+			aria-label="Range"
+			onchange={handleSheetRange}
+		/>
+		{#if sheetRangeSelected === 'custom'}
+			<DateRangePicker
+				{startDate}
+				{endDate}
+				{minDate}
+				{maxDate}
+				size="md"
+				numberOfMonths={1}
+				fill
+				onchange={(range) => {
+					customChosen = false;
+					ondaterangechange?.(range);
+				}}
+			/>
+		{/if}
+	</FilterSheetSection>
+	{@render intervalControls()}
+{:else if variant === 'expanded'}
 	<!-- The switcher falls back to dropdowns below `md`. -->
 	<div class="hidden md:flex items-stretch gap-[var(--chart-range-gap,0.375rem)]">
 		<SwitchWithIcons
@@ -292,72 +308,76 @@
 	</div>
 {/if}
 
-<!-- Both desktop entry points share one popover and restore focus to its opener. -->
-<Popover.Root bind:open={pickerOpen}>
-	<Popover.Portal>
-		<!-- Portalled sheets use z-[9999]. -->
-		<Popover.Content
-			customAnchor={pickerAnchorEl ?? null}
-			sideOffset={6}
-			class="z-[10000] border border-warm-grey bg-white shadow-lg p-3 rounded-xl w-auto max-w-[calc(100vw-2rem)]"
-			onCloseAutoFocus={(e) => {
-				// This controlled popover has no Popover.Trigger to restore automatically.
-				e.preventDefault();
-				pickerAnchorEl?.focus();
-			}}
-		>
-			<DateRangePicker
-				bind:this={popoverPickerRef}
-				{startDate}
-				{endDate}
-				{minDate}
-				{maxDate}
-				size="sm"
-				onchange={ondaterangechange}
-			/>
-		</Popover.Content>
-	</Popover.Portal>
-</Popover.Root>
-
-<!-- Keep the portalled mobile sheet mounted so its exit transition can play. -->
-<div
-	use:portal
-	class="tablet:hidden fixed inset-0 z-[10000] pointer-events-none"
-	bind:clientHeight={sheetContainerHeight}
->
-	<BottomSheet
-		open={sheetOpen}
-		onclose={() => (sheetOpen = false)}
-		containerHeight={sheetContainerHeight}
-		peekFraction={0.8}
-		fullFraction={0.94}
-		class="pointer-events-auto"
-	>
-		{#snippet header()}
-			<div
-				class="shrink-0 px-6 pt-2 pb-4 border-b border-warm-grey flex items-center justify-between gap-2"
+{#if !sheet}
+	<!-- Both desktop entry points share one popover and restore focus to its opener. -->
+	<Popover.Root bind:open={pickerOpen}>
+		<Popover.Portal>
+			<!-- Portalled sheets use z-[9999]. -->
+			<Popover.Content
+				customAnchor={pickerAnchorEl ?? null}
+				sideOffset={6}
+				class="z-[10000] border border-warm-grey bg-white shadow-lg p-3 rounded-xl w-auto max-w-[calc(100vw-2rem)]"
+				onCloseAutoFocus={(e) => {
+					// This controlled popover has no Popover.Trigger to restore automatically.
+					e.preventDefault();
+					pickerAnchorEl?.focus();
+				}}
 			>
-				<h3 class="mb-0 text-base">Custom date range</h3>
-				<button
-					type="button"
-					class="p-2 rounded-full bg-light-warm-grey hover:bg-warm-grey transition-colors cursor-pointer"
-					onclick={() => (sheetOpen = false)}
-					aria-label="Close date picker"
+				<DateRangePicker
+					bind:this={popoverPickerRef}
+					{startDate}
+					{endDate}
+					{minDate}
+					{maxDate}
+					size="sm"
+					onchange={ondaterangechange}
+				/>
+			</Popover.Content>
+		</Popover.Portal>
+	</Popover.Root>
+
+	<!-- Keep the portalled mobile sheet mounted so its exit transition can play. -->
+	<div
+		use:portal
+		class="tablet:hidden fixed inset-0 z-[10000] pointer-events-none"
+		bind:clientHeight={sheetContainerHeight}
+	>
+		<BottomSheet
+			open={sheetOpen}
+			onclose={() => (sheetOpen = false)}
+			containerHeight={sheetContainerHeight}
+			peekFraction={0.8}
+			fullFraction={0.94}
+			class="pointer-events-auto"
+		>
+			{#snippet header()}
+				<div
+					class="shrink-0 px-6 pt-2 pb-4 border-b border-warm-grey flex items-center justify-between gap-2"
 				>
-					<X class="size-5 text-dark-grey" />
-				</button>
+					<h3 class="mb-0 text-base">Custom date range</h3>
+					<button
+						type="button"
+						class="p-2 rounded-full bg-light-warm-grey hover:bg-warm-grey transition-colors cursor-pointer"
+						onclick={() => (sheetOpen = false)}
+						aria-label="Close date picker"
+					>
+						<X class="size-5 text-dark-grey" />
+					</button>
+				</div>
+			{/snippet}
+			<div class="px-6 py-4">
+				<DateRangePicker
+					bind:this={sheetPickerRef}
+					{startDate}
+					{endDate}
+					{minDate}
+					{maxDate}
+					size="md"
+					numberOfMonths={1}
+					fill
+					onchange={ondaterangechange}
+				/>
 			</div>
-		{/snippet}
-		<div class="px-6 py-4">
-			<DateRangePicker
-				bind:this={sheetPickerRef}
-				{startDate}
-				{endDate}
-				{minDate}
-				{maxDate}
-				size="md"
-				onchange={ondaterangechange}
-			/>
-		</div>
-	</BottomSheet>
-</div>
+		</BottomSheet>
+	</div>
+{/if}

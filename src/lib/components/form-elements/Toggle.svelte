@@ -7,10 +7,19 @@
 	 * @property {boolean} [disabled] - Greyed out and inert (the option doesn't apply)
 	 * @property {boolean} [compact] - Toolbar size, beside compact filter pills:
 	 *   a 20 × 34px switch and the pills' text-xs label
+	 * @property {boolean} [spread] - A row of its own (a filter sheet): the label
+	 *   at the start in text-sm, the switch at the end
 	 */
 
 	/** @type {Props} */
-	let { checked = false, label = 'Table', onclick, disabled = false, compact = false } = $props();
+	let {
+		checked = false,
+		label = 'Table',
+		onclick,
+		disabled = false,
+		compact = false,
+		spread = false
+	} = $props();
 	const id = $props.id();
 
 	/** Each size's label, track, knob (and its travel) and icon. */
@@ -46,9 +55,9 @@
 
 <label
 	for={id}
-	class="flex justify-center items-center {size.label} {disabled
-		? 'cursor-not-allowed opacity-40'
-		: ''}"
+	class="flex items-center {spread
+		? 'w-full justify-between gap-2 text-sm text-dark-grey'
+		: `justify-center ${size.label}`} {disabled ? 'cursor-not-allowed opacity-40' : ''}"
 >
 	<span>{label}</span>
 

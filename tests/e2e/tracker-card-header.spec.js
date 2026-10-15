@@ -100,7 +100,8 @@ test.describe('Chart card header', () => {
 		await trackerFixture(page);
 		await page.goto('/tracker/timeline?region=nsw1&table=0&overlay=demand');
 		await trackerReady(page);
-		const legend = card(page, 'Generation').getByTestId('series-legend');
+		// Under the chart, in the card's footer.
+		const legend = card(page, 'Generation').locator('footer').getByTestId('series-legend');
 		await expect(legend.locator('li')).toHaveText(['Wind', 'Coal', 'Demand']);
 		// Price is one line: nothing to key.
 		await expect(card(page, 'Market').getByTestId('series-legend')).toHaveCount(0);

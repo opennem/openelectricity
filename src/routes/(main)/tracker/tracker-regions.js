@@ -44,6 +44,16 @@ export function regionLabel(value) {
 	return sharedRegionLabel(value, TRACKER_REGION_OPTIONS);
 }
 
+/**
+ * Short display label for a region value ("NEM", "NSW", "WA"), falling back to
+ * its full label.
+ * @param {string} value
+ */
+export function regionShortLabel(value) {
+	const option = TRACKER_REGION_OPTIONS.find((o) => o.value === value);
+	return option?.shortLabel ?? option?.label ?? value;
+}
+
 /** Every selectable scope value — the URL validation list. */
 export const TRACKER_REGION_VALUES = TRACKER_REGION_OPTIONS.map((option) => option.value);
 

@@ -3,12 +3,14 @@
 
 	/**
 	 * DialReadout — the radial charts' hover readout, in the style of the
-	 * scenarios' mini charts: a light band flush with its card's edges, the
-	 * hovered time (`label`) on the left a step smaller than the value and
-	 * unit on the right (dollars as "$43.17/MWh"; see `dialValue`), with an
-	 * optional `note` after the unit ("net").
-	 * Idle (`label` null) the band stays reserved but blank, so the dial
-	 * below never jumps. `large` reads a step bigger (the lightbox).
+	 * scenarios' mini charts: a light band flush with its card's edges, a
+	 * `label` on the left a step smaller than the value and unit on the right
+	 * (dollars as "$43.17/MWh"; see `dialValue`), with an optional `note` after
+	 * the unit ("net"). The hovered time isn't repeated here: the range readout
+	 * names it, so `label` is what it doesn't (the averages' "Av.", a heatmap
+	 * ring's day) or empty. Idle (`label` null) the band stays reserved but
+	 * blank, so the dial below never jumps. `large` reads a step bigger (the
+	 * lightbox).
 	 *
 	 * @type {{
 	 *   label: string | null,
@@ -31,7 +33,7 @@
 </script>
 
 <div data-testid="dial-readout" class="h-[28px]">
-	{#if label}
+	{#if label !== null}
 		<div
 			class="flex h-full items-baseline justify-between gap-4 whitespace-nowrap bg-light-warm-grey px-6 pt-[5px] {large
 				? 'text-base'

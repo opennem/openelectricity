@@ -11,7 +11,6 @@
 		COMPARISON_MIN_SPAN_MS,
 		COMPARISON_REGIONS,
 		comparisonChartRows,
-		comparisonPeriod,
 		comparisonTicks,
 		comparisonYDomain,
 		visibleComparisonRows
@@ -24,7 +23,7 @@
 	 * inspects that period in every panel and names its region to the Regions
 	 * table. Zoom is by the buttons; the panels do not drag-pan.
 	 * @type {{data: Record<string, any[]>, regions: string[], metric: string,
-	 *   basis: 'demand' | 'generation', interval: string, months: number,
+	 *   basis: 'demand' | 'generation', months: number,
 	 *   viewport: {start: number, end: number}, bounds: {start: number, end: number},
 	 *   tooltip: boolean, hover: number | null, focus: number | null, hoverRegion: string | null,
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
@@ -36,7 +35,6 @@
 		regions,
 		metric,
 		basis,
-		interval,
 		months,
 		viewport,
 		bounds,
@@ -147,7 +145,6 @@
 		{#if tooltip && inspected != null}
 			<!-- Keyboard inspection has no pointer: the tooltip sits at the top left. -->
 			<RegionTooltip
-				period={comparisonPeriod(inspected, interval)}
 				{unit}
 				{regions}
 				row={rows.find((row) => row.time === inspected)}

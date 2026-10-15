@@ -569,6 +569,8 @@
 			dateEnd,
 			showContainer: false,
 			tooltipMode: 'strip',
+			// The range readout names the hovered time.
+			showTooltipDate: false,
 			onhoverchange: handleHoverChange,
 			focusTime,
 			onfocuschange: (time) => (focusTime = time),

@@ -185,9 +185,7 @@
 
 <div class="relative">
 	<DialReadout
-		label={readout
-			? `${readout.ring.label} · ${profileClock(hoverStart)}–${profileClock(hoverStart + slotMs)}`
-			: null}
+		label={readout ? readout.ring.label : null}
 		value={readout?.value ?? null}
 		{unit}
 		{large}

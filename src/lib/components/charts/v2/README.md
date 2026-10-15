@@ -629,6 +629,10 @@ The DateRangePicker is part of the range control rather than a separate chip:
   "Custom…" row at the bottom of the range dropdown opens the picker — as a
   popover anchored to the pill at `tablet:` (768px) and up, or a portalled
   BottomSheet below that.
+- **Filter sheet** (inside a `filter-sheet.js` subtree, the Tracker's phone
+  filters): the range is the preset switcher in its own section, and the
+  calendar segment opens the picker inline beneath it; the interval controls
+  follow as sections of their own.
 
 The menus use the app-wide radio single-select row (label left, radio at the
 end), matching `FilterSelect` and `form-elements/Select`.

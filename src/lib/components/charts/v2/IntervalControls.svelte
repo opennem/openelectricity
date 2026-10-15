@@ -1,5 +1,6 @@
 <script>
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
+	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
 	import {
 		getIntervalSpec,
 		isRollingInterval,
@@ -18,7 +19,8 @@
 	 * has a rolling variant among `options`, so a rolling interval reads as its
 	 * grain plus the switch. The calendar-period pill ("All", or a month,
 	 * season, quarter or half) follows the grain and hides where it has none.
-	 * Both render as siblings, so the caller's flex row spaces them.
+	 * Both render as siblings, so the caller's flex row spaces them; in a
+	 * phone filter sheet (`filter-sheet.js`) each is a section of its own.
 	 *
 	 * @typedef {Object} Props
 	 * @property {string[]} options - Selectable interval ids, including any `12mr*` rolling variants
@@ -99,26 +101,28 @@
 	>
 		<span class="flex-1 text-left whitespace-nowrap">12-mth rolling sum</span>
 		<span
-			class="relative h-4 w-7 shrink-0 rounded-full transition-colors {rollingActive
+			class="relative h-[18px] w-[32px] shrink-0 rounded-full transition-colors {rollingActive
 				? 'bg-dark-grey'
 				: 'bg-mid-warm-grey'}"
 		>
 			<span
-				class="absolute top-0.5 size-3 rounded-full bg-white transition-all {rollingActive
-					? 'left-3.5'
-					: 'left-0.5'}"
+				class="absolute top-[2px] size-[14px] rounded-full bg-white transition-all {rollingActive
+					? 'left-[16px]'
+					: 'left-[2px]'}"
 			></span>
 		</span>
 	</button>
 {/snippet}
 
 {#if staticDisplay}
-	<!-- Matches FilterPill's inactive pill. -->
-	<span
-		class="inline-flex items-center rounded-lg border border-warm-grey bg-white px-4 py-2.5 text-xs font-medium text-dark-grey"
-	>
-		{currentIntervalLabel}
-	</span>
+	<FilterSheetSection title="Interval">
+		<!-- Matches FilterPill's inactive pill. -->
+		<span
+			class="inline-flex items-center rounded-lg border border-warm-grey bg-white px-4 py-2.5 text-xs font-medium text-dark-grey"
+		>
+			{currentIntervalLabel}
+		</span>
+	</FilterSheetSection>
 {:else}
 	<FilterSelect
 		selected={baseInterval}

@@ -12,6 +12,8 @@
 	import { flip } from 'svelte/animate';
 	import { MediaQuery } from 'svelte/reactivity';
 	import IntervalControls from '$lib/components/charts/v2/IntervalControls.svelte';
+	import FilterBarGroup from '$lib/components/filters/FilterBarGroup.svelte';
+	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
 	import ComparisonChartToggles from './ComparisonChartToggles.svelte';
 	import RegionStripes from './RegionStripes.svelte';
 	import { stripeMax, stripeScale } from './comparison-stripes.js';
@@ -449,6 +451,10 @@
 	export function getRangeLabel() {
 		return comparisonRangeLabel(shownPeriods.first, shownPeriods.last, interval);
 	}
+	/** The interval, for the phone filter summary. */
+	export function getIntervalLabel() {
+		return getIntervalSpec(interval)?.label;
+	}
 	/** The hovered or pinned period, replacing the range readout while it lasts. */
 	export function getInspectLabel() {
 		const inspected = hover ?? focus;
@@ -470,13 +476,35 @@
 	<span class="font-mono text-xxs font-light text-mid-grey">{unit}</span>
 {/snippet}
 
+<!-- How the charts are drawn: icons in the bar under the top nav, icons and
+     names in the phone filter sheet, two to a row. -->
+{#snippet displaySwitch(/** @type {boolean} */ labelled)}
+	<Switch
+		buttons={labelled
+			? DISPLAY_BUTTONS.map(({ tooltip, ...button }) => ({ ...button, label: tooltip }))
+			: DISPLAY_BUTTONS}
+		selected={display}
+		compact={!labelled}
+		columns={labelled ? 2 : undefined}
+		rounded="rounded-lg"
+		darkSelected
+		aria-label="Comparison display"
+		onchange={(option) => select({ display: normaliseComparisonDisplay(option.value) })}
+	/>
+{/snippet}
+
 {#snippet controls()}
+	<FilterBarGroup sheetOnly>
+		<FilterSheetSection title="Display">{@render displaySwitch(true)}</FilterSheetSection>
+	</FilterBarGroup>
 	<ComparisonChartToggles selected={selection.charts} onchange={(charts) => select({ charts })} />
-	<div
-		class="h-8 shrink-0 border-l border-warm-grey"
-		role="separator"
-		aria-orientation="vertical"
-	></div>
+	<FilterBarGroup barOnly>
+		<div
+			class="h-8 shrink-0 border-l border-warm-grey"
+			role="separator"
+			aria-orientation="vertical"
+		></div>
+	</FilterBarGroup>
 	<!-- Timeline's interval pill, 12-month rolling switch and calendar-period
 	     filter; a filter the new grain cannot keep is dropped. -->
 	<IntervalControls
@@ -511,20 +539,12 @@
 	data-png-context={`Compare · ${caption}`}
 >
 	<!-- How the charts are drawn sits in a bar under the top nav, as Profile's
-	     breakdown options do. -->
+	     breakdown options do; phones find it in the filter sheet. -->
 	<section
 		aria-label="Display options"
-		class="axis-ticks-bg flex shrink-0 items-center gap-4 overflow-x-auto border-b border-warm-grey bg-white px-8 py-2"
+		class="axis-ticks-bg flex shrink-0 items-center gap-4 overflow-x-auto border-b border-warm-grey bg-white px-8 py-2 max-tablet:hidden"
 	>
-		<Switch
-			buttons={DISPLAY_BUTTONS}
-			selected={display}
-			compact
-			rounded="rounded-lg"
-			darkSelected
-			aria-label="Comparison display"
-			onchange={(option) => select({ display: normaliseComparisonDisplay(option.value) })}
-		/>
+		{@render displaySwitch(false)}
 	</section>
 	<span class="sr-only" role="status"
 		>{source.pending ? 'Loading regional data…' : 'Complete periods · monthly source data'}</span
@@ -657,7 +677,6 @@
 									{regions}
 									metric={metric.id}
 									{basis}
-									{interval}
 									{months}
 									{viewport}
 									bounds={chartBounds}
@@ -682,7 +701,6 @@
 									{regions}
 									metric={metric.id}
 									{basis}
-									{interval}
 									{months}
 									{viewport}
 									bounds={chartBounds}

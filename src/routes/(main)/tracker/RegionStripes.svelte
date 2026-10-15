@@ -15,7 +15,6 @@
 		COMPARISON_MIN_SPAN_MS,
 		COMPARISON_REGIONS,
 		comparisonChartRows,
-		comparisonPeriod,
 		comparisonTickLabel,
 		comparisonTicks,
 		nextPeriodStart,
@@ -31,7 +30,7 @@
 	 * export composes the canvas raster under the SVG chrome. Pointer
 	 * geometry is pure maths on the rows, so nothing is hit-tested in the DOM.
 	 * @type {{data: Record<string, any[]>, regions: string[], metric: string,
-	 *   basis: 'demand' | 'generation', interval: string, months: number,
+	 *   basis: 'demand' | 'generation', months: number,
 	 *   viewport: {start: number, end: number}, bounds: {start: number, end: number},
 	 *   scale: import('./comparison-stripes.js').StripeScale, tooltip: boolean,
 	 *   onhoverregion: (region: string | null) => void,
@@ -46,7 +45,6 @@
 		regions,
 		metric,
 		basis,
-		interval,
 		months,
 		viewport,
 		bounds,
@@ -430,7 +428,6 @@
 		</svg>
 		{#if tooltip && inspected != null && tooltipAnchor}
 			<RegionTooltip
-				period={comparisonPeriod(inspected, interval)}
 				unit={scale.unit}
 				{regions}
 				row={byTime.get(inspected)}

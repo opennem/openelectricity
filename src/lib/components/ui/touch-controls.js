@@ -35,6 +35,8 @@ export const TOUCH_PILL_ICON = 'max-tablet:size-4';
 export const TOUCH_SWITCH_TRACK =
 	'max-tablet:h-[40px] max-tablet:rounded-[10px] max-tablet:text-sm';
 export const TOUCH_SWITCH_OPTION = 'max-tablet:rounded-[7.5px] max-tablet:px-4 max-tablet:py-0';
+/** A segmented switch laid out as a grid of rows: the rows set its height. */
+export const TOUCH_SWITCH_GRID_TRACK = 'max-tablet:rounded-[10px] max-tablet:text-sm';
 
 /** A square icon button (Feedback, the options menu), framed like a pill. */
 export const TOUCH_ICON_BUTTON =

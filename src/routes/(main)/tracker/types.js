@@ -298,6 +298,7 @@ export {};
  * top nav at every width.
  * @typedef {Object} TrackerRangeStatus
  * @property {string} label - The selected range
+ * @property {string} [intervalLabel] - The interval, for the phone filter summary
  * @property {string} [inspectLabel] - The hovered or inspected period, replacing the label
  * @property {boolean} loading - Data on screen is updating
  * @property {string} [updatedLabel] - When the data last updated
