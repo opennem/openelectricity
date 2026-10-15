@@ -135,32 +135,28 @@
 </script>
 
 {#if layout === 'list'}
-	<ul class="divide-y divide-warm-grey" aria-label="Window metrics">
+	<!-- Small Space Grotesk section labels, as in the page dialogs
+	     (DownloadDataModal). -->
+	<ul class="m-0 list-none p-0" aria-label="Window metrics">
 		{#each groups as group (group.id)}
 			{@const state = status[group.id]}
 			{@const ready = !state.pending && !state.error}
 			{@const unit = unitFor(group)}
-			<li
-				class="py-4 first:pt-0"
-				data-testid={`metrics-list-${group.id}`}
-				aria-busy={state.pending}
-			>
-				<div
-					class="flex items-baseline gap-2 font-space text-xs font-semibold uppercase tracking-wider text-dark-grey"
+			<li class="py-3" data-testid={`metrics-list-${group.id}`} aria-busy={state.pending}>
+				<h3
+					class="m-0 flex items-baseline gap-2 pb-2 font-space text-[10px] font-normal uppercase tracking-wider text-mid-grey"
 				>
 					{group.label}
-					{#if unit}<span class="font-mono font-normal normal-case tracking-normal text-mid-grey"
-							>{unit}</span
-						>{/if}
-				</div>
-				<div class="mt-2 grid grid-cols-2 gap-2">
+					{#if unit}<span class="font-mono normal-case tracking-normal">{unit}</span>{/if}
+				</h3>
+				<div class="grid grid-cols-2 gap-2">
 					{#each extrema as kind (kind)}
 						{@const point = group[kind]}
 						{@const active = !!point && point.time === focusTime}
 						{@const notice = noticeFor(state, group, point)}
 						<button
 							type="button"
-							class="flex min-h-[56px] flex-col items-start justify-center gap-1 rounded-[10px] border px-4 py-2 text-left transition-colors disabled:cursor-default {active
+							class="flex min-h-[52px] flex-col items-start justify-center gap-1 rounded-md border px-3 py-2 text-left transition-colors disabled:cursor-default {active
 								? 'border-dark-grey bg-dark-grey text-white'
 								: 'border-warm-grey bg-white text-dark-grey'}"
 							disabled={!point || !ready}

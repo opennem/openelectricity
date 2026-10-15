@@ -20,7 +20,7 @@
 	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import RangeStatus from './RangeStatus.svelte';
-	import { Download, X } from '@lucide/svelte';
+	import { Download, ImageDown, X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
@@ -99,6 +99,19 @@
 	onMount(() => {
 		hydrated = true;
 	});
+
+	/** Whether the phone range readout is stuck to the top of the viewport. */
+	let rangeStuck = $state(false);
+	/** Watch a marker placed just above the sticky readout: once it has
+	 * scrolled off the top, the readout is stuck.
+	 * @type {import('svelte/attachments').Attachment<HTMLElement>} */
+	function watchStuck(marker) {
+		const observer = new IntersectionObserver(([entry]) => {
+			rangeStuck = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+		});
+		observer.observe(marker);
+		return () => observer.disconnect();
+	}
 
 	/** Each view is its own route; a bare path starts it with its defaults.
 	 * @param {string} value */
@@ -289,6 +302,7 @@
 								}}>Download data</OptionsMenuItem
 							>
 							<OptionsMenuItem
+								icon={ImageDown}
 								onclick={() => {
 									close();
 									openPngExport();
@@ -308,11 +322,11 @@
 			<div class="flex min-h-0 flex-1 flex-col bg-light-warm-grey">
 				{#if status}
 					<!-- Phones: the range readout stays in view as the top nav
-					     scrolls away. -->
-					<div
-						class="sticky top-0 z-30 h-[48px] shrink-0 border-b border-warm-grey bg-light-warm-grey/90 backdrop-blur-md tablet:hidden"
-					>
-						<RangeStatus {...status} variant="sticky" />
+					     scrolls away; it lifts out once stuck to the top (the
+					     marker above it has scrolled off). -->
+					<div class="tablet:hidden" aria-hidden="true" {@attach watchStuck}></div>
+					<div class="pointer-events-none sticky top-0 z-30 h-[54px] shrink-0 tablet:hidden">
+						<RangeStatus {...status} variant="sticky" stuck={rangeStuck} />
 					</div>
 				{/if}
 				{#if notice}

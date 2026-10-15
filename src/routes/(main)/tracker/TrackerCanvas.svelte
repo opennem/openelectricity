@@ -994,14 +994,20 @@
 	{#snippet rail()}{@render fuelTechOptions()}{/snippet}
 </TrackerSplitLayout>
 
-<Modal bind:open={metricsDialogOpen} title="Metrics" maxWidthClass="max-w-[560px]">
+<Modal
+	bind:open={metricsDialogOpen}
+	title="Metrics"
+	titleClass="m-0 text-xl"
+	headerClass="-mx-6 border-b border-warm-grey px-6 pb-4"
+	maxWidthClass="max-w-[560px]"
+>
 	{#snippet header()}
 		<ButtonIcon onclick={() => (metricsDialogOpen = false)}>
 			<X class="size-4" aria-hidden="true" />
 			<span class="sr-only">Close metrics</span>
 		</ButtonIcon>
 	{/snippet}
-	<div class="pb-2">
+	<div class="pt-2">
 		<WindowMetrics
 			layout="list"
 			{focusTime}

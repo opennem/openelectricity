@@ -6,7 +6,8 @@
 	 * choice within its heading's group: the selected row is bold on a tinted
 	 * background and carries `aria-checked`; the icon gutter stays blank on
 	 * every row so labels align with the icon rows around them. In a
-	 * touch-controls subtree the rows are 44px tall with 14px type on phones.
+	 * touch-controls subtree, phones get 36px rows, 14px type and 18px icons,
+	 * and no keyboard hints.
 	 *
 	 * @type {{
 	 *   icon?: any,
@@ -35,7 +36,7 @@
 
 	const touch = hasTouchControls();
 	const baseRowClass = `w-full px-3 py-2 text-xs flex items-center gap-3 transition-colors text-left no-underline hover:no-underline ${
-		touch ? 'max-tablet:min-h-[44px] max-tablet:px-4 max-tablet:text-sm' : ''
+		touch ? 'max-tablet:min-h-[36px] max-tablet:px-4 max-tablet:py-0 max-tablet:text-sm' : ''
 	}`;
 	const rowClass = $derived(
 		selected
@@ -46,13 +47,13 @@
 
 {#snippet inner()}
 	{#if Icon}
-		<Icon class="size-4 text-mid-grey" />
+		<Icon class="size-4 shrink-0 text-mid-grey {touch ? 'max-tablet:size-[18px]' : ''}" />
 	{:else}
-		<span class="size-4 shrink-0" aria-hidden="true"></span>
+		<span class="size-4 shrink-0 {touch ? 'max-tablet:size-[18px]' : ''}" aria-hidden="true"></span>
 	{/if}
 	<span class="flex-1">{@render children()}</span>
 	{#if kbdKeys}
-		<span class="flex items-center gap-0.5 shrink-0">
+		<span class="flex items-center gap-0.5 shrink-0 {touch ? 'max-tablet:hidden' : ''}">
 			{#each kbdKeys as key, i (key)}
 				{#if i > 0}
 					<span class="text-[10px] text-mid-grey">+</span>

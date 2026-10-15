@@ -270,14 +270,17 @@
 				: 'border-mid-warm-grey/40 group-hover/card:border-mid-grey/50'}"
 	>
 		<!-- A container, so narrow cards (phones) let a long title wrap to two
-		     lines beside the options button instead of truncating to a word. -->
+		     lines between the options button and its unit, all on one row,
+		     instead of truncating to a word. -->
 		<header
 			class="@container relative z-20 flex flex-col gap-2 border-b bg-linear-to-br from-warm-grey via-warm-grey/50 to-light-warm-grey px-4 py-2.5 {mini
 				? 'border-warm-grey'
 				: 'border-mid-warm-grey/40'}"
 		>
 			<div class="flex min-h-[28px] items-center gap-3">
-				<div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-0.5">
+				<div
+					class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-0.5 @max-[440px]:flex-nowrap"
+				>
 					{#if hosted?.showOptions && !tableShown}
 						<!-- Pulled towards the edge and the title: the icon, not its hit area, lines up. -->
 						<span class="-ml-1.5 -mr-1.5 flex">
@@ -285,7 +288,7 @@
 						</span>
 					{/if}
 					<h3
-						class="m-0 truncate font-semibold leading-tight text-dark-grey @max-[440px]:line-clamp-2 @max-[440px]:min-w-0 @max-[440px]:flex-1 @max-[440px]:whitespace-normal {mini
+						class="m-0 truncate font-semibold leading-tight text-dark-grey @max-[440px]:line-clamp-2 @max-[440px]:min-w-0 @max-[440px]:whitespace-normal {mini
 							? 'text-sm'
 							: 'text-base'}"
 					>
@@ -304,7 +307,7 @@
 						{/if}
 					</h3>
 					{#if hosted}
-						<span class="flex items-baseline gap-1.5 whitespace-nowrap @max-[440px]:basis-full">
+						<span class="flex shrink-0 items-baseline gap-1.5 whitespace-nowrap">
 							{#if hosted.chart.title}
 								<span class="font-space text-xxs uppercase tracking-wide text-mid-grey"
 									>{hosted.chart.title}</span

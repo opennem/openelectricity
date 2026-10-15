@@ -1,6 +1,5 @@
 <script>
 	import { mergeProps } from 'bits-ui';
-	import RotateCw from '@lucide/svelte/icons/rotate-cw';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 
@@ -19,13 +18,14 @@
 	 *     below `md` it takes at most 40% of the bar and truncates, so a long
 	 *     custom range never squeezes the controls out, and it never drops
 	 *     below the loader's width.
-	 *   - `sticky` (phones) is a full-width strip at the top of the page body
-	 *     that stays in view as the top nav scrolls away. Phones can't hover,
-	 *     so the update time shows under the label, with a refresh icon. Its
-	 *     test ids carry a `-sticky` suffix so they don't collide with the
-	 *     bar's.
+	 *   - `sticky` (phones) sits at the top of the page body and stays in view
+	 *     as the top nav scrolls away: centred and as wide as its text, flush
+	 *     with the page until it sticks to the top (`stuck`), when it lifts out
+	 *     over the charts as a white pill with a soft shadow. Only the pill
+	 *     takes taps. An inspected period only changes its text. Its test ids
+	 *     carry a `-sticky` suffix so they don't collide with the bar's.
 	 *
-	 * @type {import('./types.js').TrackerRangeStatus & { variant?: 'bar' | 'sticky' }}
+	 * @type {import('./types.js').TrackerRangeStatus & { variant?: 'bar' | 'sticky', stuck?: boolean }}
 	 */
 	let {
 		label,
@@ -33,7 +33,8 @@
 		loading,
 		updatedLabel = undefined,
 		onrefresh,
-		variant = 'bar'
+		variant = 'bar',
+		stuck = false
 	} = $props();
 
 	const sticky = variant === 'sticky';
@@ -49,65 +50,9 @@
 	<span class="truncate">{inspectLabel ?? label}</span>
 {/snippet}
 
-<div
-	class="range-status relative flex items-center overflow-hidden {sticky
-		? 'h-full w-full'
-		: 'min-w-[36px] max-w-[40%] self-stretch md:max-w-none md:shrink-0'}"
-	data-loading={loading}
-	data-inspecting={inspectLabel !== undefined}
-	data-testid={testId('tracker-range-status')}
->
-	{#if onrefresh && sticky}
-		<button
-			type="button"
-			onclick={refresh}
-			class="range-label flex h-full w-full min-w-0 cursor-pointer items-center gap-3 px-4 text-left text-dark-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
-			aria-disabled={loading}
-			data-testid={testId('tracker-range-label')}
-		>
-			<span class="flex min-w-0 flex-1 flex-col gap-0.5">
-				<span class="truncate text-sm leading-[1.2] font-bold">{inspectLabel ?? label}</span>
-				<span class="sr-only">, refresh data</span>
-				<!-- While inspecting, the period stands on its own. -->
-				{#if updatedLabel && inspectLabel === undefined}
-					<span class="truncate text-xs leading-[1.2] text-mid-grey" aria-hidden="true"
-						>Updated {updatedLabel}</span
-					>
-				{/if}
-			</span>
-			<RotateCw class="size-4 shrink-0 text-mid-grey" aria-hidden="true" />
-		</button>
-	{:else if onrefresh}
-		<Tooltip
-			lines={[...(updatedLabel ? [`Updated ${updatedLabel}`] : []), 'Tap to refresh (R)']}
-			side="bottom"
-		>
-			{#snippet trigger({ props })}
-				<!-- Focusable while loading: hiding or disabling a focused button
-				     strands keyboard focus, so taps are ignored instead. The visible
-				     date leads its accessible name. -->
-				<button
-					{...mergeProps(props, { onclick: refresh })}
-					type="button"
-					class="range-label flex h-full min-w-0 items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
-					aria-disabled={loading}
-					data-testid={testId('tracker-range-label')}
-				>
-					{@render text()}<span class="sr-only">, refresh data</span>
-				</button>
-			{/snippet}
-		</Tooltip>
-	{:else}
-		<span
-			class="range-label flex h-full min-w-0 items-center whitespace-nowrap px-4 text-sm font-bold text-dark-grey"
-			aria-hidden={loading}
-			data-testid={testId('tracker-range-label')}>{@render text()}</span
-		>
-	{/if}
+{#snippet loader(/** @type {string} */ align)}
 	<div
-		class="range-loader pointer-events-none absolute inset-0 flex items-center justify-end {sticky
-			? 'pr-4'
-			: ''}"
+		class="range-loader pointer-events-none absolute inset-0 flex items-center {align}"
 		role={loading ? 'status' : undefined}
 		aria-label={loading ? 'Updating tracker' : undefined}
 		aria-hidden={!loading}
@@ -115,7 +60,79 @@
 	>
 		<LogoMarkLoader class="[&_svg]:size-[28px]" />
 	</div>
-</div>
+{/snippet}
+
+{#if sticky}
+	<div
+		class="range-status pointer-events-none flex h-full w-full items-center justify-center px-4"
+		data-loading={loading}
+		data-inspecting={inspectLabel !== undefined}
+		data-stuck={stuck}
+		data-variant="sticky"
+		data-testid={testId('tracker-range-status')}
+	>
+		<div
+			class="pointer-events-auto relative flex h-[38px] max-w-full items-center overflow-hidden rounded-full border text-dark-grey transition-[background-color,border-color,box-shadow] duration-200 {stuck
+				? 'border-warm-grey bg-white shadow-[0_8px_20px_-10px_rgba(53,53,53,0.45)]'
+				: 'border-transparent bg-transparent'}"
+		>
+			{#if onrefresh}
+				<button
+					type="button"
+					onclick={refresh}
+					class="range-label flex h-full w-full min-w-0 cursor-pointer items-center justify-center whitespace-nowrap px-5 text-sm font-semibold tabular-nums focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+					aria-disabled={loading}
+					data-testid={testId('tracker-range-label')}
+				>
+					{@render text()}<span class="sr-only">, refresh data</span>
+				</button>
+			{:else}
+				<span
+					class="range-label flex h-full w-full min-w-0 items-center justify-center whitespace-nowrap px-5 text-sm font-semibold tabular-nums"
+					aria-hidden={loading}
+					data-testid={testId('tracker-range-label')}>{@render text()}</span
+				>
+			{/if}
+			{@render loader('justify-center')}
+		</div>
+	</div>
+{:else}
+	<div
+		class="range-status relative flex min-w-[36px] max-w-[40%] items-center self-stretch overflow-hidden md:max-w-none md:shrink-0"
+		data-loading={loading}
+		data-inspecting={inspectLabel !== undefined}
+		data-testid={testId('tracker-range-status')}
+	>
+		{#if onrefresh}
+			<Tooltip
+				lines={[...(updatedLabel ? [`Updated ${updatedLabel}`] : []), 'Tap to refresh (R)']}
+				side="bottom"
+			>
+				{#snippet trigger({ props })}
+					<!-- Focusable while loading: hiding or disabling a focused button
+					     strands keyboard focus, so taps are ignored instead. The visible
+					     date leads its accessible name. -->
+					<button
+						{...mergeProps(props, { onclick: refresh })}
+						type="button"
+						class="range-label flex h-full min-w-0 items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+						aria-disabled={loading}
+						data-testid={testId('tracker-range-label')}
+					>
+						{@render text()}<span class="sr-only">, refresh data</span>
+					</button>
+				{/snippet}
+			</Tooltip>
+		{:else}
+			<span
+				class="range-label flex h-full min-w-0 items-center whitespace-nowrap px-4 text-sm font-bold text-dark-grey"
+				aria-hidden={loading}
+				data-testid={testId('tracker-range-label')}>{@render text()}</span
+			>
+		{/if}
+		{@render loader('justify-end')}
+	</div>
+{/if}
 
 <style>
 	.range-label,
@@ -135,6 +152,17 @@
 	[data-loading='true'] .range-loader {
 		transform: translateX(0);
 		opacity: 1;
+	}
+	/* The phone chip swaps vertically: the loader drops in from the top as
+	   the range drops out of the bottom. */
+	[data-variant='sticky'] .range-loader {
+		transform: translateY(-100%);
+	}
+	[data-variant='sticky'][data-loading='true'] .range-label {
+		transform: translateY(100%);
+	}
+	[data-variant='sticky'][data-loading='true'] .range-loader {
+		transform: translateY(0);
 	}
 	[data-loading='false'] .range-loader :global(svg) {
 		animation: none;

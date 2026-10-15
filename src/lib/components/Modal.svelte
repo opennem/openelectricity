@@ -42,7 +42,7 @@
 			class={`fixed z-[9999] grid grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-white text-dark-grey shadow-xl outline-none ${
 				fullscreen
 					? 'inset-0 h-dvh w-full'
-					: `left-1/2 top-1/2 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg px-4 pb-4 pt-5 sm:p-6 ${maxWidthClass}`
+					: `left-1/2 top-1/2 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg p-6 ${maxWidthClass}`
 			} ${className}`}
 		>
 			<header class={`flex items-center justify-between gap-4 ${headerClasses}`}>

@@ -1,6 +1,6 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { EllipsisVertical, Maximize2, Minimize2, CircleHelp, BookOpen } from '@lucide/svelte';
+	import { EllipsisVertical, Maximize2, Minimize2 } from '@lucide/svelte';
 	import { portal } from '$lib/actions/portal.js';
 	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 	import OptionsMenuItem from './OptionsMenuItem.svelte';
@@ -113,7 +113,6 @@
 			{#if onshowshortcuts}
 				<div class="max-md:hidden">
 					<OptionsMenuItem
-						icon={CircleHelp}
 						kbd="?"
 						onclick={() => {
 							onshowshortcuts?.();
@@ -134,7 +133,7 @@
 					</div>
 				{/if}
 
-				<OptionsMenuItem icon={BookOpen} href={DOCS_URL}>Documentation</OptionsMenuItem>
+				<OptionsMenuItem href={DOCS_URL}>Documentation</OptionsMenuItem>
 			{/if}
 		</div>
 	{/if}

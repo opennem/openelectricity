@@ -774,9 +774,10 @@ rows (`FullscreenFilterBar`'s `wrapOnPhone`, which turns its wrappers into
 `display: contents`): the "Tracker" logo menu, the view dropdown and the
 Feedback and options buttons on the first, and the view's filters on the
 second, scrolling sideways with a faded edge when they don't fit. The range
-readout moves out of the bar into a strip at the top of the body that stays in
-view (`RangeStatus`'s `sticky` variant): the range on top, when the data last
-updated under it, and a tap refreshes.
+readout moves out of the bar to the top of the body, where it
+stays in view (`RangeStatus`'s `sticky` variant): centred and as wide as its
+text, flush with the page at rest, it lifts out over the charts as a white pill
+with a soft shadow once stuck to the top (`TrackerShell` watches a marker above it), and a tap refreshes.
 
 The shell opts its subtree into touch-sized controls (`setTouchControls()`,
 `$lib/components/ui/touch-controls.js`): below 768px pills, segmented switches,
