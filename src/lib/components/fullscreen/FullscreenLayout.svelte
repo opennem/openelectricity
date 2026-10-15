@@ -8,10 +8,15 @@
 	 * In fullscreen mode the wrapper gets the dotted `gridline-bg` background by
 	 * default. Pass `gridline={false}` to opt out.
 	 *
+	 * `phoneScroll` lets the page scroll as a document below 768px instead of
+	 * being held to the viewport, so the filter bar scrolls away with the
+	 * content; pair it with `FullscreenContainer`'s `phoneScroll`.
+	 *
 	 * @type {{
 	 *   isFullscreen: boolean,
 	 *   onexitfullscreen?: () => void,
 	 *   gridline?: boolean,
+	 *   phoneScroll?: boolean,
 	 *   class?: string,
 	 *   header?: import('svelte').Snippet,
 	 *   filterBar?: import('svelte').Snippet,
@@ -22,6 +27,7 @@
 		isFullscreen,
 		onexitfullscreen,
 		gridline = true,
+		phoneScroll = false,
 		class: className = '',
 		header,
 		filterBar,
@@ -30,7 +36,7 @@
 
 	let wrapperClass = $derived(
 		isFullscreen
-			? `h-dvh flex flex-col ${gridline ? 'gridline-bg' : ''} ${className}`.trim()
+			? `h-dvh flex flex-col ${phoneScroll ? 'max-tablet:h-auto max-tablet:min-h-dvh' : ''} ${gridline ? 'gridline-bg' : ''} ${className}`.trim()
 			: className
 	);
 </script>

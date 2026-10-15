@@ -46,6 +46,10 @@
 	 * Phones (below 768px) get no side panel: the panel sits in a persistent
 	 * bottom sheet, minimised to its header while the table is closed and at
 	 * the peek height (or full) while open, so the charts keep the full width.
+	 * The page scrolls as a document there (`TrackerShell`), so the chart
+	 * column is no scroll box of its own, the sheet is fixed to the viewport,
+	 * and `canvasHeight` is 0 (nothing to fill: the column is as tall as its
+	 * charts).
 	 * Tablets (below 1024px) overlay the charts when the config says so. The
 	 * rail is hidden by CSS on phones and the docked (not overlaid) panel below
 	 * 1024px, where neither is used, so the server render (which can't know
@@ -88,6 +92,8 @@
 	);
 	let containerWidth = $state(0);
 	let containerHeight = $state(0);
+	/** The viewport's height, which the phone sheet's snaps are fractions of. */
+	let sheetViewportHeight = $state(0);
 	const wide = new MediaQuery(WIDE_QUERY, true);
 	const phone = new MediaQuery(BELOW_TABLET_QUERY);
 	let overlaid = $derived(!!narrowOverlay && !wide.current && !phone.current);
@@ -140,11 +146,12 @@
 		},
 		toggle: () => setSheetSnap(open ? 'min' : 'peek')
 	});
-	// Keep the last chart clear of the sheet (its peek, at most).
+	// Let the last chart scroll clear of the open sheet (its peek, at most).
+	// The shell keeps the page's end clear of the minimised sheet.
 	let sheetClearance = $derived(
-		!phone.current
+		!phone.current || sheetSnap === 'min'
 			? undefined
-			: `${sheetSnap === 'min' ? SHEET_MIN_PX : Math.round(containerHeight * SHEET_PEEK)}px`
+			: `${Math.round(sheetViewportHeight * SHEET_PEEK) - SHEET_MIN_PX}px`
 	);
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	// The page may close the table as it hydrates (narrow screens default it
@@ -197,7 +204,7 @@
 />
 
 <div
-	class="relative flex min-h-0 flex-1 flex-row overflow-hidden"
+	class="relative flex min-h-0 flex-1 flex-row overflow-clip tablet:overflow-hidden"
 	bind:clientWidth={containerWidth}
 	bind:clientHeight={containerHeight}
 	data-png-context={pngContext}
@@ -206,37 +213,41 @@
 	     Right padding yields to the open panel's drag handle — the handle IS
 	     the page-background gap between the white columns. -->
 	<div
-		class="min-w-0 flex-1 overflow-y-auto py-4 pl-4 md:py-6 md:pl-6 {open &&
+		class="min-w-0 flex-1 py-4 pl-4 tablet:overflow-y-auto md:py-6 md:pl-6 {open &&
 		!overlaid &&
 		!phone.current
 			? 'max-md:pr-4'
 			: 'pr-4 md:pr-6'}"
-		style:padding-bottom={sheetClearance}
+		style:margin-bottom={sheetClearance}
 		use:clickoutside={{ event: 'pointerdown', options: true }}
 		onclickoutside={() => (engaged = false)}
 		bind:contentRect={
-			null, (/** @type {DOMRectReadOnly | undefined} */ rect) => (canvasHeight = rect?.height ?? 0)
+			null,
+			(/** @type {DOMRectReadOnly | undefined} */ rect) =>
+				(canvasHeight = matchMedia(BELOW_TABLET_QUERY).matches ? 0 : (rect?.height ?? 0))
 		}
 	>
 		{@render children()}
 	</div>
 
 	{#if phone.current}
-		<BottomSheet
-			open
-			{containerHeight}
-			dismissable={false}
-			peekFraction={SHEET_PEEK}
-			minHeight={SHEET_MIN_PX}
-			bind:snap={() => sheetSnap, setSheetSnap}
-			defaultSnap={sheetSnap}
-			class="z-20"
-		>
-			<div class="flex h-full min-h-0 flex-col">
-				{#if panelHeader}{@render panelHeader(dock)}{/if}
-				{@render panel(dock)}
-			</div>
-		</BottomSheet>
+		<div class="pointer-events-none fixed inset-0 z-20" bind:clientHeight={sheetViewportHeight}>
+			<BottomSheet
+				open
+				containerHeight={sheetViewportHeight}
+				dismissable={false}
+				peekFraction={SHEET_PEEK}
+				minHeight={SHEET_MIN_PX}
+				bind:snap={() => sheetSnap, setSheetSnap}
+				defaultSnap={sheetSnap}
+				class="pointer-events-auto"
+			>
+				<div class="flex h-full min-h-0 flex-col">
+					{#if panelHeader}{@render panelHeader(dock)}{/if}
+					{@render panel(dock)}
+				</div>
+			</BottomSheet>
+		</div>
 	{:else if open}
 		{#if overlaid}
 			<!-- Tap outside the overlaid panel to close it. -->

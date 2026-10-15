@@ -1,8 +1,15 @@
 <script>
-	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
+	import {
+		formatRangeLabel,
+		getTimeFormatPolicy
+	} from '$lib/components/charts/v2/time-format-policy.js';
+	import { plottedExtent } from './plotted-extent.js';
 	import { onMount, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { slide } from 'svelte/transition';
+	import X from '@lucide/svelte/icons/x';
+	import Modal from '$lib/components/Modal.svelte';
+	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import TrackerSplitLayout, { FUEL_TECH_SPLIT } from './TrackerSplitLayout.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import SeriesLegend from './SeriesLegend.svelte';
@@ -93,7 +100,18 @@
 	let dateStart = $derived(toNetworkDateString(session.anchorStart, timeZone));
 	let dateEnd = $derived(toNetworkDateString(session.anchorEnd, timeZone));
 	let viewWindow = $derived(session.window);
-	let rangeLabel = $derived(session.rangeLabel);
+	let timePolicy = $derived(getTimeFormatPolicy(range.displayInterval, ianaTimeZone));
+	/** The periods the Generation chart plots, first to last, at the display
+	 * grain; the requested window until its data arrives. */
+	let rangeLabel = $derived.by(() => {
+		const extent = plottedExtent(data.current('generation'), viewWindow);
+		return extent
+			? formatRangeLabel(extent.start, extent.end, range.displayInterval, ianaTimeZone)
+			: session.rangeLabel;
+	});
+	export function getRangeLabel() {
+		return rangeLabel;
+	}
 	let generationChart = $state.raw(/** @type {NetworkChart | undefined} */ (undefined));
 	let priceChart = $state.raw(/** @type {NetworkChart | undefined} */ (undefined));
 	let emissionsChart = $state.raw(/** @type {NetworkChart | undefined} */ (undefined));
@@ -106,6 +124,66 @@
 	/** The one pinned time the charts and the metrics strip share: a click on a
 	 * plot or on a strip extreme sets it, and either surface clears it. */
 	let focusTime = $state(/** @type {number | undefined} */ (undefined));
+	/** The extreme last picked from the metrics; marked on its chart while its
+	 * time stays pinned (pinning anything else drops the marker). */
+	let metricPick = $state.raw(
+		/** @type {import('./window-metrics.js').MetricPick | undefined} */ (undefined)
+	);
+	/** The extreme under the pointer in the metrics strip, previewed on its chart. */
+	let metricPreview = $state.raw(
+		/** @type {import('./window-metrics.js').MetricPick | undefined} */ (undefined)
+	);
+	let pickedMetric = $derived(metricPick && metricPick.time === focusTime ? metricPick : undefined);
+	/** The card that charts a metric. @param {string} id @returns {TimelineCard} */
+	const cardOfMetric = (id) =>
+		id === 'market'
+			? 'market'
+			: id === 'emissions' || id === 'intensity'
+				? 'emissions'
+				: 'generation';
+	/** A card's markers while it isn't comparing: the picked metric (a solid
+	 * marker, like a comparison's A) and the hovered one (a dashed preview,
+	 * like its armed ghost).
+	 * @param {TimelineCard} card
+	 * @returns {import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} */
+	function chartMarkers(card) {
+		const compared = compare.timeMarkers(card);
+		if (compared) return compared;
+		const picked = pickedMetric && cardOfMetric(pickedMetric.id) === card ? pickedMetric : null;
+		const previewed =
+			metricPreview &&
+			cardOfMetric(metricPreview.id) === card &&
+			metricPreview.time !== picked?.time
+				? metricPreview
+				: null;
+		if (!picked && !previewed) return null;
+		return {
+			markers: picked ? [{ id: 'metric', time: picked.time, label: picked.label }] : [],
+			preview: previewed && { time: previewed.time, label: previewed.label }
+		};
+	}
+	/** Phones hide the strip; the options menu opens the metrics in a dialog. */
+	let metricsDialogOpen = $state(false);
+	export function openMetrics() {
+		metricsDialogOpen = true;
+	}
+	/** A pick from the dialog closes it and brings its chart into view.
+	 * @param {import('./window-metrics.js').MetricPick | undefined} pick */
+	function pickFromDialog(pick) {
+		metricPick = pick;
+		metricsDialogOpen = false;
+		if (!pick) return;
+		const card = cardOfMetric(pick.id);
+		requestAnimationFrame(() => {
+			const section = Array.from(document.querySelectorAll('section[data-chart-png]')).find(
+				(node) => JSON.parse(node.getAttribute('data-chart-png') ?? '{}').id === card
+			);
+			section?.scrollIntoView({
+				behavior: reducedMotion.current ? 'auto' : 'smooth',
+				block: 'center'
+			});
+		});
+	}
 	let panZoomEngaged = $state(false);
 	let hiddenSeries = $derived(session.selection.hiddenSeries);
 	let regionHasSpotPrice = $derived(hasSpotPrice(region));
@@ -170,7 +248,7 @@
 		range,
 		timeZone: () => timeZone,
 		needsContributionDemand: () => needsContributionDemand,
-		needsWindowMetrics: () => showMetrics
+		needsWindowMetrics: () => showMetrics || metricsDialogOpen
 	});
 	const { marketData, demandData, curtailmentData } = providers;
 	/** AEMO's rooftop forecast tops up the lagging rooftop band to the latest
@@ -261,7 +339,8 @@
 			region,
 			zone: timeZone,
 			interval: range.displayInterval,
-			formatTime: getTimeFormatPolicy(range.displayInterval, ianaTimeZone).formatTooltip
+			formatTime: timePolicy.formatTooltip,
+			formatExportTime: timePolicy.formatFull
 		});
 	}
 	/** `tracker-nem-generation-comparison-2026-10-01-to-2026-10-08.csv`
@@ -648,10 +727,16 @@
 <!-- The page mounts the canvas in a flex column: the strip sits above the charts row
      and slides open or shut with the page's metrics preference. -->
 {#if showMetrics}
-	<div class="shrink-0" transition:slide={{ duration: reducedMotion.current ? 0 : 200 }}>
+	<!-- Phones hide the strip: the options menu opens the metrics as a dialog. -->
+	<div
+		class="shrink-0 max-tablet:hidden"
+		transition:slide={{ duration: reducedMotion.current ? 0 : 200 }}
+	>
 		<WindowMetrics
 			{focusTime}
 			onfocuschange={(time) => (focusTime = time)}
+			onselect={(pick) => (metricPick = pick)}
+			onpreview={(pick) => (metricPreview = pick)}
 			input={metrics.input}
 			status={metrics.status}
 			onretry={metrics.retry}
@@ -740,7 +825,7 @@
 				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, generationChart)}
 				onvisibledata={handleGenerationData}
-				timeMarkers={compare.timeMarkers('generation')}
+				timeMarkers={chartMarkers('generation')}
 				onpick={compare.onpick('generation')}
 				bind:panZoomEngaged
 			/>
@@ -804,7 +889,7 @@
 				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, priceChart)}
 				onvisibledata={handlePriceData}
-				timeMarkers={compare.timeMarkers('market')}
+				timeMarkers={chartMarkers('market')}
 				onpick={compare.onpick('market')}
 				bind:panZoomEngaged
 			/>
@@ -859,7 +944,7 @@
 				onhoverkeychange={hoverSeries}
 				onviewportchange={(next) => session.moveViewport(next, emissionsChart)}
 				onvisibledata={handleEmissionsData}
-				timeMarkers={compare.timeMarkers('emissions')}
+				timeMarkers={chartMarkers('emissions')}
 				onpick={compare.onpick('emissions')}
 				bind:panZoomEngaged
 			/>
@@ -908,3 +993,27 @@
 	{/snippet}
 	{#snippet rail()}{@render fuelTechOptions()}{/snippet}
 </TrackerSplitLayout>
+
+<Modal bind:open={metricsDialogOpen} title="Metrics" maxWidthClass="max-w-[560px]">
+	{#snippet header()}
+		<ButtonIcon onclick={() => (metricsDialogOpen = false)}>
+			<X class="size-4" aria-hidden="true" />
+			<span class="sr-only">Close metrics</span>
+		</ButtonIcon>
+	{/snippet}
+	<div class="pb-2">
+		<WindowMetrics
+			layout="list"
+			{focusTime}
+			onfocuschange={(time) => (focusTime = time)}
+			onselect={pickFromDialog}
+			input={metrics.input}
+			status={metrics.status}
+			onretry={metrics.retry}
+			interval={range.displayInterval}
+			zone={timeZone}
+			generationPrefix={generationDisplayPrefix}
+			onhighlight={() => {}}
+		/>
+	</div>
+</Modal>

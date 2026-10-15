@@ -1,9 +1,12 @@
 <script>
+	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
+
 	/**
 	 * One row of an OptionsMenu. Pass `selected` to render the row as a radio
 	 * choice within its heading's group: the selected row is bold on a tinted
 	 * background and carries `aria-checked`; the icon gutter stays blank on
-	 * every row so labels align with the icon rows around them.
+	 * every row so labels align with the icon rows around them. In a
+	 * touch-controls subtree the rows are 44px tall with 14px type on phones.
 	 *
 	 * @type {{
 	 *   icon?: any,
@@ -30,8 +33,10 @@
 	const kbdKeys = $derived(kbd ? (Array.isArray(kbd) ? kbd : [kbd]) : null);
 	const isRadio = $derived(selected !== undefined);
 
-	const baseRowClass =
-		'w-full px-3 py-2 text-xs flex items-center gap-3 transition-colors text-left no-underline hover:no-underline';
+	const touch = hasTouchControls();
+	const baseRowClass = `w-full px-3 py-2 text-xs flex items-center gap-3 transition-colors text-left no-underline hover:no-underline ${
+		touch ? 'max-tablet:min-h-[44px] max-tablet:px-4 max-tablet:text-sm' : ''
+	}`;
 	const rowClass = $derived(
 		selected
 			? `${baseRowClass} bg-warm-grey font-semibold text-black hover:bg-mid-warm-grey data-[highlighted]:bg-mid-warm-grey`

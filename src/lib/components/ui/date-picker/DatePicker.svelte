@@ -4,6 +4,11 @@
 	import CalendarIcon from '@lucide/svelte/icons/calendar';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import {
+		hasTouchControls,
+		TOUCH_PILL,
+		TOUCH_PILL_ICON
+	} from '$lib/components/ui/touch-controls.js';
 
 	/**
 	 * DatePicker — a single-date picker built on bits-ui's DatePicker
@@ -14,7 +19,8 @@
 	 * calendar (e.g. a reset action). The input matches a compact filter pill
 	 * (`FilterPill`): the same padding and height, with the calendar icon where
 	 * the pill's chevron sits. On touch screens the calendar's days and month
-	 * arrows are 40px targets (explicit pixels: the app's rem is 10px).
+	 * arrows are 40px targets (explicit pixels: the app's rem is 10px), and in
+	 * a touch-controls subtree the input takes the phone pill sizes.
 	 *
 	 * @typedef {Object} Props
 	 * @property {string | null} [date] - Selected date in YYYY-MM-DD format
@@ -38,6 +44,8 @@
 		onchange,
 		footer
 	} = $props();
+
+	const touch = hasTouchControls();
 
 	/**
 	 * @param {string | null} value
@@ -94,10 +102,9 @@
 			{label}
 		</DatePicker.Label>
 		<DatePicker.Input
-			class="flex select-none items-center whitespace-nowrap rounded-lg border bg-white py-2.5 pl-4 pr-3 text-xs font-medium text-dark-grey transition-colors focus-within:border-dark-grey hover:border-dark-grey {active ||
-			open
-				? 'border-dark-grey'
-				: 'border-warm-grey'}"
+			class="flex select-none items-center whitespace-nowrap rounded-lg border bg-white py-2.5 pl-4 pr-3 text-xs font-medium text-dark-grey transition-colors focus-within:border-dark-grey hover:border-dark-grey {touch
+				? TOUCH_PILL
+				: ''} {active || open ? 'border-dark-grey' : 'border-warm-grey'}"
 		>
 			{#snippet children({ segments })}
 				{#each segments as { part, value: segment }, i (part + i)}
@@ -118,7 +125,7 @@
 					aria-label="Open calendar"
 					class="ml-1.5 inline-flex items-center justify-center rounded text-mid-grey transition-colors hover:text-dark-grey"
 				>
-					<CalendarIcon class="size-3.5" />
+					<CalendarIcon class="size-3.5 {touch ? TOUCH_PILL_ICON : ''}" />
 				</DatePicker.Trigger>
 			{/snippet}
 		</DatePicker.Input>

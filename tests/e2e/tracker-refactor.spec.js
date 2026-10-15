@@ -537,14 +537,18 @@ test('shared loading waits for table-only data after charts settle and fits mobi
 		animations: 'disabled'
 	});
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(loader).toBeInViewport();
-	const bounds = await loader.locator('svg').boundingBox();
-	expect(bounds.y + bounds.height).toBeLessThanOrEqual(60);
+	// Phones show it in the range strip at the top of the body.
+	const phoneLoader = page.getByTestId('tracker-loading-sticky');
+	await expect(phoneLoader).toBeInViewport();
+	const strip = await page.getByTestId('tracker-range-status-sticky').boundingBox();
+	const bounds = await phoneLoader.locator('svg').boundingBox();
+	expect(bounds.y).toBeGreaterThanOrEqual(strip.y);
+	expect(bounds.y + bounds.height).toBeLessThanOrEqual(strip.y + strip.height);
 	expect(bounds.x).toBeGreaterThanOrEqual(0);
 	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
 	await page.emulateMedia({ reducedMotion: 'reduce' });
-	await expect(loader).toHaveCSS('transition-duration', '0s');
-	await expect(loader.locator('svg')).toHaveCSS('animation-name', 'none');
+	await expect(phoneLoader).toHaveCSS('transition-duration', '0s');
+	await expect(phoneLoader.locator('svg')).toHaveCSS('animation-name', 'none');
 	await expect
 		.poll(() =>
 			page
@@ -893,8 +897,10 @@ test('the metrics strip hides and shows with the M key and the options menu, and
 	await expect(strip).toBeVisible();
 });
 
-test('window metrics strip scrolls sideways on mobile in WEM', async ({ page }, testInfo) => {
-	await page.setViewportSize({ width: 390, height: 844 });
+test('window metrics strip scrolls sideways on narrow screens in WEM; phones use a dialog', async ({
+	page
+}, testInfo) => {
+	await page.setViewportSize({ width: 820, height: 1180 });
 	await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker/timeline?region=wem&table=0');
 	const metrics = page.getByRole('region', { name: 'Window metrics' });
@@ -903,16 +909,25 @@ test('window metrics strip scrolls sideways on mobile in WEM', async ({ page }, 
 	await expect(metrics).not.toContainText('UTC+08:00');
 	await expect(page.getByRole('button', { name: /metrics/i })).toHaveCount(0);
 	const bounds = await metrics.boundingBox();
-	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+	expect(bounds.x + bounds.width).toBeLessThanOrEqual(820);
 	const scroller = metrics.locator('.ticker-scroll');
 	expect(await scroller.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
 	await expectNoHorizontalScroll(page);
 	const chart = await card(page, 'Generation').boundingBox();
 	expect(chart.y).toBeGreaterThanOrEqual(bounds.y + bounds.height);
-	expect(chart.x + chart.width).toBeLessThanOrEqual(390);
-	await page.screenshot({ path: testInfo.outputPath('window-metrics-mobile.png') });
+	expect(chart.x + chart.width).toBeLessThanOrEqual(820);
+	await page.screenshot({ path: testInfo.outputPath('window-metrics-narrow.png') });
 	await scroller.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
 	await expect(page.getByTestId('metric-curtailment_wind-max')).toBeInViewport();
+	await expectNoHorizontalScroll(page);
+
+	// Phones hide the strip; the options menu lists every metric in a dialog.
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(metrics).toBeHidden();
+	await page.getByRole('button', { name: 'Options', exact: true }).click();
+	await page.getByRole('button', { name: 'Metrics', exact: true }).click();
+	const dialog = page.getByRole('dialog', { name: 'Metrics' });
+	await expect(dialog.getByTestId('metric-list-curtailment_wind-max')).toBeAttached();
 	await expectNoHorizontalScroll(page);
 });
 
@@ -1533,7 +1548,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	const area = stack.locator('.stratum-chart-area');
 	const tooltip = stack.getByTestId('chart-tooltip-strip');
 	const readout = page.getByTestId('tracker-range-label');
-	await expect(readout).toHaveText(/25.*31 Aug 2026/);
+	await expect(readout).toHaveText(/25.*31 Aug/);
 	await area.hover({ position: { x: 200, y: 120 } });
 	await expect(tooltip).toContainText(/\d\d:\d\d–\d\d:\d\d/);
 	await expect(tooltip).not.toContainText('UTC');
@@ -1550,7 +1565,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await expect(tooltip).toContainText('00:30–01:00');
 	await inspect.press('Escape');
 	await expect(tooltip).not.toContainText('00:30–01:00');
-	await expect(readout).toHaveText(/25.*31 Aug 2026/);
+	await expect(readout).toHaveText(/25.*31 Aug/);
 	const coal = table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' });
 	await coal.click();
 	await expect(stack.locator('path.path-area')).toHaveCount(3);
@@ -1933,7 +1948,7 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	await expect(readout).toHaveText('12:00–13:00');
 	await expect(table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' })).toContainText('100');
 	await page.mouse.move(0, 0);
-	await expect(readout).toHaveText(/25.*31 Aug 2026/);
+	await expect(readout).toHaveText(/25.*31 Aug/);
 	// Table row toggles take a technology out of the dial.
 	await table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).click();
 	await expect(slices).toHaveCount(3 * 24);
@@ -1960,7 +1975,7 @@ test('time-of-day profiles keep requests bounded and reproduce selections and CS
 	// The WEM fixture has coal and wind: a chart each, then spot price.
 	const charts = page.getByRole('group', { name: /interactive chart$/ });
 	await expect(charts).toHaveCount(3);
-	await expect(page.getByTestId('tracker-range-label')).toHaveText(/25.*31 Aug 2026/);
+	await expect(page.getByTestId('tracker-range-label')).toHaveText(/25.*31 Aug/);
 	expect([...api.requests].sort()).toEqual(['power', 'price', 'renewables']);
 	for (const [from, days] of [
 		[7, 14],

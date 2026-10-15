@@ -16,12 +16,9 @@
 	 *
 	 * `label` merges the page name into the trigger ("logo Tracker"), replacing
 	 * a separate page-name link.
-	 * `hideLabelOnPhone` keeps the label for screen readers only below 768px,
-	 * where the bar needs the room (/tracker).
-	 *
-	 * @type {{ light?: boolean, label?: string, hideLabelOnPhone?: boolean }}
+	 * @type {{ light?: boolean, label?: string }}
 	 */
-	let { light = false, label, hideLabelOnPhone = false } = $props();
+	let { light = false, label } = $props();
 
 	// Unlike the header Nav, this dropdown renders `dropdownOnly` items too —
 	// that's where in-development entries (e.g. the new Tracker) surface.
@@ -146,11 +143,7 @@
 			class="h-8 w-auto {light ? 'brightness-0 invert' : ''}"
 		/>
 		{#if label}
-			<span
-				class="text-sm lg:text-base font-semibold text-dark-grey {hideLabelOnPhone
-					? 'max-tablet:sr-only'
-					: ''}">{label}</span
-			>
+			<span class="text-sm lg:text-base font-semibold text-dark-grey">{label}</span>
 		{/if}
 	</button>
 

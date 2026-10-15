@@ -7,6 +7,11 @@
 	 * snippets and props. Charts and panels register their own downloads with
 	 * the shell's registry (`chart-downloads.svelte.js`); the page supplies
 	 * only the workbook's Summary rows and the file names.
+	 *
+	 * Phones (below 768px) get touch-sized controls (`touch-controls.js`) and
+	 * scroll the page as a document: the two-row top nav (view switcher and
+	 * menus, then the filters) scrolls away, while the range readout sits in
+	 * a strip at the top of the body that stays in view.
 	 */
 
 	import { building } from '$app/environment';
@@ -22,6 +27,11 @@
 	import { OptionsMenuDivider, OptionsMenuItem } from '$lib/components/ui/options-menu';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
+	import {
+		setTouchControls,
+		TOUCH_ICON,
+		TOUCH_ICON_BUTTON
+	} from '$lib/components/ui/touch-controls.js';
 	import {
 		FullscreenContainer,
 		FullscreenFilterBar,
@@ -75,6 +85,8 @@
 		onshortcut,
 		children
 	} = $props();
+
+	setTouchControls();
 
 	// The switcher's option lists are mutable; the view table is not.
 	const viewOptions = [...TRACKER_VIEWS];
@@ -164,7 +176,7 @@
 />
 <svelte:head><meta name="robots" content="noindex,nofollow" /></svelte:head>
 
-<FullscreenLayout {isFullscreen} gridline={false} class="bg-light-warm-grey">
+<FullscreenLayout {isFullscreen} phoneScroll gridline={false} class="bg-light-warm-grey">
 	{#snippet filterBar()}
 		<div class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}">
 			<FullscreenFilterBar
@@ -178,15 +190,18 @@
 			>
 				{#snippet stable()}
 					{#if isFullscreen}
-						<FullscreenNavDropdown label="Tracker" hideLabelOnPhone />
+						<FullscreenNavDropdown label="Tracker" />
 					{/if}
 				{/snippet}
 
 				{#snippet rest()}
-					{#if isFullscreen}<div class="h-8 shrink-0 border-l border-warm-grey"></div>{/if}
-					<!-- Phones: the view switcher stays on the first row and the filters
-					     and range status wrap onto a second (FullscreenFilterBar's
-					     `wrapOnPhone`), so neither is squeezed out. -->
+					{#if isFullscreen}
+						<div class="h-8 shrink-0 border-l border-warm-grey max-tablet:hidden"></div>
+					{/if}
+					<!-- Phones: the logo menu and the view dropdown lead the first row,
+					     with the menus at its end, and the filters wrap onto a second
+					     (FullscreenFilterBar's `wrapOnPhone`); the range readout moves
+					     to the body's sticky strip. -->
 					<div
 						class="flex min-w-0 flex-1 items-center gap-4 max-tablet:contents"
 						data-testid="tracker-top-nav"
@@ -205,7 +220,7 @@
 								aria-label="Analysis view"
 							/>
 						</div>
-						<div class="shrink-0 md:hidden">
+						<div class="shrink-0 max-tablet:mr-auto md:hidden">
 							<FilterSelect
 								selected={view}
 								options={viewOptions}
@@ -248,7 +263,9 @@
 									aria-hidden="true"
 								></div>
 							</div>
-							{#if status}<RangeStatus {...status} />{/if}
+							{#if status}
+								<div class="contents max-tablet:hidden"><RangeStatus {...status} /></div>
+							{/if}
 						</div>
 					</div>
 				{/snippet}
@@ -256,6 +273,8 @@
 				{#snippet options()}
 					<PageOptionsMenu
 						{isFullscreen}
+						triggerClass="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer {TOUCH_ICON_BUTTON}"
+						iconClass="size-6 text-mid-grey {TOUCH_ICON}"
 						onfullscreenchange={() => toggleFullscreenMode(isFullscreen)}
 						oncopylink={copyLink}
 						showCopyLink
@@ -285,8 +304,17 @@
 	{/snippet}
 
 	{#snippet content()}
-		<FullscreenContainer {isFullscreen} class="[view-transition-name:page-body]">
+		<FullscreenContainer {isFullscreen} phoneScroll class="[view-transition-name:page-body]">
 			<div class="flex min-h-0 flex-1 flex-col bg-light-warm-grey">
+				{#if status}
+					<!-- Phones: the range readout stays in view as the top nav
+					     scrolls away. -->
+					<div
+						class="sticky top-0 z-30 h-[48px] shrink-0 border-b border-warm-grey bg-light-warm-grey/90 backdrop-blur-md tablet:hidden"
+					>
+						<RangeStatus {...status} variant="sticky" />
+					</div>
+				{/if}
 				{#if notice}
 					<div
 						class="relative z-30 flex shrink-0 items-center justify-center gap-3 border-b border-warm-grey bg-white px-4 py-2 font-space text-xs text-dark-grey"
@@ -303,17 +331,21 @@
 
 				<main
 					bind:this={captureRoot}
-					class="flex min-h-0 flex-1 flex-col overflow-hidden"
+					class="flex min-h-0 flex-1 flex-col overflow-clip tablet:overflow-hidden"
 					data-hydrated={hydrated || undefined}
 				>
 					{@render children()}
 				</main>
 			</div>
 			{#snippet footer()}
-				<FullscreenFooter
-					{isFullscreen}
-					onenterfullscreen={() => toggleFullscreenMode(isFullscreen)}
-				/>
+				<!-- Phones: clear of the minimised table sheet at the page end
+				     (TrackerSplitLayout's SHEET_MIN_PX). -->
+				<div class="shrink-0 max-tablet:pb-[62px]">
+					<FullscreenFooter
+						{isFullscreen}
+						onenterfullscreen={() => toggleFullscreenMode(isFullscreen)}
+					/>
+				</div>
 			{/snippet}
 		</FullscreenContainer>
 	{/snippet}

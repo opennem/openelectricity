@@ -1,9 +1,12 @@
 <script>
 	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
+	import { hasTouchControls, TOUCH_PILL_ICON } from '$lib/components/ui/touch-controls.js';
+	import { filterPillClass } from './filter-pill.js';
 
 	/**
 	 * Pill-shaped filter trigger button. `shortLabel` replaces the label below
 	 * `lg` (1440px), for pills in crowded bars (the tracker's Region: "NEM").
+	 * In a touch-controls subtree it takes the phone sizes below 768px.
 	 * @type {{
 	 *   label: string,
 	 *   shortLabel?: string,
@@ -27,6 +30,8 @@
 		el = $bindable(undefined),
 		onclick
 	} = $props();
+
+	const touch = hasTouchControls();
 </script>
 
 <button
@@ -36,13 +41,12 @@
 	{disabled}
 	aria-expanded={open}
 	aria-haspopup="true"
-	class="touch-hit flex items-center rounded-lg border whitespace-nowrap font-medium transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {compact
-		? 'gap-1.5 pl-4 pr-3 py-2.5 text-xs'
-		: 'gap-2 pl-5 pr-4 py-2.5 text-sm'} {active
-		? 'bg-dark-grey border-dark-grey text-white hover:bg-black'
-		: 'bg-white border-warm-grey text-dark-grey hover:border-dark-grey'} {open && !active
-		? 'border-dark-grey'
-		: ''}"
+	class="touch-hit cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {filterPillClass({
+		compact,
+		active,
+		open,
+		touch
+	})}"
 >
 	{#if shortLabel}
 		<span class="lg:hidden">{shortLabel}</span>
@@ -64,8 +68,8 @@
 	{/if}
 
 	<IconChevronDown
-		class="{compact ? 'size-3.5' : 'size-4'} transition-transform duration-200 {open
-			? 'rotate-180'
-			: ''}"
+		class="{compact ? 'size-3.5' : 'size-4'} {touch
+			? TOUCH_PILL_ICON
+			: ''} transition-transform duration-200 {open ? 'rotate-180' : ''}"
 	/>
 </button>

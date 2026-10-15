@@ -2,12 +2,15 @@
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
+	import Settings2 from '@lucide/svelte/icons/settings-2';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import ChartControls from './ChartControls.svelte';
 
 	/**
-	 * ChartOptionsMenu — the ⋮ button and the chart-options flyout under it
-	 * (`ChartControls`: data transform, chart type, curve, units). The flyout
+	 * ChartOptionsMenu — the chart-options button and the flyout under it
+	 * (`ChartControls`: data transform, chart type, curve, units). A chart
+	 * card's (`size="md"`) is a sliders icon: these set how the chart looks,
+	 * while the card's ⋮ holds what you can do with it. The flyout
 	 * is absolutely positioned against the nearest positioned ancestor — the
 	 * header it sits in — under that header's left or right edge (`align`).
 	 * Clicking anywhere else closes it. `size="md"` is the 28px button of a
@@ -36,7 +39,11 @@
 		aria-label="Toggle chart options"
 		aria-expanded={open}
 	>
-		<EllipsisVertical class={size === 'md' ? 'size-[18px]' : 'size-8'} />
+		{#if size === 'md'}
+			<Settings2 class="size-[16px]" strokeWidth={1.75} aria-hidden="true" />
+		{:else}
+			<EllipsisVertical class="size-8" />
+		{/if}
 	</button>
 {/snippet}
 

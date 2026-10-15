@@ -74,6 +74,12 @@ export function windowExtrema(
 	return { min, max, available, intervals };
 }
 
+/**
+ * An extreme the reader picked from the metrics: its metric, its time and
+ * a label naming it on its chart ("Max net power 32.1 GW").
+ * @typedef {{ id: string, time: number, label: string }} MetricPick
+ */
+
 /** @typedef {{id: string, label: string, unit: string, description: string,
  * docs?: {href: string, label: string}}
  * & ReturnType<typeof windowExtrema>} WindowMetricGroup */

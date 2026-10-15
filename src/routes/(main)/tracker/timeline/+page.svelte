@@ -5,7 +5,9 @@
 	 * download; the canvas supplies the workbook Summary and file names.
 	 */
 
+	import { MediaQuery } from 'svelte/reactivity';
 	import { ChartRangeBar } from '$lib/components/charts/v2';
+	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
 	import { formatDayMonthTime } from '$lib/components/charts/v2/date-labels.js';
 	import { MIN_DATE } from '$lib/utils/date-range.js';
 	import { OptionsMenuItem } from '$lib/components/ui/options-menu';
@@ -25,6 +27,8 @@
 	);
 
 	const metricsVisible = createMetricsVisibilityPreference();
+	// Phones have no metrics strip: the menu opens them in a dialog.
+	const belowTablet = new MediaQuery(BELOW_TABLET_QUERY);
 	const range = session.range;
 	let canvas = $state.raw(/** @type {TrackerCanvas | undefined} */ (undefined));
 	let loading = $derived(!canvas || canvas.isLoading());
@@ -64,7 +68,7 @@
 	shortcuts={SHORTCUTS}
 	onshortcut={handleShortcut}
 	status={{
-		label: session.rangeLabel,
+		label: canvas?.getRangeLabel() ?? session.rangeLabel,
 		inspectLabel: canvas?.getInspectLabel(),
 		loading,
 		updatedLabel,
@@ -102,13 +106,22 @@
 				refreshData();
 			}}>Refresh data</OptionsMenuItem
 		>
-		<OptionsMenuItem
-			kbd="M"
-			onclick={() => {
-				close();
-				metricsVisible.toggle();
-			}}>{metricsVisible.value ? 'Hide metrics' : 'Show metrics'}</OptionsMenuItem
-		>
+		{#if belowTablet.current}
+			<OptionsMenuItem
+				onclick={() => {
+					close();
+					canvas?.openMetrics();
+				}}>Metrics</OptionsMenuItem
+			>
+		{:else}
+			<OptionsMenuItem
+				kbd="M"
+				onclick={() => {
+					close();
+					metricsVisible.toggle();
+				}}>{metricsVisible.value ? 'Hide metrics' : 'Show metrics'}</OptionsMenuItem
+			>
+		{/if}
 	{/snippet}
 
 	<TrackerCanvas bind:this={canvas} {session} showMetrics={metricsVisible.value} />

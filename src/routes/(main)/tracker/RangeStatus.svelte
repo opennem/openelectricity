@@ -1,36 +1,83 @@
 <script>
 	import { mergeProps } from 'bits-ui';
+	import RotateCw from '@lucide/svelte/icons/rotate-cw';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 
 	/**
-	 * RangeStatus — the top-nav readout for every tracker view: the selected
-	 * range label, replaced by the hovered or keyboard-inspected period while
-	 * a chart is being inspected, and by the loader while data updates. With
-	 * `onrefresh` the readout is a button: hovering it says when the data last
-	 * updated, and tapping it refreshes (no view fetches on its own). Without
-	 * it, the readout is a plain label.
+	 * RangeStatus — every tracker view's range readout: the selected range
+	 * label, replaced by the hovered or keyboard-inspected period while a
+	 * chart is being inspected, and by the loader while data updates. With
+	 * `onrefresh` the readout is a button that refreshes (no view fetches on
+	 * its own). Without it, the readout is a plain label.
 	 *
-	 * It keeps its place at every width: below `lg` the Region pill shortens
-	 * and below `md` the view switcher and range presets fold into dropdowns
-	 * to make room. Below `md` it takes at most 40% of the bar and truncates,
-	 * so a long custom range never squeezes the controls out; it never drops
-	 * below the loader's width. Below 768px it fills the first row, between
-	 * the view switcher and the menus (the filters have the second row), in
-	 * smaller type.
+	 * Two placements (the shell renders both and CSS shows one):
 	 *
-	 * @type {import('./types.js').TrackerRangeStatus}
+	 *   - `bar` (768px up) sits in the top nav. Hovering it says when the data
+	 *     last updated. Below `lg` the Region pill shortens and below `md`
+	 *     the view switcher and range presets fold into dropdowns to make room;
+	 *     below `md` it takes at most 40% of the bar and truncates, so a long
+	 *     custom range never squeezes the controls out, and it never drops
+	 *     below the loader's width.
+	 *   - `sticky` (phones) is a full-width strip at the top of the page body
+	 *     that stays in view as the top nav scrolls away. Phones can't hover,
+	 *     so the update time shows under the label, with a refresh icon. Its
+	 *     test ids carry a `-sticky` suffix so they don't collide with the
+	 *     bar's.
+	 *
+	 * @type {import('./types.js').TrackerRangeStatus & { variant?: 'bar' | 'sticky' }}
 	 */
-	let { label, inspectLabel = undefined, loading, updatedLabel = undefined, onrefresh } = $props();
+	let {
+		label,
+		inspectLabel = undefined,
+		loading,
+		updatedLabel = undefined,
+		onrefresh,
+		variant = 'bar'
+	} = $props();
+
+	const sticky = variant === 'sticky';
+	/** @param {string} name */
+	const testId = (name) => (sticky ? `${name}-sticky` : name);
+
+	function refresh() {
+		if (!loading) onrefresh?.();
+	}
 </script>
 
+{#snippet text()}
+	<span class="truncate">{inspectLabel ?? label}</span>
+{/snippet}
+
 <div
-	class="range-status relative flex min-w-[36px] max-w-[40%] items-center self-stretch overflow-hidden max-tablet:max-w-none max-tablet:flex-1 md:max-w-none md:shrink-0"
+	class="range-status relative flex items-center overflow-hidden {sticky
+		? 'h-full w-full'
+		: 'min-w-[36px] max-w-[40%] self-stretch md:max-w-none md:shrink-0'}"
 	data-loading={loading}
 	data-inspecting={inspectLabel !== undefined}
-	data-testid="tracker-range-status"
+	data-testid={testId('tracker-range-status')}
 >
-	{#if onrefresh}
+	{#if onrefresh && sticky}
+		<button
+			type="button"
+			onclick={refresh}
+			class="range-label flex h-full w-full min-w-0 cursor-pointer items-center gap-3 px-4 text-left text-dark-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+			aria-disabled={loading}
+			data-testid={testId('tracker-range-label')}
+		>
+			<span class="flex min-w-0 flex-1 flex-col gap-0.5">
+				<span class="truncate text-sm leading-[1.2] font-bold">{inspectLabel ?? label}</span>
+				<span class="sr-only">, refresh data</span>
+				<!-- While inspecting, the period stands on its own. -->
+				{#if updatedLabel && inspectLabel === undefined}
+					<span class="truncate text-xs leading-[1.2] text-mid-grey" aria-hidden="true"
+						>Updated {updatedLabel}</span
+					>
+				{/if}
+			</span>
+			<RotateCw class="size-4 shrink-0 text-mid-grey" aria-hidden="true" />
+		</button>
+	{:else if onrefresh}
 		<Tooltip
 			lines={[...(updatedLabel ? [`Updated ${updatedLabel}`] : []), 'Tap to refresh (R)']}
 			side="bottom"
@@ -40,35 +87,31 @@
 				     strands keyboard focus, so taps are ignored instead. The visible
 				     date leads its accessible name. -->
 				<button
-					{...mergeProps(props, {
-						onclick: () => {
-							if (!loading) onrefresh();
-						}
-					})}
+					{...mergeProps(props, { onclick: refresh })}
 					type="button"
-					class="range-label flex h-full min-w-0 items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold max-tablet:px-2 max-tablet:text-xs text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+					class="range-label flex h-full min-w-0 items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
 					aria-disabled={loading}
-					data-testid="tracker-range-label"
+					data-testid={testId('tracker-range-label')}
 				>
-					<span class="truncate">{inspectLabel ?? label}</span><span class="sr-only"
-						>, refresh data</span
-					>
+					{@render text()}<span class="sr-only">, refresh data</span>
 				</button>
 			{/snippet}
 		</Tooltip>
 	{:else}
 		<span
-			class="range-label flex h-full min-w-0 items-center whitespace-nowrap px-4 text-sm font-bold max-tablet:px-2 max-tablet:text-xs text-dark-grey"
+			class="range-label flex h-full min-w-0 items-center whitespace-nowrap px-4 text-sm font-bold text-dark-grey"
 			aria-hidden={loading}
-			data-testid="tracker-range-label"><span class="truncate">{inspectLabel ?? label}</span></span
+			data-testid={testId('tracker-range-label')}>{@render text()}</span
 		>
 	{/if}
 	<div
-		class="range-loader pointer-events-none absolute inset-0 flex items-center justify-end"
+		class="range-loader pointer-events-none absolute inset-0 flex items-center justify-end {sticky
+			? 'pr-4'
+			: ''}"
 		role={loading ? 'status' : undefined}
 		aria-label={loading ? 'Updating tracker' : undefined}
 		aria-hidden={!loading}
-		data-testid={loading ? 'tracker-loading' : undefined}
+		data-testid={loading ? testId('tracker-loading') : undefined}
 	>
 		<LogoMarkLoader class="[&_svg]:size-[28px]" />
 	</div>

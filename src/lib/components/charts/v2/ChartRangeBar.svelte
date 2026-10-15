@@ -4,6 +4,8 @@
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import IntervalControls from './IntervalControls.svelte';
+	import NativeSelect from '$lib/components/filters/NativeSelect.svelte';
+	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import { portal } from '$lib/actions/portal.js';
 	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
@@ -102,6 +104,20 @@
 	let switchSelected = $derived(selectedRange ?? (isCustomActive ? 'custom' : ''));
 
 	const belowTablet = new MediaQuery(BELOW_TABLET_QUERY);
+	// Touch-sized subtrees pick the range with the phone's own picker there,
+	// "Custom…" opening the date sheet. A custom range already applied is
+	// listed as itself, with "Change dates…" to reopen the sheet (a picker
+	// reports no change when its current option is picked again).
+	const touch = hasTouchControls();
+	let nativeRangeOptions = $derived([
+		...RANGE_PRESETS.map((p) => ({ value: String(p.days), label: p.label })),
+		...(isCustomActive
+			? [
+					{ value: 'custom-applied', label: 'Custom' },
+					{ value: 'custom', label: 'Change dates…' }
+				]
+			: [{ value: 'custom', label: 'Custom…' }])
+	]);
 
 	let rangeMenuOpen = $state(false);
 	let pickerOpen = $state(false);
@@ -231,7 +247,23 @@
 {/snippet}
 
 {#snippet smallControls()}
-	{@render rangeDropdown()}
+	{#if touch}
+		<NativeSelect
+			class="tablet:hidden {pending ? 'animate-pulse' : ''}"
+			selected={isCustomActive ? 'custom-applied' : String(selectedRange ?? '')}
+			options={nativeRangeOptions}
+			label={currentRangeLabel}
+			listLabel="Range"
+			compact
+			onchange={(value) => {
+				if (value === 'custom') sheetOpen = true;
+				else if (value !== 'custom-applied') handlePresetClick(Number(value));
+			}}
+		/>
+		<div class="contents max-tablet:hidden">{@render rangeDropdown()}</div>
+	{:else}
+		{@render rangeDropdown()}
+	{/if}
 	{@render intervalControls()}
 {/snippet}
 

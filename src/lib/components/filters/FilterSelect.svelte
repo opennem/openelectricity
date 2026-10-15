@@ -1,5 +1,7 @@
 <script>
 	import FilterPanel from './FilterPanel.svelte';
+	import NativeSelect from './NativeSelect.svelte';
+	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
 
 	/**
 	 * Single-select dropdown in the filter-pill design — FilterPanel's pill +
@@ -20,6 +22,11 @@
 	 * list for controls that modify the choice rather than being one. A
 	 * `trigger` snippet replaces the pill (see FilterPanel).
 	 *
+	 * In a touch-controls subtree (`touch-controls.js`), phones get the
+	 * platform's own picker (`NativeSelect`) instead of the panel, unless a
+	 * `footer` or `trigger` needs the custom panel or `native={false}` asks for
+	 * it. Both are rendered and CSS picks one, so the server render is right.
+	 *
 	 * The generalisation of the tracker's RegionDropdown — use this for any
 	 * pick-one control that should look like the Region pill.
 	 */
@@ -34,6 +41,7 @@
 	 *   defaultValue?: string | null,
 	 *   compact?: boolean,
 	 *   disabled?: boolean,
+	 *   native?: boolean,
 	 *   footer?: import('svelte').Snippet<[() => void]>,
 	 *   trigger?: import('svelte').Snippet<[{ open: boolean, toggle: () => void }]>,
 	 *   onchange?: (value: string) => void
@@ -46,6 +54,7 @@
 		defaultValue = null,
 		compact = false,
 		disabled = false,
+		native = true,
 		footer,
 		trigger,
 		onchange
@@ -63,6 +72,10 @@
 		}, /** @type {Array<{ group: string | undefined, options: typeof options }>} */ ([]))
 	);
 	const uid = $props.id();
+	const touch = hasTouchControls();
+	let nativeOnPhone = $derived(touch && native && !footer && !trigger);
+	let pillLabel = $derived(selectedOption.selectedLabel ?? selectedOption.label);
+	let active = $derived(defaultValue !== null && selected !== defaultValue);
 
 	/**
 	 * @param {string} value
@@ -119,41 +132,60 @@
 	</li>
 {/snippet}
 
-<FilterPanel
-	label={selectedOption.selectedLabel ?? selectedOption.label}
-	title={listLabel}
-	shortLabel={selectedOption.shortLabel}
-	active={defaultValue !== null && selected !== defaultValue}
-	{compact}
-	{disabled}
-	{trigger}
->
-	{#snippet children(close)}
-		<ul class="flex flex-col text-sm px-2 py-2" role="listbox" aria-label={listLabel}>
-			{#each sections as section, index (index)}
-				{#if section.group}
-					<li role="presentation">
-						<div
-							id="{uid}-group-{index}"
-							class="px-2 pb-1 pt-3 text-xxs font-medium uppercase tracking-wider text-dark-grey"
-						>
-							{section.group}
-						</div>
-						<ul role="group" aria-labelledby="{uid}-group-{index}">
-							{#each section.options as option (option.value)}
-								{@render optionItem(option, close)}
-							{/each}
-						</ul>
-					</li>
-				{:else}
-					{#each section.options as option (option.value)}
-						{@render optionItem(option, close)}
-					{/each}
-				{/if}
-			{/each}
-		</ul>
-		{#if footer}
-			<div class="border-t border-warm-grey px-2 py-2 text-sm">{@render footer(close)}</div>
-		{/if}
-	{/snippet}
-</FilterPanel>
+{#snippet panel()}
+	<FilterPanel
+		label={pillLabel}
+		title={listLabel}
+		shortLabel={selectedOption.shortLabel}
+		{active}
+		{compact}
+		{disabled}
+		{trigger}
+	>
+		{#snippet children(close)}
+			<ul class="flex flex-col text-sm px-2 py-2" role="listbox" aria-label={listLabel}>
+				{#each sections as section, index (index)}
+					{#if section.group}
+						<li role="presentation">
+							<div
+								id="{uid}-group-{index}"
+								class="px-2 pb-1 pt-3 text-xxs font-medium uppercase tracking-wider text-dark-grey"
+							>
+								{section.group}
+							</div>
+							<ul role="group" aria-labelledby="{uid}-group-{index}">
+								{#each section.options as option (option.value)}
+									{@render optionItem(option, close)}
+								{/each}
+							</ul>
+						</li>
+					{:else}
+						{#each section.options as option (option.value)}
+							{@render optionItem(option, close)}
+						{/each}
+					{/if}
+				{/each}
+			</ul>
+			{#if footer}
+				<div class="border-t border-warm-grey px-2 py-2 text-sm">{@render footer(close)}</div>
+			{/if}
+		{/snippet}
+	</FilterPanel>
+{/snippet}
+
+{#if nativeOnPhone}
+	<NativeSelect
+		class="tablet:hidden"
+		{selected}
+		{options}
+		label={selectedOption.shortLabel ?? pillLabel}
+		{listLabel}
+		{active}
+		{compact}
+		{disabled}
+		onchange={(value) => onchange?.(value)}
+	/>
+	<div class="contents max-tablet:hidden">{@render panel()}</div>
+{:else}
+	{@render panel()}
+{/if}

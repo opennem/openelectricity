@@ -1,10 +1,16 @@
 <script>
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import {
+		hasTouchControls,
+		TOUCH_SWITCH_OPTION,
+		TOUCH_SWITCH_TRACK
+	} from '$lib/components/ui/touch-controls.js';
 	/**
 	 * Segmented switcher with a thumb that slides to the selected option.
 	 * The thumb is inset from the track via the container padding.
 	 * An option with a `tooltip` shows it in the app's `Tooltip` on hover, in
 	 * place of the browser's `title` (e.g. icon-only options naming themselves).
+	 * In a touch-controls subtree it takes the phone sizes below 768px.
 	 * @typedef {{ label?: string, ariaLabel?: string, title?: string, tooltip?: string, value: string | number, icon?: *, size?: string }} Option
 	 * @typedef {Object} Props
 	 * @property {Option[]} [buttons]
@@ -32,6 +38,8 @@
 		onchange,
 		...rest
 	} = $props();
+
+	const touch = hasTouchControls();
 
 	let isSelected = $derived((/** @type {string | number} */ value) => selected === value);
 	/** @type {Record<string, HTMLElement | undefined>} */
@@ -87,11 +95,13 @@
 	bind:this={containerEl}
 	style:view-transition-name={transitionName}
 	{...rest}
-	class={`relative flex md:inline-flex p-1 ${rounded} ${trackClass} border border-solid ${compact ? 'text-xs' : 'text-sm'} ${className}`}
+	class={`relative flex md:inline-flex p-1 ${rounded} ${trackClass} border border-solid ${compact ? 'text-xs' : 'text-sm'} ${touch ? TOUCH_SWITCH_TRACK : ''} ${className}`}
 >
 	{#if thumbVisible}
 		<div
-			class="absolute shadow-lg transition-all duration-200 ease-out {rounded} {darkSelected
+			class="absolute shadow-lg transition-all duration-200 ease-out {rounded} {touch
+				? TOUCH_SWITCH_OPTION
+				: ''} {darkSelected
 				? 'bg-dark-grey border border-dark-grey'
 				: 'bg-white border border-black'}"
 			style="left: {thumbLeft}px; top: {thumbTop}px; width: {thumbWidth}px; height: {thumbHeight}px;"
@@ -127,7 +137,7 @@
 		aria-pressed={isSelected(value)}
 		class="touch-hit z-10 flex w-full gap-3 md:w-auto items-center justify-center whitespace-nowrap cursor-pointer transition-colors duration-200 {rounded} {compact
 			? 'px-3 py-1.5 md:px-4 md:py-1.5'
-			: 'px-4 py-4 md:px-8 md:py-4'} {isSelected(value)
+			: 'px-4 py-4 md:px-8 md:py-4'} {touch ? TOUCH_SWITCH_OPTION : ''} {isSelected(value)
 			? darkSelected
 				? 'text-white'
 				: 'text-black'

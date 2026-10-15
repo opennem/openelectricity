@@ -16,6 +16,7 @@
 	 *   triggerClass?: string,
 	 *   iconClass?: string,
 	 *   showDocumentation?: boolean,
+	 *   label?: string,
 	 *   sections?: import('svelte').Snippet<[{ close: () => void }]>
 	 * }}
 	 */
@@ -28,6 +29,8 @@
 		triggerClass = 'p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer',
 		iconClass = 'size-6 text-mid-grey',
 		showDocumentation = true,
+		// The trigger's name: a page's menu is "Options"; others name theirs.
+		label = 'Options',
 		sections
 	} = $props();
 
@@ -64,7 +67,8 @@
 		bind:this={triggerRef}
 		onclick={() => (isOpen = !isOpen)}
 		class="touch-hit {triggerClass}"
-		title="Options"
+		title={label}
+		aria-label={label}
 		aria-haspopup="menu"
 		aria-expanded={isOpen}
 	>

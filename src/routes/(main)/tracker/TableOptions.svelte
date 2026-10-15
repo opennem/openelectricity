@@ -1,5 +1,5 @@
 <script>
-	import { SlidersHorizontal, X } from '@lucide/svelte';
+	import { Settings2, X } from '@lucide/svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/form-elements/Button.svelte';
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
@@ -23,7 +23,7 @@
 	onclick={() => (open = true)}
 	class="flex size-[40px] shrink-0 cursor-pointer items-center justify-center rounded-lg text-mid-grey transition-colors hover:bg-light-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey motion-reduce:transition-none"
 >
-	<SlidersHorizontal class="size-[16px]" strokeWidth={1.5} aria-hidden="true" />
+	<Settings2 class="size-[16px]" strokeWidth={1.75} aria-hidden="true" />
 </button>
 
 <Modal bind:open {title} maxWidthClass="max-w-[560px]">

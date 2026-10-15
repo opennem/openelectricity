@@ -390,11 +390,12 @@
 		</Svg>
 
 		<!-- Comparison markers (A / B): exported, unlike the hover layer above -->
-		{#if timeMarkers?.markers.length}
+		{#if timeMarkers?.markers.length || timeMarkers?.preview}
 			<Svg pointerEvents={false}>
 				<TimeMarkers
 					markers={timeMarkers.markers}
 					armed={timeMarkers.armed ?? null}
+					preview={timeMarkers.preview ?? null}
 					hoverTime={ghostTime}
 					band={!!timeMarkers.band}
 					stepData={isStepMode ? chart.seriesScaledData : null}

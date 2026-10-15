@@ -1,5 +1,10 @@
 <script>
 	import FeedbackIconButton from '$lib/components/feedback/FeedbackIconButton.svelte';
+	import {
+		hasTouchControls,
+		TOUCH_ICON,
+		TOUCH_ICON_BUTTON
+	} from '$lib/components/ui/touch-controls.js';
 
 	/**
 	 * FullscreenFilterBar — shared chrome for the filter bar at the top of
@@ -58,6 +63,9 @@
 		rest,
 		options
 	} = $props();
+
+	// Touch-sized pages frame Feedback like their pills on phones.
+	const touch = hasTouchControls();
 </script>
 
 <div
@@ -93,7 +101,14 @@
 	     padding, so Feedback and the options button sit equally either side of
 	     the divider (both buttons share the same padding). -->
 	{#if feedback && isFullscreen}
-		<FeedbackIconButton />
+		{#if touch}
+			<FeedbackIconButton
+				class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer {TOUCH_ICON_BUTTON}"
+				iconClass="size-6 text-mid-grey {TOUCH_ICON}"
+			/>
+		{:else}
+			<FeedbackIconButton />
+		{/if}
 	{/if}
 	{#if options}
 		<div

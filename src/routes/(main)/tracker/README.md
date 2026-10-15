@@ -767,22 +767,34 @@ on a fuel tech or region row solos it (`$lib/utils/long-press.js`), as
 
 ### Narrow screens: the top bar and controls
 
-Below 768px the top bar wraps onto two rows (`FullscreenFilterBar`'s
-`wrapOnPhone`, which turns its wrappers into `display: contents`): the logo
-(its "Tracker" label kept for screen readers only), the view switcher, the
-range readout and the menus on the first, and the view's filters on the
-second, scrolling sideways with a faded edge when they don't fit. Every
-`FilterPanel` (`FilterSelect`, `FilterDropdown`) opens as a bottom sheet over
-a backdrop there, titled with its list label; long-pressing an option keeps
-it alone, as ⌘ does. The popovers above 768px stay inside the viewport and
-scroll when taller than the space below their trigger (`dropdownPosition`).
-On touch screens the small controls take a 44px tap area without changing
-size (the `touch-hit` utility in `app.css`), the Profile calendar's days are
-40px, informational tooltips (a card's ⓘ, a metric's description) open on a
-tap (`Tooltip`'s `tapToOpen`), and narrow cards let a long title wrap to two
-lines. The options menu leaves out full screen on phones (always full
-screen) and keyboard shortcuts below 1024px; the footer drops its data
-sources and home link on phones.
+Below 768px the page scrolls as a document (`FullscreenLayout` and
+`FullscreenContainer`'s `phoneScroll`), so the top bar scrolls away with the
+charts, and the table sheet is fixed to the viewport. The bar wraps onto two
+rows (`FullscreenFilterBar`'s `wrapOnPhone`, which turns its wrappers into
+`display: contents`): the "Tracker" logo menu, the view dropdown and the
+Feedback and options buttons on the first, and the view's filters on the
+second, scrolling sideways with a faded edge when they don't fit. The range
+readout moves out of the bar into a strip at the top of the body that stays in
+view (`RangeStatus`'s `sticky` variant): the range on top, when the data last
+updated under it, and a tap refreshes.
+
+The shell opts its subtree into touch-sized controls (`setTouchControls()`,
+`$lib/components/ui/touch-controls.js`): below 768px pills, segmented switches,
+the date input and the Feedback and options buttons are 40px tall with 14px
+type. Pick-one lists (`FilterSelect`, the range presets) open the phone's own
+picker there (`NativeSelect`: a transparent `<select>` over the pill), with
+"Custom…" opening the date range sheet; lists with their own controls (the
+interval's rolling-sum switch) and multi-select lists (`FilterDropdown`) open
+as a bottom sheet over a backdrop, titled with their list label, where
+long-pressing an option keeps it alone, as ⌘ does. The popovers above 768px
+stay inside the viewport and scroll when taller than the space below their
+trigger (`dropdownPosition`). On touch screens the small controls take a 44px
+tap area without changing size (the `touch-hit` utility in `app.css`), the
+Profile calendar's days are 40px, informational tooltips (a card's ⓘ, a
+metric's description) open on a tap (`Tooltip`'s `tapToOpen`), and narrow
+cards let a long title wrap to two lines. The options menu leaves out full
+screen on phones (always full screen) and keyboard shortcuts below 1024px;
+the footer drops its data sources and home link on phones.
 
 ### Narrow screens: density and performance
 
@@ -887,6 +899,18 @@ menu, and it slides shut or open (no motion under `prefers-reduced-motion`).
 Like the table columns, that choice is a personal display preference kept in
 localStorage (`tracker-metrics-visible`), never in the URL, and the demand and
 renewables feeds it needs load only while it is shown.
+
+Phones hide the strip. There the options menu's Metrics opens the same
+readings in a dialog (`layout="list"`): a row per metric with both extremes as
+large buttons, each showing its time. Picking one closes the dialog, pins its
+time on every chart and scrolls its chart into view.
+
+A picked extreme (from the strip or the dialog) is marked on its chart (net
+power, demand, renewables and curtailment on Generation, the price on Market,
+emissions and intensity on Emissions) with a labelled line, "Max net power
+31,318 MW", in the style of a comparison's A and B (`timeMarkers`); hovering
+or focusing an extreme in the strip previews it as a dashed marker, like a
+comparison's armed one. Pinning another time drops the marker.
 
 Each item is a single line reading "label unit · ↓ minimum · ↑ maximum": the
 metric label in 10px uppercase Space Grotesk, semibold and the values'

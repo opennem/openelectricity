@@ -1,4 +1,6 @@
 <script>
+	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
+
 	/**
 	 * SeriesLegend — a chart card's colour key, for when nothing else on
 	 * screen names the colours (the side table that keys them is closed): a
@@ -6,6 +8,8 @@
 	 * wrapping under the card's switcher. On a narrow card (the card header is
 	 * a size container) it shows two rows, with a toggle for the rest when
 	 * some are hidden, so a long key doesn't push the chart down a phone.
+	 * In a touch-controls subtree it sits in the card's footer on phones
+	 * (`ChartCard`), in larger type with larger swatches, all of it shown.
 	 *
 	 * @type {{
 	 *   items: Array<{ id: string, label: string, colour: string, line?: boolean, dashed?: boolean }>,
@@ -14,6 +18,7 @@
 	 */
 	let { items, label = 'Legend' } = $props();
 
+	const touch = hasTouchControls();
 	let expanded = $state(false);
 	/** Some items sit below the two-row cap (narrow cards only). */
 	let clipped = $state(false);
@@ -30,9 +35,13 @@
 
 {#if items.length}
 	<ul
-		class="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 text-xxs text-mid-grey {expanded
+		class="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 text-xxs text-mid-grey {touch
+			? 'max-tablet:gap-x-4 max-tablet:gap-y-2 max-tablet:text-xs max-tablet:text-dark-grey'
+			: ''} {expanded || touch
 			? ''
-			: '@max-[440px]:max-h-[31px] @max-[440px]:overflow-hidden'}"
+			: '@max-[440px]:max-h-[31px] @max-[440px]:overflow-hidden'} {touch && !expanded
+			? 'tablet:@max-[440px]:max-h-[31px] tablet:@max-[440px]:overflow-hidden'
+			: ''}"
 		aria-label={label}
 		data-testid="series-legend"
 		{@attach measureClip}
@@ -42,13 +51,15 @@
 				{#if item.line}
 					<span
 						aria-hidden="true"
-						class="w-3 border-t-2 {item.dashed ? 'border-dashed' : ''}"
+						class="w-3 border-t-2 {item.dashed ? 'border-dashed' : ''} {touch
+							? 'max-tablet:w-4 max-tablet:border-t-[3px]'
+							: ''}"
 						style:border-color={item.colour}
 					></span>
 				{:else}
 					<span
 						aria-hidden="true"
-						class="size-2.5 shrink-0 rounded-[2px]"
+						class="size-2.5 shrink-0 rounded-[2px] {touch ? 'max-tablet:size-3' : ''}"
 						style:background-color={item.colour}
 					></span>
 				{/if}
