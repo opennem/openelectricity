@@ -31,7 +31,7 @@
 	<button
 		{...props}
 		type="button"
-		class="{className} disabled:cursor-wait"
+		class="touch-hit {className} disabled:cursor-wait"
 		disabled={feedback.status === 'loading'}
 		aria-label={feedback.label}
 		onclick={(event) => {

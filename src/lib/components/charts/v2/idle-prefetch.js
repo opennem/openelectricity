@@ -1,4 +1,7 @@
-/** Run deduplicated prefetch jobs one per idle slice. Pauses preserve the queue. */
+/** Run deduplicated prefetch jobs one per idle slice. Pauses preserve the queue.
+ * Nothing is prefetched while the reader has asked to save data (the
+ * browser's Data Saver / `navigator.connection.saveData`): prefetching is
+ * speculative, and everything still loads when it's actually needed. */
 
 /** @typedef {{ key: string, run: () => void }} IdleJob */
 
@@ -7,6 +10,11 @@ const defaultScheduleIdle = (cb) =>
 	typeof requestIdleCallback === 'function'
 		? requestIdleCallback(cb, { timeout: 2000 })
 		: setTimeout(cb, 200);
+
+/** The reader has asked the browser to save data. */
+export const savingData = () =>
+	typeof navigator !== 'undefined' &&
+	/** @type {{ connection?: { saveData?: boolean } }} */ (navigator).connection?.saveData === true;
 
 /** @param {any} token */
 const defaultCancelIdle = (token) =>
@@ -53,7 +61,7 @@ export function createIdlePrefetcher({
 	}
 
 	function arm() {
-		if (token != null || stopped) return;
+		if (token != null || stopped || savingData()) return;
 		token = scheduleIdle(pump);
 	}
 

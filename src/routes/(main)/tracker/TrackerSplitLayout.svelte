@@ -1,19 +1,24 @@
 <script module>
+	/** From here up the panel docks beside the charts; below it overlays
+	 * them (tablets, when the config says so) or sits in the phone sheet. */
+	export const WIDE_QUERY = '(min-width: 1024px)';
+
 	/** The fuel-tech table beside Timeline and Profile charts: 30% by default,
 	 * never narrower than 320px, leaving a 376px chart column (padding and
-	 * divider included) on wide layouts.
+	 * divider included) on wide layouts; over the charts on tablets.
 	 * @type {Readonly<import('./types.js').TrackerSplitConfig>} */
 	export const FUEL_TECH_SPLIT = Object.freeze({
 		initial: 30,
 		minPx: 320,
 		reservedPx: 376,
 		maxPct: 80,
-		narrowMaxPct: 80
+		narrowMaxPct: 80,
+		narrowOverlay: true
 	});
 </script>
 
 <script>
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { cubicOut } from 'svelte/easing';
 	import { clickoutside } from '@svelte-put/clickoutside';
@@ -22,6 +27,9 @@
 	import { createDockedPanel } from '$lib/components/ui/panel/docked-panel.svelte.js';
 	import { percentPanelBounds } from '$lib/components/ui/panel/panel-bounds.js';
 	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
+	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
+	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
+	import { setTrackerSheet } from './tracker-sheet.js';
 
 	/**
 	 * TrackerSplitLayout — every tracker view's charts-and-table shell: a
@@ -34,6 +42,14 @@
 	 * close control and the rail's opener can take part in the focus hand-off
 	 * (`bind:closeButton={dock.closer}`). `canvasHeight` reports the chart
 	 * column's visible height inside its padding, for charts that fill it.
+	 *
+	 * Phones (below 768px) get no side panel: the panel sits in a persistent
+	 * bottom sheet, minimised to its header while the table is closed and at
+	 * the peek height (or full) while open, so the charts keep the full width.
+	 * Tablets (below 1024px) overlay the charts when the config says so. The
+	 * rail is hidden by CSS on phones and the docked (not overlaid) panel below
+	 * 1024px, where neither is used, so the server render (which can't know
+	 * the width) never flashes a crushed layout there.
 	 *
 	 * @type {{
 	 *   config: import('./types.js').TrackerSplitConfig,
@@ -71,8 +87,10 @@
 		() => config
 	);
 	let containerWidth = $state(0);
-	const wide = new MediaQuery('(min-width: 1024px)', true);
-	let overlaid = $derived(!!narrowOverlay && !wide.current);
+	let containerHeight = $state(0);
+	const wide = new MediaQuery(WIDE_QUERY, true);
+	const phone = new MediaQuery(BELOW_TABLET_QUERY);
+	let overlaid = $derived(!!narrowOverlay && !wide.current && !phone.current);
 	let bounds = $derived(
 		percentPanelBounds({
 			containerWidth,
@@ -94,7 +112,47 @@
 		setOpen: (next) => onopenchange(next)
 	});
 	let size = $derived(overlaid ? narrowMaxPct : dock.size);
+
+	// The phone sheet: closed table → minimised to the panel header (grip +
+	// 48px header); open → peek, or full once pulled up. The snap is derived
+	// from `open`, and the sheet's snap changes write back through it.
+	const SHEET_MIN_PX = 62;
+	const SHEET_PEEK = 0.55;
+	let sheetFull = $state(false);
+	let sheetSnap = $derived(
+		/** @type {'min' | 'peek' | 'full'} */ (!open ? 'min' : sheetFull ? 'full' : 'peek')
+	);
+	/** @param {'min' | 'peek' | 'full'} next */
+	function setSheetSnap(next) {
+		if (next === 'min') {
+			if (open) onopenchange(false);
+			return;
+		}
+		sheetFull = next === 'full';
+		if (!open) onopenchange(true);
+	}
+	setTrackerSheet({
+		get active() {
+			return phone.current;
+		},
+		get minimised() {
+			return !open;
+		},
+		toggle: () => setSheetSnap(open ? 'min' : 'peek')
+	});
+	// Keep the last chart clear of the sheet (its peek, at most).
+	let sheetClearance = $derived(
+		!phone.current
+			? undefined
+			: `${sheetSnap === 'min' ? SHEET_MIN_PX : Math.round(containerHeight * SHEET_PEEK)}px`
+	);
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	// The page may close the table as it hydrates (narrow screens default it
+	// closed); that isn't the reader's doing, so it doesn't slide.
+	let settled = false;
+	onMount(() => {
+		requestAnimationFrame(() => (settled = true));
+	});
 
 	/**
 	 * Slide the panel in from (or out to) the container's right edge: its
@@ -117,7 +175,8 @@
 		const panelWidth = node.lastElementChild?.getBoundingClientRect().width ?? width;
 		node.style.setProperty('--panel-slide-width', `${panelWidth}px`);
 		return {
-			duration: reducedMotion.current ? 0 : 250,
+			// Crossing into phone width swaps the panel for the sheet at once.
+			duration: reducedMotion.current || !settled || phone.current ? 0 : 250,
 			easing: cubicOut,
 			// clip, not hidden: the opening focus hand-off would scroll a hidden
 			// box to the panel's close button, shifting the panel left.
@@ -130,22 +189,29 @@
 
 <svelte:window
 	onkeydown={(event) => {
-		if (event.key === 'Escape' && overlaid && open) dock.close();
+		if (event.key !== 'Escape' || !open) return;
+		// Esc closes the overlay, or minimises the phone sheet.
+		if (overlaid) dock.close();
+		else if (phone.current) onopenchange(false);
 	}}
 />
 
 <div
 	class="relative flex min-h-0 flex-1 flex-row overflow-hidden"
 	bind:clientWidth={containerWidth}
+	bind:clientHeight={containerHeight}
 	data-png-context={pngContext}
 >
 	<!-- No space-y: each card's full-gap drag handle is the spacer between cards.
 	     Right padding yields to the open panel's drag handle — the handle IS
 	     the page-background gap between the white columns. -->
 	<div
-		class="min-w-0 flex-1 overflow-y-auto py-4 pl-4 md:py-6 md:pl-6 {open && !overlaid
-			? ''
+		class="min-w-0 flex-1 overflow-y-auto py-4 pl-4 md:py-6 md:pl-6 {open &&
+		!overlaid &&
+		!phone.current
+			? 'max-md:pr-4'
 			: 'pr-4 md:pr-6'}"
+		style:padding-bottom={sheetClearance}
 		use:clickoutside={{ event: 'pointerdown', options: true }}
 		onclickoutside={() => (engaged = false)}
 		bind:contentRect={
@@ -155,11 +221,33 @@
 		{@render children()}
 	</div>
 
-	{#if open}
+	{#if phone.current}
+		<BottomSheet
+			open
+			{containerHeight}
+			dismissable={false}
+			peekFraction={SHEET_PEEK}
+			minHeight={SHEET_MIN_PX}
+			bind:snap={() => sheetSnap, setSheetSnap}
+			defaultSnap={sheetSnap}
+			class="z-20"
+		>
+			<div class="flex h-full min-h-0 flex-col">
+				{#if panelHeader}{@render panelHeader(dock)}{/if}
+				{@render panel(dock)}
+			</div>
+		</BottomSheet>
+	{:else if open}
+		{#if overlaid}
+			<!-- Tap outside the overlaid panel to close it. -->
+			<div class="absolute inset-0 z-10 bg-black/5" aria-hidden="true" onclick={dock.close}></div>
+		{/if}
 		<!-- The panel's column: the drag handle (docked) and the panel, sized to
 		     the panel's share plus the handle, sliding in and out as one. -->
 		<div
-			class="z-20 flex shrink-0 {overlaid ? 'absolute inset-y-0 right-0' : 'relative'}"
+			class="z-20 flex shrink-0 {overlaid
+				? 'absolute inset-y-0 right-0'
+				: 'relative max-md:hidden'}"
 			style:width={overlaid ? `${size}%` : `calc(${size}% + 1rem)`}
 			in:slidePanel
 			out:slidePanel
@@ -205,14 +293,16 @@
 		</div>
 	{:else}
 		<!-- Keep the reopen action at the panel edge. -->
-		<PanelRail
-			side="right"
-			label={railLabel}
-			{controls}
-			onopen={dock.open}
-			bind:opener={dock.opener}
-		>
-			{@render rail?.()}
-		</PanelRail>
+		<div class="contents max-tablet:hidden">
+			<PanelRail
+				side="right"
+				label={railLabel}
+				{controls}
+				onopen={dock.open}
+				bind:opener={dock.opener}
+			>
+				{@render rail?.()}
+			</PanelRail>
+		</div>
 	{/if}
 </div>

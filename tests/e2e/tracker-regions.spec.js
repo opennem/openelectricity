@@ -177,12 +177,18 @@ test('mobile panel, keyboard dismissal and responsive chart layout', async ({ pa
 	await expect(
 		page.getByText('Complete periods · monthly source data', { exact: true })
 	).toBeVisible();
-	await expect(regionsTable(page)).toHaveCount(0);
-	await page.getByRole('button', { name: 'Show regions table' }).click();
-	await expect(regionsTable(page)).toBeVisible();
+	// The table starts in a minimised bottom sheet: only its header shows.
+	const show = page.getByRole('button', { name: 'Show regions', exact: true });
+	await expect(show).toHaveAttribute('aria-expanded', 'false');
+	await show.click();
+	await expect(page.getByRole('button', { name: 'Minimise regions', exact: true })).toHaveAttribute(
+		'aria-expanded',
+		'true'
+	);
+	await expect(regionsTable(page)).toBeInViewport();
 	await page.screenshot({ path: 'test-results/tracker-regions-mobile-table.png', fullPage: true });
 	await page.keyboard.press('Escape');
-	await expect(page.getByRole('button', { name: 'Show regions table' })).toBeFocused();
+	await expect(show).toHaveAttribute('aria-expanded', 'false');
 	// Without the table alongside, the charts carry their own tooltips.
 	const intensity = page.getByRole('group', { name: 'Carbon intensity comparison chart' });
 	const box = await intensity.boundingBox();
@@ -473,7 +479,7 @@ test('comparison Y axis rescales on zoom and pan as an offscreen peak enters or 
 	await expect.poll(maximumTick).toBeLessThan(5);
 	// Engage pan interaction, then drag the time window back to the early peak.
 	await chart.locator('.stratum-chart-area').click();
-	await expect(chart.locator('[style*="touch-action: none"]').first()).toBeVisible();
+	await expect(chart.getByRole('button', { name: 'Disable pan and zoom' })).toBeVisible();
 	const box = await chart.locator('.stratum-chart-area').boundingBox();
 	await page.mouse.move(box.x + box.width * 0.25, box.y + box.height * 0.5);
 	await page.mouse.down();

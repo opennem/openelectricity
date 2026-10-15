@@ -46,7 +46,7 @@
 				value={String(btnValue)}
 				class="{compact
 					? 'h-full px-2.5'
-					: 'px-3 py-1'} rounded text-xs text-mid-grey hover:text-dark-grey transition-colors data-[state=active]:bg-white data-[state=active]:text-dark-grey data-[state=active]:shadow-sm cursor-pointer"
+					: 'px-3 py-1'} touch-hit rounded text-xs text-mid-grey hover:text-dark-grey transition-colors data-[state=active]:bg-white data-[state=active]:text-dark-grey data-[state=active]:shadow-sm cursor-pointer"
 			>
 				{label}
 			</Tabs.Trigger>

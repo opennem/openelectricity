@@ -22,7 +22,7 @@
 	aria-checked={checked}
 	{disabled}
 	{title}
-	class="inline-flex h-[26px] shrink-0 cursor-pointer items-center gap-2 rounded-md border border-mid-warm-grey/40 bg-light-warm-grey pl-2.5 pr-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 {checked
+	class="touch-hit inline-flex h-[26px] shrink-0 cursor-pointer items-center gap-2 rounded-md border border-mid-warm-grey/40 bg-light-warm-grey pl-2.5 pr-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 {checked
 		? 'text-dark-grey'
 		: 'text-mid-grey hover:text-dark-grey'}"
 	onclick={() => onchange(!checked)}

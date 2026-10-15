@@ -2,7 +2,7 @@ import { onNavigate, pushState, replaceState } from '$app/navigation';
 import { page } from '$app/state';
 import { on } from 'svelte/events';
 import { onMount, untrack } from 'svelte';
-import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
+import { WIDE_QUERY } from './TrackerSplitLayout.svelte';
 import { createTrackerSession } from './tracker-session.svelte.js';
 import { createTrackerNavigation } from './tracker-navigation.js';
 import { copiedTrackerUrl } from './tracker-url.js';
@@ -47,11 +47,12 @@ export function createTrackerPage(getData) {
 		// Back/Forward onto another route's shallow entry renders that entry's
 		// base page URL; the address bar still holds the shallow query.
 		restore(new URL(window.location.href));
-		// Below the tablet breakpoint the side-by-side panel would crush the
-		// charts — default it closed unless the URL explicitly asked for it.
-		// SSR stays stable (open); this only adjusts after hydration.
+		// Below the wide breakpoint the table would cover the charts (a tablet
+		// overlay, or the phone sheet, which then starts minimised) — default
+		// it closed unless the URL asked for it, as Compare does. SSR stays
+		// stable (open; the docked panel is CSS-hidden on phones).
 		const params = new URL(window.location.href).searchParams;
-		if (!params.has('table') && window.matchMedia(BELOW_TABLET_QUERY).matches) {
+		if (!params.has('table') && !window.matchMedia(WIDE_QUERY).matches) {
 			session.select('tablePanelOpen', false, null);
 		}
 		const offPopstate = on(window, 'popstate', () => restore(new URL(window.location.href)));

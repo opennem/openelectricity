@@ -1,4 +1,5 @@
 <script>
+	import { longPress } from '$lib/utils/long-press.js';
 	import Select from '$lib/components/form-elements/Select.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
@@ -851,6 +852,7 @@
 											title={region.label}
 											onclick={(event) =>
 												toggleRegion(region.value, event.metaKey || event.ctrlKey)}
+											{@attach longPress(() => toggleRegion(region.value, true))}
 											class="flex w-full items-center gap-2.5 py-1.5 pl-4 pr-2 text-left"
 										>
 											<span

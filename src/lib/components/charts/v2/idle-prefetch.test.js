@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { createIdlePrefetcher } from './idle-prefetch.js';
 
 /** Manual idle queue — `flush()` runs one scheduled slice. */
@@ -159,5 +159,20 @@ describe('createIdlePrefetcher', () => {
 		prefetcher.setPlan([{ key: 'b', run }]);
 		prefetcher.kick();
 		expect(sched.pendingCount).toBe(0);
+	});
+
+	describe('with Data Saver on', () => {
+		afterEach(() => vi.unstubAllGlobals());
+
+		it('schedules nothing', () => {
+			vi.stubGlobal('navigator', { connection: { saveData: true } });
+			const sched = manualScheduler();
+			const run = vi.fn();
+			const prefetcher = createIdlePrefetcher(sched);
+			prefetcher.setPlan([{ key: 'a', run }]);
+			prefetcher.kick();
+			expect(sched.pendingCount).toBe(0);
+			expect(run).not.toHaveBeenCalled();
+		});
 	});
 });

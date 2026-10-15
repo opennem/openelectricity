@@ -733,6 +733,70 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
     `tracker-nem-3d.xlsx`, `tracker-wem-time-of-day-coal-2026-08-31.csv`,
     `tracker-regions-intensity-1m-2024-01-to-2024-12.csv`.
 
+### Touch
+
+On touch screens every Tracker chart leaves vertical swipes to the page, so
+the chart column scrolls whichever chart a swipe starts on. A horizontal drag
+scrubs the readout and a tap pins a time (a second tap on it releases it),
+and two fingers pan and pinch any pannable chart straight away: on touch
+there is nothing to engage, so cards show no ✥ toggle (mice and trackpads
+keep it). The custom charts (ridgelines, radial clocks and heatmaps, the
+Compare panels) read the same way through the `pointerInspect` attachment: a
+tap shows the reading, which stays until a tap elsewhere. Chart cards have no
+height handles on touch screens, so the gaps between them scroll too. The
+shared rules live in `$lib/components/charts/v2` (`elements/touch-gesture.js`,
+`elements/pointer-inspect.js`); `tests/e2e/tracker-touch.spec.js` covers them
+at phone size.
+
+### Narrow screens: the table panel
+
+Below 768px there is no side panel: `TrackerSplitLayout` puts the fuel tech
+table (or Compare's Regions table) in a persistent `BottomSheet`, so the
+charts keep the full width. A closed table is the sheet minimised to its
+header; opening it raises the sheet to the peek height (55% of the view),
+and dragging the header or grip takes it to full. The header
+(`TrackerPanelHeader`, through `tracker-sheet.js`'s context) is the drag
+handle and swaps the docked close control for an expand/minimise chevron;
+Esc minimises. From 768 to 1023px the panel overlays the charts with a
+backdrop that closes it, and every view opens with the table closed there
+(`tracker-page.js`, `WIDE_QUERY`); docked beside the charts is for 1024px and
+up. The docked panel and rail are hidden by CSS below 1024px, where they
+aren't used, so the server render never flashes them. On touch, a long press
+on a fuel tech or region row solos it (`$lib/utils/long-press.js`), as
+⌘/Ctrl-click does.
+
+### Narrow screens: the top bar and controls
+
+Below 768px the top bar wraps onto two rows (`FullscreenFilterBar`'s
+`wrapOnPhone`, which turns its wrappers into `display: contents`): the logo
+(its "Tracker" label kept for screen readers only), the view switcher, the
+range readout and the menus on the first, and the view's filters on the
+second, scrolling sideways with a faded edge when they don't fit. Every
+`FilterPanel` (`FilterSelect`, `FilterDropdown`) opens as a bottom sheet over
+a backdrop there, titled with its list label; long-pressing an option keeps
+it alone, as ⌘ does. The popovers above 768px stay inside the viewport and
+scroll when taller than the space below their trigger (`dropdownPosition`).
+On touch screens the small controls take a 44px tap area without changing
+size (the `touch-hit` utility in `app.css`), the Profile calendar's days are
+40px, informational tooltips (a card's ⓘ, a metric's description) open on a
+tap (`Tooltip`'s `tapToOpen`), and narrow cards let a long title wrap to two
+lines. The options menu leaves out full screen on phones (always full
+screen) and keyboard shortcuts below 1024px; the footer drops its data
+sources and home link on phones.
+
+### Narrow screens: density and performance
+
+X-axis labels thin to every n-th tick when they'd collide
+(`axis-label-step.js`, used by every v2 `AxisX`; gridlines stay on every
+tick). On narrow cards a long `SeriesLegend` shows two rows and a "Show all"
+toggle. The floating tooltip (Compare on phones) also learns where a tap
+lands, so it snaps to the half of the plot away from the finger. On the
+Profile breakdown, ridgelines drop their per-ridge shadow filter on
+touch-only devices and the radial heatmap repaints after a resize settles
+(new data still paints at once). The chart lightbox opens full screen on
+phones. With the browser's Data Saver on, nothing is prefetched in idle
+time (`idle-prefetch.js`).
+
 ## Compare mode
 
 Any `ChartCard` can compare two of its buckets. The card header's **Compare**

@@ -1,4 +1,5 @@
 <script>
+	import { axisLabelStep } from './axis-label-step.js';
 	/**
 	 * AxisX Component (v2)
 	 *
@@ -87,6 +88,17 @@
 		if (typeof ticks === 'function') return ticks($xScale.ticks());
 		return $xScale.ticks(ticks);
 	});
+
+	// Labels too close to read are thinned to every n-th tick (gridlines and
+	// tick marks stay on all of them), so narrow plots don't overprint.
+	let labelStep = $derived(
+		tickLabel
+			? axisLabelStep(
+					tickVals.map((/** @type {*} */ tick) => $xScale(tick)),
+					tickVals.map((/** @type {*} */ tick) => String(formatTick(tick)))
+				)
+			: 1
+	);
 
 	// Generate tick values for gridlines (use gridlineTicks if provided, otherwise use tickVals)
 	let gridlineTickVals = $derived(gridlineTicks ?? tickVals);
@@ -204,7 +216,7 @@
 			{/if}
 
 			<!-- Tick label -->
-			{#if tickLabel}
+			{#if tickLabel && i % labelStep === 0}
 				<text
 					x={isBandwidth ? $xScale.bandwidth() / 2 + xTick : xTick + getSnapOffset(xPos)}
 					y={yTick}

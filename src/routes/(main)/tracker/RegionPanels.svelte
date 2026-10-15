@@ -6,6 +6,7 @@
 	import { inspectionStep } from './comparison-inspection.js';
 	import RegionPanel from './RegionPanel.svelte';
 	import RegionTooltip from './RegionTooltip.svelte';
+	import { pointerInspect } from '$lib/components/charts/v2/elements/pointer-inspect.js';
 	import {
 		COMPARISON_MIN_SPAN_MS,
 		COMPARISON_REGIONS,
@@ -122,8 +123,7 @@
 		class="relative grid grid-cols-2 gap-x-4 gap-y-2 px-4 pt-2 md:grid-cols-3"
 		bind:clientWidth={width}
 		bind:clientHeight={height}
-		onpointermove={trackPointer}
-		onpointerleave={() => (pointer = null)}
+		{@attach pointerInspect({ onmove: trackPointer, onleave: () => (pointer = null) })}
 	>
 		{#each regions as region (region)}
 			<RegionPanel

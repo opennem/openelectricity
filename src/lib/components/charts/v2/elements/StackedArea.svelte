@@ -189,7 +189,7 @@
 
 	/**
 	 * Handle pointer move with series key
-	 * @param {MouseEvent|TouchEvent} evt
+	 * @param {MouseEvent} evt
 	 * @param {string} key
 	 */
 	function handlePointerMove(evt, key) {
@@ -207,6 +207,8 @@
 	function handlePointerUp(evt, _key) {
 		// Cmd/Ctrl+click is used for zoom — don't trigger focus
 		if ('metaKey' in evt && (evt.metaKey || evt.ctrlKey)) return;
+		// Touch taps and drags belong to the InteractionLayer around the chart.
+		if ('pointerType' in evt && evt.pointerType === 'touch') return;
 		const item = findClosestDataPoint(evt);
 		if (item) {
 			onpointerup?.(item);
@@ -293,7 +295,6 @@
 						stroke-width={dotStrokeWidth}
 						onmousemove={(e) => handlePointerMove(e, seriesKey)}
 						onmouseout={handleMouseOut}
-						ontouchmove={(e) => handlePointerMove(e, seriesKey)}
 						onblur={handleMouseOut}
 						onpointerup={(e) => handlePointerUp(e, seriesKey)}
 					/>
@@ -397,7 +398,6 @@
 					clip-path="url(#{clipId}-positive)"
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
-					ontouchmove={(e) => handlePointerMove(e, seriesKey)}
 					onblur={handleMouseOut}
 					onpointerup={(e) => handlePointerUp(e, seriesKey)}
 				/>
@@ -413,7 +413,6 @@
 					clip-path="url(#{clipId}-negative)"
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
-					ontouchmove={(e) => handlePointerMove(e, seriesKey)}
 					onblur={handleMouseOut}
 					onpointerup={(e) => handlePointerUp(e, seriesKey)}
 				/>
@@ -428,7 +427,6 @@
 					opacity={getOpacity(d, 1, 0.65)}
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
-					ontouchmove={(e) => handlePointerMove(e, seriesKey)}
 					onblur={handleMouseOut}
 					onpointerup={(e) => handlePointerUp(e, seriesKey)}
 				/>

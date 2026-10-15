@@ -1,4 +1,5 @@
 <script>
+	import { longPress } from '$lib/utils/long-press.js';
 	import { untrack } from 'svelte';
 
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
@@ -67,12 +68,14 @@
 	 * toggling only affects the visible descendant leaves.
 	 * @param {string} value
 	 * @param {FilterOption} [groupOption]
+	 * @param {boolean} [exclusive] - Keep only this option (⌘/Alt held, or a
+	 *   long press on touch)
 	 */
-	function handleSelect(value, groupOption) {
+	function handleSelect(value, groupOption, exclusive = isMetaPressed) {
 		if (groupOption?.children && groupOption.children.length > 0) {
-			onchange?.(getLeafValues(groupOption.children), isMetaPressed);
+			onchange?.(getLeafValues(groupOption.children), exclusive);
 		} else {
-			onchange?.(value, isMetaPressed);
+			onchange?.(value, exclusive);
 		}
 	}
 
@@ -191,6 +194,7 @@
 						: 'py-2.5'}"
 					aria-pressed={someSelected && !allSelected ? 'mixed' : allSelected}
 					onclick={() => handleSelect(opt.value, hasChildren ? opt : undefined)}
+					{@attach longPress(() => handleSelect(opt.value, hasChildren ? opt : undefined, true))}
 				>
 					{@render checkbox(allSelected, someSelected)}
 					{@render (row ?? defaultRow)(opt, {

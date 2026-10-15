@@ -37,6 +37,7 @@
 		formatTablePrice
 	} from './table-format.js';
 	import { EMPTY_CELL, splitTableLabel } from '$lib/components/charts/card/cell-format.js';
+	import { longPress } from '$lib/utils/long-press.js';
 
 	/** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
 	/** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */
@@ -353,7 +354,7 @@
 		[...sourceRows, ...loadRows, ...curtailmentToggleRows, ...summaryRows].at(-1)?.key
 	);
 
-	/** ⌘/Ctrl-activation solos a row instead of toggling it.
+	/** ⌘/Ctrl-activation (a long press on touch) solos a row instead of toggling it.
 	 *  @param {MouseEvent | KeyboardEvent} event */
 	function isExclusive(event) {
 		return event.metaKey || event.ctrlKey;
@@ -431,6 +432,7 @@
 		data-testid={row.testId}
 		data-focused={focused || undefined}
 		onclick={(event) => row.activate(isExclusive(event))}
+		{@attach longPress(() => row.activate(true))}
 		onkeydown={(event) => activateOnKey(event, row)}
 		role="button"
 		tabindex="0"

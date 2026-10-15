@@ -172,18 +172,25 @@
 				routeKey="tracker"
 				stableName="filter-bar-stable-tracker"
 				feedback
-				paddingX="px-8"
+				wrapOnPhone
+				paddingX={isFullscreen ? 'px-4' : 'px-8'}
 				bgClass="bg-light-warm-grey/75"
 			>
 				{#snippet stable()}
 					{#if isFullscreen}
-						<FullscreenNavDropdown label="Tracker" />
+						<FullscreenNavDropdown label="Tracker" hideLabelOnPhone />
 					{/if}
 				{/snippet}
 
 				{#snippet rest()}
 					{#if isFullscreen}<div class="h-8 shrink-0 border-l border-warm-grey"></div>{/if}
-					<div class="flex min-w-0 flex-1 items-center gap-4" data-testid="tracker-top-nav">
+					<!-- Phones: the view switcher stays on the first row and the filters
+					     and range status wrap onto a second (FullscreenFilterBar's
+					     `wrapOnPhone`), so neither is squeezed out. -->
+					<div
+						class="flex min-w-0 flex-1 items-center gap-4 max-tablet:contents"
+						data-testid="tracker-top-nav"
+					>
 						<!-- Like the range bar's presets, the view switcher folds into a
 						     dropdown below `md`, where the bar is too cramped. -->
 						<div class="hidden shrink-0 md:block">
@@ -209,29 +216,41 @@
 							/>
 						</div>
 						<div
-							class="h-8 shrink-0 border-l border-warm-grey"
+							class="h-8 shrink-0 border-l border-warm-grey max-tablet:hidden"
 							role="separator"
 							aria-orientation="vertical"
 						></div>
-						<div
-							class="flex min-w-0 flex-1 items-center gap-4 overflow-x-auto py-0.5"
-							data-testid="tracker-view-filters"
-							data-view={view}
-						>
-							{#if regionSelect}
-								<FilterSelect
-									selected={session.selection.region}
-									options={TRACKER_REGION_TREE}
-									listLabel="Region"
-									defaultValue={DEFAULT_REGION}
-									compact
-									onchange={(value) => session.select('region', value)}
-								/>
-							{/if}
-							{@render controls?.()}
+						<div class="flex min-w-0 flex-1 items-center gap-4 max-tablet:contents">
+							<!-- Phones: the filters' own row, faded at the right edge when
+							     they scroll. The fade is an overlay beside the scroller, not
+							     a mask on it: a mask would also clip the drop-downs that
+							     open inside it (the range presets). -->
+							<div class="relative flex min-w-0 flex-1 max-tablet:order-last max-tablet:basis-full">
+								<div
+									class="flex min-w-0 flex-1 items-center gap-4 overflow-x-auto py-0.5 max-tablet:pr-8"
+									data-testid="tracker-view-filters"
+									data-view={view}
+								>
+									{#if regionSelect}
+										<FilterSelect
+											selected={session.selection.region}
+											options={TRACKER_REGION_TREE}
+											listLabel="Region"
+											defaultValue={DEFAULT_REGION}
+											compact
+											onchange={(value) => session.select('region', value)}
+										/>
+									{/if}
+									{@render controls?.()}
+								</div>
+								<div
+									class="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-light-warm-grey tablet:hidden"
+									aria-hidden="true"
+								></div>
+							</div>
+							{#if status}<RangeStatus {...status} />{/if}
 						</div>
 					</div>
-					{#if status}<RangeStatus {...status} />{/if}
 				{/snippet}
 
 				{#snippet options()}
@@ -276,7 +295,7 @@
 						<span>{notice}</span><button
 							type="button"
 							onclick={() => (notice = '')}
-							class="rounded p-1 text-mid-grey hover:bg-warm-grey hover:text-dark-grey"
+							class="touch-hit rounded p-1 text-mid-grey hover:bg-warm-grey hover:text-dark-grey"
 							aria-label="Dismiss"><X class="size-3.5" /></button
 						>
 					</div>

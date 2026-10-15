@@ -20,7 +20,7 @@
 
 <Tooltip text="Zoom out" class="inline-flex">
 	<button
-		class="{box} transition-colors {isAtMaxZoom
+		class="{box} touch-hit transition-colors {isAtMaxZoom
 			? 'text-mid-warm-grey cursor-not-allowed'
 			: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
 		onclick={onzoomout}
@@ -32,7 +32,7 @@
 </Tooltip>
 <Tooltip text="Zoom in" class="inline-flex">
 	<button
-		class="{box} transition-colors {isAtMinZoom
+		class="{box} touch-hit transition-colors {isAtMinZoom
 			? 'text-mid-warm-grey cursor-not-allowed'
 			: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
 		onclick={onzoomin}

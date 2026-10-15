@@ -75,13 +75,22 @@
 			lastClientY = e.clientY;
 			if (rafId === null) rafId = requestAnimationFrame(processFrame);
 		}
+		/** A tap (touch) never moves: take its position as it lands, so the card
+		 * snaps away from the finger before the tap pins the time.
+		 * @param {PointerEvent} e */
+		function onDown(e) {
+			lastClientY = e.clientY;
+			if (rafId === null) rafId = requestAnimationFrame(processFrame);
+		}
 		function onLeave() {
 			cursorY = null;
 		}
+		window.addEventListener('pointerdown', onDown);
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerleave', onLeave);
 		return () => {
 			if (rafId !== null) cancelAnimationFrame(rafId);
+			window.removeEventListener('pointerdown', onDown);
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerleave', onLeave);
 		};

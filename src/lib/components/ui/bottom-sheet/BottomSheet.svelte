@@ -12,7 +12,8 @@
 	 * instead). Passing `minHeight` adds a third, minimised snap below the peek —
 	 * a fixed pixel height sized to the caller's collapsed chrome. The body
 	 * scrolls within the current height, so content is reachable even at the
-	 * peek snap.
+	 * peek snap. Elements in the body marked `data-sheet-handle` (a panel's own
+	 * header, say) drag the sheet too.
 	 *
 	 * Heights are fractions of `containerHeight` (the bounding relative parent),
 	 * so the sheet sizes correctly regardless of viewport.
@@ -169,7 +170,14 @@
 			{@render header?.()}
 		</div>
 
-		<div bind:this={bodyEl} class="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			bind:this={bodyEl}
+			class="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+			onpointerdown={(e) => {
+				if (/** @type {HTMLElement} */ (e.target).closest('[data-sheet-handle]')) onGripDown(e);
+			}}
+		>
 			{@render children?.()}
 		</div>
 

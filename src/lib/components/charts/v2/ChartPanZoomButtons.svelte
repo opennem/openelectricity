@@ -1,4 +1,5 @@
 <script>
+	import { MediaQuery } from 'svelte/reactivity';
 	import Move from '@lucide/svelte/icons/move';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import StaticZoomButtons from './StaticZoomButtons.svelte';
@@ -35,9 +36,13 @@
 	} = $props();
 
 	let showZoomButtons = $derived(Boolean(onzoomin && onzoomout));
+	// Touch pans and pinches with two fingers without engaging, so the toggle
+	// is for mice and trackpads only (an iPad with a trackpad keeps it).
+	const finePointer = new MediaQuery('(any-pointer: fine)', true);
+	let showToggle = $derived(showPanZoomToggle && finePointer.current);
 </script>
 
-{#if showPanZoomToggle}
+{#if showToggle}
 	<Tooltip
 		text={panZoomEngaged ? 'Done (Esc)' : 'Enable pan & zoom — drag to pan, scroll to zoom'}
 		class="inline-flex"
@@ -45,7 +50,7 @@
 		<button
 			class="{size === 'md'
 				? 'inline-flex size-[28px] items-center justify-center rounded-md'
-				: 'p-1 rounded'} transition-colors {panZoomEngaged
+				: 'p-1 rounded'} touch-hit transition-colors {panZoomEngaged
 				? 'bg-dark-grey text-white hover:bg-black'
 				: 'text-mid-grey hover:text-dark-grey hover:bg-warm-grey'}"
 			onclick={onpanzoomtoggle}
@@ -58,7 +63,7 @@
 {/if}
 
 {#if showZoomButtons && (keepZoomWhileEngaged || !panZoomEngaged)}
-	{#if showPanZoomToggle}
+	{#if showToggle}
 		<div class="mx-0.5 h-4 w-px bg-mid-warm-grey/60" aria-hidden="true"></div>
 	{/if}
 	<StaticZoomButtons {onzoomin} {onzoomout} {isAtMinZoom} {isAtMaxZoom} {size} />

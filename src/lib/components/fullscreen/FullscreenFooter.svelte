@@ -39,7 +39,9 @@
 		<div class="flex items-center gap-4 min-w-0">
 			<span class="text-mid-grey font-mono">v{version}</span>
 			<ApiStatus variant="compact" />
-			<div class="flex items-center gap-1">
+			<!-- Phones keep the version, API status and links; the data sources
+			     and the home link (the logo menu covers it) need the room. -->
+			<div class="flex items-center gap-1 max-tablet:hidden">
 				{#each sources as { href, label } (href)}
 					<a
 						{href}
@@ -71,7 +73,9 @@
 					</Tooltip>
 				{/each}
 			</div>
-			<a href="/" class="text-dark-grey no-underline hover:text-red">Open Electricity</a>
+			<a href="/" class="text-dark-grey no-underline hover:text-red max-tablet:hidden"
+				>Open Electricity</a
+			>
 		</div>
 	{:else}
 		<span></span>

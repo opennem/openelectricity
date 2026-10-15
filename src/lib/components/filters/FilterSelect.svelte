@@ -121,6 +121,7 @@
 
 <FilterPanel
 	label={selectedOption.selectedLabel ?? selectedOption.label}
+	title={listLabel}
 	shortLabel={selectedOption.shortLabel}
 	active={defaultValue !== null && selected !== defaultValue}
 	{compact}

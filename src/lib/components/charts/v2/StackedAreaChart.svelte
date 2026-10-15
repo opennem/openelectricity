@@ -39,7 +39,6 @@
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove] - Series-key hover from StackedArea paths and hoverable overlay lines
 	 * @property {() => void} [onmouseout]
 	 * @property {(evt: TimeSeriesData) => void} [onpointerup]
-	 * @property {boolean} [enablePan] - Whether panning is enabled (controls touch-action CSS)
 	 * @property {Array<{start: number, end: number}>} [loadingRanges] - Ranges currently being fetched
 	 * @property {string} [netTotalKey] - Key for net total values in data (renders step line)
 	 * @property {string} [netTotalColor] - Color for net total line
@@ -60,7 +59,6 @@
 		onmousemove,
 		onmouseout,
 		onpointerup,
-		enablePan = false,
 		loadingRanges = [],
 		netTotalKey,
 		netTotalColor = '#C74523',
@@ -187,7 +185,6 @@
 <div
 	class="w-full {styles.chartHeightPx ? '' : styles.chartHeightClasses}"
 	style:height={styles.chartHeightPx ? `${styles.chartHeightPx}px` : undefined}
-	style:touch-action={enablePan ? 'none' : undefined}
 >
 	<LayerCake
 		padding={styles.chartPadding}

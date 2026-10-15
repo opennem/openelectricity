@@ -1,5 +1,6 @@
 <script>
 	import { untrack } from 'svelte';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { Tween, prefersReducedMotion } from 'svelte/motion';
 	import { slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
@@ -186,6 +187,10 @@
 		storageKey: compareStorageKey ? `${compareStorageKey}-compare` : undefined
 	});
 	let comparing = $derived(!!compare?.open);
+	// On touch screens the gap between cards stays a gap: a swipe landing in
+	// it would resize the card above instead of scrolling the page.
+	const coarsePointer = new MediaQuery('(pointer: coarse)');
+
 	/** Only a resizable chart halves; a content-height card keeps its size. */
 	let resizer = $derived(comparing && heightStorageKey ? compareHeight : height);
 	const shownHeight = new Tween(
@@ -218,7 +223,7 @@
 
 	/** The header's icon buttons: the same 28px square as the chart's pan/zoom buttons. */
 	const ACTION =
-		'inline-flex size-[28px] shrink-0 items-center justify-center rounded-md transition-colors';
+		'touch-hit inline-flex size-[28px] shrink-0 items-center justify-center rounded-md transition-colors';
 	const ACTION_IDLE =
 		'text-mid-grey hover:bg-warm-grey hover:text-dark-grey disabled:cursor-not-allowed disabled:text-mid-warm-grey disabled:hover:bg-transparent';
 </script>
@@ -250,8 +255,10 @@
 				? 'border-warm-grey group-hover/card:border-mid-grey/40'
 				: 'border-mid-warm-grey/40 group-hover/card:border-mid-grey/50'}"
 	>
+		<!-- A container, so narrow cards (phones) let a long title wrap to two
+		     lines beside the options button instead of truncating to a word. -->
 		<header
-			class="relative z-20 flex flex-col gap-2 border-b bg-linear-to-br from-warm-grey via-warm-grey/50 to-light-warm-grey px-4 py-2.5 {mini
+			class="@container relative z-20 flex flex-col gap-2 border-b bg-linear-to-br from-warm-grey via-warm-grey/50 to-light-warm-grey px-4 py-2.5 {mini
 				? 'border-warm-grey'
 				: 'border-mid-warm-grey/40'}"
 		>
@@ -264,7 +271,7 @@
 						</span>
 					{/if}
 					<h3
-						class="m-0 truncate font-semibold leading-tight text-dark-grey {mini
+						class="m-0 truncate font-semibold leading-tight text-dark-grey @max-[440px]:line-clamp-2 @max-[440px]:min-w-0 @max-[440px]:flex-1 @max-[440px]:whitespace-normal {mini
 							? 'text-sm'
 							: 'text-base'}"
 					>
@@ -272,6 +279,7 @@
 							<Tooltip
 								text={info.text}
 								learnMoreHref={info.href}
+								tapToOpen
 								class="inline-flex cursor-help items-center gap-1"
 							>
 								{title}
@@ -282,7 +290,7 @@
 						{/if}
 					</h3>
 					{#if hosted}
-						<span class="flex items-baseline gap-1.5 whitespace-nowrap">
+						<span class="flex items-baseline gap-1.5 whitespace-nowrap @max-[440px]:basis-full">
 							{#if hosted.chart.title}
 								<span class="font-space text-xxs uppercase tracking-wide text-mid-grey"
 									>{hosted.chart.title}</span
@@ -425,7 +433,7 @@
 		{/if}
 	</section>
 
-	{#if heightStorageKey}
+	{#if heightStorageKey && !coarsePointer.current}
 		<!-- Fills the entire gap to the next card (the column has no space-y),
 		     so the whole gap is the drag target; rounded like the cards. -->
 		<DragHandle
@@ -452,8 +460,11 @@
 <style>
 	/* While the pointer is on a chart card, its sibling cards dim a little,
 	   so the one being read stands forward. Scoped to the cards' parent, so a
-	   hover elsewhere on the page re-checks nothing. */
-	:global(:has(> .chart-card:hover) > .chart-card:not(:hover) > section) {
-		opacity: 0.7;
+	   hover elsewhere on the page re-checks nothing. Only where the pointer
+	   can hover: a tap would leave iOS's sticky :hover dimming the rest. */
+	@media (hover: hover) {
+		:global(:has(> .chart-card:hover) > .chart-card:not(:hover) > section) {
+			opacity: 0.7;
+		}
 	}
 </style>

@@ -960,7 +960,7 @@
 					<span class="text-dark-grey">Today's readings couldn't load</span>
 					<button
 						type="button"
-						class="rounded border border-mid-warm-grey px-2 py-1 hover:bg-warm-grey"
+						class="touch-hit rounded border border-mid-warm-grey px-2 py-1 hover:bg-warm-grey"
 						onclick={retryToday}>Retry today</button
 					>
 				</div>

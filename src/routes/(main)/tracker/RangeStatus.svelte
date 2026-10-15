@@ -15,7 +15,9 @@
 	 * and below `md` the view switcher and range presets fold into dropdowns
 	 * to make room. Below `md` it takes at most 40% of the bar and truncates,
 	 * so a long custom range never squeezes the controls out; it never drops
-	 * below the loader's width.
+	 * below the loader's width. Below 768px it fills the first row, between
+	 * the view switcher and the menus (the filters have the second row), in
+	 * smaller type.
 	 *
 	 * @type {import('./types.js').TrackerRangeStatus}
 	 */
@@ -23,7 +25,7 @@
 </script>
 
 <div
-	class="range-status relative flex min-w-[36px] max-w-[40%] items-center self-stretch overflow-hidden md:max-w-none md:shrink-0"
+	class="range-status relative flex min-w-[36px] max-w-[40%] items-center self-stretch overflow-hidden max-tablet:max-w-none max-tablet:flex-1 md:max-w-none md:shrink-0"
 	data-loading={loading}
 	data-inspecting={inspectLabel !== undefined}
 	data-testid="tracker-range-status"
@@ -44,7 +46,7 @@
 						}
 					})}
 					type="button"
-					class="range-label flex h-full min-w-0 items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+					class="range-label flex h-full min-w-0 items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold max-tablet:px-2 max-tablet:text-xs text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
 					aria-disabled={loading}
 					data-testid="tracker-range-label"
 				>
@@ -56,7 +58,7 @@
 		</Tooltip>
 	{:else}
 		<span
-			class="range-label flex h-full min-w-0 items-center whitespace-nowrap px-4 text-sm font-bold text-dark-grey"
+			class="range-label flex h-full min-w-0 items-center whitespace-nowrap px-4 text-sm font-bold max-tablet:px-2 max-tablet:text-xs text-dark-grey"
 			aria-hidden={loading}
 			data-testid="tracker-range-label"><span class="truncate">{inspectLabel ?? label}</span></span
 		>

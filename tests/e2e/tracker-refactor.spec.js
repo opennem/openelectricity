@@ -171,6 +171,10 @@ for (const group of ['detailed', 'simple']) {
 		await expect(solarRow.locator('td')).toHaveText(cells);
 		await page.screenshot({ path: testInfo.outputPath('rooftop-interpolation.png') });
 		await page.setViewportSize({ width: 390, height: 844 });
+		// On a phone the open table moves into the bottom sheet.
+		await expect(
+			page.getByRole('button', { name: 'Minimise fuel technologies', exact: true })
+		).toBeVisible();
 		await note.scrollIntoViewIfNeeded();
 		await expect(note).toBeVisible();
 		expect(
@@ -644,7 +648,11 @@ test('panel controls share generous targets, directional icons and keyboard focu
 	await expect(hideTable).toHaveCSS('outline-style', 'solid');
 	await hideTable.click();
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(showTable).toBeVisible();
+	// On a phone the closed table is the minimised bottom sheet's header.
+	await expect(
+		page.getByRole('button', { name: 'Show fuel technologies', exact: true })
+	).toBeVisible();
+	await expect(showTable).toBeHidden();
 	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('panels-mobile.png') });
 });
@@ -2539,7 +2547,11 @@ test('phone/tablet layouts remain usable', async ({ page }, testInfo) => {
 		await page.setViewportSize({ width, height: 900 });
 		await page.goto('/tracker/timeline?region=nsw1');
 		await trackerReady(page);
+		// Phones: the table starts in a minimised bottom sheet; tablets: closed
+		// (it would overlay the charts); desktops: docked open.
 		if (width === 390)
+			await expect(page.getByRole('button', { name: 'Show fuel technologies' })).toBeVisible();
+		else if (width === 820)
 			await expect(page.getByRole('button', { name: 'Show fuel tech table' })).toBeVisible();
 		else await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
 		await expectNoHorizontalScroll(page);

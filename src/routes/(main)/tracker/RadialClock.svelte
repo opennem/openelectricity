@@ -7,6 +7,7 @@
 	import DialFace, { dialMargin } from './DialFace.svelte';
 	import DialNight from './DialNight.svelte';
 	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
+	import { pointerInspect } from '$lib/components/charts/v2/elements/pointer-inspect.js';
 
 	/**
 	 * RadialClock — averages by hour around a 24-hour dial: noon at the top,
@@ -229,10 +230,12 @@
 			     dial (not moving between sectors) clears it. -->
 					<g
 						role="presentation"
-						onpointerleave={() => {
-							active = null;
-							activeLayer = null;
-						}}
+						{@attach pointerInspect({
+							onleave: () => {
+								active = null;
+								activeLayer = null;
+							}
+						})}
 					>
 						{#each hours as hour (hour.hour)}
 							<path

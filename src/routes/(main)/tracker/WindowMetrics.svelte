@@ -98,6 +98,7 @@
 							text={group.description}
 							learnMoreHref={group.docs.href}
 							linkLabel={group.docs.label}
+							tapToOpen
 							class="cursor-help">{group.label}</Tooltip
 						>
 					{:else}
@@ -138,7 +139,7 @@
 											onhighlight(undefined);
 										}
 									})}
-									class="flex items-center gap-x-1.5 rounded-md px-2 py-1.5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey {active
+									class="touch-hit flex items-center gap-x-1.5 rounded-md px-2 py-1.5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey {active
 										? 'bg-dark-grey'
 										: 'enabled:hover:bg-warm-grey'}"
 									disabled={!point || !ready}

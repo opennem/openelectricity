@@ -2,7 +2,9 @@
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import X from '@lucide/svelte/icons/x';
+	import { MediaQuery } from 'svelte/reactivity';
 	import Modal from '$lib/components/Modal.svelte';
+	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
 
 	/**
 	 * ChartLightbox — one chart enlarged over the page, like a photo lightbox:
@@ -38,6 +40,10 @@
 		else if (event.key === 'ArrowRight') go(1);
 	}
 
+	// Phones open it full screen, so the enlarged dial takes the whole width
+	// rather than a 20px-inset card's.
+	const phone = new MediaQuery(BELOW_TABLET_QUERY);
+
 	const BUTTON =
 		'inline-flex size-[40px] items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey';
 </script>
@@ -51,6 +57,7 @@
 	titleClass="m-0 text-base font-medium text-dark-grey"
 	headerClass="border-b border-warm-grey px-6 py-3"
 	maxWidthClass="max-w-[720px]"
+	fullscreen={phone.current}
 	class="border border-warm-grey p-0! pb-6!"
 	onclose={() => (active = null)}
 >
@@ -73,9 +80,11 @@
 	{#if item}
 		<!-- Unpadded, so a chart's readout band runs flush to the dialog's edges;
 		     the dial itself (plus the header, readout and padding) is capped by
-		     `--dial-max` to fit the viewport's height with room to spare. px,
-		     since the app's rem is 10px. -->
-		<div class="w-full [--dial-max:calc(100dvh-260px)]">
+		     `--dial-max` to fit the viewport's height with room to spare, but
+		     never below 200px (a landscape phone would leave less than the
+		     dial's minimum; the dialog scrolls instead). px, since the app's
+		     rem is 10px. -->
+		<div class="w-full [--dial-max:max(200px,calc(100dvh-260px))]">
 			{#key item.key}
 				{@render children(item.key)}
 			{/key}

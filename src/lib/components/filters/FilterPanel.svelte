@@ -1,9 +1,13 @@
 <script>
-	import { fly } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
+	import { MediaQuery } from 'svelte/reactivity';
+	import X from '@lucide/svelte/icons/x';
 
 	import { portal } from '$lib/actions/portal.js';
 	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 	import FilterPill from './FilterPill.svelte';
+	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
+	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
 
 	/**
 	 * Shared chrome for the filter dropdowns: pill trigger, portalled panel
@@ -19,8 +23,14 @@
 	 * `trigger` replaces the pill with the caller's own button (e.g. a table
 	 * header); it receives the open state and the toggle. Its wrapper anchors
 	 * the panel and counts as inside for outside-click dismissal.
+	 *
+	 * Below 768px the panel opens as a bottom sheet over a backdrop instead
+	 * (titled with `label`; drag down, tap outside or ✕ to dismiss). The
+	 * popover is kept inside the viewport, and its body scrolls when the
+	 * content is taller than the space below the trigger.
 	 * @type {{
 	 *   label: string,
+	 *   title?: string,
 	 *   shortLabel?: string,
 	 *   badge?: number | string | null,
 	 *   active?: boolean,
@@ -37,6 +47,8 @@
 	 */
 	let {
 		label,
+		/** The phone sheet's heading; the pill label by default. */
+		title = undefined,
 		/** The pill's label below `lg` (see FilterPill). */
 		shortLabel = undefined,
 		badge = null,
@@ -56,6 +68,8 @@
 	} = $props();
 
 	let showPanel = $state(false);
+	const phone = new MediaQuery(BELOW_TABLET_QUERY);
+	let sheetContainerHeight = $state(0);
 
 	/** @type {HTMLElement | undefined} */
 	let triggerEl = $state();
@@ -106,7 +120,49 @@
 		/>
 	{/if}
 
-	{#if showPanel && !disabled}
+	{#if phone.current}
+		<!-- Kept mounted while on a phone so the sheet's exit transition plays. -->
+		<div
+			use:portal
+			class="fixed inset-0 z-[10000] pointer-events-none"
+			bind:clientHeight={sheetContainerHeight}
+		>
+			{#if showPanel && !disabled}
+				<div
+					class="pointer-events-auto absolute inset-0 bg-black/20"
+					aria-hidden="true"
+					transition:fade={{ duration: 150 }}
+				></div>
+			{/if}
+			<BottomSheet
+				open={showPanel && !disabled}
+				onclose={() => setOpen(false)}
+				containerHeight={sheetContainerHeight}
+				peekFraction={0.6}
+				class="pointer-events-auto"
+			>
+				{#snippet header()}
+					<div
+						class="flex items-center justify-between gap-2 border-b border-warm-grey px-6 pt-1 pb-3"
+					>
+						<h3 class="mb-0 text-base">{title ?? label}</h3>
+						<button
+							type="button"
+							class="cursor-pointer rounded-full bg-light-warm-grey p-2 transition-colors hover:bg-warm-grey"
+							onclick={() => setOpen(false)}
+							aria-label="Close {title ?? label}"
+						>
+							<X class="size-5 text-dark-grey" />
+						</button>
+					</div>
+				{/snippet}
+				<div bind:this={panelEl} class="flex min-h-full flex-col">
+					<div class="flex-1">{@render children(() => setOpen(false))}</div>
+					{@render footer()}
+				</div>
+			</BottomSheet>
+		</div>
+	{:else if showPanel && !disabled}
 		<div
 			bind:this={panelEl}
 			use:portal
@@ -114,23 +170,30 @@
 			class="fixed z-50 bg-white border border-mid-warm-grey rounded-lg shadow-md max-w-[340px] flex flex-col overflow-hidden {panelClass}"
 			transition:fly={{ y: -5, duration: 150 }}
 		>
-			{@render children(() => setOpen(false))}
-
-			{#if onapply || footerLeft}
-				<div class="border-t border-warm-grey px-4 py-3 flex items-center gap-4">
-					{@render footerLeft?.()}
-					<button
-						type="button"
-						class="ml-auto bg-dark-grey text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
-						onclick={() => {
-							onapply?.();
-							setOpen(false);
-						}}
-					>
-						{applyLabel}
-					</button>
-				</div>
-			{/if}
+			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+				{@render children(() => setOpen(false))}
+			</div>
+			{@render footer()}
 		</div>
 	{/if}
 </div>
+
+{#snippet footer()}
+	{#if onapply || footerLeft}
+		<div
+			class="sticky bottom-0 flex items-center gap-4 border-t border-warm-grey bg-white px-4 py-3"
+		>
+			{@render footerLeft?.()}
+			<button
+				type="button"
+				class="ml-auto bg-dark-grey text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
+				onclick={() => {
+					onapply?.();
+					setOpen(false);
+				}}
+			>
+				{applyLabel}
+			</button>
+		</div>
+	{/if}
+{/snippet}

@@ -6,9 +6,17 @@
 	 * div and handles all pointer interactions at the HTML level, avoiding SVG
 	 * layer stacking issues.
 	 *
-	 * Mouse:  hover, click to focus, drag to pan, wheel to zoom
-	 * Touch:  1-finger drag → hover, 1-finger tap → focus,
-	 *         2-finger drag → pan, 2-finger pinch → zoom
+	 * Mouse:  hover, click to focus; once engaged (or 'always'), drag to pan
+	 *         and wheel to zoom
+	 * Touch:  vertical swipe scrolls the page (`touch-action: pan-y`),
+	 *         horizontal drag → hover, tap → focus (see touch-gesture.js);
+	 *         2-finger drag → pan, 2-finger pinch → zoom, with no engaging —
+	 *         one finger already belongs to scroll, scrub and tap, and the
+	 *         site blocks page pinch-zoom, so two fingers are free
+	 *
+	 * The browser follows each touch with emulated mouse events; those are
+	 * skipped so a tap focuses once and leaves no hover behind (and never
+	 * engages tap-to-engage pan/zoom, which is a mouse affordance).
 	 *
 	 * Exposes `interactionMode` (bindable) so the parent can suppress
 	 * SVG-level interactions (e.g. StackedArea series hover) during pan/zoom.
@@ -20,6 +28,7 @@
 		wheelZoomFactor,
 		WHEEL_PAN_IDLE_MS
 	} from '../wheel-interaction.js';
+	import { classifyTouchDrag, createEmulatedMouseGuard } from './touch-gesture.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -92,8 +101,16 @@
 	// Tap/drag detection
 	let tapStartX = 0;
 	let tapStartY = 0;
-	const TAP_THRESHOLD = 8;
 	const PAN_THRESHOLD = 3;
+
+	const emulatedMouse = createEmulatedMouseGuard();
+	/**
+	 * The current touch: a possible tap, a one-finger horizontal scrub, a
+	 * two-finger pan/pinch, or 'done' (handed to the page, or a pan's
+	 * remaining finger) until every finger lifts.
+	 * @type {null | 'pending' | 'scrub' | 'pan' | 'done'}
+	 */
+	let touchGesture = null;
 
 	// ---- Coordinate mapping ----
 
@@ -226,168 +243,201 @@
 		onzoom?.(factor, centerMs);
 	}
 
-	// ---- Pointer handlers ----
+	// ---- Touch (always on, engaged or not) ----
+
+	/** Two fingers can pan and pinch: the chart pans and someone listens. */
+	let touchPanEnabled = $derived(enablePan && Boolean(onpan || onzoom));
 
 	/**
 	 * @param {PointerEvent} event
 	 */
-	function handlePointerDown(event) {
-		if (!enablePan) return;
+	function handleTouchDown(event) {
+		if (event.pointerType !== 'touch') return;
 		refreshRect();
+		pointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
 
-		// --- Touch ---
-		if (event.pointerType === 'touch') {
-			pointers.set(event.pointerId, {
-				clientX: event.clientX,
-				clientY: event.clientY
-			});
-
-			if (pointers.size === 1) {
-				tapStartX = event.clientX;
-				tapStartY = event.clientY;
-				interactionMode = 'hover';
-
-				window.addEventListener('pointermove', handlePointerMove);
-				window.addEventListener('pointerup', handlePointerUp);
-				window.addEventListener('pointercancel', handlePointerCancel);
-			}
-
-			if (pointers.size === 2) {
-				if (interactionMode === 'hover') {
-					chart.clearHover();
-					onhoverend?.();
-				}
-				interactionMode = 'touch-pan';
-				onpanstart?.();
-
-				const [a, b] = [...pointers.values()];
-				pinchPrevDist = pinchDistance(a, b);
-				captureMsPerPx();
-				panLastX = (a.clientX + b.clientX) / 2;
-			}
+		if (pointers.size === 1) {
+			tapStartX = event.clientX;
+			tapStartY = event.clientY;
+			touchGesture = 'pending';
+			window.addEventListener('pointermove', handleTouchMove);
+			window.addEventListener('pointerup', handleTouchUp);
+			window.addEventListener('pointercancel', handleTouchCancel);
 			return;
 		}
 
-		// --- Mouse: left-button drag to pan ---
-		if (event.button !== 0) return;
+		if (pointers.size === 2 && touchPanEnabled) {
+			endScrub();
+			touchGesture = 'pan';
+			interactionMode = 'touch-pan';
+			onpanstart?.();
+			const [a, b] = [...pointers.values()];
+			pinchPrevDist = pinchDistance(a, b);
+			captureMsPerPx();
+			panLastX = (a.clientX + b.clientX) / 2;
+		}
+	}
 
+	/**
+	 * @param {PointerEvent} event
+	 */
+	function handleTouchMove(event) {
+		if (!pointers.has(event.pointerId)) return;
+		pointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+
+		if (touchGesture === 'pan') {
+			if (pointers.size !== 2) return;
+			const [a, b] = [...pointers.values()];
+			const midX = (a.clientX + b.clientX) / 2;
+
+			const newDist = pinchDistance(a, b);
+			if (pinchPrevDist > 0 && newDist > 0) {
+				pinchPendingFactor *= newDist / pinchPrevDist;
+				pinchPendingCenterMs = clientXToTime(midX);
+				pinchRafId ??= requestAnimationFrame(processPinchFrame);
+			}
+			pinchPrevDist = newDist;
+
+			panPendingX = midX;
+			panRafId ??= requestAnimationFrame(processPanFrame);
+			return;
+		}
+
+		if (pointers.size !== 1) return;
+		if (touchGesture === 'pending') {
+			const gesture = classifyTouchDrag(event.clientX - tapStartX, event.clientY - tapStartY);
+			if (gesture === 'pending') return;
+			// A vertical swipe is the page's scroll (the browser cancels it soon).
+			if (gesture === 'scroll') {
+				touchGesture = 'done';
+				return;
+			}
+			touchGesture = 'scrub';
+			interactionMode = 'hover';
+			pointerInside = true;
+		}
+		if (touchGesture !== 'scrub') return;
+		const time = snapTime(clientXToTime(event.clientX));
+		if (time !== chart.hoverTime) {
+			chart.setHover(time);
+			onhover?.(time);
+		}
+	}
+
+	/**
+	 * @param {PointerEvent} event
+	 */
+	function handleTouchUp(event) {
+		if (!pointers.has(event.pointerId)) return;
+		if (touchGesture === 'pending' && pointers.size === 1) {
+			const time = snapTime(clientXToTime(event.clientX));
+			onfocus ? onfocus(time) : chart.toggleFocus(time);
+		}
+		releaseTouch(event.pointerId);
+	}
+
+	/**
+	 * @param {PointerEvent} event
+	 */
+	function handleTouchCancel(event) {
+		if (pointers.has(event.pointerId)) releaseTouch(event.pointerId);
+	}
+
+	/**
+	 * A finger lifted or was taken by the browser. Lifting one of two ends the
+	 * pan; the other finger does nothing more until every finger is up.
+	 * @param {number} pointerId
+	 */
+	function releaseTouch(pointerId) {
+		pointers.delete(pointerId);
+		if (touchGesture === 'pan') {
+			endPan();
+			touchGesture = 'done';
+		}
+		if (pointers.size === 0) endTouch();
+	}
+
+	function endTouch() {
+		window.removeEventListener('pointermove', handleTouchMove);
+		window.removeEventListener('pointerup', handleTouchUp);
+		window.removeEventListener('pointercancel', handleTouchCancel);
+		emulatedMouse.touchEnded();
+		endScrub();
+		if (touchGesture === 'pan') endPan();
+		touchGesture = null;
+		pointers.clear();
+	}
+
+	/** Clear a one-finger scrub's hover. */
+	function endScrub() {
+		if (touchGesture !== 'scrub') return;
+		interactionMode = 'none';
+		pointerInside = false;
+		chart.clearHover();
+		onhoverend?.();
+	}
+
+	/** Flush nothing further and report the end of a pan or pinch. */
+	function endPan() {
+		cancelGestureFrames();
+		interactionMode = 'none';
+		pinchPrevDist = 0;
+		pinchPendingFactor = 1;
+		onpanend?.();
+	}
+
+	/**
+	 * Two-finger moves on a pan-enabled chart are its pan and pinch, never the
+	 * page's scroll (`touch-action: pan-y` would otherwise let the browser
+	 * scroll a vertical two-finger drag). Non-passive so it can cancel; the
+	 * browser can't cancel a scroll already under way when the second finger
+	 * lands.
+	 * @param {TouchEvent} event
+	 */
+	function holdTwoFingerTouch(event) {
+		if (event.touches.length > 1 && event.cancelable) event.preventDefault();
+	}
+
+	// ---- Mouse drag (pan/zoom engaged) ----
+
+	/**
+	 * @param {PointerEvent} event
+	 */
+	function handleMouseDown(event) {
+		if (event.pointerType === 'touch' || event.button !== 0) return;
 		tapStartX = event.clientX;
 		panLastX = event.clientX;
 		interactionMode = 'none'; // becomes 'mouse-pan' after threshold
 		captureMsPerPx();
-
-		window.addEventListener('pointermove', handlePointerMove);
-		window.addEventListener('pointerup', handlePointerUp);
+		window.addEventListener('pointermove', handleMouseDrag);
+		window.addEventListener('pointerup', endMouseDrag);
 	}
 
 	/**
 	 * @param {PointerEvent} event
 	 */
-	function handlePointerMove(event) {
-		if (pointers.has(event.pointerId)) {
-			pointers.set(event.pointerId, {
-				clientX: event.clientX,
-				clientY: event.clientY
-			});
-		}
-
-		// Touch 1-finger hover
-		if (interactionMode === 'hover' && pointers.size === 1) {
-			const time = snapTime(clientXToTime(event.clientX));
-			// Same snapped bucket — skip the store write and parent fan-out.
-			if (time !== chart.hoverTime) {
-				chart.setHover(time);
-				onhover?.(time);
-			}
-			return;
-		}
-
-		// Touch 2-finger pan + pinch
-		if (interactionMode === 'touch-pan' && pointers.size === 2) {
-			event.preventDefault();
-			const [a, b] = [...pointers.values()];
-
-			// Pinch
-			const newDist = pinchDistance(a, b);
-			if (pinchPrevDist > 0 && newDist > 0) {
-				const midX = (a.clientX + b.clientX) / 2;
-				pinchPendingFactor *= newDist / pinchPrevDist;
-				pinchPendingCenterMs = clientXToTime(midX);
-				if (pinchRafId === null) {
-					pinchRafId = requestAnimationFrame(processPinchFrame);
-				}
-			}
-			pinchPrevDist = newDist;
-
-			// Pan
-			const midX = (a.clientX + b.clientX) / 2;
-			panPendingX = midX;
-			if (panRafId === null) {
-				panRafId = requestAnimationFrame(processPanFrame);
-			}
-			return;
-		}
-
-		// Mouse drag pan
-		if (event.pointerType !== 'touch') {
-			const dx = Math.abs(event.clientX - tapStartX);
-
-			if (interactionMode === 'none' && dx > PAN_THRESHOLD) {
-				interactionMode = 'mouse-pan';
-				chart.clearHover();
-				onpanstart?.();
-			}
-
-			if (interactionMode === 'mouse-pan') {
-				event.preventDefault();
-				panPendingX = event.clientX;
-				if (panRafId === null) {
-					panRafId = requestAnimationFrame(processPanFrame);
-				}
-			}
-		}
-	}
-
-	/**
-	 * @param {PointerEvent} event
-	 */
-	function handlePointerUp(event) {
-		// Touch tap detection
-		if (interactionMode === 'hover' && pointers.size === 1) {
-			const dx = Math.abs(event.clientX - tapStartX);
-			const dy = Math.abs(event.clientY - tapStartY);
-
-			if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD) {
-				const time = snapTime(clientXToTime(event.clientX));
-				onfocus ? onfocus(time) : chart.toggleFocus(time);
-			}
-
+	function handleMouseDrag(event) {
+		const dx = Math.abs(event.clientX - tapStartX);
+		if (interactionMode === 'none' && dx > PAN_THRESHOLD) {
+			interactionMode = 'mouse-pan';
 			chart.clearHover();
-			onhoverend?.();
+			onpanstart?.();
 		}
-
-		pointers.delete(event.pointerId);
-
-		if (pointers.size === 0) {
-			cleanup();
-		}
-	}
-
-	/**
-	 * @param {PointerEvent} event
-	 */
-	function handlePointerCancel(event) {
-		pointers.delete(event.pointerId);
-		if (pointers.size === 0) {
-			cleanup();
+		if (interactionMode === 'mouse-pan') {
+			event.preventDefault();
+			panPendingX = event.clientX;
+			panRafId ??= requestAnimationFrame(processPanFrame);
 		}
 	}
 
-	function cleanup() {
-		window.removeEventListener('pointermove', handlePointerMove);
-		window.removeEventListener('pointerup', handlePointerUp);
-		window.removeEventListener('pointercancel', handlePointerCancel);
+	function endMouseDrag() {
+		window.removeEventListener('pointermove', handleMouseDrag);
+		window.removeEventListener('pointerup', endMouseDrag);
+		if (interactionMode === 'mouse-pan') endPan();
+		else cancelGestureFrames();
+	}
 
+	function cancelGestureFrames() {
 		if (panRafId !== null) {
 			cancelAnimationFrame(panRafId);
 			panRafId = null;
@@ -396,15 +446,6 @@
 			cancelAnimationFrame(pinchRafId);
 			pinchRafId = null;
 		}
-
-		if (interactionMode === 'mouse-pan' || interactionMode === 'touch-pan') {
-			onpanend?.();
-		}
-
-		interactionMode = 'none';
-		pinchPrevDist = 0;
-		pinchPendingFactor = 1;
-		pointers.clear();
 	}
 
 	// ---- Mouse hover/click (non-drag) ----
@@ -413,7 +454,7 @@
 	 * @param {MouseEvent} event
 	 */
 	function handleMouseMove(event) {
-		if (interactionMode !== 'none') return;
+		if (interactionMode !== 'none' || emulatedMouse.active) return;
 		const time = snapTime(clientXToTime(event.clientX));
 		// Same snapped bucket as the current hover — nothing to update.
 		if (time === chart.hoverTime) return;
@@ -428,6 +469,7 @@
 	}
 
 	function handleMouseEnter() {
+		if (emulatedMouse.active) return;
 		pointerInside = true;
 		refreshRect();
 		// Scroll doesn't bubble — capture catches ancestor scroll containers too.
@@ -446,7 +488,8 @@
 	 * @param {MouseEvent} event
 	 */
 	function handleClick(event) {
-		if (interactionMode !== 'none') return;
+		// A touch tap was handled on pointerup; this is its emulated click.
+		if (interactionMode !== 'none' || emulatedMouse.active) return;
 		// StackedArea handles clicks on its paths and its line hit area
 		// (`data-series-hit`) via onpointerup — skip them, or one click focuses
 		// twice (a toggle undone, or a comparison's A and B set together).
@@ -454,7 +497,7 @@
 		if (target.tagName === 'path' || target.hasAttribute('data-series-hit')) return;
 
 		// First tap in tap-to-engage mode engages pan/zoom instead of setting focus.
-		if (panZoomMode === 'tap-to-engage' && engageOnTap && !engaged) {
+		if (enablePan && panZoomMode === 'tap-to-engage' && engageOnTap && !engaged) {
 			engaged = true;
 			return;
 		}
@@ -565,16 +608,36 @@
 		};
 	});
 
+	// Touch: one finger scrolls the page, scrubs or taps; two fingers pan and
+	// pinch. Engaged or not — on touch, pan/zoom needs no engaging.
+	$effect(() => {
+		const target = el;
+		if (!target) return;
+		target.addEventListener('pointerdown', handleTouchDown);
+		return () => {
+			target.removeEventListener('pointerdown', handleTouchDown);
+			if (touchGesture) endTouch();
+		};
+	});
+
+	$effect(() => {
+		const target = el;
+		if (!target || !touchPanEnabled) return;
+		target.addEventListener('touchmove', holdTwoFingerTouch, { passive: false });
+		return () => target.removeEventListener('touchmove', holdTwoFingerTouch);
+	});
+
+	// Mouse: drag to pan and wheel to zoom, once engaged (or always).
 	$effect(() => {
 		const target = el;
 		if (!target || !effectiveEnablePan) return;
 
-		target.addEventListener('pointerdown', handlePointerDown);
+		target.addEventListener('pointerdown', handleMouseDown);
 		// Wheel needs `{ passive: false }` so we can preventDefault().
 		target.addEventListener('wheel', handleWheel, { passive: false });
 
 		return () => {
-			target.removeEventListener('pointerdown', handlePointerDown);
+			target.removeEventListener('pointerdown', handleMouseDown);
 			target.removeEventListener('wheel', handleWheel);
 			if (wheelPanEndTimeout) {
 				clearTimeout(wheelPanEndTimeout);
@@ -586,7 +649,7 @@
 				wheelPendingPanMs = 0;
 				wheelPendingZoomFactor = 1;
 			}
-			cleanup();
+			endMouseDrag();
 		};
 	});
 
@@ -611,7 +674,7 @@
 <div
 	bind:this={el}
 	class={className}
-	style:touch-action={effectiveEnablePan ? 'none' : undefined}
+	style:touch-action="pan-y"
 	onmouseenter={handleMouseEnter}
 	onmousemove={handleMouseMove}
 	onmouseleave={handleMouseLeave}

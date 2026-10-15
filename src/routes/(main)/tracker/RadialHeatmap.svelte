@@ -7,6 +7,7 @@
 	import DialReadout from './DialReadout.svelte';
 	import DialFace, { dialMargin } from './DialFace.svelte';
 	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
+	import { pointerInspect } from '$lib/components/charts/v2/elements/pointer-inspect.js';
 	import DialNight from './DialNight.svelte';
 
 	/**
@@ -74,13 +75,37 @@
 		value === null ? EMPTY : shade((value - range.min) / (range.max - range.min || 1));
 
 	let canvas = $state(/** @type {HTMLCanvasElement | undefined} */ (undefined));
-	// Paint the cells: a canvas draw is a DOM side effect, so an effect.
+	/** The size the canvas was last painted at (0 before the first paint). */
+	let paintedSize = 0;
+	// Paint the cells: a canvas draw is a DOM side effect, so an effect. A
+	// paint is a few thousand arcs (28 days of 5-minute slots is 8,064), and a
+	// phone shows a card per technology, so new data paints at once but a
+	// resize (a panel sliding, a phone rotating) repaints only once it settles;
+	// meanwhile the old bitmap stretches to the new size.
 	$effect(() => {
-		if (!canvas) return;
+		const target = canvas;
+		if (!target) return;
+		const dial = { size, inner, ringWidth, rings, fill, slotAngle };
+		// The fill and angle helpers read these; track them here.
+		void [range, shade, slots];
+		if (paintedSize && dial.size !== paintedSize) {
+			const timer = setTimeout(() => paintDial(target, dial), 150);
+			return () => clearTimeout(timer);
+		}
+		paintDial(target, dial);
+	});
+
+	/**
+	 * @param {HTMLCanvasElement} target
+	 * @param {{ size: number, inner: number, ringWidth: number, rings: typeof rings,
+	 *   fill: typeof fill, slotAngle: typeof slotAngle }} dial
+	 */
+	function paintDial(target, { size, inner, ringWidth, rings, fill, slotAngle }) {
+		paintedSize = size;
 		const ratio = window.devicePixelRatio || 1;
-		canvas.width = size * ratio;
-		canvas.height = size * ratio;
-		const context = canvas.getContext('2d');
+		target.width = size * ratio;
+		target.height = size * ratio;
+		const context = target.getContext('2d');
 		if (!context) return;
 		// Scale to device pixels and centre the dial; the translation is in device
 		// pixels too, so it scales with the ratio.
@@ -105,7 +130,7 @@
 				context.stroke();
 			});
 		});
-	});
+	}
 
 	let ownHover = $state(/** @type {{slot: number, ring: number} | null} */ (null));
 	let hoverSlot = $derived(
@@ -182,8 +207,7 @@
 				style:width="{size}px"
 				style:height="{size}px"
 				role="presentation"
-				onpointermove={hover}
-				onpointerleave={leave}
+				{@attach pointerInspect({ onmove: hover, onleave: leave })}
 			>
 				<canvas
 					bind:this={canvas}

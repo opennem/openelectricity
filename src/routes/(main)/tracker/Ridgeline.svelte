@@ -1,4 +1,5 @@
 <script>
+	import { MediaQuery } from 'svelte/reactivity';
 	import { area as d3Area, curveMonotoneX, curveStepAfter } from 'd3-shape';
 	import { scaleLinear } from 'd3-scale';
 	import { rgb } from 'd3-color';
@@ -7,6 +8,7 @@
 	import { formatProfileDay } from './time-of-day.js';
 	import ProfileReadout from './ProfileReadout.svelte';
 	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
+	import { pointerInspect } from '$lib/components/charts/v2/elements/pointer-inspect.js';
 
 	/**
 	 * Ridgeline — one offset curve per day for comparing the shapes of a
@@ -133,6 +135,10 @@
 	const shadowId = `ridge-shadow-${uid}`;
 
 	let ownHover = $state(/** @type {number | undefined} */ (undefined));
+	// Each ridge's shadow is an SVG filter, costly on phones with a card per
+	// technology; touch-only devices draw the ridges without it.
+	const finePointer = new MediaQuery('(any-pointer: fine)', true);
+
 	let hoverTime = $derived(ownHover ?? syncHoverTime);
 	let hoverSlot = $derived(
 		hoverTime === undefined ? undefined : Math.round((hoverTime - PROFILE_DAY_START) / slotMs)
@@ -191,8 +197,7 @@
 			height={chartHeight}
 			role="img"
 			aria-label="{label}: one curve per day"
-			onpointermove={hover}
-			onpointerleave={leave}
+			{@attach pointerInspect({ onmove: hover, onleave: leave })}
 		>
 			<defs>
 				<!-- Each ridge casts a very subtle shadow up onto the one behind it. -->
@@ -207,7 +212,7 @@
 					<path
 						d={shape.fill}
 						fill={active ? activeTint : tint}
-						filter="url(#{shadowId})"
+						filter={finePointer.current ? `url(#${shadowId})` : undefined}
 						data-ridge={ridge.key}
 						data-active={active || undefined}
 					/>

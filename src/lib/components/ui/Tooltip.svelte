@@ -1,7 +1,13 @@
 <script>
-	import { Tooltip as T } from 'bits-ui';
+	import { mergeProps, Tooltip as T } from 'bits-ui';
 
 	/**
+	 * Hover/focus tooltip. bits-ui tooltips ignore touch, so a purely
+	 * informational one (a title's ⓘ, a label's description) passes
+	 * `tapToOpen`: on touch a tap on it toggles the tooltip and a tap
+	 * elsewhere closes it. Leave it off for tooltips on buttons, whose tap
+	 * should just act.
+	 *
 	 * @type {{
 	 *   text?: string,
 	 *   lines?: string[],
@@ -12,7 +18,8 @@
 	 *   delayDuration?: number,
 	 *   class?: string,
 	 *   learnMoreHref?: string,
-	 *   linkLabel?: string
+	 *   linkLabel?: string,
+	 *   tapToOpen?: boolean
 	 * }}
 	 */
 	let {
@@ -25,18 +32,59 @@
 		delayDuration = 100,
 		class: className = '',
 		learnMoreHref,
-		linkLabel = 'Learn more →'
+		linkLabel = 'Learn more →',
+		tapToOpen = false
 	} = $props();
+
+	let open = $state(false);
+	/** @type {HTMLElement | null} */
+	let triggerEl = $state(null);
+	/** @type {HTMLElement | null} */
+	let contentEl = $state(null);
+
+	/** Opened by a tap: bits-ui's hover tracking (a mouse's) may not close it. */
+	let tapPinned = false;
+
+	/** @param {boolean} next */
+	function setOpen(next) {
+		if (!next && tapPinned) return;
+		open = next;
+	}
+
+	/** @param {PointerEvent} event */
+	function toggleOnTap(event) {
+		if (!tapToOpen || event.pointerType !== 'touch') return;
+		tapPinned = !open;
+		open = !open;
+	}
+
+	// A tooltip a tap opened stays until a tap outside it and its trigger.
+	$effect(() => {
+		if (!tapToOpen || !open) return;
+		/** @param {PointerEvent} event */
+		const closeOutside = (event) => {
+			const target = /** @type {Node} */ (event.target);
+			if (triggerEl?.contains(target) || contentEl?.contains(target)) return;
+			tapPinned = false;
+			open = false;
+		};
+		window.addEventListener('pointerdown', closeOutside, true);
+		return () => window.removeEventListener('pointerdown', closeOutside, true);
+	});
 </script>
 
 <T.Provider>
-	<T.Root {delayDuration}>
+	<T.Root {delayDuration} bind:open={() => open, setOpen} disableCloseOnTriggerClick={tapToOpen}>
 		<T.Trigger>
 			{#snippet child({ props })}
 				{#if trigger}
 					{@render trigger({ props })}
 				{:else}
-					<span {...props} class={className}>
+					<span
+						{...mergeProps(props, { onpointerup: toggleOnTap })}
+						class={className}
+						bind:this={triggerEl}
+					>
 						{@render children?.()}
 					</span>
 				{/if}
@@ -45,6 +93,7 @@
 		<T.Portal>
 			<T.Content {side} {sideOffset} class="z-[9999]">
 				<div
+					bind:this={contentEl}
 					class="bg-dark-grey rounded-lg py-3 px-4 shadow text-white text-xs font-space max-w-sm leading-relaxed"
 				>
 					{#if lines.length}

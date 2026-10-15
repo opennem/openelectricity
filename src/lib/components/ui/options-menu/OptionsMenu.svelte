@@ -63,7 +63,7 @@
 	<button
 		bind:this={triggerRef}
 		onclick={() => (isOpen = !isOpen)}
-		class={triggerClass}
+		class="touch-hit {triggerClass}"
 		title="Options"
 		aria-haspopup="menu"
 		aria-expanded={isOpen}
@@ -88,37 +88,46 @@
 				{@render sections({ close: closeFromItem })}
 			{/if}
 
+			<!-- Phones are always full screen (`fullscreen-mode.js`), and the
+			     shortcuts toast only shows from `md` up, so neither item is
+			     offered where it would do nothing. -->
 			{#if onfullscreenchange}
-				<OptionsMenuItem
-					icon={isFullscreen ? Minimize2 : Maximize2}
-					kbd="F"
-					onclick={() => {
-						onfullscreenchange?.();
-						closeFromItem();
-					}}
-				>
-					{isFullscreen ? 'Exit full screen' : 'Enter full screen'}
-				</OptionsMenuItem>
+				<div class="max-tablet:hidden">
+					<OptionsMenuItem
+						icon={isFullscreen ? Minimize2 : Maximize2}
+						kbd="F"
+						onclick={() => {
+							onfullscreenchange?.();
+							closeFromItem();
+						}}
+					>
+						{isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+					</OptionsMenuItem>
+				</div>
 			{/if}
 
 			{#if onshowshortcuts}
-				<OptionsMenuItem
-					icon={CircleHelp}
-					kbd="?"
-					onclick={() => {
-						onshowshortcuts?.();
-						closeFromItem();
-					}}
-				>
-					Keyboard shortcuts
-				</OptionsMenuItem>
+				<div class="max-md:hidden">
+					<OptionsMenuItem
+						icon={CircleHelp}
+						kbd="?"
+						onclick={() => {
+							onshowshortcuts?.();
+							closeFromItem();
+						}}
+					>
+						Keyboard shortcuts
+					</OptionsMenuItem>
+				</div>
 			{/if}
 
 			{#if showDocumentation}
 				<!-- Section snippets end with their own trailing divider, so only the
 				     built-in items above need one added here. -->
 				{#if onfullscreenchange || onshowshortcuts}
-					<OptionsMenuDivider />
+					<div class={onfullscreenchange ? 'max-tablet:hidden' : 'max-md:hidden'}>
+						<OptionsMenuDivider />
+					</div>
 				{/if}
 
 				<OptionsMenuItem icon={BookOpen} href={DOCS_URL}>Documentation</OptionsMenuItem>

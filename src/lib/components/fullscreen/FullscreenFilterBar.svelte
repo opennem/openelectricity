@@ -33,6 +33,7 @@
 	 *   paddingX?: string,
 	 *   bgClass?: string,
 	 *   feedback?: boolean,
+	 *   wrapOnPhone?: boolean,
 	 *   back?: import('svelte').Snippet,
 	 *   stable?: import('svelte').Snippet,
 	 *   rest?: import('svelte').Snippet,
@@ -47,6 +48,11 @@
 		bgClass = 'tablet:bg-light-warm-grey/75',
 		// Fullscreen views have no main nav, so Feedback sits before the divider.
 		feedback = false,
+		// Below 768px, let the page's content wrap onto a second row: the
+		// inner wrappers become `display: contents`, so the page's own
+		// elements are this bar's flex items and can take `max-tablet:order-last
+		// max-tablet:basis-full` (the /tracker filters). Off, the bar is one row.
+		wrapOnPhone = false,
 		back,
 		stable,
 		rest,
@@ -57,9 +63,9 @@
 <div
 	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 min-h-[46.5px] shadow-lg/5 {paddingX} {isFullscreen
 		? `tablet:py-3 tablet:px-4 ${bgClass}`
-		: ''}"
+		: ''} {wrapOnPhone ? 'max-tablet:flex-wrap max-tablet:gap-y-3' : ''}"
 >
-	<div class="flex flex-1 items-center gap-4 min-w-0">
+	<div class="flex flex-1 items-center gap-4 min-w-0 {wrapOnPhone ? 'max-tablet:contents' : ''}">
 		{#if back || stable}
 			<div class="flex items-center gap-1 shrink-0">
 				{#if back}
@@ -76,7 +82,7 @@
 		{/if}
 		{#if rest}
 			<div
-				class="flex flex-1 items-center gap-4 min-w-0"
+				class="flex flex-1 items-center gap-4 min-w-0 {wrapOnPhone ? 'max-tablet:contents' : ''}"
 				style="view-transition-name: filter-bar-rest-{routeKey}"
 			>
 				{@render rest()}

@@ -51,7 +51,7 @@
 	 * @property {(() => void)} [onpanend]
 	 * @property {((factor: number, centerMs: number) => void)} [onzoom]
 	 * @property {boolean} [enablePan]
-	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' gates pan/zoom behind the bindable `engaged` flag — engaged via the header's ✥ toggle, a tap on the chart, or the idle-wheel hint; released by the toggle or Esc.
+	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' gates pan/zoom behind the bindable `engaged` flag — engaged via the header's ✥ toggle, a mouse click on the chart, or the idle-wheel hint; released by the toggle or Esc. Touch needs no engaging: two fingers always pan and pinch.
 	 * @property {boolean} [engaged] - Bindable engagement state for tap-to-engage mode.
 	 * @property {(time: number) => void} [onpick] - Clicks pick a time instead of pinning it (a comparison's A and B): a click (or tap, or Enter) reports its time here, and a tap on an idle tap-to-engage chart picks rather than engages (pan/zoom engages from the ✥ toggle or the idle-wheel hint)
 	 * @property {import('./time-markers.js').TimeMarkerSet | null} [timeMarkers] - Labelled markers over the plot (a comparison's A and B)
@@ -407,7 +407,6 @@
 						onmousemove={handleSeriesHover}
 						onmouseout={handleSeriesHoverOut}
 						onpointerup={handleSeriesClick}
-						{enablePan}
 						{loadingRanges}
 						{timeMarkers}
 						ghostTime={pointerInside ? chart.hoverTime : undefined}

@@ -79,7 +79,7 @@
 			<button
 				type="button"
 				onclick={() => onshowall?.()}
-				class="min-h-[32px] shrink-0 rounded-md border border-mid-warm-grey px-2.5 py-1 text-xs text-dark-grey transition-colors hover:bg-warm-grey"
+				class="touch-hit min-h-[32px] shrink-0 rounded-md border border-mid-warm-grey px-2.5 py-1 text-xs text-dark-grey transition-colors hover:bg-warm-grey"
 			>
 				Show all
 			</button>
@@ -93,8 +93,10 @@
 			role="status"
 		>
 			<span>Could not load table data.</span>
-			<button type="button" class="rounded border border-warm-grey px-2 py-1" onclick={onretry}
-				>Retry</button
+			<button
+				type="button"
+				class="touch-hit rounded border border-warm-grey px-2 py-1"
+				onclick={onretry}>Retry</button
 			>
 		</div>
 	{/if}

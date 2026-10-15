@@ -462,6 +462,25 @@
 	--button-primary-border: 1px solid #000000;
 }
 
+/* Touch screens: grow a small control's tap area to at least 44px without
+   changing how it looks (an invisible ::after centred on it). Neighbouring
+   controls' areas may overlap; the later one takes the overlap. A scrolling
+   or overflow-hidden ancestor clips the extra area. */
+@utility touch-hit {
+	position: relative;
+	@media (pointer: coarse) {
+		&::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: max(100%, 44px);
+			height: max(100%, 44px);
+			transform: translate(-50%, -50%);
+		}
+	}
+}
+
 /* The dotted grid behind fullscreen pages. */
 @utility gridline-bg {
 	background-image: radial-gradient(circle, #d5d4d1 1px, transparent 1px);

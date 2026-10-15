@@ -13,7 +13,8 @@
 	 * outside the bounds is never reported. `footer` renders under the
 	 * calendar (e.g. a reset action). The input matches a compact filter pill
 	 * (`FilterPill`): the same padding and height, with the calendar icon where
-	 * the pill's chevron sits.
+	 * the pill's chevron sits. On touch screens the calendar's days and month
+	 * arrows are 40px targets (explicit pixels: the app's rem is 10px).
 	 *
 	 * @typedef {Object} Props
 	 * @property {string | null} [date] - Selected date in YYYY-MM-DD format
@@ -130,13 +131,13 @@
 				{#snippet children({ months, weekdays })}
 					<DatePicker.Header class="flex items-center justify-between">
 						<DatePicker.PrevButton
-							class="inline-flex size-7 items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey"
+							class="inline-flex size-7 pointer-coarse:size-[40px] items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey"
 						>
 							<ChevronLeft class="size-4" />
 						</DatePicker.PrevButton>
 						<DatePicker.Heading class="text-xs font-medium text-dark-grey" />
 						<DatePicker.NextButton
-							class="inline-flex size-7 items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey"
+							class="inline-flex size-7 pointer-coarse:size-[40px] items-center justify-center rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey"
 						>
 							<ChevronRight class="size-4" />
 						</DatePicker.NextButton>
@@ -149,7 +150,7 @@
 									<DatePicker.GridRow class="flex w-full justify-between">
 										{#each weekdays as day (day)}
 											<DatePicker.HeadCell
-												class="w-8 text-center text-[10px] font-medium text-mid-grey"
+												class="w-8 pointer-coarse:w-[40px] text-center text-[10px] font-medium text-mid-grey"
 											>
 												{day.slice(0, 2)}
 											</DatePicker.HeadCell>
@@ -163,10 +164,10 @@
 												<DatePicker.Cell
 													date={day}
 													month={month.value}
-													class="relative size-8 p-0 text-center"
+													class="relative size-8 pointer-coarse:size-[40px] p-0 text-center"
 												>
 													<DatePicker.Day
-														class="group relative inline-flex size-8 items-center justify-center rounded-md text-xs text-dark-grey transition-colors hover:bg-light-warm-grey data-[disabled]:pointer-events-none data-[outside-month]:pointer-events-none data-[selected]:bg-dark-grey data-[disabled]:text-warm-grey data-[outside-month]:text-warm-grey data-[selected]:text-white"
+														class="group relative inline-flex size-8 pointer-coarse:size-[40px] pointer-coarse:text-sm items-center justify-center rounded-md text-xs text-dark-grey transition-colors hover:bg-light-warm-grey data-[disabled]:pointer-events-none data-[outside-month]:pointer-events-none data-[selected]:bg-dark-grey data-[disabled]:text-warm-grey data-[outside-month]:text-warm-grey data-[selected]:text-white"
 													>
 														<span
 															class="absolute bottom-1 hidden size-1 rounded-full bg-current group-data-[today]:block"

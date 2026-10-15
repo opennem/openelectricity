@@ -36,7 +36,7 @@
 	{disabled}
 	aria-expanded={open}
 	aria-haspopup="true"
-	class="flex items-center rounded-lg border whitespace-nowrap font-medium transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {compact
+	class="touch-hit flex items-center rounded-lg border whitespace-nowrap font-medium transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {compact
 		? 'gap-1.5 pl-4 pr-3 py-2.5 text-xs'
 		: 'gap-2 pl-5 pr-4 py-2.5 text-sm'} {active
 		? 'bg-dark-grey border-dark-grey text-white hover:bg-black'
