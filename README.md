@@ -70,6 +70,7 @@ The SDK is a separate chunk loaded once the page is idle, so it doesn't slow fir
 | Command                    | Description                                                                |
 | -------------------------- | -------------------------------------------------------------------------- |
 | `pnpm run dev`             | Start dev server using `.env` (default)                                    |
+| `pnpm run dev:lan`         | Dev server on the local network too, for phones (prints the Network URL)   |
 | `pnpm run doppler-dev`     | Start dev server with secrets injected from Doppler (maintainers)          |
 | `pnpm run build`           | Production build                                                           |
 | `pnpm run doppler-build`   | Production build with secrets injected from Doppler (maintainers)          |
