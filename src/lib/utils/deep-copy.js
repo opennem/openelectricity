@@ -1,7 +1,8 @@
 /**
  * Deep copy utility that handles Svelte 5 reactive proxies.
  * Use this when cloning data that may originate from $state variables.
- * For plain (non-proxied) data, prefer structuredClone directly.
+ * Also used for plain data in modules the Tracker widget loads: the widget is
+ * embedded on other sites and still opened in browsers without structuredClone.
  * @param {*} original
  * @returns {*}
  */

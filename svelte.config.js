@@ -37,6 +37,10 @@ const config = {
 			// http://sveltekit-prerender placeholder.
 			origin: 'https://openelectricity.org.au'
 		},
+		// Registered in `hooks.client.js` instead, which skips embeds.
+		serviceWorker: {
+			register: false
+		},
 		version: {
 			name: pkg.version,
 			pollInterval: 5 * 60 * 1000

@@ -1,3 +1,5 @@
+import deepCopy from '../deep-copy';
+
 /**
  * Merge forecast and other stats type data to make it easy to calculate dataset
  * - atm, we only have forecast and history to merge
@@ -8,7 +10,7 @@ export default function (originalData, statsType = 'history') {
 	const statsObj = (/** @type {any} */ d) => d[statsType] || d.history;
 
 	/** @type {StatsData[]} */
-	const data = structuredClone(originalData);
+	const data = deepCopy(originalData);
 
 	if (statsType !== 'forecast') {
 		data.forEach((d) => {

@@ -93,7 +93,7 @@
 
 	// Build legend from static list
 	let displayLegend = $derived(
-		legend.toReversed().map((d) => ({
+		[...legend].reverse().map((d) => ({
 			key: d,
 			label: fuelTechName(d),
 			colour: $fuelTechColour(d)

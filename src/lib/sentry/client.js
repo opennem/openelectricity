@@ -1,7 +1,7 @@
 import { browser, version } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import { hostEnvironment } from '$lib/utils/environment.js';
-import { replaySessionSampleRate, resolveSentryDsn } from './config.js';
+import { IGNORED_ERRORS, replaySessionSampleRate, resolveSentryDsn } from './config.js';
 
 /**
  * The browser's one Sentry client: JavaScript errors, session replay and the
@@ -51,6 +51,7 @@ export function loadSentry() {
 				transportOptions: { headers: { 'Content-Type': 'application/x-sentry-envelope' } },
 				release: `openelectricity@${version}`,
 				environment,
+				ignoreErrors: IGNORED_ERRORS,
 				integrations: [
 					Sentry.replayIntegration({
 						maskAllText: false,
