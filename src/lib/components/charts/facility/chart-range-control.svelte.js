@@ -200,6 +200,15 @@ export function createChartRangeControl(config) {
 		pushToCharts(startMs, endMs);
 	}
 
+	/** A chart reporting the viewport it already shows (one remounting for a
+	 *  new region or calendar period, say) hasn't moved it: that must not turn
+	 *  a preset range into a custom one.
+	 *  @param {{ start: number, end: number }} range */
+	function isCurrentViewport(range) {
+		const current = viewport();
+		return range.start === current.start && range.end === current.end;
+	}
+
 	/** @param {number} days */
 	function handleRangeSelect(days) {
 		selectedRange = days;
@@ -246,7 +255,7 @@ export function createChartRangeControl(config) {
 	 *  gestures never mirror into the peers. */
 	/** @param {{ start: number, end: number }} range */
 	function handleChartViewportChange(range) {
-		if (echo.suppressed) return;
+		if (echo.suppressed || isCurrentViewport(range)) return;
 		setViewport(range.start, range.end);
 		selectedRange = null;
 		updateLiveDisplayInterval(range);
@@ -265,7 +274,7 @@ export function createChartRangeControl(config) {
 	 *  @param {{ start: number, end: number }} range
 	 *  @param {RangeControlChart | null} [source] */
 	function handleDerivedViewportChange(range, source = null) {
-		if (echo.suppressed) return;
+		if (echo.suppressed || isCurrentViewport(range)) return;
 		setViewport(range.start, range.end);
 		selectedRange = null;
 		updateLiveDisplayInterval(range);

@@ -178,3 +178,25 @@ describe('interval pinning across gesture settles', () => {
 		expect(range.displayInterval).toBe('1d');
 	});
 });
+
+describe('reported viewports', () => {
+	it('a chart reporting the viewport it already shows keeps the preset', async () => {
+		const anchorEnd = Date.now();
+		const { state, range } = createHarness({
+			anchorEnd,
+			viewStart: anchorEnd - DAY_MS,
+			viewEnd: anchorEnd
+		});
+		range.handleRangeSelect(7);
+		await Promise.resolve(); // past the push's echo guard
+
+		// A chart remounting for a new region or calendar period.
+		range.handleDerivedViewportChange({ start: state.viewStart, end: state.viewEnd });
+		range.handleChartViewportChange({ start: state.viewStart, end: state.viewEnd });
+		expect(range.selectedRange).toBe(7);
+
+		// A real move still leaves the preset.
+		range.handleDerivedViewportChange({ start: state.viewStart - DAY_MS, end: state.viewEnd });
+		expect(range.selectedRange).toBe(null);
+	});
+});
