@@ -619,7 +619,8 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   with `dialog`, named for the options) laid out as the filter sheet's titled
   sections — the grouping and contribution basis as segmented switches
   (`SwitchWithIcons` `columns`), and a switch per table column (`Toggle`
-  `spread`) — with "Show all columns" and Done in its footer. Picks apply as
+  `spread`, with "Show all columns" at the end of the Columns title) — and a
+  full-width Done in its footer. Picks apply as
   they land; Done, ✕, Escape or a click outside closes it, and Done, ✕ and
   Escape hand focus back to the trigger. Escape closes the options before
   the phone table sheet under them.
@@ -762,8 +763,10 @@ at phone size.
 Below 768px there is no side panel and nothing docked: the charts have the
 screen, and a table button floating at the bottom middle (`TrackerShell`'s
 `table`, a pill naming the table, clear of the page's end, sliding down out of view while the table is open) opens the fuel tech table (or Compare's Regions table) in a sheet
-over the dimmed page, near full height (`TrackerSplitLayout`, a
-`BottomSheet` at 94%). The panel header (`TrackerPanelHeader`, through
+over the dimmed page, reaching up to just under the top nav
+(`TrackerSplitLayout`, a `BottomSheet` sized as it opens from where the
+shell's nav ends, shared through `tracker-sheet.js`; at most 94% once the
+nav has scrolled away). The panel header (`TrackerPanelHeader`, through
 `tracker-sheet.js`'s context) becomes the sheet's header, laid out like the
 filter sheet's: the panel's actions (Show all, the table options) on the
 left, the title centred and a round ✕ on the right; the header drags the

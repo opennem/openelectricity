@@ -7,8 +7,7 @@
 	 * TableOptions — the sliders button every tracker table panel carries in its
 	 * header (and collapsed rail), opening that table's options: a popover under
 	 * the button from 768px up, a bottom sheet over the table sheet on phones
-	 * (`FilterPanel`), with Done (and `footerLeft`, e.g. "Show all columns") in
-	 * its footer. The options lay out as the filter sheet's titled sections
+	 * (`FilterPanel`), with a full-width Done in its footer. The options lay out as the filter sheet's titled sections
 	 * (`FilterSheetSection`, segmented switches, switch rows), and apply as
 	 * they're picked. The button's title echoes the current choices
 	 * (`summary`).
@@ -16,11 +15,10 @@
 	 * @type {{
 	 *   title: string,
 	 *   summary: string,
-	 *   footerLeft?: import('svelte').Snippet,
 	 *   children: import('svelte').Snippet
 	 * }}
 	 */
-	let { title, summary, footerLeft, children: content } = $props();
+	let { title, summary, children: content } = $props();
 
 	setFilterSheet();
 </script>
@@ -33,7 +31,6 @@
 	dialog
 	applyLabel="Done"
 	onapply={() => {}}
-	{footerLeft}
 >
 	{#snippet trigger({ open, toggle })}
 		<button

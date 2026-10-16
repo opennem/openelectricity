@@ -14,6 +14,7 @@ import { getContext, setContext } from 'svelte';
  */
 
 const KEY = Symbol('tracker-sheet');
+const NAV_KEY = Symbol('tracker-nav-bottom');
 
 /** @param {TrackerSheet} sheet */
 export function setTrackerSheet(sheet) {
@@ -23,4 +24,19 @@ export function setTrackerSheet(sheet) {
 /** @returns {TrackerSheet | undefined} */
 export function getTrackerSheet() {
 	return getContext(KEY);
+}
+
+/**
+ * The shell shares where its top nav ends on screen (in px from the
+ * viewport's top, 0 once it has scrolled away), so the phone table sheet
+ * can open to just under it.
+ * @param {() => number} navBottom
+ */
+export function setTrackerNavBottom(navBottom) {
+	setContext(NAV_KEY, navBottom);
+}
+
+/** @returns {(() => number) | undefined} */
+export function getTrackerNavBottom() {
+	return getContext(NAV_KEY);
 }

@@ -30,7 +30,7 @@
 	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
-	import { setTrackerSheet } from './tracker-sheet.js';
+	import { getTrackerNavBottom, setTrackerSheet } from './tracker-sheet.js';
 
 	/**
 	 * TrackerSplitLayout — every tracker view's charts-and-table shell: a
@@ -46,8 +46,8 @@
 	 *
 	 * Phones (below 768px) get no side panel and nothing docked: the charts
 	 * have the screen, and an open table is a sheet over the dimmed page,
-	 * near full height (the shell's table button opens it; its header's ✕, a
-	 * tap on the page, Escape or a drag down closes it). The page scrolls as a
+	 * up to just under the shell's top nav (its table button opens it; the
+	 * sheet header's ✕, a tap on the page, Escape or a drag down closes it). The page scrolls as a
 	 * document there (`TrackerShell`), so the chart column is no scroll box of
 	 * its own, the sheet is fixed to the viewport, and `canvasHeight` is 0
 	 * (nothing to fill: the column is as tall as its charts).
@@ -120,8 +120,17 @@
 	});
 	let size = $derived(overlaid ? narrowMaxPct : dock.size);
 
-	// The phone sheet: near full height, a sliver of the page left above it.
-	const SHEET_FRACTION = 0.94;
+	// The phone sheet opens to just under the shell's top nav, or near full
+	// height (a sliver of the page left above it) once the nav has scrolled
+	// away. Measured as it opens, and kept while it closes.
+	const MAX_SHEET_FRACTION = 0.94;
+	const navBottom = getTrackerNavBottom();
+	let sheetTop = 0;
+	let sheetFraction = $derived.by(() => {
+		if (open && phone.current) sheetTop = navBottom?.() ?? 0;
+		if (!sheetViewportHeight) return MAX_SHEET_FRACTION;
+		return Math.min(MAX_SHEET_FRACTION, 1 - sheetTop / sheetViewportHeight);
+	});
 	setTrackerSheet({
 		get active() {
 			return phone.current;
@@ -223,8 +232,8 @@
 				{open}
 				onclose={() => onopenchange(false)}
 				containerHeight={sheetViewportHeight}
-				peekFraction={SHEET_FRACTION}
-				fullFraction={SHEET_FRACTION}
+				peekFraction={sheetFraction}
+				fullFraction={sheetFraction}
 				class="pointer-events-auto"
 			>
 				<div class="flex h-full min-h-0 flex-col">

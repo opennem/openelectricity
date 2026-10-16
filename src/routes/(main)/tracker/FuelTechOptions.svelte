@@ -11,7 +11,7 @@
 	 * FuelTechOptions — the fuel tech table's options (`TableOptions`): the
 	 * grouping and contribution basis as segmented switches, and, where the
 	 * table has column choices (Timeline), a switch per column with "Show all
-	 * columns" in the footer.
+	 * columns" at the end of the section's title.
 	 *
 	 * @type {{group: string, ongroupchange: (value: string) => void,
 	 * contributionMode?: import('./types.js').ContributionMode,
@@ -42,18 +42,14 @@
 {#snippet showAllColumns()}
 	<button
 		type="button"
-		class="cursor-pointer text-sm text-dark-grey underline underline-offset-2 hover:text-black"
+		class="cursor-pointer text-xs text-dark-grey underline underline-offset-2 hover:text-black"
 		onclick={() => oncolumnschange?.([...ALL_TABLE_COLUMNS])}
 	>
 		Show all columns
 	</button>
 {/snippet}
 
-<TableOptions
-	title="Fuel technology options"
-	{summary}
-	footerLeft={oncolumnschange ? showAllColumns : undefined}
->
+<TableOptions title="Fuel technology options" {summary}>
 	<FilterSheetSection title="Grouping">
 		<Switch
 			buttons={GROUP_OPTIONS}
@@ -88,7 +84,7 @@
 		</FilterSheetSection>
 	{/if}
 	{#if oncolumnschange}
-		<FilterSheetSection title="Columns">
+		<FilterSheetSection title="Columns" action={showAllColumns}>
 			<p class="m-0 text-xs text-mid-grey">Technology is always shown.</p>
 			{#each TABLE_COLUMNS as column (column.key)}
 				<div class="py-1 max-tablet:py-2.5">

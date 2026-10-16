@@ -61,6 +61,7 @@
 	import { DEFAULT_REGION } from './tracker-model.js';
 	import { TRACKER_VIEWS, trackerView } from './tracker-url.js';
 	import PngExport from './PngExport.svelte';
+	import { setTrackerNavBottom } from './tracker-sheet.js';
 	import { capturePngSnapshot, settleChartAnimations } from './png-export.js';
 	import DownloadDataModal from '$lib/components/charts/card/DownloadDataModal.svelte';
 	import {
@@ -116,6 +117,11 @@
 	onMount(() => {
 		hydrated = true;
 	});
+
+	/** @type {HTMLElement | undefined} */
+	let navEl = $state();
+	// The phone table sheet opens to just under the top nav.
+	setTrackerNavBottom(() => Math.max(0, navEl?.getBoundingClientRect().bottom ?? 0));
 
 	/** Whether the phone filter sheet is open. */
 	let filtersOpen = $state(false);
@@ -230,7 +236,10 @@
 
 <FullscreenLayout {isFullscreen} phoneScroll gridline={false} class="bg-light-warm-grey">
 	{#snippet filterBar()}
-		<div class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}">
+		<div
+			bind:this={navEl}
+			class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}"
+		>
 			<FullscreenFilterBar
 				{isFullscreen}
 				routeKey="tracker"
@@ -386,10 +395,12 @@
 				{#if status}
 					<!-- Phones: the filters pill stays in view as the top nav
 					     scrolls away; it lifts out once stuck to the top (the
-					     marker above it has scrolled off). -->
+					     marker above it has scrolled off). It sits at the row's
+					     foot, so the 16px over it matches the chart column's top
+					     padding under it. -->
 					<div class="tablet:hidden" aria-hidden="true" {@attach watchStuck}></div>
 					<div
-						class="pointer-events-none sticky top-0 z-30 flex h-[68px] shrink-0 items-center justify-center px-[10px] tablet:hidden"
+						class="pointer-events-none sticky top-0 z-30 flex h-[68px] shrink-0 items-end justify-center px-[10px] pt-4 tablet:hidden"
 					>
 						<RangeStatus
 							{...status}

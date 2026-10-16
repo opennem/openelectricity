@@ -15,7 +15,8 @@
 	 * the caller's staged changes (via `onapply`) and closes the panel;
 	 * dismissing any other way discards them.
 	 *
-	 * The footer only renders when `onapply`/`footerLeft` is passed —
+	 * The footer only renders when `onapply`/`footerLeft` is passed (the
+	 * button spans it when there's no `footerLeft`) —
 	 * immediate-apply consumers (e.g. the explorer's single-select
 	 * RegionDropdown) skip it and instead call the `close` function handed to
 	 * the `children` snippet when a pick lands.
@@ -220,7 +221,9 @@
 			{@render footerLeft?.()}
 			<button
 				type="button"
-				class="ml-auto bg-dark-grey text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
+				class="{footerLeft
+					? 'ml-auto'
+					: 'flex-1'} bg-dark-grey text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
 				onclick={() => {
 					onapply?.();
 					closeToTrigger();
