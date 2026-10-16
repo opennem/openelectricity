@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { API_STATUS_URL, fetchApiStatus } from '$lib/api-status.js';
+	import ApiStatusDot from '$lib/components/ApiStatusDot.svelte';
 
 	/**
 	 * ApiStatus — a link to the status page with a coloured dot for the current
@@ -34,10 +35,7 @@
 			title="API status: {summary.statusLabel}"
 			class="flex items-center gap-1.5 text-mid-grey no-underline hover:text-red hover:no-underline"
 		>
-			<span
-				class="inline-block size-2.5 shrink-0 rounded-full"
-				style="background-color: {summary.statusColor}"
-			></span>
+			<ApiStatusDot color={summary.statusColor} />
 			API Status
 		</a>
 	{:else}
@@ -49,10 +47,7 @@
 			onmouseenter={toggleHover}
 			onmouseleave={toggleHover}
 		>
-			<span
-				class="inline-block size-2.5 shrink-0 rounded-full"
-				style="background-color: {summary.statusColor}"
-			></span>
+			<ApiStatusDot color={summary.statusColor} />
 			API Status
 			<svg
 				class="transition-all"

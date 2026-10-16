@@ -14,7 +14,9 @@
 	 * the page's chart exports (Generation, Energy, …) in the header menus.
 	 * `extraSections` lets a host prepend its own headed groups (each ending in
 	 * an `OptionsMenuDivider`) — the tracker adds its "Download data" dialog and
-	 * PNG export actions here.
+	 * PNG export actions here. `trailingSections` (each starting with an
+	 * `OptionsMenuDivider`) follow the built-in items, so they end the menu —
+	 * the tracker's phone About. `triggerBadge` marks the trigger.
 	 * @type {{
 	 *   isFullscreen?: boolean,
 	 *   onfullscreenchange?: () => void,
@@ -30,7 +32,9 @@
 	 *   searchShortcutKeys?: string[],
 	 *   triggerClass?: string,
 	 *   iconClass?: string,
-	 *   extraSections?: import('svelte').Snippet<[{ close: () => void }]>
+	 *   extraSections?: import('svelte').Snippet<[{ close: () => void }]>,
+	 *   trailingSections?: import('svelte').Snippet<[{ close: () => void }]>,
+	 *   triggerBadge?: import('svelte').Snippet
 	 * }}
 	 */
 	let {
@@ -48,7 +52,9 @@
 		searchShortcutKeys = ['/'],
 		triggerClass = undefined,
 		iconClass = undefined,
-		extraSections
+		extraSections,
+		trailingSections,
+		triggerBadge
 	} = $props();
 
 	let downloading = $state(false);
@@ -85,6 +91,8 @@
 	{triggerClass}
 	{iconClass}
 	{showDocumentation}
+	{trailingSections}
+	badge={triggerBadge}
 >
 	{#snippet sections({ close })}
 		{@render extraSections?.({ close })}

@@ -16,6 +16,12 @@
 	 * (`TrackerFilterSheet`), which shows the same Region switch and view
 	 * `controls` as the bar. The view's `table` button floats at the bottom
 	 * middle and opens its table in a sheet of its own (`TrackerSplitLayout`).
+	 * The fullscreen footer gives way to the options menu's last item, About,
+	 * which opens its version, API status and links in a sheet
+	 * (`TrackerAboutSheet`). The API status, checked on phones as the page
+	 * loads, every five minutes and as About opens, marks the options button
+	 * with a dot and leads the menu's last group as a row with that dot,
+	 * opening the status page, above About.
 	 */
 
 	import { building } from '$app/environment';
@@ -24,9 +30,13 @@
 	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import RangeStatus from './RangeStatus.svelte';
+	import TrackerAboutSheet from './TrackerAboutSheet.svelte';
 	import TrackerFilterSheet from './TrackerFilterSheet.svelte';
-	import { Download, ImageDown, Table2, X } from '@lucide/svelte';
+	import { Download, ImageDown, Info, Table2, X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
+	import ApiStatusDot from '$lib/components/ApiStatusDot.svelte';
+	import { createApiStatusState } from '$lib/api-status-state.svelte.js';
+	import { API_STATUS_URL, apiStatusLabel } from '$lib/api-status.js';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
 	import { OptionsMenuDivider, OptionsMenuItem } from '$lib/components/ui/options-menu';
@@ -109,6 +119,14 @@
 
 	/** Whether the phone filter sheet is open. */
 	let filtersOpen = $state(false);
+	let aboutOpen = $state(false);
+
+	// Phones carry the API status in the options menu (wider screens have
+	// the footer's), so only they keep checking it.
+	const apiStatus = createApiStatusState();
+	$effect(() => {
+		if (belowTablet.current) return apiStatus.start();
+	});
 	/** The phone pill's line under the range: the other filters, and the
 	 * zone the range's times are in. */
 	let filterDetail = $derived(
@@ -324,6 +342,38 @@
 							{@render menu?.({ close })}
 							<OptionsMenuDivider />
 						{/snippet}
+						{#snippet trailingSections({ close })}
+							{#if belowTablet.current}
+								<OptionsMenuDivider />
+								<!-- The status row opens the status page; its dot sits where
+								     an icon would, and names the status only to assistive
+								     tech. -->
+								<OptionsMenuItem href={API_STATUS_URL}>
+									API status <span class="sr-only">({apiStatusLabel(apiStatus.current)})</span>
+									{#snippet leading()}
+										<ApiStatusDot color={apiStatus.current?.statusColor} />
+									{/snippet}
+								</OptionsMenuItem>
+								<OptionsMenuItem
+									icon={Info}
+									onclick={() => {
+										close();
+										apiStatus.refresh();
+										aboutOpen = true;
+									}}>About</OptionsMenuItem
+								>
+							{/if}
+						{/snippet}
+						{#snippet triggerBadge()}
+							<!-- Over the button's top-right corner, partly outside it. -->
+							{#if belowTablet.current && apiStatus.current}
+								<ApiStatusDot
+									color={apiStatus.current.statusColor}
+									class="absolute -right-1.5 -top-1.5 size-3 ring-2 ring-white"
+									data-testid="tracker-options-api-status"
+								/>
+							{/if}
+						{/snippet}
 					</PageOptionsMenu>
 				{/snippet}
 			</FullscreenFilterBar>
@@ -373,12 +423,15 @@
 				</main>
 			</div>
 			{#snippet footer()}
-				<!-- Phones: the page's end clears the floating table button. -->
+				<!-- Phones: the footer's details move to the menu's About, and
+				     the page's end clears the floating table button. -->
 				<div class="shrink-0 {table ? 'max-tablet:pb-[80px]' : ''}">
-					<FullscreenFooter
-						{isFullscreen}
-						onenterfullscreen={() => toggleFullscreenMode(isFullscreen)}
-					/>
+					<div class="max-tablet:hidden">
+						<FullscreenFooter
+							{isFullscreen}
+							onenterfullscreen={() => toggleFullscreenMode(isFullscreen)}
+						/>
+					</div>
 				</div>
 			{/snippet}
 		</FullscreenContainer>
@@ -417,6 +470,12 @@
 	{regionSelect}
 	onregionchange={(value) => session.select('region', value)}
 	{controls}
+/>
+
+<TrackerAboutSheet
+	open={aboutOpen}
+	onclose={() => (aboutOpen = false)}
+	apiStatus={apiStatus.current}
 />
 
 <DownloadDataModal {downloads} />

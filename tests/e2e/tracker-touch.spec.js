@@ -297,6 +297,56 @@ test('metrics open as a dialog; a pick pins and marks it on its chart', async ({
 	await expect(page.getByTestId('tracker-range-label-sticky')).toContainText(READOUT_TIME);
 });
 
+test('the options menu ends with About, which holds the footer details', async ({ page }) => {
+	// The shell checks the status as the page loads, so the fixture goes in
+	// before a reload.
+	await page.route('https://status.openelectricity.org.au/api/summary', (route) =>
+		route.fulfill({
+			json: {
+				status: 'operational',
+				statusLabel: 'Operational',
+				statusColor: '#2C7629',
+				apiLatencyMs: 212,
+				dataLatencyMs: 360000,
+				checkedAt: '2026-10-16T01:00:00Z'
+			}
+		})
+	);
+	await page.reload();
+	await trackerReady(page);
+	await expect(page.getByRole('link', { name: 'API Status', exact: true })).toBeHidden();
+	// The options icon carries the status as a dot; the trigger keeps its name.
+	await expect(page.getByTestId('tracker-options-api-status')).toHaveCSS(
+		'background-color',
+		'rgb(44, 118, 41)'
+	);
+
+	await page.getByRole('button', { name: 'Options', exact: true }).tap();
+	// The status row (its dot and name; the status itself only for assistive
+	// tech), opening the status page, then About end the menu.
+	const items = page.getByRole('menu').locator('a, button');
+	const status = items.nth(-2);
+	await expect(status).toHaveAccessibleName('API status (Operational)');
+	await expect(status.locator('.sr-only')).toHaveText('(Operational)');
+	await expect(status).toHaveAttribute('href', 'https://status.openelectricity.org.au');
+	await expect(items.last()).toHaveText('About');
+	await items.last().tap();
+
+	const sheet = page.getByTestId('tracker-about-sheet');
+	await expect(sheet).toBeVisible();
+	await expect(sheet.getByTestId('tracker-about-version')).toHaveText(/^v\d+\.\d+\.\d+/);
+	await expect(sheet.getByRole('link', { name: /^API status/ })).toContainText('Operational');
+	await expect(sheet.getByRole('link', { name: /^AEMO/ })).toHaveAttribute(
+		'href',
+		'https://www.aemo.com.au/'
+	);
+	await expect(sheet.getByRole('link', { name: /^Data licence/ })).toBeVisible();
+	await expect(sheet.getByRole('link')).toHaveCount(6);
+
+	await page.getByRole('button', { name: 'Done' }).tap();
+	await expect(sheet).toBeHidden();
+});
+
 test('a card folds its actions into ⋮ and keys its colours in the footer', async ({ page }) => {
 	const generation = card(page, 'Generation');
 	// The chart options are a sliders button; the actions sit behind ⋮.

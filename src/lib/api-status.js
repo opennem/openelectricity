@@ -10,7 +10,21 @@
 
 export const API_STATUS_URL = 'https://status.openelectricity.org.au';
 
-const TTL_MS = 5 * 60 * 1000;
+/**
+ * The words for a status check's state: the summary's own label, "Checking…"
+ * while the first check runs (undefined) or "Unavailable" when it failed
+ * (null).
+ *
+ * @param {ApiStatusSummary | null | undefined} summary
+ * @returns {string}
+ */
+export function apiStatusLabel(summary) {
+	if (summary) return summary.statusLabel;
+	return summary === null ? 'Unavailable' : 'Checking…';
+}
+
+/** How long a status answer is shared before the next check fetches again. */
+export const API_STATUS_TTL_MS = 5 * 60 * 1000;
 
 /** @type {{ at: number, promise: Promise<ApiStatusSummary | null> } | null} */
 let cached = null;
@@ -23,7 +37,7 @@ let cached = null;
  * @returns {Promise<ApiStatusSummary | null>}
  */
 export function fetchApiStatus() {
-	if (cached && Date.now() - cached.at < TTL_MS) return cached.promise;
+	if (cached && Date.now() - cached.at < API_STATUS_TTL_MS) return cached.promise;
 
 	const promise = fetch(`${API_STATUS_URL}/api/summary`)
 		.then((res) => (res.ok ? res.json() : null))

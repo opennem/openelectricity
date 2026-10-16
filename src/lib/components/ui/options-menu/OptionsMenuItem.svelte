@@ -7,7 +7,8 @@
 	 * background and carries `aria-checked`; the icon gutter stays blank on
 	 * every row so labels align with the icon rows around them. In a
 	 * touch-controls subtree, phones get 36px rows, 14px type and 18px icons,
-	 * and no keyboard hints.
+	 * and no keyboard hints. `leading` fills the icon gutter in place of
+	 * `icon` (a status dot, say).
 	 *
 	 * @type {{
 	 *   icon?: any,
@@ -16,7 +17,8 @@
 	 *   href?: string,
 	 *   selected?: boolean,
 	 *   disabled?: boolean,
-	 *   children: import('svelte').Snippet
+	 *   children: import('svelte').Snippet,
+	 *   leading?: import('svelte').Snippet
 	 * } & Omit<import('svelte/elements').HTMLButtonAttributes, 'children'>}
 	 */
 	let {
@@ -27,6 +29,7 @@
 		selected = undefined,
 		disabled = false,
 		children,
+		leading,
 		...rest
 	} = $props();
 
@@ -46,7 +49,13 @@
 </script>
 
 {#snippet inner()}
-	{#if Icon}
+	{#if leading}
+		<span
+			class="flex size-4 shrink-0 items-center justify-center {touch
+				? 'max-tablet:size-[18px]'
+				: ''}">{@render leading()}</span
+		>
+	{:else if Icon}
 		<Icon class="size-4 shrink-0 text-mid-grey {touch ? 'max-tablet:size-[18px]' : ''}" />
 	{:else}
 		<span class="size-4 shrink-0 {touch ? 'max-tablet:size-[18px]' : ''}" aria-hidden="true"></span>

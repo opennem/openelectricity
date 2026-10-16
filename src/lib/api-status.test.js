@@ -49,3 +49,15 @@ describe('fetchApiStatus', () => {
 		expect(await fetchApiStatus()).toBeNull();
 	});
 });
+
+describe('apiStatusLabel', () => {
+	it("names a check's state: the summary's label, checking or unavailable", async () => {
+		const { apiStatusLabel } = await freshModule();
+		const summary = /** @type {import('./api-status.js').ApiStatusSummary} */ ({
+			statusLabel: 'Operational'
+		});
+		expect(apiStatusLabel(summary)).toBe('Operational');
+		expect(apiStatusLabel(undefined)).toBe('Checking…');
+		expect(apiStatusLabel(null)).toBe('Unavailable');
+	});
+});

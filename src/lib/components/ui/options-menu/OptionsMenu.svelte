@@ -9,6 +9,13 @@
 	const DOCS_URL = 'https://docs.openelectricity.org.au/introduction';
 
 	/**
+	 * `sections` render before the built-in items (full screen, shortcuts,
+	 * Documentation), each ending in its own divider; `trailingSections` render
+	 * after them, each starting with one, so a host's item can close the menu.
+	 * `badge` marks the trigger, placed against it (`touch-hit` makes it
+	 * `relative`): the tracker's API status dot on phones. It is decorative,
+	 * so the trigger keeps its `label` as its name.
+	 *
 	 * @type {{
 	 *   isFullscreen?: boolean,
 	 *   onfullscreenchange?: () => void,
@@ -17,7 +24,9 @@
 	 *   iconClass?: string,
 	 *   showDocumentation?: boolean,
 	 *   label?: string,
-	 *   sections?: import('svelte').Snippet<[{ close: () => void }]>
+	 *   sections?: import('svelte').Snippet<[{ close: () => void }]>,
+	 *   trailingSections?: import('svelte').Snippet<[{ close: () => void }]>,
+	 *   badge?: import('svelte').Snippet
 	 * }}
 	 */
 	let {
@@ -31,7 +40,9 @@
 		showDocumentation = true,
 		// The trigger's name: a page's menu is "Options"; others name theirs.
 		label = 'Options',
-		sections
+		sections,
+		trailingSections,
+		badge
 	} = $props();
 
 	let isOpen = $state(false);
@@ -73,6 +84,7 @@
 		aria-expanded={isOpen}
 	>
 		<EllipsisVertical class={iconClass} />
+		{@render badge?.()}
 	</button>
 
 	{#if isOpen}
@@ -135,6 +147,8 @@
 
 				<OptionsMenuItem href={DOCS_URL}>Documentation</OptionsMenuItem>
 			{/if}
+
+			{@render trailingSections?.({ close: closeFromItem })}
 		</div>
 	{/if}
 </div>

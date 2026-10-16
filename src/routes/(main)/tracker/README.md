@@ -793,7 +793,8 @@ range). As wide as its text and centred, it lifts out over the charts with a sof
 (refresh is in the options menu).
 
 The filters open in a bottom sheet over a dimmed page (`TrackerFilterSheet`),
-in the Facilities filter sheet's chrome: a centred "Filters" title, a round
+in the Facilities filter sheet's chrome (`ModalSheet`, in
+`$lib/components/ui/bottom-sheet`): a centred "Filters" title, a round
 ✕ and a full-width Done in the footer. It renders the Region switch (All,
 NEM, the five states and WA, four to a row, like the range presets) and then
 the view's own `controls`, the snippet the bar shows from 768px up, in a
@@ -827,8 +828,20 @@ tap area without changing size (the `touch-hit` utility in `app.css`), the
 Profile calendar's days are 40px, informational tooltips (a card's ⓘ, a
 metric's description) open on a tap (`Tooltip`'s `tapToOpen`), and narrow
 cards let a long title wrap to two lines. The options menu leaves out full
-screen on phones (always full screen) and keyboard shortcuts below 1024px;
-the footer drops its data sources and home link on phones.
+screen on phones (always full screen) and keyboard shortcuts below 1024px.
+
+Phones hide the fullscreen footer. Its details move to the options menu's
+last item, About, which opens a `ModalSheet` (`TrackerAboutSheet`) of grouped
+rows: the version and the API status (checked as the sheet opens, a link to
+the status page), the data sources (AEMO, APVI) and Open Electricity's
+platform, documentation and data licence. The footer and the sheet share
+their links (`$lib/components/fullscreen/site-links.js`). The shell checks the
+API status on phones as the page loads, every five minutes and as About opens
+(`createApiStatusState`, `$lib/api-status-state.svelte.js`): a dot in the status
+page's colour sits over the options button's top-right corner
+(`OptionsMenu`'s `badge`), and a row above About carries it too: the dot in
+the icon gutter (`OptionsMenuItem`'s `leading`) beside "API status", opening
+the status page (the status's name is there for assistive tech only).
 
 ### Narrow screens: density and performance
 
