@@ -21,6 +21,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { cubicOut } from 'svelte/easing';
+	import { fade } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import PanelRail from './PanelRail.svelte';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
@@ -43,13 +44,13 @@
 	 * (`bind:closeButton={dock.closer}`). `canvasHeight` reports the chart
 	 * column's visible height inside its padding, for charts that fill it.
 	 *
-	 * Phones (below 768px) get no side panel: the panel sits in a persistent
-	 * bottom sheet, minimised to its header while the table is closed and at
-	 * the peek height (or full) while open, so the charts keep the full width.
-	 * The page scrolls as a document there (`TrackerShell`), so the chart
-	 * column is no scroll box of its own, the sheet is fixed to the viewport,
-	 * and `canvasHeight` is 0 (nothing to fill: the column is as tall as its
-	 * charts).
+	 * Phones (below 768px) get no side panel and nothing docked: the charts
+	 * have the screen, and an open table is a sheet over the dimmed page,
+	 * near full height (the shell's table button opens it; its header's ✕, a
+	 * tap on the page, Escape or a drag down closes it). The page scrolls as a
+	 * document there (`TrackerShell`), so the chart column is no scroll box of
+	 * its own, the sheet is fixed to the viewport, and `canvasHeight` is 0
+	 * (nothing to fill: the column is as tall as its charts).
 	 * Tablets (below 1024px) overlay the charts when the config says so. The
 	 * rail is hidden by CSS on phones and the docked (not overlaid) panel below
 	 * 1024px, where neither is used, so the server render (which can't know
@@ -119,40 +120,14 @@
 	});
 	let size = $derived(overlaid ? narrowMaxPct : dock.size);
 
-	// The phone sheet: closed table → minimised to the panel header (grip +
-	// 48px header); open → peek, or full once pulled up. The snap is derived
-	// from `open`, and the sheet's snap changes write back through it.
-	const SHEET_MIN_PX = 62;
-	const SHEET_PEEK = 0.55;
-	let sheetFull = $state(false);
-	let sheetSnap = $derived(
-		/** @type {'min' | 'peek' | 'full'} */ (!open ? 'min' : sheetFull ? 'full' : 'peek')
-	);
-	/** @param {'min' | 'peek' | 'full'} next */
-	function setSheetSnap(next) {
-		if (next === 'min') {
-			if (open) onopenchange(false);
-			return;
-		}
-		sheetFull = next === 'full';
-		if (!open) onopenchange(true);
-	}
+	// The phone sheet: near full height, a sliver of the page left above it.
+	const SHEET_FRACTION = 0.94;
 	setTrackerSheet({
 		get active() {
 			return phone.current;
 		},
-		get minimised() {
-			return !open;
-		},
-		toggle: () => setSheetSnap(open ? 'min' : 'peek')
+		close: () => onopenchange(false)
 	});
-	// Let the last chart scroll clear of the open sheet (its peek, at most).
-	// The shell keeps the page's end clear of the minimised sheet.
-	let sheetClearance = $derived(
-		!phone.current || sheetSnap === 'min'
-			? undefined
-			: `${Math.round(sheetViewportHeight * SHEET_PEEK) - SHEET_MIN_PX}px`
-	);
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	// The page may close the table as it hydrates (narrow screens default it
 	// closed); that isn't the reader's doing, so it doesn't slide.
@@ -196,8 +171,9 @@
 
 <svelte:window
 	onkeydown={(event) => {
-		if (event.key !== 'Escape' || !open) return;
-		// Esc closes the overlay, or minimises the phone sheet.
+		// A panel open over the table (its options) takes Escape first.
+		if (event.key !== 'Escape' || !open || event.defaultPrevented) return;
+		// Esc closes the overlay, or the phone sheet.
 		if (overlaid) dock.close();
 		else if (phone.current) onopenchange(false);
 	}}
@@ -218,7 +194,6 @@
 		!phone.current
 			? 'max-md:pr-4'
 			: 'pr-4 md:pr-6'}"
-		style:margin-bottom={sheetClearance}
 		use:clickoutside={{ event: 'pointerdown', options: true }}
 		onclickoutside={() => (engaged = false)}
 		bind:contentRect={
@@ -231,15 +206,25 @@
 	</div>
 
 	{#if phone.current}
-		<div class="pointer-events-none fixed inset-0 z-20" bind:clientHeight={sheetViewportHeight}>
+		<!-- Kept mounted (pointer-events-none) so the sheet's fly in and out can
+		     play; the filter sheet and the table options stack above it. -->
+		<div class="pointer-events-none fixed inset-0 z-50" bind:clientHeight={sheetViewportHeight}>
+			{#if open}
+				<!-- A tap on the dimmed page closes the sheet; its ✕ and Escape are the
+				     accessible ways out. -->
+				<div
+					class="pointer-events-auto absolute inset-0 bg-black/20"
+					aria-hidden="true"
+					transition:fade={{ duration: 150 }}
+					onclick={() => onopenchange(false)}
+				></div>
+			{/if}
 			<BottomSheet
-				open
+				{open}
+				onclose={() => onopenchange(false)}
 				containerHeight={sheetViewportHeight}
-				dismissable={false}
-				peekFraction={SHEET_PEEK}
-				minHeight={SHEET_MIN_PX}
-				bind:snap={() => sheetSnap, setSheetSnap}
-				defaultSnap={sheetSnap}
+				peekFraction={SHEET_FRACTION}
+				fullFraction={SHEET_FRACTION}
 				class="pointer-events-auto"
 			>
 				<div class="flex h-full min-h-0 flex-col">

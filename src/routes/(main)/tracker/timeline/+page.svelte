@@ -68,9 +68,15 @@
 	downloadFileName={(id, extension) => canvas?.downloadFileName(id, extension) ?? ''}
 	shortcuts={SHORTCUTS}
 	onshortcut={handleShortcut}
+	table={{
+		label: 'Fuel technologies',
+		open: session.selection.tablePanelOpen,
+		onopen: () => session.select('tablePanelOpen', true)
+	}}
 	status={{
 		label: canvas?.getRangeLabel() ?? session.rangeLabel,
 		intervalLabel: getIntervalSpec(range.displayInterval)?.label,
+		zoneLabel: canvas?.getZoneLabel(),
 		inspectLabel: canvas?.getInspectLabel(),
 		loading,
 		updatedLabel,

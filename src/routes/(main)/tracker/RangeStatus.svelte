@@ -20,9 +20,10 @@
 	 *     custom range never squeezes the controls out, and it never drops
 	 *     below the loader's width.
 	 *   - `sticky` (phones) sits at the top of the page body and stays in view
-	 *     as the top nav scrolls away: a centred white pill as wide as its
-	 *     text, the filters icon leading the range over a smaller `detail`
-	 *     line of the other filters ("NEM · 30 min"). With `onfilters` it is
+	 *     as the top nav scrolls away: a white pill as wide as its text,
+	 *     centred by the shell, the filters icon leading
+	 *     the range over a smaller `detail` line of the other filters and the
+	 *     range's zone ("NEM · 30 min · AEST"). With `onfilters` it is
 	 *     the button that opens the phone filter sheet. Once stuck to the top
 	 *     (`stuck`) it lifts out over the charts with a soft shadow. Only the
 	 *     pill takes taps. An inspected period only changes its text. Its test
@@ -38,6 +39,7 @@
 	let {
 		label,
 		inspectLabel = undefined,
+		zoneLabel = undefined,
 		loading,
 		updatedLabel = undefined,
 		onrefresh,
@@ -63,7 +65,7 @@
 </script>
 
 {#snippet text()}
-	<span class="truncate">{inspectLabel ?? label}</span>
+	<span class="truncate">{inspectLabel ?? (zoneLabel ? `${label} ${zoneLabel}` : label)}</span>
 {/snippet}
 
 {#snippet loader(/** @type {string} */ align)}
@@ -80,7 +82,7 @@
 
 {#if sticky}
 	<div
-		class="range-status pointer-events-none flex h-full w-full items-center justify-center px-4"
+		class="range-status pointer-events-none flex h-full min-w-0 items-center"
 		data-loading={loading}
 		data-inspecting={inspectLabel !== undefined}
 		data-stuck={stuck}

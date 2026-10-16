@@ -103,39 +103,55 @@ test('two fingers pinch-zoom a chart with no pan and zoom toggle to engage first
 	expect(await pageScrollY(page)).toBe(scrollBefore);
 });
 
-test('the fuel tech table opens in a bottom sheet that leaves the charts full width', async ({
-	page
-}) => {
-	const width = () =>
-		card(page, 'Generation').evaluate((node) => node.getBoundingClientRect().width);
-	const fullWidth = await width();
-	expect(fullWidth).toBeGreaterThan(350);
-	await expect(page.getByRole('button', { name: 'Show fuel tech table' })).toBeHidden();
-
-	const show = page.getByRole('button', { name: 'Show fuel technologies' });
-	await show.tap();
-	await expect(page).not.toHaveURL(/[?&]table=0/);
-	await expect(page.locator('#tracker-table-panel table')).toBeVisible();
-	expect(await width()).toBe(fullWidth);
-
-	await page.getByRole('button', { name: 'Minimise fuel technologies' }).tap();
-	await expect(page).toHaveURL(/[?&]table=0/);
-	await expect(page.getByRole('button', { name: 'Show fuel technologies' })).toBeVisible();
-});
-
-test('a long press on a fuel tech row shows that technology alone', async ({ page }) => {
-	await page.getByRole('button', { name: 'Show fuel technologies' }).tap();
-	const rows = page.getByTestId('fuel-tech-row');
-	await expect(rows.first()).toBeVisible();
-	// Let the sheet finish rising before aiming at a row.
-	await page.locator('#tracker-table-panel').evaluate((panel) =>
+/** Open the fuel tech table's sheet from the button beside the range pill,
+ * and wait for it to finish rising. */
+async function openTable(page) {
+	await page.getByTestId('tracker-table-button').tap();
+	const panel = page.locator('#tracker-table-panel');
+	await expect(panel.locator('table')).toBeVisible();
+	await panel.evaluate((node) =>
 		Promise.all(
-			panel
+			node
 				.closest('.rounded-t-2xl')
 				.getAnimations({ subtree: false })
 				.map((a) => a.finished)
 		)
 	);
+	return panel;
+}
+
+test('the fuel tech table opens in a sheet that leaves the charts full width', async ({ page }) => {
+	const width = () =>
+		card(page, 'Generation').evaluate((node) => node.getBoundingClientRect().width);
+	const fullWidth = await width();
+	expect(fullWidth).toBeGreaterThan(350);
+	// Nothing is docked: no rail, no sheet, until the button opens one.
+	await expect(page.getByRole('button', { name: 'Show fuel tech table' })).toBeHidden();
+	await expect(page.locator('#tracker-table-panel')).toHaveCount(0);
+
+	const button = page.getByTestId('tracker-table-button');
+	await expect(button).toBeInViewport();
+	const panel = await openTable(page);
+	await expect(page).not.toHaveURL(/[?&]table=0/);
+	// The floating button slides away while the table is open.
+	await expect(button).not.toBeInViewport();
+	// Near full height, over the page.
+	const sheet = await panel.evaluate(
+		(node) => node.closest('.rounded-t-2xl').getBoundingClientRect().height
+	);
+	expect(sheet).toBeGreaterThan(844 * 0.9);
+	expect(await width()).toBe(fullWidth);
+
+	await page.getByRole('button', { name: 'Hide fuel tech table', exact: true }).tap();
+	await expect(page).toHaveURL(/[?&]table=0/);
+	await expect(page.locator('#tracker-table-panel')).toHaveCount(0);
+	await expect(button).toBeInViewport();
+});
+
+test('a long press on a fuel tech row shows that technology alone', async ({ page }) => {
+	await openTable(page);
+	const rows = page.getByTestId('fuel-tech-row');
+	await expect(rows.first()).toBeVisible();
 	const total = await rows.count();
 	expect(total).toBeGreaterThan(1);
 	const box = await rows.first().boundingBox();

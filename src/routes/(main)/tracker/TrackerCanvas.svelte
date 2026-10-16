@@ -1,7 +1,8 @@
 <script>
 	import {
 		formatRangeLabel,
-		getTimeFormatPolicy
+		getTimeFormatPolicy,
+		showsClockTimes
 	} from '$lib/components/charts/v2/time-format-policy.js';
 	import { plottedExtent } from './plotted-extent.js';
 	import { onMount, untrack } from 'svelte';
@@ -27,7 +28,10 @@
 	} from '$lib/components/charts/v2/bucket-filter.js';
 	import { createContributionContext } from '$lib/components/charts/network/contribution.js';
 	import { RENEWABLES_SERIES_ID } from '$lib/components/charts/network/market-series-ids.js';
-	import { toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
+	import {
+		toNetworkDateString,
+		tzAbbreviationFromIana
+	} from '$lib/components/charts/v2/network-time.js';
 	import { hasSpotPrice, regionLabel } from './tracker-regions.js';
 	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
 	import ReadingFreshness from './ReadingFreshness.svelte';
@@ -102,15 +106,25 @@
 	let viewWindow = $derived(session.window);
 	let timePolicy = $derived(getTimeFormatPolicy(range.displayInterval, ianaTimeZone));
 	/** The periods the Generation chart plots, first to last, at the display
-	 * grain; the requested window until its data arrives. */
-	let rangeLabel = $derived.by(() => {
-		const extent = plottedExtent(data.current('generation'), viewWindow);
-		return extent
-			? formatRangeLabel(extent.start, extent.end, range.displayInterval, ianaTimeZone)
-			: session.rangeLabel;
+	 * grain; the requested window until its data arrives. The readout shows
+	 * the zone apart from the range (on its own line on phones), so it takes
+	 * `readoutLabel` and `zoneLabel`; captions and exports take `rangeLabel`. */
+	let readoutLabel = $derived.by(() => {
+		const extent = plottedExtent(data.current('generation'), viewWindow) ?? viewWindow;
+		return formatRangeLabel(extent.start, extent.end, range.displayInterval, ianaTimeZone, {
+			zone: false
+		});
 	});
+	/** The zone sub-daily times are in ("AEST"); dates need none. */
+	let zoneLabel = $derived(
+		showsClockTimes(range.displayInterval) ? tzAbbreviationFromIana(ianaTimeZone) : undefined
+	);
+	let rangeLabel = $derived(zoneLabel ? `${readoutLabel} ${zoneLabel}` : readoutLabel);
 	export function getRangeLabel() {
-		return rangeLabel;
+		return readoutLabel;
+	}
+	export function getZoneLabel() {
+		return zoneLabel;
 	}
 	let generationChart = $state.raw(/** @type {NetworkChart | undefined} */ (undefined));
 	let priceChart = $state.raw(/** @type {NetworkChart | undefined} */ (undefined));

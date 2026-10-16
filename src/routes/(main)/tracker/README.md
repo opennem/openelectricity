@@ -612,13 +612,17 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   Technology header opens the grouping list (the shared `FilterSelect`
   through a custom `trigger`), and the Contribution header toggles its basis. The same trigger stays in the
   collapsed table rail, allowing chart configuration without table-provider
-  fetches. Profile changes its grouping and contribution basis the same way (Technology and Contribution headers, or the options dialog — without table columns — in the panel header and rail); its top nav has no grouping control. Global page
+  fetches. Profile changes its grouping and contribution basis the same way (Technology and Contribution headers, or the table options — without table columns — in the panel header and rail); its top nav has no grouping control. Global page
   options now contain only page actions (exports, link, fullscreen and docs).
-  `FuelTechOptions` fills `TableOptions` (the sliders trigger and the app’s
-  shared `Modal`, Bits UI Dialog, with Done) with `Select` in its expanded
-  radio-list mode, `Checkbox` and button components. The dialog
-  supplies focus containment, Escape dismissal and focus restoration.
-  The dialog scrolls within the viewport; Done and the close button dismiss it.
+  `FuelTechOptions` fills `TableOptions`: the sliders trigger opens a
+  popover under it (a sheet over the table's sheet on phones; `FilterPanel`
+  with `dialog`, named for the options) laid out as the filter sheet's titled
+  sections — the grouping and contribution basis as segmented switches
+  (`SwitchWithIcons` `columns`), and a switch per table column (`Toggle`
+  `spread`) — with "Show all columns" and Done in its footer. Picks apply as
+  they land; Done, ✕, Escape or a click outside closes it, and Done, ✕ and
+  Escape hand focus back to the trigger. Escape closes the options before
+  the phone table sheet under them.
   Its trigger matches the panel controls' 40px
   target with a smaller 16px muted-grey sliders icon. Choices still use the session's URL/history
   path; they affect linked charts, not just the table.
@@ -755,14 +759,17 @@ at phone size.
 
 ### Narrow screens: the table panel
 
-Below 768px there is no side panel: `TrackerSplitLayout` puts the fuel tech
-table (or Compare's Regions table) in a persistent `BottomSheet`, so the
-charts keep the full width. A closed table is the sheet minimised to its
-header; opening it raises the sheet to the peek height (55% of the view),
-and dragging the header or grip takes it to full. The header
-(`TrackerPanelHeader`, through `tracker-sheet.js`'s context) is the drag
-handle and swaps the docked close control for an expand/minimise chevron;
-Esc minimises. From 768 to 1023px the panel overlays the charts with a
+Below 768px there is no side panel and nothing docked: the charts have the
+screen, and a table button floating at the bottom middle (`TrackerShell`'s
+`table`, a pill naming the table, clear of the page's end, sliding down out of view while the table is open) opens the fuel tech table (or Compare's Regions table) in a sheet
+over the dimmed page, near full height (`TrackerSplitLayout`, a
+`BottomSheet` at 94%). The panel header (`TrackerPanelHeader`, through
+`tracker-sheet.js`'s context) becomes the sheet's header, laid out like the
+filter sheet's: the panel's actions (Show all, the table options) on the
+left, the title centred and a round ✕ on the right; the header drags the
+sheet. ✕, a tap on the page, Esc or a drag down closes it, which closes the
+table (`table=0`). Profile's stacked dial comes along under the table.
+From 768 to 1023px the panel overlays the charts with a
 backdrop that closes it, and every view opens with the table closed there
 (`tracker-page.js`, `WIDE_QUERY`); docked beside the charts is for 1024px and
 up. The docked panel and rail are hidden by CSS below 1024px, where they
@@ -779,10 +786,11 @@ charts, and the table sheet is fixed to the viewport. The bar is one row (the
 `FullscreenFilterBar`'s `wrapOnPhone` turns its wrappers into
 `display: contents`), and the filters leave it. In their place, a pill at the
 top of the body stays in view (`RangeStatus`'s `sticky` variant): the filters
-icon, then the range over a smaller line of the other filters ("NEM ·
-30 min"). Centred and as wide as its text, it lifts out over the charts with
-a soft shadow once stuck to the top (`TrackerShell` watches a marker above
-it). A tap opens the filters (refresh is in the options menu).
+icon, then the range over a smaller line of the other filters and the zone
+its times are in ("NEM · 30 min · AEST"; the bar shows the zone after the
+range). As wide as its text and centred, it lifts out over the charts with a soft shadow once stuck to the top
+(`TrackerShell` watches a marker above it). A tap opens the filters
+(refresh is in the options menu).
 
 The filters open in a bottom sheet over a dimmed page (`TrackerFilterSheet`),
 in the Facilities filter sheet's chrome: a centred "Filters" title, a round
@@ -1366,7 +1374,7 @@ no tooltip beside the Regions table, which is their readout (with the period in
 the top nav); while the table is closed, or below 1024px where it overlays the charts, they float one. Price tooltips use the table's one-decimal format.
 
 **Regions table.** Its header carries the same sliders button as the fuel-tech
-table (`TableOptions`, shared with `FuelTechOptions`), whose dialog sets the
+table (`TableOptions`, shared with `FuelTechOptions`), whose popover sets the
 percentage basis (`compare-basis`); the collapsed rail keeps it. Column headers
 work like the fuel-tech table's (`comparisonTableColumn`): generation steps
 through MWh / GWh / TWh and intensity through kg / t per MWh, with the same

@@ -295,11 +295,11 @@ test.describe('Tracker options menu', () => {
 
 		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
 		const menu = page.getByRole('dialog', { name: 'Fuel technology options' });
-		await expect(menu.getByRole('radio', { name: 'Simplified' })).toHaveAttribute(
-			'aria-checked',
+		await expect(menu.getByRole('button', { name: 'Simplified', exact: true })).toHaveAttribute(
+			'aria-pressed',
 			'true'
 		);
-		await menu.getByRole('radio', { name: 'Detailed' }).click();
+		await menu.getByRole('button', { name: 'Detailed', exact: true }).click();
 		await menu.getByRole('button', { name: 'Done', exact: true }).click();
 		await expect(page).toHaveURL(/group=detailed/);
 		await expect(techHeader).toContainText('Detailed');
@@ -307,7 +307,7 @@ test.describe('Tracker options menu', () => {
 		const contributionHeader = page.getByRole('columnheader', { name: /Contribution/ });
 		await expect(contributionHeader).toContainText('% demand');
 		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-		await menu.getByRole('radio', { name: '% generation' }).click();
+		await menu.getByRole('button', { name: '% generation', exact: true }).click();
 		await menu.getByRole('button', { name: 'Done', exact: true }).click();
 		await expect(contributionHeader).toContainText('% generation');
 		await expect

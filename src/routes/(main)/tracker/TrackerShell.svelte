@@ -11,9 +11,11 @@
 	 * Phones (below 768px) get touch-sized controls (`touch-controls.js`) and
 	 * scroll the page as a document: the one-row top nav (logo menu, view
 	 * dropdown and menus) scrolls away, while a pill summarising the filters
-	 * ("NEM · 9–15 Oct · 30 min") sits at the top of the body and stays in
-	 * view. The pill opens the filters in a sheet (`TrackerFilterSheet`),
-	 * which shows the same Region list and view `controls` as the bar.
+	 * (the range over "NEM · 30 min · AEST") sits at the top of the body and
+	 * stays in view. The pill opens the filters in a sheet
+	 * (`TrackerFilterSheet`), which shows the same Region switch and view
+	 * `controls` as the bar. The view's `table` button floats at the bottom
+	 * middle and opens its table in a sheet of its own (`TrackerSplitLayout`).
 	 */
 
 	import { building } from '$app/environment';
@@ -23,7 +25,7 @@
 	import { MediaQuery } from 'svelte/reactivity';
 	import RangeStatus from './RangeStatus.svelte';
 	import TrackerFilterSheet from './TrackerFilterSheet.svelte';
-	import { Download, ImageDown, X } from '@lucide/svelte';
+	import { Download, ImageDown, Table2, X } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
@@ -65,6 +67,7 @@
 	 *   regionSelect?: boolean,
 	 *   controls?: import('svelte').Snippet,
 	 *   status?: import('./types.js').TrackerRangeStatus,
+	 *   table?: { label: string, open: boolean, onopen: () => void },
 	 *   menu?: import('svelte').Snippet<[{ close: () => void }]>,
 	 *   downloadSummary: () => Array<[string, string]>,
 	 *   downloadFileName: (id: string | null, extension: 'csv' | 'xlsx') => string,
@@ -81,6 +84,7 @@
 		regionSelect = true,
 		controls,
 		status,
+		table,
 		menu,
 		downloadSummary,
 		downloadFileName,
@@ -105,9 +109,14 @@
 
 	/** Whether the phone filter sheet is open. */
 	let filtersOpen = $state(false);
-	/** The phone pill's line under the range: the other filters. */
+	/** The phone pill's line under the range: the other filters, and the
+	 * zone the range's times are in. */
 	let filterDetail = $derived(
-		[regionSelect ? regionShortLabel(session.selection.region) : null, status?.intervalLabel]
+		[
+			regionSelect ? regionShortLabel(session.selection.region) : null,
+			status?.intervalLabel,
+			status?.zoneLabel
+		]
 			.filter(Boolean)
 			.join(' · ')
 	);
@@ -329,7 +338,9 @@
 					     scrolls away; it lifts out once stuck to the top (the
 					     marker above it has scrolled off). -->
 					<div class="tablet:hidden" aria-hidden="true" {@attach watchStuck}></div>
-					<div class="pointer-events-none sticky top-0 z-30 h-[68px] shrink-0 tablet:hidden">
+					<div
+						class="pointer-events-none sticky top-0 z-30 flex h-[68px] shrink-0 items-center justify-center px-[10px] tablet:hidden"
+					>
 						<RangeStatus
 							{...status}
 							detail={filterDetail}
@@ -362,9 +373,8 @@
 				</main>
 			</div>
 			{#snippet footer()}
-				<!-- Phones: clear of the minimised table sheet at the page end
-				     (TrackerSplitLayout's SHEET_MIN_PX). -->
-				<div class="shrink-0 max-tablet:pb-[62px]">
+				<!-- Phones: the page's end clears the floating table button. -->
+				<div class="shrink-0 {table ? 'max-tablet:pb-[80px]' : ''}">
 					<FullscreenFooter
 						{isFullscreen}
 						onenterfullscreen={() => toggleFullscreenMode(isFullscreen)}
@@ -377,6 +387,27 @@
 
 {#if pngSnapshot}
 	<PngExport snapshot={pngSnapshot} onclose={() => (pngSnapshot = null)} />
+{/if}
+
+{#if table}
+	<!-- Phones: the view's table floats at the bottom middle, a fixed target
+	     whatever the range pill's width; it opens the table in a sheet
+	     (`TrackerSplitLayout`), and slides down out of view while the table
+	     is open, back up once it closes. -->
+	<button
+		type="button"
+		onclick={table.onopen}
+		aria-haspopup="dialog"
+		inert={table.open}
+		data-testid="tracker-table-button"
+		data-open={table.open}
+		class="fixed bottom-[max(16px,env(safe-area-inset-bottom))] left-1/2 z-40 flex h-[48px] -translate-x-1/2 cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-full border border-warm-grey bg-white pl-4 pr-5 text-sm font-semibold text-dark-grey shadow-[0_10px_24px_-10px_rgba(53,53,53,0.5)] transition-transform duration-300 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey motion-reduce:transition-none tablet:hidden {table.open
+			? 'translate-y-[calc(100%+48px)]'
+			: ''}"
+	>
+		<Table2 class="size-[18px] shrink-0 text-mid-grey" strokeWidth={1.75} aria-hidden="true" />
+		{table.label}
+	</button>
 {/if}
 
 <TrackerFilterSheet

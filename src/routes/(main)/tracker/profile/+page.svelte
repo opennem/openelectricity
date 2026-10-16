@@ -35,6 +35,11 @@
 	{session}
 	{shareUrl}
 	controls={canvas?.getControls()}
+	table={{
+		label: 'Fuel technologies',
+		open: session.selection.tablePanelOpen,
+		onopen: () => session.select('tablePanelOpen', true)
+	}}
 	downloadSummary={() => canvas?.downloadSummary() ?? []}
 	downloadFileName={(id, extension) => canvas?.downloadFileName(id, extension) ?? ''}
 	shortcuts={SHORTCUTS}

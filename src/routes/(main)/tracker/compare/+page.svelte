@@ -37,6 +37,11 @@
 	{shareUrl}
 	regionSelect={false}
 	controls={canvas?.getControls()}
+	table={{
+		label: 'Regions',
+		open: !!canvas?.isTableOpen(),
+		onopen: () => canvas?.openTable()
+	}}
 	downloadSummary={() => canvas?.downloadSummary() ?? []}
 	downloadFileName={(id, extension) => canvas?.downloadFileName(id, extension) ?? ''}
 	shortcuts={SHORTCUTS}

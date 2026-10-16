@@ -48,7 +48,7 @@
 
 	/** @param {KeyboardEvent} event */
 	function handleKeydown(event) {
-		if (open && event.key === 'Escape') onclose();
+		if (open && event.key === 'Escape' && !event.defaultPrevented) onclose();
 	}
 </script>
 

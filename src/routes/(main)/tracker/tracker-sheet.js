@@ -1,16 +1,15 @@
 import { getContext, setContext } from 'svelte';
 
 /**
- * On phones the Tracker's table panel sits in a persistent bottom sheet
- * (`TrackerSplitLayout`): minimised to its header when the table is closed,
- * at the peek height (or full, if pulled up) when open. Panel headers read
- * this to act as the sheet's drag handle and expand/minimise toggle instead
- * of the docked panel's close control.
+ * On phones the Tracker's table panel opens in a sheet over the page
+ * (`TrackerSplitLayout`), near full height, and closes away entirely. Panel
+ * headers read this to act as the sheet's header: a drag handle, the panel's
+ * own actions on the left, the title centred and a ✕ that closes the sheet,
+ * instead of the docked panel's close control.
  *
  * @typedef {{
  *   readonly active: boolean,
- *   readonly minimised: boolean,
- *   toggle: () => void
+ *   close: () => void
  * }} TrackerSheet
  */
 

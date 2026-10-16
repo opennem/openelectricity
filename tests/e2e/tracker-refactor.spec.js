@@ -42,7 +42,7 @@ async function percentageView(page) {
 async function contributionBasis(page, label) {
 	const trigger = page.getByRole('button', { name: 'Fuel technology options', exact: true });
 	await trigger.click();
-	await page.getByRole('dialog').getByRole('radio', { name: label, exact: true }).click();
+	await page.getByRole('dialog').getByRole('button', { name: label, exact: true }).click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 	await expect(page.getByRole('dialog', { name: 'Fuel technology options' })).toBeHidden();
 	await expect(trigger).toBeFocused();
@@ -171,9 +171,9 @@ for (const group of ['detailed', 'simple']) {
 		await expect(solarRow.locator('td')).toHaveText(cells);
 		await page.screenshot({ path: testInfo.outputPath('rooftop-interpolation.png') });
 		await page.setViewportSize({ width: 390, height: 844 });
-		// On a phone the open table moves into the bottom sheet.
+		// On a phone the open table moves into a sheet, closed with its ✕.
 		await expect(
-			page.getByRole('button', { name: 'Minimise fuel technologies', exact: true })
+			page.getByRole('button', { name: 'Hide fuel tech table', exact: true })
 		).toBeVisible();
 		await note.scrollIntoViewIfNeeded();
 		await expect(note).toBeVisible();
@@ -507,7 +507,10 @@ test('tracker slides one nav logo in place of the date range and overlays charts
 	});
 	// Grouping stays usable during a range refresh; the newest selection wins.
 	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-	await page.getByRole('radio', { name: 'Detailed', exact: true }).click();
+	await page
+		.getByRole('dialog', { name: 'Fuel technology options' })
+		.getByRole('button', { name: 'Detailed', exact: true })
+		.click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 	await expect(page).toHaveURL(/group=detailed/);
 	await expect(loader).toBeVisible();
@@ -654,16 +657,15 @@ test('panel controls share generous targets, directional icons and keyboard focu
 	await expect(hideTable).toHaveCSS('outline-style', 'solid');
 	await hideTable.click();
 	await page.setViewportSize({ width: 390, height: 844 });
-	// On a phone the closed table is the minimised bottom sheet's header.
-	await expect(
-		page.getByRole('button', { name: 'Show fuel technologies', exact: true })
-	).toBeVisible();
+	// On a phone nothing is docked: the table button beside the range pill
+	// opens the table in a sheet.
+	await expect(page.getByTestId('tracker-table-button')).toBeVisible();
 	await expect(showTable).toBeHidden();
 	await expectNoHorizontalScroll(page);
 	await page.screenshot({ path: testInfo.outputPath('panels-mobile.png') });
 });
 
-test('fuel technology options modal controls grouping, contribution and columns across history and mobile', async ({
+test('fuel technology options popover controls grouping, contribution and columns across history and mobile', async ({
 	page
 }, testInfo) => {
 	await trackerFixture(page);
@@ -671,40 +673,30 @@ test('fuel technology options modal controls grouping, contribution and columns 
 	await chartsSettled(page);
 	const trigger = page.getByRole('button', { name: 'Fuel technology options', exact: true });
 	const dialog = page.getByRole('dialog', { name: 'Fuel technology options' });
+	/** A segment of the grouping or contribution switch. @param {string} name */
+	const option = (name) => dialog.getByRole('button', { name, exact: true });
+	/** A column's switch. @param {string} name */
+	const column = (name) => dialog.getByRole('switch', { name, exact: true });
 	await trigger.press('Enter');
-	await expect(dialog.getByRole('radio')).toHaveCount(8);
-	await expect(dialog.getByRole('checkbox')).toHaveCount(6);
-	await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
-	await dialog.getByRole('button', { name: 'Close fuel technology options' }).focus();
-	await page.keyboard.press('Shift+Tab');
-	await expect(dialog.getByRole('button', { name: 'Done', exact: true })).toBeFocused();
-	await expect(dialog.getByRole('radio', { name: 'Simplified', exact: true })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
-	await expect(dialog.getByRole('radio', { name: '% demand', exact: true })).toHaveAttribute(
-		'aria-checked',
-		'true'
-	);
-	await expect(dialog.getByRole('radio', { name: 'Detailed', exact: true })).toHaveAttribute(
-		'aria-checked',
-		'false'
-	);
+	await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+	await expect(dialog.getByRole('switch')).toHaveCount(6);
+	await expect(option('Simplified')).toHaveAttribute('aria-pressed', 'true');
+	await expect(option('% demand')).toHaveAttribute('aria-pressed', 'true');
+	await expect(option('Detailed')).toHaveAttribute('aria-pressed', 'false');
 	await page.screenshot({ path: testInfo.outputPath('fuel-options-desktop.png') });
-	await dialog.getByRole('radio', { name: 'Simplified', exact: true }).focus();
-	await page.keyboard.press('ArrowUp');
-	await expect(dialog.getByRole('radio', { name: 'Detailed', exact: true })).toBeChecked();
+	await option('Detailed').click();
+	await expect(option('Detailed')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page).toHaveURL(/group=detailed/);
-	await dialog.getByRole('radio', { name: '% generation', exact: true }).click();
-	await dialog.getByRole('checkbox', { name: 'Energy', exact: true }).focus();
-	await page.keyboard.press('Space');
-	await expect(dialog.getByRole('checkbox', { name: 'Energy', exact: true })).not.toBeChecked();
+	await option('% generation').click();
+	await column('Energy').click();
+	await expect(column('Energy')).toHaveAttribute('aria-checked', 'false');
 	// Price, emissions and intensity are opt-in.
 	for (const name of ['Av price', 'Emissions', 'Intensity'])
-		await expect(dialog.getByRole('checkbox', { name, exact: true })).not.toBeChecked();
-	await dialog.getByRole('checkbox', { name: 'Intensity', exact: true }).check();
+		await expect(column(name)).toHaveAttribute('aria-checked', 'false');
+	await column('Intensity').click();
 	await expect(dialog).toBeVisible();
 	await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+	await expect(dialog).toBeHidden();
 	await expect(trigger).toBeFocused();
 	const table = page.getByRole('table', { name: 'Fuel technology values' });
 	await expect(table.getByRole('columnheader', { name: /^Energy/ })).toHaveCount(0);
@@ -727,29 +719,38 @@ test('fuel technology options modal controls grouping, contribution and columns 
 	await expect(table.getByRole('columnheader', { name: /^Intensity/ })).toBeVisible();
 	await expect(table.getByRole('columnheader', { name: /^Energy/ })).toHaveCount(0);
 	await trigger.click();
-	for (const checkbox of await dialog.getByRole('checkbox').all()) await checkbox.uncheck();
+	for (const name of ['Energy', 'Av power', 'Contribution', 'Av price', 'Emissions', 'Intensity'])
+		if ((await column(name).getAttribute('aria-checked')) === 'true') await column(name).click();
 	await dialog.getByRole('button', { name: 'Done', exact: true }).click();
 	await expect(table.getByRole('columnheader', { name: /^Av / })).toHaveCount(0);
 	await expect(table.locator('[colspan="0"]')).toHaveCount(0);
+	// A click elsewhere closes the popover.
 	await trigger.click();
-	await page.locator('[data-dialog-overlay]').click({ position: { x: 5, y: 5 } });
-	await expect(dialog).not.toBeVisible();
-	await expect(trigger).toBeFocused();
+	await expect(dialog).toBeVisible();
+	await page.mouse.click(3, 300);
+	await expect(dialog).toBeHidden();
+	// The collapsed rail carries the same options.
 	await page.getByRole('button', { name: 'Hide fuel tech table', exact: true }).click();
 	await trigger.click();
 	await dialog.getByRole('button', { name: 'Show all columns' }).click();
+	await expect(column('Energy')).toHaveAttribute('aria-checked', 'true');
 	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
 	await expect(trigger).toBeFocused();
-	await page.setViewportSize({ width: 390, height: 480 });
+	// On a phone the options open in a sheet over the table's sheet.
+	await page.setViewportSize({ width: 390, height: 640 });
+	await page.getByTestId('tracker-table-button').click();
 	await trigger.click();
+	await expect(dialog).toBeVisible();
 	const bounds = await dialog.boundingBox();
 	expect(bounds.x).toBeGreaterThanOrEqual(0);
 	expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
-	expect(bounds.y + bounds.height).toBeLessThanOrEqual(480);
-	await dialog.getByRole('checkbox', { name: 'Intensity', exact: true }).uncheck();
+	await column('Intensity').click();
 	await page.screenshot({ path: testInfo.outputPath('fuel-options-mobile.png') });
-	await dialog.getByRole('button', { name: 'Done', exact: true }).click();
-	await expect(trigger).toBeFocused();
+	// Escape closes the options, not the table under them.
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(table).toBeVisible();
 	await expectNoHorizontalScroll(page);
 });
 
@@ -1358,7 +1359,10 @@ test('single-line cards compare as value tiles and stacks as change lists, absol
 			1
 		);
 	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-	await page.getByRole('radio', { name: 'Detailed', exact: true }).click();
+	await page
+		.getByRole('dialog', { name: 'Fuel technology options' })
+		.getByRole('button', { name: 'Detailed', exact: true })
+		.click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 	await expect(
 		generation.getByRole('rowheader', { name: 'Coal (Black)', exact: true })
@@ -2205,7 +2209,10 @@ test('analytical history restores grouping visibility and transform without echo
 	await percentageView(page);
 	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
 	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-	await page.getByRole('radio', { name: 'Detailed', exact: true }).click();
+	await page
+		.getByRole('dialog', { name: 'Fuel technology options' })
+		.getByRole('button', { name: 'Detailed', exact: true })
+		.click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 	await expect.poll(() => new URL(page.url()).searchParams.get('hidden')).toBeNull();
 	await expect(page.getByRole('columnheader', { name: /Technology/ })).toContainText('Detailed');
@@ -2559,10 +2566,9 @@ test('phone/tablet layouts remain usable', async ({ page }, testInfo) => {
 		await page.setViewportSize({ width, height: 900 });
 		await page.goto('/tracker/timeline?region=nsw1');
 		await trackerReady(page);
-		// Phones: the table starts in a minimised bottom sheet; tablets: closed
-		// (it would overlay the charts); desktops: docked open.
-		if (width === 390)
-			await expect(page.getByRole('button', { name: 'Show fuel technologies' })).toBeVisible();
+		// Phones: the table starts closed, opened by the button beside the range
+		// pill; tablets: closed (it would overlay the charts); desktops: docked open.
+		if (width === 390) await expect(page.getByTestId('tracker-table-button')).toBeVisible();
 		else if (width === 820)
 			await expect(page.getByRole('button', { name: 'Show fuel tech table' })).toBeVisible();
 		else await expect(page.getByTestId('fuel-tech-row').first()).toBeVisible();
@@ -2599,7 +2605,7 @@ test('frontend options reuse cached responses without flashing loading overlays'
 	});
 	for (const label of ['Detailed', 'Simplified', 'Detailed', 'Simplified']) {
 		await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-		await page.getByRole('radio', { name: label, exact: true }).click();
+		await page.getByRole('dialog').getByRole('button', { name: label, exact: true }).click();
 		await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 		await expect(page.getByRole('columnheader', { name: /Technology/ })).toContainText(label);
 		await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
@@ -2608,7 +2614,7 @@ test('frontend options reuse cached responses without flashing loading overlays'
 	await percentageView(page);
 	await page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first().click();
 	await page.getByRole('button', { name: 'Fuel technology options', exact: true }).click();
-	await page.getByRole('dialog').getByRole('checkbox', { name: 'Energy', exact: true }).uncheck();
+	await page.getByRole('dialog').getByRole('switch', { name: 'Energy', exact: true }).click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).click();
 	await chartsSettled(page);
 	await expect(page.locator('html')).toHaveAttribute('data-loading-flashes', '0');

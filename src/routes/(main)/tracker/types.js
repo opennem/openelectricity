@@ -299,6 +299,8 @@ export {};
  * @typedef {Object} TrackerRangeStatus
  * @property {string} label - The selected range
  * @property {string} [intervalLabel] - The interval, for the phone filter summary
+ * @property {string} [zoneLabel] - The zone the range's times are in ("AEST"), shown
+ *   after the range in the bar and on the phone pill's second line
  * @property {string} [inspectLabel] - The hovered or inspected period, replacing the label
  * @property {boolean} loading - Data on screen is updating
  * @property {string} [updatedLabel] - When the data last updated

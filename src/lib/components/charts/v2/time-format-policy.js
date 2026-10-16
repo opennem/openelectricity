@@ -122,7 +122,7 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
 		return { formatTooltip: label, formatFull: label, formatShort: label, bucketTick: null };
 	}
 
-	if (displayInterval === '5m' || displayInterval === '30m' || displayInterval === '1h') {
+	if (showsClockTimes(displayInterval)) {
 		return {
 			formatTooltip: (d) =>
 				isCurrentLocalYear(d, ianaTimeZone)
@@ -149,6 +149,15 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
 }
 
 /**
+ * Whether a display grain's labels carry clock times (sub-daily grains), and
+ * so a zone: a range readout names it.
+ * @param {string} displayInterval
+ */
+export function showsClockTimes(displayInterval) {
+	return displayInterval === '5m' || displayInterval === '30m' || displayInterval === '1h';
+}
+
+/**
  * Interval-aware label for a `[start, end]` viewport — the standalone
  * toolbar/nav range readout. Endpoints render at the display grain's
  * resolution:
@@ -158,7 +167,9 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
  * - Months: "Aug 2025 — Aug 2026", collapsing likewise.
  * - Sub-daily with clock times and the (DST-free) zone the times are in:
  *   "19 Aug 2025, 10:00 am — 26 Aug 2025, 10:00 am AEST", without the years
- *   when both ends fall in the current one ("19 Aug, 10:00 am — …").
+ *   when both ends fall in the current one ("19 Aug, 10:00 am — …"). With
+ *   `zone: false` the zone is left for the caller to show (a phone readout
+ *   puts it on a line of its own).
  * - Daily/weekly: a plain date range, with the year when it isn't the
  *   current one ("19 — 26 Aug 2025") since the label stands alone.
  *
@@ -166,7 +177,8 @@ export function getTimeFormatPolicy(displayInterval, ianaTimeZone) {
  * @param {Date | number} end
  * @param {string} displayInterval
  * @param {string} ianaTimeZone
- * @param {{ referenceDate?: Date | number }} [opts] - "Now", for the current year
+ * @param {{ referenceDate?: Date | number, zone?: boolean }} [opts] - "Now", for
+ *   the current year; whether sub-daily ranges name their zone (default true)
  * @returns {string}
  */
 export function formatRangeLabel(
@@ -174,7 +186,7 @@ export function formatRangeLabel(
 	end,
 	displayInterval,
 	ianaTimeZone,
-	{ referenceDate = new Date() } = {}
+	{ referenceDate = new Date(), zone = true } = {}
 ) {
 	const rollingBase = baseIntervalFor(displayInterval);
 	if (
@@ -192,14 +204,15 @@ export function formatRangeLabel(
 		return startLabel === endLabel ? startLabel : `${startLabel} ${RANGE_SEPARATOR} ${endLabel}`;
 	}
 
-	if (displayInterval === '5m' || displayInterval === '30m' || displayInterval === '1h') {
+	if (showsClockTimes(displayInterval)) {
 		const thisYear =
 			isCurrentLocalYear(start, ianaTimeZone, referenceDate) &&
 			isCurrentLocalYear(end, ianaTimeZone, referenceDate);
 		const format = thisYear ? formatDayMonthTime : formatDayMonthYearTime;
 		const startLabel = format(start, ianaTimeZone);
 		const endLabel = format(end, ianaTimeZone);
-		return `${startLabel} ${RANGE_SEPARATOR} ${endLabel} ${tzAbbreviationFromIana(ianaTimeZone)}`;
+		const range = `${startLabel} ${RANGE_SEPARATOR} ${endLabel}`;
+		return zone ? `${range} ${tzAbbreviationFromIana(ianaTimeZone)}` : range;
 	}
 
 	// Daily/weekly grains — the viewport resolves to dates, not times. (The 7d

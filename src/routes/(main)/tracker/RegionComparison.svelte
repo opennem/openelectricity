@@ -1,6 +1,5 @@
 <script>
 	import { longPress } from '$lib/utils/long-press.js';
-	import Select from '$lib/components/form-elements/Select.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
 	import LayoutGrid from '@lucide/svelte/icons/layout-grid';
@@ -451,6 +450,13 @@
 	export function getRangeLabel() {
 		return comparisonRangeLabel(shownPeriods.first, shownPeriods.last, interval);
 	}
+	/** Open the Regions table (the phone pill's table button). */
+	export function openTable() {
+		select({ table: true });
+	}
+	export function isTableOpen() {
+		return panelOpen;
+	}
 	/** The interval, for the phone filter summary. */
 	export function getIntervalLabel() {
 		return getIntervalSpec(interval)?.label;
@@ -521,15 +527,19 @@
      its options dialog, the collapsed rail and the proportion headers. -->
 {#snippet tableOptions()}
 	<TableOptions title="Regions table options" summary={contributionLabel(basis)}>
-		<Select
-			formLabel="Contribution %"
-			options={CONTRIBUTION_OPTIONS}
-			selected={basis}
-			staticDisplay
-			paddingX=""
-			onchange={(option) =>
-				select({ basis: option.value === 'generation' ? 'generation' : 'demand' })}
-		/>
+		<FilterSheetSection title="Contribution %">
+			<Switch
+				buttons={CONTRIBUTION_OPTIONS}
+				selected={basis}
+				columns={2}
+				compact
+				rounded="rounded-lg"
+				darkSelected
+				aria-label="Contribution basis"
+				onchange={(option) =>
+					select({ basis: option.value === 'generation' ? 'generation' : 'demand' })}
+			/>
+		</FilterSheetSection>
 	</TableOptions>
 {/snippet}
 

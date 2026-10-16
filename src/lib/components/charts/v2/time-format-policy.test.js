@@ -251,6 +251,15 @@ describe('formatRangeLabel — interval-aware viewport labels', () => {
 		);
 	});
 
+	it('leaves the zone to the caller on request', () => {
+		const referenceDate = Date.UTC(2026, 9, 15);
+		const label = formatRangeLabel(Date.UTC(2026, 7, 19), Date.UTC(2026, 7, 26), '30m', NEM, {
+			referenceDate,
+			zone: false
+		});
+		expect(clean(label)).toBe('19 Aug, 10:00 am — 26 Aug, 10:00 am');
+	});
+
 	it('falls back to a plain date range at daily grains', () => {
 		expect(
 			formatRangeLabel(localMidnight(10, 2025, 7, 19), localMidnight(10, 2025, 7, 26), '1d', NEM)

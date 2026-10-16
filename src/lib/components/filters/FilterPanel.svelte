@@ -25,9 +25,12 @@
 	 * the panel and counts as inside for outside-click dismissal.
 	 *
 	 * Below 768px the panel opens as a bottom sheet over a backdrop instead
-	 * (titled with `label`; drag down, tap outside or ✕ to dismiss). The
-	 * popover is kept inside the viewport, and its body scrolls when the
-	 * content is taller than the space below the trigger.
+	 * (titled with `title`, else `label`, centred like the other phone filter
+	 * sheets; drag down, tap outside or ✕ to dismiss), `sheetPeek` of the
+	 * screen tall. The popover is kept inside the viewport, and its body
+	 * scrolls when the content is taller than the space below the trigger.
+	 * Escape closes either; closing from inside (Apply/Done, ✕, Escape) hands
+	 * focus back to the trigger.
 	 * @type {{
 	 *   label: string,
 	 *   title?: string,
@@ -37,6 +40,8 @@
 	 *   compact?: boolean,
 	 *   disabled?: boolean,
 	 *   panelClass?: string,
+	 *   sheetPeek?: number,
+	 *   dialog?: boolean,
 	 *   onopenchange?: (open: boolean) => void,
 	 *   onapply?: () => void,
 	 *   applyLabel?: string,
@@ -57,6 +62,11 @@
 		disabled = false,
 		/** Extra panel classes, e.g. a min width. The panel fits its content by default. */
 		panelClass = '',
+		/** The phone sheet's height, as a fraction of the screen. */
+		sheetPeek = 0.6,
+		/** Label the panel as a dialog named `title` (a panel of options rather
+		 *  than a pick list). */
+		dialog = false,
 		onopenchange,
 		onapply,
 		/** The footer button's text: Apply commits staged changes; an
@@ -96,9 +106,26 @@
 	function handleScroll() {
 		setOpen(false);
 	}
+
+	/** Close from inside (Done, ✕ or Escape) and hand focus back to the
+	 * trigger, so the keyboard picks up where the panel opened. */
+	function closeToTrigger() {
+		setOpen(false);
+		const target = triggerEl?.matches('button') ? triggerEl : triggerEl?.querySelector('button');
+		target?.focus();
+	}
+
+	/** Escape closes the panel first: caught on the way down and marked
+	 * handled, so a sheet the panel sits in (the Tracker's table) stays open.
+	 * @param {KeyboardEvent} event */
+	function handleKeydown(event) {
+		if (!showPanel || event.key !== 'Escape') return;
+		event.preventDefault();
+		closeToTrigger();
+	}
 </script>
 
-<svelte:window onscroll={handleScroll} />
+<svelte:window onscroll={handleScroll} onkeydowncapture={handleKeydown} />
 <svelte:document onclick={handleDocumentClick} />
 
 <div class="relative">
@@ -138,25 +165,30 @@
 				open={showPanel && !disabled}
 				onclose={() => setOpen(false)}
 				containerHeight={sheetContainerHeight}
-				peekFraction={0.6}
+				peekFraction={sheetPeek}
 				class="pointer-events-auto"
 			>
 				{#snippet header()}
 					<div
-						class="flex items-center justify-between gap-2 border-b border-warm-grey px-6 pt-1 pb-3"
+						class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-warm-grey px-6 pt-1 pb-3"
 					>
-						<h3 class="mb-0 text-base">{title ?? label}</h3>
+						<h3 class="col-start-2 mb-0 text-base">{title ?? label}</h3>
 						<button
 							type="button"
-							class="cursor-pointer rounded-full bg-light-warm-grey p-2 transition-colors hover:bg-warm-grey"
-							onclick={() => setOpen(false)}
+							class="cursor-pointer justify-self-end rounded-full bg-light-warm-grey p-2 transition-colors hover:bg-warm-grey"
+							onclick={closeToTrigger}
 							aria-label="Close {title ?? label}"
 						>
 							<X class="size-5 text-dark-grey" />
 						</button>
 					</div>
 				{/snippet}
-				<div bind:this={panelEl} class="flex min-h-full flex-col">
+				<div
+					bind:this={panelEl}
+					class="flex min-h-full flex-col"
+					role={dialog ? 'dialog' : undefined}
+					aria-label={dialog ? (title ?? label) : undefined}
+				>
 					<div class="flex-1">{@render children(() => setOpen(false))}</div>
 					{@render footer()}
 				</div>
@@ -167,6 +199,8 @@
 			bind:this={panelEl}
 			use:portal
 			use:dropdownPosition={{ trigger: triggerEl }}
+			role={dialog ? 'dialog' : undefined}
+			aria-label={dialog ? (title ?? label) : undefined}
 			class="fixed z-50 bg-white border border-mid-warm-grey rounded-lg shadow-md max-w-[340px] flex flex-col overflow-hidden {panelClass}"
 			transition:fly={{ y: -5, duration: 150 }}
 		>
@@ -189,7 +223,7 @@
 				class="ml-auto bg-dark-grey text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-black transition-colors cursor-pointer"
 				onclick={() => {
 					onapply?.();
-					setOpen(false);
+					closeToTrigger();
 				}}
 			>
 				{applyLabel}
