@@ -15,10 +15,11 @@
 	 * mobile floating nav over a dark/satellite map).
 	 *
 	 * `label` merges the page name into the trigger ("logo Tracker"), replacing
-	 * a separate page-name link.
-	 * @type {{ light?: boolean, label?: string }}
+	 * a separate page-name link. `badge` sets a tiny red tag under the label
+	 * (e.g. "beta" for a page still in development).
+	 * @type {{ light?: boolean, label?: string, badge?: string }}
 	 */
-	let { light = false, label } = $props();
+	let { light = false, label, badge } = $props();
 
 	// Unlike the header Nav, this dropdown renders `dropdownOnly` items too —
 	// that's where in-development entries (e.g. the new Tracker) surface.
@@ -143,7 +144,14 @@
 			class="h-8 w-auto {light ? 'brightness-0 invert' : ''}"
 		/>
 		{#if label}
-			<span class="text-sm lg:text-base font-semibold text-dark-grey">{label}</span>
+			<span class="flex flex-col items-start">
+				<span class="text-sm lg:text-base font-semibold text-dark-grey">{label}</span>
+				{#if badge}
+					<span class="font-space text-[9px] leading-none uppercase tracking-wider text-red"
+						>{badge}</span
+					>
+				{/if}
+			</span>
 		{/if}
 	</button>
 

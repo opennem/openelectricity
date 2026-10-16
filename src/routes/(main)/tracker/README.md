@@ -785,7 +785,7 @@ on a fuel tech or region row solos it (`$lib/utils/long-press.js`), as
 Below 768px the page scrolls as a document (`FullscreenLayout` and
 `FullscreenContainer`'s `phoneScroll`), so the top bar scrolls away with the
 charts, and the table sheet is fixed to the viewport. The bar is one row (the
-"Tracker" logo menu, the view dropdown and the Feedback and options buttons;
+"Tracker" logo menu, tagged "beta" in tiny red under the title, the view dropdown and the Feedback and options buttons;
 `FullscreenFilterBar`'s `wrapOnPhone` turns its wrappers into
 `display: contents`), and the filters leave it. In their place, a pill at the
 top of the body stays in view (`RangeStatus`'s `sticky` variant): the filters

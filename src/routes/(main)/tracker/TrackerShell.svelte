@@ -251,7 +251,7 @@
 			>
 				{#snippet stable()}
 					{#if isFullscreen}
-						<FullscreenNavDropdown label="Tracker" />
+						<FullscreenNavDropdown label="Tracker" badge="beta" />
 					{/if}
 				{/snippet}
 
