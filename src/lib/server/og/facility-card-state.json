@@ -934,7 +934,7 @@
 				"solar_utility",
 				"battery"
 			],
-			"dominant": "solar_utility",
+			"dominant": "battery",
 			"capacity": 5,
 			"status": "committed",
 			"region": "NSW",
@@ -1056,6 +1056,20 @@
 			"name": "Manjimup"
 		}
 	},
+	"BRIGALOWGT": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"gas_ocgt"
+			],
+			"dominant": "gas_ocgt",
+			"capacity": 400,
+			"status": "committed",
+			"region": "QLD",
+			"name": "Brigalow"
+		}
+	},
 	"BRNDBES": {
 		"v": 1,
 		"photo": "https://cdn.sanity.io/images/bjedimft/production/2365b2ca4b2e5e9320691dca21dd8eeb84ed65c0-2560x1440.jpg",
@@ -1138,6 +1152,20 @@
 			"status": "operating",
 			"region": "VIC",
 			"name": "Berrybank"
+		}
+	},
+	"BULABUL": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 302,
+			"status": "committed",
+			"region": "NSW",
+			"name": "Bulabul"
 		}
 	},
 	"BULGANA": {
@@ -2471,7 +2499,7 @@
 				"solar_utility",
 				"battery"
 			],
-			"dominant": "solar_utility",
+			"dominant": "battery",
 			"capacity": 180,
 			"status": "committed",
 			"region": "NSW",
@@ -2613,7 +2641,7 @@
 				"solar_utility",
 				"battery"
 			],
-			"dominant": "solar_utility",
+			"dominant": "battery",
 			"capacity": 300,
 			"status": "committed",
 			"region": "QLD",
@@ -2713,7 +2741,7 @@
 				"solar_utility",
 				"battery"
 			],
-			"dominant": "solar_utility",
+			"dominant": "battery",
 			"capacity": 600,
 			"status": "committed",
 			"region": "QLD",
@@ -4321,7 +4349,7 @@
 				"solar_utility",
 				"battery"
 			],
-			"dominant": "solar_utility",
+			"dominant": "battery",
 			"capacity": 20,
 			"status": "committed",
 			"region": "NSW",
@@ -4462,7 +4490,7 @@
 				"solar_utility",
 				"battery"
 			],
-			"dominant": "solar_utility",
+			"dominant": "battery",
 			"capacity": 562,
 			"status": "committed",
 			"region": "QLD",
@@ -4674,7 +4702,7 @@
 				"solar_utility",
 				"battery"
 			],
-			"dominant": "solar_utility",
+			"dominant": "battery",
 			"capacity": 300,
 			"status": "committed",
 			"region": "QLD",
@@ -5022,7 +5050,7 @@
 	},
 	"MP": {
 		"v": 1,
-		"photo": null,
+		"photo": "https://cdn.sanity.io/images/bjedimft/production/4610ef7652eb081874d8525595960fa5513dfab3-1200x674.jpg",
 		"data": {
 			"fuelTechs": [
 				"coal_black"
@@ -6643,7 +6671,7 @@
 				"solar_utility",
 				"battery"
 			],
-			"dominant": "solar_utility",
+			"dominant": "battery",
 			"capacity": 600,
 			"status": "committed",
 			"region": "QLD",
@@ -6925,7 +6953,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 300,
-			"status": "commissioning",
+			"status": "operating",
 			"region": "QLD",
 			"name": "Stanwell"
 		}
@@ -8094,20 +8122,6 @@
 			"status": "operating",
 			"region": "NSW",
 			"name": "Woodlawn"
-		}
-	},
-	"WELLINGTONBESS": {
-		"v": 1,
-		"photo": null,
-		"data": {
-			"fuelTechs": [
-				"battery"
-			],
-			"dominant": "battery",
-			"capacity": 302,
-			"status": "committed",
-			"region": "NSW",
-			"name": "Bulabul"
 		}
 	},
 	"WELLSF1": {
