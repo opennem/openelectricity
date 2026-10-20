@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getFilterParams, defaultSignificance } from './filters.js';
+import { getFilterParams, defaultSignificance, parseListParam } from './filters.js';
 
 /** @param {number | null | undefined} significance */
 function paramsWithSignificance(significance) {
@@ -30,5 +30,20 @@ describe('getFilterParams significance', () => {
 
 	it('encodes non-default values', () => {
 		expect(paramsWithSignificance(9).significanceParam).toBe('&significance=9');
+	});
+});
+
+describe('parseListParam', () => {
+	it('returns an empty list for a missing or empty param', () => {
+		expect(parseListParam(null)).toEqual([]);
+		expect(parseListParam('')).toEqual([]);
+	});
+
+	it('splits comma-separated values in order', () => {
+		expect(parseListParam('nsw1,vic1')).toEqual(['nsw1', 'vic1']);
+	});
+
+	it('drops duplicates, blanks and surrounding whitespace', () => {
+		expect(parseListParam('nsw1, vic1,nsw1,,vic1 ')).toEqual(['nsw1', 'vic1']);
 	});
 });

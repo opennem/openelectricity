@@ -288,3 +288,15 @@ export function getFilterParams({
 		significanceParam
 	};
 }
+
+/**
+ * Parse a comma-separated filter param into unique, non-empty values.
+ * The filter tags and selects key on these values, so a hand-edited or
+ * shared link such as `?regions=nsw1,nsw1` would otherwise break the page.
+ * @param {string | null} param
+ * @returns {string[]}
+ */
+export function parseListParam(param) {
+	if (!param) return [];
+	return [...new Set(param.split(',').map((value) => value.trim()))].filter(Boolean);
+}
