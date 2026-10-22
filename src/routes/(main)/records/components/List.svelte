@@ -39,9 +39,7 @@
 				(/** @type {any} */ r) => r.period === 'year'
 			);
 			if (yearsRecords.length) {
-				// year is last 4 chars of the day
-				let year = day.slice(-4);
-				records.push([year, yearsRecords]);
+				records.push([day, yearsRecords]);
 			}
 		});
 		return records;
@@ -97,14 +95,15 @@
 				<p
 					class="sticky top-0 z-20 bg-white/80 backdrop-blur-xs pt-6 pb-4 pl-6 md:pl-0 mb-0 border-b border-warm-grey font-space uppercase"
 				>
-					{yearRecords[0][0]}
+					<!-- year is last 4 chars of the day -->
+					{yearRecords[0][0].slice(-4)}
 				</p>
 			{/if}
 
 			{#each yearRecords as [day, records] (day)}
 				<div>
 					<ul>
-						{#each records as record (record.record_id)}
+						{#each records as record (record.instance_id)}
 							{@const path = `/records/${encodeURIComponent(record.record_id)}?${dateTimeQuery(record.interval)}&focus=${record.time}`}
 							<li>
 								<a
@@ -169,7 +168,7 @@
 			{#each monthRecords as [day, records] (day)}
 				<div>
 					<ul>
-						{#each records as record (record.record_id)}
+						{#each records as record (record.instance_id)}
 							{@const path = `/records/${encodeURIComponent(record.record_id)}?${dateTimeQuery(record.interval)}&focus=${record.time}`}
 							<li>
 								<a
