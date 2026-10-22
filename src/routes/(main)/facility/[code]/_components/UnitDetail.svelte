@@ -91,7 +91,7 @@
 	 * @returns {string}
 	 */
 	function fmtDate(date, specificity) {
-		return formatDateBySpecificity(date, specificity ?? 'day', timeZone);
+		return formatDateBySpecificity(date, specificity ?? 'day');
 	}
 
 	/** Human timezone label for the network offset (NEM → AEST, WEM → AWST). */

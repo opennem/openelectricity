@@ -1,8 +1,8 @@
 <script>
-	import { parseAbsolute, today, getLocalTimeZone } from '@internationalized/date';
+	import { toZoned, today, getLocalTimeZone } from '@internationalized/date';
 	import { tick } from 'svelte';
 	import { browser } from '$app/environment';
-	import { formatDateBySpecificity, stripDateTimezone } from '$lib/utils/date-format';
+	import { formatDateBySpecificity, parseCalendarDate } from '$lib/utils/date-format';
 	import { formatDateTime } from '$lib/utils/formatters';
 	import { getUnitCapacity } from '$lib/utils/capacity';
 	import formatValue from '$lib/facilities/format-value.js';
@@ -83,18 +83,12 @@
 			const offset = facility.network_id === 'WEM' ? '+08:00' : '+10:00';
 			facility.units.forEach((/** @type {*} */ unit) => {
 				const dateField = getDateField(unit.status_id);
-				const dateValue = unit[dateField];
+				const calendarDate = parseCalendarDate(unit[dateField]);
 
-				if (dateValue) {
-					// Why convert?
-					// The data is set in the CMS as UTC (should be a plain date string or?)
-					// when returned from the API, it is converted to +10:00 and sometimes returned
-					// as a Z date or a + date. (🤷🏻‍♂️)
-					// - the date and time are also adjusted with +10:00 or +08:00 (🤷🏻‍♂️)
-					// - e.g. commencement_date: "2025-12-15T14:00:00+10:00" this should be 2025-12-16T00:00:00+10:00 or better just 2025-12-16
-					// - so to fix, we need to convert it back to UTC to get the date
-					// - and then add the offset back on based on network_id (NEM or WEM) so we can sort the data correctly
-					let parsedZonedDate = parseAbsolute(stripDateTimezone(dateValue) + 'Z', offset);
+				if (calendarDate) {
+					// Local midnight in the network's timezone, so the sort and the
+					// year/day headers all read the unit's own calendar date.
+					let parsedZonedDate = toZoned(calendarDate, offset);
 
 					// this will order the data so year is first, then month, then day
 					if (unit[dateField + '_specificity'] === 'month') {

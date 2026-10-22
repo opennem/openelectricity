@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
 	canSplitBatteryUnits,
+	findUnitDate,
 	getFacilityCapacity,
 	getOrderedFuelTechGroups,
 	groupUnits,
@@ -253,5 +254,43 @@ describe('canSplitBatteryUnits', () => {
 	it('is false with no units', () => {
 		expect(canSplitBatteryUnits({ units: [] })).toBe(false);
 		expect(canSplitBatteryUnits(null)).toBe(false);
+	});
+});
+
+describe('findUnitDate', () => {
+	// SWAN_B (QLD): units closed in different years, with a missing date
+	const units = [
+		{ closure_date: '2011-01-01T00:00:00+10:00', closure_date_specificity: 'year' },
+		{ closure_date: '2004-01-01T00:00:00+10:00', closure_date_specificity: 'year' },
+		{ closure_date: '2012-03-15T00:00:00+10:00', closure_date_specificity: 'day' },
+		{ closure_date: null },
+		{ closure_date: 'unknown' }
+	];
+
+	it('finds the latest and earliest dates with their specificity', () => {
+		const latest = findUnitDate(units, 'closure_date', 'latest');
+		expect(latest?.value).toBe('2012-03-15T00:00:00+10:00');
+		expect(latest?.date.toString()).toBe('2012-03-15');
+		expect(latest?.specificity).toBe('day');
+
+		const earliest = findUnitDate(units, 'closure_date', 'earliest');
+		expect(earliest?.date.toString()).toBe('2004-01-01');
+		expect(earliest?.specificity).toBe('year');
+	});
+
+	it('compares calendar dates across source shapes and offsets', () => {
+		const mixed = [
+			{ closure_date: '2022-01-01T00:00:00+10:00' }, // NEM, e.g. SA or QLD
+			{ closure_date: '2022-01-02T00:00:00+08:00' }, // WEM
+			{ closure_date: '2021-12-31' } // Sanity
+		];
+		expect(findUnitDate(mixed, 'closure_date', 'latest')?.date.toString()).toBe('2022-01-02');
+		expect(findUnitDate(mixed, 'closure_date', 'earliest')?.date.toString()).toBe('2021-12-31');
+		expect(findUnitDate(mixed, 'closure_date', 'latest')?.specificity).toBeNull();
+	});
+
+	it('returns null when no unit has a valid date', () => {
+		expect(findUnitDate([], 'closure_date', 'latest')).toBeNull();
+		expect(findUnitDate([{ closure_date: null }], 'closure_date', 'latest')).toBeNull();
 	});
 });

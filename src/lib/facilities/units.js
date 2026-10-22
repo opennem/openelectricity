@@ -1,6 +1,7 @@
 import { getFueltechColor } from '$lib/utils/fueltech-display';
 import { sumUnitCapacities } from '$lib/utils/capacity';
 import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
+import { parseCalendarDate } from '$lib/utils/date-format.js';
 
 /** Fuel techs of the split units derived from a bidirectional `battery` unit. */
 const DERIVED_BATTERY_FUEL_TECHS = ['battery_charging', 'battery_discharging'];
@@ -167,4 +168,34 @@ export function withBatteryView(facility, { batteryView = 'net' } = {}) {
 			? facility.units.filter((/** @type {any} */ unit) => unit.fueltech_id !== 'battery')
 			: filterDerivedBatteryUnits(facility.units, hasBidirectional);
 	return { ...facility, units };
+}
+
+/**
+ * @typedef {object} UnitDate
+ * @property {string} value - the unit's raw date string
+ * @property {import('@internationalized/date').CalendarDate} date
+ * @property {string | null} specificity - the unit's `${field}_specificity`
+ */
+
+/**
+ * The earliest or latest of the units' `field` dates (e.g. `closure_date`),
+ * compared as calendar dates, with that unit's `${field}_specificity`. Units
+ * with a missing or unparseable date are skipped.
+ * @param {any[]} units
+ * @param {string} field
+ * @param {'earliest' | 'latest'} which
+ * @returns {UnitDate | null}
+ */
+export function findUnitDate(units, field, which) {
+	/** @type {UnitDate | null} */
+	let found = null;
+	for (const unit of units) {
+		const date = parseCalendarDate(unit[field]);
+		if (!date) continue;
+		const order = found ? date.compare(found.date) : 0;
+		if (!found || (which === 'earliest' ? order < 0 : order > 0)) {
+			found = { value: unit[field], date, specificity: unit[`${field}_specificity`] ?? null };
+		}
+	}
+	return found;
 }

@@ -13,8 +13,10 @@
 	import {
 		groupUnits,
 		hasBidirectionalBattery,
-		filterDerivedBatteryUnits
+		filterDerivedBatteryUnits,
+		findUnitDate
 	} from '$lib/facilities/units.js';
+	import { formatDateBySpecificity } from '$lib/utils/date-format.js';
 	import { getRegionLabel, getRegionLongLabel } from '$lib/facilities/filters.js';
 	import formatValue from '$lib/facilities/format-value.js';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
@@ -77,35 +79,6 @@
 	);
 	let hasLinks = $derived(Boolean(websiteUrl || wikipediaUrl || wikidataUrl));
 
-	/** Earliest commencement year across units. */
-	let commissionedYear = $derived.by(() => {
-		let earliest = /** @type {string | null} */ (null);
-		for (const u of filteredUnits) {
-			const d = /** @type {string | null | undefined} */ (u.commencement_date);
-			if (!d) continue;
-			if (!earliest || d < earliest) earliest = d;
-		}
-		return earliest ? earliest.slice(0, 4) : null;
-	});
-
-	/** Latest closure_date across units — only meaningful when fully retired. */
-	let retiredDateLabel = $derived.by(() => {
-		let latest = /** @type {string | null} */ (null);
-		for (const u of filteredUnits) {
-			const d = /** @type {string | null | undefined} */ (u.closure_date);
-			if (!d) continue;
-			if (!latest || d > latest) latest = d;
-		}
-		if (!latest) return null;
-		const parsed = new Date(latest);
-		if (Number.isNaN(parsed.getTime())) return latest;
-		return parsed.toLocaleDateString('en-AU', {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
-	});
-
 	let regionLabel = $derived(
 		facility ? getRegionLongLabel(facility.network_id, facility.network_region) : ''
 	);
@@ -118,6 +91,24 @@
 	let filteredUnits = $derived(
 		filterDerivedBatteryUnits(facility?.units ?? [], hasBidirectionalBattery(facility))
 	);
+
+	/** Earliest commencement year across units. */
+	let commissionedYear = $derived(
+		findUnitDate(filteredUnits, 'commencement_date', 'earliest')?.date.year ?? null
+	);
+
+	/**
+	 * "Retired on 1 Jan 2022" (or "in Jan 2022" / "in 2022" for a less specific
+	 * date) from the latest closure across units — only shown when fully retired.
+	 */
+	let retiredLabel = $derived.by(() => {
+		const closure = findUnitDate(filteredUnits, 'closure_date', 'latest');
+		if (!closure) return null;
+		const specificity = closure.specificity ?? 'day';
+		const preposition = specificity === 'day' ? 'on' : 'in';
+		return `Retired ${preposition} ${formatDateBySpecificity(closure.value, specificity)}`;
+	});
+
 	// Top-of-stack first so icons, proportion bar, and per-group rows mirror
 	// what the chart paints on top.
 	let unitGroups = $derived(
@@ -346,8 +337,8 @@
 								class="inline-flex items-center gap-1.5 font-medium shrink-0 border px-2 py-1 -mr-px -mb-px tablet:border-0 tablet:px-0 tablet:py-0 tablet:m-0 {onColourText} {onColourBorder}"
 							>
 								<FacilityStatusIcon status={facilityStatus} />
-								{#if facilityStatus === 'retired' && retiredDateLabel}
-									Retired on {retiredDateLabel}
+								{#if facilityStatus === 'retired' && retiredLabel}
+									{retiredLabel}
 								{:else}
 									<span class="capitalize">{facilityStatus}</span>
 								{/if}

@@ -1,5 +1,6 @@
-import { format } from 'date-fns';
-import { parseDateTime, parseAbsolute, DateFormatter } from '@internationalized/date';
+import { parseDate, DateFormatter } from '@internationalized/date';
+
+/** @typedef {import('@internationalized/date').CalendarDate} CalendarDate */
 
 /**
  * Strip inconsistent timezone info from API date strings.
@@ -13,67 +14,46 @@ export function stripDateTimezone(dateValue) {
 }
 
 /**
- * Format a date based on specificity
- * @param {string | null | undefined} dateValue - The date value to format
- * @param {string | null | undefined} specificity - How specific the date is (e.g., 'day', 'month', 'year')
- * @returns {string} Formatted date string
+ * The calendar date a facility or unit date names. These dates arrive as plain
+ * dates from Sanity (`2022-01-01`), naive local datetimes from the data-centre
+ * sheet (`2022-01-01T00:00:00`) and local midnight with the network offset from
+ * the OE API (`2022-01-01T00:00:00+10:00`). In every shape the leading
+ * YYYY-MM-DD is the local date, so read it directly: converting through an
+ * instant shifts the day by the runtime's timezone (1 Jan becomes 31 Dec when
+ * rendered in UTC or west of the network).
+ * @param {string | null | undefined} dateValue
+ * @returns {CalendarDate | null} null when missing or not a valid date
  */
-export function formatDateBySpecificity(dateValue, specificity, offset = '+10:00') {
-	if (!dateValue) return '-';
-
+export function parseCalendarDate(dateValue) {
+	const match = typeof dateValue === 'string' ? /^\d{4}-\d{2}-\d{2}/.exec(dateValue) : null;
+	if (!match) return null;
 	try {
-		const dateStr = typeof dateValue === 'string' ? stripDateTimezone(dateValue) : dateValue;
-
-		// inconsistent data format, some have Z, some have +
-		// assume return string is always in Z
-		let parsedZonedDate = parseAbsolute(dateStr + 'Z', offset);
-		// console.log('parsedDate', dateValue, dateStr, parsedZonedDate);
-		let formatter;
-
-		if (isNaN(parsedZonedDate.toDate().getTime())) {
-			return '-';
-		}
-
-		switch (specificity?.toLowerCase()) {
-			case 'day':
-				formatter = new DateFormatter('en-AU', {
-					year: 'numeric',
-					month: 'short',
-					day: 'numeric',
-					timeZone: offset
-				});
-				return formatter.format(parsedZonedDate.toDate());
-			case 'month':
-				formatter = new DateFormatter('en-AU', {
-					year: 'numeric',
-					month: 'short',
-					timeZone: offset
-				});
-				return formatter.format(parsedZonedDate.toDate());
-			case 'year':
-				formatter = new DateFormatter('en-AU', {
-					year: 'numeric',
-					timeZone: offset
-				});
-				return formatter.format(parsedZonedDate.toDate());
-			case 'quarter':
-				formatter = new DateFormatter('en-AU', {
-					year: 'numeric',
-					timeZone: offset
-				});
-				return formatter.format(parsedZonedDate.toDate());
-			default:
-				// If no specificity is provided, default to full date
-				formatter = new DateFormatter('en-AU', {
-					year: 'numeric',
-					month: 'short',
-					day: 'numeric',
-					timeZone: offset
-				});
-				return formatter.format(parsedZonedDate.toDate());
-		}
-	} catch (error) {
-		console.error('Error formatting date:', error);
-		return '-';
+		return parseDate(match[0]);
+	} catch {
+		return null;
 	}
+}
+
+/** @type {Record<string, Intl.DateTimeFormatOptions>} */
+const SPECIFICITY_FORMATS = {
+	day: { year: 'numeric', month: 'short', day: 'numeric' },
+	month: { year: 'numeric', month: 'short' },
+	quarter: { year: 'numeric' },
+	year: { year: 'numeric' }
+};
+
+/**
+ * Format a facility or unit date to its specificity (day when unknown), e.g.
+ * "1 Jan 2022", "Jan 2022" or "2022". Reads the calendar date (see
+ * parseCalendarDate), so the label never depends on the runtime's timezone.
+ * @param {string | null | undefined} dateValue
+ * @param {string | null | undefined} specificity - 'day', 'month', 'quarter' or 'year'
+ * @returns {string} '-' when missing or unparseable
+ */
+export function formatDateBySpecificity(dateValue, specificity) {
+	const date = parseCalendarDate(dateValue);
+	if (!date) return '-';
+
+	const options = SPECIFICITY_FORMATS[specificity?.toLowerCase() ?? ''] ?? SPECIFICITY_FORMATS.day;
+	return new DateFormatter('en-AU', { ...options, timeZone: 'UTC' }).format(date.toDate('UTC'));
 }
