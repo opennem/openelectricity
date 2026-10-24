@@ -1,5 +1,6 @@
 import { group, rollup } from 'd3-array';
 import { getFormattedDate } from '$lib/utils/formatters';
+import { intlTimeZone } from '$lib/utils/date-format.js';
 /**
  *
  * @param {MilestoneRecord[]} data
@@ -38,7 +39,7 @@ function groupByMonthDay(data) {
 			return new Intl.DateTimeFormat('en-AU', {
 				month: 'short',
 				year: 'numeric',
-				timeZone: d.timeZone
+				timeZone: intlTimeZone(d.timeZone)
 			}).format(d.time);
 		},
 		(/** @type {MilestoneRecord} */ d) => {
@@ -48,7 +49,7 @@ function groupByMonthDay(data) {
 				day: 'numeric',
 				month: 'short',
 				year: 'numeric',
-				timeZone: d.timeZone
+				timeZone: intlTimeZone(d.timeZone)
 			}).format(d.time);
 		}
 	);

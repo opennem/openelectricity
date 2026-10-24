@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { formatDateBySpecificity, parseCalendarDate } from './date-format.js';
+import { formatDateBySpecificity, intlTimeZone, parseCalendarDate } from './date-format.js';
 
 const ORIGINAL_TZ = process.env.TZ;
 
@@ -30,6 +30,39 @@ function useTimezone(timeZone) {
 afterAll(() => {
 	if (ORIGINAL_TZ === undefined) delete process.env.TZ;
 	else process.env.TZ = ORIGINAL_TZ;
+});
+
+describe('intlTimeZone', () => {
+	it('turns whole-hour offsets into fixed-offset zones, sign inverted', () => {
+		expect(intlTimeZone('+10:00')).toBe('Etc/GMT-10');
+		expect(intlTimeZone('+08:00')).toBe('Etc/GMT-8');
+		expect(intlTimeZone('-05:00')).toBe('Etc/GMT+5');
+		expect(intlTimeZone('+00:00')).toBe('UTC');
+	});
+
+	it('passes through IANA names and offsets without a fixed-offset zone', () => {
+		expect(intlTimeZone('Australia/Brisbane')).toBe('Australia/Brisbane');
+		expect(intlTimeZone('UTC')).toBe('UTC');
+		expect(intlTimeZone('+09:30')).toBe('+09:30');
+		expect(intlTimeZone(undefined)).toBeUndefined();
+	});
+
+	it('formats exactly as the offset does', () => {
+		// January 2008 falls in Perth's 2006–09 daylight-saving trial, when
+		// 'Australia/Perth' reads an hour ahead of the WEM's +08:00.
+		const instants = [new Date('2008-01-15T00:00:00Z'), new Date('2022-07-01T13:59:00Z')];
+		for (const offset of ['+10:00', '+08:00']) {
+			for (const instant of instants) {
+				const format = (/** @type {string} */ timeZone) =>
+					new Intl.DateTimeFormat('en-AU', {
+						dateStyle: 'full',
+						timeStyle: 'long',
+						timeZone
+					}).format(instant);
+				expect(format(intlTimeZone(offset))).toBe(format(offset));
+			}
+		}
+	});
 });
 
 describe('parseCalendarDate', () => {

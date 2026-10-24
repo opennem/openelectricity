@@ -7,6 +7,8 @@
  * pure and testable.
  */
 
+import { intlTimeZone } from '$lib/utils/date-format.js';
+
 /** Separator used in all range labels ("21 — 27 Jan"). */
 export const RANGE_SEPARATOR = '—';
 
@@ -23,7 +25,8 @@ const formatterCache = new Map();
  * share the key.
  *
  * @param {string} key - Stable name for the option set
- * @param {string} ianaTimeZone
+ * @param {string} ianaTimeZone - a network offset ('+10:00') also works, via
+ *   `intlTimeZone`, as some chart stores hold one
  * @param {Intl.DateTimeFormatOptions} options
  * @returns {Intl.DateTimeFormat}
  */
@@ -31,7 +34,7 @@ export function cachedFormatter(key, ianaTimeZone, options) {
 	const cacheKey = `${key}|${ianaTimeZone}`;
 	let fmt = formatterCache.get(cacheKey);
 	if (!fmt) {
-		fmt = new Intl.DateTimeFormat('en-AU', { ...options, timeZone: ianaTimeZone });
+		fmt = new Intl.DateTimeFormat('en-AU', { ...options, timeZone: intlTimeZone(ianaTimeZone) });
 		formatterCache.set(cacheKey, fmt);
 	}
 	return fmt;

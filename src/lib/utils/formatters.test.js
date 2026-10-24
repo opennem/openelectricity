@@ -1,5 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { formatFyTickX, formatCapacity, formatPrice, formatWithUnit } from './formatters.js';
+import { afterEach, beforeEach, describe, it, expect } from 'vitest';
+import {
+	formatDateTime,
+	formatFyTickX,
+	formatCapacity,
+	formatPrice,
+	formatWithUnit,
+	getFormattedDate,
+	getFormattedMonth,
+	getFormattedTime
+} from './formatters.js';
 
 describe('formatPrice', () => {
 	it('always shows cents', () => {
@@ -77,5 +86,42 @@ describe('formatWithUnit', () => {
 		expect(formatWithUnit('12', 'MW', { separator: ' ' })).toBe('12 MW');
 		expect(formatWithUnit('', '$/MWh')).toBe('');
 		expect(formatWithUnit('12', '')).toBe('12');
+	});
+});
+
+describe('date formatters in browsers that reject offset time zones', () => {
+	const { DateTimeFormat } = Intl;
+	// 1 Jan 2022 01:00 in the NEM (+10:00); still 31 Dec 2021 in the WEM (+08:00).
+	const NEW_YEAR = new Date('2021-12-31T15:00:00Z');
+
+	beforeEach(() => {
+		// Older browsers throw "invalid time zone" for a UTC offset.
+		Intl.DateTimeFormat = /** @type {any} */ (
+			class extends DateTimeFormat {
+				/**
+				 * @param {string} [locales]
+				 * @param {Intl.DateTimeFormatOptions} [options]
+				 */
+				constructor(locales, options) {
+					if (/^[+-]\d/.test(options?.timeZone ?? '')) throw new RangeError('invalid time zone');
+					super(locales, options);
+				}
+			}
+		);
+	});
+
+	afterEach(() => {
+		Intl.DateTimeFormat = DateTimeFormat;
+	});
+
+	it('format in the network offset they are given', () => {
+		expect(getFormattedDate(NEW_YEAR, undefined, undefined, undefined, 'numeric')).toBe('2022');
+		expect(getFormattedDate(NEW_YEAR, undefined, undefined, undefined, 'numeric', '+08:00')).toBe(
+			'2021'
+		);
+		expect(formatDateTime({ date: NEW_YEAR, year: 'numeric' })).toBe('2022');
+		expect(formatDateTime({ date: NEW_YEAR, year: 'numeric', timeZone: '+08:00' })).toBe('2021');
+		expect(getFormattedMonth(NEW_YEAR, 'short', '+10:00')).toBe('Jan 2022');
+		expect(getFormattedTime(NEW_YEAR, '+08:00')).toMatch(/^11:00\s?pm$/);
 	});
 });

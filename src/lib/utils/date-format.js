@@ -14,6 +14,25 @@ export function stripDateTimezone(dateValue) {
 }
 
 /**
+ * A time zone every browser's `Intl` accepts. Older browsers reject UTC
+ * offsets such as the networks' '+10:00' ("invalid time zone"), so a
+ * whole-hour offset becomes the fixed-offset IANA zone that formats the same,
+ * 'Etc/GMT-10' (POSIX inverts the sign). Not the network's city: Perth kept
+ * daylight saving in 2006–09 while the WEM stayed on +08:00. IANA names pass
+ * through.
+ * @template {string | undefined} T
+ * @param {T} timeZone
+ * @returns {T | string}
+ */
+export function intlTimeZone(timeZone) {
+	const match = /^([+-])(\d{2}):00$/.exec(timeZone ?? '');
+	if (!match) return timeZone;
+	const hours = Number(match[2]);
+	if (hours === 0) return 'UTC';
+	return `Etc/GMT${match[1] === '+' ? '-' : '+'}${hours}`;
+}
+
+/**
  * The calendar date a facility or unit date names. These dates arrive as plain
  * dates from Sanity (`2022-01-01`), naive local datetimes from the data-centre
  * sheet (`2022-01-01T00:00:00`) and local midnight with the network offset from

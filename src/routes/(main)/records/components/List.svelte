@@ -5,6 +5,7 @@
 	import recordDescription from '../page-data-options/record-description';
 	import { regions } from '../page-data-options/filters';
 	import dateTimeQuery from '../page-data-options/date-time-query';
+	import { intlTimeZone } from '$lib/utils/date-format.js';
 	let { rolledUpRecords } = $props();
 
 	// $inspect('rolledUpRecords', rolledUpRecords);
@@ -270,7 +271,7 @@
 												{@const formattedDate = new Intl.DateTimeFormat('en-AU', {
 													hour: 'numeric',
 													minute: 'numeric',
-													timeZone: record.timeZone
+													timeZone: intlTimeZone(record.timeZone)
 												}).format(record.time)}
 												<li class="text-sm text-mid-grey flex items-center justify-between">
 													<div>

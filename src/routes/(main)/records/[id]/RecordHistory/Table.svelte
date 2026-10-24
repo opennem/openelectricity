@@ -3,6 +3,7 @@
 	import getContext from '$lib/utils/get-context.js';
 	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 	import { getFormattedDate, getFormattedTime } from '$lib/utils/formatters.js';
+	import { intlTimeZone } from '$lib/utils/date-format.js';
 	import { xTickValueFormatters } from './helpers/config';
 	/**
 	 * @typedef {Object} Props
@@ -56,14 +57,14 @@
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric',
-			timeZone: cxt.timeZone
+			timeZone: intlTimeZone(cxt.timeZone)
 		}).format(currentDate);
 
 		let nextFormatDate = new Intl.DateTimeFormat('en-AU', {
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric',
-			timeZone: cxt.timeZone
+			timeZone: intlTimeZone(cxt.timeZone)
 		}).format(prevDate);
 
 		if (prevDate && currentFormatDate === nextFormatDate) {
@@ -193,7 +194,7 @@
 									{new Intl.DateTimeFormat('en-AU', {
 										hour: 'numeric',
 										minute: 'numeric',
-										timeZone: cxt.timeZone
+										timeZone: intlTimeZone(cxt.timeZone)
 									}).format(record.date)}
 								</time>
 							</td>

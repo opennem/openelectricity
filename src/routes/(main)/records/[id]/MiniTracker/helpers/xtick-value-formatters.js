@@ -1,5 +1,6 @@
 /** @typedef {(d: Date, timeZone?: string) => string} dateFormatter */
 import { formatDayMonth } from '$lib/components/charts/v2/date-labels.js';
+import { intlTimeZone } from '$lib/utils/date-format.js';
 
 /**
  * @param {Date} d
@@ -9,12 +10,12 @@ import { formatDayMonth } from '$lib/components/charts/v2/date-labels.js';
 function getQuarter(d, timeZone) {
 	let month = new Intl.DateTimeFormat('en-AU', {
 		month: 'numeric',
-		timeZone
+		timeZone: intlTimeZone(timeZone)
 	}).format(d);
 
 	let year = new Intl.DateTimeFormat('en-AU', {
 		year: 'numeric',
-		timeZone
+		timeZone: intlTimeZone(timeZone)
 	}).format(d);
 
 	let quarterString = month === '1' ? 'Q1' : month === '4' ? 'Q2' : month === '7' ? 'Q3' : 'Q4';
@@ -30,7 +31,7 @@ function getInterval(d, timeZone) {
 	let time = new Intl.DateTimeFormat('en-AU', {
 		hour: 'numeric',
 		minute: 'numeric',
-		timeZone
+		timeZone: intlTimeZone(timeZone)
 	}).format(d);
 
 	let date = new Intl.DateTimeFormat('en-AU', {
@@ -38,7 +39,7 @@ function getInterval(d, timeZone) {
 		day: 'numeric',
 		month: 'short',
 		year: 'numeric',
-		timeZone
+		timeZone: intlTimeZone(timeZone)
 	}).format(d);
 
 	return `${date}, ${time}`;
@@ -59,10 +60,14 @@ let xTickValueFormatters = {
 				day: 'numeric',
 				month: 'short',
 				year: 'numeric',
-				timeZone
+				timeZone: intlTimeZone(timeZone)
 			}).format(d),
 		formatTick: (d, timeZone) =>
-			new Intl.DateTimeFormat('en-AU', { month: 'short', year: '2-digit', timeZone }).format(d)
+			new Intl.DateTimeFormat('en-AU', {
+				month: 'short',
+				year: '2-digit',
+				timeZone: intlTimeZone(timeZone)
+			}).format(d)
 	},
 	month: {
 		ticks: 3,
@@ -70,23 +75,36 @@ let xTickValueFormatters = {
 			new Intl.DateTimeFormat('en-AU', {
 				month: 'short',
 				year: 'numeric',
-				timeZone
+				timeZone: intlTimeZone(timeZone)
 			}).format(d),
 		formatTick: (d, timeZone) =>
-			new Intl.DateTimeFormat('en-AU', { month: 'short', year: '2-digit', timeZone }).format(d)
+			new Intl.DateTimeFormat('en-AU', {
+				month: 'short',
+				year: '2-digit',
+				timeZone: intlTimeZone(timeZone)
+			}).format(d)
 	},
 	quarter: {
 		ticks: 3,
 		format: (d, timeZone) => getQuarter(d, timeZone),
 		formatTick: (d, timeZone) =>
-			new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone }).format(d)
+			new Intl.DateTimeFormat('en-AU', {
+				year: 'numeric',
+				timeZone: intlTimeZone(timeZone)
+			}).format(d)
 	},
 	year: {
 		ticks: 3,
 		format: (d, timeZone) =>
-			new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone }).format(d),
+			new Intl.DateTimeFormat('en-AU', {
+				year: 'numeric',
+				timeZone: intlTimeZone(timeZone)
+			}).format(d),
 		formatTick: (d, timeZone) =>
-			new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone }).format(d)
+			new Intl.DateTimeFormat('en-AU', {
+				year: 'numeric',
+				timeZone: intlTimeZone(timeZone)
+			}).format(d)
 	}
 };
 

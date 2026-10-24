@@ -2,7 +2,7 @@
 	import { toZoned, today, getLocalTimeZone } from '@internationalized/date';
 	import { tick } from 'svelte';
 	import { browser } from '$app/environment';
-	import { formatDateBySpecificity, parseCalendarDate } from '$lib/utils/date-format';
+	import { formatDateBySpecificity, intlTimeZone, parseCalendarDate } from '$lib/utils/date-format';
 	import { formatDateTime } from '$lib/utils/formatters';
 	import { getUnitCapacity } from '$lib/utils/capacity';
 	import formatValue from '$lib/facilities/format-value.js';
@@ -88,7 +88,7 @@
 				if (calendarDate) {
 					// Local midnight in the network's timezone, so the sort and the
 					// year/day headers all read the unit's own calendar date.
-					let parsedZonedDate = toZoned(calendarDate, offset);
+					let parsedZonedDate = toZoned(calendarDate, intlTimeZone(offset));
 
 					// this will order the data so year is first, then month, then day
 					if (unit[dateField + '_specificity'] === 'month') {

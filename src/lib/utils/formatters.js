@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { intlTimeZone } from './date-format.js';
 
 /** @typedef {"long" | "short" | "numeric" | "2-digit" | "narrow" | undefined}  DateTimeFormatMonthStyles */
 /** @typedef {"full" | "long" | "medium" | "short" | undefined} DateTimeFormatDateTimeStyles */
@@ -93,7 +94,7 @@ export function getFormattedDateTime(
 	return new Intl.DateTimeFormat('en-AU', {
 		dateStyle,
 		timeStyle,
-		timeZone
+		timeZone: intlTimeZone(timeZone)
 	}).format(date);
 }
 
@@ -106,7 +107,7 @@ export function getFormattedDateTime(
 export function getFormattedTime(date, timeZone = 'Australia/Sydney') {
 	return new Intl.DateTimeFormat('en-AU', {
 		timeStyle: 'short',
-		timeZone
+		timeZone: intlTimeZone(timeZone)
 	}).format(date);
 }
 
@@ -121,7 +122,7 @@ export function getFormattedMonth(date, month, timeZone = 'Australia/Sydney') {
 	return new Intl.DateTimeFormat('en-AU', {
 		year: 'numeric',
 		month,
-		timeZone
+		timeZone: intlTimeZone(timeZone)
 	}).format(date);
 }
 
@@ -141,7 +142,7 @@ export function getFormattedDate(date, weekday, day, month, year, timeZone = '+1
 		weekday,
 		day,
 		year,
-		timeZone
+		timeZone: intlTimeZone(timeZone)
 	}).format(date);
 }
 
@@ -192,6 +193,6 @@ export function formatDateTime({
 		day,
 		month,
 		year,
-		timeZone
+		timeZone: intlTimeZone(timeZone)
 	}).format(date);
 }
