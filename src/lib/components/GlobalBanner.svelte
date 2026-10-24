@@ -34,12 +34,19 @@
 	let active = $state(null);
 
 	onMount(() => {
-		cleanupObsoleteDismissals(BANNERS, window.localStorage);
+		/** @type {Storage} */
+		let storage;
+		try {
+			// Throws where the reader blocks site data; the banner then stays
+			// hidden, as there's nowhere to keep a dismissal.
+			storage = window.localStorage;
+		} catch {
+			return;
+		}
+		cleanupObsoleteDismissals(BANNERS, storage);
 		// Wait one frame so the fly-in transition has a "before" state to animate from.
 		const frame = requestAnimationFrame(() => {
-			active = /** @type {Banner | null} */ (
-				getActiveBanner(BANNERS, window.localStorage, Date.now())
-			);
+			active = /** @type {Banner | null} */ (getActiveBanner(BANNERS, storage, Date.now()));
 		});
 		return () => cancelAnimationFrame(frame);
 	});

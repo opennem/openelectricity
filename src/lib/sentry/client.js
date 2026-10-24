@@ -3,6 +3,7 @@ import { env } from '$env/dynamic/public';
 import { hostEnvironment } from '$lib/utils/environment.js';
 import {
 	IGNORED_ERRORS,
+	errorFromEvent,
 	replaySessionSampleRate,
 	reportsErrors,
 	resolveSentryDsn
@@ -102,7 +103,10 @@ export function loadSentry() {
 export function startSentry() {
 	if (!browser || !reportsErrors(env, dev)) return;
 	/** @param {ErrorEvent | PromiseRejectionEvent} event */
-	const queue = (event) => captureError('reason' in event ? event.reason : event.error);
+	const queue = (event) => {
+		const error = errorFromEvent(event);
+		if (error !== null) captureError(error);
+	};
 	window.addEventListener('error', queue);
 	window.addEventListener('unhandledrejection', queue);
 	const start = () =>

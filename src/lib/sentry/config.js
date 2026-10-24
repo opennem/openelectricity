@@ -1,5 +1,5 @@
 /**
- * Sentry configuration shared by the browser client
+ * Sentry configuration and helpers shared by the browser client
  * (`$lib/sentry/client.js`) and the feedback widget. Pure, so it can be
  * tested without the SDK.
  */
@@ -44,8 +44,9 @@ export function replaySessionSampleRate(environment) {
  * @type {RegExp[]}
  */
 export const IGNORED_ERRORS = [
-	// A page still on the previous build asks for chunks the deploy removed;
-	// `reloadOnStaleBuild` moves it onto the new one.
+	// A chunk that didn't load: a page still on the previous build asking for
+	// one the deploy removed, or a dropped download. `reloadOnStaleBuild`
+	// reloads the page.
 	/Failed to fetch dynamically imported module/,
 	/error loading dynamically imported module/,
 	/Importing a module script failed/,
@@ -61,3 +62,18 @@ export const IGNORED_ERRORS = [
 	// Outlook's link scanner opening pages from emails.
 	/Object Not Found Matching Id/
 ];
+
+/**
+ * What to report for a window `error` or `unhandledrejection` event caught
+ * before the SDK starts, or null when there's nothing to report. An error
+ * event without an Error object (a cross-origin "Script error.", a
+ * ResizeObserver loop) reports its message, which `ignoreErrors` and
+ * Sentry's own filters can match; its `null` error arrives as an
+ * unfilterable "Error: null".
+ * @param {Pick<ErrorEvent, 'error' | 'message'> | Pick<PromiseRejectionEvent, 'reason'>} event
+ * @returns {unknown}
+ */
+export function errorFromEvent(event) {
+	if ('reason' in event) return event.reason ?? null;
+	return event.error ?? (event.message || null);
+}

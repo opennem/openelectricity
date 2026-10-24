@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	IGNORED_ERRORS,
+	errorFromEvent,
 	replaySessionSampleRate,
 	reportsErrors,
 	resolveSentryDsn
@@ -59,6 +60,25 @@ describe('IGNORED_ERRORS', () => {
 		]) {
 			expect(ignored(message), message).toBe(false);
 		}
+	});
+});
+
+describe('errorFromEvent', () => {
+	it('reports the Error an event carries', () => {
+		const error = new Error('boom');
+		expect(errorFromEvent({ error, message: 'Uncaught Error: boom' })).toBe(error);
+		expect(errorFromEvent({ reason: error })).toBe(error);
+	});
+
+	it('reports the message of an error event without an Error', () => {
+		// What a cross-origin script raises; Sentry's own filters drop it by message.
+		expect(errorFromEvent({ error: null, message: 'Script error.' })).toBe('Script error.');
+	});
+
+	it('has nothing to report for an empty error event or rejection', () => {
+		expect(errorFromEvent({ error: null, message: '' })).toBeNull();
+		expect(errorFromEvent({ reason: null })).toBeNull();
+		expect(errorFromEvent({ reason: undefined })).toBeNull();
 	});
 });
 
