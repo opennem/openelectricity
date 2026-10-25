@@ -3324,6 +3324,20 @@
 			"name": "Hazelwood BESS"
 		}
 	},
+	"HBESS2": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"battery"
+			],
+			"dominant": "battery",
+			"capacity": 150,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Hazelwood 2"
+		}
+	},
 	"HD1WF": {
 		"v": 1,
 		"photo": "https://cdn.sanity.io/images/bjedimft/production/38ac228c71cb686b9693fd9cfae3ef97379138e7-2000x1125.jpg",
@@ -4748,7 +4762,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 100,
-			"status": "operating",
+			"status": "commissioning",
 			"region": "WEM",
 			"name": "Merredin"
 		}
