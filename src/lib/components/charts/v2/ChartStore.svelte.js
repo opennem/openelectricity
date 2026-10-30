@@ -8,7 +8,11 @@
 import { untrack } from 'svelte';
 import { convert } from '$lib/utils/si-units';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
-import { transformToProportion, transformToGrowth } from '$lib/utils/data-transform';
+import {
+	transformToProportion,
+	transformToGrowth,
+	transformToAveragePower
+} from '$lib/utils/data-transform';
 import ChartOptions from './ChartOptions.svelte.js';
 import ChartStyles from './ChartStyles.svelte.js';
 import ChartTooltips from './ChartTooltips.svelte.js';
@@ -316,12 +320,20 @@ export default class ChartStore {
 
 	/** Overlay geometry, domain and tooltip all consume the same converted rows.
 	 *  Growth hides the absolute primary-axis overlays (demand, curtailment),
-	 *  which can't be read against changes; percentage lines keep their own scale. */
+	 *  which can't be read against changes; percentage lines keep their own scale.
+	 *  Average power converts the absolute overlays as it does the series. */
 	displayOverlayLines = $derived.by(() => {
 		if (this.chartOptions?.isDataTransformTypeGrowth)
 			return this.overlayLines.filter((overlay) => overlay.scale === 'percent');
 		const context = this.usesCustomProportion ? this.proportionContext : null;
-		if (!context) return this.overlayLines;
+		if (!context)
+			return this.#convertsToAveragePower
+				? this.overlayLines.map((overlay) =>
+						overlay.scale === 'percent'
+							? overlay
+							: { ...overlay, data: this.#inMeasure(overlay.data, [overlay.valueKey]) }
+					)
+				: this.overlayLines;
 		return this.overlayLines.map((overlay) =>
 			overlay.scale === 'percent'
 				? overlay
@@ -337,7 +349,16 @@ export default class ChartStore {
 	displayOverlayAreas = $derived.by(() => {
 		if (this.chartOptions?.isDataTransformTypeGrowth) return [];
 		const context = this.usesCustomProportion ? this.proportionContext : null;
-		if (!context) return this.overlayAreas;
+		if (!context)
+			return this.#convertsToAveragePower
+				? this.overlayAreas.map((overlay) => ({
+						...overlay,
+						data: this.#inMeasure(
+							overlay.data,
+							overlay.series.map((series) => series.id)
+						)
+					}))
+				: this.overlayAreas;
 		return this.overlayAreas.map((overlay) => ({
 			...overlay,
 			data: overlay.data.map((row) =>
@@ -405,6 +426,30 @@ export default class ChartStore {
 		return getNumberFormat(this.maximumFractionDigits).format(converted);
 	});
 
+	/**
+	 * Rows in the measure shown: as loaded, or (average power) with `keys`
+	 * divided by each bucket's hours. Proportion keeps energy: a share is the
+	 * same either way.
+	 * @param {any[]} rows
+	 * @param {string[]} keys
+	 */
+	#inMeasure(rows, keys) {
+		const hoursOf = this.bucketHours;
+		return this.#convertsToAveragePower && hoursOf && rows.length
+			? transformToAveragePower(rows, keys, hoursOf)
+			: rows;
+	}
+
+	get #convertsToAveragePower() {
+		const options = this.chartOptions;
+		return (
+			!!options?.isAveragePower && !options.isDataTransformTypeProportion && !!this.bucketHours
+		);
+	}
+
+	/** `seriesData` in the measure shown, before any transform. */
+	seriesMeasureData = $derived.by(() => this.#inMeasure(this.seriesData ?? [], this.seriesNames));
+
 	// Transformed data
 	seriesScaledData = $derived.by(() => {
 		if (!this.seriesData?.length || !this.chartOptions) return [];
@@ -413,20 +458,26 @@ export default class ChartStore {
 		const growth = this.chartOptions.isDataTransformTypeGrowth
 			? this.chartOptions.growthComparison
 			: null;
+		const rows = this.seriesMeasureData;
 		if (growth)
-			return transformToGrowth(this.seriesData, this.seriesNames, growth.lag, this.growthLeadIn);
+			return transformToGrowth(
+				rows,
+				this.seriesNames,
+				growth.lag,
+				this.#inMeasure(this.growthLeadIn, this.seriesNames)
+			);
 
 		const isChangeSince = this.chartOptions.isDataTransformTypeChangeSince;
 		// Only changeSince depends on xDomain; other modes should not rerun on every pan.
-		let filteredData = this.seriesData;
+		let filteredData = rows;
 		if (isChangeSince) {
 			const xDomain = this.xDomain;
 			if (xDomain?.[0] !== undefined && xDomain?.[1] !== undefined) {
-				filteredData = this.seriesData.filter((d) => d.time >= xDomain[0] && d.time <= xDomain[1]);
+				filteredData = rows.filter((d) => d.time >= xDomain[0] && d.time <= xDomain[1]);
 			}
 		}
 
-		return this.seriesData.map((d) =>
+		return rows.map((d) =>
 			this.chartOptions.dataTransformFunction({
 				datapoint: d,
 				dataset: filteredData,
@@ -598,6 +649,11 @@ export default class ChartStore {
 	 *  buckets with (set by the chart owner from data it already holds).
 	 *  @type {TimeSeriesData[]} */
 	growthLeadIn = $state.raw([]);
+
+	/** Hours each row's bucket covers, for average power (set by the chart
+	 *  owner, who knows the grain and how much of the open bucket has passed).
+	 *  @type {((row: any) => number) | null} */
+	bucketHours = $state.raw(null);
 
 	/** Whether to use lighter color for negative values */
 	lighterNegative = $state(false);

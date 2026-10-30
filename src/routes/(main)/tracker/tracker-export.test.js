@@ -105,6 +105,7 @@ function context(overrides = {}) {
 		tablePanelOpen: true,
 		hiddenSeries: [],
 		generationTransform: 'absolute',
+		generationMeasure: 'energy',
 		marketValueTransform: 'absolute',
 		overlayLines: [],
 		overlayAreas: [],
@@ -365,6 +366,13 @@ describe('timelineSummaryRows', () => {
 		expect(rows['Generation overlays']).toBe('Curtailment (Wind)');
 		expect(rows['Generation view']).toContain('base units');
 		expect(rows['Rooftop forecast']).toContain('not exported');
+	});
+
+	it('notes average power only while the chart draws it', () => {
+		const measure = (/** @type {'energy' | 'averagePower'} */ generationMeasure) =>
+			Object.fromEntries(timelineSummaryRows(context({ generationMeasure })))['Generation measure'];
+		expect(measure('averagePower')).toContain('exported as energy');
+		expect(measure('energy')).toBeUndefined();
 	});
 });
 

@@ -37,6 +37,18 @@ describe('tracker URLs', () => {
 		expect(roundTrip(parsed).url.searchParams.get('transform')).toBe('growth');
 	});
 
+	it('round trips average power as the generation measure, energy by default', () => {
+		expect(parseTrackerUrl(new URLSearchParams(), context).generationMeasure).toBe('energy');
+		const parsed = parseTrackerUrl(new URLSearchParams('measure=average-power'), context);
+		expect(parsed.generationMeasure).toBe('averagePower');
+		expect(roundTrip(parsed).url.searchParams.get('measure')).toBe('average-power');
+		const energy = roundTrip({ ...parsed, generationMeasure: 'energy' });
+		expect(energy.url.searchParams.has('measure')).toBe(false);
+		expect(
+			parseTrackerUrl(new URLSearchParams('measure=nonsense'), context).generationMeasure
+		).toBe('energy');
+	});
+
 	it.each(['absolute', 'proportion', 'changeSince'])(
 		'round trips both chart transforms: %s',
 		(transform) => {

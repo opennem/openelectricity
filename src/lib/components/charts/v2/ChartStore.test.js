@@ -528,3 +528,66 @@ describe('growth transform', () => {
 		expect(chart.seriesScaledData[0].coal).toBe(80);
 	});
 });
+
+describe('average power', () => {
+	function averagePowerChart() {
+		const chart = new ChartStore({ key: Symbol('average-power'), prefix: 'M', baseUnit: 'Wh' });
+		chart.seriesNames = ['coal', 'wind'];
+		chart.seriesData = [
+			{ time: 1, date: new Date(1), coal: 2400, wind: 480 },
+			{ time: 2, date: new Date(2), coal: 1200, wind: 120 }
+		];
+		// The second bucket is open, with 12 of its hours passed.
+		chart.bucketHours = (row) => (row.time === 2 ? 12 : 24);
+		chart.overlayLines = [
+			{ id: 'demand', data: [{ time: 2, demand: 1800 }], valueKey: 'demand', colour: '#000' },
+			{
+				id: 'renewables',
+				data: [{ time: 2, share: 40 }],
+				valueKey: 'share',
+				colour: '#0a0',
+				scale: 'percent'
+			}
+		];
+		chart.overlayAreas = [
+			{ id: 'curtailment', data: [{ time: 2, wind: 60 }], series: [{ id: 'wind', colour: '#00f' }] }
+		];
+		chart.chartOptions.averagePowerAvailable = true;
+		chart.chartOptions.selectedEnergyMeasure = 'averagePower';
+		return chart;
+	}
+
+	it('divides each bucket by its hours, the open one by those passed', () => {
+		const chart = averagePowerChart();
+		expect(chart.seriesScaledData.map(({ coal, wind }) => [coal, wind])).toEqual([
+			[100, 20],
+			[100, 10]
+		]);
+	});
+
+	it('converts absolute overlays and leaves percentage lines', () => {
+		const chart = averagePowerChart();
+		expect(chart.displayOverlayLines.map((overlay) => overlay.data[0])).toEqual([
+			{ time: 2, demand: 150 },
+			{ time: 2, share: 40 }
+		]);
+		expect(chart.displayOverlayAreas[0].data[0].wind).toBe(5);
+	});
+
+	it('feeds growth with average power', () => {
+		const chart = averagePowerChart();
+		chart.chartOptions.growthComparison = { lag: 1, label: 'month-on-month', leadInMs: 1 };
+		chart.chartOptions.selectedDataTransformType = 'growth';
+		expect(chart.seriesScaledData[1].wind).toBe(-10);
+	});
+
+	it('keeps energy for shares and where average power is not offered', () => {
+		const chart = averagePowerChart();
+		chart.chartOptions.selectedDataTransformType = 'proportion';
+		expect(chart.displayOverlayLines[0].data[0].demand).toBe(1800);
+		chart.chartOptions.selectedDataTransformType = 'absolute';
+		chart.chartOptions.averagePowerAvailable = false;
+		expect(chart.seriesScaledData[1].coal).toBe(1200);
+		expect(chart.displayOverlayLines).toBe(chart.overlayLines);
+	});
+});

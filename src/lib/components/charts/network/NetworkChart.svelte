@@ -101,6 +101,9 @@
 	 * @property {import('../v2/ChartOptions.svelte.js').DataTransformType} [dataTransform] - Optional controlled transform; omitted consumers keep local options
 	 * @property {(value: import('../v2/ChartOptions.svelte.js').DataTransformType) => void} [ondatatransformchange] - User choices only, not restoration
 	 * @property {boolean} [growthTransform] - Offer the Growth transform (each bucket's change from the one before, or from a year before at rolling and calendar-filtered grains) at energy grains
+	 * @property {boolean} [averagePower] - Offer average power (each bucket's energy ÷ its hours, so far for the open bucket) on a generation chart at energy grains
+	 * @property {import('../v2/ChartOptions.svelte.js').EnergyMeasure} [energyMeasure] - Optional controlled energy measure
+	 * @property {(value: import('../v2/ChartOptions.svelte.js').EnergyMeasure) => void} [onenergymeasurechange] - User choices only, not restoration
 	 * @property {(rows: TimeSeriesData[], names: string[]) => import('../v2/ChartStore.svelte.js').ProportionContext} [createProportionContext] - Optional display-grain percentage calculation
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
@@ -178,6 +181,9 @@
 		dataTransform,
 		ondatatransformchange,
 		growthTransform = false,
+		averagePower = false,
+		energyMeasure,
+		onenergymeasurechange,
 		createProportionContext,
 		hoverTime = undefined,
 		focusTime = undefined,
@@ -657,12 +663,20 @@
 		if (chartStore && !holdFrame) chartStore.chartOptions.growthComparison = growthForGrain;
 	});
 
+	$effect(() => {
+		if (chartStore && !holdFrame)
+			chartStore.chartOptions.averagePowerAvailable =
+				averagePower && isEnergyMetric && panelKind === 'generation';
+	});
+
 	// Restore controlled state without emitting a UI event back into history.
 	$effect(() => {
 		if (!chartStore) return;
 		if (dataTransform !== undefined)
 			chartStore.chartOptions.selectedDataTransformType = dataTransform;
 		chartStore.chartOptions.onDataTransformChange = ondatatransformchange;
+		if (energyMeasure !== undefined) chartStore.chartOptions.selectedEnergyMeasure = energyMeasure;
+		chartStore.chartOptions.onEnergyMeasureChange = onenergymeasurechange;
 	});
 
 	// A parent following the hovered series wants it visible on the chart too.
@@ -712,10 +726,12 @@
 			chartStore.chartOptions.selectedCurveType = 'step';
 			return;
 		}
+		// Average power is energy per hour of its bucket: MW, not MWh.
+		const energyUnits = isEnergyMetric && !chartStore.chartOptions.isAveragePower;
 		chartStore.chartOptions.baseUnit =
 			panelKind === 'emissions'
 				? formatIntervalQuantityUnit('tCO₂e', displayInterval)
-				: isEnergyMetric
+				: energyUnits
 					? 'Wh'
 					: 'W';
 		chartStore.chartOptions.selectedCurveType = /** @type {any} */ (
@@ -723,8 +739,8 @@
 		);
 
 		if (panelKind === 'generation' && generationUnitOptions) {
-			const basis = isEnergyMetric ? 'energy' : 'power';
-			chartStore.chartOptions.allowedPrefixes = isEnergyMetric ? ['M', 'G', 'T'] : ['M', 'G'];
+			const basis = energyUnits ? 'energy' : 'power';
+			chartStore.chartOptions.allowedPrefixes = energyUnits ? ['M', 'G', 'T'] : ['M', 'G'];
 			if (basis !== lastGenerationUnitBasis) {
 				lastGenerationUnitBasis = basis;
 				chartStore.chartOptions.resetDisplayPrefix('M');
@@ -736,9 +752,16 @@
 	});
 
 	// Keep the automatic energy unit readable until the user makes an explicit
-	// selection in the chart header/options. Power always starts in MW.
+	// selection in the chart header/options. Power (and average power) always
+	// starts in MW.
 	$effect(() => {
-		if (!chartStore || panelKind !== 'generation' || !generationUnitOptions || !isEnergyMetric)
+		if (
+			!chartStore ||
+			panelKind !== 'generation' ||
+			!generationUnitOptions ||
+			!isEnergyMetric ||
+			chartStore.chartOptions.isAveragePower
+		)
 			return;
 		chartStore.chartOptions.setAutomaticDisplayPrefix(
 			automaticGenerationEnergyPrefix(chartStore.seriesData, chartStore.visibleSeriesNames)
@@ -764,6 +787,25 @@
 			Date.now(),
 			ianaTimeZone
 		);
+	});
+
+	// Average power divides each bucket's energy by the hours it covers: the
+	// whole bucket (a trailing year for rolling grains), or for the open
+	// bucket only the hours passed, since its energy is the total so far.
+	const HOUR_MS = 60 * 60 * 1000;
+	let averagePowerHours = $derived.by(() => {
+		const open = incompleteEnergyInterval;
+		const nowMs = Date.now();
+		return (/** @type {{ time: number }} */ row) => {
+			const hours = getIntervalHours(displayInterval, row.time, ianaTimeZone);
+			return open && row.time === open.start
+				? hours - Math.max(0, open.end - nowMs) / HOUR_MS
+				: hours;
+		};
+	});
+
+	$effect(() => {
+		if (chartStore && !holdFrame) chartStore.bucketHours = averagePowerHours;
 	});
 
 	// Memoises the slice + display aggregation so pan ticks within one native

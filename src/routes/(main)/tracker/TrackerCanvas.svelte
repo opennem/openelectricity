@@ -211,6 +211,13 @@
 			? 'absolute'
 			: session.selection.generationTransform
 	);
+	/** The generation measure as drawn: average power applies at energy
+	 *  grains, and not to shares (`NetworkChart`'s `averagePower`). */
+	let shownGenerationMeasure = $derived(
+		energyMetric && shownGenerationTransform !== 'proportion'
+			? session.selection.generationMeasure
+			: 'energy'
+	);
 
 	/** @typedef {import('./types.js').TimelineCard} TimelineCard */
 	/** The chart card under the pointer, and the series under it on that card:
@@ -676,6 +683,7 @@
 			tablePanelOpen,
 			hiddenSeries,
 			generationTransform: shownGenerationTransform,
+			generationMeasure: shownGenerationMeasure,
 			marketValueTransform: session.selection.marketValueTransform,
 			overlayLines,
 			overlayAreas,
@@ -834,7 +842,11 @@
 				metric={range.activeMetric}
 				chartKind="stacked"
 				nightShading
-				title={energyMetric ? 'Energy' : 'Power'}
+				title={!energyMetric
+					? 'Power'
+					: shownGenerationMeasure === 'averagePower'
+						? 'Av. Power'
+						: 'Energy'}
 				chartHeightPx={heightPx}
 				generationUnitOptions
 				interpolateRooftop
@@ -842,6 +854,9 @@
 				dataTransform={session.selection.generationTransform}
 				ondatatransformchange={(value) => session.select('generationTransform', value)}
 				growthTransform
+				averagePower
+				energyMeasure={session.selection.generationMeasure}
+				onenergymeasurechange={(value) => session.select('generationMeasure', value)}
 				createProportionContext={chartContributionContext}
 				{overlayLines}
 				{overlayAreas}

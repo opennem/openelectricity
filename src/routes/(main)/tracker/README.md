@@ -1234,7 +1234,8 @@ failed charts cannot show or export old values.
 `group` (simple) · `hidden` (comma-separated group IDs) · `contribution=generation`
 (gross demand is the default) · `transform` / `market-transform` (`proportion` or
 `changeSince`, absolute is the default; `transform` also takes `growth`, see
-[Growth](#growth)) · `price=mv` · `emissions=volume` (intensity is the default) ·
+[Growth](#growth)) · `measure=average-power` (energy is the default, see
+[Average power](#average-power)) · `price=mv` · `emissions=volume` (intensity is the default) ·
 `overlay` — a canonical comma-separated selection of `demand`, `renewables`,
 `curtailment-solar`, and `curtailment-wind` · `table=0` · `fullscreen=false` ·
 `filter` — a calendar-period id (`jan`…`dec`,
@@ -1445,6 +1446,35 @@ comparisons live in `growthComparison` (`$lib/utils/data-transform/growth.js`).
   Growth's period-on-period view with any A → B pair.
 - Market value doesn't offer Growth; `market-transform=growth` parses as
   absolute.
+
+### Average power
+
+The generation chart's **Measure** option (Energy | Av. power, as on the
+legacy explorer, after reader feedback) shows each bucket's energy divided by
+the hours it covers, in MW. It compares buckets of different lengths fairly —
+a 28-day February with a 31-day March, or this month so far with whole months
+(the reason the feedback gave, with a calendar filter such as every October).
+It is offered at energy grains only (`NetworkChart`'s `averagePower`).
+
+- The open bucket divides by the hours passed so far, since its energy is the
+  total so far (OE's open-bucket energy is live to within minutes). Rolling
+  grains divide each 12-month window by a year, less the open month's
+  remaining hours. `NetworkChart` supplies the hours (`ChartStore.bucketHours`,
+  via `getIntervalHours`) and the store converts the rows before any
+  transform, so Change since and Growth read average power too (Growth then
+  evens out month lengths).
+- Demand and curtailment overlays convert with the stack; the renewables
+  share doesn't. Proportion keeps energy (a share is the same either way), so
+  the Measure row is hidden there.
+- The card reads "Generation Av. Power" (the chart's title) and units switch
+  to MW / GW (the automatic GWh choice is for energy only).
+- The table already lists energy and average power side by side, and the
+  metrics strip both net energy and net power, so neither follows the switch.
+  Compare mode stays on energy, as with Growth. CSV/XLSX values stay energy
+  (MWh), with a Summary note while the chart draws average power; the PNG's
+  unit follows the chart.
+- Zooming in to a power grain shows power anyway; the choice stays in the URL
+  for zooming back out.
 
 The generation chart's **Proportion** view uses the same basis selected in
 **Fuel technology options → Contribution** as the table, including from the

@@ -22,6 +22,8 @@
  * - `transform` / `market-transform` — generation / market-value data transform;
  *                 `proportion`, `changeSince` or `growth` (generation only;
  *                 shown at energy grains), default `absolute`
+ * - `measure`   — `average-power` for the generation chart's average power
+ *                 (shown at energy grains), default energy
  * - `filter`    — calendar-period filter id (`jan`…`dec`, `summer`…, `q1`…,
  *                 `h1`/`h2`) for the All range; omitted when All (unfiltered)
  * - `price`     — `mv` when the price card shows market value; never written
@@ -127,6 +129,14 @@ export function normaliseDataTransform(value, { growth = true } = {}) {
 }
 
 /**
+ * @param {unknown} value
+ * @returns {import('$lib/components/charts/v2/ChartOptions.svelte.js').EnergyMeasure}
+ */
+export function normaliseEnergyMeasure(value) {
+	return value === 'averagePower' || value === 'average-power' ? 'averagePower' : 'energy';
+}
+
+/**
  * Keep supported overlays unique and in a stable URL order.
  * @param {unknown} value
  * @returns {TrackerOverlay[]}
@@ -184,6 +194,7 @@ export function normaliseTrackerState(value) {
 		hiddenSeries: normaliseHiddenSeries(value.hiddenSeries, group),
 		contributionMode: normaliseContributionMode(value.contributionMode),
 		generationTransform: normaliseDataTransform(value.generationTransform),
+		generationMeasure: normaliseEnergyMeasure(value.generationMeasure),
 		marketValueTransform: normaliseDataTransform(value.marketValueTransform, { growth: false }),
 		range,
 		bucketFilter: validBucketFilterFor(
@@ -226,6 +237,7 @@ export function parseTrackerUrl(params, context) {
 		hiddenSeries: (params.get('hidden') ?? '').split(','),
 		contributionMode: params.get('contribution'),
 		generationTransform: params.get('transform'),
+		generationMeasure: params.get('measure'),
 		marketValueTransform: params.get('market-transform'),
 		range: parseRangeParams(params, { nowMs: context.nowMs, includeRolling: true }),
 		bucketFilter: params.get('filter'),
@@ -267,6 +279,7 @@ export function applyTrackerUrl(url, state) {
 	set('hidden', next.hiddenSeries.length ? next.hiddenSeries.join(',') : null);
 	set('contribution', next.contributionMode === 'generation' ? 'generation' : null);
 	set('transform', next.generationTransform === 'absolute' ? null : next.generationTransform);
+	set('measure', next.generationMeasure === 'averagePower' ? 'average-power' : null);
 	set(
 		'market-transform',
 		next.marketValueTransform === 'absolute' ? null : next.marketValueTransform

@@ -3,6 +3,7 @@
  *
  * Manages chart configuration options including:
  * - Data transform type (absolute, proportion, change since, growth)
+ * - Energy measure (energy, or average power)
  * - Curve interpolation type
  * - Chart type (stacked-area, area, line)
  * - Unit prefixes
@@ -13,6 +14,7 @@ import { transformToProportion, transformToChangeSince } from '$lib/utils/data-t
 
 /** @typedef {'absolute' | 'proportion' | 'changeSince' | 'growth'} DataTransformType */
 /** @typedef {import('$lib/utils/data-transform/growth.js').GrowthComparison} GrowthComparison */
+/** @typedef {'energy' | 'averagePower'} EnergyMeasure */
 /** @typedef {'smooth' | 'straight' | 'step'} CurveType */
 /** @typedef {'stacked-area' | 'area' | 'line' | 'grouped-bar' | 'bar-stacked'} ChartType */
 
@@ -39,6 +41,10 @@ const BASE_DATA_TRANSFORM_OPTIONS = Object.freeze([
 const GROWTH_DATA_TRANSFORM_OPTIONS = Object.freeze([
 	...BASE_DATA_TRANSFORM_OPTIONS,
 	{ label: 'Growth', value: /** @type {DataTransformType} */ ('growth') }
+]);
+const ENERGY_MEASURE_OPTIONS = Object.freeze([
+	{ label: 'Energy', value: /** @type {EnergyMeasure} */ ('energy') },
+	{ label: 'Av. power', value: /** @type {EnergyMeasure} */ ('averagePower') }
 ]);
 
 export default class ChartOptions {
@@ -81,6 +87,29 @@ export default class ChartOptions {
 	isDataTransformTypeProportion = $derived(this.dataTransformType === 'proportion');
 	isDataTransformTypeChangeSince = $derived(this.dataTransformType === 'changeSince');
 	isDataTransformTypeGrowth = $derived(this.dataTransformType === 'growth');
+
+	// Energy measure: energy as loaded, or average power (energy ÷ each
+	// bucket's hours, which the store applies before any transform)
+	energyMeasureOptions = ENERGY_MEASURE_OPTIONS;
+
+	/** Whether average power is offered (set by the chart owner at energy grains). */
+	averagePowerAvailable = $state(false);
+
+	/** The user's (or a restored) choice, kept while it doesn't apply.
+	 * @type {EnergyMeasure} */
+	selectedEnergyMeasure = $state('energy');
+
+	/** User-selection callback; direct assignments restore state without emitting.
+	 * @type {((measure: EnergyMeasure) => void) | undefined} */
+	onEnergyMeasureChange;
+
+	/** The measure in effect: average power applies only where it's offered. */
+	energyMeasure = $derived(
+		this.averagePowerAvailable
+			? this.selectedEnergyMeasure
+			: /** @type {EnergyMeasure} */ ('energy')
+	);
+	isAveragePower = $derived(this.energyMeasure === 'averagePower');
 
 	// Curve options
 	// Note: "Step" uses curveStepAfter — the value at time T is drawn as a
@@ -188,6 +217,12 @@ export default class ChartOptions {
 		if (type === this.selectedDataTransformType) return;
 		this.selectedDataTransformType = type;
 		this.onDataTransformChange?.(type);
+	}
+
+	setEnergyMeasure(/** @type {EnergyMeasure} */ measure) {
+		if (measure === this.selectedEnergyMeasure) return;
+		this.selectedEnergyMeasure = measure;
+		this.onEnergyMeasureChange?.(measure);
 	}
 
 	setCurveType(/** @type {CurveType} */ type) {

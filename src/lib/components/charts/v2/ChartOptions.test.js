@@ -85,3 +85,25 @@ describe('growth transform', () => {
 		expect(options.curveType).toBe('smooth');
 	});
 });
+
+describe('energy measure', () => {
+	it('keeps an average power choice but measures energy where it is not offered', () => {
+		const options = new ChartOptions();
+		options.selectedEnergyMeasure = 'averagePower';
+		expect(options.isAveragePower).toBe(false);
+		options.averagePowerAvailable = true;
+		expect(options.energyMeasure).toBe('averagePower');
+		expect(options.isAveragePower).toBe(true);
+	});
+
+	it('reports user choices only', () => {
+		const options = new ChartOptions();
+		/** @type {string[]} */
+		const changes = [];
+		options.onEnergyMeasureChange = (measure) => changes.push(measure);
+		options.selectedEnergyMeasure = 'averagePower';
+		options.setEnergyMeasure('averagePower');
+		options.setEnergyMeasure('energy');
+		expect(changes).toEqual(['energy']);
+	});
+});

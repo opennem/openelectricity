@@ -61,6 +61,7 @@
  * @property {string[]} hiddenSeries - Hidden group IDs, validated against the grouping
  * @property {ContributionMode} contributionMode
  * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
+ * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').EnergyMeasure} generationMeasure
  * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} marketValueTransform
  * @property {TrackerRange} range
  * @property {string | null} bucketFilter - Recurring calendar period (All range only)
@@ -218,6 +219,7 @@
  * @property {boolean} tablePanelOpen - The table's providers only fetch while open
  * @property {string[]} hiddenSeries - Group ids toggled off in the charts
  * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
+ * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').EnergyMeasure} generationMeasure - As drawn
  * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} marketValueTransform
  * @property {Array<{id: string, label: string, data: Array<Record<string, any>>, valueKey: string, scale?: string}>} overlayLines
  *   - Lines drawn over the generation stack (demand, renewables share)

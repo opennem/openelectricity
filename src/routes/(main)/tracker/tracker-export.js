@@ -380,6 +380,11 @@ export function timelineSummaryRows(ctx) {
 	if (overlays.length) rows.push(['Generation overlays', overlays.join(', ')]);
 	const generationNote = transformNote(ctx.generationTransform);
 	if (generationNote) rows.push(['Generation view', generationNote]);
+	if (ctx.generationMeasure === 'averagePower')
+		rows.push([
+			'Generation measure',
+			'Chart shows average power (each period’s energy ÷ its hours; the latest, so far); values exported as energy (MWh)'
+		]);
 	const marketNote = ctx.priceMetric === 'market_value' && transformNote(ctx.marketValueTransform);
 	if (marketNote) rows.push(['Market value view', marketNote]);
 	if (ctx.hiddenSeries.length) {

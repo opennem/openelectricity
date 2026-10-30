@@ -2,7 +2,8 @@
 	/**
 	 * Chart Controls Component
 	 *
-	 * Provides controls for data transform, chart type, curve style, and units.
+	 * Provides controls for data transform, chart type, curve style, energy
+	 * measure and units.
 	 * Displayed in a dropdown panel from the chart header.
 	 */
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
@@ -44,6 +45,7 @@
 	let dataTransformOptions = $derived([...chart.chartOptions.dataTransformOptions]);
 	let chartTypeOptions = $derived([...chart.chartOptions.chartTypeOptions]);
 	let curveOptions = $derived([...chart.chartOptions.curveOptions]);
+	let energyMeasureOptions = $derived([...chart.chartOptions.energyMeasureOptions]);
 
 	/**
 	 * @param {string} type
@@ -68,6 +70,15 @@
 	function handleCurveTypeChange(type) {
 		chart.chartOptions.selectedCurveType =
 			/** @type {import('./ChartOptions.svelte.js').CurveType} */ (type);
+	}
+
+	/**
+	 * @param {string} measure
+	 */
+	function handleEnergyMeasureChange(measure) {
+		chart.chartOptions.setEnergyMeasure(
+			/** @type {import('./ChartOptions.svelte.js').EnergyMeasure} */ (measure)
+		);
 	}
 
 	/**
@@ -113,6 +124,20 @@
 					buttons={curveOptions}
 					selected={chart.chartOptions.selectedCurveType}
 					onChange={handleCurveTypeChange}
+				/>
+			</div>
+		</div>
+	{/if}
+
+	<!-- A share is the same in either measure. -->
+	{#if chart.chartOptions.averagePowerAvailable && !chart.chartOptions.isDataTransformTypeProportion}
+		<div class="grid grid-cols-5 gap-4 items-center">
+			<span class="font-space font-normal uppercase text-xxs text-mid-grey">Measure</span>
+			<div class="col-span-4">
+				<SwitchTabs
+					buttons={energyMeasureOptions}
+					selected={chart.chartOptions.selectedEnergyMeasure}
+					onChange={handleEnergyMeasureChange}
 				/>
 			</div>
 		</div>
