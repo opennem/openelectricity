@@ -1,5 +1,5 @@
 /**
- * @type {ScenarioContent}
+ * @type {Object.<string, Object.<string, string>>}
  */
 export const scenarioLabels = {
 	aemo2026final: {

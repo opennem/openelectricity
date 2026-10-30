@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getScenarios, getScenarioJson } from './index.js';
 
+/** @param {unknown} body */
 function mockResponse(body) {
 	return { json: () => Promise.resolve(body) };
 }

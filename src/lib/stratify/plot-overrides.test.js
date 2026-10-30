@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import * as Plot from '@observablehq/plot';
 import { applyPlotOverrides, resolveMarkSpec } from './plot-overrides.js';
 
 // ── resolveMarkSpec ─────────────────────────────────────────────
@@ -114,12 +115,15 @@ describe('resolveMarkSpec', () => {
 // ── applyPlotOverrides ──────────────────────────────────────────
 
 describe('applyPlotOverrides', () => {
+	const existingMark = Plot.ruleY([0]);
+
+	/** @type {import('@observablehq/plot').PlotOptions} */
 	const baseOptions = {
 		style: { fontFamily: 'monospace' },
 		x: { label: null, grid: false },
 		y: { label: null, grid: true },
 		color: { domain: ['a', 'b'], legend: true },
-		marks: [{ _type: 'existing-mark' }]
+		marks: [existingMark]
 	};
 
 	it('returns baseOptions unchanged when overrides is null', () => {
@@ -155,8 +159,8 @@ describe('applyPlotOverrides', () => {
 		const result = applyPlotOverrides(baseOptions, {
 			color: { scheme: 'blues' }
 		});
-		expect(result.color.scheme).toBe('blues');
-		expect(result.color.domain).toEqual(['a', 'b']);
+		expect(result.color?.scheme).toBe('blues');
+		expect(result.color?.domain).toEqual(['a', 'b']);
 	});
 
 	it('adds fx/fy when not in base', () => {
@@ -215,9 +219,9 @@ describe('applyPlotOverrides', () => {
 			extraMarks: [{ markType: 'rule-y', data: [100], options: { stroke: 'red' } }]
 		});
 		// Original mark still first
-		expect(result.marks[0]).toEqual({ _type: 'existing-mark' });
+		expect(result.marks?.[0]).toBe(existingMark);
 		// New mark appended
-		expect(result.marks.length).toBe(2);
+		expect(result.marks?.length).toBe(2);
 	});
 
 	it('skips unknown mark types in extraMarks', () => {
@@ -225,7 +229,7 @@ describe('applyPlotOverrides', () => {
 			extraMarks: [{ markType: 'nonexistent' }, { markType: 'rule-y', data: [0] }]
 		});
 		// Only the valid mark gets appended
-		expect(result.marks.length).toBe(2);
+		expect(result.marks?.length).toBe(2);
 	});
 
 	it('handles empty extraMarks array', () => {
@@ -239,9 +243,9 @@ describe('applyPlotOverrides', () => {
 			layout: { title: 'Test', marginLeft: 50 },
 			extraMarks: [{ markType: 'rule-y', data: [0] }]
 		});
-		expect(result.x.type).toBe('band');
+		expect(result.x?.type).toBe('band');
 		expect(result.title).toBe('Test');
 		expect(result.marginLeft).toBe(50);
-		expect(result.marks.length).toBe(2);
+		expect(result.marks?.length).toBe(2);
 	});
 });

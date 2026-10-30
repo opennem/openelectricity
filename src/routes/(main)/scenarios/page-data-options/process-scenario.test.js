@@ -1,13 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import processScenario from './process-scenario.js';
 
+/**
+ * StatsData declares every series key (history/forecast/projection) as
+ * required, but real entries only carry the one they were fetched for, so
+ * these single-series fixtures are cast.
+ *
+ * @param {{ fuelTech: FuelTechCode, data: (number | null)[], units?: string, start?: string }} params
+ * @returns {StatsData}
+ */
 function makeProjectionStats({
 	fuelTech,
 	data,
 	units = 'GWh',
 	start = '2024-07-01T00:00:00+10:00'
 }) {
-	return {
+	return /** @type {StatsData} */ ({
 		id: `au.fuel_tech.${fuelTech}.energy`,
 		type: 'energy',
 		code: fuelTech,
@@ -21,11 +29,15 @@ function makeProjectionStats({
 			interval: '1Y',
 			data
 		}
-	};
+	});
 }
 
+/**
+ * @param {{ fuelTech: FuelTechCode, data: (number | null)[], units?: string }} params
+ * @returns {StatsData}
+ */
 function makeHistoryStats({ fuelTech, data, units = 'GWh' }) {
-	return {
+	return /** @type {StatsData} */ ({
 		id: `au.fuel_tech.${fuelTech}.energy`,
 		type: 'energy',
 		code: fuelTech,
@@ -39,9 +51,10 @@ function makeHistoryStats({ fuelTech, data, units = 'GWh' }) {
 			interval: '1M',
 			data
 		}
-	};
+	});
 }
 
+/** @param {number} baseValue */
 function monthlyData(baseValue) {
 	return Array.from({ length: 36 }, (_, i) => baseValue + i);
 }
@@ -98,6 +111,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical', 'aemo2024-step_change-CDP14'],
 				seriesColours: { historical: '#000', 'aemo2024-step_change-CDP14': '#f00' },
 				seriesLabels: { historical: 'Historical', 'aemo2024-step_change-CDP14': 'Step Change' },
+				nameOptions: [],
 				yDomain: [0, 500]
 			};
 
@@ -119,6 +133,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical', 'aemo2024-step_change-CDP14'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 1200]
 			};
 
@@ -138,6 +153,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical'],
 				seriesColours: { historical: '#000' },
 				seriesLabels: { historical: 'Historical' },
+				nameOptions: [],
 				yDomain: [0, 600]
 			};
 
@@ -146,6 +162,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 1200]
 			};
 
@@ -168,6 +185,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical'],
 				seriesColours: { historical: '#000' },
 				seriesLabels: { historical: 'Historical' },
+				nameOptions: [],
 				yDomain: [0, 500]
 			};
 
@@ -180,6 +198,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 1200]
 			};
 
@@ -206,6 +225,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical'],
 				seriesColours: { historical: '#000' },
 				seriesLabels: { historical: 'Historical' },
+				nameOptions: [],
 				yDomain: [0, 500]
 			};
 
@@ -215,6 +235,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 1000]
 			};
 
@@ -237,6 +258,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical', 'scenario-a'],
 				seriesColours: { historical: '#000', 'scenario-a': '#f00' },
 				seriesLabels: { historical: 'Historical', 'scenario-a': 'Scenario A' },
+				nameOptions: [],
 				yDomain: [0, 600]
 			};
 
@@ -248,6 +270,7 @@ describe('processScenario', () => {
 				seriesNames: ['historical', 'scenario-a'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 1200]
 			};
 

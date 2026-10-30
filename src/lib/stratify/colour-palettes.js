@@ -216,10 +216,11 @@ export function getPaletteColours(paletteId, n) {
 	}
 
 	// For fixed arrays, take first N or cycle
-	if (n <= palette.colours.length) {
-		return palette.colours.slice(0, n);
+	const colours = palette.colours;
+	if (n <= colours.length) {
+		return colours.slice(0, n);
 	}
-	return Array.from({ length: n }, (_, i) => palette.colours[i % palette.colours.length]);
+	return Array.from({ length: n }, (_, i) => colours[i % colours.length]);
 }
 
 /**

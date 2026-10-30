@@ -150,10 +150,14 @@ export function applyPlotOverrides(baseOptions, overrides) {
 
 	// Layout overrides
 	if (overrides.layout) {
-		const layoutKeys = /** @type {const} */ ([
-			'title',
-			'subtitle',
-			'caption',
+		// Split by value type so each assignment's key union has one target type
+		const textKeys = /** @type {const} */ (['title', 'subtitle', 'caption']);
+		for (const key of textKeys) {
+			if (overrides.layout[key] !== undefined) {
+				result[key] = overrides.layout[key];
+			}
+		}
+		const numericKeys = /** @type {const} */ ([
 			'marginTop',
 			'marginRight',
 			'marginBottom',
@@ -165,7 +169,7 @@ export function applyPlotOverrides(baseOptions, overrides) {
 			'width',
 			'height'
 		]);
-		for (const key of layoutKeys) {
+		for (const key of numericKeys) {
 			if (overrides.layout[key] !== undefined) {
 				result[key] = overrides.layout[key];
 			}

@@ -14,7 +14,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {number} startTime - Start time in ms for the overlay
-	 * @property {number} [endTime] - Optional end time in ms
+	 * @property {number | null} [endTime] - Optional end time in ms (null/omitted = right edge)
 	 * @property {string} [patternId] - ID for the hatch pattern def
 	 * @property {string} [patternTransform] - SVG transform controlling hatch direction
 	 * @property {string} [bgFill] - Optional background fill behind the hatch

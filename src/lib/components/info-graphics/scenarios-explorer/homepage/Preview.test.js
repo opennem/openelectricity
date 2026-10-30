@@ -7,9 +7,16 @@ import {
 
 /**
  * Create a minimal projection StatsData entry for the scenario pipeline.
+ *
+ * StatsData declares every series key (history/forecast/projection) as
+ * required, but real entries only carry the one they were fetched for, so
+ * these single-series fixtures are cast.
+ *
+ * @param {{ fuelTech: FuelTechCode, data: (number | null)[], units?: string }} params
+ * @returns {StatsData}
  */
 function makeProjectionStats({ fuelTech, data, units = 'GWh' }) {
-	return {
+	return /** @type {StatsData} */ ({
 		id: `au.fuel_tech.${fuelTech}.energy`,
 		type: 'energy',
 		code: fuelTech,
@@ -23,11 +30,15 @@ function makeProjectionStats({ fuelTech, data, units = 'GWh' }) {
 			interval: '1Y',
 			data
 		}
-	};
+	});
 }
 
+/**
+ * @param {{ fuelTech: FuelTechCode, data: (number | null)[], units?: string }} params
+ * @returns {StatsData}
+ */
 function makeHistoryStats({ fuelTech, data, units = 'GWh' }) {
-	return {
+	return /** @type {StatsData} */ ({
 		id: `au.fuel_tech.${fuelTech}.energy`,
 		type: 'energy',
 		code: fuelTech,
@@ -41,19 +52,26 @@ function makeHistoryStats({ fuelTech, data, units = 'GWh' }) {
 			interval: '1M',
 			data
 		}
-	};
+	});
 }
 
+/**
+ * @param {Record<string, string>} acc
+ * @param {StatsData} d
+ */
 const colourReducer = (acc, d) => {
 	acc[d.id] = d.colour || '#999';
 	return acc;
 };
 
+/** @param {number} baseValue */
 function monthlyData(baseValue) {
 	return Array.from({ length: 36 }, (_, i) => baseValue + i);
 }
 
-/** All fuel techs that appear in the homepage_preview group (flattened from fuelTechMap) */
+/** All fuel techs that appear in the homepage_preview group (flattened from fuelTechMap)
+ * @type {FuelTechCode[]}
+ */
 const previewFuelTechs = [
 	'coal_black',
 	'coal_brown',
@@ -71,7 +89,9 @@ const previewFuelTechs = [
 	'solar_rooftop'
 ];
 
-/** All fuel techs that appear in the homepage_renewables_vs_fossil_fuels group */
+/** All fuel techs that appear in the homepage_renewables_vs_fossil_fuels group
+ * @type {FuelTechCode[]}
+ */
 const renewableVsFossilFuelTechs = [
 	'coal_black',
 	'coal_brown',

@@ -17,6 +17,7 @@
 		chroma.scale(['#FFFDE4', '#FED500', '#F08030', '#C62828', '#6A1B1B']).domain([0, maxValue])
 	);
 
+	/** @type {HTMLCanvasElement | null} */
 	let canvas = $state(null);
 	/** @type {HTMLElement | null} */
 	let container = $state(null);
@@ -34,6 +35,7 @@
 		if (!canvas || !data || !containerWidth || !containerHeight) return;
 
 		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
 		canvas.width = containerWidth * dpr;
 		canvas.height = containerHeight * dpr;
 		ctx.scale(dpr, dpr);
@@ -55,6 +57,7 @@
 		}
 	});
 
+	/** @param {MouseEvent & { currentTarget: HTMLDivElement }} e */
 	function handleMouseMove(e) {
 		if (!showTooltip || !data || !days) return;
 		const rect = e.currentTarget.getBoundingClientRect();
@@ -118,6 +121,7 @@
 		return positions;
 	});
 
+	/** @param {HTMLElement} node */
 	function resizeObserve(node) {
 		const ro = new ResizeObserver((entries) => {
 			const entry = entries[0];

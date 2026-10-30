@@ -39,6 +39,12 @@
 
 	let selectedChart = $derived(chartMap[selectedChartKey]);
 
+	// MiniCharts takes the overlay start as epoch ms
+	let overlayStartMs = $derived.by(() => {
+		const date = selectedChart.chartStyles.chartOverlayLine?.date;
+		return date ? +new Date(date) : undefined;
+	});
+
 	let isAemo2024 = $derived($singleSelectionModel === 'aemo2024');
 </script>
 
@@ -70,7 +76,7 @@
 					xTicks={selectedChart.xTicks}
 					formatTickX={selectedChart.formatTickX}
 					formatTickY={selectedChart.convertAndFormatValue}
-					overlayStart={selectedChart.chartStyles.chartOverlayLine}
+					overlayStart={overlayStartMs}
 					hoverTime={selectedChart.hoverTime}
 					focusTime={selectedChart.focusTime}
 					seriesData={selectedChart.seriesData}
@@ -88,7 +94,7 @@
 					xTicks={selectedChart.xTicks}
 					formatTickX={selectedChart.formatTickX}
 					formatTickY={intensity.convertAndFormatValue}
-					overlayStart={selectedChart.chartStyles.chartOverlayLine}
+					overlayStart={overlayStartMs}
 					hoverTime={intensity.hoverTime}
 					focusTime={intensity.focusTime}
 					seriesData={intensity.seriesData}
@@ -109,7 +115,7 @@
 				xTicks={selectedChart.xTicks}
 				formatTickX={selectedChart.formatTickX}
 				formatTickY={selectedChart.convertAndFormatValue}
-				overlayStart={selectedChart.chartStyles.chartOverlayLine}
+				overlayStart={overlayStartMs}
 				hoverTime={selectedChart.hoverTime}
 				focusTime={selectedChart.focusTime}
 				seriesData={selectedChart.seriesData}

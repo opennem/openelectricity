@@ -63,8 +63,10 @@ export function covertHistoryDataToTWh(data) {
 }
 
 /**
- * @param {TimeSeriesData[]} data
+ * @template {TimeSeriesData} T
+ * @param {T[]} data
  * @param {number} additionalYears
+ * @returns {T[]}
  */
 export function mutateDatesToStartOfYear(data, additionalYears = 0) {
 	return data.map((d) => {

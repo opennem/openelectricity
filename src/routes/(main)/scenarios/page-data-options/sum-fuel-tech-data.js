@@ -4,7 +4,7 @@
  * Statistic → deepCopy → invertValues → group → reorder → structuredClone pipeline.
  *
  * @param {StatsData[]} data - Raw fuel tech data
- * @param {string} statsType - 'projection' or 'history'
+ * @param {StatsType} statsType - 'projection' or 'history'
  * @param {Object.<string, string[]>} groupMap - Fuel tech group mapping
  * @param {{
  *   negateFuelTechs?: string[],
@@ -28,6 +28,7 @@ export default function sumFuelTechData(data, statsType, groupMap, options = {})
 	}
 
 	// Build negate set for O(1) lookup
+	/** @type {Set<string | undefined>} */
 	const negateSet = new Set(negateFuelTechs);
 
 	// Filter to relevant data entries
@@ -67,8 +68,8 @@ export default function sumFuelTechData(data, statsType, groupMap, options = {})
 		}
 	}
 
-	// Return a StatsData-shaped object without deep cloning
-	return {
+	// Build a StatsData-shaped object without deep cloning
+	const summedStats = {
 		id: id || template.id,
 		code: null,
 		fuel_tech: null,
@@ -83,4 +84,10 @@ export default function sumFuelTechData(data, statsType, groupMap, options = {})
 			data: summed
 		}
 	};
+
+	// StatsData can't describe this shape: it declares every series key
+	// (history/forecast/projection) as required while a summed entry carries one,
+	// and types code/fuel_tech as optional strings while the aggregate uses
+	// explicit nulls. Cast via unknown rather than change the runtime value.
+	return /** @type {StatsData} */ (/** @type {unknown} */ (summedStats));
 }

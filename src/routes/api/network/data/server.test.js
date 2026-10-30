@@ -25,6 +25,20 @@ function request(search, setHeaders = vi.fn()) {
 	);
 }
 
+/**
+ * Read one metric's results from an endpoint response, failing if it is absent.
+ * @param {Response} response
+ * @param {string} metric
+ * @returns {Promise<import('openelectricity').ITimeSeriesResult[]>}
+ */
+async function resultsForMetric(response, metric) {
+	/** @type {{ response: { data: import('openelectricity').INetworkTimeSeries[] } }} */
+	const body = await response.json();
+	const entry = body.response.data.find((series) => series.metric === metric);
+	if (!entry) throw new Error(`Expected a ${metric} series in the response`);
+	return entry.results;
+}
+
 describe('network data endpoint', () => {
 	beforeEach(() => {
 		mocks.getMarket.mockReset().mockResolvedValue({ response: { data: [] } });
@@ -115,8 +129,7 @@ describe('network data endpoint', () => {
 		const response = await request(
 			'region=nsw1&metric=power&interval=1h&date_start=2026-01-01&date_end=2026-01-02'
 		);
-		const body = await response.json();
-		const results = body.response.data.find((entry) => entry.metric === 'power').results;
+		const results = await resultsForMetric(response, 'power');
 
 		expect(mocks.getMarket).toHaveBeenCalledWith('NEM', ['flow_imports', 'flow_exports'], {
 			interval: '1h',
@@ -161,8 +174,7 @@ describe('network data endpoint', () => {
 		const response = await request(
 			'region=vic1&metric=energy&interval=1d&date_start=2026-01-01&date_end=2026-01-02'
 		);
-		const body = await response.json();
-		const results = body.response.data.find((entry) => entry.metric === 'energy').results;
+		const results = await resultsForMetric(response, 'energy');
 
 		expect(mocks.getMarket).toHaveBeenCalledWith(
 			'NEM',

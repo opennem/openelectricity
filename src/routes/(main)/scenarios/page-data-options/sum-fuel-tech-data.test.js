@@ -1,9 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import sumFuelTechData from './sum-fuel-tech-data.js';
 
-/** @param {Partial<StatsData>} overrides */
+/**
+ * StatsData declares every series key (history/forecast/projection) as
+ * required, but real entries only carry the one they were fetched for, so
+ * this single-series fixture is cast.
+ *
+ * @param {Partial<StatsData>} overrides
+ * @returns {StatsData}
+ */
 function makeStats(overrides = {}) {
-	return {
+	return /** @type {StatsData} */ ({
 		id: 'test',
 		fuel_tech: 'solar_utility',
 		type: 'energy',
@@ -17,7 +24,7 @@ function makeStats(overrides = {}) {
 			data: [10, 20, 30]
 		},
 		...overrides
-	};
+	});
 }
 
 const groupMap = {
@@ -26,7 +33,8 @@ const groupMap = {
 
 describe('sumFuelTechData', () => {
 	it('returns null when no fuel techs match the group map', () => {
-		const data = [makeStats({ fuel_tech: 'unknown_tech' })];
+		// Deliberately not a known FuelTechCode
+		const data = [makeStats({ fuel_tech: /** @type {any} */ ('unknown_tech') })];
 		expect(sumFuelTechData(data, 'history', groupMap)).toBe(null);
 	});
 
@@ -46,7 +54,7 @@ describe('sumFuelTechData', () => {
 			})
 		];
 		const result = sumFuelTechData(data, 'history', groupMap);
-		expect(result.history.data).toEqual([15, 30, 45]);
+		expect(result?.history.data).toEqual([15, 30, 45]);
 	});
 
 	it('uses max data length when fuel techs have different lengths', () => {
@@ -68,14 +76,14 @@ describe('sumFuelTechData', () => {
 		const result = sumFuelTechData(data, 'history', groupMap);
 
 		// Should use the longer array length (5), not the shorter one (2)
-		expect(result.history.data).toHaveLength(5);
+		expect(result?.history.data).toHaveLength(5);
 		// First two values summed from both fuel techs
-		expect(result.history.data[0]).toBe(110);
-		expect(result.history.data[1]).toBe(220);
+		expect(result?.history.data[0]).toBe(110);
+		expect(result?.history.data[1]).toBe(220);
 		// Remaining values from solar only (coal_black has no data beyond index 1)
-		expect(result.history.data[2]).toBe(30);
-		expect(result.history.data[3]).toBe(40);
-		expect(result.history.data[4]).toBe(50);
+		expect(result?.history.data[2]).toBe(30);
+		expect(result?.history.data[3]).toBe(40);
+		expect(result?.history.data[4]).toBe(50);
 	});
 
 	it('sets start/last to widest date range across all fuel techs', () => {
@@ -96,8 +104,8 @@ describe('sumFuelTechData', () => {
 		];
 		const result = sumFuelTechData(data, 'history', groupMap);
 
-		expect(result.history.start).toBe('2009-07-01');
-		expect(result.history.last).toBe('2025-02-01');
+		expect(result?.history.start).toBe('2009-07-01');
+		expect(result?.history.last).toBe('2025-02-01');
 	});
 
 	it('negates load fuel techs when specified', () => {
@@ -116,7 +124,7 @@ describe('sumFuelTechData', () => {
 			negateFuelTechs: ['battery_charging']
 		});
 
-		expect(result.history.data).toEqual([90, 180, 270]);
+		expect(result?.history.data).toEqual([90, 180, 270]);
 	});
 
 	it('uses custom id/label/colour when provided', () => {
@@ -127,9 +135,9 @@ describe('sumFuelTechData', () => {
 			colour: '#00bcd4'
 		});
 
-		expect(result.id).toBe('tas');
-		expect(result.label).toBe('Tasmania');
-		expect(result.colour).toBe('#00bcd4');
+		expect(result?.id).toBe('tas');
+		expect(result?.label).toBe('Tasmania');
+		expect(result?.colour).toBe('#00bcd4');
 	});
 
 	it('excludes groups listed in excludeGroups', () => {
@@ -151,7 +159,7 @@ describe('sumFuelTechData', () => {
 			excludeGroups: ['total_loads']
 		});
 
-		expect(result.history.data).toEqual([100]);
+		expect(result?.history.data).toEqual([100]);
 	});
 
 	it('handles null values in data arrays without corrupting the sum', () => {
@@ -177,6 +185,6 @@ describe('sumFuelTechData', () => {
 		];
 		const result = sumFuelTechData(data, 'history', groupMap);
 
-		expect(result.history.data).toEqual([15, 10, 30, 20, 75]);
+		expect(result?.history.data).toEqual([15, 10, 30, 20, 75]);
 	});
 });

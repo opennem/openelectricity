@@ -22,7 +22,8 @@ const scenarioCache = new Map();
  * @returns {Promise<{ energyData: StatsData[], emissionsData: StatsData[] }>}
  */
 async function getEnergyAndEmissions(region, options) {
-	if (historyCache.has(region)) return historyCache.get(region);
+	const cached = historyCache.get(region);
+	if (cached !== undefined) return cached;
 
 	const params = {
 		region: region && region === 'NEM' ? '' : region
@@ -50,7 +51,8 @@ async function getEnergyAndEmissions(region, options) {
  * @returns {Promise<StatsData[]>}
  */
 async function getCachedCapacity(region, options) {
-	if (capacityCache.has(region)) return capacityCache.get(region);
+	const cached = capacityCache.get(region);
+	if (cached !== undefined) return cached;
 
 	const result = await getHistory(region, 'capacity', options);
 
@@ -72,7 +74,8 @@ async function getCachedCapacity(region, options) {
 async function getCachedScenarios(model, scenario, filters, options) {
 	const key = `${model}:${scenario}:${filters.pathway || ''}:${filters.region || ''}:${filters.dataType || ''}`;
 
-	if (scenarioCache.has(key)) return scenarioCache.get(key);
+	const cached = scenarioCache.get(key);
+	if (cached !== undefined) return cached;
 
 	const result = await getScenarios(model, scenario, filters, options);
 
@@ -264,22 +267,26 @@ async function fetchRegionViewData({ regions, model, scenario, pathway }) {
 	const regionsData = [...regions];
 
 	// Fetch scenario data (all regions for this pathway), and energy+emissions + capacity per region, all in parallel
-	const [scenarioData, ...regionResults] = await Promise.all([
+	const [scenarioData, regionResults] = await Promise.all([
 		getCachedScenarios(model, scenario, { pathway }),
-		...regionsData.flatMap((r) => [
-			getEnergyAndEmissions(r.value.toUpperCase()),
-			getCachedCapacity(r.value.toUpperCase())
-		])
+		Promise.all(
+			regionsData.map((r) =>
+				Promise.all([
+					getEnergyAndEmissions(r.value.toUpperCase()),
+					getCachedCapacity(r.value.toUpperCase())
+				])
+			)
+		)
 	]);
 
 	for (let i = 0; i < regionsData.length; i++) {
 		const r = regionsData[i];
-		const base = i * 2;
+		const [energyAndEmissions, capacityData] = regionResults[i];
 
 		r.id = r.value;
-		r.historicalEnergyData = regionResults[base].energyData;
-		r.historicalEmissionsData = regionResults[base].emissionsData;
-		r.historicalCapacityData = regionResults[base + 1];
+		r.historicalEnergyData = energyAndEmissions.energyData;
+		r.historicalEmissionsData = energyAndEmissions.emissionsData;
+		r.historicalCapacityData = capacityData;
 
 		const regionLower = r.value.toLowerCase();
 		r.projectionEnergyData = scenarioData

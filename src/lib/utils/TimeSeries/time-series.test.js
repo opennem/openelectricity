@@ -3,22 +3,23 @@ import { startOfMonth } from 'date-fns';
 import transform from './transform-stats-to-ts.js';
 
 /**
- * Helper to create a StatsData-shaped object for testing.
+ * Helper to create a StatsData-shaped object for testing. Only the history
+ * series is populated, as the transform reads just the requested stats type.
  * @param {string} id
  * @param {string} start
  * @param {string} last
  * @param {number[]} data
+ * @returns {StatsData}
  */
 function makeStats(id, start, last, data) {
-	return {
+	return /** @type {StatsData} */ ({
 		id,
-		fuel_tech: null,
 		type: 'energy',
 		units: 'GWh',
 		label: id,
 		colour: '#999',
 		history: { start, last, interval: '1M', data }
-	};
+	});
 }
 
 describe('transform-stats-to-ts (date-aligned mapping)', () => {
@@ -123,7 +124,10 @@ describe('transform-stats-to-ts (date-aligned mapping)', () => {
 	});
 
 	it('returns empty array when dataset has no valid stats', () => {
-		const dataset = [{ id: 'nsw', history: null }];
+		// Deliberately malformed row: the transform must tolerate a null series
+		const dataset = /** @type {StatsData[]} */ (
+			/** @type {unknown} */ ([{ id: 'nsw', history: null }])
+		);
 		const result = transform(dataset, '1M', 'history');
 		expect(result).toEqual([]);
 	});

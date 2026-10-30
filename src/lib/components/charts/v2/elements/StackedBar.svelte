@@ -12,7 +12,7 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {Array<Array<[number, number]> & { key: string }>} [stackedData] - D3 stack output: array of series, each with a .key and [y0, y1] elements
+	 * @property {Array<import('d3-shape').Series<Record<string, any>, string>>} [stackedData] - D3 stack output: array of series, each with a .key and [y0, y1] elements carrying their source row as .data
 	 * @property {Record<string, string>} [seriesColours] - Map of series key to colour
 	 * @property {string | null} [highlightId] - Currently hovered series key (dims others)
 	 * @property {(evt: { data: any, key: string }) => void} [onmousemove] - Callback on bar hover

@@ -6,6 +6,7 @@ import { fetchTechnologyViewData, clearCaches } from './fetch.svelte.js';
  * Captures all calls for assertion.
  */
 function createMockFetch() {
+	/** @type {{ url: string, signal: AbortSignal | null | undefined }[]} */
 	const calls = [];
 
 	/** @param {string} url */

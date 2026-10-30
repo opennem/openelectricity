@@ -2,8 +2,8 @@
  * Compute the Y domain [min, max] from series data with min/max values.
  * Uses reduce instead of Math.max(...spread) to avoid stack overflow on large datasets.
  *
- * @param {Array<Record<string, any>>} data - Array of data points with _min and _max fields
- * @param {{ padding?: number }} [options] - Options
+ * @param {Array<Record<string, any>> | null | undefined} data - Array of data points with _min and _max fields
+ * @param {object} [options] - Options
  * @param {number} [options.padding=0.1] - Fractional padding to add (default 10%)
  * @returns {[number, number]} The [min, max] Y domain
  */

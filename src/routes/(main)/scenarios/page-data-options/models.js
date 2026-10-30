@@ -93,6 +93,7 @@ export const modelScenarios = {
 	]
 };
 
+/** @type {Record<string, string[]>} */
 export const modelPathways = {
 	[AEMO_2026_ISP_FINAL]: [
 		'CDP1',

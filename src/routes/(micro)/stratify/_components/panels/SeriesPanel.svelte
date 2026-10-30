@@ -28,7 +28,9 @@
 		const ordered =
 			project.tooltipColumns.length > 0
 				? [
-						...project.tooltipColumns.map((key) => all.find((c) => c.key === key)).filter(Boolean),
+						...project.tooltipColumns
+							.map((key) => all.find((c) => c.key === key))
+							.filter((c) => c !== undefined),
 						...all.filter((c) => !project.tooltipColumns.includes(c.key))
 					]
 				: all;

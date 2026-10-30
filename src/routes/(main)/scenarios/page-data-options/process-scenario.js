@@ -239,8 +239,10 @@ function emissions({ projections, history, includeBatteryAndLoads }) {
 			scenarioProjectionStats.push({
 				...first,
 				id: projection.id,
-				code: null,
-				fuel_tech: null,
+				// Explicit nulls mark the aggregate as having no single code/fuel tech;
+				// StatsData types these as optional strings, so cast rather than change the value.
+				code: /** @type {any} */ (null),
+				fuel_tech: /** @type {any} */ (null),
 				label: scenarioLabels[projection.model][projection.scenario],
 				colour: scenarioColourMap[`${projection.model}-${projection.scenario}`]
 			});

@@ -4,6 +4,66 @@
  */
 
 /**
+ * @typedef {Object} AnnotationRect
+ * @property {'rect'} type
+ * @property {Date | number} x - X position in data coordinates
+ * @property {number} y - Y position in data coordinates
+ * @property {number} width - Width in pixels
+ * @property {number} height - Height in pixels
+ * @property {string} [fill] - Fill colour
+ * @property {string} [stroke] - Stroke colour
+ * @property {number} [strokeWidth] - Stroke width
+ * @property {number} [opacity] - Opacity
+ * @property {number} [rx] - Corner radius
+ */
+
+/**
+ * @typedef {Object} AnnotationCircle
+ * @property {'circle'} type
+ * @property {Date | number} x - Centre X in data coordinates
+ * @property {number} y - Centre Y in data coordinates
+ * @property {number} r - Radius in pixels
+ * @property {string} [fill] - Fill colour
+ * @property {string} [stroke] - Stroke colour
+ * @property {number} [strokeWidth] - Stroke width
+ * @property {number} [opacity] - Opacity
+ */
+
+/**
+ * @typedef {Object} AnnotationLine
+ * @property {'line'} type
+ * @property {Date | number} x1 - Start X in data coordinates
+ * @property {number} y1 - Start Y in data coordinates
+ * @property {Date | number} x2 - End X in data coordinates
+ * @property {number} y2 - End Y in data coordinates
+ * @property {string} [stroke] - Stroke colour
+ * @property {number} [strokeWidth] - Stroke width
+ * @property {string} [strokeDasharray] - Dash pattern
+ * @property {number} [opacity] - Opacity
+ */
+
+/**
+ * @typedef {Object} AnnotationText
+ * @property {'text'} type
+ * @property {Date | number} x - X position in data coordinates
+ * @property {number} y - Y position in data coordinates
+ * @property {string} text - Text content
+ * @property {number} [dx] - Horizontal offset in pixels
+ * @property {number} [dy] - Vertical offset in pixels
+ * @property {number} [rotate] - Rotation angle in degrees
+ * @property {string} [fill] - Text fill colour
+ * @property {string} [fontSize] - Font size (e.g. '12px')
+ * @property {string} [fontWeight] - Font weight
+ * @property {string} [textAnchor] - Text anchor: 'start', 'middle', 'end'
+ * @property {string} [dominantBaseline] - Baseline alignment
+ * @property {number} [opacity] - Opacity
+ */
+
+/**
+ * @typedef {AnnotationRect | AnnotationCircle | AnnotationLine | AnnotationText} Annotation
+ */
+
+/**
  * Convert a data x value (Date or number) to a Date for scale input.
  * @param {Date | number} val
  * @returns {Date}
@@ -14,7 +74,7 @@ export function toDateValue(val) {
 
 /**
  * Resolve annotation defaults for a rect.
- * @param {import('./Annotations.svelte').AnnotationRect} item
+ * @param {AnnotationRect} item
  */
 export function rectDefaults(item) {
 	return {
@@ -28,7 +88,7 @@ export function rectDefaults(item) {
 
 /**
  * Resolve annotation defaults for a circle.
- * @param {import('./Annotations.svelte').AnnotationCircle} item
+ * @param {AnnotationCircle} item
  */
 export function circleDefaults(item) {
 	return {
@@ -41,7 +101,7 @@ export function circleDefaults(item) {
 
 /**
  * Resolve annotation defaults for a line.
- * @param {import('./Annotations.svelte').AnnotationLine} item
+ * @param {AnnotationLine} item
  */
 export function lineDefaults(item) {
 	return {
@@ -54,7 +114,7 @@ export function lineDefaults(item) {
 
 /**
  * Resolve annotation defaults for text.
- * @param {import('./Annotations.svelte').AnnotationText} item
+ * @param {AnnotationText} item
  */
 export function textDefaults(item) {
 	return {
@@ -71,7 +131,7 @@ export function textDefaults(item) {
 
 /**
  * Build the SVG transform string for rotated text.
- * @param {import('./Annotations.svelte').AnnotationText} item
+ * @param {AnnotationText} item
  * @param {number} xPx - Computed x pixel position (including dx)
  * @param {number} yPx - Computed y pixel position (including dy)
  * @returns {string | undefined}

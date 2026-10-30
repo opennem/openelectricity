@@ -8,11 +8,17 @@
 /** @typedef {'area' | 'column' | 'bar' | 'line' | 'dot'} ChartFamily */
 
 /**
+ * Chart types a family variant can name: the v2 `ChartType`s plus the
+ * horizontal bar variants, which v2 charts don't render.
+ * @typedef {import('./types.js').ChartType | 'bar-horizontal' | 'grouped-bar-horizontal'} FamilyChartType
+ */
+
+/**
  * @typedef {Object} ChartFamilyConfig
  * @property {string} label - Display label for the family
- * @property {import('./types.js').ChartType[]} variants - Ordered list of chart type values
+ * @property {FamilyChartType[]} variants - Ordered list of chart type values
  * @property {Record<string, string>} variantLabels - Display labels keyed by chart type value
- * @property {import('./types.js').ChartType} defaultVariant - Default chart type when switching to this family
+ * @property {FamilyChartType} defaultVariant - Default chart type when switching to this family
  */
 
 /** @type {Record<ChartFamily, ChartFamilyConfig>} */
@@ -81,7 +87,7 @@ export function getAvailableFamilies(isCategory) {
 /**
  * Get the default chart type for a family.
  * @param {ChartFamily} family
- * @returns {import('./types.js').ChartType}
+ * @returns {FamilyChartType}
  */
 export function getDefaultForFamily(family) {
 	return CHART_FAMILIES[family].defaultVariant;

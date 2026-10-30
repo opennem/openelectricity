@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import combineHistoryProjection, { interpolateGap } from './combine-history-projection.js';
 
+/**
+ * @param {{
+ *   data: TimeSeriesData[],
+ *   seriesNames: string[],
+ *   seriesColours?: Object.<string, string>,
+ *   seriesLabels?: Object.<string, string>,
+ *   statsDatasets?: { id: string, code?: string }[]
+ * }} params
+ * @returns {import('./combine-history-projection.js').SeriesSource}
+ */
 function makeMockTimeSeries({
 	data,
 	seriesNames,
@@ -500,9 +510,9 @@ describe('line chart scenario bridging', () => {
 
 		// Last history row should have projection series anchored to historical value
 		const lastHistRow = result.seriesData.find((d) => d.time === new Date('2025-01-01').getTime());
-		expect(lastHistRow.historical).toBe(120);
-		expect(lastHistRow['scenario-a']).toBe(120);
-		expect(lastHistRow['scenario-b']).toBe(120);
+		expect(lastHistRow?.historical).toBe(120);
+		expect(lastHistRow?.['scenario-a']).toBe(120);
+		expect(lastHistRow?.['scenario-b']).toBe(120);
 	});
 
 	it('interpolates projection series through gap years from historical anchor', () => {
@@ -648,8 +658,8 @@ describe('keepFullHistory (By Scenario)', () => {
 
 		// Overlapping rows have both history and projection values
 		const overlap2022 = result.seriesData.find((d) => d.time === new Date('2022-01-01').getTime());
-		expect(overlap2022.historical).toBe(100);
-		expect(overlap2022['scenario-a']).toBe(200);
+		expect(overlap2022?.historical).toBe(100);
+		expect(overlap2022?.['scenario-a']).toBe(200);
 	});
 
 	it('trims history at overlap when keepFullHistory is false (default)', () => {
@@ -763,17 +773,17 @@ describe('keepFullHistory (By Scenario)', () => {
 
 		// Historical values preserved at overlap points
 		const row2018 = result.seriesData.find((d) => d.time === new Date('2018-01-01').getTime());
-		expect(row2018.historical).toBe(500);
-		expect(row2018['aemo2018-neutral-default']).toBe(480);
+		expect(row2018?.historical).toBe(500);
+		expect(row2018?.['aemo2018-neutral-default']).toBe(480);
 
 		const row2020 = result.seriesData.find((d) => d.time === new Date('2020-01-01').getTime());
-		expect(row2020.historical).toBe(520);
-		expect(row2020['aemo2018-neutral-default']).toBe(440);
+		expect(row2020?.historical).toBe(520);
+		expect(row2020?.['aemo2018-neutral-default']).toBe(440);
 
 		// Projection-only row has null for historical
 		const row2021 = result.seriesData.find((d) => d.time === new Date('2021-01-01').getTime());
-		expect(row2021['aemo2018-neutral-default']).toBe(420);
-		expect(row2021.historical).toBeNull();
+		expect(row2021?.['aemo2018-neutral-default']).toBe(420);
+		expect(row2021?.historical).toBeNull();
 	});
 
 	it('does not merge rows when keepFullHistory is false — trims history instead', () => {
@@ -805,7 +815,7 @@ describe('keepFullHistory (By Scenario)', () => {
 		expect(result.seriesData[0].historical).toBe(490);
 		// Projection rows present
 		const proj2018 = result.seriesData.find((d) => d.time === new Date('2018-01-01').getTime());
-		expect(proj2018['scenario-a']).toBe(480);
+		expect(proj2018?.['scenario-a']).toBe(480);
 	});
 
 	it('keeps null values in gap year rows so stacked-area charts cut off instead of drawing to 0', () => {

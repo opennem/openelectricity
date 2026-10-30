@@ -26,6 +26,7 @@
 	 * @property {string} [zeroValueStroke] - Stroke colour for zero line
 	 * @property {boolean} [showLastTick] - Show the last (top) tick
 	 * @property {number | null} [lastTickDy] - dy offset for the last (top) tick label. null = use dyTick
+	 * @property {boolean} [animate] - Transition tick changes (skipped on first render)
 	 */
 
 	/** @type {Props} */

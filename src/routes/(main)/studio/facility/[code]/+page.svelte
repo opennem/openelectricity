@@ -34,7 +34,7 @@
 		if (total <= 0) return [];
 		return groups.map((g) => ({
 			...g,
-			label: fuelTechName(g.fueltech_id),
+			label: fuelTechName(/** @type {FuelTechCode} */ (g.fueltech_id)),
 			pct: (g.capacity / total) * 100
 		}));
 	});

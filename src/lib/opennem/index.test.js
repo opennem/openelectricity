@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getHistory } from './index.js';
 
-/** Create a mock Response with .json() */
+/**
+ * Create a mock Response with .json()
+ * @param {unknown} body
+ */
 function mockResponse(body) {
 	return { json: () => Promise.resolve(body) };
 }

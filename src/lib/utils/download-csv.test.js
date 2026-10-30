@@ -24,7 +24,9 @@ describe('escapeCsv', () => {
 });
 
 describe('downloadCsv', () => {
+	/** @type {import('vitest').Mock} */
 	let mockClick;
+	/** @type {{ click?: import('vitest').Mock, href?: string, download?: string }} */
 	let createdAnchor;
 	let revokedUrls;
 

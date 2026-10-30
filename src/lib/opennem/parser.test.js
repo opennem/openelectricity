@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import parser from './parser.js';
 
 /**
- * @param {Partial<StatsData>} overrides
+ * Raw API rows can carry fuel techs outside `FuelTechCode` (e.g. curtailment
+ * series), which the parser is responsible for filtering out.
+ *
+ * @param {Omit<Partial<StatsData>, 'fuel_tech'> & { fuel_tech?: string }} overrides
  * @returns {StatsData}
  */
 function makeStats(overrides = {}) {
@@ -20,6 +23,18 @@ function makeStats(overrides = {}) {
 		},
 		...overrides
 	});
+}
+
+/**
+ * Find a parsed series by fuel tech, failing the test if it is missing.
+ * @param {StatsData[]} result
+ * @param {string} fuelTech
+ * @returns {StatsData}
+ */
+function findFuelTech(result, fuelTech) {
+	const series = result.find((d) => d.fuel_tech === fuelTech);
+	if (!series) throw new Error(`Expected a ${fuelTech} series in the parser result`);
+	return series;
 }
 
 describe('parser', () => {
@@ -68,7 +83,7 @@ describe('parser', () => {
 		];
 
 		const result = parser(data, 'energy');
-		const solar = result.find((d) => d.fuel_tech === 'solar_utility');
+		const solar = findFuelTech(result, 'solar_utility');
 
 		// Solar should be padded with 2 nulls at the start to align to coal_black's start
 		expect(solar.history.data).toEqual([null, null, 30, 40]);
@@ -100,7 +115,7 @@ describe('parser', () => {
 		];
 
 		const result = parser(data, 'energy');
-		const solar = result.find((d) => d.fuel_tech === 'solar_utility');
+		const solar = findFuelTech(result, 'solar_utility');
 
 		// Solar should be padded with 3 nulls at the end to match coal_black's last date
 		expect(solar.history.data).toEqual([10, 20, 30, null, null, null]);
@@ -122,7 +137,7 @@ describe('parser', () => {
 		];
 
 		const result = parser(data, 'energy');
-		const hydro = result.find((d) => d.fuel_tech === 'hydro');
+		const hydro = findFuelTech(result, 'hydro');
 
 		// Without coal_black, fallback start is 1998-12-01
 		// hydro starts at 2010-01 — should be padded at start
@@ -165,7 +180,7 @@ describe('parser', () => {
 		];
 
 		const result = parser(data, 'energy');
-		const wind = result.find((d) => d.fuel_tech === 'wind');
+		const wind = findFuelTech(result, 'wind');
 
 		// Wind starts 2 months after coal, ends 2 months before coal
 		// Should be padded on both sides

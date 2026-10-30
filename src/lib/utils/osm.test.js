@@ -115,6 +115,16 @@ describe('fetchOsmPolygon', () => {
 	/** @type {typeof import('./osm.js').fetchOsmPolygon} */
 	let fetchOsmPolygon;
 
+	/**
+	 * Fetch a polygon the test expects to exist, narrowing away `null`.
+	 * @param {string | number} osmId
+	 */
+	async function fetchFeature(osmId) {
+		const feature = await fetchOsmPolygon(osmId);
+		if (!feature) throw new Error(`Expected a feature for OSM id ${osmId}`);
+		return feature;
+	}
+
 	beforeEach(async () => {
 		vi.resetModules();
 		vi.stubGlobal('localStorage', createLocalStorageMock());
@@ -135,7 +145,7 @@ describe('fetchOsmPolygon', () => {
 		it('returns a Polygon Feature for a way with open ring', async () => {
 			stubFetchSuccess(buildWayResponse(12345, SQUARE_GEOM));
 
-			const result = await fetchOsmPolygon(12345);
+			const result = await fetchFeature(12345);
 
 			expect(result).not.toBeNull();
 			expect(result.type).toBe('Feature');
@@ -151,7 +161,7 @@ describe('fetchOsmPolygon', () => {
 			const closedGeom = [...SQUARE_GEOM, { lon: SQUARE_GEOM[0].lon, lat: SQUARE_GEOM[0].lat }];
 			stubFetchSuccess(buildWayResponse(100, closedGeom));
 
-			const result = await fetchOsmPolygon(100);
+			const result = await fetchFeature(100);
 
 			const ring = result.geometry.coordinates[0];
 			expect(ring).toHaveLength(5); // 5 input nodes, no extra added
@@ -174,7 +184,7 @@ describe('fetchOsmPolygon', () => {
 		it('maps {lon, lat} to [lon, lat] GeoJSON order', async () => {
 			stubFetchSuccess(buildWayResponse(400, SQUARE_GEOM));
 
-			const result = await fetchOsmPolygon(400);
+			const result = await fetchFeature(400);
 
 			const ring = result.geometry.coordinates[0];
 			expect(ring[0]).toEqual([150.0, -33.0]); // [lon, lat]
@@ -191,7 +201,7 @@ describe('fetchOsmPolygon', () => {
 			const members = [{ type: 'way', role: 'outer', geometry: SQUARE_GEOM }];
 			stubFetchSuccess(buildRelationResponse(5000, members));
 
-			const result = await fetchOsmPolygon(5000);
+			const result = await fetchFeature(5000);
 
 			expect(result.type).toBe('Feature');
 			expect(result.properties).toEqual({ osm_type: 'relation', osm_id: 5000 });
@@ -206,7 +216,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(5001, members));
 
-			const result = await fetchOsmPolygon(5001);
+			const result = await fetchFeature(5001);
 
 			expect(result.geometry.type).toBe('Polygon');
 			expect(result.geometry.coordinates).toHaveLength(2); // outer + inner
@@ -226,7 +236,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(5002, members));
 
-			const result = await fetchOsmPolygon(5002);
+			const result = await fetchFeature(5002);
 
 			expect(result.geometry.type).toBe('Polygon');
 			expect(result.geometry.coordinates).toHaveLength(3); // outer + 2 inners
@@ -245,7 +255,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(6000, members));
 
-			const result = await fetchOsmPolygon(6000);
+			const result = await fetchFeature(6000);
 
 			expect(result.geometry.type).toBe('MultiPolygon');
 			expect(result.geometry.coordinates).toHaveLength(2);
@@ -259,7 +269,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(6001, members));
 
-			const result = await fetchOsmPolygon(6001);
+			const result = await fetchFeature(6001);
 
 			expect(result.geometry.type).toBe('MultiPolygon');
 			// First polygon has outer + inner
@@ -292,7 +302,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(11000, members));
 
-			const result = await fetchOsmPolygon(11000);
+			const result = await fetchFeature(11000);
 
 			expect(result).not.toBeNull();
 			expect(result.geometry.type).toBe('Polygon');
@@ -325,7 +335,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(11001, members));
 
-			const result = await fetchOsmPolygon(11001);
+			const result = await fetchFeature(11001);
 
 			expect(result).not.toBeNull();
 			expect(result.geometry.type).toBe('Polygon');
@@ -352,7 +362,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(11002, members));
 
-			const result = await fetchOsmPolygon(11002);
+			const result = await fetchFeature(11002);
 
 			expect(result).not.toBeNull();
 			expect(result.geometry.type).toBe('Polygon');
@@ -378,7 +388,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(11003, members));
 
-			const result = await fetchOsmPolygon(11003);
+			const result = await fetchFeature(11003);
 
 			expect(result).not.toBeNull();
 			expect(result.geometry.type).toBe('Polygon');
@@ -405,7 +415,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(11004, members));
 
-			const result = await fetchOsmPolygon(11004);
+			const result = await fetchFeature(11004);
 
 			expect(result).not.toBeNull();
 			expect(result.geometry.type).toBe('MultiPolygon');
@@ -439,7 +449,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(7002, members));
 
-			const result = await fetchOsmPolygon(7002);
+			const result = await fetchFeature(7002);
 
 			expect(result.geometry.type).toBe('Polygon');
 			// Only the way member should be included
@@ -453,7 +463,7 @@ describe('fetchOsmPolygon', () => {
 			];
 			stubFetchSuccess(buildRelationResponse(7003, members));
 
-			const result = await fetchOsmPolygon(7003);
+			const result = await fetchFeature(7003);
 
 			expect(result.geometry.type).toBe('Polygon');
 			expect(result.geometry.coordinates).toHaveLength(1);
@@ -602,7 +612,7 @@ describe('fetchOsmPolygon', () => {
 				json: () => Promise.resolve(buildWayResponse(10003, SECOND_OUTER_GEOM))
 			});
 
-			const second = await fetchOsmPolygon(10003);
+			const second = await fetchFeature(10003);
 			expect(second).not.toBeNull();
 			expect(mock).toHaveBeenCalledTimes(2);
 

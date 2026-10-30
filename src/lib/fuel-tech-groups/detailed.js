@@ -156,8 +156,11 @@ const fuelTechNameReducer = (acc, d) => {
  * @returns {T[]}
  */
 export function sortByDetailedOrder(items, { reverse = false } = {}) {
+	// Widen to string[] so arbitrary unit fuel techs can be looked up
+	/** @type {readonly string[]} */
+	const orderKeys = order;
 	const rank = (/** @type {string} */ ft) => {
-		const i = order.indexOf(ft);
+		const i = orderKeys.indexOf(ft);
 		return i === -1 ? order.length : i;
 	};
 	return [...items].sort((a, b) =>

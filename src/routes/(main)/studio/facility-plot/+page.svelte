@@ -126,10 +126,13 @@
 	);
 	let isEnergyMetric = $derived(currentMetric === 'energy');
 	let fetchBufferMultiplier = $derived(isEnergyMetric ? 3 : 1);
+	/** @type {SiPrefix} */
 	let displayPrefix = $state('M');
 	let baseUnit = $derived(isEnergyMetric ? 'Wh' : 'W');
 	let unitLabel = $derived(displayPrefix + baseUnit);
-	let prefixOptions = $derived(['k', 'M', 'G'].map((p) => ({ label: p + baseUnit, value: p })));
+	/** @type {SiPrefix[]} */
+	const prefixChoices = ['k', 'M', 'G'];
+	let prefixOptions = $derived(prefixChoices.map((p) => ({ label: p + baseUnit, value: p })));
 
 	// Auto-set curve type when metric changes
 	$effect(() => {
@@ -440,7 +443,7 @@
 				<Select
 					selected={displayPrefix}
 					options={prefixOptions}
-					onchange={(opt) => (displayPrefix = opt.value)}
+					onchange={(opt) => (displayPrefix = /** @type {SiPrefix} */ (opt.value))}
 					widthClass="w-auto"
 					paddingX="px-1"
 					paddingY="py-0.5"

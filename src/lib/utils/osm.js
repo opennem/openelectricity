@@ -7,13 +7,19 @@ const STORAGE_PREFIX = 'osm-polygon:';
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1500; // ms
 
-/** @type {Map<string, Promise<GeoJSON.Feature | null>>} */
+/**
+ * The footprint built from an OSM way (Polygon) or relation (Polygon or
+ * MultiPolygon).
+ * @typedef {GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>} OsmPolygonFeature
+ */
+
+/** @type {Map<string, Promise<OsmPolygonFeature | null>>} */
 const inflight = new Map();
 
 /**
  * Read a cache entry from localStorage.
  * @param {string} key
- * @returns {{ feature: GeoJSON.Feature | null, timestamp: number } | null}
+ * @returns {{ feature: OsmPolygonFeature | null, timestamp: number } | null}
  */
 function getCache(key) {
 	if (typeof localStorage === 'undefined') return null;
@@ -29,7 +35,7 @@ function getCache(key) {
 /**
  * Write a cache entry to localStorage.
  * @param {string} key
- * @param {{ feature: GeoJSON.Feature | null, timestamp: number }} entry
+ * @param {{ feature: OsmPolygonFeature | null, timestamp: number }} entry
  */
 function setCache(key, entry) {
 	if (typeof localStorage === 'undefined') return;
@@ -96,7 +102,7 @@ export function featureBounds(feature) {
  * Results are cached in localStorage for 30 days.
  *
  * @param {string | number} osmId
- * @returns {Promise<GeoJSON.Feature | null>}
+ * @returns {Promise<OsmPolygonFeature | null>}
  */
 export function fetchOsmPolygon(osmId) {
 	const key = String(osmId);
@@ -118,7 +124,7 @@ export function fetchOsmPolygon(osmId) {
 /**
  * @param {string} key
  * @param {string | number} osmId
- * @returns {Promise<GeoJSON.Feature | null>}
+ * @returns {Promise<OsmPolygonFeature | null>}
  */
 async function _fetchOsmPolygon(key, osmId) {
 	const query = `[out:json];(way(${osmId});relation(${osmId}););out geom;`;
@@ -180,7 +186,7 @@ async function _fetchOsmPolygon(key, osmId) {
 
 /**
  * @param {any} way
- * @returns {GeoJSON.Feature | null}
+ * @returns {OsmPolygonFeature | null}
  */
 function wayToFeature(way) {
 	const geom = way.geometry;
@@ -198,7 +204,7 @@ function wayToFeature(way) {
 
 /**
  * @param {any} relation
- * @returns {GeoJSON.Feature | null}
+ * @returns {OsmPolygonFeature | null}
  */
 function relationToFeature(relation) {
 	const members = relation.members;

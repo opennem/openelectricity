@@ -3,7 +3,7 @@ import useDate from '$lib/utils/TimeSeries/use-date';
 
 /**
  * Parse and update the data to match the start and last dates of the dataset.
- * @param {StatsData[]} jsonData
+ * @param {StatsData[] | null | undefined} jsonData
  * @param {string} dataType
  * @returns {StatsData[]}
  */

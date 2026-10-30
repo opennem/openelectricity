@@ -203,8 +203,10 @@ function emissions({ regionsData, includeBatteryAndLoads }) {
 			regionProjectionStats.push({
 				...first,
 				id: region.id,
-				code: null,
-				fuel_tech: null,
+				// Explicit nulls mark the aggregate as having no single code/fuel tech;
+				// StatsData types these as optional strings, so cast rather than change the value.
+				code: /** @type {any} */ (null),
+				fuel_tech: /** @type {any} */ (null),
 				label: region.label,
 				colour: region.colour
 			});

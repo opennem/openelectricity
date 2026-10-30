@@ -3,6 +3,18 @@ import { addYears } from 'date-fns';
 const ONE_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
 
 /**
+ * The parts of a TimeSeries that combineHistoryProjection reads, so callers can
+ * pass either a TimeSeries instance or a plain merged projection object.
+ * @typedef {{
+ *   data: TimeSeriesData[],
+ *   seriesNames: string[],
+ *   seriesColours: Object.<string, string>,
+ *   seriesLabels: Object.<string, string>,
+ *   statsDatasets?: { id: string, code?: string }[]
+ * }} SeriesSource
+ */
+
+/**
  * Linearly interpolate gap years between the last history row and the first projection row.
  * Each interpolated row is marked with `_derived: true`.
  *
@@ -30,8 +42,9 @@ function interpolateGap(lastRow, firstRow, gapYears, seriesNames) {
 			if (a == null || b == null) {
 				row[name] = null;
 			} else {
-				row[name] =
-					/** @type {number} */ (a) + t * /** @type {number} */ ((b) - /** @type {number} */ (a));
+				const start = /** @type {number} */ (a);
+				const end = /** @type {number} */ (b);
+				row[name] = start + t * (end - start);
 			}
 		}
 
@@ -54,8 +67,8 @@ function interpolateGap(lastRow, firstRow, gapYears, seriesNames) {
  * Used by process-technology, process-scenario, and process-region pipelines.
  *
  * @param {{
- *   historicalTimeSeries: import('$lib/utils/TimeSeries').default,
- *   projectionTimeSeries: import('$lib/utils/TimeSeries').default | { data: TimeSeriesData[], seriesNames: string[], seriesColours: Object.<string, string>, seriesLabels: Object.<string, string>, statsDatasets?: any[] },
+ *   historicalTimeSeries: SeriesSource,
+ *   projectionTimeSeries: SeriesSource,
  *   loadSeries?: string[],
  *   order?: FuelTechCode[],
  *   baseUnit?: string,

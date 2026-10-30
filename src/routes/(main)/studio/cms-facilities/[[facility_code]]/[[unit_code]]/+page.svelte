@@ -365,7 +365,7 @@
 		if (osmStatus === 'ok' && osmPolygon) {
 			showMap = true;
 			tick().then(() => {
-				if (mapInstance) {
+				if (mapInstance && osmPolygon) {
 					const bounds = featureBounds(osmPolygon);
 					mapInstance.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
 				}

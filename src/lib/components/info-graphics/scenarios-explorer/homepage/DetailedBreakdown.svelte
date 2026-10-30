@@ -27,9 +27,6 @@
 		return /** @type {number} */ (+new Date(/** @type {any} */ (overlay).date));
 	});
 
-	let bgShadingData = $derived(chart.bgShadingData);
-	let bgShadingFill = $derived(chart.bgShadingFill);
-
 	// Battery (discharging) is tiny historically, so it rounds to "0 TWh" at the
 	// default integer precision. Give just that tile's headline one decimal place;
 	// every other tile keeps the chart's standard formatter.
@@ -61,8 +58,6 @@
 			formatTickY={chart.convertAndFormatValue}
 			formatValue={formatHeadlineValue}
 			overlayStart={overlayStartValue}
-			shadingData={bgShadingData}
-			shadingFill={bgShadingFill}
 			hoverTime={chart.hoverTime}
 			focusTime={chart.focusTime}
 			{gridColClass}

@@ -4,9 +4,16 @@ import processTechnology from './process-technology.js';
 /**
  * Create a minimal StatsData entry with valid structure for Statistic + TimeSeries pipeline.
  * Uses yearly projection data (1Y interval) matching the scenario format.
+ *
+ * StatsData declares every series key (history/forecast/projection) as
+ * required, but real entries only carry the one they were fetched for, so
+ * these single-series fixtures are cast.
+ *
+ * @param {{ fuelTech: FuelTechCode, data: (number | null)[], units?: string }} params
+ * @returns {StatsData}
  */
 function makeProjectionStats({ fuelTech, data, units = 'GWh' }) {
-	return {
+	return /** @type {StatsData} */ ({
 		id: `au.fuel_tech.${fuelTech}.energy`,
 		type: 'energy',
 		code: fuelTech,
@@ -20,11 +27,15 @@ function makeProjectionStats({ fuelTech, data, units = 'GWh' }) {
 			interval: '1Y',
 			data
 		}
-	};
+	});
 }
 
+/**
+ * @param {{ fuelTech: FuelTechCode, data: (number | null)[], units?: string }} params
+ * @returns {StatsData}
+ */
 function makeHistoryStats({ fuelTech, data, units = 'GWh' }) {
-	return {
+	return /** @type {StatsData} */ ({
 		id: `au.fuel_tech.${fuelTech}.energy`,
 		type: 'energy',
 		code: fuelTech,
@@ -38,16 +49,21 @@ function makeHistoryStats({ fuelTech, data, units = 'GWh' }) {
 			interval: '1M',
 			data
 		}
-	};
+	});
 }
 
-/** Simple colourReducer matching the pattern used in the app */
+/**
+ * Simple colourReducer matching the pattern used in the app
+ * @param {Record<string, string>} acc
+ * @param {StatsData} d
+ */
 const colourReducer = (acc, d) => {
 	acc[d.id] = d.colour || '#999';
 	return acc;
 };
 
 /** 36 months of data (3 years worth for FY rollup) */
+/** @param {number} baseValue */
 function monthlyData(baseValue) {
 	return Array.from({ length: 36 }, (_, i) => baseValue + i);
 }
@@ -167,7 +183,7 @@ describe('processTechnology', () => {
 
 			// Projection start is 2024-07-01 → after mutateDatesToStartOfYear(data, 1) → 2025-01-01 (FY2025)
 			expect(result.projectionStartTime).toBeDefined();
-			const startDate = new Date(result.projectionStartTime);
+			const startDate = new Date(result.projectionStartTime ?? Number.NaN);
 			expect(startDate.getFullYear()).toBe(2025);
 			expect(startDate.getMonth()).toBe(0);
 			expect(startDate.getDate()).toBe(1);
@@ -286,6 +302,7 @@ describe('processTechnology', () => {
 				seriesNames: ['au.emissions.total'],
 				seriesColours: { 'au.emissions.total': '#444' },
 				seriesLabels: { 'au.emissions.total': 'Emissions' },
+				nameOptions: [],
 				yDomain: [0, 500]
 			};
 
@@ -297,6 +314,7 @@ describe('processTechnology', () => {
 				seriesNames: ['solar'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 1100]
 			};
 
@@ -317,6 +335,7 @@ describe('processTechnology', () => {
 				seriesNames: ['au.emissions.total'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 600]
 			};
 
@@ -325,6 +344,7 @@ describe('processTechnology', () => {
 				seriesNames: ['solar'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 1200]
 			};
 

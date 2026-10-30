@@ -1,8 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import processRegion from './process-region.js';
 
+/**
+ * StatsData declares every series key (history/forecast/projection) as
+ * required, but real entries only carry the one they were fetched for, so
+ * these single-series fixtures are cast.
+ *
+ * @param {{ fuelTech: FuelTechCode, data: (number | null)[], units?: string }} params
+ * @returns {StatsData}
+ */
 function makeProjectionStats({ fuelTech, data, units = 'GWh' }) {
-	return {
+	return /** @type {StatsData} */ ({
 		id: `au.fuel_tech.${fuelTech}.energy`,
 		type: 'energy',
 		code: fuelTech,
@@ -16,11 +24,15 @@ function makeProjectionStats({ fuelTech, data, units = 'GWh' }) {
 			interval: '1Y',
 			data
 		}
-	};
+	});
 }
 
+/**
+ * @param {{ fuelTech: FuelTechCode, data: (number | null)[], units?: string }} params
+ * @returns {StatsData}
+ */
 function makeHistoryStats({ fuelTech, data, units = 'GWh' }) {
-	return {
+	return /** @type {StatsData} */ ({
 		id: `au.fuel_tech.${fuelTech}.energy`,
 		type: 'energy',
 		code: fuelTech,
@@ -34,13 +46,17 @@ function makeHistoryStats({ fuelTech, data, units = 'GWh' }) {
 			interval: '1M',
 			data
 		}
-	};
+	});
 }
 
+/** @param {number} baseValue */
 function monthlyData(baseValue) {
 	return Array.from({ length: 36 }, (_, i) => baseValue + i);
 }
 
+/**
+ * @param {{ id: string, label: string, colour: string, projectionData: StatsData[], historyData: StatsData[] }} params
+ */
 function makeRegion({ id, label, colour, projectionData, historyData }) {
 	return {
 		id,
@@ -161,6 +177,7 @@ describe('processRegion', () => {
 				seriesNames: ['nsw', 'vic'],
 				seriesColours: { nsw: '#1a73e8', vic: '#e8501a' },
 				seriesLabels: { nsw: 'NSW', vic: 'VIC' },
+				nameOptions: [],
 				yDomain: [0, 500]
 			};
 
@@ -169,6 +186,7 @@ describe('processRegion', () => {
 				seriesNames: ['nsw', 'vic'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 1000]
 			};
 
@@ -188,6 +206,7 @@ describe('processRegion', () => {
 				seriesNames: ['nsw', 'vic'],
 				seriesColours: { nsw: '#1a73e8', vic: '#e8501a' },
 				seriesLabels: { nsw: 'NSW', vic: 'VIC' },
+				nameOptions: [],
 				yDomain: [0, 600]
 			};
 
@@ -196,6 +215,7 @@ describe('processRegion', () => {
 				seriesNames: ['nsw', 'vic'],
 				seriesColours: {},
 				seriesLabels: {},
+				nameOptions: [],
 				yDomain: [0, 1200]
 			};
 

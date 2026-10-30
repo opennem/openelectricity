@@ -7,9 +7,15 @@
 	import HeatmapTooltip from './components/HeatmapTooltip.svelte';
 	import ColorLegend from './components/ColorLegend.svelte';
 
+	/**
+	 * Cell under the pointer, as reported by SolarHeatmap's `onhover`.
+	 * @typedef {{ dayIndex: number, slot: number, value: number, date: Date, dateFormatted: string, timeSlot: string, x: number, y: number }} HeatmapCell
+	 */
+
 	let { data } = $props();
 
 	let selectedYear = $state(2025);
+	/** @type {HeatmapCell | null} */
 	let hoveredCell = $state(null);
 	let tooltipX = $state(0);
 	let tooltipY = $state(0);
@@ -20,10 +26,12 @@
 	const smallMultipleYears = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
 
 	let playing = $state(false);
+	/** @type {ReturnType<typeof setInterval> | null} */
 	let playInterval = $state(null);
 
 	/** @type {Record<number, HTMLElement>} */
 	let thumbnailRefs = {};
+	/** @type {HTMLDivElement | null} */
 	let scrollContainer = $state(null);
 	let isScrollingProgrammatically = $state(false);
 
@@ -63,6 +71,7 @@
 		}
 	}
 
+	/** @param {HeatmapCell} cell */
 	function handleHeroHover(cell) {
 		hoveredCell = cell;
 		tooltipX = cell.x;
@@ -73,6 +82,7 @@
 		hoveredCell = null;
 	}
 
+	/** @param {number} year */
 	function handleThumbnailClick(year) {
 		stopAnimation();
 		selectedYear = year;

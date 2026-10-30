@@ -248,6 +248,11 @@ const REGION_FLOW_SERIES = {
 };
 
 /**
+ * The slice of an OE time-series entry that the regional flow merge reads.
+ * @typedef {{ metric: string, results?: import('openelectricity').ITimeSeriesResult[] }} FlowMergeEntry
+ */
+
+/**
  * Add official regional import/export results to a fuel-tech generation
  * response. Each interconnector result is classified under the synthetic
  * `imports` or `exports` fuel tech; the normal network processor then sums
@@ -279,6 +284,7 @@ export function mergeRegionalFlowsIntoGeneration(
 		}
 	}
 
+	/** @type {import('openelectricity').ITimeSeriesResult[]} */
 	const supplementalResults = [];
 	for (const definition of definitions) {
 		if (existingFuelTechs.has(definition.fueltech)) continue;
@@ -296,7 +302,7 @@ export function mergeRegionalFlowsIntoGeneration(
 	if (supplementalResults.length === 0) return generationResponse;
 
 	let merged = false;
-	const data = generationResponse.data.map((entry) => {
+	const data = generationResponse.data.map((/** @type {FlowMergeEntry} */ entry) => {
 		if (merged || entry.metric !== generationMetric) return entry;
 		merged = true;
 		return { ...entry, results: [...(entry.results ?? []), ...supplementalResults] };

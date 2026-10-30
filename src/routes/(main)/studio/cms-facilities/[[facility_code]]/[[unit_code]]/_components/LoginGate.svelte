@@ -9,7 +9,7 @@
 	import { onMount } from 'svelte';
 	import { initClerk, getClerkState } from '$lib/auth/clerk.svelte.js';
 
-	/** @type {import('svelte').Snippet} */
+	/** @type {{ children: import('svelte').Snippet }} */
 	let { children } = $props();
 
 	const clerkState = getClerkState();
@@ -101,7 +101,7 @@
 		try {
 			if (strategy === 'email_code') {
 				const signIn = await clerk.client.signIn.create({ identifier: email });
-				const factor = signIn.supportedFirstFactors.find(
+				const factor = signIn.supportedFirstFactors?.find(
 					(/** @type {any} */ f) => f.strategy === 'email_code'
 				);
 

@@ -620,7 +620,7 @@ export default class ChartStore {
 
 	// Annotations (arbitrary SVG shapes and text at data coordinates)
 	/**
-	 * @type {Array<import('./elements/Annotations.svelte').Annotation>}
+	 * @type {Array<import('./elements/annotations-helpers.js').Annotation>}
 	 */
 	annotations = $state([]);
 

@@ -507,8 +507,7 @@
 								</td>
 								<td class="text-right">
 									{hoverData && hoverData[key] !== 0 && hoverData._max
-										? formatValue(/** @type {number} */ ((hoverData[key]) / hoverData._max) * 100) +
-											'%'
+										? formatValue((Number(hoverData[key]) / hoverData._max) * 100) + '%'
 										: '—'}
 								</td>
 							</tr>

@@ -113,7 +113,7 @@
 		try {
 			if (strategy === 'email_code') {
 				const signIn = await clerk.client.signIn.create({ identifier: email });
-				const factor = signIn.supportedFirstFactors.find(
+				const factor = signIn.supportedFirstFactors?.find(
 					(/** @type {any} */ f) => f.strategy === 'email_code'
 				);
 
