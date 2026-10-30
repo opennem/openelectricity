@@ -8,7 +8,11 @@ export function chartImageMetadata(chart) {
 		unit: options.isDataTransformTypeProportion
 			? (chart.proportionContext?.label ?? '%')
 			: options.displayUnit,
-		transform: options.isDataTransformTypeChangeSince ? 'Change since start' : '',
+		transform: options.isDataTransformTypeChangeSince
+			? 'Change since start'
+			: options.isDataTransformTypeGrowth && options.growthComparison
+				? `Growth, ${options.growthComparison.label}`
+				: '',
 		legend: [
 			...chart.visibleSeriesNames.map((id) => ({
 				label: chart.seriesLabels[id] || id,

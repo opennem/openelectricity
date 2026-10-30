@@ -204,6 +204,13 @@
 	let priceIsMarketValue = $derived(resolvePriceMode(region, priceMode) === 'market_value');
 	let emissionsIsIntensity = $derived(emissionsMode === 'intensity');
 	let energyMetric = $derived(range.activeMetric === 'energy');
+	/** The generation transform as drawn: Growth is kept as the choice but
+	 *  only applies at energy grains (`NetworkChart`'s `growthTransform`). */
+	let shownGenerationTransform = $derived(
+		session.selection.generationTransform === 'growth' && !energyMetric
+			? 'absolute'
+			: session.selection.generationTransform
+	);
 
 	/** @typedef {import('./types.js').TimelineCard} TimelineCard */
 	/** The chart card under the pointer, and the series under it on that card:
@@ -668,7 +675,7 @@
 			overlaySummary: displayedTable?.overlaySummary ?? null,
 			tablePanelOpen,
 			hiddenSeries,
-			generationTransform: session.selection.generationTransform,
+			generationTransform: shownGenerationTransform,
 			marketValueTransform: session.selection.marketValueTransform,
 			overlayLines,
 			overlayAreas,
@@ -834,6 +841,7 @@
 				rooftopForecast={forecastShown ? rooftopForecast.rows : null}
 				dataTransform={session.selection.generationTransform}
 				ondatatransformchange={(value) => session.select('generationTransform', value)}
+				growthTransform
 				createProportionContext={chartContributionContext}
 				{overlayLines}
 				{overlayAreas}

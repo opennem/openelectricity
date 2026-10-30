@@ -8,7 +8,7 @@
 import { untrack } from 'svelte';
 import { convert } from '$lib/utils/si-units';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
-import { transformToProportion } from '$lib/utils/data-transform';
+import { transformToProportion, transformToGrowth } from '$lib/utils/data-transform';
 import ChartOptions from './ChartOptions.svelte.js';
 import ChartStyles from './ChartStyles.svelte.js';
 import ChartTooltips from './ChartTooltips.svelte.js';
@@ -152,7 +152,7 @@ export default class ChartStore {
 	// point) by a full interval, so the last bar under `curveStepAfter`
 	// renders at the same width as the others.
 	stepIntervalMs = $derived.by(() => {
-		if (this.chartOptions?.selectedCurveType !== 'step') return 0;
+		if (this.chartOptions?.curveType !== 'step') return 0;
 		const d = this.seriesScaledData;
 		if (!d || d.length < 2) return 0;
 		return d[d.length - 1].time - d[d.length - 2].time;
@@ -314,8 +314,12 @@ export default class ChartStore {
 	 *  @type {Array<{ id: string, data: any[], series: Array<{ id: string, colour: string, label?: string, tooltipUnit?: string, formatTooltipValue?: (value: number) => string }> }>} */
 	overlayAreas = $state.raw([]);
 
-	/** Overlay geometry, domain and tooltip all consume the same converted rows. */
+	/** Overlay geometry, domain and tooltip all consume the same converted rows.
+	 *  Growth hides the absolute primary-axis overlays (demand, curtailment),
+	 *  which can't be read against changes; percentage lines keep their own scale. */
 	displayOverlayLines = $derived.by(() => {
+		if (this.chartOptions?.isDataTransformTypeGrowth)
+			return this.overlayLines.filter((overlay) => overlay.scale === 'percent');
 		const context = this.usesCustomProportion ? this.proportionContext : null;
 		if (!context) return this.overlayLines;
 		return this.overlayLines.map((overlay) =>
@@ -331,6 +335,7 @@ export default class ChartStore {
 	});
 
 	displayOverlayAreas = $derived.by(() => {
+		if (this.chartOptions?.isDataTransformTypeGrowth) return [];
 		const context = this.usesCustomProportion ? this.proportionContext : null;
 		if (!context) return this.overlayAreas;
 		return this.overlayAreas.map((overlay) => ({
@@ -405,7 +410,13 @@ export default class ChartStore {
 		if (!this.seriesData?.length || !this.chartOptions) return [];
 		if (this.usesCustomProportion) return this.seriesProportionData;
 
-		const isChangeSince = this.chartOptions.selectedDataTransformType === 'changeSince';
+		const growth = this.chartOptions.isDataTransformTypeGrowth
+			? this.chartOptions.growthComparison
+			: null;
+		if (growth)
+			return transformToGrowth(this.seriesData, this.seriesNames, growth.lag, this.growthLeadIn);
+
+		const isChangeSince = this.chartOptions.isDataTransformTypeChangeSince;
 		// Only changeSince depends on xDomain; other modes should not rerun on every pan.
 		let filteredData = this.seriesData;
 		if (isChangeSince) {
@@ -576,6 +587,17 @@ export default class ChartStore {
 	// Stacking options
 	/** @type {boolean} */
 	useDivergingStack = $state(false);
+
+	/** Whether stacks pile positives and negatives independently: as configured,
+	 *  and always for growth, whose series rise and fall within one bucket. */
+	stackDiverging = $derived.by(
+		() => this.useDivergingStack || !!this.chartOptions?.isDataTransformTypeGrowth
+	);
+
+	/** Rows just before `seriesData` that growth compares the first visible
+	 *  buckets with (set by the chart owner from data it already holds).
+	 *  @type {TimeSeriesData[]} */
+	growthLeadIn = $state.raw([]);
 
 	/** Whether to use lighter color for negative values */
 	lighterNegative = $state(false);

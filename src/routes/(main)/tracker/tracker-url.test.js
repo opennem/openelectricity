@@ -27,6 +27,16 @@ describe('tracker URLs', () => {
 		});
 	});
 
+	it('round trips the generation growth transform but not a market-value one', () => {
+		const parsed = parseTrackerUrl(
+			new URLSearchParams('transform=growth&market-transform=growth'),
+			context
+		);
+		expect(parsed.generationTransform).toBe('growth');
+		expect(parsed.marketValueTransform).toBe('absolute');
+		expect(roundTrip(parsed).url.searchParams.get('transform')).toBe('growth');
+	});
+
 	it.each(['absolute', 'proportion', 'changeSince'])(
 		'round trips both chart transforms: %s',
 		(transform) => {

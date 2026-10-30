@@ -97,7 +97,7 @@
 	});
 
 	let activeData = $derived(getActiveData(chart));
-	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
+	let isStepMode = $derived(chart.chartOptions.curveType === 'step');
 	let formattedDate = $derived(getFormattedX(chart, activeData));
 	let rows = $derived(activeData ? buildSeriesRows(chart, activeData) : []);
 	let overlayRows = $derived(activeData ? buildOverlayRows(chart, activeData) : []);

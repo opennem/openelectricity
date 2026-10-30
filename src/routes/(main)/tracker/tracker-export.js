@@ -345,6 +345,8 @@ function transformNote(transform) {
 	if (transform === 'proportion') return 'Chart shows shares; values exported in base units';
 	if (transform === 'changeSince')
 		return 'Chart shows change since the start; values exported in base units';
+	if (transform === 'growth')
+		return 'Chart shows growth (each bucket’s change from the one it is compared with); values exported in base units';
 	return '';
 }
 

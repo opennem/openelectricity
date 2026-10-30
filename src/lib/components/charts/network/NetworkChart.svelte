@@ -63,6 +63,7 @@
 	import { currentIncompleteInterval } from '../v2/incomplete-interval.js';
 	import { ianaFromOffset, offsetMsFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
+	import { growthComparison } from '$lib/utils/data-transform';
 	import nighttimes from '$lib/utils/nighttimes';
 	import {
 		automaticGenerationEnergyPrefix,
@@ -99,6 +100,7 @@
 	 *   row, in both the chart and the published snapshot. Null when off
 	 * @property {import('../v2/ChartOptions.svelte.js').DataTransformType} [dataTransform] - Optional controlled transform; omitted consumers keep local options
 	 * @property {(value: import('../v2/ChartOptions.svelte.js').DataTransformType) => void} [ondatatransformchange] - User choices only, not restoration
+	 * @property {boolean} [growthTransform] - Offer the Growth transform (each bucket's change from the one before, or from a year before at rolling and calendar-filtered grains) at energy grains
 	 * @property {(rows: TimeSeriesData[], names: string[]) => import('../v2/ChartStore.svelte.js').ProportionContext} [createProportionContext] - Optional display-grain percentage calculation
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
@@ -175,6 +177,7 @@
 		rooftopForecast = null,
 		dataTransform,
 		ondatatransformchange,
+		growthTransform = false,
 		createProportionContext,
 		hoverTime = undefined,
 		focusTime = undefined,
@@ -422,6 +425,12 @@
 			? interpolateRooftopPower(source)
 			: source;
 	});
+	// Growth compares whole energy buckets; sub-hourly power isn't offered it.
+	let growthForGrain = $derived(
+		growthTransform && isEnergyMetric
+			? growthComparison(displayInterval, { filtered: !!bucketFilter })
+			: null
+	);
 	let viewStart = $derived(host.viewStart);
 	let viewEnd = $derived(host.viewEnd);
 	let isPanning = $derived(host.isPanning);
@@ -644,6 +653,10 @@
 			createProportionContext?.(chartStore.seriesData, chartStore.seriesNames) ?? null;
 	});
 
+	$effect(() => {
+		if (chartStore && !holdFrame) chartStore.chartOptions.growthComparison = growthForGrain;
+	});
+
 	// Restore controlled state without emitting a UI event back into history.
 	$effect(() => {
 		if (!chartStore) return;
@@ -762,6 +775,9 @@
 	// Native table rows need a separate memo from filtered or rolling chart rows.
 	const nativeVisibleAggregation = createVisibleAggregation();
 
+	// The rows just before the view that growth compares its first buckets with.
+	const growthLeadInAggregation = createVisibleAggregation();
+
 	// Reuse one marker so gesture-mode memoisation stays stable.
 	const GESTURE_SLICE = {};
 
@@ -831,6 +847,22 @@
 				renderData = lastVwPriceRows;
 			}
 
+			const growth = chartStore.chartOptions.isDataTransformTypeGrowth
+				? chartStore.chartOptions.growthComparison
+				: null;
+			const firstTime = renderData[0]?.time;
+			chartStore.growthLeadIn =
+				growth && firstTime !== undefined
+					? growthLeadInAggregation(displayCache, {
+							viewStart: firstTime - growth.leadInMs,
+							viewEnd: firstTime,
+							apiInterval: interval,
+							displayInterval: currentDisplayInterval,
+							ianaTimeZone,
+							method: sums ? 'sum' : 'mean',
+							bucketFilter
+						}).filter((row) => row.time < firstTime)
+					: [];
 			chartStore.seriesData = renderData;
 			chartStore.setXDomain(start, end);
 			// The price panel keeps its fixed hybrid domain; every other panel

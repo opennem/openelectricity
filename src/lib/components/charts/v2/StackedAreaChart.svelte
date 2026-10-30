@@ -82,7 +82,7 @@
 	let pinnedTime = $derived(timeMarkers?.markers.length ? undefined : chart.focusTime);
 
 	// Determine if curve type is step (for band hover + axis alignment)
-	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
+	let isStepMode = $derived(chart.chartOptions.curveType === 'step');
 
 	// In step mode, append a phantom trailing point one interval past the last
 	// real point. Under `curveStep` (centred), this turns the last real point
@@ -103,7 +103,7 @@
 		if (renderSeriesData.length === 0) return [];
 
 		return perfSpan('chart:d3-stack', () => {
-			if (chart.useDivergingStack) {
+			if (chart.stackDiverging) {
 				const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
 				return stackGen(renderSeriesData);
 			}
@@ -261,7 +261,7 @@
 						series={overlay.series}
 						baseRows={renderSeriesData}
 						baseKeys={chart.visibleSeriesNames}
-						divergingBase={chart.useDivergingStack}
+						divergingBase={chart.stackDiverging}
 						curveType={chart.chartOptions.curveFunction}
 						patternPrefix="{id}-overlay-hatch-{overlay.id}"
 					/>

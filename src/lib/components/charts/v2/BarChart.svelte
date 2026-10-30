@@ -62,7 +62,7 @@
 
 		const stackGen = d3Stack().keys(chart.visibleSeriesNames);
 
-		if (chart.useDivergingStack) {
+		if (chart.stackDiverging) {
 			stackGen.offset(stackOffsetDiverging);
 		}
 

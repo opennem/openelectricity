@@ -46,7 +46,8 @@ import { comparisonValueUnit } from './region-comparison-export.js';
 /** @typedef {import('./types.js').GenerationSnapshot} GenerationSnapshot */
 /** @typedef {import('./types.js').TimelineCard} TimelineCard */
 
-const ABSOLUTE_NOTE = 'Values are absolute; the chart’s proportion and change views do not apply.';
+const ABSOLUTE_NOTE =
+	'Values are absolute; the chart’s proportion, change and growth views do not apply.';
 
 /**
  * A Timeline card's comparison: Generation, market value and emissions
@@ -136,7 +137,7 @@ export function timelineCompareSource(card, snapshot, context) {
 			baseUnit: energy ? 'MWh' : 'MW',
 			format: (value) =>
 				energy ? formatTableEnergy(value, prefix) : formatTablePower(value, prefix),
-			note: `Values are absolute ${energy ? 'energy' : 'power'}; the chart’s proportion and change views do not apply.`
+			note: `Values are absolute ${energy ? 'energy' : 'power'}; the chart’s proportion, change and growth views do not apply.`
 		});
 	}
 	if (card === 'market') {

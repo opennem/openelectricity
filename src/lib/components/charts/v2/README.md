@@ -873,7 +873,9 @@ move would cost frames for little gain. Put `hoverFade` on the element whose own
 
 ### Step Mode
 
-When `chart.chartOptions.selectedCurveType === 'step'`, StackedAreaChart renders with d3's `curveStepAfter` (value at T is drawn as a horizontal bar from T to T+I) and uses **StepHoverBand** instead of LineX/Dot for hover/focus indicators. This aligns with interval-start timestamps — a point at "1 June" visually spans all of June — and is suitable for daily / weekly / monthly energy data.
+When `chart.chartOptions.curveType === 'step'` (the effective curve: the user's `selectedCurveType`, or `'step'` while the growth transform locks it, `isCurveLocked`), StackedAreaChart renders with d3's `curveStepAfter` (value at T is drawn as a horizontal bar from T to T+I) and uses **StepHoverBand** instead of LineX/Dot for hover/focus indicators. This aligns with interval-start timestamps — a point at "1 June" visually spans all of June — and is suitable for daily / weekly / monthly energy data.
+
+**Data transforms.** `ChartOptions` offers Absolute, Proportion and Change since, plus **Growth** while the owner sets `growthComparison` (`{ lag, label, leadInMs }` from `growthComparison()` in `$lib/utils/data-transform/growth.js`; `NetworkChart` does so at energy grains when given `growthTransform`). `selectedDataTransformType` is the choice; `dataTransformType` is the transform in effect (a growth choice reads as absolute while growth isn't offered), and the `isDataTransformType*` flags, `ChartControls` and the store follow it. Growth is row-relative, so the store computes it over `growthLeadIn` + `seriesData` (`lag` rows back), stacks it diverging and hides absolute primary-axis overlays.
 
 **Automatic last-bar rendering**: StackedAreaChart internally appends a phantom trailing point one interval past the last real point (in `renderSeriesData`), and the ChartStore derives `renderXDomain` to extend `xDomain` by one full interval on the right. Together these make the last bar render at full width without the consumer doing anything — both `chart.stepIntervalMs` and `chart.renderXDomain` are exposed on ChartStore as derived values (see the table below).
 
@@ -915,6 +917,8 @@ Two optional SVG elements for specialized visualizations:
 | `formatTickX`             | Custom x-axis tick formatter `(d) => string`                                                                                                                                                                                                                          |
 | `formatTooltipX`          | Optional dedicated tooltip x-formatter, preferred over `formatTickX` for the tooltip header. `formatTickX` is keyed to gridline midpoints and returns `''` for arbitrary hovered points; `formatTooltipX` formats the exact point. `null` falls back to `formatTickX` |
 | `useDivergingStack`       | Use d3 diverging offset for independent pos/neg stacking                                                                                                                                                                                                              |
+| `stackDiverging`          | Derived: whether stacks use the diverging offset — `useDivergingStack`, or always while the growth transform applies                                                                                                                                                  |
+| `growthLeadIn`            | Rows just before `seriesData` that the growth transform compares the first visible buckets with (set by the chart owner)                                                                                                                                              |
 
 ### ChartDataManager
 

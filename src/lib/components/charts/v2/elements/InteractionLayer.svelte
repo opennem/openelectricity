@@ -176,7 +176,7 @@
 		const data = chart.seriesScaledData;
 		if (!data?.length) return rawTime;
 
-		const isStep = chart.chartOptions.selectedCurveType === 'step';
+		const isStep = chart.chartOptions.curveType === 'step';
 
 		if (isStep) {
 			let found = data[0].time;

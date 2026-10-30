@@ -478,3 +478,53 @@ describe('ChartStore frozen y-domain (gesture freeze)', () => {
 		expect(chart.yDomain).toEqual(before);
 	});
 });
+
+describe('growth transform', () => {
+	function growthChart() {
+		const chart = new ChartStore({ key: Symbol('growth'), prefix: 'M', baseUnit: 'Wh' });
+		chart.seriesNames = ['coal', 'wind'];
+		chart.seriesData = [
+			{ time: 2, date: new Date(2), coal: 80, wind: 30 },
+			{ time: 3, date: new Date(3), coal: 70, wind: 45 }
+		];
+		chart.growthLeadIn = [{ time: 1, date: new Date(1), coal: 100, wind: 10 }];
+		chart.overlayLines = [
+			{ id: 'demand', data: [], valueKey: 'demand', colour: '#000' },
+			{ id: 'renewables', data: [], valueKey: 'share', colour: '#0a0', scale: 'percent' }
+		];
+		chart.overlayAreas = [{ id: 'curtailment', data: [], series: [] }];
+		chart.chartOptions.growthComparison = { lag: 1, label: 'month-on-month', leadInMs: 1 };
+		chart.chartOptions.selectedDataTransformType = 'growth';
+		return chart;
+	}
+
+	it('plots each bucket’s change, comparing the first with the lead-in', () => {
+		const chart = growthChart();
+		expect(chart.seriesScaledData.map(({ coal, wind }) => [coal, wind])).toEqual([
+			[-20, 20],
+			[-10, 15]
+		]);
+	});
+
+	it('stacks diverging and spans the falls below zero', () => {
+		const chart = growthChart();
+		expect(chart.useDivergingStack).toBe(false);
+		expect(chart.stackDiverging).toBe(true);
+		const [min, max] = chart.yDomain;
+		expect(min).toBeLessThanOrEqual(-20);
+		expect(max).toBeGreaterThanOrEqual(20);
+	});
+
+	it('hides absolute overlays but keeps percentage lines', () => {
+		const chart = growthChart();
+		expect(chart.displayOverlayLines.map((overlay) => overlay.id)).toEqual(['renewables']);
+		expect(chart.displayOverlayAreas).toEqual([]);
+	});
+
+	it('draws absolute values again where growth is not offered', () => {
+		const chart = growthChart();
+		chart.chartOptions.growthComparison = null;
+		expect(chart.stackDiverging).toBe(false);
+		expect(chart.seriesScaledData[0].coal).toBe(80);
+	});
+});

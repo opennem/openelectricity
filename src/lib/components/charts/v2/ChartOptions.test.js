@@ -54,3 +54,34 @@ describe('ChartOptions display prefix selection', () => {
 		expect(options.displayPrefix).toBe('G');
 	});
 });
+
+describe('growth transform', () => {
+	const comparison = { lag: 1, label: 'month-on-month', leadInMs: 1 };
+
+	it('is offered only while the owner sets a comparison', () => {
+		const options = new ChartOptions();
+		expect(options.dataTransformOptions.map((option) => option.value)).not.toContain('growth');
+		options.growthComparison = comparison;
+		expect(options.dataTransformOptions.map((option) => option.value)).toContain('growth');
+	});
+
+	it('keeps a growth choice but shows absolute values where it is not offered', () => {
+		const options = new ChartOptions();
+		options.selectedDataTransformType = 'growth';
+		expect(options.dataTransformType).toBe('absolute');
+		expect(options.isDataTransformTypeGrowth).toBe(false);
+		options.growthComparison = comparison;
+		expect(options.dataTransformType).toBe('growth');
+		expect(options.isDataTransformTypeGrowth).toBe(true);
+	});
+
+	it('locks the curve to step while growth applies', () => {
+		const options = new ChartOptions({ curveType: 'smooth' });
+		options.growthComparison = comparison;
+		options.setDataTransformType('growth');
+		expect(options.isCurveLocked).toBe(true);
+		expect(options.curveType).toBe('step');
+		options.setDataTransformType('absolute');
+		expect(options.curveType).toBe('smooth');
+	});
+});

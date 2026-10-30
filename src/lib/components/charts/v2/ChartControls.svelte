@@ -85,7 +85,7 @@
 			<div class="col-span-4">
 				<SwitchTabs
 					buttons={dataTransformOptions}
-					selected={chart.chartOptions.selectedDataTransformType}
+					selected={chart.chartOptions.dataTransformType}
 					onChange={handleDataTransformChange}
 				/>
 			</div>
@@ -105,7 +105,7 @@
 		</div>
 	{/if}
 
-	{#if showCurveOptions}
+	{#if showCurveOptions && !chart.chartOptions.isCurveLocked}
 		<div class="grid grid-cols-5 gap-4 items-center">
 			<span class="font-space font-normal uppercase text-xxs text-mid-grey">Style</span>
 			<div class="col-span-4">

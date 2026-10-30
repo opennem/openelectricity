@@ -1233,7 +1233,8 @@ failed charts cannot show or export old values.
 12-month rolling variants on the 1Y/All tiers via `includeRolling`) ·
 `group` (simple) · `hidden` (comma-separated group IDs) · `contribution=generation`
 (gross demand is the default) · `transform` / `market-transform` (`proportion` or
-`changeSince`, absolute is the default) · `price=mv` · `emissions=volume` (intensity is the default) ·
+`changeSince`, absolute is the default; `transform` also takes `growth`, see
+[Growth](#growth)) · `price=mv` · `emissions=volume` (intensity is the default) ·
 `overlay` — a canonical comma-separated selection of `demand`, `renewables`,
 `curtailment-solar`, and `curtailment-wind` · `table=0` · `fullscreen=false` ·
 `filter` — a calendar-period id (`jan`…`dec`,
@@ -1414,6 +1415,36 @@ shared with the fuel-tech table's focused columns). Both tables' value
 headers and cells share their classes and outlines (`columnFocusFor`,
 `valueHeaderClass`, `valueCellClass`, `valueCellEdges`). The line hit area is
 mirrored in `@chienleng/stratum-ui` (`chartStyles.lineHitWidth`).
+
+### Growth
+
+The generation chart's **Growth** view (Data → Growth in its options, as on
+the legacy explorer) plots each technology's change from the bucket it is
+compared with, as a diverging stack: rises above zero, falls below, so the net
+line is the total's change. It is offered at energy grains only (30D and up;
+`NetworkChart`'s `growthTransform`), month-on-month at Month, day-on-day at
+Daily and so on. Rolling grains compare each 12-month window with the window a
+year earlier (12, 4, 4 or 2 rows back), since neighbouring windows share most
+of their months, and a calendar-period filter compares each period with the
+same period a year earlier (its rows are already a year apart). The
+comparisons live in `growthComparison` (`$lib/utils/data-transform/growth.js`).
+
+- The first visible buckets compare with rows before the view: the chart
+  passes a lead-in of earlier display rows it already holds
+  (`ChartStore.growthLeadIn`). Where none are loaded, or either value is
+  missing, the bucket is a gap rather than a jump from zero.
+- Growth draws stepped (the Style switch is hidden): each value belongs to a
+  whole bucket. The open bucket (today, this month…) is kept and hatched as in
+  the absolute view; its growth is partial, as its value is.
+- Demand and curtailment overlays are hidden, since absolute values can't be
+  read against changes; the renewables share keeps its own right-hand scale.
+- Zooming in to a power grain shows absolute values but keeps the choice in
+  the URL, so zooming back out restores Growth. Exports note the view only
+  while it is drawn; values export in base units.
+- Compare mode still reads absolute bucket values (B − A), which complements
+  Growth's period-on-period view with any A → B pair.
+- Market value doesn't offer Growth; `market-transform=growth` parses as
+  absolute.
 
 The generation chart's **Proportion** view uses the same basis selected in
 **Fuel technology options → Contribution** as the table, including from the

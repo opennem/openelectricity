@@ -2,7 +2,7 @@
  * Chart Options Store
  *
  * Manages chart configuration options including:
- * - Data transform type (absolute, proportion, change since)
+ * - Data transform type (absolute, proportion, change since, growth)
  * - Curve interpolation type
  * - Chart type (stacked-area, area, line)
  * - Unit prefixes
@@ -11,7 +11,8 @@
 import { curveStepAfter, curveLinear, curveMonotoneX } from 'd3-shape';
 import { transformToProportion, transformToChangeSince } from '$lib/utils/data-transform';
 
-/** @typedef {'absolute' | 'proportion' | 'changeSince'} DataTransformType */
+/** @typedef {'absolute' | 'proportion' | 'changeSince' | 'growth'} DataTransformType */
+/** @typedef {import('$lib/utils/data-transform/growth.js').GrowthComparison} GrowthComparison */
 /** @typedef {'smooth' | 'straight' | 'step'} CurveType */
 /** @typedef {'stacked-area' | 'area' | 'line' | 'grouped-bar' | 'bar-stacked'} ChartType */
 
@@ -30,31 +31,56 @@ const DEFAULT_CHART_TYPE = /** @type {ChartType} */ ('stacked-area');
  * @property {SiPrefix} [displayPrefix]
  */
 
-export default class ChartOptions {
-	// Data transform options
-	dataTransformOptions = Object.freeze([
-		{ label: 'Absolute', value: /** @type {DataTransformType} */ ('absolute') },
-		{ label: 'Proportion', value: /** @type {DataTransformType} */ ('proportion') },
-		{ label: 'Change since', value: /** @type {DataTransformType} */ ('changeSince') }
-	]);
+const BASE_DATA_TRANSFORM_OPTIONS = Object.freeze([
+	{ label: 'Absolute', value: /** @type {DataTransformType} */ ('absolute') },
+	{ label: 'Proportion', value: /** @type {DataTransformType} */ ('proportion') },
+	{ label: 'Change since', value: /** @type {DataTransformType} */ ('changeSince') }
+]);
+const GROWTH_DATA_TRANSFORM_OPTIONS = Object.freeze([
+	...BASE_DATA_TRANSFORM_OPTIONS,
+	{ label: 'Growth', value: /** @type {DataTransformType} */ ('growth') }
+]);
 
-	/** @type {Record<DataTransformType, Function>} */
+export default class ChartOptions {
+	/** How growth is measured at the current grain (set by the chart owner);
+	 *  null while growth isn't offered, e.g. at sub-hourly power grains.
+	 *  @type {GrowthComparison | null} */
+	growthComparison = $state.raw(null);
+
+	// Data transform options
+	dataTransformOptions = $derived(
+		this.growthComparison ? GROWTH_DATA_TRANSFORM_OPTIONS : BASE_DATA_TRANSFORM_OPTIONS
+	);
+
+	/** Per-row transforms; growth is row-relative and computed by the store.
+	 * @type {Record<DataTransformType, Function>} */
 	#dataTransformFunctions = Object.freeze({
 		absolute: (/** @type {{datapoint: TimeSeriesData}} */ { datapoint }) => datapoint,
 		proportion: transformToProportion,
-		changeSince: transformToChangeSince
+		changeSince: transformToChangeSince,
+		growth: (/** @type {{datapoint: TimeSeriesData}} */ { datapoint }) => datapoint
 	});
 
-	/** @type {DataTransformType} */
+	/** The user's (or a restored) choice, kept while it doesn't apply.
+	 * @type {DataTransformType} */
 	selectedDataTransformType = $state(DEFAULT_DATA_TRANSFORM_TYPE);
 
 	/** User-selection callback; direct assignments restore state without emitting.
 	 * @type {((type: DataTransformType) => void) | undefined} */
 	onDataTransformChange;
 
-	dataTransformFunction = $derived(this.#dataTransformFunctions[this.selectedDataTransformType]);
-	isDataTransformTypeProportion = $derived(this.selectedDataTransformType === 'proportion');
-	isDataTransformTypeChangeSince = $derived(this.selectedDataTransformType === 'changeSince');
+	/** The transform in effect: a growth choice shows absolute values wherever
+	 *  growth isn't offered, and returns when the grain offers it again. */
+	dataTransformType = $derived(
+		this.selectedDataTransformType === 'growth' && !this.growthComparison
+			? DEFAULT_DATA_TRANSFORM_TYPE
+			: this.selectedDataTransformType
+	);
+
+	dataTransformFunction = $derived(this.#dataTransformFunctions[this.dataTransformType]);
+	isDataTransformTypeProportion = $derived(this.dataTransformType === 'proportion');
+	isDataTransformTypeChangeSince = $derived(this.dataTransformType === 'changeSince');
+	isDataTransformTypeGrowth = $derived(this.dataTransformType === 'growth');
 
 	// Curve options
 	// Note: "Step" uses curveStepAfter — the value at time T is drawn as a
@@ -78,7 +104,14 @@ export default class ChartOptions {
 	/** @type {CurveType} */
 	selectedCurveType = $state(DEFAULT_CURVE_TYPE);
 
-	curveFunction = $derived(this.#curveFunctions[this.selectedCurveType]);
+	/** Growth is one value per whole bucket, so it is always drawn stepped:
+	 *  joining buckets would imply a continuous change. */
+	isCurveLocked = $derived(this.isDataTransformTypeGrowth);
+	curveType = $derived(
+		this.isCurveLocked ? /** @type {CurveType} */ ('step') : this.selectedCurveType
+	);
+
+	curveFunction = $derived(this.#curveFunctions[this.curveType]);
 
 	// Chart type options
 	chartTypeOptions = Object.freeze([

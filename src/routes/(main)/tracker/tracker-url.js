@@ -20,7 +20,8 @@
  * - `hidden`    — comma-separated hidden IDs in the selected grouping
  * - `contribution` — `generation` for source generation, otherwise gross demand
  * - `transform` / `market-transform` — generation / market-value data transform;
- *                 `proportion` or `changeSince`, default `absolute`
+ *                 `proportion`, `changeSince` or `growth` (generation only;
+ *                 shown at energy grains), default `absolute`
  * - `filter`    — calendar-period filter id (`jan`…`dec`, `summer`…, `q1`…,
  *                 `h1`/`h2`) for the All range; omitted when All (unfiltered)
  * - `price`     — `mv` when the price card shows market value; never written
@@ -115,9 +116,14 @@ export function normaliseContributionMode(value) {
 	return value === 'generation' ? 'generation' : 'demand';
 }
 
-/** @param {unknown} value @returns {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} */
-export function normaliseDataTransform(value) {
-	return value === 'proportion' || value === 'changeSince' ? value : 'absolute';
+/**
+ * @param {unknown} value
+ * @param {{ growth?: boolean }} [options] - `growth: false` where Growth isn't offered (market value)
+ * @returns {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType}
+ */
+export function normaliseDataTransform(value, { growth = true } = {}) {
+	if (value === 'proportion' || value === 'changeSince') return value;
+	return value === 'growth' && growth ? value : 'absolute';
 }
 
 /**
@@ -178,7 +184,7 @@ export function normaliseTrackerState(value) {
 		hiddenSeries: normaliseHiddenSeries(value.hiddenSeries, group),
 		contributionMode: normaliseContributionMode(value.contributionMode),
 		generationTransform: normaliseDataTransform(value.generationTransform),
-		marketValueTransform: normaliseDataTransform(value.marketValueTransform),
+		marketValueTransform: normaliseDataTransform(value.marketValueTransform, { growth: false }),
 		range,
 		bucketFilter: validBucketFilterFor(
 			typeof value.bucketFilter === 'string' ? value.bucketFilter : null,
