@@ -404,14 +404,16 @@
 							class="mx-0.5 h-4 w-px bg-mid-warm-grey/60 {touch ? 'max-tablet:hidden' : ''}"
 							aria-hidden="true"
 						></div>
+						<!-- `?.`: the chart can unmount (clearing `hosted`) before this
+						     block does, and the buttons' tooltip still reads its props. -->
 						<ChartPanZoomButtons
-							onzoomin={hosted.onzoomin}
-							onzoomout={hosted.onzoomout}
-							isAtMinZoom={hosted.isAtMinZoom}
-							isAtMaxZoom={hosted.isAtMaxZoom}
-							showPanZoomToggle={hosted.showPanZoomToggle}
-							panZoomEngaged={hosted.panZoomEngaged}
-							onpanzoomtoggle={hosted.onpanzoomtoggle}
+							onzoomin={hosted?.onzoomin}
+							onzoomout={hosted?.onzoomout}
+							isAtMinZoom={hosted?.isAtMinZoom}
+							isAtMaxZoom={hosted?.isAtMaxZoom}
+							showPanZoomToggle={hosted?.showPanZoomToggle}
+							panZoomEngaged={hosted?.panZoomEngaged}
+							onpanzoomtoggle={hosted?.onpanzoomtoggle}
 							keepZoomWhileEngaged
 							size="md"
 						/>

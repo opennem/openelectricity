@@ -103,10 +103,7 @@ export function loadSentry() {
 export function startSentry() {
 	if (!browser || !reportsErrors(env, dev)) return;
 	/** @param {ErrorEvent | PromiseRejectionEvent} event */
-	const queue = (event) => {
-		const error = errorFromEvent(event);
-		if (error !== null) captureError(error);
-	};
+	const queue = (event) => captureError(errorFromEvent(event));
 	window.addEventListener('error', queue);
 	window.addEventListener('unhandledrejection', queue);
 	const start = () =>
@@ -120,11 +117,13 @@ export function startSentry() {
 
 /**
  * Report an error SvelteKit caught (load and render failures it doesn't
- * rethrow), queueing it if the SDK hasn't started yet.
+ * rethrow, and the early queue's), queueing it if the SDK hasn't started yet.
+ * A null or undefined error is skipped: with nothing to describe it, it
+ * arrives as an unfilterable "Error: null".
  * @param {unknown} error
  */
 export function captureError(error) {
-	if (!browser || !reportsErrors(env, dev)) return;
+	if (error == null || !browser || !reportsErrors(env, dev)) return;
 	if (loading) {
 		void loading.then((Sentry) => Sentry?.captureException(error));
 	} else if (earlyErrors.length < MAX_EARLY_ERRORS) {

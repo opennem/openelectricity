@@ -52,6 +52,14 @@ export const IGNORED_ERRORS = [
 	/Importing a module script failed/,
 	/Importing module .* is not found/,
 	/Unable to preload CSS/,
+	// A chunk from another copy of the build (a stale cache between the reader
+	// and the site); the deployed chunk has the export.
+	/The requested module .* (does not|doesn't) provide an export named/,
+	// A frame that forbids history (a locked-down embed of /widget) stops
+	// SvelteKit's start-up `history.replaceState`. Firefox and Safari wording
+	// only: Chrome's names the blocked API, so unguarded storage reads still
+	// report there.
+	/^(SecurityError: )?The operation is insecure\.$/,
 	// One navigation superseded by another, or a view transition the browser
 	// skipped (tab hidden, viewport resized).
 	/^(Error: )?navigation aborted$/,

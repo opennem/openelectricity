@@ -38,6 +38,9 @@ describe('IGNORED_ERRORS', () => {
 			'Error: Unable to preload CSS for https://openelectricity.org.au/_app/immutable/assets/Footer.xbaq3Lvl.css',
 			"SyntaxError: Importing module './BJNHJbZY.js' is not found.",
 			'TypeError: Importing a module script failed.',
+			"SyntaxError: The requested module 'https://openelectricity.org.au/_app/immutable/chunks/D-w3H8tA.js' doesn't provide an export named: 'F'",
+			"SyntaxError: The requested module './D-w3H8tA.js' does not provide an export named 'F'",
+			'SecurityError: The operation is insecure.',
 			'Error: navigation aborted',
 			'InvalidStateError: Transition was aborted because of invalid state. Document hidden',
 			'InvalidStateError: View transition was skipped because document visibility state is hidden.',
@@ -56,6 +59,7 @@ describe('IGNORED_ERRORS', () => {
 			'ReferenceError: structuredClone is not defined',
 			"TypeError: Cannot read properties of undefined (reading '0')",
 			'TypeError: Failed to fetch records: 500',
+			"SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
 			'Error: navigation aborted while saving'
 		]) {
 			expect(ignored(message), message).toBe(false);
