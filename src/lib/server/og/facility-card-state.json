@@ -7394,7 +7394,7 @@
 			"name": "Tailem Bend 2"
 		}
 	},
-	"TBBESS3": {
+	"TB3B1": {
 		"v": 1,
 		"photo": null,
 		"data": {
@@ -7402,8 +7402,8 @@
 				"battery"
 			],
 			"dominant": "battery",
-			"capacity": 408,
-			"status": "committed",
+			"capacity": 204,
+			"status": "commissioning",
 			"region": "SA",
 			"name": "Tailem Bend 3"
 		}
