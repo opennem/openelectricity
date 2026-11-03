@@ -5,6 +5,7 @@
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { getFormattedX, getFormattedY } from '$lib/components/charts/v2/tooltip-derivations.js';
 	import ProfileReadout from './ProfileReadout.svelte';
+	import { ZERO_LINE_STROKE } from './tracker-overlays.js';
 	import {
 		PROFILE_DAY_START,
 		PROFILE_DAY_END,
@@ -86,6 +87,7 @@
 	chart.chartOptions.selectedCurveType = isPrice ? 'step' : 'smooth';
 	chart.chartStyles.snapTicks = true;
 	chart.chartStyles.chartPadding = { top: 12, bottom: 28, left: 0, right: 0 };
+	chart.chartStyles.zeroValueStroke = ZERO_LINE_STROKE;
 	chart.chartTooltips.showTotal = false;
 	// The range readout names the hovered slot.
 	chart.chartTooltips.showDate = false;

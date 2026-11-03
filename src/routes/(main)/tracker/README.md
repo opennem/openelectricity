@@ -395,6 +395,10 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   `highlightableKeys`), as the legacy explorer did, so loads under the zero
   line (battery charging, pumps) can be picked out. Everything else in the
   plot fades to 10% (`HIGHLIGHT_DIMMED_OPACITY`).
+  Every Timeline and Profile chart draws its y-axis zero line solid in dark
+  grey (`ZERO_LINE_STROKE`; `NetworkChart`'s `zeroLineStroke`) on the axes
+  layer over the plot, rather than in the faint gridline grey, so it stays
+  visible across the stack and loads read as below it.
   The breakdown's own options sit in a **Breakdown options** bar under the
   top nav, as Timeline's metrics strip does, sliding open and shut with the
   display: the compact **Show today** toggle, a divider, then a **Style**

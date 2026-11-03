@@ -51,6 +51,7 @@
 		curtailmentOverlayFor,
 		DEMAND_LINE_COLOUR,
 		DEMAND_LINE_ID,
+		ZERO_LINE_STROKE,
 		RENEWABLES_LINE_COLOUR,
 		RENEWABLES_LINE_ID
 	} from './tracker-overlays.js';
@@ -592,7 +593,7 @@
 		 * 'region' | 'bucketFilter' | 'interval' | 'displayInterval' | 'group' | 'timeZone' |
 		 * 'dateStart' | 'dateEnd' | 'showContainer' | 'tooltipMode' | 'onhoverchange' | 'focusTime' | 'onfocuschange' |
 		 * 'onviewportsettle' | 'panZoomMode' | 'gestureActive' | 'ongesturechange' |
-		 * 'showLoadingIndicator' | 'holdFrame' | 'prefetchPlan'>} */ ({
+		 * 'showLoadingIndicator' | 'holdFrame' | 'prefetchPlan' | 'zeroLineStroke'>} */ ({
 			region,
 			bucketFilter,
 			interval: range.activeInterval,
@@ -603,6 +604,8 @@
 			dateEnd,
 			showContainer: false,
 			tooltipMode: 'strip',
+			// A solid zero line over the stack, so loads read as below it.
+			zeroLineStroke: ZERO_LINE_STROKE,
 			// The range readout names the hovered time.
 			showTooltipDate: false,
 			onhoverchange: handleHoverChange,

@@ -22,6 +22,8 @@ export const OE_RED = '#C74523';
 
 /** OE red for the operational demand line. */
 export const DEMAND_LINE_COLOUR = OE_RED;
+/** The charts' y-axis zero line, drawn over the stack: the palette's dark grey. */
+export const ZERO_LINE_STROKE = '#353535';
 /** The demand and renewable-share overlay lines' series ids on the generation chart. */
 export const DEMAND_LINE_ID = 'demand';
 export const RENEWABLES_LINE_ID = 'renewable-share';

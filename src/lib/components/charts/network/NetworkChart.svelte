@@ -110,6 +110,9 @@
 	 * @property {((key: string | undefined) => void)} [onhoverkeychange] - Reports the
 	 *   series under the pointer (undefined once the hover ends). When given, the
 	 *   hovered series is also highlighted and the others dim
+	 * @property {string} [zeroLineStroke] - Draw the y-axis zero line in this colour,
+	 *   over the plot, instead of the faint gridline grey (which vanishes against
+	 *   a stack)
 	 * @property {string} [highlightKey] - A series to highlight from outside the plot
 	 *   (the tracker's hovered table row), dimming the rest: a stack layer, an
 	 *   overlay line's id or an overlay band's series id. Ignored unless the chart
@@ -194,6 +197,7 @@
 		onhoverchange,
 		onhoverkeychange,
 		highlightKey = undefined,
+		zeroLineStroke = undefined,
 		onfocuschange,
 		onviewportchange,
 		onviewportsettle,
@@ -611,6 +615,11 @@
 		if (!chartStore) return;
 		chartStore.chartStyles.chartHeightClasses = chartHeight;
 		if (chartHeightPx) chartStore.chartStyles.chartHeightPx = chartHeightPx;
+	});
+
+	// The zero line's colour, when the parent wants it to stand out.
+	$effect(() => {
+		if (chartStore && zeroLineStroke) chartStore.chartStyles.zeroValueStroke = zeroLineStroke;
 	});
 
 	// Mirror the tooltip date toggle into the store.
