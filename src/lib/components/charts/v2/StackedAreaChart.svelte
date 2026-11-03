@@ -128,6 +128,9 @@
 
 	let isAreaOverlay = $derived(chart.chartOptions.isChartTypeArea);
 
+	/** The highlighted series (a stack layer, overlay band or overlay line). */
+	let highlightId = $derived(chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null);
+
 	/** @type {'stacked-area' | 'line'} */
 	let stackedAreaDisplay = $derived(chart.chartOptions.isChartTypeLine ? 'line' : 'stacked-area');
 
@@ -224,7 +227,7 @@
 						dataset={chart.seriesScaledData}
 						curveType={chart.chartOptions.curveFunction}
 						seriesColours={chart.seriesColours}
-						highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
+						{highlightId}
 						stepMode={isStepMode}
 						{onmousemove}
 						{onmouseout}
@@ -237,7 +240,7 @@
 						display={stackedAreaDisplay}
 						curveType={chart.chartOptions.curveFunction}
 						seriesColours={chart.seriesColours}
-						highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
+						{highlightId}
 						lighterNegative={chart.lighterNegative}
 						solidLineRange={chart.solidLineRange}
 						lineHitWidth={chart.chartStyles.lineHitWidth}
@@ -264,13 +267,16 @@
 						divergingBase={chart.stackDiverging}
 						curveType={chart.chartOptions.curveFunction}
 						patternPrefix="{id}-overlay-hatch-{overlay.id}"
+						{highlightId}
 					/>
 				{/each}
 
 				{#each chart.displayOverlayLines as overlay (overlay.id)}
 					<OverlayLine
 						dataset={overlay.data}
+						id={overlay.id}
 						valueKey={overlay.valueKey}
+						{highlightId}
 						colour={overlay.colour}
 						strokeWidth={overlay.strokeWidth ?? 1.5}
 						dasharray={overlay.dasharray}

@@ -50,7 +50,9 @@
 		CURTAILMENT_SERIES,
 		curtailmentOverlayFor,
 		DEMAND_LINE_COLOUR,
-		RENEWABLES_LINE_COLOUR
+		DEMAND_LINE_ID,
+		RENEWABLES_LINE_COLOUR,
+		RENEWABLES_LINE_ID
 	} from './tracker-overlays.js';
 	import { formatPercentageValue } from '$lib/components/charts/card/cell-format.js';
 	import { createTrackerProviders } from './tracker-providers.svelte.js';
@@ -243,6 +245,10 @@
 	}
 	/** @param {string | undefined} key */
 	const hoverSeries = (key) => (hoveredSeries = key);
+	/** The table row under the pointer: its series (a fuel tech layer, a
+	 * curtailment band, or the demand or renewables line) is highlighted on every
+	 * chart that draws it, as hovering the series on a chart would. */
+	let tableHoveredSeries = $state(/** @type {string | undefined} */ (undefined));
 	let isRollingDisplay = $derived(isRollingInterval(range.displayInterval));
 	let intervalBadge = $derived(
 		getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval
@@ -481,7 +487,7 @@
 		const lines = [];
 		if (showDemandLine) {
 			lines.push({
-				id: 'demand',
+				id: DEMAND_LINE_ID,
 				label: 'Demand',
 				data: demandData.getDisplayRows(start, end, displayRowOpts),
 				valueKey: 'demand',
@@ -491,7 +497,7 @@
 		}
 		if (showRenewablesLine) {
 			lines.push({
-				id: 'renewable-share',
+				id: RENEWABLES_LINE_ID,
 				label: showContributions ? 'Renewables (% of gross demand)' : 'Renewables',
 				data: providers.renewableShareRows(start, end, table.shareRowOpts),
 				valueKey: 'renewable_share',
@@ -862,6 +868,7 @@
 				{overlayAreas}
 				hiddenSeriesNames={hiddenSeries}
 				onhoverkeychange={hoverSeries}
+				highlightKey={tableHoveredSeries}
 				onviewportchange={(next) => session.moveViewport(next, generationChart)}
 				onvisibledata={handleGenerationData}
 				timeMarkers={chartMarkers('generation')}
@@ -926,6 +933,7 @@
 				dataTransform={priceIsMarketValue ? session.selection.marketValueTransform : 'absolute'}
 				ondatatransformchange={(value) => session.select('marketValueTransform', value)}
 				onhoverkeychange={hoverSeries}
+				highlightKey={tableHoveredSeries}
 				onviewportchange={(next) => session.moveViewport(next, priceChart)}
 				onvisibledata={handlePriceData}
 				timeMarkers={chartMarkers('market')}
@@ -981,6 +989,7 @@
 				hiddenSeriesNames={emissionsIsIntensity ? [] : hiddenSeries}
 				excludedFuelTechGroups={emissionsIsIntensity ? hiddenSeries : []}
 				onhoverkeychange={hoverSeries}
+				highlightKey={tableHoveredSeries}
 				onviewportchange={(next) => session.moveViewport(next, emissionsChart)}
 				onvisibledata={handleEmissionsData}
 				timeMarkers={chartMarkers('emissions')}
@@ -1000,6 +1009,7 @@
 			tableColumns={tableColumns.value}
 			focusColumns={focusColumn ? [focusColumn] : []}
 			focusRow={hoveredSeries}
+			onrowhover={(key) => (tableHoveredSeries = key)}
 			valuesPending={tableValuesPending}
 			error={data.state('generation').error ?? table.feedsError}
 			onretry={() => {

@@ -20,6 +20,7 @@ import {
 	networkTimeZoneLabel
 } from '$lib/components/charts/v2/network-time.js';
 import { contributionLabel } from './tracker-model.js';
+import { RENEWABLES_LINE_ID } from './tracker-overlays.js';
 import {
 	deriveVwPriceDisplayRows,
 	VW_PRICE_SERIES_ID
@@ -40,7 +41,6 @@ const MARKET_VALUE_ID = 'market_value';
 const EMISSIONS_ID = 'emissions';
 const ENERGY_ID = 'energy_mwh';
 /** The renewables overlay line's id, a share of gross demand at every grain. */
-const RENEWABLES_LINE_ID = 'renewable-share';
 
 // ============================================
 // Labels

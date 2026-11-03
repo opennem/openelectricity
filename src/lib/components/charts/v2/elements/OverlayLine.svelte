@@ -7,7 +7,8 @@
 	 * spanning the same pixel range, with optional right-edge tick labels.
 	 * With `onmousemove`, an invisible `hitWidth` stroke along the line takes the
 	 * pointer and reports the row under it, as StackedArea's paths do; the
-	 * drawn line stays pointer-transparent.
+	 * drawn line stays pointer-transparent. While another series is highlighted
+	 * (`highlightId`), the line dims; its % axis labels stay legible.
 	 *
 	 * Must be rendered inside a LayerCake context.
 	 */
@@ -17,6 +18,7 @@
 	import { perfSpan } from '../perf.js';
 	import { bisectTimeRight, nearestIndexOfTime } from '../binary-search.js';
 	import { percentAxisTicks } from './percent-axis.js';
+	import { highlightOpacity } from './highlight.js';
 
 	const { xScale, yScale, width } = getContext('LayerCake');
 
@@ -24,6 +26,8 @@
 	 * @typedef {Object} Props
 	 * @property {any[]} dataset - Rows with `time` and the value key
 	 * @property {string} valueKey
+	 * @property {string} [id] - The line's series id, matched against `highlightId`
+	 * @property {string | null} [highlightId] - The highlighted series, if any
 	 * @property {string} [colour]
 	 * @property {number} [strokeWidth]
 	 * @property {string} [dasharray] - SVG stroke-dasharray, e.g. '4 3' for a reference line
@@ -41,6 +45,8 @@
 	let {
 		dataset = [],
 		valueKey,
+		id = valueKey,
+		highlightId = null,
 		colour = '#C74523',
 		strokeWidth = 1.5,
 		dasharray = undefined,
@@ -117,6 +123,7 @@
 		stroke={colour}
 		stroke-width={strokeWidth}
 		stroke-dasharray={dasharray}
+		opacity={highlightOpacity(highlightId, id)}
 		pointer-events="none"
 	/>
 	{#if onmousemove}

@@ -375,6 +375,14 @@ export default class ChartStore {
 		}));
 	});
 
+	/** Every series the plot draws that a highlight can pick out: the visible
+	 *  stack layers, the overlay lines and each overlay band. */
+	highlightableKeys = $derived([
+		...this.visibleSeriesNames,
+		...this.displayOverlayLines.map((overlay) => overlay.id),
+		...this.displayOverlayAreas.flatMap((overlay) => overlay.series.map((series) => series.id))
+	]);
+
 	// Formatters
 	/** @type {number} */
 	maximumFractionDigits = $state(0);

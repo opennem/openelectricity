@@ -9,7 +9,7 @@
 	 * The bands ride the visible stack's drawn top — the signed total for a
 	 * standard stack (loads pull it down), or the positive sum for a diverging
 	 * one — interpolated between rendered rows; bands accumulate above it in
-	 * the order given.
+	 * the order given. While a series is highlighted, every other band dims.
 	 *
 	 * Must be rendered inside a LayerCake context.
 	 */
@@ -17,6 +17,7 @@
 	import { area as d3Area, curveLinear } from 'd3-shape';
 	import { nearestIndexOfTime } from '../binary-search.js';
 	import { perfSpan } from '../perf.js';
+	import { highlightOpacity } from './highlight.js';
 
 	const { xScale, yScale } = getContext('LayerCake');
 
@@ -31,6 +32,7 @@
 	 *   (loads pull it down), and the bands must ride whichever is drawn
 	 * @property {any} [curveType] - d3 curve factory, matching the host chart
 	 * @property {string} patternPrefix - Unique id prefix for the hatch patterns
+	 * @property {string | null} [highlightId] - The highlighted series, if any
 	 */
 
 	/** @type {Props} */
@@ -41,7 +43,8 @@
 		baseKeys = [],
 		divergingBase = false,
 		curveType = curveLinear,
-		patternPrefix
+		patternPrefix,
+		highlightId = null
 	} = $props();
 
 	/** Drawn stack-top per rendered row, matching the chart's stacking mode. */
@@ -136,6 +139,7 @@
 		fill="url(#{patternPrefix}-{band.id})"
 		stroke={band.colour}
 		stroke-width="0.5"
+		opacity={highlightOpacity(highlightId, band.id)}
 		pointer-events="none"
 	/>
 {/each}

@@ -12,6 +12,7 @@
 	import chroma from 'chroma-js';
 	import { perfSpan } from '../perf.js';
 	import { nearestLine } from './line-hit.js';
+	import { HIGHLIGHT_DIMMED_OPACITY } from './highlight.js';
 
 	const { data, xGet, xScale, yScale, yGet, z, width, height } = getContext('LayerCake');
 
@@ -394,7 +395,7 @@
 					d={pathD}
 					fill={baseColor}
 					stroke="none"
-					opacity={getOpacity(d, 1, 0.65)}
+					opacity={getOpacity(d, 1, HIGHLIGHT_DIMMED_OPACITY)}
 					clip-path="url(#{clipId}-positive)"
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
@@ -409,7 +410,7 @@
 					d={pathD}
 					fill={getLighterColor(baseColor)}
 					stroke="none"
-					opacity={getOpacity(d, 1, 0.65)}
+					opacity={getOpacity(d, 1, HIGHLIGHT_DIMMED_OPACITY)}
 					clip-path="url(#{clipId}-negative)"
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
@@ -424,7 +425,7 @@
 					d={pathD}
 					fill={baseColor}
 					stroke="none"
-					opacity={getOpacity(d, 1, 0.65)}
+					opacity={getOpacity(d, 1, HIGHLIGHT_DIMMED_OPACITY)}
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
 					onblur={handleMouseOut}

@@ -388,6 +388,13 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   pick the layer under the pointer from its radius within the hour
   (`RadialClock`'s bindable `activeLayer`), and either chart's series stands
   out on both. Cards report the pointer through `ChartCard`'s `onhover`.
+  On Timeline the reverse holds too: hovering a fuel tech, curtailment, Demand
+  or Renewables row with a mouse or pen (`FuelTechTable`'s `onrowhover`)
+  highlights its layer, hatched band or line on every chart that draws it
+  (`NetworkChart`'s `highlightKey`, checked against `ChartStore`'s
+  `highlightableKeys`), as the legacy explorer did, so loads under the zero
+  line (battery charging, pumps) can be picked out. Everything else in the
+  plot fades to 10% (`HIGHLIGHT_DIMMED_OPACITY`).
   The breakdown's own options sit in a **Breakdown options** bar under the
   top nav, as Timeline's metrics strip does, sliding open and shut with the
   display: the compact **Show today** toggle, a divider, then a **Style**

@@ -24,7 +24,9 @@
 	import {
 		CURTAILMENT_COLOURS,
 		DEMAND_LINE_COLOUR,
-		RENEWABLES_LINE_COLOUR
+		DEMAND_LINE_ID,
+		RENEWABLES_LINE_COLOUR,
+		RENEWABLES_LINE_ID
 	} from './tracker-overlays.js';
 	import { formatRunTime } from './rooftop-forecast.js';
 	import {
@@ -63,6 +65,8 @@
 	 *   `TABLE_COLUMNS` entry, or each `powerColumns` entry when given
 	 * @property {string[]} [breakdown] - Tooltip lines listing the folded fuel techs
 	 * @property {boolean} [dimmed] - Fade the whole row while toggled off
+	 * @property {string} [seriesKey] - The chart series the row draws (a stack layer,
+	 *   curtailment band or overlay line): hovering the row reports it (`onrowhover`)
 	 * @property {boolean} [summary] - Bold summary treatment for the overlay rows
 	 * @property {string} [testId]
 	 * @property {boolean} [interpolated]
@@ -94,6 +98,11 @@
 	 * (`focusColumns`): the hovered day, or a percentile band's bounds. Focused
 	 * rows and columns are outlined, and the cells where they meet read white
 	 * on OE red.
+	 *
+	 * Hovering a row with a mouse or pen reports its chart series (`onrowhover`),
+	 * so the timeline can highlight it on its charts, as the legacy explorer did
+	 * (useful for loads drawn under the zero line): a fuel tech's layer, a
+	 * curtailment band, or the Demand or Renewables line.
 	 *
 	 * A view can set its own chart (`companion`) between the table and the
 	 * footnotes, scrolling with them.
@@ -128,6 +137,7 @@
 		showDemandLine = false,
 		showRenewablesLine = false,
 		ontoggle,
+		onrowhover,
 		ongroupchange,
 		oncontributionchange,
 		onunitchange,
@@ -265,6 +275,7 @@
 			interpolated: rooftopInterpolation && row.fuelTechs.includes('solar_rooftop'),
 			partialColumns: partialColumnsOf(row),
 			dimmed: row.hidden,
+			seriesKey: row.id,
 			testId: 'fuel-tech-row'
 		};
 	}
@@ -276,6 +287,7 @@
 			label: row.label,
 			active: shownCurtailment.includes(row.id),
 			activate: (exclusive) => oncurtailmenttoggle?.(row.id, exclusive),
+			seriesKey: row.id,
 			swatch: { kind: 'hatch', colour: CURTAILMENT_COLOURS[row.id] ?? '#888' },
 			cells: powerColumns
 				? emptyCells
@@ -292,6 +304,7 @@
 
 	/**
 	 * @param {string} label
+	 * @param {string} seriesKey - The overlay line's id on the chart
 	 * @param {boolean} active
 	 * @param {string} colour
 	 * @param {((exclusive?: boolean) => void) | undefined} ontogglerow
@@ -300,10 +313,20 @@
 	 * @param {number | null} sharePct
 	 * @returns {ToggleRow}
 	 */
-	function summaryRow(label, active, colour, ontogglerow, energyMWh, avPowerMW, sharePct) {
+	function summaryRow(
+		label,
+		seriesKey,
+		active,
+		colour,
+		ontogglerow,
+		energyMWh,
+		avPowerMW,
+		sharePct
+	) {
 		return {
 			key: label,
 			label,
+			seriesKey,
 			active,
 			activate: (exclusive) => ontogglerow?.(exclusive),
 			swatch: { kind: 'line', colour },
@@ -329,6 +352,7 @@
 			? [
 					summaryRow(
 						'Demand',
+						DEMAND_LINE_ID,
 						showDemandLine,
 						DEMAND_LINE_COLOUR,
 						ondemandlinetoggle,
@@ -338,6 +362,7 @@
 					),
 					summaryRow(
 						'Renewables',
+						RENEWABLES_LINE_ID,
 						showRenewablesLine,
 						RENEWABLES_LINE_COLOUR,
 						onrenewableslinetoggle,
@@ -365,6 +390,37 @@
 		if (event.key !== 'Enter' && event.key !== ' ') return;
 		event.preventDefault();
 		row.activate(isExclusive(event));
+	}
+
+	/**
+	 * Reports the row under a mouse or pen pointer (touch taps toggle rows, so
+	 * they don't highlight), and lets go if the row unmounts beneath it, e.g. on
+	 * a grouping change.
+	 * @param {string} key
+	 * @returns {import('svelte/attachments').Attachment<HTMLTableRowElement>}
+	 */
+	function rowHover(key) {
+		return (node) => {
+			let hovered = false;
+			/** @param {PointerEvent} event */
+			const enter = (event) => {
+				if (event.pointerType === 'touch') return;
+				hovered = true;
+				onrowhover?.(key);
+			};
+			const leave = () => {
+				if (!hovered) return;
+				hovered = false;
+				onrowhover?.(undefined);
+			};
+			node.addEventListener('pointerenter', enter);
+			node.addEventListener('pointerleave', leave);
+			return () => {
+				node.removeEventListener('pointerenter', enter);
+				node.removeEventListener('pointerleave', leave);
+				leave();
+			};
+		};
 	}
 
 	/** Diagonal hatch in the series colour — the curtailment swatch treatment.
@@ -433,6 +489,7 @@
 		data-focused={focused || undefined}
 		onclick={(event) => row.activate(isExclusive(event))}
 		{@attach longPress(() => row.activate(true))}
+		{@attach row.seriesKey && onrowhover ? rowHover(row.seriesKey) : undefined}
 		onkeydown={(event) => activateOnKey(event, row)}
 		role="button"
 		tabindex="0"

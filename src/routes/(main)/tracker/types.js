@@ -158,6 +158,8 @@
  * @property {boolean} [showDemandLine]
  * @property {boolean} [showRenewablesLine]
  * @property {(series: string, exclusive?: boolean) => void} [ontoggle]
+ * @property {(series: string | undefined) => void} [onrowhover] - The fuel tech row
+ *   under a mouse or pen pointer (undefined once it leaves), for the charts to highlight
  * @property {(group: string) => void} [ongroupchange] - Technology header grouping menu
  * @property {(mode: ContributionMode) => void} [oncontributionchange] - Contribution header cycle
  * @property {(key: import('./table-units.js').TableUnitKey, prefix: SiPrefix) => void} [onunitchange] - Value header unit cycle

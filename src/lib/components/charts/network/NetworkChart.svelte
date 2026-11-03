@@ -110,6 +110,10 @@
 	 * @property {((key: string | undefined) => void)} [onhoverkeychange] - Reports the
 	 *   series under the pointer (undefined once the hover ends). When given, the
 	 *   hovered series is also highlighted and the others dim
+	 * @property {string} [highlightKey] - A series to highlight from outside the plot
+	 *   (the tracker's hovered table row), dimming the rest: a stack layer, an
+	 *   overlay line's id or an overlay band's series id. Ignored unless the chart
+	 *   draws it, so one key can drive charts with different series
 	 * @property {number | undefined} [focusTime] - Controlled focus (pinned) time, for a
 	 *   parent that shares one focus across charts and other surfaces; pair with `onfocuschange`
 	 * @property {((time: number | undefined) => void)} [onfocuschange] - The reader
@@ -189,6 +193,7 @@
 		focusTime = undefined,
 		onhoverchange,
 		onhoverkeychange,
+		highlightKey = undefined,
 		onfocuschange,
 		onviewportchange,
 		onviewportsettle,
@@ -679,9 +684,27 @@
 		chartStore.chartOptions.onEnergyMeasureChange = onenergymeasurechange;
 	});
 
-	// A parent following the hovered series wants it visible on the chart too.
+	// A parent following or driving the hovered series wants it visible on the chart too.
 	$effect(() => {
-		if (chartStore) chartStore.chartOptions.allowHoverHighlight = !!onhoverkeychange;
+		if (chartStore)
+			chartStore.chartOptions.allowHoverHighlight =
+				!!onhoverkeychange || highlightKey !== undefined;
+	});
+
+	// Drive the store's hover key from `highlightKey` while the chart draws that
+	// series or overlay. Only changes are written, so a data update can't clear the plot's
+	// own hover key while the pointer is on the chart.
+	/** @type {string | undefined} */
+	let appliedHighlightKey;
+	$effect(() => {
+		if (!chartStore) return;
+		const key =
+			highlightKey !== undefined && chartStore.highlightableKeys.includes(highlightKey)
+				? highlightKey
+				: undefined;
+		if (key === appliedHighlightKey) return;
+		appliedHighlightKey = key;
+		chartStore.hoverKey = key;
 	});
 
 	// Caller-driven overlay lines (demand / renewable share) — independent row

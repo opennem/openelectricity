@@ -22,6 +22,9 @@ export const OE_RED = '#C74523';
 
 /** OE red for the operational demand line. */
 export const DEMAND_LINE_COLOUR = OE_RED;
+/** The demand and renewable-share overlay lines' series ids on the generation chart. */
+export const DEMAND_LINE_ID = 'demand';
+export const RENEWABLES_LINE_ID = 'renewable-share';
 export const RENEWABLES_LINE_COLOUR = getFuelTechColour('renewables');
 
 /**
