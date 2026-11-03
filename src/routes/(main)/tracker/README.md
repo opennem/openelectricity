@@ -397,7 +397,10 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   (`NetworkChart`'s `highlightKey`, checked against `ChartStore`'s
   `highlightableKeys`), as the legacy explorer did, so loads under the zero
   line (battery charging, pumps) can be picked out. Everything else in the
-  plot fades to 10% (`HIGHLIGHT_DIMMED_OPACITY`).
+  plot fades to 10% (`HIGHLIGHT_DIMMED_OPACITY`); hovering a series on the
+  plot itself fades the rest only to 50% (`HOVER_DIMMED_OPACITY`).
+  `ChartStore.highlightSeries` marks the table's highlight
+  (`externalHighlight`), and the plot's own hover clears the mark.
   Every Timeline and Profile chart draws its y-axis zero line solid in dark
   grey (`ZERO_LINE_STROKE`; `NetworkChart`'s `zeroLineStroke`) on the axes
   layer over the plot, rather than in the faint gridline grey, so it stays

@@ -713,7 +713,7 @@
 				: undefined;
 		if (key === appliedHighlightKey) return;
 		appliedHighlightKey = key;
-		chartStore.hoverKey = key;
+		chartStore.highlightSeries(key);
 	});
 
 	// Caller-driven overlay lines (demand / renewable share) — independent row

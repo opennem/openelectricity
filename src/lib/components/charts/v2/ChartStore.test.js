@@ -591,3 +591,28 @@ describe('average power', () => {
 		expect(chart.displayOverlayLines).toBe(chart.overlayLines);
 	});
 });
+
+describe('ChartStore highlight source', () => {
+	it('marks a highlight from outside the plot until the plot hovers a series', () => {
+		const chart = new ChartStore({ key: Symbol('test') });
+		chart.highlightSeries('coal');
+		expect(chart.hoverKey).toBe('coal');
+		expect(chart.externalHighlight).toBe(true);
+		chart.setHover(1000);
+		expect(chart.externalHighlight).toBe(true);
+		chart.setHover(1000, 'gas');
+		expect(chart.hoverKey).toBe('gas');
+		expect(chart.externalHighlight).toBe(false);
+	});
+
+	it('clears the mark with the highlight', () => {
+		const chart = new ChartStore({ key: Symbol('test') });
+		chart.highlightSeries('coal');
+		chart.highlightSeries(undefined);
+		expect(chart.hoverKey).toBeUndefined();
+		expect(chart.externalHighlight).toBe(false);
+		chart.highlightSeries('coal');
+		chart.clearHover();
+		expect(chart.externalHighlight).toBe(false);
+	});
+});

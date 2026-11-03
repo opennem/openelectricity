@@ -18,7 +18,7 @@
 	import { perfSpan } from '../perf.js';
 	import { bisectTimeRight, nearestIndexOfTime } from '../binary-search.js';
 	import { percentAxisTicks } from './percent-axis.js';
-	import { highlightOpacity } from './highlight.js';
+	import { highlightOpacity, HIGHLIGHT_DIMMED_OPACITY } from './highlight.js';
 
 	const { xScale, yScale, width } = getContext('LayerCake');
 
@@ -28,6 +28,7 @@
 	 * @property {string} valueKey
 	 * @property {string} [id] - The line's series id, matched against `highlightId`
 	 * @property {string | null} [highlightId] - The highlighted series, if any
+	 * @property {number} [dimmedOpacity] - Its opacity while another series is highlighted
 	 * @property {string} [colour]
 	 * @property {number} [strokeWidth]
 	 * @property {string} [dasharray] - SVG stroke-dasharray, e.g. '4 3' for a reference line
@@ -47,6 +48,7 @@
 		valueKey,
 		id = valueKey,
 		highlightId = null,
+		dimmedOpacity = HIGHLIGHT_DIMMED_OPACITY,
 		colour = '#C74523',
 		strokeWidth = 1.5,
 		dasharray = undefined,
@@ -123,7 +125,7 @@
 		stroke={colour}
 		stroke-width={strokeWidth}
 		stroke-dasharray={dasharray}
-		opacity={highlightOpacity(highlightId, id)}
+		opacity={highlightOpacity(highlightId, id, 1, dimmedOpacity)}
 		pointer-events="none"
 	/>
 	{#if onmousemove}

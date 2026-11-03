@@ -28,6 +28,7 @@
 	import NetTotalLine from './elements/NetTotalLine.svelte';
 	import OverlayLine from './elements/OverlayLine.svelte';
 	import OverlayArea from './elements/OverlayArea.svelte';
+	import { HIGHLIGHT_DIMMED_OPACITY, HOVER_DIMMED_OPACITY } from './elements/highlight.js';
 	import HatchOverlay from './elements/HatchOverlay.svelte';
 	import { indexOfTime } from './binary-search.js';
 	import { perfSpan } from './perf.js';
@@ -130,6 +131,11 @@
 
 	/** The highlighted series (a stack layer, overlay band or overlay line). */
 	let highlightId = $derived(chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null);
+	/** The rest fade almost away for a highlight from outside the plot (a
+	 * table row), only half for the plot's own hover. */
+	let dimmedOpacity = $derived(
+		chart.externalHighlight ? HIGHLIGHT_DIMMED_OPACITY : HOVER_DIMMED_OPACITY
+	);
 
 	/** @type {'stacked-area' | 'line'} */
 	let stackedAreaDisplay = $derived(chart.chartOptions.isChartTypeLine ? 'line' : 'stacked-area');
@@ -241,6 +247,7 @@
 						curveType={chart.chartOptions.curveFunction}
 						seriesColours={chart.seriesColours}
 						{highlightId}
+						{dimmedOpacity}
 						lighterNegative={chart.lighterNegative}
 						solidLineRange={chart.solidLineRange}
 						lineHitWidth={chart.chartStyles.lineHitWidth}
@@ -268,6 +275,7 @@
 						curveType={chart.chartOptions.curveFunction}
 						patternPrefix="{id}-overlay-hatch-{overlay.id}"
 						{highlightId}
+						{dimmedOpacity}
 					/>
 				{/each}
 
@@ -277,6 +285,7 @@
 						id={overlay.id}
 						valueKey={overlay.valueKey}
 						{highlightId}
+						{dimmedOpacity}
 						colour={overlay.colour}
 						strokeWidth={overlay.strokeWidth ?? 1.5}
 						dasharray={overlay.dasharray}

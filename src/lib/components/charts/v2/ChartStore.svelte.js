@@ -559,6 +559,11 @@ export default class ChartStore {
 	/** @type {string | undefined} */
 	hoverKey = $state();
 
+	/** Whether `hoverKey` was set from outside the plot (`highlightSeries`, a
+	 * table row) rather than by the plot's own pointer; the plot dims the
+	 * other series further then. */
+	externalHighlight = $state(false);
+
 	/** @type {number | undefined} */
 	hoverTime = $state();
 
@@ -778,7 +783,10 @@ export default class ChartStore {
 	 */
 	setHover(time, key) {
 		this.hoverTime = time;
-		if (key !== undefined) this.hoverKey = key;
+		if (key !== undefined) {
+			this.hoverKey = key;
+			this.externalHighlight = false;
+		}
 	}
 
 	/**
@@ -789,6 +797,16 @@ export default class ChartStore {
 	setHoverCategory(category, key) {
 		this.hoverCategory = category;
 		this.hoverKey = key;
+		this.externalHighlight = false;
+	}
+
+	/**
+	 * Highlight a series from outside the plot (a table row), or clear it.
+	 * @param {string | undefined} key
+	 */
+	highlightSeries(key) {
+		this.hoverKey = key;
+		this.externalHighlight = key !== undefined;
 	}
 
 	/**
@@ -798,6 +816,7 @@ export default class ChartStore {
 		this.hoverTime = undefined;
 		this.hoverCategory = undefined;
 		this.hoverKey = undefined;
+		this.externalHighlight = false;
 	}
 
 	/**

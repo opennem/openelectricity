@@ -27,6 +27,8 @@
 	 * @property {*} [curveType] - D3 curve type
 	 * @property {Object.<string, string>} [seriesColours] - Map of series id to colour
 	 * @property {string | null} [highlightId] - Currently highlighted series id
+	 * @property {number} [dimmedOpacity] - Stacked areas: the opacity of the layers
+	 *   that aren't highlighted
 	 * @property {number} [strokeWidth] - Line stroke width
 	 * @property {Record<string, number>} [strokeWidths] - Line display: per-series widths over `strokeWidth`
 	 * @property {number | null} [highlightStrokeWidth] - Line display: the highlighted series' width
@@ -53,6 +55,7 @@
 		curveType = curveLinear,
 		seriesColours = {},
 		highlightId = null,
+		dimmedOpacity = HIGHLIGHT_DIMMED_OPACITY,
 		strokeWidth = 1.5,
 		strokeWidths = {},
 		highlightStrokeWidth = null,
@@ -395,7 +398,7 @@
 					d={pathD}
 					fill={baseColor}
 					stroke="none"
-					opacity={getOpacity(d, 1, HIGHLIGHT_DIMMED_OPACITY)}
+					opacity={getOpacity(d, 1, dimmedOpacity)}
 					clip-path="url(#{clipId}-positive)"
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
@@ -410,7 +413,7 @@
 					d={pathD}
 					fill={getLighterColor(baseColor)}
 					stroke="none"
-					opacity={getOpacity(d, 1, HIGHLIGHT_DIMMED_OPACITY)}
+					opacity={getOpacity(d, 1, dimmedOpacity)}
 					clip-path="url(#{clipId}-negative)"
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
@@ -425,7 +428,7 @@
 					d={pathD}
 					fill={baseColor}
 					stroke="none"
-					opacity={getOpacity(d, 1, HIGHLIGHT_DIMMED_OPACITY)}
+					opacity={getOpacity(d, 1, dimmedOpacity)}
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
 					onblur={handleMouseOut}

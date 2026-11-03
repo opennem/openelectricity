@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HIGHLIGHT_DIMMED_OPACITY, highlightOpacity } from './highlight.js';
+import { HIGHLIGHT_DIMMED_OPACITY, HOVER_DIMMED_OPACITY, highlightOpacity } from './highlight.js';
 
 describe('highlightOpacity', () => {
 	it('keeps every mark at its own opacity with nothing highlighted', () => {
@@ -10,5 +10,10 @@ describe('highlightOpacity', () => {
 	it('keeps the highlighted mark and dims the rest', () => {
 		expect(highlightOpacity('demand', 'demand')).toBe(1);
 		expect(highlightOpacity('coal', 'demand')).toBe(HIGHLIGHT_DIMMED_OPACITY);
+	});
+
+	it('dims the rest to a given opacity', () => {
+		expect(highlightOpacity('coal', 'demand', 1, HOVER_DIMMED_OPACITY)).toBe(HOVER_DIMMED_OPACITY);
+		expect(highlightOpacity('demand', 'demand', 1, HOVER_DIMMED_OPACITY)).toBe(1);
 	});
 });

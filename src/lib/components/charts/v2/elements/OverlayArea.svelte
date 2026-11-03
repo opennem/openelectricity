@@ -17,7 +17,7 @@
 	import { area as d3Area, curveLinear } from 'd3-shape';
 	import { nearestIndexOfTime } from '../binary-search.js';
 	import { perfSpan } from '../perf.js';
-	import { highlightOpacity } from './highlight.js';
+	import { highlightOpacity, HIGHLIGHT_DIMMED_OPACITY } from './highlight.js';
 
 	const { xScale, yScale } = getContext('LayerCake');
 
@@ -33,6 +33,7 @@
 	 * @property {any} [curveType] - d3 curve factory, matching the host chart
 	 * @property {string} patternPrefix - Unique id prefix for the hatch patterns
 	 * @property {string | null} [highlightId] - The highlighted series, if any
+	 * @property {number} [dimmedOpacity] - Its opacity while another series is highlighted
 	 */
 
 	/** @type {Props} */
@@ -44,7 +45,8 @@
 		divergingBase = false,
 		curveType = curveLinear,
 		patternPrefix,
-		highlightId = null
+		highlightId = null,
+		dimmedOpacity = HIGHLIGHT_DIMMED_OPACITY
 	} = $props();
 
 	/** Drawn stack-top per rendered row, matching the chart's stacking mode. */
@@ -139,7 +141,7 @@
 		fill="url(#{patternPrefix}-{band.id})"
 		stroke={band.colour}
 		stroke-width="0.5"
-		opacity={highlightOpacity(highlightId, band.id)}
+		opacity={highlightOpacity(highlightId, band.id, 1, dimmedOpacity)}
 		pointer-events="none"
 	/>
 {/each}
