@@ -14,7 +14,7 @@
 	 * Two placements (the shell renders both and CSS shows one):
 	 *
 	 *   - `bar` (768px up) sits in the top nav. Hovering it says when the data
-	 *     last updated. Below `lg` the Region pill shortens and below `md`
+	 *     last updated; while a chart is inspected, its period is shaded. Below `lg` the Region pill shortens and below `md`
 	 *     the view switcher and range presets fold into dropdowns to make room;
 	 *     below `md` it takes at most 40% of the bar and truncates, so a long
 	 *     custom range never squeezes the controls out, and it never drops
@@ -50,6 +50,8 @@
 	} = $props();
 
 	const sticky = variant === 'sticky';
+	/** The bar readout's shade while it reads an inspected period. */
+	let inspectShade = $derived(inspectLabel === undefined ? '' : 'bg-mid-warm-grey/40');
 	/** @param {string} name */
 	const testId = (name) => (sticky ? `${name}-sticky` : name);
 
@@ -161,7 +163,8 @@
 					<button
 						{...mergeProps(props, { onclick: refresh })}
 						type="button"
-						class="range-label flex h-full min-w-0 items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors hover:bg-warm-grey focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
+						class="range-label flex h-full min-w-0 items-center cursor-pointer whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors {inspectShade ||
+							'hover:bg-warm-grey'} focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-grey"
 						aria-disabled={loading}
 						data-testid={testId('tracker-range-label')}
 					>
@@ -171,7 +174,7 @@
 			</Tooltip>
 		{:else}
 			<span
-				class="range-label flex h-full min-w-0 items-center whitespace-nowrap px-4 text-sm font-bold text-dark-grey"
+				class="range-label flex h-full min-w-0 items-center whitespace-nowrap rounded-md px-4 text-sm font-bold text-dark-grey transition-colors {inspectShade}"
 				aria-hidden={loading}
 				data-testid={testId('tracker-range-label')}>{@render text()}</span
 			>
