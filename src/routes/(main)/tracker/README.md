@@ -1427,7 +1427,9 @@ the row under the pointer, and on Panels the panel under it. A hovered card's co
 beside the pinned Region column (`scrollColumnsIntoView` in `table-styles.js`,
 shared with the fuel-tech table's focused columns). Both tables' value
 headers and cells share their classes and outlines (`columnFocusFor`,
-`valueHeaderClass`, `valueCellClass`, `valueCellEdges`). The line hit area is
+`valueHeaderClass`, `valueCellClass`, `valueCellEdges`), including the faint
+rule right of every value column but the last (`columnRule`, which the
+fuel-tech table's section headings add per cell). The line hit area is
 mirrored in `@chienleng/stratum-ui` (`chartStyles.lineHitWidth`).
 
 ### Growth

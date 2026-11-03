@@ -42,6 +42,15 @@ export function pinnedTableEdge(scrollLeft) {
 	return `sticky left-0 z-[1] border-r border-warm-grey after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-6 after:bg-linear-to-r after:from-black/5 after:to-transparent after:transition-opacity after:duration-200 ${scrollLeft > 0 ? 'after:opacity-100' : 'after:opacity-0'}`;
 }
 
+/** A value column's width in px: both tables' `min-width` sums it, and
+ * `valueHeaderClass` sets it (`w-[112px]`; keep the two in step). */
+export const VALUE_COLUMN_WIDTH = 112;
+
+/** Side padding for a value header or cell; the last column's right edge is
+ * the table's, so it sits a little further in.
+ * @param {boolean} last */
+const VALUE_CELL_PADDING = (last) => (last ? 'pl-3 pr-4' : 'px-3');
+
 /**
  * @param {string} text @param {boolean} last @param {string} [padding]
  * @param {boolean} [selected] - The inspected cell: white on OE red
@@ -52,7 +61,7 @@ export function tableValueCell(text, last, padding = 'py-1.5', selected = false)
 		: text === EMPTY_CELL
 			? 'text-mid-grey'
 			: 'text-dark-grey';
-	return `${last ? 'pr-3 pl-2' : 'px-2'} ${padding} whitespace-nowrap text-right font-mono tabular-nums transition-opacity duration-300 ${colour}`;
+	return `${VALUE_CELL_PADDING(last)} ${padding} whitespace-nowrap text-right font-mono tabular-nums transition-opacity duration-300 ${colour}`;
 }
 
 const FOCUS_EDGE = '#353535';
@@ -93,11 +102,19 @@ export function columnFocusFor(keys, focusedKeys) {
 	});
 }
 
+/** A faint rule right of each value column but the last (the table's own
+ * edge), in the pinned label column's colour. Value headers and cells carry
+ * it; a full-width row (a section heading) adds it per cell so it's unbroken.
+ * @param {boolean} last */
+export function columnRule(last) {
+	return last ? '' : 'border-r border-warm-grey';
+}
+
 /** A value column header: fixed width, snapping, the last column's wider
- * right padding, and the focused column's tint.
+ * right padding, the column rule and the focused column's tint.
  * @param {boolean} last @param {boolean} focused */
 export function valueHeaderClass(last, focused) {
-	return `w-[100px] snap-start text-right transition-colors ${last ? 'pr-3 pl-2' : 'px-2'} ${focused ? 'bg-warm-grey' : ''} ${TABLE_HEADER_CELL}`;
+	return `w-[112px] snap-start text-right transition-colors ${VALUE_CELL_PADDING(last)} ${columnRule(last)} ${focused ? 'bg-warm-grey' : ''} ${TABLE_HEADER_CELL}`;
 }
 
 /** @param {ColumnFocus} column */
@@ -105,12 +122,12 @@ export function valueHeaderEdges(column) {
 	return focusEdges({ top: column.focused, left: column.left, right: column.right });
 }
 
-/** A value cell: the focused column tints it, and where the focused row
- * crosses it the cell reads white on OE red.
+/** A value cell: the column rule; the focused column tints it, and where the
+ * focused row crosses it the cell reads white on OE red.
  * @param {string} text @param {boolean} last @param {string} padding
  * @param {boolean} rowFocused @param {ColumnFocus} column */
 export function valueCellClass(text, last, padding, rowFocused, column) {
-	return `${tableValueCell(text, last, padding, column.focused && rowFocused)} ${column.focused && !rowFocused ? 'bg-light-warm-grey' : ''}`;
+	return `${tableValueCell(text, last, padding, column.focused && rowFocused)} ${columnRule(last)} ${column.focused && !rowFocused ? 'bg-light-warm-grey' : ''}`;
 }
 
 /** A value cell's outline: its row's top and bottom while the row is focused,

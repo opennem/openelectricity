@@ -8,10 +8,12 @@
 		pinnedTableEdge,
 		scrollColumnsIntoView,
 		columnFocusFor,
+		columnRule,
 		valueCellClass,
 		valueCellEdges,
 		valueHeaderClass,
-		valueHeaderEdges
+		valueHeaderEdges,
+		VALUE_COLUMN_WIDTH
 	} from './table-styles.js';
 	import { TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
@@ -441,11 +443,6 @@
 	// strip anchors to it and paints above the value cells sliding under.
 	let pinnedEdgeClass = $derived(pinnedTableEdge(scrollLeft));
 
-	/** A faint rule right of each value column but the last (the table's own
-	 *  edge), run through the headers and section headings so it's unbroken.
-	 *  @param {boolean} last */
-	const columnRule = (last) => (last ? '' : 'border-r border-warm-grey');
-
 	/** @param {boolean} focused */
 	const stickyLabelCell = (focused) =>
 		`${pinnedEdgeClass} ${focused ? 'bg-light-warm-grey' : 'bg-white group-hover:bg-light-warm-grey'}`;
@@ -533,7 +530,7 @@
 			{@const columnFocused = columnFocus[index]}
 			{@const last = index === visibleColumns.length - 1}
 			<td
-				class="{valueCellClass(cell, last, cellPad, focused, columnFocused)} {columnRule(last)}"
+				class={valueCellClass(cell, last, cellPad, focused, columnFocused)}
 				style:box-shadow={valueCellEdges(focused, columnFocused, {
 					last,
 					lastRow: row.key === lastRowKey
@@ -606,7 +603,7 @@
 		     rules live on the cells instead of the row groups. -->
 		<table
 			aria-label="Fuel technology values"
-			style:min-width={`${160 + visibleColumns.length * 100}px`}
+			style:min-width={`${160 + visibleColumns.length * VALUE_COLUMN_WIDTH}px`}
 			class="w-full table-fixed border-separate border-spacing-0 select-none"
 		>
 			<thead class="bg-light-warm-grey">
@@ -642,10 +639,10 @@
 						<th
 							data-column={column.key}
 							data-focused={columnFocus[index].focused || undefined}
-							class="{valueHeaderClass(
+							class={valueHeaderClass(
 								index === visibleColumns.length - 1,
 								columnFocus[index].focused
-							)} {columnRule(index === visibleColumns.length - 1)}"
+							)}
 							style:box-shadow={valueHeaderEdges(columnFocus[index])}
 						>
 							{#if column.cycle}

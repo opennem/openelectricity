@@ -43,7 +43,8 @@
 		valueCellClass,
 		valueCellEdges,
 		valueHeaderClass,
-		valueHeaderEdges
+		valueHeaderEdges,
+		VALUE_COLUMN_WIDTH
 	} from './table-styles.js';
 	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
 	import TableOptions from './TableOptions.svelte';
@@ -792,7 +793,7 @@
 					class="overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-pl-(--region-w) scroll-smooth motion-reduce:scroll-auto"
 				>
 					<table
-						style:min-width={`${240 + metrics.length * 100}px`}
+						style:min-width={`${240 + metrics.length * VALUE_COLUMN_WIDTH}px`}
 						class="w-full table-fixed border-separate border-spacing-0 select-none"
 						aria-label="Region comparison values"
 					>

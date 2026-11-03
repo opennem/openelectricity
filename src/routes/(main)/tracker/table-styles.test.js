@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { columnFocusFor, valueCellEdges } from './table-styles.js';
+import {
+	columnFocusFor,
+	columnRule,
+	valueCellClass,
+	valueCellEdges,
+	valueHeaderClass
+} from './table-styles.js';
 
 describe('table value-column focus', () => {
 	it('outlines a focused column, and adjacent focused columns as one block', () => {
@@ -22,5 +28,17 @@ describe('table value-column focus', () => {
 		expect(valueCellEdges(false, column, { last: false, lastRow: false })).not.toContain('0 -1px');
 		expect(valueCellEdges(true, none, { last: true, lastRow: false })).toContain('-1px 0');
 		expect(valueCellEdges(false, none, { last: true, lastRow: true })).toBeUndefined();
+	});
+});
+
+describe('table column rules', () => {
+	const none = { focused: false, left: false, right: false };
+	it('rules off every value column but the last, in headers and cells', () => {
+		expect(columnRule(false)).toBe('border-r border-warm-grey');
+		expect(columnRule(true)).toBe('');
+		expect(valueHeaderClass(false, false)).toContain('border-r');
+		expect(valueHeaderClass(true, false)).not.toContain('border-r');
+		expect(valueCellClass('1', false, 'py-1.5', false, none)).toContain('border-r');
+		expect(valueCellClass('1', true, 'py-1.5', false, none)).not.toContain('border-r');
 	});
 });
