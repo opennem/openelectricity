@@ -8,10 +8,10 @@
 export const HIGHLIGHT_DIMMED_OPACITY = 0.1;
 
 /**
- * While the pointer on the plot highlights a series, the rest only half
- * fades: the reader is still reading the whole stack at that time.
+ * While the pointer on the plot highlights a series, the rest only fade a
+ * little: the reader is still reading the whole stack at that time.
  */
-export const HOVER_DIMMED_OPACITY = 0.5;
+export const HOVER_DIMMED_OPACITY = 0.4;
 
 /**
  * Opacity for a mark while `highlightId` may be set: full when nothing is
