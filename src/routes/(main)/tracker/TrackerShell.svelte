@@ -1,8 +1,9 @@
 <script>
 	/**
 	 * Tracker page chrome shared by every view route: the filter bar (view
-	 * switcher, region and the view's own controls and status), options menu,
-	 * notices, PNG export, the "Download data" dialog and shortcuts. Each view
+	 * switcher, region and the view's own controls and status), the Download
+	 * data icon (in the options menu on phones), options menu, notices, PNG
+	 * export, the "Download data" dialog and shortcuts. Each view
 	 * page composes it around its canvas and supplies what differs through
 	 * snippets and props. Charts and panels register their own downloads with
 	 * the shell's registry (`chart-downloads.svelte.js`); the page supplies
@@ -64,6 +65,8 @@
 	import { setTrackerNavBottom } from './tracker-sheet.js';
 	import { capturePngSnapshot, settleChartAnimations } from './png-export.js';
 	import DownloadDataModal from '$lib/components/charts/card/DownloadDataModal.svelte';
+	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import { mergeProps } from 'bits-ui';
 	import {
 		createChartDownloads,
 		setChartDownloads
@@ -324,6 +327,21 @@
 					</div>
 				{/snippet}
 
+				{#snippet actions()}
+					<Tooltip text="Download data" side="bottom">
+						{#snippet trigger({ props })}
+							<button
+								{...mergeProps(props, { onclick: () => (downloads.open = true) })}
+								type="button"
+								aria-label="Download data"
+								class="touch-hit p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer {TOUCH_ICON_BUTTON}"
+							>
+								<Download class="size-6 text-mid-grey {TOUCH_ICON}" aria-hidden="true" />
+							</button>
+						{/snippet}
+					</Tooltip>
+				{/snippet}
+
 				{#snippet options()}
 					<PageOptionsMenu
 						{isFullscreen}
@@ -335,13 +353,16 @@
 						onshowshortcuts={() => (showShortcuts = !showShortcuts)}
 					>
 						{#snippet extraSections({ close })}
-							<OptionsMenuItem
-								icon={Download}
-								onclick={() => {
-									close();
-									downloads.open = true;
-								}}>Download data</OptionsMenuItem
-							>
+							<!-- Wider screens have it as an icon beside the menu. -->
+							{#if belowTablet.current}
+								<OptionsMenuItem
+									icon={Download}
+									onclick={() => {
+										close();
+										downloads.open = true;
+									}}>Download data</OptionsMenuItem
+								>
+							{/if}
 							<OptionsMenuItem
 								icon={ImageDown}
 								onclick={() => {

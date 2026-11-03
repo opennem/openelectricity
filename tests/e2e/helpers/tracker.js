@@ -420,15 +420,20 @@ export async function openOptions(page) {
 }
 
 /**
- * Open Options → Download data and return the dialog. Reuses the dialog when
- * it is already open.
+ * Open Download data and return the dialog: the top nav's icon button, or
+ * Options → Download data on phones. Reuses the dialog when it is already
+ * open.
  * @param {Page} page
  */
 export async function openDownloads(page) {
 	const dialog = page.getByRole('dialog', { name: 'Download data' });
 	if (await dialog.isVisible()) return dialog;
-	const menu = await openOptions(page);
-	await menu.getByRole('button', { name: 'Download data', exact: true }).click();
+	const button = page.getByRole('button', { name: 'Download data', exact: true });
+	if (await button.isVisible()) await button.click();
+	else {
+		const menu = await openOptions(page);
+		await menu.getByRole('button', { name: 'Download data', exact: true }).click();
+	}
 	await expect(dialog).toBeVisible();
 	return dialog;
 }
@@ -438,7 +443,7 @@ export async function closeDownloads(page) {
 	const dialog = page.getByRole('dialog', { name: 'Download data' });
 	await page.keyboard.press('Escape');
 	await expect(dialog).toBeHidden();
-	// The pointer still rests where the menu's item was, over the metrics
+	// The pointer may still rest where the menu's item was, over the metrics
 	// strip; move it off so a strip tooltip can't cover the Options button.
 	await page.mouse.move(0, 0);
 }

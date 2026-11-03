@@ -29,6 +29,10 @@
 	 *   - `filter-bar-options`    → options dropdown on the right. Paired
 	 *     across all routes, animation: none.
 	 *
+	 * `actions` are the page's own icon buttons in a divided block of their
+	 * own before the options menu (after Feedback), from tablet width up;
+	 * phones have no dividers and keep them in the options menu.
+	 *
 	 * The animation keyframes live in `(main)/+layout.svelte`.
 	 *
 	 * @type {{
@@ -42,6 +46,7 @@
 	 *   back?: import('svelte').Snippet,
 	 *   stable?: import('svelte').Snippet,
 	 *   rest?: import('svelte').Snippet,
+	 *   actions?: import('svelte').Snippet,
 	 *   options?: import('svelte').Snippet
 	 * }}
 	 */
@@ -61,11 +66,17 @@
 		back,
 		stable,
 		rest,
+		actions,
 		options
 	} = $props();
 
 	// Touch-sized pages frame Feedback like their pills on phones.
 	const touch = hasTouchControls();
+
+	// A block behind a divider from tablet width up: the actions and options.
+	let dividedBlock = $derived(
+		`flex items-center tablet:border-l tablet:border-warm-grey ${isFullscreen ? 'tablet:pl-2 tablet:ml-2' : 'tablet:pl-4 tablet:ml-4'}`
+	);
 </script>
 
 <div
@@ -97,27 +108,32 @@
 			</div>
 		{/if}
 	</div>
-	<!-- No margin of its own: the options block's left margin matches its left
-	     padding, so Feedback and the options button sit equally either side of
-	     the divider (both buttons share the same padding). -->
-	{#if feedback && isFullscreen}
-		{#if touch}
-			<FeedbackIconButton
-				class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer {TOUCH_ICON_BUTTON}"
-				iconClass="size-6 text-mid-grey {TOUCH_ICON}"
-			/>
-		{:else}
-			<FeedbackIconButton />
-		{/if}
-	{/if}
-	{#if options}
-		<div
-			class="flex items-center tablet:border-l tablet:border-warm-grey {isFullscreen
-				? 'tablet:pl-2 tablet:ml-2'
-				: 'tablet:pl-4 tablet:ml-4'}"
-			style="view-transition-name: filter-bar-options"
-		>
-			{@render options()}
+	<!-- Feedback, the actions and the options in one gapless group: each
+	     divided block's left margin matches its left padding, so the buttons
+	     either side of a divider sit equally far from it (they share the same
+	     padding). Phones have no dividers, so the group keeps the bar's gap. -->
+	{#if (feedback && isFullscreen) || actions || options}
+		<div class="flex shrink-0 items-center max-tablet:gap-4">
+			{#if feedback && isFullscreen}
+				{#if touch}
+					<FeedbackIconButton
+						class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer {TOUCH_ICON_BUTTON}"
+						iconClass="size-6 text-mid-grey {TOUCH_ICON}"
+					/>
+				{:else}
+					<FeedbackIconButton />
+				{/if}
+			{/if}
+			{#if actions}
+				<div class="{dividedBlock} gap-1 max-tablet:hidden">
+					{@render actions()}
+				</div>
+			{/if}
+			{#if options}
+				<div class={dividedBlock} style="view-transition-name: filter-bar-options">
+					{@render options()}
+				</div>
+			{/if}
 		</div>
 	{/if}
 </div>

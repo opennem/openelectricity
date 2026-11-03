@@ -260,7 +260,8 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   filter-bar controls and range status, extra menu items, shortcuts and the
   workbook's Summary rows and file names. Compare's `+page.server.js` loads the CPI series only there.
 - **`TrackerShell.svelte`** — the chrome every view shares: view switcher,
-  region select, options menu (copy link, PNG export, Download data), notices,
+  region select, Download data icon (in the options menu on phones), options
+  menu (copy link, PNG export), notices,
   fullscreen and the shortcuts toast. It owns the download registry and the
   "Download data" dialog (see Data export). Its `<main>` gains `data-hydrated` once
   mounted: the server-rendered charts already contain svgs, so automation waits
@@ -693,7 +694,9 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   decimals in tonnes). Av price has one unit, so its header is static. A
   header choice pins that column until the page reloads; it is session state,
   not URL or localStorage, because the defaults follow the window's scale.
-- **Data export** — the options (⋮) menu's single **Download data** item opens
+- **Data export** — the top nav's **Download data** icon, between dividers
+  left of the options (⋮) menu (the menu's item on phones, which have no
+  dividers; `FullscreenFilterBar` `actions`), opens
   `DownloadDataModal` (`$lib/components/charts/card/`): a "Download as CSV" row for every chart and panel
   on screen, each with a download button, then a "Download as XLSX" row for
   the "All charts" workbook (a Summary sheet, then one sheet per listed chart
