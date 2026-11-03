@@ -441,6 +441,11 @@
 	// strip anchors to it and paints above the value cells sliding under.
 	let pinnedEdgeClass = $derived(pinnedTableEdge(scrollLeft));
 
+	/** A faint rule right of each value column but the last (the table's own
+	 *  edge), run through the headers and section headings so it's unbroken.
+	 *  @param {boolean} last */
+	const columnRule = (last) => (last ? '' : 'border-r border-warm-grey');
+
 	/** @param {boolean} focused */
 	const stickyLabelCell = (focused) =>
 		`${pinnedEdgeClass} ${focused ? 'bg-light-warm-grey' : 'bg-white group-hover:bg-light-warm-grey'}`;
@@ -528,7 +533,7 @@
 			{@const columnFocused = columnFocus[index]}
 			{@const last = index === visibleColumns.length - 1}
 			<td
-				class={valueCellClass(cell, last, cellPad, focused, columnFocused)}
+				class="{valueCellClass(cell, last, cellPad, focused, columnFocused)} {columnRule(last)}"
 				style:box-shadow={valueCellEdges(focused, columnFocused, {
 					last,
 					lastRow: row.key === lastRowKey
@@ -562,7 +567,7 @@
 				<!-- One cell per column, so a focused column's outline runs through. -->
 				{#each visibleColumns as column, index (column.key)}
 					<th
-						class="border-b border-warm-grey"
+						class="border-b border-warm-grey {columnRule(index === visibleColumns.length - 1)}"
 						style:box-shadow={focusEdges({
 							left: columnFocus[index].left,
 							right: columnFocus[index].right
@@ -637,10 +642,10 @@
 						<th
 							data-column={column.key}
 							data-focused={columnFocus[index].focused || undefined}
-							class={valueHeaderClass(
+							class="{valueHeaderClass(
 								index === visibleColumns.length - 1,
 								columnFocus[index].focused
-							)}
+							)} {columnRule(index === visibleColumns.length - 1)}"
 							style:box-shadow={valueHeaderEdges(columnFocus[index])}
 						>
 							{#if column.cycle}
