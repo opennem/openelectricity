@@ -5,7 +5,9 @@
  * excluded from browser history.
  *
  * The analysis view is the route (`/tracker/timeline`, `/tracker/profile`,
- * `/tracker/compare`), not a parameter.
+ * `/tracker/compare`), not a parameter. Every view holds and writes the whole
+ * selection and the views' keys don't overlap, so a view switch carries the
+ * full query: each view's choices ride along unread and are back on return.
  *
  * Schema (defaults omitted so the canonical URL stays clean):
  * - `profile-display` — `breakdown` for the Profile's per-series cards (default stacked)

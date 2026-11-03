@@ -330,6 +330,39 @@ describe('tracker URLs', () => {
 		expect(trackerView(null).value).toBe('timeline');
 	});
 
+	it('keeps every view’s selection through a round trip of view switches', () => {
+		const timeline = new URL(
+			'https://oe.test/tracker/timeline?region=qld1&group=detailed&hidden=coal_black' +
+				'&range=30d&interval=1d&overlay=demand&contribution=generation&emissions=volume'
+		);
+		let url = timeline;
+		for (const [view, change] of /** @type {const} */ ([
+			['profile', { profileInterval: '5m', profileDisplay: 'breakdown', profileToday: true }],
+			['compare', { regionComparison: { regions: ['qld1', 'sa1'], display: 'stripes' } }]
+		])) {
+			// A switch lands on the next route with the current query, and that
+			// view's own writes keep the other views' keys.
+			const next = new URL(`https://oe.test/tracker/${view}${url.search}`);
+			url = copiedTrackerUrl(next, { ...parseTrackerUrl(next.searchParams, context), ...change });
+		}
+		const back = parseTrackerUrl(url.searchParams, context);
+		const original = parseTrackerUrl(timeline.searchParams, context);
+		for (const key of /** @type {const} */ ([
+			'region',
+			'group',
+			'hiddenSeries',
+			'range',
+			'overlays',
+			'contributionMode',
+			'emissionsMode'
+		]))
+			expect(back[key]).toEqual(original[key]);
+		expect(back.profileInterval).toBe('5m');
+		expect(back.profileDisplay).toBe('breakdown');
+		expect(back.profileToday).toBe(true);
+		expect(back.regionComparison.display).toBe('stripes');
+	});
+
 	it('drops the retired view parameter and profile view, metric and series', () => {
 		const cases = [
 			['view=profile', ''],

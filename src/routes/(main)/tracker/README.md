@@ -236,8 +236,10 @@ chart names) with `compare-date-a` / `compare-date-b` (`YYYY-MM`; Timeline's
 own `compare-a` / `compare-b` are epoch ms). Defaults are omitted. Older links with the full ids
 (`nsw1`, `solar_generation`) still parse. Every Tracker list parameter
 (`hidden`, `overlay` and the two above) is written with bare commas
-(`readableQuery` in `tracker-url.js`), never `%2C`. Explicit view switches navigate to the bare view route, so every query
-setting starts at that view's defaults. Back/Forward
+(`readableQuery` in `tracker-url.js`), never `%2C`. Explicit view switches carry the whole query to the next view's route: every view holds and writes
+the full selection and the views' keys don't overlap, so each view's choices ride along unread and are
+back on return. Timeline and Profile share `region` and the fuel techs; Compare's region list is its
+own. Back/Forward
 and direct links restore the full historical selection. Explicit filter changes push history; settled gestures
 replace it. The top nav holds all three views' filters with uniform spacing and
 a divider after the switcher. Switching views is a route change, so the site's

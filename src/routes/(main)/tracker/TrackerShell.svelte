@@ -158,10 +158,11 @@
 		return () => observer.disconnect();
 	}
 
-	/** Each view is its own route; a bare path starts it with its defaults.
+	/** Each view is its own route; a switch carries the whole selection, so
+	 * every view's choices are back on return (see `tracker-url.js`).
 	 * @param {string} value */
 	function selectView(value) {
-		if (value !== view) goto(resolve(trackerView(value).route));
+		if (value !== view) goto(`${resolve(trackerView(value).route)}${shareUrl().search}`);
 	}
 
 	async function copyLink() {
