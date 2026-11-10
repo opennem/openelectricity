@@ -8,27 +8,61 @@ allowBuilds:
   utf-8-validate: true
   workerd: true
 
+# Supply-chain guard: refuse versions younger than 7 days (in minutes) so
+# freshly-published malicious releases have time to be flagged/yanked before
+# pnpm install/update picks them up. Lockfile pins are honoured regardless.
+# pnpm 11 reads this here; the old .npmrc `minimum-release-age` is ignored.
+minimumReleaseAge: 10080
+
 # Force-bump vulnerable transitive copies past their patched versions to clear
 # Dependabot alerts. Each key is scoped to the affected range only, so unrelated
 # older copies (e.g. ws@1.x/4.x/7.x) other packages need are left untouched.
 #   cookie@0.6.0    (GHSA-pxg6-pf52-xh8x) pulled by @sveltejs/kit + bits-ui/runed
 #   uuid@8.3.2      (GHSA-w5hq-g745-h8pq) pulled by @clerk/clerk-js' unused Solana
 #                   wallet adapters; >=11.1.1 dedupes onto the 14.0.0 already present
-#   undici@7.24.8   (6 alerts, incl. SOCKS5 highs) via adapter-cloudflare→wrangler→miniflare
+#   undici@7.x      (cache, cookie, CRLF, TLS-bypass and DoS alerts up to 7.30.0) via
+#                   adapter-cloudflare→wrangler→miniflare
+#   undici@8.x      (TLS-bypass and DoS alerts up to 8.12.1) via vitest→jsdom
 #   ws@8.18.x       (GHSA-96hv-2xvq-fx4p) via adapter-cloudflare + @clerk/clerk-js→viem/solana
-#   js-yaml@4.1.1   (GHSA-h67p-54hq-rp68) via eslint→@eslint/eslintrc
+#   js-yaml@4.x     (merge-key and !!omap CPU alerts up to 4.3.1) via eslint→@eslint/eslintrc
 #   esbuild@0.27.x  (GHSA-g7r4-m6w7-qqqr) via vite; forced past vite's own ^0.27.0 pin
-#   brace-expansion@1.1.14 (GHSA-3jxr-9vmj-r5cp) via eslint→minimatch; 1.x line only
-#   shell-quote@1.8.4      (GHSA-395f-4hp3-45gv) via @clerk/clerk-js' unused react-native
-#   sharp@0.34.5           (GHSA-f88m-g3jw-g9cj) via adapter-cloudflare→wrangler→miniflare
-#                          (our own sharp direct dep is already 0.35.1)
+#   brace-expansion@1.x    (CPU DoS alerts up to 1.1.20) via eslint→minimatch; 1.x line only
+#   shell-quote@1.x        (quote() command injection up to 1.10.x) via @clerk/clerk-js'
+#                          unused react-native
+#   sharp@0.34.5           (GHSA-f88m-g3jw-g9cj, libheif) via adapter-cloudflare→wrangler→
+#                          miniflare; floor matches our own direct sharp dep
+#   devalue@5.8.x          (typed-array allocation bypass) via @sveltejs/kit + svelte;
+#                          ships in the client bundle
+#   browserslist@4.28.6 + baseline-browser-mapping@2.10.x (crash/DoS on untrusted
+#                          input) via @clerk/clerk-js' unused react-native→babel
+#   stream-json@1.9.1      (O(depth²) filter DoS) via @clerk/clerk-js' unused Solana→jayson
+#   postcss-selector-parser@6.0.10 / 7.1.1 (quadratic parsing + AST recursion DoS) via
+#                          @tailwindcss/typography (exact 6.0.10 pin) and eslint-plugin-svelte
+#   postcss@8.5.14         (sourceMappingURL .map file disclosure) via vite's own copy
+#   nanoid@3.3.12          (generator infinite loops) via @sanity/client
+#   fflate@0.7.4           (ZIP64 unzipSync infinite loop) via satori→@shuding/opentype.js
+#   image-size@1.2.1       (parser infinite-loop DoS) via @clerk/clerk-js' unused
+#                          react-native→metro; no 1.x fix, forced onto 2.x
+#   source-map-js@1.2.1    (indexed source-map DoS) via @tailwindcss/node + css-tree
 overrides:
   cookie@<0.7.0: ^0.7.0
   uuid@<11.1.1: '>=11.1.1'
-  undici@>=7.0.0 <7.28.0: ^7.28.0
+  undici@>=7.0.0 <7.30.1: ^7.30.1
+  undici@>=8.0.0 <8.12.2: ^8.12.2
   ws@>=8.0.0 <8.21.0: ^8.21.0
-  js-yaml@>=4.0.0 <4.2.0: ^4.2.0
+  js-yaml@>=4.0.0 <4.3.2: ^4.3.2
   esbuild@>=0.27.3 <0.28.1: ^0.28.1
-  brace-expansion@<1.1.16: ^1.1.16
-  shell-quote@<1.9.0: ^1.9.0
-  sharp@<0.35.0: ^0.35.0
+  brace-expansion@<1.1.21: ^1.1.21
+  shell-quote@<1.11.0: ^1.11.0
+  sharp@<0.35.4: ^0.35.4
+  devalue@<5.9.3: ^5.9.3
+  browserslist@<4.28.7: ^4.28.7
+  baseline-browser-mapping@>=2.0.0 <2.11.0: ^2.11.0
+  stream-json@<3.5.0: ^3.5.0
+  postcss-selector-parser@<6.1.5: ^6.1.5
+  postcss-selector-parser@>=7.0.0 <7.1.6: ^7.1.6
+  postcss@<8.5.23: ^8.5.23
+  nanoid@<3.3.18: ^3.3.18
+  fflate@>=0.7.0 <0.7.5: ^0.7.5
+  image-size@>=0.6.3 <2.0.3: ^2.0.3
+  source-map-js@<1.2.2: ^1.2.2
