@@ -187,7 +187,9 @@ function badgesMarkup(fuelTechs, ringColour) {
 		.map((ft, i) => {
 			const icon = iconDataUri(ft, needsDarkText(ft) ? '#0b0b0b' : '#ffffff');
 			const iconImg = icon ? `<img style="width:44px;height:44px;" src="${icon}" />` : '';
-			return `<div style="display:flex;align-items:center;justify-content:center;width:74px;height:74px;border-radius:9999px;background:${fuelColour(
+			// border-box keeps the 74px badge inclusive of its ring: newer satori
+			// follows the CSS content-box default, which would grow it to 82px.
+			return `<div style="display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:74px;height:74px;border-radius:9999px;background:${fuelColour(
 				ft
 			)};border:4px solid ${ringColour};margin-right:${i ? -18 : 0}px;box-shadow:0 3px 10px rgba(0,0,0,0.28);">${iconImg}</div>`;
 		})
