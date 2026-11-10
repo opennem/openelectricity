@@ -1,18 +1,4 @@
 {
-	"0WNSF": {
-		"v": 1,
-		"photo": null,
-		"data": {
-			"fuelTechs": [
-				"solar_utility"
-			],
-			"dominant": "solar_utility",
-			"capacity": 100,
-			"status": "committed",
-			"region": "VIC",
-			"name": "Winton North"
-		}
-	},
 	"ADP": {
 		"v": 1,
 		"photo": null,
@@ -6672,7 +6658,7 @@
 			],
 			"dominant": "battery",
 			"capacity": 120,
-			"status": "commissioning",
+			"status": "operating",
 			"region": "SA",
 			"name": "Summerfield 2"
 		}
@@ -7682,7 +7668,7 @@
 				"gas_steam"
 			],
 			"dominant": "gas_steam",
-			"capacity": 840,
+			"capacity": 630,
 			"status": "operating",
 			"region": "SA",
 			"name": "Torrens Island"
@@ -8374,6 +8360,20 @@
 			"status": "operating",
 			"region": "SA",
 			"name": "Wingfield 2"
+		}
+	},
+	"WINNSF1": {
+		"v": 1,
+		"photo": null,
+		"data": {
+			"fuelTechs": [
+				"solar_utility"
+			],
+			"dominant": "solar_utility",
+			"capacity": 100,
+			"status": "committed",
+			"region": "VIC",
+			"name": "Winton North"
 		}
 	},
 	"WINTSF1": {
