@@ -1,6 +1,33 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
+const INSPECTOR_LOAD = "import('virtual:svelte-inspector-path:load-inspector.js')";
+
+/**
+ * Dev only: the Svelte Inspector appends its loader to Vite's client
+ * (`/@vite/client`). Vite also imports that client into module workers it
+ * serves — e.g. MapLibre 6's worker — where the inspector's CSS then throws
+ * "document is not defined". Load the inspector only where a document exists.
+ * @returns {import('vite').Plugin}
+ */
+function inspectorOutsideWorkers() {
+	return {
+		name: 'oe:inspector-outside-workers',
+		apply: 'serve',
+		enforce: 'post',
+		transform: {
+			filter: { id: /vite\/dist\/client\/client\.mjs(?:\?|$)/ },
+			handler(code) {
+				if (!code.includes(INSPECTOR_LOAD)) return;
+				return code.replace(
+					INSPECTOR_LOAD,
+					`if (typeof document !== 'undefined') ${INSPECTOR_LOAD}`
+				);
+			}
+		}
+	};
+}
+
 export default defineConfig({
 	server: {
 		// openelectricity.localhost, not localhost: cookies are port-blind, so
@@ -14,7 +41,7 @@ export default defineConfig({
 		port: 7602,
 		strictPort: true
 	},
-	plugins: [sveltekit()],
+	plugins: [sveltekit(), inspectorOutsideWorkers()],
 	optimizeDeps: {
 		// MapLibre 6's worker registration imports `…/maplibre-gl-worker.mjs?worker&url`,
 		// a Vite-only query esbuild's dev pre-bundler can't read. Leave it to Vite,
