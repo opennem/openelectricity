@@ -7,6 +7,8 @@
 		GeoJSONSource,
 		CircleLayer
 	} from 'svelte-maplibre-gl';
+	// Registers MapLibre 6's worker URL with Vite (once per page, idempotent).
+	import 'svelte-maplibre-gl/vite';
 	import MapLegend from './MapLegend.svelte';
 	import { collapseMapAttribution } from './collapse-attribution.js';
 	import { mapStyleForTheme } from './map-style.js';

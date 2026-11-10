@@ -9,6 +9,8 @@
 		SymbolLayer,
 		FillLayer
 	} from 'svelte-maplibre-gl';
+	// Registers MapLibre 6's worker URL with Vite (once per page, idempotent).
+	import 'svelte-maplibre-gl/vite';
 	import { backOut } from 'svelte/easing';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { sumUnitCapacities } from '$lib/utils/capacity';

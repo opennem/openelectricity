@@ -11,6 +11,8 @@
 	 */
 
 	import { MapLibre, NavigationControl, AttributionControl } from 'svelte-maplibre-gl';
+	// Registers MapLibre 6's worker URL with Vite (once per page, idempotent).
+	import 'svelte-maplibre-gl/vite';
 	import TransmissionLinesLayer from '$lib/components/map/TransmissionLinesLayer.svelte';
 	import { allBandsVisible, transmissionBandFilter } from '$lib/facilities/transmission-bands.js';
 	import FlowArcsLayer from '$lib/components/map/FlowArcsLayer.svelte';

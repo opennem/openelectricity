@@ -7,6 +7,8 @@
 		LineLayer,
 		NavigationControl
 	} from 'svelte-maplibre-gl';
+	// Registers MapLibre 6's worker URL with Vite (once per page, idempotent).
+	import 'svelte-maplibre-gl/vite';
 	import { DragHandle } from '$lib/components/ui/panel';
 
 	/**

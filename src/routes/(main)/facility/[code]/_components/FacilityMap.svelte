@@ -1,5 +1,7 @@
 <script>
 	import { MapLibre, Marker, AttributionControl } from 'svelte-maplibre-gl';
+	// Registers MapLibre 6's worker URL with Vite (once per page, idempotent).
+	import 'svelte-maplibre-gl/vite';
 	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
 	import TransmissionLinesLayer from '$lib/components/map/TransmissionLinesLayer.svelte';
 	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';

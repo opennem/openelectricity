@@ -15,6 +15,15 @@ export default defineConfig({
 		strictPort: true
 	},
 	plugins: [sveltekit()],
+	optimizeDeps: {
+		// MapLibre 6's worker registration imports `…/maplibre-gl-worker.mjs?worker&url`,
+		// a Vite-only query esbuild's dev pre-bundler can't read. Leave it to Vite,
+		// and pre-bundle maplibre-gl as its own entry so that module and the
+		// (pre-bundled) svelte-maplibre-gl share one instance — otherwise
+		// setWorkerUrl lands on a copy the maps never use.
+		include: ['maplibre-gl'],
+		exclude: ['svelte-maplibre-gl/vite']
+	},
 	build: {
 		// Clerk (~1.5 MB) and MapLibre (~1.0 MB) are lazy-loaded on auth/map routes only.
 		// Bumped above their size so the warning still fires for accidental regressions.
