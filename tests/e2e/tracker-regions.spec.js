@@ -14,7 +14,8 @@ import {
 	regionRow,
 	regionsFixture,
 	regionsReady,
-	regionsTable
+	regionsTable,
+	rangeText
 } from './helpers/tracker.js';
 
 /**
@@ -129,7 +130,7 @@ test('regional toggles, national sums, failure isolation and retry', async ({ pa
 	).toHaveCount(0);
 });
 
-test('view routes reset query settings while history restores each view and its top-nav filters', async ({
+test('view routes carry the query while history restores each view and its top-nav filters', async ({
 	page
 }) => {
 	await regionsFixture(page);
@@ -143,11 +144,14 @@ test('view routes reset query settings while history restores each view and its 
 	// After the view switcher, and between the chart picker and the interval.
 	await expect(nav.getByRole('separator')).toHaveCount(2);
 	await nav.getByRole('button', { name: 'Profile', exact: true }).click();
-	await expect(page).toHaveURL(/\/tracker\/profile$/);
+	// View switches carry the whole query, so Compare's choices ride along.
+	await expect(page).toHaveURL(
+		'/tracker/profile?range=30d&compare-interval=1M&compare-charts=intensity&unknown=1'
+	);
 	await pickNavOption(page, 'Window', '7 days', '28 days');
 	await nav.getByRole('button', { name: 'Breakdown', exact: true }).click();
 	await nav.getByRole('button', { name: 'Timeline', exact: true }).click();
-	await expect(page).toHaveURL(/\/tracker\/timeline$/);
+	await expect(page).toHaveURL(/\/tracker\/timeline\?.*profile-display=breakdown/);
 	// Views are routes: let the navigation finish before going back through it.
 	await expect(nav.locator('[data-view="timeline"]')).toBeVisible();
 	await page.goBack();
@@ -161,11 +165,13 @@ test('view routes reset query settings while history restores each view and its 
 	await page.goForward();
 	await expect(navPill(page, '7 days')).toBeVisible();
 	await nav.getByRole('button', { name: 'Compare', exact: true }).click();
-	await expect(page).toHaveURL(/\/tracker\/compare$/);
+	// Compare's own choices are back from the carried query.
+	await expect(page).toHaveURL(
+		/\/tracker\/compare\?.*compare-interval=1M&compare-charts=intensity/
+	);
 	await regionsReady(page);
-	// The default 12-month rolling interval reads as its grain plus the switch.
 	await expect(nav.getByRole('button', { name: 'Month', exact: true })).toBeVisible();
-	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(2);
+	await expect(page.getByRole('group', { name: /comparison chart$/ })).toHaveCount(1);
 	await expect(nav.locator('[data-view="compare"]')).toHaveCSS('opacity', '1');
 	await page.screenshot({ path: 'test-results/tracker-top-nav.png' });
 });
@@ -234,7 +240,7 @@ test('late responses cannot restore a deselected region; interval and zoom choic
 		.getByRole('option', { name: 'Fin-Year', exact: true })
 		.click();
 	await expect(page).toHaveURL(/compare-interval=fy/);
-	await expect(page.getByTestId('tracker-range-label')).toHaveText(/ — FY2026$/);
+	await expect(rangeText(page)).toHaveText(/ — FY2026$/);
 	await page.getByRole('group', { name: 'Carbon intensity comparison chart' }).hover();
 	await page.getByRole('button', { name: 'Zoom in', exact: true }).first().click();
 	await expect(page).toHaveURL(/compare-start=/);
@@ -316,7 +322,7 @@ async function inspectLatestPoints(page, expected) {
 			await page.mouse.move(point.x - 100, point.y + 50);
 			await page.mouse.move(point.x, point.y);
 			await expect(chart.getByTestId('chart-floating-tooltip')).toHaveCount(0);
-			await expect(page.getByTestId('tracker-range-label')).toHaveText(expected);
+			await expect(rangeText(page)).toHaveText(expected);
 			const hoverLine = chart.locator('.line-x');
 			await expect(hoverLine).toHaveCount(1);
 			await expect
@@ -334,7 +340,7 @@ async function inspectLatestPoints(page, expected) {
 		await chart.getByRole('button', { name: /Inspect .* values/ }).focus();
 		await page.keyboard.press('Enter');
 		await page.mouse.move(1, 1);
-		await expect(page.getByTestId('tracker-range-label')).toHaveText(expected);
+		await expect(rangeText(page)).toHaveText(expected);
 		await expect(chart.locator('.line-x')).toHaveCount(1);
 		const pinnedX = await chart
 			.locator('.line-x')
@@ -673,7 +679,7 @@ test('intervals match Timeline: grains, a rolling switch and a calendar-period f
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	await page.goto('/tracker/compare');
 	await regionsReady(page);
-	const readout = page.getByTestId('tracker-range-label');
+	const readout = rangeText(page);
 	// Rolling stays on across grains that have a rolling variant.
 	await pickNavOption(page, 'Interval', 'Month', 'Season');
 	await expect(page).toHaveURL(/compare-interval=12mr-season/);

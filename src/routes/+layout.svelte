@@ -1,5 +1,6 @@
 <script>
 	import '../app.css';
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { isNonProductionHost } from '#lib/utils/environment.js';
 	import { trackBackNavigation } from '#lib/utils/back-navigation.js';
@@ -7,6 +8,12 @@
 	let { children } = $props();
 
 	trackBackNavigation();
+
+	// Flag the document once the app has hydrated, so e2e tests can wait for
+	// event handlers to be attached before they interact with the page.
+	onMount(() => {
+		document.documentElement.dataset.hydrated = '';
+	});
 
 	const DEV_TITLE_PREFIX = '[DEV] ';
 

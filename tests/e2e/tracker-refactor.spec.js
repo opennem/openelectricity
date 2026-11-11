@@ -18,7 +18,8 @@ import {
 	pickNavOption,
 	trackerFixture,
 	trackerReady,
-	styleButton
+	styleButton,
+	rangeText
 } from './helpers/tracker.js';
 
 async function openPng(page) {
@@ -1437,7 +1438,7 @@ test('breakdown linear charts pin a slot on click and share it, with no pan or z
 	await expect(page.getByRole('button', { name: /pan and zoom/ })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /^Zoom (in|out)$/ })).toHaveCount(0);
 	const strips = page.getByTestId('chart-tooltip-strip');
-	const readout = page.getByTestId('tracker-range-label');
+	const readout = rangeText(page);
 	// One click pins the slot on every card, the readout and the table.
 	const box = await areas.first().boundingBox();
 	if (!box) throw new Error('chart not laid out');
@@ -1445,8 +1446,9 @@ test('breakdown linear charts pin a slot on click and share it, with no pan or z
 	await page.mouse.move(0, 0);
 	await expect(readout).toHaveText(/^\d\d:\d\d–\d\d:\d\d$/);
 	const pinned = await readout.innerText();
+	// The readout names the slot; every card's strip shows its value there.
 	const count = await strips.count();
-	for (let i = 0; i < count; i++) await expect(strips.nth(i)).toContainText(pinned);
+	for (let i = 0; i < count; i++) await expect(strips.nth(i)).toContainText('Av.');
 	// Clicking the pinned slot again releases it everywhere.
 	await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 	await page.mouse.move(0, 0);
@@ -1499,21 +1501,20 @@ test('stacked profile area and radial bars share one hover', async ({ page }) =>
 	await page.locator('main[data-hydrated]').waitFor();
 	const stack = card(page, 'Average over 7 full days');
 	const area = stack.locator('.stratum-chart-area');
-	const tooltip = stack.getByTestId('chart-tooltip-strip');
 	const dial = page
 		.getByRole('group', { name: 'Average by hour', exact: true })
 		.getByRole('img', { name: /average by hour of day$/ });
 	const dialReadout = page
 		.getByRole('group', { name: 'Average by hour', exact: true })
 		.getByTestId('dial-readout');
-	const readout = page.getByTestId('tracker-range-label');
+	const readout = rangeText(page);
 	await expect(stack.locator('path.path-area').first()).toBeVisible();
-	// Hovering the area marks its slot's hour on the dial.
+	// Hovering the area marks its slot's hour on the dial; the range readout
+	// names the slot and the dial's readout gives its value.
 	await area.hover({ position: { x: 200, y: 120 } });
-	const slot = (await tooltip.textContent())?.match(/(\d\d):\d\d–\d\d:\d\d/);
-	expect(slot).not.toBeNull();
+	await expect(readout).toHaveText(/^\d\d:\d\d–\d\d:\d\d$/);
 	await expect(dial.getByTestId('radial-hover')).toHaveCount(1);
-	await expect(dialReadout).toContainText(`${slot?.[1]}:00–`);
+	await expect(dialReadout).toContainText('MWh');
 	await page.mouse.move(0, 0);
 	await expect(dial.getByTestId('radial-hover')).toHaveCount(0);
 	// Hovering the dial's 12:00 hour marks it on the area; the table and readout
@@ -1523,11 +1524,10 @@ test('stacked profile area and radial bars share one hover', async ({ page }) =>
 	const box = await dial.boundingBox();
 	if (!box) throw new Error('dial not laid out');
 	await page.mouse.move(box.x + box.width / 2 + 3, box.y + box.height / 2 - 20);
-	await expect(dialReadout).toContainText('12:00–13:00');
-	await expect(tooltip).toContainText('12:00–');
 	await expect(readout).toHaveText('12:00–13:00');
+	await expect(dialReadout).toContainText('MWh');
 	await page.mouse.move(0, 0);
-	await expect(tooltip).not.toContainText('12:00–');
+	await expect(readout).toHaveText(/25.*31 Aug/);
 });
 
 test('Stratum profiles support hover, keyboard pinning, table filtering and bounded zoom without fetching', async ({
@@ -1553,24 +1553,22 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	for (let i = 1; i < edges.length; i++) expect(edges[i].start).toBeCloseTo(edges[i - 1].end, 2);
 	const area = stack.locator('.stratum-chart-area');
 	const tooltip = stack.getByTestId('chart-tooltip-strip');
-	const readout = page.getByTestId('tracker-range-label');
+	const readout = rangeText(page);
 	await expect(readout).toHaveText(/25.*31 Aug/);
+	// The range readout names the hovered slot as a bare clock range.
 	await area.hover({ position: { x: 200, y: 120 } });
-	await expect(tooltip).toContainText(/\d\d:\d\d–\d\d:\d\d/);
-	await expect(tooltip).not.toContainText('UTC');
-	await expect(tooltip).not.toContainText('2000');
+	await expect(readout).toHaveText(/^\d\d:\d\d–\d\d:\d\d$/);
 	await page.mouse.move(0, 0);
 	const inspect = stack.getByRole('button', { name: /^Inspect / });
 	await inspect.focus();
 	await inspect.press('ArrowRight');
-	await expect(tooltip).toContainText('00:30–01:00');
 	// The readout and the table follow the inspected half-hour.
 	await expect(readout).toHaveText('00:30–01:00');
 	await inspect.press('Enter');
 	await page.mouse.move(0, 0);
-	await expect(tooltip).toContainText('00:30–01:00');
+	await expect(readout).toHaveText('00:30–01:00');
 	await inspect.press('Escape');
-	await expect(tooltip).not.toContainText('00:30–01:00');
+	await expect(tooltip).toHaveText('');
 	await expect(readout).toHaveText(/25.*31 Aug/);
 	const coal = table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' });
 	await coal.click();
@@ -1718,7 +1716,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	// just right of straight up is 12:00–13:00 (noon at the top, clockwise).
 	const dial = await clocks.first().boundingBox();
 	await page.mouse.move(dial.x + dial.width / 2 + 3, dial.y + dial.height / 2 - 20);
-	await expect(page.getByTestId('dial-readout').first()).toContainText('12:00–13:00');
+	await expect(readout).toHaveText('12:00–13:00');
 	await expect(clocks.first().getByTestId('radial-hover')).toHaveCount(1);
 	// The hovered hour's time reads on the arc, in place of the fixed noon label.
 	await expect(clocks.first().getByTestId('dial-hover-time')).toHaveText('12:00');
@@ -1733,7 +1731,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await expect(dialToday).toHaveCount(4);
 	await expect(page.getByTestId('dial-readout').first()).not.toContainText('Today');
 	await page.mouse.move(dial.x + dial.width / 2 - 3, dial.y + dial.height / 2 + 20);
-	await expect(page.getByTestId('dial-readout').first()).toContainText('00:00–01:00');
+	await expect(readout).toHaveText('00:00–01:00');
 	await expect(dialToday.first()).toHaveText(/^Today \S+ MW$/);
 	await expect(dialToday.first()).toHaveCSS('text-align', 'center');
 	// With nothing hovered, both read the average across the hours.
@@ -1746,7 +1744,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await expect(readout).toHaveText('12:00–13:00');
 	await expect(table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' })).toContainText('100');
 	// The dials share the hovered hour.
-	await expect(page.getByTestId('dial-readout').nth(1)).toContainText('12:00–13:00');
+	await expect(clocks.nth(1).getByTestId('radial-hover')).toHaveCount(1);
 	// Loads read as positive on the dial: charging's 400 MW grows outward.
 	const charging = page.getByRole('img', { name: /Charging.* average by hour of day$/ });
 	await expect(charging).toHaveCount(1);
@@ -1799,9 +1797,8 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	await expect(showToday).toHaveAttribute('aria-checked', 'false');
 	await expect(page).toHaveURL(/profile-today=1/);
 	await expect(heatmaps.first().locator('circle[stroke="#C74523"]')).toHaveCount(0);
-	// Heatmap cards are mini cards, titled with an h6 like the scenarios' mini
-	// charts.
-	await expect(page.locator('h6').filter({ hasText: /^Coal$/ })).toBeVisible();
+	// Heatmap cards share the other styles' card header.
+	await expect(card(page, 'Coal')).toBeVisible();
 	// Enlarge opens a card in the lightbox; ← / → step through the cards, and
 	// Escape closes it.
 	await page.getByRole('button', { name: 'Enlarge Coal', exact: true }).click();
@@ -1826,7 +1823,7 @@ test('Stratum profiles support hover, keyboard pinning, table filtering and boun
 	}).toPass();
 	await expect(heatmaps.first().getByTestId('dial-hover-time')).toHaveText('12:00');
 	await expect(table.locator('th[data-column="2026-08-31"]')).toHaveClass(/bg-warm-grey/);
-	await expect(page.getByTestId('dial-readout').nth(1)).toContainText('12:00–12:30');
+	await expect(heatmaps.nth(1).getByTestId('dial-hover-time')).toHaveText('12:00');
 	// The innermost ring is the oldest day, and its column comes into view.
 	// Mid-way through the innermost of its seven rings, from the dial's
 	// geometry: a 48px margin and a hub at 22% of the radius.
@@ -1908,7 +1905,7 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	const api = await trackerFixture(page, { contributions: true });
 	await page.goto('/tracker/profile?profile-end=2026-08-31');
 	const table = page.locator('#tracker-table-panel');
-	const readout = page.getByTestId('tracker-range-label');
+	const readout = rangeText(page);
 	// Both stacked charts show (the dial in the table panel), with no stacked style to pick.
 	await expect(card(page, 'Average over 7 full days').locator('path.path-area')).toHaveCount(4);
 	await expect(navPill(page, 'Stacked area')).toHaveCount(0);
@@ -1943,7 +1940,6 @@ test('Stacked shows the stacked area beside radial bars that stack every visible
 	await clock.scrollIntoViewIfNeeded();
 	const dial = await clock.boundingBox();
 	await page.mouse.move(dial.x + dial.width / 2 + 3, dial.y + dial.height / 2 - 20);
-	await expect(stack.getByTestId('dial-readout')).toContainText('12:00–13:00');
 	await expect(stack.getByTestId('dial-readout')).toContainText('MWh net');
 	await expect(readout).toHaveText('12:00–13:00');
 	await expect(table.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' })).toContainText('100');
@@ -1975,7 +1971,7 @@ test('time-of-day profiles keep requests bounded and reproduce selections and CS
 	// The WEM fixture has coal and wind: a chart each, then spot price.
 	const charts = page.getByRole('group', { name: /interactive chart$/ });
 	await expect(charts).toHaveCount(3);
-	await expect(page.getByTestId('tracker-range-label')).toHaveText(/25.*31 Aug/);
+	await expect(rangeText(page)).toHaveText(/25.*31 Aug/);
 	expect([...api.requests].sort()).toEqual(['power', 'price', 'renewables']);
 	for (const [from, days] of [
 		[7, 14],
@@ -2049,20 +2045,23 @@ test('time-of-day profiles keep requests bounded and reproduce selections and CS
 	await expect(charts).toHaveCount(3);
 });
 
-test('time-of-day switches reset settings, restore history and fit narrow screens', async ({
+test('time-of-day switches carry the query, restore history and fit narrow screens', async ({
 	page
 }, testInfo) => {
 	await trackerFixture(page);
 	await page.goto(
 		'/tracker/profile?profile-end=2026-08-31&profile-days=14&range=30d&interval=1h&hidden=coal&transform=proportion'
 	);
+	await page.locator('main[data-hydrated]').waitFor();
 	const original = page.url();
 	const stack = card(page, 'Average over 14 full days').locator('.stratum-chart');
 	await expect(stack).toBeVisible();
 	await page.getByRole('button', { name: 'Timeline', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Timeline', exact: true })).toBeVisible();
 	await expect(card(page, 'Generation')).toBeVisible();
-	expect(new URL(page.url()).search).toBe('');
+	// View switches carry the whole query: Timeline reads its own keys (and
+	// the shared hidden sources) and holds the Profile's for the way back.
+	expect(new URL(page.url()).search).toBe(new URL(original).search);
 	await page.goBack();
 	await expect(page.getByRole('button', { name: 'Profile', exact: true })).toBeVisible();
 	await expect(page).toHaveURL(original);
@@ -2455,6 +2454,9 @@ test('idle warming stays near the selected range and other grains load only on d
 	await expect.poll(() => source.urls.length).toBeGreaterThan(3);
 	for (const href of source.urls) {
 		const params = new URL(href).searchParams;
+		// The rooftop solar forecast is its own feed, only published at 30m
+		// and only ahead of now, so it is not a warmed grain.
+		if (params.get('metric') === 'rooftop_forecast') continue;
 		expect(params.get('interval')).toBe('5m');
 		const start = Date.parse(params.get('date_start') + '+10:00');
 		const end = Date.parse(params.get('date_end') + '+10:00');
@@ -2720,9 +2722,19 @@ for (const interval of ['30m', '1d']) {
 	}) => {
 		const source = await trackerFixture(page, { distinctEmissions: true });
 		const start = Date.parse('2026-08-01T00:00:00+10:00');
-		await page.goto(
-			`/tracker/timeline?region=nsw1&start=${start}&end=${start + 2 * 86_400_000}&interval=${interval}`
-		);
+		const end = start + 2 * 86_400_000;
+		// Intensity requests covering the visible window. Idle warming of the
+		// neighbouring ranges can land at any point and doesn't count.
+		const visibleIntensityRequests = () =>
+			source.urls.filter((href) => {
+				const params = new URL(href).searchParams;
+				return (
+					params.get('metric') === 'emissions_intensity' &&
+					Date.parse(params.get('date_start') + '+10:00') < end &&
+					Date.parse(params.get('date_end') + '+10:00') > start
+				);
+			}).length;
+		await page.goto(`/tracker/timeline?region=nsw1&start=${start}&end=${end}&interval=${interval}`);
 		await chartsSettled(page);
 		const emissions = card(page, 'Emissions');
 		const value = emissions.getByTestId('chart-tooltip-strip').locator('strong').first();
@@ -2753,7 +2765,7 @@ for (const interval of ['30m', '1d']) {
 			});
 		});
 		source.hold('emissions_intensity');
-		const requests = source.requests.filter((metric) => metric === 'emissions_intensity').length;
+		const requests = visibleIntensityRequests();
 		const coal = page.getByTestId('fuel-tech-row').filter({ hasText: 'Coal' }).first();
 		await coal.click();
 		await expect(coal).toHaveAttribute('aria-pressed', 'false');
@@ -2764,9 +2776,7 @@ for (const interval of ['30m', '1d']) {
 		await emissions.locator('.stratum-chart-area').hover();
 		await expect(value).toHaveText(original);
 		await expect(page.locator('html')).toHaveAttribute('data-loading-flashes', '0');
-		expect(source.requests.filter((metric) => metric === 'emissions_intensity')).toHaveLength(
-			requests
-		);
+		expect(visibleIntensityRequests()).toBe(requests);
 		source.release();
 	});
 }

@@ -274,7 +274,11 @@ test('the top nav scrolls away and the filters pill stays in view', async ({ pag
 	await page.evaluate(() => window.scrollTo(0, 600));
 	await expect.poll(() => pageScrollY(page)).toBeGreaterThan(300);
 	await expect(page.getByRole('combobox', { name: 'Analysis view' })).not.toBeInViewport();
-	await expect.poll(async () => Math.round((await strip.boundingBox()).y)).toBe(0);
+	// Its sticky row pins to the top; the pill sits at the row's foot, with
+	// gaps above and below.
+	const row = strip.locator('xpath=..');
+	await expect.poll(async () => Math.round((await row.boundingBox()).y)).toBe(0);
+	await expect(strip).toHaveAttribute('data-stuck', 'true');
 	// It is the filters button.
 	await expect(page.getByTestId('tracker-range-label-sticky')).toHaveAccessibleName(
 		/, change filters$/
