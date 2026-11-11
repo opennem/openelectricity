@@ -1,4 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { appHydrated } from './helpers/app.js';
+
+/** The desktop filter bar's plan (ISP model) select. */
+const planSelect = (/** @type {import('@playwright/test').Page} */ page) =>
+	page.getByRole('button', { name: /^AEMO \d{4} ISP/ }).first();
 
 test.describe('Scenarios Page', () => {
 	test.beforeEach(async ({ page }) => {
@@ -109,15 +114,14 @@ test.describe('Scenarios Page', () => {
 
 	// 4. Scenario view details
 
-	test('should show scenario mini charts with titles', async ({ page }) => {
+	test('should show scenario mini charts under each plan heading', async ({ page }) => {
 		const scenarioButton = page.getByRole('button', { name: /By Scenario/i });
 		await scenarioButton.click();
 		await page.waitForSelector('.stratum-chart', { timeout: 30000 });
 
-		// Mini charts should have h6 titles for each scenario
-		const miniChartTitles = page.locator('.stratum-chart').locator('..').locator('h6');
-		const titleCount = await miniChartTitles.count();
-		expect(titleCount).toBeGreaterThan(0);
+		// Each plan's mini charts sit under an h6 naming the plan
+		const planHeadings = page.locator('h6').filter({ hasText: /^AEMO \d{4} ISP/ });
+		await expect(planHeadings.first()).toBeVisible();
 	});
 
 	test('should switch data type in Scenario view', async ({ page }) => {
@@ -205,51 +209,37 @@ test.describe('Scenarios Page', () => {
 		expect(errors).toEqual([]);
 	});
 
-	// 7. Draft/Final model selection
+	// 7. Draft/Final plan selection
 
-	test('should show all four model groups in scenario selector', async ({ page }) => {
-		// Open scenario selector
-		const selectorButton = page
-			.locator('button')
-			.filter({ hasText: /Step Change|Update Scenarios/ })
-			.first();
-		await selectorButton.click();
-
-		// All four model groups should be visible
-		await expect(page.getByText('AEMO 2024 ISP (Final)')).toBeVisible();
-		await expect(page.getByText('AEMO 2024 ISP (Draft)')).toBeVisible();
-		await expect(page.getByText('AEMO 2022 ISP (Final)')).toBeVisible();
-		await expect(page.getByText('AEMO 2022 ISP (Draft)')).toBeVisible();
+	test('should list final and draft plans in the plan selector', async ({ page }) => {
+		await planSelect(page).click();
+		const listbox = page.getByRole('listbox');
+		for (const plan of [
+			'AEMO 2026 ISP (Final)',
+			'AEMO 2026 ISP (Draft)',
+			'AEMO 2024 ISP (Final)',
+			'AEMO 2024 ISP (Draft)',
+			'AEMO 2022 ISP (Final)',
+			'AEMO 2022 ISP (Draft)'
+		]) {
+			await expect(listbox.getByRole('option', { name: plan, exact: true })).toBeVisible();
+		}
 	});
 
-	test('should select a draft scenario and render charts without errors', async ({ page }) => {
+	test('should select a draft plan and render charts without errors', async ({ page }) => {
 		const errors = [];
 		page.on('pageerror', (error) => errors.push(error.message));
 
-		// Open scenario selector
-		const selectorButton = page
-			.locator('button')
-			.filter({ hasText: /Step Change|Update Scenarios/ })
-			.first();
-		await selectorButton.click();
+		const plan = planSelect(page);
+		await plan.click();
+		await page
+			.getByRole('listbox')
+			.getByRole('option', { name: 'AEMO 2024 ISP (Draft)', exact: true })
+			.click();
+		await expect(plan).toHaveText(/AEMO 2024 ISP \(Draft\)/);
 
-		// Click on a 2024 Draft scenario (Step Change)
-		const draftSection = page.getByText('AEMO 2024 ISP (Draft)');
-		await expect(draftSection).toBeVisible();
-
-		// Find and click the Step Change button within the draft section
-		const draftStepChange = page.locator('button').filter({ hasText: 'Step Change' });
-		// Click the one under the draft heading (second group of Step Change buttons)
-		const draftButtons = await draftStepChange.all();
-		if (draftButtons.length > 1) {
-			await draftButtons[1].click();
-		}
-
-		// Wait for charts to re-render with draft data
-		await page.waitForSelector('.stratum-chart', { timeout: 30000 });
-
-		const charts = page.locator('.stratum-chart');
-		expect(await charts.count()).toBeGreaterThan(0);
+		// Charts re-render with the draft plan's data
+		await expect(page.locator('.stratum-chart svg path').first()).toBeVisible();
 		expect(errors).toEqual([]);
 	});
 
@@ -289,6 +279,7 @@ test('shared selects support keyboard dropdowns and mobile dialog filters', asyn
 	page
 }, testInfo) => {
 	await page.goto('/scenarios');
+	await appHydrated(page);
 	// Bits UI's Select trigger is a button that pops a listbox.
 	const region = page.getByRole('button', { name: 'NEM Regions', exact: true });
 	await expect(region).toBeVisible();

@@ -385,6 +385,15 @@ export async function hydrated(page) {
 }
 
 /**
+ * The range label's visible text. On desktop the label is also the refresh
+ * button, whose accessible name adds a screen-reader-only ", refresh data".
+ * @param {Page} page
+ */
+export function rangeText(page) {
+	return page.getByTestId('tracker-range-label').locator('span:not(.sr-only)').first();
+}
+
+/**
  * The timeline view is hydrated, its first data surface has left its busy
  * state and the Generation chart has mounted.
  * @param {Page} page

@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { appHydrated } from './helpers/app.js';
 
 test('shared Bits checkboxes support labels, keyboard, mixed and disabled states', async ({
 	page
 }, testInfo) => {
 	await page.goto('/studio/design-system');
+	await appHydrated(page);
 	const checked = page.getByRole('checkbox', { name: 'Solar (Rooftop)', exact: true });
 	const unchecked = page.getByRole('checkbox', { name: 'Imports', exact: true });
 	const mixed = page.getByRole('checkbox', { name: 'Mixed selection', exact: true });
