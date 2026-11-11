@@ -1,13 +1,14 @@
 import { NoDataFound } from 'openelectricity';
-import { oeClient } from '$lib/server/oe-client.js';
-import { createSwrCache } from '$lib/server/swr-cache';
+import { oeClient } from '#lib/server/oe-client.js';
+import { createSwrCache } from '#lib/server/swr-cache.js';
 import {
 	derivePairwiseFlows,
 	isCorridorDetermined,
 	toLegacyPayload,
 	trimToLastCompleteRow
-} from '$lib/flows/derive-pairwise.js';
-import { HOURS_MS, nemNaiveRange } from '$lib/flows/nem-time.js';
+} from '#lib/flows/derive-pairwise.js';
+import { HOURS_MS, nemNaiveRange } from '#lib/flows/nem-time.js';
+import { edgeRuntime } from '#lib/server/edge-runtime.js';
 
 /** One dispatch-ish interval — matches the route's public max-age. */
 const FRESH_MS = 5 * 60 * 1000;
@@ -18,7 +19,7 @@ const FRESH_MS = 5 * 60 * 1000;
  * The legacy stats flows endpoint this route used to proxy has been
  * decommissioned, and v4 has no pairwise interconnector metric — so this
  * adapter fetches per-region `flow_imports`/`flow_exports` and derives the
- * corridor flows from the net positions (see `$lib/flows/derive-pairwise.js`):
+ * corridor flows from the net positions (see `#lib/flows/derive-pairwise.js`):
  * exact for QLD–NSW and TAS–VIC, null for SA–VIC and NSW–VIC since the
  * NSW1–SA1 interconnector closed a loop on 1 October 2026. The response keeps
  * the legacy payload shape
@@ -69,8 +70,8 @@ const cache = createSwrCache({
 	isCacheable: (payload) => !payload.error && payload.data.length > 0
 });
 
-export async function GET({ setHeaders, platform }) {
-	const payload = await cache.get(platform);
+export async function GET({ setHeaders }) {
+	const payload = await cache.get(edgeRuntime());
 	if (payload.error) return Response.json({ error: payload.error }, { status: 500 });
 	setHeaders({ 'cache-control': 'public, max-age=300' });
 	return Response.json(payload);

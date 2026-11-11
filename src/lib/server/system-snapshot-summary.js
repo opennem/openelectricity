@@ -1,7 +1,7 @@
-import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
-import { contributionSeries } from '$lib/components/charts/network/contribution.js';
-import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
-import { regionsNemOnlyOptions, regionsWithShortLabels } from '$lib/regions.js';
+import { getGroup, loadGroupsFor } from '#lib/components/charts/network/groups.js';
+import { contributionSeries } from '#lib/components/charts/network/contribution.js';
+import { offsetMsFromOffset } from '#lib/components/charts/v2/network-time.js';
+import { regionsNemOnlyOptions, regionsWithShortLabels } from '#lib/regions.js';
 
 /**
  * Per-region System Snapshot figures from raw OE v4 responses.
@@ -17,7 +17,7 @@ import { regionsNemOnlyOptions, regionsWithShortLabels } from '$lib/regions.js';
  * The aggregate `battery` series is skipped throughout: it nets the
  * charging/discharging splits, so counting it would double-count.
  *
- * Pure: the cached loaders in `$lib/server/system-snapshot.js` fetch and store.
+ * Pure: the cached loaders in `#lib/server/system-snapshot.js` fetch and store.
  */
 
 const group = getGroup('detailed');

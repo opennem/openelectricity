@@ -11,7 +11,7 @@
 
 import { formatDayMonthTime, formatDayMonthYearTime, isCurrentLocalYear } from './date-labels.js';
 import { indexOfTime } from './binary-search.js';
-import { getNumberFormat } from '$lib/utils/formatters';
+import { getNumberFormat } from '#lib/utils/formatters.js';
 
 const percentageFormat = getNumberFormat(1);
 

@@ -1,38 +1,38 @@
 <script>
-	import Meta from '$lib/components/Meta.svelte';
-	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
-	import LogoMark from '$lib/images/logo-mark.svelte';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity.js';
-	import { statusOptions } from '$lib/facilities/filters.js';
-	import { fuelTechNameMap } from '$lib/fuel_techs.js';
-	import secondaryColours from '$lib/theme/secondary-colour-palette.js';
-	import { regionOptions } from '$lib/regions.js';
-	import { spectrum, getContrastedTextCss } from '$lib/colours.js';
-	import { MAP_FAB_CLASS } from '$lib/components/map/map-style.js';
-	import Button from '$lib/components/form-elements/Button.svelte';
-	import Button2 from '$lib/components/form-elements/Button2.svelte';
-	import Toggle from '$lib/components/form-elements/Toggle.svelte';
-	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
-	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
-	import { Button as ShadButton } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import simpleGroup from '$lib/fuel-tech-groups/simple.js';
-	import rvfGroup from '$lib/fuel-tech-groups/renewables-fossils.js';
-	import sourcesLoadsGroup from '$lib/fuel-tech-groups/sources-loads.js';
-	import vreResidualGroup from '$lib/fuel-tech-groups/lens/vre-residual.js';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
-	import IconXMark from '$lib/icons/XMark.svelte';
-	import IconShare from '$lib/icons/Share.svelte';
-	import IconArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
-	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import IconGithub from '$lib/icons/Github.svelte';
-	import ChartStyles from '$lib/components/charts/v2/ChartStyles.svelte.js';
-	import { SERIES_FALLBACK_COLOUR } from '$lib/components/charts/colours.js';
+	import Meta from '#lib/components/Meta.svelte';
+	import PageHeaderSimple from '#lib/components/PageHeaderSimple.svelte';
+	import LogoMark from '#lib/images/logo-mark.svelte';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
+	import { statusOptions } from '#lib/facilities/filters.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
+	import secondaryColours from '#lib/theme/secondary-colour-palette.js';
+	import { regionOptions } from '#lib/regions.js';
+	import { spectrum, getContrastedTextCss } from '#lib/colours.js';
+	import { MAP_FAB_CLASS } from '#lib/components/map/map-style.js';
+	import Button from '#lib/components/form-elements/Button.svelte';
+	import Button2 from '#lib/components/form-elements/Button2.svelte';
+	import Toggle from '#lib/components/form-elements/Toggle.svelte';
+	import Checkbox from '#lib/components/form-elements/Checkbox.svelte';
+	import RadioBigButton from '#lib/components/form-elements/RadioBigButton.svelte';
+	import { Button as ShadButton } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import simpleGroup from '#lib/fuel-tech-groups/simple.js';
+	import rvfGroup from '#lib/fuel-tech-groups/renewables-fossils.js';
+	import sourcesLoadsGroup from '#lib/fuel-tech-groups/sources-loads.js';
+	import vreResidualGroup from '#lib/fuel-tech-groups/lens/vre-residual.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
+	import IconChevronDown from '#lib/icons/ChevronDown.svelte';
+	import IconXMark from '#lib/icons/XMark.svelte';
+	import IconShare from '#lib/icons/Share.svelte';
+	import IconArrowDownTray from '#lib/icons/ArrowDownTray.svelte';
+	import IconAdjustmentsHorizontal from '#lib/icons/AdjustmentsHorizontal.svelte';
+	import IconGithub from '#lib/icons/Github.svelte';
+	import ChartStyles from '#lib/components/charts/v2/ChartStyles.svelte.js';
+	import { SERIES_FALLBACK_COLOUR } from '#lib/components/charts/colours.js';
 	import SwatchGrid from './_components/SwatchGrid.svelte';
 	import DemoChart from './_components/DemoChart.svelte';
 	import WeeklySummaryCard from './_components/WeeklySummaryCard.svelte';
-	import RecordCard from '$lib/components/records/RecordCard.svelte';
+	import RecordCard from '#lib/components/records/RecordCard.svelte';
 	import ResizeStage from './_components/ResizeStage.svelte';
 
 	// Shared specimen-stage surface — referenced by every component stage below.
@@ -416,7 +416,7 @@
 		)}
 		<p class="text-sm text-mid-grey max-w-3xl mb-8">
 			The heart of the visual identity — each technology has a fixed colour used in every chart, map
-			and legend. The canonical map is <code>$lib/theme/openelectricity.js</code>; the older
+			and legend. The canonical map is <code>#lib/theme/openelectricity.js</code>; the older
 			palettes still in the repo (<code>theme/opennem.js</code>,
 			<code>theme/openelectricity-old.js</code> and the stale copy inside
 			<code>fuel_techs.js</code>) should not be used.
@@ -834,7 +834,7 @@
 			/facilities presentation: a colour-filled circle with the glyph in <strong>white</strong>,
 			flipping to <strong>black</strong> on the light backgrounds (solar, OCGT and reciprocating
 			gas, data centre) via <code>needsDarkText()</code> in
-			<code>$lib/utils/fueltech-display.js</code>. The glyphs stroke <code>currentColor</code>, so
+			<code>#lib/utils/fueltech-display.js</code>. The glyphs stroke <code>currentColor</code>, so
 			the flip is just a text-colour change. UI icons are hand-rolled Heroicon-style;
 			<code>@lucide/svelte</code> is also available for anything not covered.
 		</p>
@@ -1070,7 +1070,7 @@
 			The shared <code>RecordCard</code> — the pinned-record card rendered on the homepage and
 			/records, here with fixed specimen values.
 			<a href="{REPO}src/lib/components/records/RecordCard.svelte"
-				>$lib/components/records/RecordCard.svelte</a
+				>#lib/components/records/RecordCard.svelte</a
 			>
 		</p>
 		<div class="max-w-[220px]">

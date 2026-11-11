@@ -1,5 +1,5 @@
 <script>
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils/index.js';
 
 	let { ref = $bindable(null), class: className, children, ...restProps } = $props();
 </script>

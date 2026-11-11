@@ -7,8 +7,8 @@
 	import { OE_RED } from './tracker-overlays.js';
 	import { formatProfileDay } from './time-of-day.js';
 	import ProfileReadout from './ProfileReadout.svelte';
-	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
-	import { pointerInspect } from '$lib/components/charts/v2/elements/pointer-inspect.js';
+	import { hoverFade } from '#lib/components/charts/v2/hover-fade.js';
+	import { pointerInspect } from '#lib/components/charts/v2/elements/pointer-inspect.js';
 
 	/**
 	 * Ridgeline — one offset curve per day for comparing the shapes of a

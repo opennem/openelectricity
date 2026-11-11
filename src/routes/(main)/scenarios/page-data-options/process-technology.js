@@ -1,8 +1,8 @@
-import Statistic from '$lib/utils/Statistic';
-import TimeSeries from '$lib/utils/TimeSeries';
-import parseInterval from '$lib/utils/intervals';
+import Statistic from '#lib/utils/Statistic/index.js';
+import TimeSeries from '#lib/utils/TimeSeries/index.js';
+import parseInterval from '#lib/utils/intervals.js';
 
-import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
+import { fuelTechNameReducer, loadFuelTechs } from '#lib/fuel_techs.js';
 import { fuelTechMap, orderMap } from './groups-technology';
 import excludeBatteryAndLoads from './exclude-battery-and-loads';
 import combineHistoryProjection from './combine-history-projection';

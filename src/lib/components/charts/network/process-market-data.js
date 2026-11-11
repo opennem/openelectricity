@@ -13,7 +13,7 @@
 import {
 	collectSeriesByTimestamp,
 	rowsFromSeriesMaps
-} from '$lib/components/charts/v2/series-rows.js';
+} from '#lib/components/charts/v2/series-rows.js';
 
 /**
  * @typedef {Object} MarketSeriesDef

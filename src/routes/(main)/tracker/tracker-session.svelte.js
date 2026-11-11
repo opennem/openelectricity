@@ -1,9 +1,9 @@
-import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
-import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
-import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
-import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
-import { formatRangeLabel } from '$lib/components/charts/v2/time-format-policy.js';
-import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
+import { createChartRangeControl } from '#lib/components/charts/facility/chart-range-control.svelte.js';
+import { getIntervalHours } from '#lib/components/charts/facility/interval-hours.js';
+import { regionToNetwork } from '#lib/components/charts/network/region-to-network.js';
+import { ianaFromOffset } from '#lib/components/charts/v2/network-time.js';
+import { formatRangeLabel } from '#lib/components/charts/v2/time-format-policy.js';
+import { EARLIEST_DATA_MS } from '#lib/utils/date-range.js';
 import { DEFAULT_RANGE_DAYS, normaliseRange, customRangeDates } from './tracker-model.js';
 import { normaliseTrackerState } from './tracker-url.js';
 
@@ -38,7 +38,7 @@ export function createTrackerSession(initial, onchange) {
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	/** Relative timeline presets follow the latest data; exact bounds are pinned. */
 	let following = $derived(selection.range.kind === 'preset');
-	/** @type {() => Array<import('$lib/components/charts/facility/chart-range-control.svelte.js').RangeControlChart | null | undefined>} */
+	/** @type {() => Array<import('#lib/components/charts/facility/chart-range-control.svelte.js').RangeControlChart | null | undefined>} */
 	let charts = () => [];
 	const range = createChartRangeControl({
 		viewport: () => viewport,
@@ -239,7 +239,7 @@ export function createTrackerSession(initial, onchange) {
 			chooseRange(() => range.handleIntervalChange(value));
 		},
 		/** @param {{start: number, end: number}} value
-		 * @param {import('$lib/components/charts/facility/chart-range-control.svelte.js').RangeControlChart | null | undefined} source */
+		 * @param {import('#lib/components/charts/facility/chart-range-control.svelte.js').RangeControlChart | null | undefined} source */
 		moveViewport(value, source) {
 			keepingGrain(() => range.handleDerivedViewportChange(value, source));
 		},

@@ -1,7 +1,7 @@
 <script>
 	import { MessageSquareShare } from '@lucide/svelte';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
-	import { feedback } from '$lib/feedback/feedback.svelte.js';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
+	import { feedback } from '#lib/feedback/feedback.svelte.js';
 	import FeedbackGate from './FeedbackGate.svelte';
 
 	/**

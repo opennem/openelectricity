@@ -89,7 +89,7 @@ official aggregate includes rooftop solar; the optional storage definition is st
 The range presets only expose compatible display intervals. OpenElectricity API v4.5.11 accepts a
 maximum 30-day request at `5m` and a maximum 365-day request at `1h` (verified 21 August 2026).
 `ChartDataManager` splits wider visible windows into bounded requests using
-`$lib/oe-api/data-limits.js`; the server endpoints also reject direct requests beyond those caps.
+`#lib/oe-api/data-limits.js`; the server endpoints also reject direct requests beyond those caps.
 Daily and coarser intervals support the longer presets used here.
 
 Facility comparison is capped at six facilities in the product and in the endpoint, below the SDK's

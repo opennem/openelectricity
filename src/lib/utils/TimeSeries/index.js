@@ -1,9 +1,9 @@
 import { rollup } from 'd3-array';
-import transform from '$lib/utils/TimeSeries/transform-stats-to-ts';
-import meanReducer from '$lib/utils/TimeSeries/reducer/mean';
-import sumReducer from '$lib/utils/TimeSeries/reducer/sum';
-import withMinMax from '$lib/utils/TimeSeries/with-min-max';
-import transformRollingSum12Mth from '$lib/utils/rolling-sum-12-mth';
+import transform from '#lib/utils/TimeSeries/transform-stats-to-ts.js';
+import meanReducer from '#lib/utils/TimeSeries/reducer/mean.js';
+import sumReducer from '#lib/utils/TimeSeries/reducer/sum.js';
+import withMinMax from '#lib/utils/TimeSeries/with-min-max.js';
+import transformRollingSum12Mth from '#lib/utils/rolling-sum-12-mth.js';
 import rollUpMap from './rollup/map';
 
 /**

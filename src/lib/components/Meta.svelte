@@ -1,6 +1,6 @@
 <script>
-	import { page } from '$app/stores';
-	import { jsonLdToString } from '$lib/seo/jsonld.js';
+	import { page } from '$app/state';
+	import { jsonLdToString } from '#lib/seo/jsonld.js';
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [type] - or article, or music.album etc. See https://ogp.me/#types
@@ -27,7 +27,7 @@
 		imageWidth = undefined,
 		imageHeight = undefined,
 		imageType = undefined,
-		path = $page.url.pathname,
+		path = page.url.pathname,
 		domain = 'https://openelectricity.org.au',
 		siteTitle = 'Open Electricity',
 		useSuffix = true,

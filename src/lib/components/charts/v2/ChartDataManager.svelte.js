@@ -8,11 +8,11 @@
 
 import { bisectTime, bisectTimeRight, mergeSortedByTime } from './binary-search.js';
 import { offsetMsFromOffset } from './network-time.js';
-import { EARLIEST_DATA_MS, isHistoricalWindow } from '$lib/utils/date-range.js';
-import { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
+import { EARLIEST_DATA_MS, isHistoricalWindow } from '#lib/utils/date-range.js';
+import { OE_API_MAX_RANGE_DAYS } from '#lib/oe-api/data-limits.js';
 import { fetchChartResponse } from './fetch-chart-response.js';
 
-export { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
+export { OE_API_MAX_RANGE_DAYS } from '#lib/oe-api/data-limits.js';
 
 /**
  * Concurrent equivalent API requests share a single in-flight fetch, keyed by a

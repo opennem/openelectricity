@@ -1,7 +1,7 @@
 <script>
 	import { run } from 'svelte/legacy';
 
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
 
 	import Filters from '../components/Filters.svelte';
@@ -81,13 +81,10 @@
 
 		const periodsParam =
 			periods.length === periodOptions.length ? '' : '&periods=' + periods.join(',');
-
 		const aggregatesParam =
 			aggregates.length === aggregateOptions.length ? '' : '&aggregates=' + aggregates.join(',');
-
 		const metricsParam =
 			metrics.length === metricOptions.length ? '' : '&metrics=' + metrics.join(',');
-
 		const fuelTechParams =
 			fuelTechs.length === fuelTechOptions.length ? '' : '&fuelTechs=' + fuelTechs.join(',');
 
@@ -182,7 +179,7 @@
 		goto(
 			`/records-checker/all?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}${significanceParam}`,
 			{
-				replaceState: true
+				replace: true
 			}
 		);
 	}
@@ -313,19 +310,27 @@
 			<thead>
 				<tr class="border-b border-mid-warm-grey">
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">No.</th>
+
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Record ID</th>
 
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Interval</th>
+
 					<th class="text-right border-r border-mid-warm-grey p-1 align-top">Value & unit</th>
 
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Network</th>
+
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Region</th>
+
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Fuel Tech</th>
 
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Period</th>
+
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Metric</th>
+
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Aggregate</th>
+
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Significance</th>
+
 					<th class="border-r border-mid-warm-grey p-1 align-top text-left"></th>
 				</tr>
 			</thead>
@@ -337,9 +342,9 @@
 
 						<td
 							class="font-mono text-dark-grey border-r border-mid-warm-grey p-1 align-top text-left"
+							>{removeSeconds(record.interval)}</td
 						>
-							{removeSeconds(record.interval)}
-						</td>
+
 						<td class="text-right border-r border-mid-warm-grey p-1 align-top">
 							<div class="flex justify-end gap-1">
 								<span class="font-mono text-black">{auNumber.format(record.value)}</span>
@@ -350,17 +355,22 @@
 						<td class="border-r border-mid-warm-grey p-1 align-top text-left"
 							>{record.network_id}</td
 						>
+
 						<td class="border-r border-mid-warm-grey p-1 align-top text-left"
 							>{record.network_region || 'all'}</td
 						>
+
 						<td class="border-r border-mid-warm-grey p-1 align-top text-left"
 							>{record.fueltech_id || ''}</td
 						>
 
 						<td class="border-r border-mid-warm-grey p-1 align-top text-left">{record.period}</td>
+
 						<td class="border-r border-mid-warm-grey p-1 align-top text-left">{record.metric}</td>
+
 						<td class="border-r border-mid-warm-grey p-1 align-top text-left">{record.aggregate}</td
 						>
+
 						<td class="border-r border-mid-warm-grey p-1 align-top text-left"
 							>{record.significance}</td
 						>

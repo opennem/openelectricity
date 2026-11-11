@@ -1,8 +1,8 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import Meta from '$lib/components/Meta.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import Meta from '#lib/components/Meta.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
 	import StratifyHeader from './_components/StratifyHeader.svelte';
 	import StratifyButton from './_components/StratifyButton.svelte';
 	import ConfirmModal from './_components/ConfirmModal.svelte';
@@ -110,8 +110,8 @@
 	function clampPage(key, section) {
 		if (section && section.items.length === 0 && section.page > section.totalPages) {
 			goto(hrefWith({ [PAGE_PARAMS[key]]: section.totalPages }), {
-				replaceState: true,
-				noScroll: true
+				replace: true,
+				reset: false
 			});
 		}
 	}
@@ -156,16 +156,15 @@
 		clearTimeout(searchTimer);
 		searchTimer = setTimeout(() => {
 			goto(hrefWith({ q: searchInput, ...FIRST_PAGES }), {
-				replaceState: true,
-				keepFocus: true,
-				noScroll: true
+				replace: true,
+				reset: false
 			});
 		}, 300);
 	}
 
 	/** @param {string} option */
 	function setStatusFilter(option) {
-		goto(hrefWith({ status: option, ...FIRST_PAGES }), { noScroll: true });
+		goto(hrefWith({ status: option, ...FIRST_PAGES }), { reset: false });
 	}
 
 	/** @param {import('./_utils/api.js').ChartDoc} chart */
@@ -192,7 +191,7 @@
 			await api.createChart(/** @type {any} */ (snapshot));
 			// The copy sorts to the top of page 1 (_updatedAt desc)
 			if (pages.my !== 1) {
-				goto(hrefWith({ myPage: 1 }), { noScroll: true });
+				goto(hrefWith({ myPage: 1 }), { reset: false });
 			} else {
 				await loadSection('my', sectionOpts('my'));
 			}

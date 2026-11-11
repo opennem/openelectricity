@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PLAY_STATUSES } from '$lib/facilities/filters.js';
+import { PLAY_STATUSES } from '#lib/facilities/filters.js';
 
 const mocks = vi.hoisted(() => ({
 	getFacilities: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('openelectricity', () => ({
 	}
 }));
 
-vi.mock('$lib/server/facilities-server-cache.js', () => ({
+vi.mock('#lib/server/facilities-server-cache.js', () => ({
 	getCachedFacilities: mocks.getCachedFacilities,
 	setCachedFacilities: mocks.setCachedFacilities
 }));

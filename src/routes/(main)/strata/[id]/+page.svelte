@@ -1,6 +1,6 @@
 <script>
-	import Meta from '$lib/components/Meta.svelte';
-	import StrataChartCard from '$lib/stratify/StrataChartCard.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import StrataChartCard from '#lib/stratify/StrataChartCard.svelte';
 
 	/** @type {{ data: { chart: any } }} */
 	let { data } = $props();

@@ -1,13 +1,13 @@
 <script>
 	import { untrack } from 'svelte';
-	import getContext from '$lib/utils/get-context.js';
-	import Switch from '$lib/components/Switch.svelte';
+	import getContext from '#lib/utils/get-context.js';
+	import Switch from '#lib/components/Switch.svelte';
 
 	/** @type {{ cxtKey: symbol }} */
 	let { cxtKey } = $props();
 
 	// Get context once during initialization (cxtKey is stable)
-	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
+	/** @type {import('#lib/components/charts/stores/chart.svelte.js').default} */
 	let cxt = untrack(() => getContext(cxtKey));
 
 	let unitOptions = $derived(

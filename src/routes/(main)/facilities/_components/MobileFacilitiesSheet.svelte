@@ -1,15 +1,15 @@
 <script>
-	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
-	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
+	import { BottomSheet } from '#lib/components/ui/bottom-sheet/index.js';
+	import SwitchWithIcons from '#lib/components/SwitchWithIcons.svelte';
 	import List from '../List.svelte';
 	import Tiles from '../Tiles.svelte';
 	import Timeline from '../Timeline.svelte';
 	import SortDropdown from './SortDropdown.svelte';
-	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
-	import formatValue from '$lib/facilities/format-value.js';
+	import LogoMarkLoader from '#lib/components/LogoMarkLoader.svelte';
+	import formatValue from '#lib/facilities/format-value.js';
 	import { sortFacilities } from '../_utils/sort-facilities';
-	import { VIEW_OPTIONS } from '$lib/facilities/filters.js';
-	import { createLocalStorageState } from '$lib/utils/local-storage-state.svelte.js';
+	import { VIEW_OPTIONS } from '#lib/facilities/filters.js';
+	import { createLocalStorageState } from '#lib/utils/local-storage-state.svelte.js';
 
 	/**
 	 * Mobile facilities browser — a persistent bottom sheet peeking over the

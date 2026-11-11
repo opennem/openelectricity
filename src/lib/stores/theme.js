@@ -4,11 +4,11 @@ import { derived, writable } from 'svelte/store';
 import {
 	fuelTechColourMap as OpenNemFtColours,
 	carbonIntensityColourMap as OpenNemCarbonIntensityColours
-} from '$lib/theme/opennem';
+} from '#lib/theme/opennem.js';
 import {
 	fuelTechColourMap as OpenElectricityFtColours,
 	carbonIntensityColourMap as OpenElectricityCarbonIntensityColours
-} from '$lib/theme/openelectricity';
+} from '#lib/theme/openelectricity.js';
 
 export const showThemeSwitcher = writable(false);
 

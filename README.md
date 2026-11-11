@@ -20,7 +20,7 @@ should begin with [AGENTS.md](AGENTS.md), the model-neutral project guide.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 22.12.0
+- [Node.js](https://nodejs.org/) >= 22.17.0
 - [pnpm](https://pnpm.io/) — pinned via the `packageManager` field in `package.json`, so the easiest install is via [Corepack](https://nodejs.org/api/corepack.html): `corepack enable` (ships with Node 22+).
 
 ### Setup

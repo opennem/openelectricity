@@ -1,5 +1,5 @@
 import { differenceInMonths, parse } from 'date-fns';
-import useDate from '$lib/utils/TimeSeries/use-date';
+import useDate from '#lib/utils/TimeSeries/use-date.js';
 
 /**
  * Parse and update the data to match the start and last dates of the dataset.

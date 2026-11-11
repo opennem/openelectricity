@@ -4,14 +4,14 @@
 	import { resolve } from '$app/paths';
 	import { LayoutGrid, Layers3, ListFilter, Plus, Settings2, X } from '@lucide/svelte';
 	import { MediaQuery } from 'svelte/reactivity';
-	import { ChartRangeBar, formatRangeLabel } from '$lib/components/charts/v2';
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
-	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
-	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
-	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
-	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
-	import { MIN_DATE } from '$lib/utils/date-range.js';
-	import { Sheet } from '$lib/components/ui/sheet';
+	import { ChartRangeBar, formatRangeLabel } from '#lib/components/charts/v2/index.js';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
+	import NetworkChart from '#lib/components/charts/network/NetworkChart.svelte';
+	import { createChartRangeControl } from '#lib/components/charts/facility/chart-range-control.svelte.js';
+	import { ianaFromOffset, toNetworkDateString } from '#lib/components/charts/v2/network-time.js';
+	import { regionToNetwork } from '#lib/components/charts/network/region-to-network.js';
+	import { MIN_DATE } from '#lib/utils/date-range.js';
+	import { Sheet } from '#lib/components/ui/sheet/index.js';
 	import RegionDropdown from '../RegionDropdown.svelte';
 	import { TRACKER_REGION_OPTIONS } from '../tracker-regions.js';
 	import ExploreBuilder from './ExploreBuilder.svelte';
@@ -194,6 +194,7 @@
 						? 'Layout'
 						: 'Views'
 	);
+
 	let layoutMode = $derived(
 		drawerOpen && drawerMode === 'tabs' && drawerTab === 'layout' && !isBuiltInView
 	);
@@ -786,6 +787,7 @@
 	});
 
 	beforeNavigate((navigation) => {
+		if (navigation.shallow && navigation.type === 'goto') return;
 		if (!isDirty || !navigation.to || pendingAction) return;
 		pendingAction = {
 			type: 'navigate',

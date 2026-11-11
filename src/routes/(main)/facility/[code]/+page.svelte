@@ -4,9 +4,9 @@
 	import { goto } from '$app/navigation';
 	import { fade } from 'svelte/transition';
 	import { LineChart } from '@lucide/svelte';
-	import Meta from '$lib/components/Meta.svelte';
-	import { urlFor } from '$lib/sanity';
-	import { OG_CARD_WIDTH, OG_CARD_HEIGHT, OG_CARD_TYPE } from '$lib/og/card-dimensions.js';
+	import Meta from '#lib/components/Meta.svelte';
+	import { urlFor } from '#lib/sanity.js';
+	import { OG_CARD_WIDTH, OG_CARD_HEIGHT, OG_CARD_TYPE } from '#lib/og/card-dimensions.js';
 	import {
 		FacilityChart,
 		FacilityPriceChart,
@@ -18,43 +18,47 @@
 		FacilityPollutionPanel,
 		FacilityCurtailmentPanel,
 		FacilityMetrics
-	} from '$lib/components/charts/facility';
+	} from '#lib/components/charts/facility/index.js';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { formatRangeLabel, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
-	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
-	import FacilityPanelHeader from '$lib/components/facilities/FacilityPanelHeader.svelte';
-	import { withBatteryView, canSplitBatteryUnits } from '$lib/facilities/units.js';
+	import {
+		formatRangeLabel,
+		ChartRangeBar,
+		toolbarTrayClass
+	} from '#lib/components/charts/v2/index.js';
+	import RetiredFacilityNotice from '#lib/components/facilities/RetiredFacilityNotice.svelte';
+	import FacilityPanelHeader from '#lib/components/facilities/FacilityPanelHeader.svelte';
+	import { withBatteryView, canSplitBatteryUnits } from '#lib/facilities/units.js';
 
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
-	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
-	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
-	import { primaryFuelTechColour } from '$lib/utils/fueltech-display';
-	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
-	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
+	import { getIntervalSpec } from '#lib/components/charts/facility/range-interval-config.js';
+	import { createChartRangeControl } from '#lib/components/charts/facility/chart-range-control.svelte.js';
+	import { MIN_DATE, getEarliestDate } from '#lib/utils/date-range.js';
+	import { primaryFuelTechColour } from '#lib/utils/fueltech-display.js';
+	import { createDragHandler } from '#lib/components/ui/panel/drag-resize.svelte.js';
+	import DragHandle from '#lib/components/ui/panel/drag-handle.svelte';
 
 	import FacilityInfoPanel from './_components/FacilityInfoPanel.svelte';
 	import FacilityUnitsPanel from './_components/FacilityUnitsPanel.svelte';
 	import FacilityMediaPanel from './_components/FacilityMediaPanel.svelte';
 	import FacilityMobileNav from './_components/FacilityMobileNav.svelte';
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
-	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
+	import { ianaFromOffset, toNetworkDateString } from '#lib/components/charts/v2/network-time.js';
 	import {
 		CHARTS_FRACTION_COOKIE,
 		CHARTS_FRACTION_MIN,
 		CHARTS_FRACTION_MAX
 	} from './_utils/charts-fraction.js';
-	import { sectionCardClass } from '$lib/components/charts/v2/section-card.js';
-	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
-	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
-	import DownloadDataModal from '$lib/components/charts/card/DownloadDataModal.svelte';
-	import ComparePanel from '$lib/components/charts/card/compare/ComparePanel.svelte';
+	import { sectionCardClass } from '#lib/components/charts/v2/section-card.js';
+	import { getTimeFormatPolicy } from '#lib/components/charts/v2/time-format-policy.js';
+	import ChartCard from '#lib/components/charts/card/ChartCard.svelte';
+	import DownloadDataModal from '#lib/components/charts/card/DownloadDataModal.svelte';
+	import ComparePanel from '#lib/components/charts/card/compare/ComparePanel.svelte';
 	import {
 		createChartDownloads,
 		setChartDownloads
-	} from '$lib/components/charts/card/chart-downloads.svelte.js';
-	import { createCompareMode } from '$lib/components/charts/card/compare/compare-mode.svelte.js';
-	import { compareBuckets } from '$lib/components/charts/card/compare/snapshot-sources.js';
-	import { createComparePins } from '$lib/components/charts/card/compare/compare-pins.svelte.js';
+	} from '#lib/components/charts/card/chart-downloads.svelte.js';
+	import { createCompareMode } from '#lib/components/charts/card/compare/compare-mode.svelte.js';
+	import { compareBuckets } from '#lib/components/charts/card/compare/snapshot-sources.js';
+	import { createComparePins } from '#lib/components/charts/card/compare/compare-pins.svelte.js';
 	import {
 		FACILITY_CARDS,
 		FACILITY_CARD_TITLES,
@@ -63,15 +67,15 @@
 		facilityCompareSource,
 		facilityFileName,
 		facilitySummaryRows
-	} from '$lib/components/charts/facility/facility-cards.js';
-	import { analyzeUnits, unitSeriesIds } from '$lib/components/charts/facility/unit-analysis.js';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { hiddenCurtailmentSeries } from '$lib/components/charts/facility/curtailment/scope.js';
+	} from '#lib/components/charts/facility/facility-cards.js';
+	import { analyzeUnits, unitSeriesIds } from '#lib/components/charts/facility/unit-analysis.js';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import { hiddenCurtailmentSeries } from '#lib/components/charts/facility/curtailment/scope.js';
 	import {
 		parseRangeParams,
 		applyRangeParams,
 		rangeSlugFor
-	} from '$lib/components/charts/facility/range-params.js';
+	} from '#lib/components/charts/facility/range-params.js';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -159,18 +163,18 @@
 	/** What the Curtailment, Market and Emissions charts draw (whichever of a
 	 *  pair shows): their cards' downloads and comparisons read them, as
 	 *  Generation's read `intervalData`.
-	 *  @typedef {import('$lib/components/charts/card/types.js').ChartSnapshot} ChartSnapshot */
+	 *  @typedef {import('#lib/components/charts/card/types.js').ChartSnapshot} ChartSnapshot */
 	let curtailmentSnapshot = $state.raw(/** @type {ChartSnapshot | null} */ (null));
 	let marketSnapshot = $state.raw(/** @type {ChartSnapshot | null} */ (null));
 	let emissionsSnapshot = $state.raw(/** @type {ChartSnapshot | null} */ (null));
 
-	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
+	/** @type {import('#lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let powerChart = $state(undefined);
 
 	/** The curtailment panel re-exports `setViewport`/`reconcileFetches` from the
 	 *  NetworkChart it wraps, so the range controller drives it as a peer of the
 	 *  generation chart. Undefined for facilities with no curtailment split. */
-	/** @type {import('$lib/components/charts/facility/curtailment/FacilityCurtailmentPanel.svelte').default | undefined} */
+	/** @type {import('#lib/components/charts/facility/curtailment/FacilityCurtailmentPanel.svelte').default | undefined} */
 	let curtailmentPanel = $state(undefined);
 
 	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
@@ -258,7 +262,7 @@
 
 	// ---- Chart cards: downloads and compare mode ----
 
-	/** @typedef {import('$lib/components/charts/facility/facility-cards.js').FacilityCard} FacilityCard */
+	/** @typedef {import('#lib/components/charts/facility/facility-cards.js').FacilityCard} FacilityCard */
 	/** The units the charts draw as loads (charging, pumping), as they class them. */
 	let loadUnitCodes = $derived(
 		activeFacility ? analyzeUnits(activeFacility, getFuelTechColour).loadCodes : []
@@ -271,7 +275,7 @@
 	}
 	/** A card's selection: the basis, its tab and the series the units panel hides.
 	 * @param {FacilityCard} card
-	 * @returns {import('$lib/components/charts/facility/facility-cards.js').FacilityCardView} */
+	 * @returns {import('#lib/components/charts/facility/facility-cards.js').FacilityCardView} */
 	function cardView(card) {
 		const metric =
 			card === 'generation'
@@ -603,7 +607,7 @@
 			const before = url.searchParams.toString();
 			applyRangeParams(url.searchParams, state);
 			if (url.searchParams.toString() === before) return;
-			goto(`${url.pathname}${url.search}`, { replaceState: true, noScroll: true, keepFocus: true });
+			goto(`${url.pathname}${url.search}`, { replace: true, reset: false });
 		}, 300);
 		return () => clearTimeout(timer);
 	});

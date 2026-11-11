@@ -1,5 +1,5 @@
 <script>
-	import PlotChart from '$lib/components/charts/plot/PlotChart.svelte';
+	import PlotChart from '#lib/components/charts/plot/PlotChart.svelte';
 	import { ruleX, ruleY, tip, pointer, pointerX, pointerY, axisY } from '@observablehq/plot';
 	import { scaleLinear } from 'd3-scale';
 	import {
@@ -21,7 +21,7 @@
 		withFacetFields,
 		FACET_X_FIELD,
 		FACET_Y_FIELD
-	} from '$lib/components/charts/plot/plot-configs.js';
+	} from '#lib/components/charts/plot/plot-configs.js';
 	import { processAnnotations, processDataAnnotations, formatCompact } from './plot-annotations.js';
 	import { DEFAULT_ANNOTATION_STYLE } from './annotation-data.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
@@ -37,7 +37,7 @@
 		TIME_SERIES_TYPES,
 		GROUPED_TYPES,
 		WATERFALL_TYPES
-	} from '$lib/stratify/chart-types.js';
+	} from '#lib/stratify/chart-types.js';
 
 	// Hide the synthetic facet channels (data fields and Plot's scale names)
 	// from every tooltip — Plot inherits both on tip marks in faceted charts.
@@ -69,7 +69,7 @@
 	 *   seriesNames: string[],
 	 *   seriesColours: Record<string, string>,
 	 *   seriesLabels: Record<string, string>,
-	 *   chartType: import('$lib/stratify/chart-types.js').ChartType,
+	 *   chartType: import('#lib/stratify/chart-types.js').ChartType,
 	 *   waterfallMode?: 'single' | 'sum' | 'stacked',
 	 *   waterfallShowTotal?: boolean,
 	 *   waterfallColourMode?: 'semantic' | 'series',
@@ -119,7 +119,7 @@
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
 	 *   marginLeft?: number,
-	 *   options?: import('$lib/components/charts/plot/plot-configs.js').TimeSeriesOptions,
+	 *   options?: import('#lib/components/charts/plot/plot-configs.js').TimeSeriesOptions,
 	 *   annotations?: import('./plot-annotations.js').Annotation[],
 	 *   dataAnnotations?: import('./annotation-data.js').DataAnnotation[],
 	 *   annotationStyle?: import('./annotation-data.js').AnnotationStyleConfig,
@@ -391,7 +391,7 @@
 						seriesNames,
 						seriesColours,
 						seriesLabels,
-						/** @type {Record<string, import('$lib/components/charts/plot/plot-configs.js').SeriesMarkType>} */ (
+						/** @type {Record<string, import('#lib/components/charts/plot/plot-configs.js').SeriesMarkType>} */ (
 							seriesChartTypes
 						),
 						chartType,

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ verifyAdmin: vi.fn(), searchAdmins: vi.fn() }));
 
-vi.mock('$lib/auth/clerk-server.js', () => ({
+vi.mock('#lib/auth/clerk-server.js', () => ({
 	verifyAdmin: mocks.verifyAdmin,
 	searchAdmins: mocks.searchAdmins
 }));

@@ -1,5 +1,5 @@
 <script>
-	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
+	import IconChevronDown from '#lib/icons/ChevronDown.svelte';
 
 	/**
 	 * Collapsible section for the phone filter sheets (Facilities' filters,

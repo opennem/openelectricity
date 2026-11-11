@@ -1,4 +1,4 @@
-import { indexOfTime } from '$lib/components/charts/v2/binary-search.js';
+import { indexOfTime } from '#lib/components/charts/v2/binary-search.js';
 
 /**
  * Compare pins — the rows a Timeline chart drew at the comparison's A and B,

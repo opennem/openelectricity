@@ -1,8 +1,8 @@
 import {
 	getIntervalsForRange,
 	getPresetByDays
-} from '$lib/components/charts/facility/range-interval-config.js';
-import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+} from '#lib/components/charts/facility/range-interval-config.js';
+import { GROUP_OPTIONS } from '#lib/components/charts/network/groups.js';
 import { TRACKER_REGION_OPTIONS } from '../tracker-regions.js';
 
 export const MAX_EXPLORE_CHARTS = 12;

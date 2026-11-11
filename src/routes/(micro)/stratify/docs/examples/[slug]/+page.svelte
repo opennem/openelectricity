@@ -1,13 +1,13 @@
 <script>
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import ArrowUpRightIcon from '@lucide/svelte/icons/arrow-up-right';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import CopyIcon from '@lucide/svelte/icons/copy';
-	import Meta from '$lib/components/Meta.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import StrataChartView from '$lib/stratify/StrataChartView.svelte';
-	import { getChartTypeGuidance } from '$lib/stratify/example-catalogue.js';
+	import Meta from '#lib/components/Meta.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import StrataChartView from '#lib/stratify/StrataChartView.svelte';
+	import { getChartTypeGuidance } from '#lib/stratify/example-catalogue.js';
 
 	/** @type {{ data: { example: Record<string, any> } }} */
 	let { data } = $props();
@@ -39,9 +39,9 @@
 			<a
 				href="/stratify/docs"
 				class="mb-8 inline-flex items-center gap-2 font-space text-xxs font-medium uppercase tracking-wider text-mid-grey hover:text-red hover:no-underline"
+				><ArrowLeftIcon size={14} /> All examples</a
 			>
-				<ArrowLeftIcon size={14} /> All examples
-			</a>
+
 			<div class="grid gap-8 md:grid-cols-[minmax(0,1fr)_280px] md:items-end">
 				<div>
 					<div class="mb-4 flex flex-wrap items-center gap-3">

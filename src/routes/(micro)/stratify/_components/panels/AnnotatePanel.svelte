@@ -1,6 +1,6 @@
 <script>
 	import { Plus, Trash2 } from '@lucide/svelte';
-	import { HORIZONTAL_TYPES, MAP_TYPES } from '$lib/stratify/chart-types.js';
+	import { HORIZONTAL_TYPES, MAP_TYPES } from '#lib/stratify/chart-types.js';
 	import { getStratifyContext } from '../../_state/context.js';
 	import ColourPicker from '../ColourPicker.svelte';
 	import ControlInput, { CONTROL_INPUT_CLASS } from '../ControlInput.svelte';
@@ -53,15 +53,15 @@
 	});
 
 	/**
-	 * @param {import('$lib/stratify/annotation-data.js').AnnotationItem} item
+	 * @param {import('#lib/stratify/annotation-data.js').AnnotationItem} item
 	 */
 	function getAppearance(item) {
 		return { ...project.annotationStyle, ...(item.appearance ?? {}) };
 	}
 
 	/**
-	 * @param {import('$lib/stratify/annotation-data.js').AnnotationItem} item
-	 * @param {keyof import('$lib/stratify/annotation-data.js').AnnotationStyleConfig} key
+	 * @param {import('#lib/stratify/annotation-data.js').AnnotationItem} item
+	 * @param {keyof import('#lib/stratify/annotation-data.js').AnnotationStyleConfig} key
 	 * @param {string | number} value
 	 */
 	function setStyle(item, key, value) {
@@ -71,7 +71,7 @@
 	}
 
 	/**
-	 * @param {import('$lib/stratify/annotation-data.js').AnnotationItem} item
+	 * @param {import('#lib/stratify/annotation-data.js').AnnotationItem} item
 	 * @param {'lineWidth' | 'fontSize' | 'pointRadius' | 'labelMaxWidth'} key
 	 * @param {string} raw
 	 * @param {number} min
@@ -83,7 +83,7 @@
 	}
 
 	/**
-	 * @param {import('$lib/stratify/annotation-data.js').AnnotationItem} item
+	 * @param {import('#lib/stratify/annotation-data.js').AnnotationItem} item
 	 * @param {'rule' | 'point'} type
 	 */
 	function setAnnotationType(item, type) {
@@ -236,7 +236,7 @@
 									onchange={(event) =>
 										project.updateAnnotation(item.id, {
 											labelPosition:
-												/** @type {import('$lib/stratify/annotation-data.js').AnnotationLabelPosition} */ (
+												/** @type {import('#lib/stratify/annotation-data.js').AnnotationLabelPosition} */ (
 													event.currentTarget.value
 												)
 										})}

@@ -1,13 +1,13 @@
 <script>
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
-	import GenCapViz from '$lib/components/facilities/GenCapViz.svelte';
-	import { fuelTechName } from '$lib/fuel_techs';
-	import { groupUnits } from '$lib/facilities/units.js';
-	import formatValue from '$lib/facilities/format-value.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
+	import FacilityStatusIcon from '#lib/components/facilities/FacilityStatusIcon.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
+	import GenCapViz from '#lib/components/facilities/GenCapViz.svelte';
+	import { fuelTechName } from '#lib/fuel_techs.js';
+	import { groupUnits } from '#lib/facilities/units.js';
+	import formatValue from '#lib/facilities/format-value.js';
 	import { getPercentage, getParsedDate, formatTimestampLabel } from '../_utils/unit-helpers';
-	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
+	import { sortByDetailedOrder } from '#lib/fuel-tech-groups/detailed.js';
 
 	/**
 	 * `singleColumn` forces one card per row (used in the narrow 1/3-width units

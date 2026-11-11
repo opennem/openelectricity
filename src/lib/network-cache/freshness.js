@@ -2,7 +2,7 @@
  * Freshness derivation for keyed SWR edge-cache entries.
  *
  * Shared by the server (keyed-swr-cache retention, admin endpoints) and the
- * Studio cache dashboard, so it lives outside `$lib/server`. An entry is
+ * Studio cache dashboard, so it lives outside `#lib/server`. An entry is
  * `fresh` within its freshness period, `stale` between that and the edge
  * retention limit (served while a background refresh runs), and `expired`
  * once its retention TTL has elapsed. Cloudflare may evict an entry earlier,

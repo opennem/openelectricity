@@ -1,11 +1,15 @@
 <script>
 	import { toZoned, today, getLocalTimeZone } from '@internationalized/date';
 	import { tick } from 'svelte';
-	import { browser } from '$app/environment';
-	import { formatDateBySpecificity, intlTimeZone, parseCalendarDate } from '$lib/utils/date-format';
-	import { formatDateTime } from '$lib/utils/formatters';
-	import { getUnitCapacity } from '$lib/utils/capacity';
-	import formatValue from '$lib/facilities/format-value.js';
+	import { browser } from '$app/env';
+	import {
+		formatDateBySpecificity,
+		intlTimeZone,
+		parseCalendarDate
+	} from '#lib/utils/date-format.js';
+	import { formatDateTime } from '#lib/utils/formatters.js';
+	import { getUnitCapacity } from '#lib/utils/capacity.js';
+	import formatValue from '#lib/facilities/format-value.js';
 	import groupByMonthDay from './_utils/group-by-month-day';
 	import getDateField from './_utils/get-date-field';
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';

@@ -1,5 +1,5 @@
 <script>
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [widthClass]

@@ -15,9 +15,9 @@
 	 * — safe to always wrap even when financial charts are hidden.
 	 */
 
-	import { ChartStore } from '$lib/components/charts/v2';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { formatPrice } from '$lib/utils/formatters';
+	import { ChartStore } from '#lib/components/charts/v2/index.js';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import { formatPrice } from '#lib/utils/formatters.js';
 	import { setFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 	import { toEnergySeriesRows } from './energy-basis.js';
 	import { derivePriceRows, genPriceLabel, loadPriceLabel } from './price-lines.js';
@@ -37,7 +37,7 @@
 	 * @property {any[]} energyData
 	 * @property {string[]} mvSeriesNames
 	 * @property {string[]} energySeriesNames
-	 * @property {import('$lib/components/charts/v2/ChartStore.svelte.js').default} mvChartStore
+	 * @property {import('#lib/components/charts/v2/ChartStore.svelte.js').default} mvChartStore
 	 */
 
 	/**
@@ -95,7 +95,7 @@
 	} = $props();
 
 	/**
-	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 * @param {import('#lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 * @param {number} value
 	 */
 	function formatDollarValue(chart, value) {

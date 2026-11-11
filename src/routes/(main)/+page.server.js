@@ -1,6 +1,7 @@
-import { client } from '$lib/sanity';
-import { getHomepageRenewablesCached } from '$lib/oe-api/renewables-cache.server';
-import { processFlows, processPrices } from '$lib/flows/process-flows.js';
+import { client } from '#lib/sanity.js';
+import { getHomepageRenewablesCached } from '#lib/oe-api/renewables-cache.server.js';
+import { processFlows, processPrices } from '#lib/flows/process-flows.js';
+import { edgeRuntime } from '#lib/server/edge-runtime.js';
 
 // Disable prerendering - homepage has dynamic real-time data
 export const prerender = false;
@@ -26,11 +27,11 @@ async function safeFetchJson(fetchFn, url, fallback = null) {
 }
 
 /** @type {import('./$types').PageServerLoad} */
-export async function load({ fetch, platform }) {
+export async function load({ fetch }) {
 	// Streamed (returned un-awaited) so the slow OE fetch behind it never gates
 	// homepage TTFB — the hero shows a skeleton until hydration anyway. The
 	// catch is mandatory: a rejecting streamed promise is an unhandled rejection.
-	const renewablesInput = getHomepageRenewablesCached(platform).catch(() => ({
+	const renewablesInput = getHomepageRenewablesCached(edgeRuntime()).catch(() => ({
 		data: { marketStats: [] },
 		error: "Couldn't load renewables data"
 	}));

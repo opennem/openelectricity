@@ -3,7 +3,7 @@
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 
-	import IconArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
+	import IconArrowDownTray from '#lib/icons/ArrowDownTray.svelte';
 
 	/**
 	 * @typedef {Object} Props

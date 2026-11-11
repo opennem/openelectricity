@@ -2,7 +2,7 @@
  * @typedef {'date' | 'time' | 'date-time'} TooltipDateFormat
  */
 
-import { appendHistoricalYear } from '$lib/components/charts/v2/date-labels.js';
+import { appendHistoricalYear } from '#lib/components/charts/v2/date-labels.js';
 
 const DATE_OPTIONS = /** @type {const} */ ({
 	day: 'numeric',

@@ -3,11 +3,11 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { fly } from 'svelte/transition';
-	import { feedback } from '$lib/feedback/feedback.svelte.js';
-	import { portal } from '$lib/actions/portal.js';
-	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
-	import { dataTrackerLink, parsedFeatureFlags } from '$lib/stores/app';
-	import { getNavItems } from '$lib/components/nav/nav-items.js';
+	import { feedback } from '#lib/feedback/feedback.svelte.js';
+	import { portal } from '#lib/actions/portal.js';
+	import { dropdownPosition } from '#lib/actions/dropdown-position.js';
+	import { dataTrackerLink, parsedFeatureFlags } from '#lib/stores/app.js';
+	import { getNavItems } from '#lib/components/nav/nav-items.js';
 	import { NAV_MENU_KEY } from './shortcuts.js';
 
 	/**
@@ -116,7 +116,11 @@
 			const item = navItems[activeIndex];
 			if (item) {
 				closeMenu();
-				goto(item.href);
+				// goto() only navigates within the app (it rejects other origins,
+				// e.g. the Explore tracker link), so leave those to the browser.
+				const url = new URL(item.href, window.location.href);
+				if (url.origin === window.location.origin) goto(item.href);
+				else window.location.assign(url);
 			}
 			return;
 		}

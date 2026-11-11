@@ -8,11 +8,11 @@
 	 * the AEMO nominal figures remain in region-geo's `capacityMW`.)
 	 */
 
-	import { corridorLiveStatus, directionLabel } from '$lib/flows/region-geo.js';
+	import { corridorLiveStatus, directionLabel } from '#lib/flows/region-geo.js';
 
 	/**
 	 * @type {{
-	 *   interconnector: import('$lib/flows/region-geo.js').InterconnectorDef,
+	 *   interconnector: import('#lib/flows/region-geo.js').InterconnectorDef,
 	 *   flows?: Record<string, number>,
 	 *   large?: boolean
 	 * }}

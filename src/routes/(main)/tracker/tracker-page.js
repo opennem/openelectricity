@@ -1,4 +1,4 @@
-import { onNavigate, pushState, replaceState } from '$app/navigation';
+import { goto, onNavigate } from '$app/navigation';
 import { page } from '$app/state';
 import { on } from 'svelte/events';
 import { onMount, untrack } from 'svelte';
@@ -19,14 +19,12 @@ import { startTrackerClock } from './tracker-live.js';
 export function createTrackerPage(getData) {
 	const navigation = createTrackerNavigation(
 		{
-			read: () => new URL(typeof window === 'undefined' ? page.url : window.location.href),
-			write: (url, mode) => {
-				const history = mode === 'push' ? pushState : replaceState;
-				history(url.pathname + url.search, {});
-			}
+			read: () => new URL(typeof window === 'undefined' ? page.url.href : window.location.href),
+			write: (url, mode) =>
+				goto(url.pathname + url.search, { shallow: true, replace: mode !== 'push', state: {} })
 		},
 		// The data was loaded for page.url, which can lag the address bar (below).
-		new URL(page.url)
+		new URL(page.url.href)
 	);
 	const session = createTrackerSession(untrack(getData), (mode) =>
 		navigation.write(session.selection, mode)
@@ -40,7 +38,8 @@ export function createTrackerPage(getData) {
 
 	// Same-route links arrive as navigations; shallow history (our pushState
 	// entries) only as popstate, since SvelteKit leaves page.url alone.
-	onNavigate(({ to }) => {
+	onNavigate(({ to, shallow, type }) => {
+		if (shallow && type === 'goto') return;
 		if (to) restore(to.url);
 	});
 	onMount(() => {

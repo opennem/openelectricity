@@ -1,5 +1,5 @@
 <script>
-	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
+	import FilterSelect from '#lib/components/filters/FilterSelect.svelte';
 	import { DEFAULT_REGION, TRACKER_REGION_OPTIONS } from './tracker-regions.js';
 
 	/**

@@ -1,17 +1,17 @@
 <script>
 	import { parseISO } from 'date-fns';
-	import { browser } from '$app/environment';
-	import { formatRecordValue } from '$lib/records/format-value.js';
+	import { browser } from '$app/env';
+	import { formatRecordValue } from '#lib/records/format-value.js';
 	import getRelativeTime from '../page-data-options/relative-time';
 	import recordDescription from '../page-data-options/record-description';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import RecordCard from '$lib/components/records/RecordCard.svelte';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
+	import RecordCard from '#lib/components/records/RecordCard.svelte';
 	import dateTimeQuery from '../page-data-options/date-time-query';
 	import {
 		PINNED_CONFIG as pinned,
 		PINNED_REGIONS as regions,
 		createEmptyRecordMap
-	} from '$lib/records/pinned-records.js';
+	} from '#lib/records/pinned-records.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -62,6 +62,7 @@
 		loading = true;
 
 		const params = new URLSearchParams({ regions: selectedRegions.join(',') });
+
 		fetch(`/api/notable-records?${params}`)
 			.then((r) => (r.ok ? r.json() : null))
 			.then((data) => {
@@ -124,9 +125,8 @@
 							class="bg-{fuelTech} rounded-full p-3 inline-block"
 							class:text-black={fuelTech === 'solar'}
 							class:text-white={fuelTech !== 'solar'}
+							><FuelTechBadge {fuelTech} iconOnly iconSize={12} /></span
 						>
-							<FuelTechBadge {fuelTech} iconOnly iconSize={12} />
-						</span>
 					</div>
 				{/if}
 			{:else}
@@ -135,9 +135,8 @@
 						class="bg-{fuelTech} rounded-full p-3 inline-block"
 						class:text-black={fuelTech === 'solar'}
 						class:text-white={fuelTech !== 'solar'}
+						><FuelTechBadge {fuelTech} iconOnly iconSize={12} /></span
 					>
-						<FuelTechBadge {fuelTech} iconOnly iconSize={12} />
-					</span>
 
 					<div role="status" class="text-black animate-pulse">
 						<div class="bg-mid-warm-grey h-full w-full rounded-full"></div>

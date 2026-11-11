@@ -6,7 +6,7 @@
 	import { run, stopPropagation } from 'svelte/legacy';
 
 	import { getContext, createEventDispatcher } from 'svelte';
-	import clamp from '$lib/utils/clamp';
+	import clamp from '#lib/utils/clamp.js';
 	const { xScale } = getContext('LayerCake');
 
 	/**

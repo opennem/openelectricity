@@ -1,4 +1,4 @@
-import { networkQueryKey } from '$lib/components/charts/network/network-query.js';
+import { networkQueryKey } from '#lib/components/charts/network/network-query.js';
 
 /** @typedef {import('./types.js').TimelineCard} ChartKey */
 /** @typedef {import('./types.js').GenerationSnapshot} Snapshot */

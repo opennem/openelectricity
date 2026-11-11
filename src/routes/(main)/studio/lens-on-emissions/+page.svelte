@@ -6,10 +6,10 @@
 	 * historical data (FY 1990-2004) and future projections (FY 2026-2040).
 	 */
 
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { untrack } from 'svelte';
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
 	import { aggregateToYearly, filterByFYRange, mergeData } from './helpers/csv-parser.js';
 	import { SECTOR_ORDER, SECTOR_COLORS, SECTOR_LABELS, TIME_RANGES } from './helpers/config.js';
 	import { getFinancialYear, fyStartDate } from './helpers/financial-year.js';
@@ -36,20 +36,20 @@
 	 * Parse initial state from URL query parameters
 	 */
 	function getInitialInterval() {
-		const param = $page.url.searchParams.get('interval');
+		const param = page.url.searchParams.get('interval');
 		return param === 'quarter' ? 'quarter' : 'year';
 	}
 
 	function getInitialHistory() {
-		return $page.url.searchParams.get('history') === 'true';
+		return page.url.searchParams.get('history') === 'true';
 	}
 
 	function getInitialProjections() {
-		return $page.url.searchParams.get('projections') === 'true';
+		return page.url.searchParams.get('projections') === 'true';
 	}
 
 	function getInitialRollingSum() {
-		const param = $page.url.searchParams.get('rolling');
+		const param = page.url.searchParams.get('rolling');
 		// Default to true in quarter mode (unless explicitly set to false)
 		if (param === null) return true;
 		return param === 'true';
@@ -61,7 +61,7 @@
 	 */
 	function updateURL() {
 		untrack(() => {
-			const url = new URL($page.url);
+			const url = new URL(page.url.href);
 
 			// Set interval (only if not default)
 			if (intervalType === 'quarter') {
@@ -95,7 +95,7 @@
 				url.searchParams.delete('rolling');
 			}
 
-			goto(url.toString(), { replaceState: true, keepFocus: true, noScroll: true });
+			goto(url.toString(), { replace: true, reset: false });
 		});
 	}
 
@@ -569,20 +569,17 @@
 					'chart'
 						? 'bg-dark-grey text-white'
 						: 'text-dark-grey hover:bg-warm-grey'}"
-					onclick={() => (viewMode = 'chart')}
+					onclick={() => (viewMode = 'chart')}>Chart</button
 				>
-					Chart
-				</button>
+
 				<button
 					type="button"
 					class="px-4 py-1.5 text-sm font-medium rounded-full transition-colors cursor-pointer {viewMode ===
 					'table'
 						? 'bg-dark-grey text-white'
 						: 'text-dark-grey hover:bg-warm-grey'}"
-					onclick={() => (viewMode = 'table')}
+					onclick={() => (viewMode = 'table')}>Table</button
 				>
-					Table
-				</button>
 			</div>
 		</div>
 

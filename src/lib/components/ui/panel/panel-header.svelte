@@ -1,5 +1,5 @@
 <script>
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils/index.js';
 	/** @type {{ ref?: HTMLDivElement | null, class?: string, children?: import('svelte').Snippet, [key: string]: any }} */
 	let { ref = $bindable(null), class: className, children, ...restProps } = $props();
 </script>

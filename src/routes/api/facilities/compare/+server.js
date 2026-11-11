@@ -1,6 +1,6 @@
 import { NoDataFound } from 'openelectricity';
-import { oeClient } from '$lib/server/oe-client.js';
-import { apiRangeLimitError } from '$lib/oe-api/data-limits.js';
+import { oeClient } from '#lib/server/oe-client.js';
+import { apiRangeLimitError } from '#lib/oe-api/data-limits.js';
 
 const VALID_INTERVALS = new Set(['5m', '1h', '1d', '7d', '1M', '3M', '1y']);
 const VALID_METRICS = new Set(['power', 'energy']);

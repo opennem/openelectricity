@@ -1,9 +1,9 @@
 <script>
 	import { slide } from 'svelte/transition';
-	import LensChart from '$lib/components/charts/LensChart.svelte';
-	import DateBrushWithContext from '$lib/components/charts/DateBrushWithContext.svelte';
-	import Switch from '$lib/components/Switch.svelte';
-	import IconXMark from '$lib/icons/XMark.svelte';
+	import LensChart from '#lib/components/charts/LensChart.svelte';
+	import DateBrushWithContext from '#lib/components/charts/DateBrushWithContext.svelte';
+	import Switch from '#lib/components/Switch.svelte';
+	import IconXMark from '#lib/icons/XMark.svelte';
 
 	import { recordState } from './stores/state.svelte';
 	import MiniTracker from '../MiniTracker/index.svelte';

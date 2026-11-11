@@ -1,9 +1,9 @@
 <script>
 	import { getContext } from 'svelte';
-	import Switch from '$lib/components/Switch.svelte';
+	import Switch from '#lib/components/Switch.svelte';
 
 	import ScenarioDescription from './ScenarioDescription.svelte';
-	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
+	import MiniCharts from '#lib/components/charts/v2/MiniCharts.svelte';
 	import { withScenarioLabels } from '../page-data-options/models';
 
 	/**

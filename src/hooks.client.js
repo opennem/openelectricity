@@ -1,6 +1,6 @@
-import { captureError, startSentry } from '$lib/sentry/client.js';
-import { registerServiceWorker } from '$lib/utils/service-worker.js';
-import { reloadOnStaleBuild } from '$lib/utils/stale-build.js';
+import { captureError, startSentry } from '#lib/sentry/client.js';
+import { registerServiceWorker } from '#lib/utils/service-worker.js';
+import { reloadOnStaleBuild } from '#lib/utils/stale-build.js';
 
 /**
  * Start Sentry (errors, session replay, feedback) once the page is idle,
@@ -14,10 +14,11 @@ export function init() {
 }
 
 /**
- * Report load and render errors SvelteKit catches itself; a missing page
- * (404) isn't a fault.
- * @type {import('@sveltejs/kit').HandleClientError}
+ * Report load and render errors SvelteKit catches itself. Only `unknown`
+ * errors are faults: `app` errors are ones we raised with `error(...)`, and
+ * `framework` errors are SvelteKit's own (e.g. a 404 for a missing page).
+ * @type {import('@sveltejs/kit/hooks').HandleClientError}
  */
-export function handleError({ error, status }) {
-	if (status !== 404) captureError(error);
+export function handleError({ kind, error }) {
+	if (kind === 'unknown') captureError(error);
 }

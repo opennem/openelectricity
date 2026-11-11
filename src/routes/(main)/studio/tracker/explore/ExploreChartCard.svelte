@@ -1,13 +1,13 @@
 <script>
 	import { MoreHorizontal, Pencil, Trash2 } from '@lucide/svelte';
-	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
-	import FacilityChart from '$lib/components/charts/facility/FacilityChart.svelte';
-	import FacilityComparisonChart from '$lib/components/charts/facility/FacilityComparisonChart.svelte';
-	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
-	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
-	import { toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
-	import { MIN_DATE } from '$lib/utils/date-range.js';
+	import NetworkChart from '#lib/components/charts/network/NetworkChart.svelte';
+	import FacilityChart from '#lib/components/charts/facility/FacilityChart.svelte';
+	import FacilityComparisonChart from '#lib/components/charts/facility/FacilityComparisonChart.svelte';
+	import MetricCard from '#lib/components/charts/facility/metrics/MetricCard.svelte';
+	import { getIntervalSpec } from '#lib/components/charts/facility/range-interval-config.js';
+	import { regionToNetwork } from '#lib/components/charts/network/region-to-network.js';
+	import { toNetworkDateString } from '#lib/components/charts/v2/network-time.js';
+	import { MIN_DATE } from '#lib/utils/date-range.js';
 	import { TRACKER_REGION_OPTIONS } from '../tracker-regions.js';
 	import GenerationBreakdown from '../dashboard/GenerationBreakdown.svelte';
 	import { recipeById } from './explore-model.js';

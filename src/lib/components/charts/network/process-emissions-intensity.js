@@ -15,8 +15,8 @@
 import {
 	collectSeriesByTimestamp,
 	rowsFromSeriesMaps
-} from '$lib/components/charts/v2/series-rows.js';
-import { intensityKgPerMWh } from '$lib/components/charts/facility/intensity-lines.js';
+} from '#lib/components/charts/v2/series-rows.js';
+import { intensityKgPerMWh } from '#lib/components/charts/facility/intensity-lines.js';
 
 export const INTENSITY_SERIES_ID = 'intensity';
 const EMISSIONS_ID = 'emissions';

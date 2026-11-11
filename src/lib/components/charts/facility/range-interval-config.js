@@ -1,4 +1,4 @@
-import { POWER_THRESHOLD } from '$lib/utils/metric-interval';
+import { POWER_THRESHOLD } from '#lib/utils/metric-interval.js';
 
 /**
  * Range + interval configuration for the facility charts — the single source of

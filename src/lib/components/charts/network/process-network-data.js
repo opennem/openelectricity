@@ -23,7 +23,7 @@ import {
 	collectSeriesByTimestamp,
 	orderSeriesIds,
 	rowsFromSeriesMaps
-} from '$lib/components/charts/v2/series-rows.js';
+} from '#lib/components/charts/v2/series-rows.js';
 
 /**
  * Battery split fuel techs. The OE network responses return the aggregate

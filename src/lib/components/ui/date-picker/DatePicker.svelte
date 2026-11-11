@@ -4,12 +4,12 @@
 	import CalendarIcon from '@lucide/svelte/icons/calendar';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import { inFilterSheet } from '$lib/components/filters/filter-sheet.js';
+	import { inFilterSheet } from '#lib/components/filters/filter-sheet.js';
 	import {
 		hasTouchControls,
 		TOUCH_PILL,
 		TOUCH_PILL_ICON
-	} from '$lib/components/ui/touch-controls.js';
+	} from '#lib/components/ui/touch-controls.js';
 
 	/**
 	 * DatePicker — a single-date picker built on bits-ui's DatePicker

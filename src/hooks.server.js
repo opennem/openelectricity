@@ -1,7 +1,7 @@
-import { building } from '$app/environment';
-import { ARTICLE_LOGIN } from '$env/static/private';
+import { building } from '$app/env';
+import { ARTICLE_LOGIN } from '$app/env/private';
 
-/** @type {import('@sveltejs/kit').Handle} */
+/** @type {import('@sveltejs/kit/hooks').Handle} */
 export const handle = async ({ event, resolve }) => {
 	let url = new URL(event.request.url);
 

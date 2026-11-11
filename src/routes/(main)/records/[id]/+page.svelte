@@ -2,10 +2,10 @@
 	import { fade } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import Meta from '$lib/components/Meta.svelte';
-	import { regionsWithLabels } from '$lib/regions';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import { regionsWithLabels } from '#lib/regions.js';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import PageNav from './RecordHistory/PageNav.svelte';
 	import RecordHistory from './RecordHistory/index.svelte';
@@ -16,9 +16,9 @@
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
 	import { chartOptions } from './MiniTracker/helpers/config';
 	import dateTimeQuery from '../page-data-options/date-time-query';
-	import { showToast } from '$lib/stores/toast';
-	import { backOr } from '$lib/utils/back-navigation.js';
-	import { applyRecordValueFormat } from '$lib/records/format-value.js';
+	import { showToast } from '#lib/stores/toast.js';
+	import { backOr } from '#lib/utils/back-navigation.js';
+	import { applyRecordValueFormat } from '#lib/records/format-value.js';
 	/** @type {{ data: any }} */
 	let { data } = $props();
 	let { period, recordIds, focusTime } = $derived(data);
@@ -144,7 +144,7 @@
 			query.delete('datetime');
 			query.delete('offset');
 		}
-		goto(`?${query.toString()}`, { noScroll: true });
+		goto(`?${query.toString()}`, { reset: false });
 	}
 
 	let pageTitle = $derived.by(() => {

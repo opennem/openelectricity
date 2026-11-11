@@ -1,4 +1,4 @@
-import { fetchRenewablesInput } from '$lib/oe-api/fetch-renewables.server';
+import { fetchRenewablesInput } from '#lib/oe-api/fetch-renewables.server.js';
 
 export const prerender = false;
 

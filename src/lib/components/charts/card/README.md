@@ -65,7 +65,7 @@ the card, the "Download data" dialog and the comparison.
 Pages: `src/routes/(main)/tracker/` (Timeline, Profile, Compare) and
 `src/routes/(main)/facility/[code]/+page.svelte` (Generation, Curtailment,
 Market, Emissions; its builders are
-`$lib/components/charts/facility/facility-cards.js`).
+`#lib/components/charts/facility/facility-cards.js`).
 
 ## Tests
 

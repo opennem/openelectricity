@@ -1,4 +1,4 @@
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 
 export async function load({ setHeaders }) {
 	/** @type {any[]} */

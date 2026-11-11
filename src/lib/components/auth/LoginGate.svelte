@@ -7,9 +7,9 @@
 	 */
 
 	import { onMount } from 'svelte';
-	import { initClerk, getClerkState } from '$lib/auth/clerk.svelte.js';
-	import Button from '$lib/components/form-elements/Button.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import { initClerk, getClerkState } from '#lib/auth/clerk.svelte.js';
+	import Button from '#lib/components/form-elements/Button.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
 
 	/**
 	 * @type {{

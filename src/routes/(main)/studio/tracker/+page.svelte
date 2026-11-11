@@ -1,13 +1,13 @@
 <script>
 	import { resolve } from '$app/paths';
 	import { ArrowUpRight, ChartNoAxesCombined, Compass, Map } from '@lucide/svelte';
-	import Meta from '$lib/components/Meta.svelte';
-	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import PageHeaderSimple from '#lib/components/PageHeaderSimple.svelte';
 
-	/** @type {Array<{href:'/studio/tracker/map'|'/studio/tracker/dashboard'|'/studio/tracker/explore',name:string,label:string,description:string,icon:any}>} */
+	/** @type {Array<{href:'studio/tracker/map'|'studio/tracker/dashboard'|'studio/tracker/explore',name:string,label:string,description:string,icon:any}>} */
 	const reviews = [
 		{
-			href: '/studio/tracker/map',
+			href: 'studio/tracker/map',
 			name: 'Map tracker',
 			label: 'Map-first',
 			description:
@@ -15,7 +15,7 @@
 			icon: Map
 		},
 		{
-			href: '/studio/tracker/dashboard',
+			href: 'studio/tracker/dashboard',
 			name: 'Dashboard tracker',
 			label: 'Analysis-first',
 			description:
@@ -23,7 +23,7 @@
 			icon: ChartNoAxesCombined
 		},
 		{
-			href: '/studio/tracker/explore',
+			href: 'studio/tracker/explore',
 			name: 'Explore',
 			label: 'Explore-first',
 			description:

@@ -1,12 +1,12 @@
 /**
  * Studio tracker region options: the shared Explorer list plus the combined
  * "All Regions" (NEM+WEM, value 'au') scope, which is this tracker's default.
- * The scope itself and the spot-price rule come from `$lib/regions.js`.
+ * The scope itself and the spot-price rule come from `#lib/regions.js`.
  */
 
-import { regionOptionsWithAu } from '$lib/regions.js';
+import { regionOptionsWithAu } from '#lib/regions.js';
 
-export { hasSpotPrice } from '$lib/regions.js';
+export { hasSpotPrice } from '#lib/regions.js';
 
 export const DEFAULT_REGION = 'au';
 

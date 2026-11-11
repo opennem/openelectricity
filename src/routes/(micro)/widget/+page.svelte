@@ -2,10 +2,10 @@
 	import { untrack } from 'svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { goto } from '$app/navigation';
-	import { colourReducer } from '$lib/stores/theme';
-	import { StratumChart } from '$lib/components/charts/v2';
-	import IconCheckMark from '$lib/icons/CheckMark.svelte';
-	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
+	import { colourReducer } from '#lib/stores/theme.js';
+	import { StratumChart } from '#lib/components/charts/v2/index.js';
+	import IconCheckMark from '#lib/icons/CheckMark.svelte';
+	import IconChevronUpDown from '#lib/icons/ChevronUpDown.svelte';
 
 	import init from './helpers/init';
 	import process from './helpers/process';

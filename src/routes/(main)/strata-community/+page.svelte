@@ -1,8 +1,8 @@
 <script>
 	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
-	import Meta from '$lib/components/Meta.svelte';
-	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
-	import StrataChartCard from '$lib/stratify/StrataChartCard.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import PageHeaderSimple from '#lib/components/PageHeaderSimple.svelte';
+	import StrataChartCard from '#lib/stratify/StrataChartCard.svelte';
 
 	/**
 	 * @typedef {Object} Props

@@ -3,7 +3,7 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('$lib/types/chart.types').TimeSeriesData[]} [dataset]
+	 * @property {import('#lib/types/chart.types.ts').TimeSeriesData[]} [dataset]
 	 * @property {string[]} [keys]
 	 * @property {Object.<string, string>} [labelDict]
 	 * @property {Object.<string, string>} [colourDict]

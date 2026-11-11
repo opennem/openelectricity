@@ -1,4 +1,4 @@
-import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
+import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$app/env/public';
 
 export async function GET({ url, fetch, setHeaders }) {
 	setHeaders({

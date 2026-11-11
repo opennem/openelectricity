@@ -25,7 +25,7 @@ import {
 	processForChart,
 	DateBrush,
 	INTERVAL_OPTIONS
-} from '$lib/components/charts/v2';
+} from '#lib/components/charts/v2/index.js';
 
 // Process raw data
 const chartData = processForChart(rawData, 'W', {
@@ -66,7 +66,7 @@ chart.seriesColours = chartData.seriesColours;
 The main entry point for processing raw statistics data into chart-ready format.
 
 ```javascript
-import { processForChart } from '$lib/components/charts/v2';
+import { processForChart } from '#lib/components/charts/v2/index.js';
 
 const result = processForChart(rawData, 'W', {
   // Group fuel techs into categories
@@ -111,7 +111,7 @@ const result = processForChart(rawData, 'W', {
 Create a reusable processor with preset options:
 
 ```javascript
-import { createProcessor } from '$lib/components/charts/v2';
+import { createProcessor } from '#lib/components/charts/v2/index.js';
 
 const processAuGrid = createProcessor({
 	groupMap: auGridGroups,
@@ -128,7 +128,7 @@ const result = processAuGrid(data, 'W');
 Filter data points by date range:
 
 ```javascript
-import { filterByDateRange } from '$lib/components/charts/v2';
+import { filterByDateRange } from '#lib/components/charts/v2/index.js';
 
 const filtered = filterByDateRange(data, new Date('2024-01-01'), new Date('2024-01-31'));
 ```
@@ -137,14 +137,14 @@ const filtered = filterByDateRange(data, new Date('2024-01-01'), new Date('2024-
 
 ## StatisticV2 Class
 
-Located in `$lib/utils/Statistic/v2.js`
+Located in `#lib/utils/Statistic/v2.js`
 
 The StatisticV2 class processes raw statistics data, handling grouping, ordering, and value transformations.
 
 ### Constructor
 
 ```javascript
-import StatisticV2 from '$lib/utils/Statistic/v2.js';
+import StatisticV2 from '#lib/utils/Statistic/v2.js';
 
 const stats = new StatisticV2(data, {
 	statsType: 'history', // or 'forecast'
@@ -215,14 +215,14 @@ const result = new StatisticV2(data, { unit: 'MW' })
 
 ## TimeSeriesV2 Class
 
-Located in `$lib/utils/TimeSeries/v2.js`
+Located in `#lib/utils/TimeSeries/v2.js`
 
 The TimeSeriesV2 class transforms statistics data into time-indexed series suitable for charting.
 
 ### Constructor
 
 ```javascript
-import TimeSeriesV2 from '$lib/utils/TimeSeries/v2.js';
+import TimeSeriesV2 from '#lib/utils/TimeSeries/v2.js';
 
 const ts = new TimeSeriesV2(statsData, {
 	statsType: 'history',
@@ -289,8 +289,8 @@ const chartData = ts.toChartFormat();
 ### Full Example
 
 ```javascript
-import StatisticV2 from '$lib/utils/Statistic/v2.js';
-import TimeSeriesV2 from '$lib/utils/TimeSeries/v2.js';
+import StatisticV2 from '#lib/utils/Statistic/v2.js';
+import TimeSeriesV2 from '#lib/utils/TimeSeries/v2.js';
 
 // Process statistics
 const stats = new StatisticV2(rawData, { unit: 'MW' })
@@ -318,7 +318,7 @@ const chartData = ts.toChartFormat();
 The central state management for a chart instance:
 
 ```javascript
-import { ChartStore } from '$lib/components/charts/v2';
+import { ChartStore } from '#lib/components/charts/v2/index.js';
 
 const chart = new ChartStore({
   key: Symbol('unique-key'),
@@ -352,7 +352,7 @@ The main chart component for stacked area/bar charts:
 
 ```svelte
 <script>
-	import { StratumChart } from '$lib/components/charts/v2';
+	import { StratumChart } from '#lib/components/charts/v2/index.js';
 </script>
 
 <StratumChart {chart} height={400} />
@@ -432,7 +432,7 @@ What a date label should look like per display interval is defined once in [`tim
 
 ```svelte
 <script>
-	import { StratumChart, ChartStore, createSyncedCharts } from '$lib/components/charts/v2';
+	import { StratumChart, ChartStore, createSyncedCharts } from '#lib/components/charts/v2/index.js';
 
 	const chart1 = new ChartStore({ key: Symbol('chart1'), title: 'Region 1' });
 	const chart2 = new ChartStore({ key: Symbol('chart2'), title: 'Region 2' });
@@ -472,7 +472,7 @@ A brush component for date range selection:
 
 ```svelte
 <script>
-	import { DateBrush } from '$lib/components/charts/v2';
+	import { DateBrush } from '#lib/components/charts/v2/index.js';
 
 	let brushedRange = $state(undefined);
 
@@ -490,7 +490,7 @@ Toggle between time intervals:
 
 ```svelte
 <script>
-	import { IntervalSelector, INTERVAL_OPTIONS } from '$lib/components/charts/v2';
+	import { IntervalSelector, INTERVAL_OPTIONS } from '#lib/components/charts/v2/index.js';
 
 	let selectedInterval = $state('5m');
 </script>
@@ -508,8 +508,8 @@ StratumChart owns the +/- zoom button rendering — pass `zoomMode` plus the cli
 
 ```svelte
 <script>
-	import { StratumChart } from '$lib/components/charts/v2';
-	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
+	import { StratumChart } from '#lib/components/charts/v2/index.js';
+	import { createViewportGestures } from '#lib/components/charts/v2/viewport-gestures.js';
 
 	const { handlePan, handleZoom, zoomIn, zoomOut } = createViewportGestures({
 		viewport: () => ({ start: viewStart, end: viewEnd }),
@@ -546,7 +546,7 @@ A unified toolbar combining range presets, an integrated date-range picker, and 
 
 ```svelte
 <script>
-	import { ChartRangeBar } from '$lib/components/charts/v2';
+	import { ChartRangeBar } from '#lib/components/charts/v2/index.js';
 </script>
 
 <ChartRangeBar
@@ -646,7 +646,7 @@ end), matching `FilterSelect` and `form-elements/Select`.
 Aggregate and average data to a target interval:
 
 ```javascript
-import { aggregateData } from '$lib/components/charts/v2';
+import { aggregateData } from '#lib/components/charts/v2/index.js';
 
 const aggregated = aggregateData(data, '30m', seriesNames);
 ```
@@ -656,7 +656,7 @@ const aggregated = aggregateData(data, '30m', seriesNames);
 Default interval options for selectors:
 
 ```javascript
-import { INTERVAL_OPTIONS } from '$lib/components/charts/v2';
+import { INTERVAL_OPTIONS } from '#lib/components/charts/v2/index.js';
 
 // [{ label: '5 min', value: '5m' }, { label: '30 min', value: '30m' }]
 ```
@@ -670,7 +670,7 @@ import { INTERVAL_OPTIONS } from '$lib/components/charts/v2';
 Synchronize multiple charts for linked interactions:
 
 ```javascript
-import { createSyncedCharts } from '$lib/components/charts/v2';
+import { createSyncedCharts } from '#lib/components/charts/v2/index.js';
 
 const chart1 = new ChartStore({ ... });
 const chart2 = new ChartStore({ ... });
@@ -706,7 +706,7 @@ A complete example showing multiple region charts with synced interactions:
 		INTERVAL_OPTIONS,
 		createSyncedCharts,
 		processForChart
-	} from '$lib/components/charts/v2';
+	} from '#lib/components/charts/v2/index.js';
 
 	let { data } = $props(); // { regions: [...] }
 
@@ -784,7 +784,7 @@ const result = process({
 **After (v2):**
 
 ```javascript
-import { processForChart } from '$lib/components/charts/v2';
+import { processForChart } from '#lib/components/charts/v2/index.js';
 
 const result = processForChart(data, 'W', {
 	groupMap: myMap,
@@ -875,9 +875,9 @@ move would cost frames for little gain. Put `hoverFade` on the element whose own
 
 When `chart.chartOptions.curveType === 'step'` (the effective curve: the user's `selectedCurveType`, or `'step'` while the growth transform locks it, `isCurveLocked`), StackedAreaChart renders with d3's `curveStepAfter` (value at T is drawn as a horizontal bar from T to T+I) and uses **StepHoverBand** instead of LineX/Dot for hover/focus indicators. This aligns with interval-start timestamps — a point at "1 June" visually spans all of June — and is suitable for daily / weekly / monthly energy data.
 
-**Data transforms.** `ChartOptions` offers Absolute, Proportion and Change since, plus **Growth** while the owner sets `growthComparison` (`{ lag, label, leadInMs }` from `growthComparison()` in `$lib/utils/data-transform/growth.js`; `NetworkChart` does so at energy grains when given `growthTransform`). `selectedDataTransformType` is the choice; `dataTransformType` is the transform in effect (a growth choice reads as absolute while growth isn't offered), and the `isDataTransformType*` flags, `ChartControls` and the store follow it. Growth is row-relative, so the store computes it over `growthLeadIn` + `seriesData` (`lag` rows back), stacks it diverging and hides absolute primary-axis overlays.
+**Data transforms.** `ChartOptions` offers Absolute, Proportion and Change since, plus **Growth** while the owner sets `growthComparison` (`{ lag, label, leadInMs }` from `growthComparison()` in `#lib/utils/data-transform/growth.js`; `NetworkChart` does so at energy grains when given `growthTransform`). `selectedDataTransformType` is the choice; `dataTransformType` is the transform in effect (a growth choice reads as absolute while growth isn't offered), and the `isDataTransformType*` flags, `ChartControls` and the store follow it. Growth is row-relative, so the store computes it over `growthLeadIn` + `seriesData` (`lag` rows back), stacks it diverging and hides absolute primary-axis overlays.
 
-**Energy measure.** While the owner sets `averagePowerAvailable` (`NetworkChart` does on a generation chart at energy grains when given `averagePower`), `ChartControls` shows a Measure row (Energy | Av. power; hidden under Proportion). `selectedEnergyMeasure` is the choice (`setEnergyMeasure` reports user changes to `onEnergyMeasureChange`); `isAveragePower` is the measure in effect. The store then divides `seriesData`, the growth lead-in and absolute overlays by `bucketHours(row)` (`transformToAveragePower` in `$lib/utils/data-transform/average-power.js`) before any transform; the result is `seriesMeasureData`. The owner sets the unit (`baseUnit` `W`).
+**Energy measure.** While the owner sets `averagePowerAvailable` (`NetworkChart` does on a generation chart at energy grains when given `averagePower`), `ChartControls` shows a Measure row (Energy | Av. power; hidden under Proportion). `selectedEnergyMeasure` is the choice (`setEnergyMeasure` reports user changes to `onEnergyMeasureChange`); `isAveragePower` is the measure in effect. The store then divides `seriesData`, the growth lead-in and absolute overlays by `bucketHours(row)` (`transformToAveragePower` in `#lib/utils/data-transform/average-power.js`) before any transform; the result is `seriesMeasureData`. The owner sets the unit (`baseUnit` `W`).
 
 **Automatic last-bar rendering**: StackedAreaChart internally appends a phantom trailing point one interval past the last real point (in `renderSeriesData`), and the ChartStore derives `renderXDomain` to extend `xDomain` by one full interval on the right. Together these make the last bar render at full width without the consumer doing anything — both `chart.stepIntervalMs` and `chart.renderXDomain` are exposed on ChartStore as derived values (see the table below).
 

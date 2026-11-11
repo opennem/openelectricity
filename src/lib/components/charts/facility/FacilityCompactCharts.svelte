@@ -21,13 +21,13 @@
 	import FacilityPriceChart from './FacilityPriceChart.svelte';
 	import FacilityFinancialDataProvider from './FacilityFinancialDataProvider.svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { formatRangeLabel, ChartRangeBar } from '$lib/components/charts/v2';
+	import { formatRangeLabel, ChartRangeBar } from '#lib/components/charts/v2/index.js';
 	import { createChartRangeControl } from './chart-range-control.svelte.js';
 	import { dataEndMs } from './data-end.js';
 	import { capYTicks } from './helpers.js';
-	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
-	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
-	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
+	import { MIN_DATE, getEarliestDate } from '#lib/utils/date-range.js';
+	import { ianaFromOffset, toNetworkDateString } from '#lib/components/charts/v2/network-time.js';
+	import PageOptionsMenu from '#lib/components/PageOptionsMenu.svelte';
 	import { chartDownloadItems, downloadChartCsv } from './facility-csv.js';
 	import { rangeSlugFor } from './range-params.js';
 
@@ -77,7 +77,7 @@
 		return formatRangeLabel(start, end, range.displayInterval, ianaTimeZone);
 	});
 
-	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
+	/** @type {import('#lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let powerChart = $state(undefined);
 
 	/** Visible-range data captured for the CSV downloads in the options menu:

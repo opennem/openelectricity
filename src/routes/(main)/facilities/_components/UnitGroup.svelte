@@ -1,11 +1,11 @@
 <script>
-	import { formatDateTime } from '$lib/utils/formatters';
-	import { stripDateTimezone } from '$lib/utils/date-format';
-	import { fuelTechName } from '$lib/fuel_techs';
-	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import GenCapViz from '$lib/components/facilities/GenCapViz.svelte';
-	import formatValue from '$lib/facilities/format-value.js';
+	import { formatDateTime } from '#lib/utils/formatters.js';
+	import { stripDateTimezone } from '#lib/utils/date-format.js';
+	import { fuelTechName } from '#lib/fuel_techs.js';
+	import FacilityStatusIcon from '#lib/components/facilities/FacilityStatusIcon.svelte';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
+	import GenCapViz from '#lib/components/facilities/GenCapViz.svelte';
+	import formatValue from '#lib/facilities/format-value.js';
 
 	/**
 	 * @type {{

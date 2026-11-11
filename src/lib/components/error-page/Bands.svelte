@@ -1,9 +1,9 @@
 <script>
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
 
 	// Top → bottom, mirroring the site's stacked-area order (solar on top,
 	// coal at the base). Bands are equal height.
-	/** @type {import('$lib/types/fuel_tech.types').FuelTechCode[]} */
+	/** @type {import('#lib/types/fuel_tech.types.ts').FuelTechCode[]} */
 	const stack = [
 		'solar_rooftop',
 		'solar_utility',

@@ -6,17 +6,17 @@
 	 * Keyboard navigable, technical/dense presentation of all CMS data.
 	 */
 
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
 	import { Search, MapPin, Image, LogOut } from '@lucide/svelte';
 	import { slide } from 'svelte/transition';
 	import { getContext, onDestroy, onMount, tick, untrack } from 'svelte';
-	import { PanelHeader, DragHandle, createDragHandler } from '$lib/components/ui/panel';
+	import { PanelHeader, DragHandle, createDragHandler } from '#lib/components/ui/panel/index.js';
 	import FacilityDetail from './_components/FacilityDetail.svelte';
-	import LoginGate from '$lib/components/auth/LoginGate.svelte';
-	import { getClerkState } from '$lib/auth/clerk.svelte.js';
-	import { fetchOsmPolygon, isOsmCached, featureBounds } from '$lib/utils/osm.js';
+	import LoginGate from '#lib/components/auth/LoginGate.svelte';
+	import { getClerkState } from '#lib/auth/clerk.svelte.js';
+	import { fetchOsmPolygon, isOsmCached, featureBounds } from '#lib/utils/osm.js';
 
 	const clerkState = getClerkState();
 
@@ -208,20 +208,20 @@
 			deselectFacility();
 			return;
 		}
-		goto(`${BASE_PATH}/${code}`, { noScroll: true, keepFocus: true });
+		goto(`${BASE_PATH}/${code}`, { reset: false });
 	}
 
 	function deselectFacility() {
-		goto(BASE_PATH, { noScroll: true, keepFocus: true });
+		goto(BASE_PATH, { reset: false });
 	}
 
 	/** @param {string | null} code */
 	function selectUnit(code) {
 		if (!facilityCode) return;
 		if (code) {
-			goto(`${BASE_PATH}/${facilityCode}/${code}`, { noScroll: true, keepFocus: true });
+			goto(`${BASE_PATH}/${facilityCode}/${code}`, { reset: false });
 		} else {
-			goto(`${BASE_PATH}/${facilityCode}`, { noScroll: true, keepFocus: true });
+			goto(`${BASE_PATH}/${facilityCode}`, { reset: false });
 		}
 	}
 
@@ -464,7 +464,7 @@
 											if (ds === data.sanity.dataset) return;
 											switchingDataset = true;
 											document.cookie = `cms-dataset=${ds};path=/;max-age=${60 * 60 * 24 * 365}`;
-											await invalidateAll();
+											await refreshAll();
 											switchingDataset = false;
 										}}
 									>

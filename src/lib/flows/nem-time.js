@@ -6,7 +6,7 @@
  * dropping the `Z` yields the naive NEM-local string the API wants.
  */
 
-import { offsetMsFromOffset, toNetworkNaive } from '$lib/components/charts/v2/network-time.js';
+import { offsetMsFromOffset, toNetworkNaive } from '#lib/components/charts/v2/network-time.js';
 
 export const HOURS_MS = 3600_000;
 

@@ -20,7 +20,7 @@ duplicating it.
 
 ## Commands and verification
 
-- Use `pnpm` only. Node 22.12 or later is required.
+- Use `pnpm` only. Node 22.17 or later is required (SvelteKit 3).
 - `pnpm run dev` is the contributor path and reads `.env`.
 - `pnpm run doppler-dev` is a maintainer convenience; never make Doppler a
   requirement for contributors.

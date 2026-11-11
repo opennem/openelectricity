@@ -1,8 +1,8 @@
 /**
  * Pure facility → card data derivation, shared by the build-time OG card renderer
- * (`$lib/server/og/facility-card.js`, run in Node) and the live in-app card
- * (`$lib/components/FacilityOgCard.svelte`). Kept here (not under `$lib/server`,
- * and free of `$lib`-alias/theme/node imports) so both a plain-Node build script
+ * (`#lib/server/og/facility-card.js`, run in Node) and the live in-app card
+ * (`#lib/components/FacilityOgCard.svelte`). Kept here (not under `#lib/server`,
+ * and free of `#lib`-alias/theme/node imports) so both a plain-Node build script
  * and the browser bundle can import it — hence the relative import of the
  * self-contained `detailed` fuel-tech order below.
  */

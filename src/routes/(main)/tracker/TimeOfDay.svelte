@@ -1,21 +1,21 @@
 <script>
-	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
-	import FilterBarGroup from '$lib/components/filters/FilterBarGroup.svelte';
-	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
-	import { DatePicker } from '$lib/components/ui/date-picker';
-	import Switch from '$lib/components/SwitchWithIcons.svelte';
+	import FilterSelect from '#lib/components/filters/FilterSelect.svelte';
+	import FilterBarGroup from '#lib/components/filters/FilterBarGroup.svelte';
+	import FilterSheetSection from '#lib/components/filters/FilterSheetSection.svelte';
+	import { DatePicker } from '#lib/components/ui/date-picker/index.js';
+	import Switch from '#lib/components/SwitchWithIcons.svelte';
 	import ChartArea from '@lucide/svelte/icons/chart-area';
 	import ChartSpline from '@lucide/svelte/icons/chart-spline';
 	import Waves from '@lucide/svelte/icons/waves';
 	import CircleDashed from '@lucide/svelte/icons/circle-dashed';
 	import Target from '@lucide/svelte/icons/target';
-	import Toggle from '$lib/components/form-elements/Toggle.svelte';
+	import Toggle from '#lib/components/form-elements/Toggle.svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { slide } from 'svelte/transition';
 	import { color as d3Colour } from 'd3-color';
-	import { formatDateRange } from '$lib/components/charts/v2/date-labels.js';
-	import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
-	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
+	import { formatDateRange } from '#lib/components/charts/v2/date-labels.js';
+	import { getGroup, loadGroupsFor } from '#lib/components/charts/network/groups.js';
+	import ChartCard from '#lib/components/charts/card/ChartCard.svelte';
 	import SeriesLegend from './SeriesLegend.svelte';
 	import { seriesLegendItems } from './chart-legend.js';
 	import FuelTechOptions from './FuelTechOptions.svelte';
@@ -36,8 +36,8 @@
 	import { createProfileData, createProfileDemand } from './profile-data.svelte.js';
 	import { createRooftopForecast } from './rooftop-forecast.svelte.js';
 	import { hasRooftopForecast } from './rooftop-forecast.js';
-	import { topUpRooftopPower } from '$lib/components/charts/network/rooftop-top-up.js';
-	import { DEMAND_GROSS_SERIES_ID } from '$lib/components/charts/network/market-series-ids.js';
+	import { topUpRooftopPower } from '#lib/components/charts/network/rooftop-top-up.js';
+	import { DEMAND_GROSS_SERIES_ID } from '#lib/components/charts/network/market-series-ids.js';
 	import { createLoadingNotice } from './tracker-loading.svelte.js';
 	import { DEFAULT_TABLE_COLUMNS, PERCENTILE_TABLE_COLUMNS } from './table-columns.js';
 	import { hasSpotPrice, regionLabel as regionLabelFor } from './tracker-regions.js';
@@ -45,7 +45,7 @@
 	import {
 		getChartDownloads,
 		chartDownload
-	} from '$lib/components/charts/card/chart-downloads.svelte.js';
+	} from '#lib/components/charts/card/chart-downloads.svelte.js';
 	import { toggleSeriesVisibility } from './tracker-visibility.js';
 	import { OE_RED } from './tracker-overlays.js';
 	import {

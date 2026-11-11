@@ -1,12 +1,12 @@
 <script>
-	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
-	import { convert } from '$lib/utils/si-units';
-	import { getNumberFormat } from '$lib/utils/formatters';
+	import MiniCharts from '#lib/components/charts/v2/MiniCharts.svelte';
+	import { convert } from '#lib/utils/si-units.js';
+	import { getNumberFormat } from '#lib/utils/formatters.js';
 	import { withScenarioLabels } from '../../../../../routes/(main)/scenarios/page-data-options/models';
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 * @property {import('#lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 * @property {string} selectedGroup
 	 * @property {string[]} [seriesLoadsIds]
 	 * @property {(time: number, key?: string) => void} [onhover]

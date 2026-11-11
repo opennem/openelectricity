@@ -1,6 +1,6 @@
 <script>
-	import Icon from '$lib/components/Icon.svelte';
-	import { fuelTechName } from '$lib/fuel_techs';
+	import Icon from '#lib/components/Icon.svelte';
+	import { fuelTechName } from '#lib/fuel_techs.js';
 
 	/**
 	 * @typedef {Object} Props

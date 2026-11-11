@@ -8,7 +8,7 @@
  * - Focus/hover visual states
  */
 
-import getSeqId from '$lib/utils/html-id-gen';
+import getSeqId from '#lib/utils/html-id-gen.js';
 
 /**
  * @typedef {Object} ChartPadding

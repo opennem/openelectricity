@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import { createClient } from '@sanity/client';
-import { PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID } from '$env/static/public';
-import { SANITY_TOKEN } from '$env/static/private';
-import { normaliseChart } from '$lib/stratify/chart-data.js';
+import { PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID } from '$app/env/public';
+import { SANITY_TOKEN } from '$app/env/private';
+import { normaliseChart } from '#lib/stratify/chart-data.js';
 
 const client = createClient({
 	projectId: PUBLIC_SANITY_PROJECT_ID,

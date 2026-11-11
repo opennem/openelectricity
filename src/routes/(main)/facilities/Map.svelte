@@ -12,31 +12,31 @@
 	// Registers MapLibre 6's worker URL with Vite (once per page, idempotent).
 	import 'svelte-maplibre-gl/vite';
 	import { backOut } from 'svelte/easing';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import { sumUnitCapacities } from '$lib/utils/capacity';
-	import { fetchOsmPolygon } from '$lib/utils/osm.js';
-	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
-	import TransmissionLinesLayer from '$lib/components/map/TransmissionLinesLayer.svelte';
-	import DaylightLayer from '$lib/components/map/DaylightLayer.svelte';
-	import CloudCoverLayer from '$lib/components/map/CloudCoverLayer.svelte';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
+	import { sumUnitCapacities } from '#lib/utils/capacity.js';
+	import { fetchOsmPolygon } from '#lib/utils/osm.js';
+	import OsmFootprintLayer from '#lib/components/map/OsmFootprintLayer.svelte';
+	import TransmissionLinesLayer from '#lib/components/map/TransmissionLinesLayer.svelte';
+	import DaylightLayer from '#lib/components/map/DaylightLayer.svelte';
+	import CloudCoverLayer from '#lib/components/map/CloudCoverLayer.svelte';
 	import {
 		mapStyleForTheme,
 		isLightMapTheme,
 		AUSTRALIA_VIEW
-	} from '$lib/components/map/map-style.js';
+	} from '#lib/components/map/map-style.js';
 	import DataCentresLayer from './_components/DataCentresLayer.svelte';
 	import UnitGroup from './_components/UnitGroup.svelte';
-	import { groupUnits } from '$lib/facilities/units.js';
+	import { groupUnits } from '#lib/facilities/units.js';
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import FacilityCardImage from './_components/FacilityCardImage.svelte';
-	import { getRegionLabel } from '$lib/facilities/filters.js';
-	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
+	import { getRegionLabel } from '#lib/facilities/filters.js';
+	import { collapseMapAttribution } from '#lib/components/map/collapse-attribution.js';
 	import { CIRCLE_MIN, CIRCLE_MAX, buildCircleStops } from './_utils/marker-radius.js';
-	import { allBandsVisible, transmissionBandFilter } from '$lib/facilities/transmission-bands.js';
+	import { allBandsVisible, transmissionBandFilter } from '#lib/facilities/transmission-bands.js';
 	import { X } from '@lucide/svelte';
 
 	/**
-	 * @typedef {import('$lib/facilities/transmission-bands.js').BandVisibility} TransmissionLineVisibility
+	 * @typedef {import('#lib/facilities/transmission-bands.js').BandVisibility} TransmissionLineVisibility
 	 */
 
 	/**

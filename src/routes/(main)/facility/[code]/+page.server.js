@@ -1,12 +1,12 @@
 import { error } from '@sveltejs/kit';
-import { client as sanityClient } from '$lib/sanity';
-import { SANITY_FACILITY_PROFILE_PROJECTION } from '$lib/server/sanity-projections.js';
-import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
-import { retiredAnchorMs } from '$lib/components/charts/facility/data-end.js';
-import { sumUnitCapacities } from '$lib/utils/capacity';
+import { client as sanityClient } from '#lib/sanity.js';
+import { SANITY_FACILITY_PROFILE_PROJECTION } from '#lib/server/sanity-projections.js';
+import { fetchFacilityByCode } from '#lib/server/opennem/fetch-facility-by-code.js';
+import { retiredAnchorMs } from '#lib/components/charts/facility/data-end.js';
+import { sumUnitCapacities } from '#lib/utils/capacity.js';
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
-import { buildFacilityJsonLd } from '$lib/seo/facility-jsonld.js';
-import facilityCardCodes from '$lib/server/og/facility-card-codes.json';
+import { buildFacilityJsonLd } from '#lib/seo/facility-jsonld.js';
+import facilityCardCodes from '#lib/server/og/facility-card-codes.json';
 
 const DEFAULT_RANGE_DAYS = 3;
 

@@ -1,5 +1,5 @@
-import IconTableCells from '$lib/icons/TableCells.svelte';
-import IconQueueList from '$lib/icons/QueueList.svelte';
+import IconTableCells from '#lib/icons/TableCells.svelte';
+import IconQueueList from '#lib/icons/QueueList.svelte';
 
 /** @type {ViewSectionOption[]} */
 export const viewSectionOptions = [

@@ -19,8 +19,8 @@
 	 * — safe to always wrap even when emissions charts are hidden.
 	 */
 
-	import { ChartStore } from '$lib/components/charts/v2';
-	import { getNumberFormat } from '$lib/utils/formatters';
+	import { ChartStore } from '#lib/components/charts/v2/index.js';
+	import { getNumberFormat } from '#lib/utils/formatters.js';
 	import { setFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
 	import { deriveIntensityRows } from './intensity-lines.js';
 	import { LINE_COLOUR } from './colours.js';
@@ -75,7 +75,7 @@
 	const intensityFormatter = getNumberFormat(0);
 
 	/**
-	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 * @param {import('#lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 * @param {number} value
 	 */
 	function formatEmissionsValue(chart, value) {

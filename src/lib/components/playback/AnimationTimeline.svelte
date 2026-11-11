@@ -1,5 +1,5 @@
 <script>
-	import clamp from '$lib/utils/clamp.js';
+	import clamp from '#lib/utils/clamp.js';
 
 	/**
 	 * Shared animation playback controls: a square play/pause button beside a

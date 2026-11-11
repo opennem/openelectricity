@@ -1,8 +1,8 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { EllipsisVertical, Maximize2, Minimize2 } from '@lucide/svelte';
-	import { portal } from '$lib/actions/portal.js';
-	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
+	import { portal } from '#lib/actions/portal.js';
+	import { dropdownPosition } from '#lib/actions/dropdown-position.js';
 	import OptionsMenuItem from './OptionsMenuItem.svelte';
 	import OptionsMenuDivider from './OptionsMenuDivider.svelte';
 

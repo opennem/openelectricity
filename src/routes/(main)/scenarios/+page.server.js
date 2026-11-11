@@ -1,4 +1,4 @@
-import { client } from '$lib/sanity';
+import { client } from '#lib/sanity.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load() {

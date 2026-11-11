@@ -14,14 +14,16 @@
  */
 
 import { json } from '@sveltejs/kit';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
-import { freshnessDeadlines, freshnessStatus } from '$lib/network-cache/freshness.js';
-import { registryDb } from '$lib/server/network-cache-registry.js';
-import { freshnessFor, networkDataCache, parseRegisteredKey } from '$lib/server/network-data.js';
+import { verifyAdmin } from '#lib/auth/clerk-server.js';
+import { freshnessDeadlines, freshnessStatus } from '#lib/network-cache/freshness.js';
+import { registryDb } from '#lib/server/network-cache-registry.js';
+import { freshnessFor, networkDataCache, parseRegisteredKey } from '#lib/server/network-data.js';
+import { edgeRuntime } from '#lib/server/edge-runtime.js';
 
 const NO_STORE = { 'cache-control': 'no-store' };
 
-export async function GET({ request, url, platform }) {
+export async function GET({ request, url }) {
+	const platform = edgeRuntime();
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
 		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });

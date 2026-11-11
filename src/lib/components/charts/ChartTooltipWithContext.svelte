@@ -1,12 +1,12 @@
 <script>
 	import { untrack } from 'svelte';
-	import getContext from '$lib/utils/get-context.js';
+	import getContext from '#lib/utils/get-context.js';
 
 	/** @type {{ cxtKey: symbol, defaultText?: string, wrapperStyles?: string }} */
 	let { cxtKey, defaultText = '', wrapperStyles = '' } = $props();
 
 	// Get context once during initialization (cxtKey is stable)
-	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
+	/** @type {import('#lib/components/charts/stores/chart.svelte.js').default} */
 	let cxt = untrack(() => getContext(cxtKey));
 
 	let useData = $derived(cxt.hoverData || cxt.focusData);

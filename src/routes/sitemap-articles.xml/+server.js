@@ -1,5 +1,5 @@
-import { client } from '$lib/sanity';
-import { toLastmod, urlsetXml, xmlResponse } from '$lib/seo/sitemap.js';
+import { client } from '#lib/sanity.js';
+import { toLastmod, urlsetXml, xmlResponse } from '#lib/seo/sitemap.js';
 
 // Prerendered: the /analysis pages this sitemap lists are themselves
 // prerendered, so a runtime query would advertise articles published since
@@ -7,7 +7,7 @@ import { toLastmod, urlsetXml, xmlResponse } from '$lib/seo/sitemap.js';
 // the same build keeps the sitemap exactly in sync with the deployed pages.
 // A Sanity outage fails the build (like the /analysis prerender itself)
 // rather than shipping without this sitemap. url.origin comes from
-// kit.prerender.origin in svelte.config.js.
+// the sveltekit() `paths.origin` option in vite.config.js.
 export const prerender = true;
 
 /**

@@ -10,9 +10,9 @@
  */
 
 import { json } from '@sveltejs/kit';
-import { oeClient } from '$lib/server/oe-client.js';
-import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
-import { PLAY_STATUSES } from '$lib/facilities/filters.js';
+import { oeClient } from '#lib/server/oe-client.js';
+import { getCachedFacilities, setCachedFacilities } from '#lib/server/facilities-server-cache.js';
+import { PLAY_STATUSES } from '#lib/facilities/filters.js';
 
 // Shares the page load's keyed server cache, so a play fetch and a page load
 // with the same statuses serve each other within the TTL.

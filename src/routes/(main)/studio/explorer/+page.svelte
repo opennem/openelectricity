@@ -11,37 +11,37 @@
 
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { goto, replaceState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 
-	import Meta from '$lib/components/Meta.svelte';
-	import FullscreenLayout from '$lib/components/fullscreen/FullscreenLayout.svelte';
-	import FullscreenNavDropdown from '$lib/components/fullscreen/FullscreenNavDropdown.svelte';
-	import OptionsMenu from '$lib/components/ui/options-menu/OptionsMenu.svelte';
-	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
-	import { pageShortcuts } from '$lib/components/fullscreen/shortcuts.js';
-	import { ChartRangeBar } from '$lib/components/charts/v2';
-	import Select from '$lib/components/form-elements/Select.svelte';
-	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
-	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import FullscreenLayout from '#lib/components/fullscreen/FullscreenLayout.svelte';
+	import FullscreenNavDropdown from '#lib/components/fullscreen/FullscreenNavDropdown.svelte';
+	import OptionsMenu from '#lib/components/ui/options-menu/OptionsMenu.svelte';
+	import ShortcutsToast from '#lib/components/ShortcutsToast.svelte';
+	import { pageShortcuts } from '#lib/components/fullscreen/shortcuts.js';
+	import { ChartRangeBar } from '#lib/components/charts/v2/index.js';
+	import Select from '#lib/components/form-elements/Select.svelte';
+	import ResizablePanel from '#lib/components/ui/resizable-panel/resizable-panel.svelte';
+	import NetworkChart from '#lib/components/charts/network/NetworkChart.svelte';
 	import FuelTechTable from './components/FuelTechTable.svelte';
 
-	import { regionOptions } from '$lib/regions.js';
-	import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
-	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
-	import { createEchoGuard } from '$lib/components/charts/v2/echo-guard.js';
+	import { regionOptions } from '#lib/regions.js';
+	import { GROUP_OPTIONS } from '#lib/components/charts/network/groups.js';
+	import { regionToNetwork } from '#lib/components/charts/network/region-to-network.js';
+	import { createEchoGuard } from '#lib/components/charts/v2/echo-guard.js';
 	import { PANELS } from './panels.js';
 	import {
 		getIntervalSpec,
 		getPresetByDays,
 		getDefaultIntervalForRange,
 		getIntervalOptionsForDays
-	} from '$lib/components/charts/facility/range-interval-config.js';
+	} from '#lib/components/charts/facility/range-interval-config.js';
 	import {
 		getMetricIntervalForDays,
 		getHysteresisTarget,
 		getDisplayIntervalForDays
-	} from '$lib/utils/metric-interval.js';
-	import { MIN_DATE } from '$lib/utils/date-range.js';
+	} from '#lib/utils/metric-interval.js';
+	import { MIN_DATE } from '#lib/utils/date-range.js';
 
 	/** @type {{ data: { region: string, selectedRange: number | null, intervalId: string, group: string, startDate: string, endDate: string } }} */
 	let { data } = $props();
@@ -315,16 +315,15 @@
 	function updateUrl() {
 		if (!mounted) return;
 		// Shallow update — keeps the address bar shareable without re-running load.
-		replaceState(`?${buildParams(isFullscreen).toString()}`, {});
+		goto(`?${buildParams(isFullscreen).toString()}`, { shallow: true, replace: true });
 	}
 
 	function toggleFullscreen() {
 		// `goto` (not shallow replaceState) so `page.url` updates and the
 		// `isFullscreen` derived actually flips — matching the facility layout.
 		goto(`${page.url.pathname}?${buildParams(!isFullscreen).toString()}`, {
-			noScroll: true,
-			replaceState: true,
-			keepFocus: true
+			reset: false,
+			replace: true
 		});
 	}
 
@@ -495,6 +494,7 @@
 						</span>
 					</header>
 				{/snippet}
+
 				<FuelTechTable {tableData} {hoverTime} metric={activeMetric} />
 			</ResizablePanel>
 		</div>

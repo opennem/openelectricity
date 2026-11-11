@@ -1,4 +1,5 @@
-import { getHomepageRenewablesCached } from '$lib/oe-api/renewables-cache.server';
+import { getHomepageRenewablesCached } from '#lib/oe-api/renewables-cache.server.js';
+import { edgeRuntime } from '#lib/server/edge-runtime.js';
 
 /**
  * Public endpoint for the homepage fossil-vs-renewables dataset. The homepage
@@ -8,8 +9,8 @@ import { getHomepageRenewablesCached } from '$lib/oe-api/renewables-cache.server
  *
  * @type {import('./$types').RequestHandler}
  */
-export async function GET({ setHeaders, platform }) {
-	const result = await getHomepageRenewablesCached(platform);
+export async function GET({ setHeaders }) {
+	const result = await getHomepageRenewablesCached(edgeRuntime());
 
 	// Monthly data — long edge cache with stale-while-revalidate for direct
 	// hits; errors must never be cached or a transient OE failure would stick.

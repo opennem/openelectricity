@@ -1,4 +1,4 @@
-import parseInterval from '$lib/utils/intervals';
+import parseInterval from '#lib/utils/intervals.js';
 
 /**
  *

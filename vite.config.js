@@ -1,3 +1,7 @@
+import adapter from '@sveltejs/adapter-cloudflare';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
@@ -28,6 +32,10 @@ function inspectorOutsideWorkers() {
 	};
 }
 
+const file = fileURLToPath(new URL('package.json', import.meta.url));
+const json = readFileSync(file, 'utf8');
+const pkg = JSON.parse(json);
+
 export default defineConfig({
 	server: {
 		// openelectricity.localhost, not localhost: cookies are port-blind, so
@@ -41,7 +49,50 @@ export default defineConfig({
 		port: 7602,
 		strictPort: true
 	},
-	plugins: [sveltekit(), inspectorOutsideWorkers()],
+	plugins: [
+		sveltekit({
+			inspector: true,
+			preprocess: vitePreprocess(),
+			// See https://kit.svelte.dev/docs/adapter-cloudflare for more information about Cloudflare adapters.
+			adapter: adapter({
+				routes: {
+					include: ['/*'],
+					exclude: [
+						'<build>',
+						'/data/*',
+						'/fonts/*',
+						'/img/*',
+						'/og/*',
+						'/map-styles/*',
+						'/favicon.png',
+						'/robots.txt',
+						'/studio/lens-on-emissions/data/*',
+						'/analysis/*',
+						'/content/*',
+						'/isp/*'
+					]
+				}
+			}),
+			prerender: { handleHttpError: 'warn' },
+			// Registered in `hooks.client.js` instead, which skips embeds.
+			serviceWorker: { register: false },
+			version: { name: pkg.version, pollInterval: 5 * 60 * 1000 },
+			// The public origin: absolute URLs emitted during prerender (e.g.
+			// /sitemap-articles.xml) resolve against it instead of the
+			// http://sveltekit-prerender placeholder. SvelteKit 3 also uses it as
+			// the CSRF self-origin, so multipart/form POSTs (e.g. /api/cms/upload)
+			// are rejected on preview deploys served from another host.
+			paths: { origin: 'https://openelectricity.org.au' }
+		}),
+		inspectorOutsideWorkers()
+	],
+	ssr: {
+		// Vite 8 resolves CSS `@import`s for the SSR build like JS imports, so an
+		// externalised package comes back as its bare name and `@import
+		// 'tailwindcss'` (src/app.css) fails as a relative file. Nothing imports
+		// tailwindcss from server JS, so this only affects that CSS import.
+		noExternal: ['tailwindcss']
+	},
 	optimizeDeps: {
 		// MapLibre 6's worker registration imports `…/maplibre-gl-worker.mjs?worker&url`,
 		// a Vite-only query esbuild's dev pre-bundler can't read. Leave it to Vite,
@@ -77,7 +128,8 @@ export default defineConfig({
 				test: {
 					name: 'runes',
 					include: ['src/**/*.svelte.test.js'],
-					environment: 'jsdom'
+					environment: 'jsdom',
+					setupFiles: ['./vitest-setup-client.js']
 				}
 			}
 		]

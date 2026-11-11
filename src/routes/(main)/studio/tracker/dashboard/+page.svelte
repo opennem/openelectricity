@@ -1,22 +1,22 @@
 <script>
-	import { building } from '$app/environment';
-	import { pushState, replaceState } from '$app/navigation';
+	import { building } from '$app/env';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
 	import { PanelRightOpen, X } from '@lucide/svelte';
-	import Meta from '$lib/components/Meta.svelte';
-	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import PageOptionsMenu from '#lib/components/PageOptionsMenu.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 	import {
 		FullscreenContainer,
 		FullscreenFilterBar,
 		FullscreenFooter,
 		FullscreenLayout,
 		FullscreenNavDropdown
-	} from '$lib/components/fullscreen';
-	import { createGridLive } from '$lib/flows/grid-live.svelte.js';
-	import { isFullscreenUrl, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
+	} from '#lib/components/fullscreen/index.js';
+	import { createGridLive } from '#lib/flows/grid-live.svelte.js';
+	import { isFullscreenUrl, toggleFullscreenMode } from '#lib/utils/fullscreen-mode.js';
 	import { TRACKER_REGION_OPTIONS } from '../tracker-regions.js';
 	import DashboardCanvas from './DashboardCanvas.svelte';
 	import {
@@ -83,9 +83,14 @@
 	function syncUrl(mode = 'replace') {
 		if (suppressUrl || typeof window === 'undefined') return;
 		const url = applyDashboardUrl(new URL(window.location.href), currentUrlState());
+
 		if (mode === 'push')
-			pushState(`${resolve('/(main)/studio/tracker/dashboard')}${url.search}`, {});
-		else replaceState(`${resolve('/(main)/studio/tracker/dashboard')}${url.search}`, {});
+			goto(`${resolve('/(main)/studio/tracker/dashboard')}${url.search}`, { shallow: true });
+		else
+			goto(`${resolve('/(main)/studio/tracker/dashboard')}${url.search}`, {
+				shallow: true,
+				replace: true
+			});
 	}
 
 	function markCustomLayout() {
@@ -397,6 +402,8 @@
 		type="button"
 		onclick={() => (panelLibraryOpen = true)}
 		class="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-dark-grey px-4 py-3 text-sm font-medium text-white shadow-lg"
-		><PanelRightOpen class="size-4" /> <span class="font-space">Add panel</span></button
 	>
+		<PanelRightOpen class="size-4" />
+		<span class="font-space">Add panel</span>
+	</button>
 {/if}

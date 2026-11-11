@@ -7,7 +7,7 @@
 	 * current buckets. Must be inside a LayerCake context.
 	 */
 	import { getContext } from 'svelte';
-	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
+	import HatchPattern from '#lib/components/charts/elements/defs/HatchPattern.svelte';
 
 	const { xScale, width, height } = getContext('LayerCake');
 

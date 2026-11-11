@@ -1,5 +1,5 @@
-import sourcesLoadsGroup from '$lib/fuel-tech-groups/sources-loads';
-import sourcesWithoutBattery from '$lib/fuel-tech-groups/sources-without-battery';
+import sourcesLoadsGroup from '#lib/fuel-tech-groups/sources-loads.js';
+import sourcesWithoutBattery from '#lib/fuel-tech-groups/sources-without-battery.js';
 
 // Customise group labels
 export const netGroup = {

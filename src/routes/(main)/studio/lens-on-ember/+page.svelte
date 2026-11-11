@@ -1,11 +1,11 @@
 <script>
 	import { untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { colourReducer } from '$lib/stores/theme';
-	import Meta from '$lib/components/Meta.svelte';
-	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
-	import LensChart from '$lib/components/charts/LensChart.svelte';
-	import DateBrushWithContext from '$lib/components/charts/DateBrushWithContext.svelte';
+	import { colourReducer } from '#lib/stores/theme.js';
+	import Meta from '#lib/components/Meta.svelte';
+	import PageHeaderSimple from '#lib/components/PageHeaderSimple.svelte';
+	import LensChart from '#lib/components/charts/LensChart.svelte';
+	import DateBrushWithContext from '#lib/components/charts/DateBrushWithContext.svelte';
 	import init from './page-data-options/init.js';
 	import fetchData from './page-data-options/fetch.js';
 	import { fuelTechMap, orderMap, labelReducer } from './page-data-options/groups';

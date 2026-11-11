@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getStratifyGuide, stratifyGuides } from '$lib/stratify/guide-catalogue.js';
+import { getStratifyGuide, stratifyGuides } from '#lib/stratify/guide-catalogue.js';
 
 /** @type {import('./$types').PageLoad} */
 export function load({ params }) {

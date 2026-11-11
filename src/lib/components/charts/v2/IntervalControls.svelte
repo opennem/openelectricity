@@ -1,16 +1,16 @@
 <script>
-	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
-	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
+	import FilterSelect from '#lib/components/filters/FilterSelect.svelte';
+	import FilterSheetSection from '#lib/components/filters/FilterSheetSection.svelte';
 	import {
 		getIntervalSpec,
 		isRollingInterval,
 		rollingIntervalFor,
 		baseIntervalFor
-	} from '$lib/components/charts/facility/range-interval-config.js';
+	} from '#lib/components/charts/facility/range-interval-config.js';
 	import {
 		bucketFilterKindFor,
 		bucketFilterOptionsFor
-	} from '$lib/components/charts/v2/bucket-filter.js';
+	} from '#lib/components/charts/v2/bucket-filter.js';
 
 	/**
 	 * IntervalControls — the interval pill and calendar-period filter shared by

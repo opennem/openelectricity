@@ -9,14 +9,14 @@
 	 */
 
 	import { ExternalLink } from '@lucide/svelte';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
-	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import { pickCapacity } from '$lib/utils/capacity';
-	import { getNumberFormat, formatCapacity, formatDateTime } from '$lib/utils/formatters';
-	import { formatDateBySpecificity, stripDateTimezone } from '$lib/utils/date-format.js';
-	import { fuelTechToGroup } from '$lib/fuel-tech-groups/facility-group.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
+	import FacilityStatusIcon from '#lib/components/facilities/FacilityStatusIcon.svelte';
+	import { getFueltechColor, needsDarkText } from '#lib/utils/fueltech-display.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
+	import { pickCapacity } from '#lib/utils/capacity.js';
+	import { getNumberFormat, formatCapacity, formatDateTime } from '#lib/utils/formatters.js';
+	import { formatDateBySpecificity, stripDateTimezone } from '#lib/utils/date-format.js';
+	import { fuelTechToGroup } from '#lib/fuel-tech-groups/facility-group.js';
 	import {
 		capacityFactor,
 		dcAcRatio,
@@ -24,12 +24,12 @@
 		isChargingSideUnit,
 		storageDurationHours,
 		sumEnergy
-	} from '$lib/components/charts/facility/metrics/metrics-calc.js';
-	import { METRICS } from '$lib/components/charts/facility/metrics/metric-definitions.js';
-	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
-	import { FacilityCompactCharts } from '$lib/components/charts/facility';
-	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
-	import { sectionCardClass } from '$lib/components/charts/v2/section-card.js';
+	} from '#lib/components/charts/facility/metrics/metrics-calc.js';
+	import { METRICS } from '#lib/components/charts/facility/metrics/metric-definitions.js';
+	import MetricCard from '#lib/components/charts/facility/metrics/MetricCard.svelte';
+	import { FacilityCompactCharts } from '#lib/components/charts/facility/index.js';
+	import RetiredFacilityNotice from '#lib/components/facilities/RetiredFacilityNotice.svelte';
+	import { sectionCardClass } from '#lib/components/charts/v2/section-card.js';
 
 	/**
 	 * `facility` powers the per-unit snapshot charts — the unit is charted by

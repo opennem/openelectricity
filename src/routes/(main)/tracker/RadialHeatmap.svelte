@@ -6,8 +6,8 @@
 	import { dialAngle } from './dial.js';
 	import DialReadout from './DialReadout.svelte';
 	import DialFace, { dialMargin } from './DialFace.svelte';
-	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
-	import { pointerInspect } from '$lib/components/charts/v2/elements/pointer-inspect.js';
+	import { hoverFade } from '#lib/components/charts/v2/hover-fade.js';
+	import { pointerInspect } from '#lib/components/charts/v2/elements/pointer-inspect.js';
 	import DialNight from './DialNight.svelte';
 
 	/**

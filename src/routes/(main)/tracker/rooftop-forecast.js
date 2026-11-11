@@ -2,16 +2,16 @@
  * AEMO's rooftop solar forecast on the Timeline Generation card. Rooftop
  * readings arrive up to half an hour after the other fuel techs, so the chart
  * tops up the rooftop series from the forecast to the latest data time — never
- * beyond it (`$lib/components/charts/network/rooftop-top-up.js`).
+ * beyond it (`#lib/components/charts/network/rooftop-top-up.js`).
  *
  * The chart, table, window metrics and exports all see the topped-up rows;
  * no rows are added, so freshness still reports the newest reading. Pure
  * helpers; the reactive fetch is `rooftop-forecast.svelte.js`.
  */
 
-import { toNetworkNaive } from '$lib/components/charts/v2/network-time.js';
-import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
-import { HALF_HOUR_MS } from '$lib/components/charts/network/rooftop-top-up.js';
+import { toNetworkNaive } from '#lib/components/charts/v2/network-time.js';
+import { regionToNetwork } from '#lib/components/charts/network/region-to-network.js';
+import { HALF_HOUR_MS } from '#lib/components/charts/network/rooftop-top-up.js';
 
 /** Reaches back past the latest rooftop reading, which can lag the other fuel
  * techs by well over an hour (NSW stood 1.5 hours behind on 13 October 2026). */

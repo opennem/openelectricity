@@ -108,7 +108,7 @@ export function isSubDailyData(rows) {
 /**
  * Capacity factor (%) — energy as a share of the theoretical maximum
  * (capacity × hours). Callers pass capacity with the canonical precedence
- * (maximum falling back to registered — see $lib/utils/capacity.js).
+ * (maximum falling back to registered — see #lib/utils/capacity.js).
  * @param {number} energy - MWh
  * @param {number} capacity - MW
  * @param {number} hours

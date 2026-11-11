@@ -8,7 +8,7 @@
 	 * `collapsible={false}` renders the body in full with no clamp or toggle —
 	 * used on mobile, where the description gets its own scrollable tab.
 	 */
-	import PortableTextBody from '$lib/components/PortableTextBody.svelte';
+	import PortableTextBody from '#lib/components/PortableTextBody.svelte';
 
 	/** @type {{ value: any, maxHeight?: number, collapsible?: boolean }} */
 	let { value, maxHeight = 160, collapsible = true } = $props();

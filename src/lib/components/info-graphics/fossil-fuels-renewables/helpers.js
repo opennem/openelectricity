@@ -1,7 +1,7 @@
 import { range } from 'd3-array';
 import { format as d3Format } from 'd3-format';
 import { formatInTimeZone } from 'date-fns-tz';
-import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
+import { fuelTechName, fuelTechColour } from '#lib/fuel_techs.js';
 
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 export const domainGroups = {

@@ -8,7 +8,7 @@
  * energy (MWh) using its own interval length first.
  *
  * The renewables share follows the homepage methodology
- * (`buildOeHomepageStats` in $lib/oe-api/calculate-renewables.js):
+ * (`buildOeHomepageStats` in #lib/oe-api/calculate-renewables.js):
  * renewables = generation_renewable ÷ demand_gross, fossil = a real fueltech
  * sum ÷ demand_gross — never the remainder, so the pair needn't sum to 100%.
  *
@@ -18,9 +18,9 @@
 import {
 	sumAllSeries,
 	getIntervalHours
-} from '$lib/components/charts/facility/metrics/metrics-calc.js';
-import { FOSSIL_FUEL_TECHS } from '$lib/oe-api/fuel-tech-classes.js';
-import { loadFuelTechs } from '$lib/fuel_techs';
+} from '#lib/components/charts/facility/metrics/metrics-calc.js';
+import { FOSSIL_FUEL_TECHS } from '#lib/oe-api/fuel-tech-classes.js';
+import { loadFuelTechs } from '#lib/fuel_techs.js';
 import { RENEWABLES_SERIES_ID, DEMAND_GROSS_SERIES_ID } from './network-market-data.svelte.js';
 
 /** @param {unknown} value @returns {value is number} */

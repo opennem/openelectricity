@@ -1,13 +1,13 @@
 import { json } from '@sveltejs/kit';
-import { findAdminByEmail } from '$lib/auth/clerk-server.js';
-import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
-import { COLLABORATOR_ROLES } from '$lib/stratify/chart-permissions.js';
+import { findAdminByEmail } from '#lib/auth/clerk-server.js';
+import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
+import { COLLABORATOR_ROLES } from '#lib/stratify/chart-permissions.js';
 import {
 	addCollaborator,
 	removeCollaborator,
 	setCollaboratorRole,
 	updateCollaborators
-} from '$lib/server/stratify/collaborators.js';
+} from '#lib/server/stratify/collaborators.js';
 
 /**
  * Share a chart with other Stratify admins (owner only). Called by the
@@ -34,7 +34,7 @@ function isRole(role) {
  * Load the chart for a sharing change and run it.
  * @param {Request} request
  * @param {string} id
- * @param {(context: { auth: import('$lib/server/stratify/chart-access.js').ChartAuth, chart: Record<string, any>, body: Record<string, any> }) => Promise<Response | Parameters<typeof updateCollaborators>[1]['change']>} prepare
+ * @param {(context: { auth: import('#lib/server/stratify/chart-access.js').ChartAuth, chart: Record<string, any>, body: Record<string, any> }) => Promise<Response | Parameters<typeof updateCollaborators>[1]['change']>} prepare
  *   Validates the body; returns a response to send, or the change to apply.
  */
 async function share(request, id, prepare) {

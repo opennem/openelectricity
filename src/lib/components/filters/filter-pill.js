@@ -1,4 +1,4 @@
-import { TOUCH_PILL } from '$lib/components/ui/touch-controls.js';
+import { TOUCH_PILL } from '#lib/components/ui/touch-controls.js';
 
 /**
  * The filter pill's look, shared by the pill button (`FilterPill`) and the

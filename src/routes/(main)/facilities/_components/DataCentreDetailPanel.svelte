@@ -4,7 +4,7 @@
 		asUrl,
 		isEstimated,
 		STATUS_LABELS
-	} from '$lib/facilities/data-centres.js';
+	} from '#lib/facilities/data-centres.js';
 
 	/**
 	 * Body of the data centre (load) detail pane — all of the source record's

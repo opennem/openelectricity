@@ -1,4 +1,4 @@
-import secondaryColourPalette from '$lib/theme/secondary-colour-palette';
+import secondaryColourPalette from '#lib/theme/secondary-colour-palette.js';
 
 /**
  * How to define the model scenarios and pathways

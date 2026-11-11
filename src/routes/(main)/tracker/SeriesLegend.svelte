@@ -1,5 +1,5 @@
 <script>
-	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
+	import { hasTouchControls } from '#lib/components/ui/touch-controls.js';
 
 	/**
 	 * SeriesLegend — a chart card's colour key, for when nothing else on

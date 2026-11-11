@@ -1,8 +1,8 @@
 <script>
-	import { ModalSheet } from '$lib/components/ui/bottom-sheet';
-	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
-	import { setFilterSheet } from '$lib/components/filters/filter-sheet.js';
-	import Switch from '$lib/components/SwitchWithIcons.svelte';
+	import { ModalSheet } from '#lib/components/ui/bottom-sheet/index.js';
+	import FilterSheetSection from '#lib/components/filters/FilterSheetSection.svelte';
+	import { setFilterSheet } from '#lib/components/filters/filter-sheet.js';
+	import Switch from '#lib/components/SwitchWithIcons.svelte';
 	import { TRACKER_REGION_OPTIONS } from './tracker-regions.js';
 
 	/**

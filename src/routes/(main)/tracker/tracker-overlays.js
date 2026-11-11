@@ -5,7 +5,7 @@
  * URL codec (canonical order) agree on ids, labels and colours.
  */
 
-import { getFuelTechColour } from '$lib/components/charts/colours.js';
+import { getFuelTechColour } from '#lib/components/charts/colours.js';
 
 /** @typedef {import('./types.js').TrackerOverlay} TrackerOverlay */
 

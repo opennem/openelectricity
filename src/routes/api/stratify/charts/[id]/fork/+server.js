@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
+import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
 
 /**
  * POST /api/stratify/charts/:id/fork — fork a chart into the current user's account.

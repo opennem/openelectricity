@@ -1,6 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
-	import IconXMark from '$lib/icons/XMark.svelte';
+	import IconXMark from '#lib/icons/XMark.svelte';
 	import { fuelTechLabel, milestoneTypeLabel, periodLabel } from '../page-data-options/filters';
 
 	const {

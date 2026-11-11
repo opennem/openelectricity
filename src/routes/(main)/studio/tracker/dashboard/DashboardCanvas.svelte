@@ -2,23 +2,27 @@
 	import { onMount, tick, untrack } from 'svelte';
 	import { Maximize2 } from '@lucide/svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { ChartRangeBar, formatRangeLabel, toolbarTrayClass } from '$lib/components/charts/v2';
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
-	import { MIN_DATE } from '$lib/utils/date-range.js';
-	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
-	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
-	import InterconnectorChart from '$lib/components/charts/flows/InterconnectorChart.svelte';
-	import { createNetworkMarketData } from '$lib/components/charts/network/network-market-data.svelte.js';
-	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
-	import { INTERCONNECTORS, interconnectorsForRegion } from '$lib/flows/region-geo.js';
-	import { NETWORK_METRIC_KEYS } from '$lib/components/charts/network/network-metric-definitions.js';
-	import { downloadCsv } from '$lib/utils/download-csv.js';
-	import MapKey from '$lib/components/map/MapKey.svelte';
-	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
-	import { allBandsVisible } from '$lib/facilities/transmission-bands.js';
+	import {
+		ChartRangeBar,
+		formatRangeLabel,
+		toolbarTrayClass
+	} from '#lib/components/charts/v2/index.js';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
+	import { createChartRangeControl } from '#lib/components/charts/facility/chart-range-control.svelte.js';
+	import { getIntervalSpec } from '#lib/components/charts/facility/range-interval-config.js';
+	import { MIN_DATE } from '#lib/utils/date-range.js';
+	import { ianaFromOffset, toNetworkDateString } from '#lib/components/charts/v2/network-time.js';
+	import NetworkChart from '#lib/components/charts/network/NetworkChart.svelte';
+	import InterconnectorChart from '#lib/components/charts/flows/InterconnectorChart.svelte';
+	import { createNetworkMarketData } from '#lib/components/charts/network/network-market-data.svelte.js';
+	import { regionToNetwork } from '#lib/components/charts/network/region-to-network.js';
+	import { INTERCONNECTORS, interconnectorsForRegion } from '#lib/flows/region-geo.js';
+	import { NETWORK_METRIC_KEYS } from '#lib/components/charts/network/network-metric-definitions.js';
+	import { downloadCsv } from '#lib/utils/download-csv.js';
+	import MapKey from '#lib/components/map/MapKey.svelte';
+	import MapOptionsDropdown from '#lib/components/map/MapOptionsDropdown.svelte';
+	import { allBandsVisible } from '#lib/facilities/transmission-bands.js';
 	import { hasSpotPrice, isWholeNetworkScope } from '../tracker-regions.js';
 	import RegionDropdown from '../RegionDropdown.svelte';
 	import NetworkMetrics from '../NetworkMetrics.svelte';

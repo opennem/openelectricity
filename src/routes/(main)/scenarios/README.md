@@ -84,8 +84,8 @@ Raw API Response
 
 | Parser          | File                       | Purpose                                               |
 | --------------- | -------------------------- | ----------------------------------------------------- |
-| Scenario parser | `$lib/scenarios/parser.js` | Converts GWh → TWh, extracts pathways and fuel techs  |
-| History parser  | `$lib/opennem/parser.js`   | Filters by fuel tech, pads/aligns dates across series |
+| Scenario parser | `#lib/scenarios/parser.js` | Converts GWh → TWh, extracts pathways and fuel techs  |
+| History parser  | `#lib/opennem/parser.js`   | Filters by fuel tech, pads/aligns dates across series |
 
 ### Process Functions
 
@@ -163,7 +163,7 @@ All in `page-data-options/`:
 
 ## Chart System
 
-Uses ChartStore v2 (`$lib/components/charts/v2/ChartStore.svelte.js`) with four synced chart instances:
+Uses ChartStore v2 (`#lib/components/charts/v2/ChartStore.svelte.js`) with four synced chart instances:
 
 | Chart      | Type         | Key          |
 | ---------- | ------------ | ------------ |

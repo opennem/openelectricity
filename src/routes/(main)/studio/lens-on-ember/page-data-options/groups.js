@@ -1,6 +1,6 @@
-import detailedGroup from '$lib/fuel-tech-groups/lens/detailed';
-import renewablesFossilsGroup from '$lib/fuel-tech-groups/lens/renewables-fossils';
-import vreResidual from '$lib/fuel-tech-groups/lens/vre-residual';
+import detailedGroup from '#lib/fuel-tech-groups/lens/detailed.js';
+import renewablesFossilsGroup from '#lib/fuel-tech-groups/lens/renewables-fossils.js';
+import vreResidual from '#lib/fuel-tech-groups/lens/vre-residual.js';
 
 export const groups = [detailedGroup, renewablesFossilsGroup, vreResidual];
 export const groupOptions = groups.map((group) => ({

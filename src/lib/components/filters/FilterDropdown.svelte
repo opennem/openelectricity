@@ -1,7 +1,7 @@
 <script>
 	import SearchInput from './SearchInput.svelte';
 	import FilterAccordionSection from './FilterAccordionSection.svelte';
-	import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
+	import FilterPanel from '#lib/components/filters/FilterPanel.svelte';
 	import FilterOptionList from './FilterOptionList.svelte';
 	import { inFilterSheet } from './filter-sheet.js';
 	import {
@@ -10,10 +10,10 @@
 		getSelectedLabels,
 		isDefaultSelection,
 		toggleInSelection
-	} from '$lib/facilities/filter-options.js';
+	} from '#lib/facilities/filter-options.js';
 
 	/**
-	 * @typedef {import('$lib/facilities/filter-options.js').FilterOption} FilterOption
+	 * @typedef {import('#lib/facilities/filter-options.js').FilterOption} FilterOption
 	 * @typedef {{ selected: boolean, indeterminate: boolean, isChild: boolean }} RowState
 	 */
 

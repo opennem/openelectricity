@@ -1,5 +1,5 @@
-import { createCmsClient } from '$lib/sanity-cms.js';
-import { normaliseChart } from '$lib/stratify/chart-data.js';
+import { createCmsClient } from '#lib/sanity-cms.js';
+import { normaliseChart } from '#lib/stratify/chart-data.js';
 
 const PAGE_SIZE = 12;
 

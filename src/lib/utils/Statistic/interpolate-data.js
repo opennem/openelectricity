@@ -1,5 +1,5 @@
 import { parseISO } from 'date-fns';
-import parseInterval from '$lib/utils/intervals';
+import parseInterval from '#lib/utils/intervals.js';
 import interpolate from './interpolate-array';
 
 /**

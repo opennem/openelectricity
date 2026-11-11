@@ -2,17 +2,17 @@
 	import { untrack } from 'svelte';
 	import { X } from '@lucide/svelte';
 
-	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
-	import RangeSlider from '$lib/components/ui/range-slider/RangeSlider.svelte';
-	import SearchInput from '$lib/components/filters/SearchInput.svelte';
-	import FilterAccordionSection from '$lib/components/filters/FilterAccordionSection.svelte';
-	import FilterOptionList from '$lib/components/filters/FilterOptionList.svelte';
+	import { BottomSheet } from '#lib/components/ui/bottom-sheet/index.js';
+	import RangeSlider from '#lib/components/ui/range-slider/RangeSlider.svelte';
+	import SearchInput from '#lib/components/filters/SearchInput.svelte';
+	import FilterAccordionSection from '#lib/components/filters/FilterAccordionSection.svelte';
+	import FilterOptionList from '#lib/components/filters/FilterOptionList.svelte';
 	import {
 		getSelectedLabels,
 		activeLeafCount,
 		toggleInSelection
-	} from '$lib/facilities/filter-options.js';
-	import { regionShortLabels } from '$lib/facilities/filters.js';
+	} from '#lib/facilities/filter-options.js';
+	import { regionShortLabels } from '#lib/facilities/filters.js';
 
 	/**
 	 * Mobile filter sheet. Like the desktop dropdowns, every control edits a
@@ -39,7 +39,7 @@
 	 *   formatCapacity: (val: number) => string,
 	 *   onclose: () => void,
 	 *   onapply?: (drafts: { types: string[], statuses: string[], regions: string[], capacityRange: [number, number], yearRange: [number, number] }) => void,
-	 *   typeRow?: import('svelte').Snippet<[import('$lib/facilities/filter-options.js').FilterOption, any]>,
+	 *   typeRow?: import('svelte').Snippet<[import('#lib/facilities/filter-options.js').FilterOption, any]>,
 	 *   yearRange: [number, number],
 	 *   yearMin: number,
 	 *   yearMax: number

@@ -20,7 +20,7 @@ import {
 	profileWindow,
 	todayWindow
 } from './time-of-day.js';
-import { datasetToCsv } from '$lib/components/charts/card/export-dataset.js';
+import { datasetToCsv } from '#lib/components/charts/card/export-dataset.js';
 import { applyTrackerUrl, parseTrackerUrl } from './tracker-url.js';
 import { PROFILE_DAY_START, PROFILE_SLOT_MS } from './profile-chart.js';
 

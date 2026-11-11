@@ -6,9 +6,9 @@
  * outside the facilities/units pipeline and render as their own overlay layer.
  */
 
-import { fuelTechColourMap } from '$lib/theme/openelectricity';
-import { formatCapacity } from '$lib/utils/formatters';
-import { isLightMapTheme } from '$lib/components/map/map-style.js';
+import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
+import { formatCapacity } from '#lib/utils/formatters.js';
+import { isLightMapTheme } from '#lib/components/map/map-style.js';
 
 /** @typedef {'operating' | 'construction' | 'announced' | 'retired'} DataCentreStatusBucket */
 

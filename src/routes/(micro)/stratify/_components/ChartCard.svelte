@@ -1,6 +1,6 @@
 <script>
 	import { timeAgo } from '../_utils/format.js';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
 	import ChartThumbnail from './ChartThumbnail.svelte';
 
 	/**

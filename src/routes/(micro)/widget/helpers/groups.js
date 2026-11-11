@@ -1,6 +1,6 @@
-import detailedGroup from '$lib/fuel-tech-groups/detailed';
-import simpleGroup from '$lib/fuel-tech-groups/simple';
-import renewablesFossilsGroup from '$lib/fuel-tech-groups/renewables-fossils';
+import detailedGroup from '#lib/fuel-tech-groups/detailed.js';
+import simpleGroup from '#lib/fuel-tech-groups/simple.js';
+import renewablesFossilsGroup from '#lib/fuel-tech-groups/renewables-fossils.js';
 
 const groups = [detailedGroup, simpleGroup, renewablesFossilsGroup];
 

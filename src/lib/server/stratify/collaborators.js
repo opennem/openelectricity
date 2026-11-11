@@ -27,7 +27,7 @@ const MAX_ATTEMPTS = 3;
  * @property {string} _key
  * @property {string} userId
  * @property {string} email
- * @property {import('$lib/stratify/chart-permissions.js').CollaboratorRole} role
+ * @property {import('#lib/stratify/chart-permissions.js').CollaboratorRole} role
  * @property {string} addedAt
  * @property {string | null} addedBy
  */

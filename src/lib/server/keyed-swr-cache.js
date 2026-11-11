@@ -11,7 +11,7 @@
  * hook so the admin endpoint can read its own write.
  */
 
-import { EDGE_MAX_AGE_MS } from '$lib/network-cache/freshness.js';
+import { EDGE_MAX_AGE_MS } from '#lib/network-cache/freshness.js';
 
 /** Edge retention; the stored-at header determines freshness. */
 const EDGE_MAX_AGE_S = EDGE_MAX_AGE_MS / 1000;
@@ -23,31 +23,31 @@ const STORED_AT_HEADER = 'x-stored-at';
  * @param {string} config.keyPrefix - Synthetic URL prefix for Cache API keys
  * @param {(value: T) => boolean} [config.isCacheable] - Whether to store a value
  * @param {(info: {
- *   platform: App.Platform | undefined,
+ *   platform: EdgeRuntime | undefined,
  *   key: string,
  *   storedAt: number,
  *   sizeBytes: number,
  *   durationMs: number
  * }) => void | Promise<void>} [config.onStored] - After a successful edge write
  * @param {(info: {
- *   platform: App.Platform | undefined,
+ *   platform: EdgeRuntime | undefined,
  *   key: string,
  *   error: unknown,
  *   durationMs: number
  * }) => void | Promise<void>} [config.onRefreshError] - After a failed fetch
  * @returns {{
  *   get: (
- *     platform: App.Platform | undefined,
+ *     platform: EdgeRuntime | undefined,
  *     key: string,
  *     fetcher: () => Promise<T>,
  *     opts: { freshMs: number }
  *   ) => Promise<{ value: T, status: 'hit' | 'stale' | 'miss' }>,
  *   peek: (
- *     platform: App.Platform | undefined,
+ *     platform: EdgeRuntime | undefined,
  *     key: string
  *   ) => Promise<{ value: T, storedAt: number, sizeBytes: number } | null>,
  *   refresh: (
- *     platform: App.Platform | undefined,
+ *     platform: EdgeRuntime | undefined,
  *     key: string,
  *     fetcher: () => Promise<T>
  *   ) => Promise<{
@@ -76,7 +76,7 @@ export function createKeyedSwrCache({
 	const edgeKeyFor = (key) => `${keyPrefix}?${key}`;
 
 	/**
-	 * @param {App.Platform | undefined} platform
+	 * @param {EdgeRuntime | undefined} platform
 	 * @param {string} edgeKey
 	 * @returns {Promise<{ value: T, storedAt: number } | null>}
 	 */
@@ -97,7 +97,7 @@ export function createKeyedSwrCache({
 	/**
 	 * Write a pre-serialised body to the edge; report whether it stored.
 	 *
-	 * @param {App.Platform | undefined} platform
+	 * @param {EdgeRuntime | undefined} platform
 	 * @param {string} edgeKey
 	 * @param {string} body
 	 * @param {number} storedAt
@@ -127,7 +127,7 @@ export function createKeyedSwrCache({
 	/**
 	 * Fetch and cache one value, sharing concurrent requests for the same key.
 	 *
-	 * @param {App.Platform | undefined} platform
+	 * @param {EdgeRuntime | undefined} platform
 	 * @param {string} key
 	 * @param {() => Promise<T>} fetcher
 	 * @returns {Promise<{ value: T, stored: StoredInfo | null }>}
@@ -181,7 +181,7 @@ export function createKeyedSwrCache({
 		/**
 		 * Return a cached value, refreshing stale entries in the background.
 		 *
-		 * @param {App.Platform | undefined} platform
+		 * @param {EdgeRuntime | undefined} platform
 		 * @param {string} key
 		 * @param {() => Promise<T>} fetcher
 		 * @param {{ freshMs: number }} opts
@@ -205,7 +205,7 @@ export function createKeyedSwrCache({
 		/**
 		 * Inspect this data centre's entry without populating on a miss.
 		 *
-		 * @param {App.Platform | undefined} platform
+		 * @param {EdgeRuntime | undefined} platform
 		 * @param {string} key
 		 * @returns {Promise<{ value: T, storedAt: number, sizeBytes: number } | null>}
 		 */
@@ -232,7 +232,7 @@ export function createKeyedSwrCache({
 		 * their own write. Rejects on upstream failure, leaving any existing
 		 * entry untouched.
 		 *
-		 * @param {App.Platform | undefined} platform
+		 * @param {EdgeRuntime | undefined} platform
 		 * @param {string} key
 		 * @param {() => Promise<T>} fetcher
 		 * @returns {Promise<{

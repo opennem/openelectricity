@@ -68,7 +68,7 @@ import { bufferedFetchWindow, viewportRequestAllowed } from './fetch-window.js';
 import { createIdlePrefetcher } from './idle-prefetch.js';
 import { createFrameProbe } from './perf.js';
 import { viewportDurationLimits } from '../facility/range-interval-config.js';
-import { OE_API_MAX_RANGE_DAYS } from '$lib/oe-api/data-limits.js';
+import { OE_API_MAX_RANGE_DAYS } from '#lib/oe-api/data-limits.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

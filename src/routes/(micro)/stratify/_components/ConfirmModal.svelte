@@ -1,8 +1,8 @@
 <script>
-	import { portal } from '$lib/actions/portal.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Backdrop } from '$lib/components/ui/backdrop';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import { portal } from '#lib/actions/portal.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Backdrop } from '#lib/components/ui/backdrop/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
 
 	/**
 	 * @type {{

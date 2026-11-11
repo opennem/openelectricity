@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { addDays, addMonths, addYears, subDays, subMonths, subYears } from 'date-fns';
-import { plainDateTime } from '$lib/utils/date-parser';
+import { plainDateTime } from '#lib/utils/date-parser.js';
 import { apiIntervalMap } from '../../../(main)/records/[id]/MiniTracker/helpers/config';
 
 /**
@@ -130,23 +130,17 @@ export async function load({ params, url, fetch }) {
 	let id = params.id;
 
 	if (!id) {
-		error(404, {
-			message: 'Record ID not found.'
-		});
+		error(404, 'Record ID not found.');
 	}
 
 	let res = await fetch(`/api/records/${id}?pageSize=1`);
 	if (!res.ok) {
-		error(502, {
-			message: 'Unable to fetch record.'
-		});
+		error(502, 'Unable to fetch record.');
 	}
 
 	let jsonData = await res.json();
 	if (!jsonData.data || jsonData.data.length === 0) {
-		error(404, {
-			message: 'Record not found.'
-		});
+		error(404, 'Record not found.');
 	}
 
 	let firstRecord = jsonData.data[0];

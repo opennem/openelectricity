@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { reloadOnStaleBuild } from './stale-build.js';
 
-vi.mock('$app/environment', () => ({ version: '2.0.0' }));
+vi.mock('$app/env', () => ({ version: '2.0.0' }));
 
 /** @type {EventTarget & { location: { reload: import('vitest').Mock } }} */
 let page;

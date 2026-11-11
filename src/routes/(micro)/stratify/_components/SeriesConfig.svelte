@@ -3,7 +3,7 @@
 	import { flip } from 'svelte/animate';
 	import { getStratifyContext } from '../_state/context.js';
 	import ColourPicker from './ColourPicker.svelte';
-	import { LINE_STYLES, WATERFALL_ROLE_KEYS } from '$lib/stratify/chart-types.js';
+	import { LINE_STYLES, WATERFALL_ROLE_KEYS } from '#lib/stratify/chart-types.js';
 
 	const project = getStratifyContext();
 

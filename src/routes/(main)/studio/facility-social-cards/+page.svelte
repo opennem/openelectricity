@@ -1,5 +1,5 @@
 <script>
-	import Meta from '$lib/components/Meta.svelte';
+	import Meta from '#lib/components/Meta.svelte';
 
 	/** @type {{ data: { facilities: { code: string, name: string, network_region: string, hasPhoto: boolean }[] } }} */
 	let { data } = $props();

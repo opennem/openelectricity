@@ -1,4 +1,4 @@
-import { fetchCuratedCommunityCharts } from '$lib/stratify/community-examples.server.js';
+import { fetchCuratedCommunityCharts } from '#lib/stratify/community-examples.server.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ setHeaders }) {

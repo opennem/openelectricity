@@ -2,11 +2,11 @@
 	import XIcon from '@lucide/svelte/icons/x';
 	import { getChartSaveContext } from '../_state/context.js';
 	import { searchAdmins } from '../_utils/api.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import Select from '$lib/components/form-elements/Select.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import Select from '#lib/components/form-elements/Select.svelte';
 	import SectionHeader from './SectionHeader.svelte';
 
-	/** @typedef {import('$lib/stratify/chart-permissions.js').CollaboratorRole} CollaboratorRole */
+	/** @typedef {import('#lib/stratify/chart-permissions.js').CollaboratorRole} CollaboratorRole */
 
 	const saveSession = getChartSaveContext();
 

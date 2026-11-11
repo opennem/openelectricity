@@ -19,21 +19,21 @@ import {
 	isFiniteNumber,
 	meanSeries,
 	sumAsEnergy
-} from '$lib/components/charts/network/network-metrics-calc.js';
+} from '#lib/components/charts/network/network-metrics-calc.js';
 import {
 	DEMAND_GROSS_SERIES_ID,
 	RENEWABLES_SERIES_ID
-} from '$lib/components/charts/network/market-series-ids.js';
+} from '#lib/components/charts/network/market-series-ids.js';
 import {
 	contributionSeries,
 	contributionPercent
-} from '$lib/components/charts/network/contribution.js';
+} from '#lib/components/charts/network/contribution.js';
 
 /** @typedef {import('./types.js').ContributionMode} ContributionMode */
 /** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */
 /** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
 /** @typedef {import('./types.js').OverlaySummary} OverlaySummary */
-/** @typedef {import('$lib/components/charts/network/network-metrics-calc.js').BucketHours} BucketHours */
+/** @typedef {import('#lib/components/charts/network/network-metrics-calc.js').BucketHours} BucketHours */
 
 /** Below this magnitude (MWh) a window's energy is noise, not a denominator. */
 const ENERGY_EPSILON_MWH = 1e-6;

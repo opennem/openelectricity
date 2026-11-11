@@ -1,4 +1,4 @@
-import { getNumberFormat } from '$lib/utils/formatters';
+import { getNumberFormat } from '#lib/utils/formatters.js';
 
 const formatter0 = getNumberFormat(0);
 const formatter1 = getNumberFormat(1);

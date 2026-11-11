@@ -1,4 +1,4 @@
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 
 import { transformOeToStatsData } from './transform';
 import { fetchLegacyOpenNemFueltechStats } from './fetch-legacy-energy.server';

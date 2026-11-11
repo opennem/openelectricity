@@ -7,11 +7,11 @@
 	 * Hover/focus state is local since it's per-chart.
 	 */
 
-	import { StratumChart } from '$lib/components/charts/v2';
+	import { StratumChart } from '#lib/components/charts/v2/index.js';
 	import { syncCardChart } from './card-chart.svelte.js';
 	import { getFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
 
-	/** @type {{ showContainer?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean, chartHeightPx?: number, timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void, onvisibledata?: (snapshot: import('$lib/components/charts/card/types.js').ChartSnapshot) => void }} */
+	/** @type {{ showContainer?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean, chartHeightPx?: number, timeMarkers?: import('#lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void, onvisibledata?: (snapshot: import('#lib/components/charts/card/types.js').ChartSnapshot) => void }} */
 	let {
 		showContainer = true,
 		zoomMode = 'static',

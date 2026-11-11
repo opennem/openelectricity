@@ -1,12 +1,13 @@
 import { NoDataFound } from 'openelectricity';
-import { oeClient } from '$lib/server/oe-client.js';
-import { createSwrCache } from '$lib/server/swr-cache';
+import { oeClient } from '#lib/server/oe-client.js';
+import { createSwrCache } from '#lib/server/swr-cache.js';
 import {
 	collectRegionSeriesAligned,
 	toLegacyPayload,
 	trimToLastCompleteRow
-} from '$lib/flows/derive-pairwise.js';
-import { HOURS_MS, nemNaiveRange } from '$lib/flows/nem-time.js';
+} from '#lib/flows/derive-pairwise.js';
+import { HOURS_MS, nemNaiveRange } from '#lib/flows/nem-time.js';
+import { edgeRuntime } from '#lib/server/edge-runtime.js';
 
 /** One dispatch-ish interval — matches the route's public max-age. */
 const FRESH_MS = 5 * 60 * 1000;
@@ -56,8 +57,8 @@ const cache = createSwrCache({
 	isCacheable: (payload) => !payload.error && payload.data.length > 0
 });
 
-export async function GET({ setHeaders, platform }) {
-	const payload = await cache.get(platform);
+export async function GET({ setHeaders }) {
+	const payload = await cache.get(edgeRuntime());
 	if (payload.error) return Response.json({ error: payload.error }, { status: 500 });
 	setHeaders({ 'cache-control': 'public, max-age=300' });
 	return Response.json(payload);

@@ -3,7 +3,7 @@ import { flushSync } from 'svelte';
 import {
 	clearCompletedResponses,
 	clearInFlightFetches
-} from '$lib/components/charts/v2/ChartDataManager.svelte.js';
+} from '#lib/components/charts/v2/ChartDataManager.svelte.js';
 import { createTrackerProviders } from './tracker-providers.svelte.js';
 import { createTrackerSession } from './tracker-session.svelte.js';
 import { parseTrackerUrl } from './tracker-url.js';

@@ -4,11 +4,11 @@
 	import { fly } from 'svelte/transition';
 	import ArrowDownToLine from '@lucide/svelte/icons/arrow-down-to-line';
 	import ArrowUpToLine from '@lucide/svelte/icons/arrow-up-to-line';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
-	import { formatPrice, formatWithUnit, getNumberFormat } from '$lib/utils/formatters';
-	import { formatGenerationUnitValue } from '$lib/components/charts/network/generation-units.js';
-	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
-	import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
+	import { formatPrice, formatWithUnit, getNumberFormat } from '#lib/utils/formatters.js';
+	import { formatGenerationUnitValue } from '#lib/components/charts/network/generation-units.js';
+	import { getTimeFormatPolicy } from '#lib/components/charts/v2/time-format-policy.js';
+	import { ianaFromOffset } from '#lib/components/charts/v2/network-time.js';
 	import { buildWindowMetrics } from './window-metrics.js';
 
 	/**

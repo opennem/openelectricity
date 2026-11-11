@@ -18,10 +18,10 @@
  *  - OE also returns a net `battery` series (= discharging − charging) alongside
  *    the charging/discharging split; we drop it to avoid double-counting.
  */
-import { oeClient } from '$lib/server/oe-client.js';
-import { transformOeToStatsData } from '$lib/oe-api/transform';
-import { processPower7d } from '$lib/server/tracker/process-power-7d';
-import { toNetworkNaive } from '$lib/components/charts/v2/network-time.js';
+import { oeClient } from '#lib/server/oe-client.js';
+import { transformOeToStatsData } from '#lib/oe-api/transform.js';
+import { processPower7d } from '#lib/server/tracker/process-power-7d.js';
+import { toNetworkNaive } from '#lib/components/charts/v2/network-time.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STEP_MS = 5 * 60 * 1000; // OE fetch interval (5m)

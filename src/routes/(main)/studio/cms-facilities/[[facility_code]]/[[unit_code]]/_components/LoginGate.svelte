@@ -7,7 +7,7 @@
 	 */
 
 	import { onMount } from 'svelte';
-	import { initClerk, getClerkState } from '$lib/auth/clerk.svelte.js';
+	import { initClerk, getClerkState } from '#lib/auth/clerk.svelte.js';
 
 	/** @type {{ children: import('svelte').Snippet }} */
 	let { children } = $props();

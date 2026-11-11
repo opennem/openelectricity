@@ -1,4 +1,4 @@
-import energyParser from '$lib/opennem/parser';
+import energyParser from '#lib/opennem/parser.js';
 
 /**
  * Fetch the legacy OpenNEM static-JSON energy data via the local `/api/energy`

@@ -1,5 +1,5 @@
 import { NoDataFound } from 'openelectricity';
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 
 const CATEGORIES = /** @type {const} */ ([
 	'air_pollutant',

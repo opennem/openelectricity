@@ -6,7 +6,8 @@ import {
 	makeUpstreamFetcher,
 	networkDataCache,
 	parseNetworkDataParams
-} from '$lib/server/network-data.js';
+} from '#lib/server/network-data.js';
+import { edgeRuntime } from '#lib/server/edge-runtime.js';
 
 /**
  * Network-level time-series for the Explorer dashboard.
@@ -42,9 +43,10 @@ import {
  * at daily-and-coarser.
  *
  * Validation, canonical cache keys and the upstream fetch live in
- * `$lib/server/network-data.js`, shared with `/api/admin/network-cache/*`.
+ * `#lib/server/network-data.js`, shared with `/api/admin/network-cache/*`.
  */
-export async function GET({ url, setHeaders, platform }) {
+export async function GET({ url, setHeaders }) {
+	const platform = edgeRuntime();
 	const parsed = parseNetworkDataParams(url.searchParams);
 	if ('error' in parsed) {
 		return Response.json({ error: parsed.error }, { status: 400 });

@@ -1,4 +1,4 @@
-import { formatPrice, formatWithUnit } from '$lib/utils/formatters';
+import { formatPrice, formatWithUnit } from '#lib/utils/formatters.js';
 
 /** A dollar unit's per-quantity tail: `$/MWh` → `/MWh`. */
 const DOLLAR = /^[kMGT]?\$(\/.+)?$/;

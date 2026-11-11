@@ -1,8 +1,8 @@
 import { eachYearOfInterval } from 'date-fns';
-import { getFormattedDate } from '$lib/utils/formatters';
-import popEveryXItem from '$lib/utils/pop-every-x-item';
-import { formatDayMonth } from '$lib/components/charts/v2/date-labels.js';
-import { intlTimeZone } from '$lib/utils/date-format.js';
+import { getFormattedDate } from '#lib/utils/formatters.js';
+import popEveryXItem from '#lib/utils/pop-every-x-item.js';
+import { formatDayMonth } from '#lib/components/charts/v2/date-labels.js';
+import { intlTimeZone } from '#lib/utils/date-format.js';
 
 /**
  * @param {Date} d

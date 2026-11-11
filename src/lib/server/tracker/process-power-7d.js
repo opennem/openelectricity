@@ -10,9 +10,9 @@
  * history:{ start, last, interval, data } }`. Values are MW and get divided by
  * 1000 to GW here, matching the chart's `G`/`W` prefix.
  */
-import { fuelTechColourMap } from '$lib/theme/openelectricity';
-import { loadFuelTechs, fuelTechNameMap } from '$lib/fuel_techs';
-import simpleGroup from '$lib/fuel-tech-groups/simple-with-split-solar';
+import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
+import { loadFuelTechs, fuelTechNameMap } from '#lib/fuel_techs.js';
+import simpleGroup from '#lib/fuel-tech-groups/simple-with-split-solar.js';
 
 const fuelTechMap = simpleGroup.fuelTechs;
 const groupOrder = simpleGroup.order;

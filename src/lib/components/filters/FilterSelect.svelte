@@ -3,10 +3,10 @@
 	import FilterPanel from './FilterPanel.svelte';
 	import FilterRadioList from './FilterRadioList.svelte';
 	import FilterSheetSection from './FilterSheetSection.svelte';
-	import Switch from '$lib/components/SwitchWithIcons.svelte';
+	import Switch from '#lib/components/SwitchWithIcons.svelte';
 	import NativeSelect from './NativeSelect.svelte';
 	import { inFilterSheet } from './filter-sheet.js';
-	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
+	import { hasTouchControls } from '#lib/components/ui/touch-controls.js';
 
 	/**
 	 * Single-select dropdown in the filter-pill design — FilterPanel's pill +

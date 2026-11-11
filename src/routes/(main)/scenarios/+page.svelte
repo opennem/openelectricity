@@ -1,25 +1,25 @@
 <script>
 	import { setContext, getContext, onMount, onDestroy } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
-	import { colourReducer } from '$lib/stores/theme';
-	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
+	import { colourReducer } from '#lib/stores/theme.js';
+	import { regionsNemOnlyOptions as regionOptions } from '#lib/regions.js';
 	import { modelOptions } from './page-data-options/models';
 
-	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
-	import Meta from '$lib/components/Meta.svelte';
-	import Skeleton from '$lib/components/Skeleton.svelte';
-	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
+	import PageHeaderSimple from '#lib/components/PageHeaderSimple.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
+	import LogoMarkLoader from '#lib/components/LogoMarkLoader.svelte';
 
-	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
-	import { createSyncedCharts } from '$lib/components/charts/v2/sync.js';
-	import { createRequestGuard } from '$lib/utils/request-guard';
+	import ChartStore from '#lib/components/charts/v2/ChartStore.svelte.js';
+	import { createSyncedCharts } from '#lib/components/charts/v2/sync.js';
+	import { createRequestGuard } from '#lib/utils/request-guard.js';
 
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
-	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
-	import { pageShortcuts } from '$lib/components/fullscreen';
+	import ShortcutsToast from '#lib/components/ShortcutsToast.svelte';
+	import { pageShortcuts } from '#lib/components/fullscreen/index.js';
 	import ScenarioChart from './components/ScenarioChart.svelte';
 	import TableTechnology from './components/TableTechnology.svelte';
 	import TableScenario from './components/TableScenario.svelte';
@@ -117,7 +117,7 @@
 	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */
 	const layoutContext = getContext('layout-fullscreen');
 
-	let isFullscreen = $derived($page.url.searchParams.get('fullscreen') === 'true');
+	let isFullscreen = $derived(page.url.searchParams.get('fullscreen') === 'true');
 
 	$effect(() => {
 		layoutContext?.setFullscreen(isFullscreen);
@@ -129,13 +129,13 @@
 
 	function toggleFullscreen() {
 		const newFullscreen = !isFullscreen;
-		const url = new URL($page.url);
+		const url = new URL(page.url.href);
 		if (newFullscreen) {
 			url.searchParams.set('fullscreen', 'true');
 		} else {
 			url.searchParams.delete('fullscreen');
 		}
-		goto(url.toString(), { noScroll: true });
+		goto(url.toString(), { reset: false });
 	}
 
 	// --- Shortcuts toast ---
@@ -208,8 +208,9 @@
 		chart.chartOptions.allowedPrefixes = processed.allowedPrefixes || [];
 
 		const chartType = processed.chartType === 'area' ? 'stacked-area' : processed.chartType;
+
 		chart.chartOptions.selectedChartType =
-			/** @type {import('$lib/components/charts/v2/ChartOptions.svelte.js').ChartType} */ (
+			/** @type {import('#lib/components/charts/v2/ChartOptions.svelte.js').ChartType} */ (
 				chartType
 			);
 
@@ -645,12 +646,10 @@
 			regionsData,
 			includeBatteryAndLoads: $includeBatteryAndLoads
 		});
-
 		const processedCapacity = processRegion.capacity({
 			regionsData,
 			includeBatteryAndLoads: $includeBatteryAndLoads
 		});
-
 		const processedEmissions = processRegion.emissions({
 			regionsData,
 			includeBatteryAndLoads: $includeBatteryAndLoads

@@ -1,9 +1,9 @@
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 import {
 	hasBidirectionalBattery,
 	filterDerivedBatteryUnits,
 	getFacilityCapacity
-} from '$lib/facilities/units.js';
+} from '#lib/facilities/units.js';
 
 /**
  * @typedef {Object} FacilityListItem

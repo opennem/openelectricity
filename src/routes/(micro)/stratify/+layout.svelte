@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/state';
-	import LoginGate from '$lib/components/auth/LoginGate.svelte';
-	import { isPublicStratifyRoute, stratifySignInRedirect } from '$lib/stratify/routes.js';
+	import LoginGate from '#lib/components/auth/LoginGate.svelte';
+	import { isPublicStratifyRoute, stratifySignInRedirect } from '#lib/stratify/routes.js';
 	import StratifyHeader from './_components/StratifyHeader.svelte';
 
 	/** @type {{ children: import('svelte').Snippet }} */

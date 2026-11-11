@@ -1,6 +1,6 @@
 <script>
-	import { EDGE_MAX_AGE_MS } from '$lib/network-cache/freshness.js';
-	import { showToast } from '$lib/stores/toast.js';
+	import { EDGE_MAX_AGE_MS } from '#lib/network-cache/freshness.js';
+	import { showToast } from '#lib/stores/toast.js';
 	import { getCacheEntry, refreshCacheEntry } from '../_lib/api.js';
 	import {
 		formatBytes,

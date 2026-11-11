@@ -24,8 +24,8 @@ import {
 	pointerY
 } from '@observablehq/plot';
 import { scaleSqrt } from 'd3-scale';
-import { getLineDasharray, WATERFALL_ROLE_KEYS } from '$lib/stratify/chart-types.js';
-import { formatCompact } from '$lib/stratify/plot-annotations.js';
+import { getLineDasharray, WATERFALL_ROLE_KEYS } from '#lib/stratify/chart-types.js';
+import { formatCompact } from '#lib/stratify/plot-annotations.js';
 
 /**
  * Per-series mark type for mixed charts.

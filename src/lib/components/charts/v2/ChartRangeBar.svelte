@@ -1,14 +1,14 @@
 <script>
 	import { MediaQuery } from 'svelte/reactivity';
 	import { Popover, Select } from 'bits-ui';
-	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
-	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
+	import { DateRangePicker } from '#lib/components/ui/date-range-picker/index.js';
+	import SwitchWithIcons from '#lib/components/SwitchWithIcons.svelte';
 	import IntervalControls from './IntervalControls.svelte';
-	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
-	import { inFilterSheet } from '$lib/components/filters/filter-sheet.js';
-	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
-	import { portal } from '$lib/actions/portal.js';
-	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
+	import FilterSheetSection from '#lib/components/filters/FilterSheetSection.svelte';
+	import { inFilterSheet } from '#lib/components/filters/filter-sheet.js';
+	import { BottomSheet } from '#lib/components/ui/bottom-sheet/index.js';
+	import { portal } from '#lib/actions/portal.js';
+	import { BELOW_TABLET_QUERY } from '#lib/utils/fullscreen-mode.js';
 	import Calendar from '@lucide/svelte/icons/calendar';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import X from '@lucide/svelte/icons/x';
@@ -18,7 +18,7 @@
 		getPresetByDays,
 		getIntervalsForRange,
 		getIntervalOptionsForDays
-	} from '$lib/components/charts/facility/range-interval-config.js';
+	} from '#lib/components/charts/facility/range-interval-config.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -133,9 +133,9 @@
 	/** @type {HTMLElement | null} */
 	let rangeTriggerEl = $state(null);
 
-	/** @type {import('$lib/components/ui/date-range-picker/DateRangePicker.svelte').default | undefined} */
+	/** @type {import('#lib/components/ui/date-range-picker/DateRangePicker.svelte').default | undefined} */
 	let popoverPickerRef = $state(undefined);
-	/** @type {import('$lib/components/ui/date-range-picker/DateRangePicker.svelte').default | undefined} */
+	/** @type {import('#lib/components/ui/date-range-picker/DateRangePicker.svelte').default | undefined} */
 	let sheetPickerRef = $state(undefined);
 
 	/**

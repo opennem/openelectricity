@@ -10,7 +10,7 @@
  * outlive the creating component.
  */
 
-import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
+import ChartDataManager from '#lib/components/charts/v2/ChartDataManager.svelte.js';
 import { processFacilityPower } from './process-facility-power.js';
 import { getNetworkTimezone } from './helpers.js';
 import { unitSeriesIds, unitsKeyFor } from './unit-analysis.js';

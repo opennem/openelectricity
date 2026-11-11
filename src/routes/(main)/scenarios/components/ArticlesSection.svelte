@@ -1,5 +1,5 @@
 <script>
-	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
+	import ArticleCard from '#lib/components/articles/ArticleCard.svelte';
 
 	/**
 	 * @typedef {Object} Props

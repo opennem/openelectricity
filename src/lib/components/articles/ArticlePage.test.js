@@ -3,12 +3,11 @@ import { render } from 'svelte/server';
 import AnalysisPage from '../../../routes/(main)/analysis/[article]/+page.svelte';
 import DraftPage from '../../../routes/(main)/article-drafts/[article]/+page.svelte';
 
-vi.mock('$app/stores', async () => {
-	const { readable } = await import('svelte/store');
-	return { page: readable({ url: new URL('https://openelectricity.org.au/analysis/example') }) };
-});
+vi.mock('$app/state', () => ({
+	page: { url: new URL('https://openelectricity.org.au/analysis/example') }
+}));
 
-vi.mock('$lib/sanity', () => ({
+vi.mock('#lib/sanity.js', () => ({
 	urlFor: (/** @type {{ alt: string }} */ image) => ({
 		height: () => ({ url: () => `/images/${image.alt}.jpg` })
 	})

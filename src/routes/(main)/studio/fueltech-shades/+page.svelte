@@ -1,13 +1,13 @@
 <script>
 	import chroma from 'chroma-js';
-	import Meta from '$lib/components/Meta.svelte';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { fuelTechNameMap } from '$lib/fuel_techs';
+	import Meta from '#lib/components/Meta.svelte';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
 	import {
 		generateUnitShades,
 		DEFAULT_SHADE_SPREAD,
 		SHADE_SPREADS
-	} from '$lib/components/charts/facility/helpers.js';
+	} from '#lib/components/charts/facility/helpers.js';
 
 	// Production values come straight from the source so this page can't drift.
 	const PROD_DARKEN = DEFAULT_SHADE_SPREAD.darken;

@@ -1,6 +1,6 @@
 <script>
 	import { format, isValid, parse } from 'date-fns';
-	import { urlFor } from '$lib/sanity';
+	import { urlFor } from '#lib/sanity.js';
 
 	/**
 	 * @typedef {Object} Props

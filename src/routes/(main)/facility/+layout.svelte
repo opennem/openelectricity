@@ -1,7 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page, navigating } from '$app/state';
-	import { building } from '$app/environment';
+	import { building } from '$app/env';
 	import { onMount, setContext, tick } from 'svelte';
 	import { fly } from 'svelte/transition';
 
@@ -10,27 +10,27 @@
 		FullscreenContainer,
 		FullscreenFooter,
 		pageShortcuts
-	} from '$lib/components/fullscreen';
-	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
-	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
-	import { Backdrop } from '$lib/components/ui/backdrop';
-	import { portal } from '$lib/actions/portal.js';
-	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '$lib/facilities/units.js';
-	import { regions as regionDefs } from '$lib/facilities/filters.js';
+	} from '#lib/components/fullscreen/index.js';
+	import ShortcutsToast from '#lib/components/ShortcutsToast.svelte';
+	import { createDragHandler, DragHandle } from '#lib/components/ui/panel/index.js';
+	import { Backdrop } from '#lib/components/ui/backdrop/index.js';
+	import { portal } from '#lib/actions/portal.js';
+	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '#lib/facilities/units.js';
+	import { regions as regionDefs } from '#lib/facilities/filters.js';
 	import { MediaQuery } from 'svelte/reactivity';
 	import {
 		BELOW_TABLET_QUERY,
 		isFullscreenUrl,
 		toggleFullscreenMode
-	} from '$lib/utils/fullscreen-mode.js';
-	import { streamedState } from '$lib/utils/streamed-state.svelte.js';
+	} from '#lib/utils/fullscreen-mode.js';
+	import { streamedState } from '#lib/utils/streamed-state.svelte.js';
 
 	import FacilityPickerBar from './[code]/_components/FacilityPickerBar.svelte';
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
-	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
-	import FeedbackIconButton from '$lib/components/feedback/FeedbackIconButton.svelte';
+	import PageOptionsMenu from '#lib/components/PageOptionsMenu.svelte';
+	import FeedbackIconButton from '#lib/components/feedback/FeedbackIconButton.svelte';
 	import { ArrowLeft, Download } from '@lucide/svelte';
-	import { OptionsMenuDivider, OptionsMenuItem } from '$lib/components/ui/options-menu';
+	import { OptionsMenuDivider, OptionsMenuItem } from '#lib/components/ui/options-menu/index.js';
 	import { backToFacilities } from './_utils/back-navigation.js';
 
 	/**
@@ -135,7 +135,7 @@
 		const params = new URLSearchParams(page.url.search);
 		params.delete('unit');
 		const search = params.size ? `?${params.toString()}` : '';
-		goto(`/facility/${code}${search}`, { noScroll: true, keepFocus: true });
+		goto(`/facility/${code}${search}`, { reset: false });
 	}
 
 	// On mobile the list is a modal, so a tap dismisses it and loads the facility.
@@ -298,7 +298,9 @@
 
 			<!-- Mobile: the facility search list is a modal over the detail page;
 			     tapping a facility dismisses it and loads that facility. -->
+
 			<Backdrop open={isMobile && leftOpen} onclick={() => (leftOpen = false)} />
+
 			{#if isMobile && leftOpen}
 				<div
 					use:portal

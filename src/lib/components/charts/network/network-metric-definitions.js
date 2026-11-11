@@ -10,13 +10,13 @@
  * fossil from a real fueltech sum — so the two needn't sum to 100%.
  */
 
-import { formatPrice, getNumberFormat } from '$lib/utils/formatters';
+import { formatPrice, getNumberFormat } from '#lib/utils/formatters.js';
 
 const fmt0 = getNumberFormat(0);
 const fmt1 = getNumberFormat(1);
 
 /** @typedef {import('./network-metrics-calc.js').NetworkMetricsContext} NetworkMetricsContext */
-/** @typedef {import('$lib/components/charts/facility/metrics/metric-definitions.js').MetricResult} MetricResult */
+/** @typedef {import('#lib/components/charts/facility/metrics/metric-definitions.js').MetricResult} MetricResult */
 
 const SHARE_OF_DEMAND = 'Share of gross demand';
 

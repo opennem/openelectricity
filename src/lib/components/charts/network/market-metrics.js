@@ -13,7 +13,7 @@
  */
 
 import chroma from 'chroma-js';
-import { fuelTechColourMap } from '$lib/theme/openelectricity';
+import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
 import { MARKET_METRIC_NAMES } from './market-metric-names.js';
 
 /** @param {string} colour */

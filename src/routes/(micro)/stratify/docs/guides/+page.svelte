@@ -1,8 +1,8 @@
 <script>
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import Meta from '$lib/components/Meta.svelte';
-	import { stratifyGuides } from '$lib/stratify/guide-catalogue.js';
+	import Meta from '#lib/components/Meta.svelte';
+	import { stratifyGuides } from '#lib/stratify/guide-catalogue.js';
 </script>
 
 <Meta

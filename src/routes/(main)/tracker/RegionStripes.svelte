@@ -1,12 +1,12 @@
 <script>
 	import { onDestroy } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
-	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
+	import { createViewportGestures } from '#lib/components/charts/v2/viewport-gestures.js';
 	import {
 		classifyWheelIntent,
 		wheelPanDeltaMs
-	} from '$lib/components/charts/v2/wheel-interaction.js';
-	import StaticZoomButtons from '$lib/components/charts/v2/StaticZoomButtons.svelte';
+	} from '#lib/components/charts/v2/wheel-interaction.js';
+	import StaticZoomButtons from '#lib/components/charts/v2/StaticZoomButtons.svelte';
 	import { comparisonMetric } from './comparison-metrics.js';
 	import RegionTooltip from './RegionTooltip.svelte';
 	import { inspectionStep } from './comparison-inspection.js';
@@ -37,7 +37,7 @@
 	 *   hover: number | null, focus: number | null,
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
 	 *   onviewport: (start: number, end: number, settled: boolean) => void,
-	 *   timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null,
+	 *   timeMarkers?: import('#lib/components/charts/v2/time-markers.js').TimeMarkerSet | null,
 	 *   onpick?: (time: number) => void
 	 * }} */
 	let {

@@ -7,11 +7,11 @@
 	 * (unit-specific colour), unit code, and capacity.
 	 */
 
-	import { buildUnitColourMap } from '$lib/components/charts/facility/helpers.js';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import detailedGroup from '$lib/fuel-tech-groups/detailed';
-	import { getUnitCapacity } from '$lib/utils/capacity';
-	import { getNumberFormat } from '$lib/utils/formatters';
+	import { buildUnitColourMap } from '#lib/components/charts/facility/helpers.js';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import detailedGroup from '#lib/fuel-tech-groups/detailed.js';
+	import { getUnitCapacity } from '#lib/utils/capacity.js';
+	import { getNumberFormat } from '#lib/utils/formatters.js';
 
 	const fuelTechOrder = detailedGroup.order;
 

@@ -1,11 +1,11 @@
 import { derived, writable } from 'svelte/store';
 import { startOfYear } from 'date-fns';
 
-import Statistic from '$lib/utils/Statistic';
-import TimeSeries from '$lib/utils/TimeSeries';
-import parseInterval from '$lib/utils/intervals';
-import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
-import { colourReducer } from '$lib/stores/theme';
+import Statistic from '#lib/utils/Statistic/index.js';
+import TimeSeries from '#lib/utils/TimeSeries/index.js';
+import parseInterval from '#lib/utils/intervals.js';
+import { fuelTechNameReducer, loadFuelTechs } from '#lib/fuel_techs.js';
+import { colourReducer } from '#lib/stores/theme.js';
 import { pathwayOrder } from './scenarios';
 import { explorerGroups, groupMap, orderMap } from './explorer-ft-groups';
 

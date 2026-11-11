@@ -1,5 +1,5 @@
 <script>
-	import { getContrastedTextCss } from '$lib/colours.js';
+	import { getContrastedTextCss } from '#lib/colours.js';
 
 	/**
 	 * @typedef {Object} Props

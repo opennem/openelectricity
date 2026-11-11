@@ -1,9 +1,9 @@
-import { convert } from '$lib/utils/si-units';
-import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
+import { convert } from '#lib/utils/si-units.js';
+import { getNumberFormat, getFormattedDate, getFormattedTime } from '#lib/utils/formatters.js';
 import ChartOptions from './chart-options.svelte.js';
 import ChartStyles from './chart-styles.svelte.js';
 import ChartTooltips from './chart-tooltips.svelte.js';
-import { transformToProportion } from '$lib/utils/data-transform/index.js';
+import { transformToProportion } from '#lib/utils/data-transform/index.js';
 import { computeYDomain } from '../v2/compute-y-domain.js';
 
 /**
@@ -14,7 +14,7 @@ import { computeYDomain } from '../v2/compute-y-domain.js';
  * @property {SiPrefix} [displayPrefix]
  * @property {SiPrefix[]} [allowedPrefixes]
  * @property {string} [baseUnit]
- * @property {string} [chartType]
+ * @property {import('./chart-options.svelte.js').ChartType} [chartType]
  * @property {boolean} [hideDataOptions]
  * @property {boolean} [hideChartTypeOptions]
  * @property {Object} [chartStyles]
@@ -294,7 +294,7 @@ export default class ChartStore {
 			displayPrefix,
 			allowedPrefixes,
 			baseUnit,
-			chartType: /** @type {import('./chart-options.svelte.js').ChartType} */ (chartType)
+			chartType
 		});
 		this.chartStyles = new ChartStyles();
 		this.chartTooltips = new ChartTooltips();

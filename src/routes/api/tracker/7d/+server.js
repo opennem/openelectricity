@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { PUBLIC_JSON_API } from '$env/static/public';
+import { PUBLIC_JSON_API } from '$app/env/public';
 
 export async function GET({ fetch, url }) {
 	let { searchParams } = url;

@@ -1,4 +1,4 @@
-import { escapeCsv } from '$lib/utils/download-csv';
+import { escapeCsv } from '#lib/utils/download-csv.js';
 
 const CSV_HEADERS = [
 	'facility_code',

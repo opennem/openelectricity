@@ -1,4 +1,4 @@
-import { createCmsClient, getAvailableDatasets, resolveDataset } from '$lib/sanity-cms.js';
+import { createCmsClient, getAvailableDatasets, resolveDataset } from '#lib/sanity-cms.js';
 
 const FACILITIES_QUERY = `*[_type == "facility"] | order(name asc) {
 	_id, code, name, website, wikipedia, wikidata_id, osm_way_id, npiId, location,

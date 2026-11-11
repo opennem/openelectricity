@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { NoDataFound } from 'openelectricity';
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 
 const DEFAULT_CATEGORIES = ['air_pollutant', 'water_pollutant', 'heavy_metal', 'organic'];
 

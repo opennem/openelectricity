@@ -3,7 +3,7 @@ import {
 	buildWorkbookSheets,
 	datasetToCsv,
 	datasetToSheet
-} from '$lib/components/charts/card/export-dataset.js';
+} from '#lib/components/charts/card/export-dataset.js';
 import {
 	exportFileName,
 	timelineDataset,

@@ -13,15 +13,15 @@
 	import { MapLibre, NavigationControl, AttributionControl } from 'svelte-maplibre-gl';
 	// Registers MapLibre 6's worker URL with Vite (once per page, idempotent).
 	import 'svelte-maplibre-gl/vite';
-	import TransmissionLinesLayer from '$lib/components/map/TransmissionLinesLayer.svelte';
-	import { allBandsVisible, transmissionBandFilter } from '$lib/facilities/transmission-bands.js';
-	import FlowArcsLayer from '$lib/components/map/FlowArcsLayer.svelte';
-	import RegionPriceMarkers from '$lib/components/map/RegionPriceMarkers.svelte';
+	import TransmissionLinesLayer from '#lib/components/map/TransmissionLinesLayer.svelte';
+	import { allBandsVisible, transmissionBandFilter } from '#lib/facilities/transmission-bands.js';
+	import FlowArcsLayer from '#lib/components/map/FlowArcsLayer.svelte';
+	import RegionPriceMarkers from '#lib/components/map/RegionPriceMarkers.svelte';
 	import RegionChartMarkers from './RegionChartMarkers.svelte';
-	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
-	import { mapStyleForTheme } from '$lib/components/map/map-style.js';
-	import { coordsBounds } from '$lib/utils/osm.js';
-	import { INTERCONNECTORS, getInterconnector, corridorCoords } from '$lib/flows/region-geo.js';
+	import { collapseMapAttribution } from '#lib/components/map/collapse-attribution.js';
+	import { mapStyleForTheme } from '#lib/components/map/map-style.js';
+	import { coordsBounds } from '#lib/utils/osm.js';
+	import { INTERCONNECTORS, getInterconnector, corridorCoords } from '#lib/flows/region-geo.js';
 	import { ALL_CARD_CODES, CARD_PX, NEM_CARD_CODES, cardPlacement } from './card-geometry.js';
 	import { isWholeNetworkScope } from './tracker-regions.js';
 
@@ -43,7 +43,7 @@
 	 * @type {{
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   showTransmissionLines?: boolean,
-	 *   transmissionLineVisibility?: import('$lib/facilities/transmission-bands.js').BandVisibility,
+	 *   transmissionLineVisibility?: import('#lib/facilities/transmission-bands.js').BandVisibility,
 	 *   showFlows?: boolean,
 	 *   flows?: Record<string, number>,
 	 *   prices?: Record<string, number>,

@@ -4,23 +4,23 @@
 	import { Tween, prefersReducedMotion } from 'svelte/motion';
 	import { slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import { createDockedPanel } from '$lib/components/ui/panel/docked-panel.svelte.js';
-	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
+	import { createDockedPanel } from '#lib/components/ui/panel/docked-panel.svelte.js';
+	import DragHandle from '#lib/components/ui/panel/drag-handle.svelte';
 	import {
 		createChartHeaderHost,
 		setChartHeaderHost
-	} from '$lib/components/charts/v2/chart-header-host.svelte.js';
-	import ChartHeaderUnit from '$lib/components/charts/v2/ChartHeaderUnit.svelte';
-	import ChartOptionsMenu from '$lib/components/charts/v2/ChartOptionsMenu.svelte';
-	import ChartPanZoomButtons from '$lib/components/charts/v2/ChartPanZoomButtons.svelte';
+	} from '#lib/components/charts/v2/chart-header-host.svelte.js';
+	import ChartHeaderUnit from '#lib/components/charts/v2/ChartHeaderUnit.svelte';
+	import ChartOptionsMenu from '#lib/components/charts/v2/ChartOptionsMenu.svelte';
+	import ChartPanZoomButtons from '#lib/components/charts/v2/ChartPanZoomButtons.svelte';
 	import Download from '@lucide/svelte/icons/download';
 	import GitCompareArrows from '@lucide/svelte/icons/git-compare-arrows';
 	import Info from '@lucide/svelte/icons/info';
 	import Maximize2 from '@lucide/svelte/icons/maximize-2';
 	import Table2 from '@lucide/svelte/icons/table-2';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
-	import { OptionsMenu, OptionsMenuItem } from '$lib/components/ui/options-menu';
-	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
+	import { OptionsMenu, OptionsMenuItem } from '#lib/components/ui/options-menu/index.js';
+	import { hasTouchControls } from '#lib/components/ui/touch-controls.js';
 	import ChartDataTable from './ChartDataTable.svelte';
 	import LoadingOverlay from './LoadingOverlay.svelte';
 	import { downloadStatus } from './chart-downloads.js';

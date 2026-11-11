@@ -10,7 +10,7 @@
  * Must be called during component init — it registers `$effect`s.
  */
 
-import { getFuelTechColour } from '$lib/components/charts/colours.js';
+import { getFuelTechColour } from '#lib/components/charts/colours.js';
 import { getGroup, loadGroupsFor } from './groups.js';
 import { createHeadlessSeriesProvider } from './headless-series-provider.svelte.js';
 import { processNetworkData } from './process-network-data.js';

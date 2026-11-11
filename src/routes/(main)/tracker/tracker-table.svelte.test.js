@@ -17,7 +17,9 @@ function harness(search = '') {
 	const { start, end } = session.window;
 	const marketData = makeProvider();
 	const intensityData = makeProvider();
-	const providers = makeProviders({ marketData, intensityData });
+	// Cast here, not as `providers: … (providers)` below: a same-named key's
+	// cast trips the Svelte compiler's printer (sveltejs/esrap#257).
+	const providers = /** @type {any} */ (makeProviders({ marketData, intensityData }));
 	const state = $state({
 		ready: true,
 		inspectTime: /** @type {number | undefined} */ (undefined),
@@ -41,7 +43,7 @@ function harness(search = '') {
 	});
 	const table = createTrackerTable({
 		session,
-		providers: /** @type {any} */ (providers),
+		providers,
 		generation: () => state.snapshot,
 		queryKey: () => state.snapshot.queryKey,
 		ready: () => state.ready,

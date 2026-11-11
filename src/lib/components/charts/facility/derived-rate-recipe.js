@@ -9,7 +9,7 @@
  * elsewhere (svelte2tsx does not export them).
  */
 
-/** @typedef {import('$lib/components/charts/v2/ChartStore.svelte.js').default} ChartStore */
+/** @typedef {import('#lib/components/charts/v2/ChartStore.svelte.js').default} ChartStore */
 
 /**
  * Lazy inputs for `getRateSeries` — getters, so recipes with a fixed single

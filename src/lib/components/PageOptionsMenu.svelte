@@ -5,8 +5,8 @@
 		OptionsMenuItem,
 		OptionsMenuHeading,
 		OptionsMenuDivider
-	} from '$lib/components/ui/options-menu';
-	import { writeToClipboard } from '$lib/utils/clipboard';
+	} from '#lib/components/ui/options-menu/index.js';
+	import { writeToClipboard } from '#lib/utils/clipboard.js';
 
 	/**
 	 * `downloadItems` + `ondownloaditem` let a host inject extra rows under the

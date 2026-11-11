@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { describe, expect, it } from 'vitest';
-import { DEMAND_GROSS_SERIES_ID } from '$lib/components/charts/network/network-market-data.svelte.js';
+import { DEMAND_GROSS_SERIES_ID } from '#lib/components/charts/network/network-market-data.svelte.js';
 import {
 	buildFuelTechTableRows,
 	computeAvPowerMW,
@@ -10,7 +10,7 @@ import {
 	computeOverlaySummary,
 	computeVWPrices
 } from './table-model.js';
-import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
+import { getIntervalHours } from '#lib/components/charts/facility/interval-hours.js';
 
 const MIN_30 = 30 * 60 * 1000;
 const MIN_5 = 5 * 60 * 1000;

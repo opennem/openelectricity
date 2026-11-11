@@ -1,6 +1,6 @@
 <script>
 	import { fade } from 'svelte/transition';
-	import { portal } from '$lib/actions/portal.js';
+	import { portal } from '#lib/actions/portal.js';
 
 	/**
 	 * Full-page modal backdrop. Portalled to <body> so it always sits above

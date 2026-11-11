@@ -1,5 +1,5 @@
 import { addYears, startOfYear, eachYearOfInterval, differenceInCalendarMonths } from 'date-fns';
-import { getFormattedDate, getFormattedMonth } from '$lib/utils/formatters.js';
+import { getFormattedDate, getFormattedMonth } from '#lib/utils/formatters.js';
 
 /**
  * @param {*[]} array

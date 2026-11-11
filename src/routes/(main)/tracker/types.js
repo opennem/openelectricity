@@ -42,7 +42,7 @@
  * @typedef {{cards: TimelineCard[], a: number | null, b: number | null}} TimelineComparison
  */
 
-/** @typedef {import('$lib/components/charts/card/types.js').CompareSource} CompareSource */
+/** @typedef {import('#lib/components/charts/card/types.js').CompareSource} CompareSource */
 
 /**
  * Navigation state carried by the URL (plus `nowMs`, added by the page load).
@@ -60,9 +60,9 @@
  *   (exact displayed interval starts), or null when no card compares
  * @property {string[]} hiddenSeries - Hidden group IDs, validated against the grouping
  * @property {ContributionMode} contributionMode
- * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
- * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').EnergyMeasure} generationMeasure
- * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} marketValueTransform
+ * @property {import('#lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
+ * @property {import('#lib/components/charts/v2/ChartOptions.svelte.js').EnergyMeasure} generationMeasure
+ * @property {import('#lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} marketValueTransform
  * @property {TrackerRange} range
  * @property {string | null} bucketFilter - Recurring calendar period (All range only)
  * @property {PriceMode} priceMode
@@ -184,13 +184,13 @@
  * @typedef {'generation' | 'market' | 'emissions' | 'table'} ExportDatasetKey
  */
 
-/** @typedef {import('$lib/components/charts/card/types.js').ExportColumn} ExportColumn */
+/** @typedef {import('#lib/components/charts/card/types.js').ExportColumn} ExportColumn */
 
-/** @typedef {import('$lib/components/charts/card/types.js').ExportDataset} ExportDataset */
+/** @typedef {import('#lib/components/charts/card/types.js').ExportDataset} ExportDataset */
 
-/** @typedef {import('$lib/components/charts/card/types.js').DownloadState} DownloadState */
+/** @typedef {import('#lib/components/charts/card/types.js').DownloadState} DownloadState */
 
-/** @typedef {import('$lib/components/charts/card/types.js').DownloadSource} DownloadSource */
+/** @typedef {import('#lib/components/charts/card/types.js').DownloadSource} DownloadSource */
 
 /**
  * Everything Timeline's downloads need, packaged by the canvas
@@ -220,9 +220,9 @@
  * @property {OverlaySummary | null} overlaySummary
  * @property {boolean} tablePanelOpen - The table's providers only fetch while open
  * @property {string[]} hiddenSeries - Group ids toggled off in the charts
- * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
- * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').EnergyMeasure} generationMeasure - As drawn
- * @property {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} marketValueTransform
+ * @property {import('#lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} generationTransform
+ * @property {import('#lib/components/charts/v2/ChartOptions.svelte.js').EnergyMeasure} generationMeasure - As drawn
+ * @property {import('#lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType} marketValueTransform
  * @property {Array<{id: string, label: string, data: Array<Record<string, any>>, valueKey: string, scale?: string}>} overlayLines
  *   - Lines drawn over the generation stack (demand, renewables share)
  * @property {Array<{data: Array<Record<string, any>>, series: Array<{id: string, label: string}>}>} overlayAreas
@@ -233,7 +233,7 @@
 /**
  * A docked side panel's controller — size, resize handlers, open/close and
  * the focus hand-off between its close control and the rail's opener.
- * @typedef {ReturnType<typeof import('$lib/components/ui/panel/docked-panel.svelte.js').createDockedPanel>} TrackerDock
+ * @typedef {ReturnType<typeof import('#lib/components/ui/panel/docked-panel.svelte.js').createDockedPanel>} TrackerDock
  */
 
 /**

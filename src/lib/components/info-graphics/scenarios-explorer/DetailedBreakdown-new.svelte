@@ -3,7 +3,7 @@
 
 	import { getContext } from 'svelte';
 	import { startOfYear } from 'date-fns';
-	import SparkLineArea from '$lib/components/info-graphics/integrated-system-plan/SparkLineArea.svelte';
+	import SparkLineArea from '#lib/components/info-graphics/integrated-system-plan/SparkLineArea.svelte';
 	import {
 		scenarioLabels as scenarioLabelsOrig,
 		scenarioParagraphs as scenarioParagraphsOrig,

@@ -1,18 +1,18 @@
 <script>
-	import { longPress } from '$lib/utils/long-press.js';
-	import Switch from '$lib/components/SwitchWithIcons.svelte';
+	import { longPress } from '#lib/utils/long-press.js';
+	import Switch from '#lib/components/SwitchWithIcons.svelte';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
 	import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 	import ListOrdered from '@lucide/svelte/icons/list-ordered';
 	import Rows3 from '@lucide/svelte/icons/rows-3';
 	import { bisectLeft } from 'd3-array';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
+	import { getIntervalSpec } from '#lib/components/charts/facility/range-interval-config.js';
 	import { fade } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import { MediaQuery } from 'svelte/reactivity';
-	import IntervalControls from '$lib/components/charts/v2/IntervalControls.svelte';
-	import FilterBarGroup from '$lib/components/filters/FilterBarGroup.svelte';
-	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
+	import IntervalControls from '#lib/components/charts/v2/IntervalControls.svelte';
+	import FilterBarGroup from '#lib/components/filters/FilterBarGroup.svelte';
+	import FilterSheetSection from '#lib/components/filters/FilterSheetSection.svelte';
 	import ComparisonChartToggles from './ComparisonChartToggles.svelte';
 	import RegionStripes from './RegionStripes.svelte';
 	import { stripeMax, stripeScale } from './comparison-stripes.js';
@@ -28,8 +28,8 @@
 		comparisonTableColumn,
 		formatComparisonCell
 	} from './comparison-metrics.js';
-	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
-	import { splitTableLabel } from '$lib/components/charts/card/cell-format.js';
+	import ChartCard from '#lib/components/charts/card/ChartCard.svelte';
+	import { splitTableLabel } from '#lib/components/charts/card/cell-format.js';
 	import {
 		TABLE_HEADER_BUTTON,
 		TABLE_HEADER_CELL,
@@ -52,9 +52,9 @@
 	import TrackerSplitLayout from './TrackerSplitLayout.svelte';
 	import RegionComparisonChart from './RegionComparisonChart.svelte';
 	import RegionPanels from './RegionPanels.svelte';
-	import ComparePanel from '$lib/components/charts/card/compare/ComparePanel.svelte';
-	import { windowRows } from '$lib/components/charts/v2/binary-search.js';
-	import { createCompareMode } from '$lib/components/charts/card/compare/compare-mode.svelte.js';
+	import ComparePanel from '#lib/components/charts/card/compare/ComparePanel.svelte';
+	import { windowRows } from '#lib/components/charts/v2/binary-search.js';
+	import { createCompareMode } from '#lib/components/charts/card/compare/compare-mode.svelte.js';
 	import { regionCompareSource } from './chart-compare-sources.js';
 	import { trackerFileName } from './tracker-export.js';
 	import {
@@ -74,7 +74,7 @@
 	import {
 		getChartDownloads,
 		chartDownload
-	} from '$lib/components/charts/card/chart-downloads.svelte.js';
+	} from '#lib/components/charts/card/chart-downloads.svelte.js';
 	import {
 		COMPARISON_REGIONS,
 		COMPARISON_INTERVAL_IDS,
@@ -96,7 +96,7 @@
 	/** Comparison regions by value, for ids that come back from rankings and errors. */
 	const REGION_BY_ID = new Map(COMPARISON_REGIONS.map((region) => [region.value, region]));
 
-	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>, cpi: ReturnType<typeof import('$lib/comparison-cpi.js').comparisonCpi>}} */
+	/** @type {{session: ReturnType<typeof import('./tracker-session.svelte.js').createTrackerSession>, cpi: ReturnType<typeof import('#lib/comparison-cpi.js').comparisonCpi>}} */
 	let { session, cpi } = $props();
 	let selection = $derived(normaliseRegionComparison(session.selection.regionComparison));
 	// Every move replaces the selection, whose arrays are rebuilt each time.

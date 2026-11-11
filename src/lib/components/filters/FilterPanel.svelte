@@ -3,11 +3,11 @@
 	import { MediaQuery } from 'svelte/reactivity';
 	import X from '@lucide/svelte/icons/x';
 
-	import { portal } from '$lib/actions/portal.js';
-	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
+	import { portal } from '#lib/actions/portal.js';
+	import { dropdownPosition } from '#lib/actions/dropdown-position.js';
 	import FilterPill from './FilterPill.svelte';
-	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
-	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
+	import { BottomSheet } from '#lib/components/ui/bottom-sheet/index.js';
+	import { BELOW_TABLET_QUERY } from '#lib/utils/fullscreen-mode.js';
 
 	/**
 	 * Shared chrome for the filter dropdowns: pill trigger, portalled panel

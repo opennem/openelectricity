@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/environment', () => ({ browser: true, dev: false, version: '1.0.0' }));
+vi.mock('$app/env', () => ({ browser: true, dev: false, version: '1.0.0' }));
 vi.mock('$env/dynamic/public', () => ({
 	env: { PUBLIC_SENTRY_DSN: 'https://public@o0.ingest.sentry.io/0' }
 }));

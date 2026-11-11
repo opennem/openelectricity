@@ -1,10 +1,10 @@
 <script>
 	import { run } from 'svelte/legacy';
 
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
 
-	import Meta from '$lib/components/Meta.svelte';
+	import Meta from '#lib/components/Meta.svelte';
 	import Filters from './components/Filters.svelte';
 	import {
 		regionOptions,
@@ -57,7 +57,6 @@
 			regions.length === 0 || regions.length === 7 ? '' : '&regions=' + validRegions.join(',');
 		const periodsParam =
 			periods.length === periodOptions.length ? '' : '&periods=' + periods.join(',');
-
 		const fuelTechParams =
 			fuelTechs.length === fuelTechOptions.length ? '' : '&fuelTechs=' + fuelTechs.join(',');
 
@@ -127,7 +126,7 @@
 		goto(
 			`/records-checker?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}`,
 			{
-				replaceState: true
+				replace: true
 			}
 		);
 	}

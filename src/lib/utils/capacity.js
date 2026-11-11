@@ -3,9 +3,9 @@
  * otherwise registered. Used for all capacity display and calculations on the
  * /facilities and /facility/[code] surfaces.
  *
- * NOTE: keep this module free of imports — `$lib/og/facility-card-data.js`
+ * NOTE: keep this module free of imports — `#lib/og/facility-card-data.js`
  * imports it via a relative path so the plain-Node OG build script
- * (`scripts/generate-og-images.mjs`) can load it without the `$lib` alias.
+ * (`scripts/generate-og-images.mjs`) can load it without the `#lib` alias.
  */
 
 /**

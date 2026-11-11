@@ -1,7 +1,7 @@
 <script>
-	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
-	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
-	import Icon from '$lib/components/Icon.svelte';
+	import ChartStore from '#lib/components/charts/v2/ChartStore.svelte.js';
+	import StratumChart from '#lib/components/charts/v2/StratumChart.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 
 	/**
 	 * @typedef {Object} Props

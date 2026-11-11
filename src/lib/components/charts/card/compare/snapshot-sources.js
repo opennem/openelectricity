@@ -12,7 +12,7 @@
  * screen (`compare-pins.svelte.js`), so a comparison never blanks mid-pan.
  */
 
-import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
+import { isObservationRow } from '#lib/components/charts/v2/bucket-filter.js';
 import { finite, formatSignedChange } from './chart-compare.js';
 
 /** @typedef {import('../types.js').ChartSnapshot} ChartSnapshot */

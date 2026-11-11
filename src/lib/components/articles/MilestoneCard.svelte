@@ -1,7 +1,7 @@
 <script>
 	import { format, isValid, parse } from 'date-fns';
-	import { urlFor } from '$lib/sanity';
-	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
+	import { urlFor } from '#lib/sanity.js';
+	import FuelTechTag from '#lib/components/FuelTechTag.svelte';
 
 	/**
 	 * @typedef {Object} Props

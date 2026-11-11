@@ -1,6 +1,6 @@
 /**
  * What each level of access to a Stratify chart allows. Shared by the
- * server (`$lib/server/stratify/chart-access.js` decides the access) and the
+ * server (`#lib/server/stratify/chart-access.js` decides the access) and the
  * builder (which shows or hides controls to match).
  *
  * - `owner`: the chart's creator, or a superadmin. Everything.

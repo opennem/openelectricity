@@ -26,13 +26,13 @@
 	 */
 
 	import { page } from '$app/state';
-	import { building } from '$app/environment';
-	import { afterNavigate, replaceState } from '$app/navigation';
+	import { building } from '$app/env';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { onMount, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 
 	import { ChevronLeft, LoaderCircle, PanelLeftOpen, X } from '@lucide/svelte';
-	import Meta from '$lib/components/Meta.svelte';
+	import Meta from '#lib/components/Meta.svelte';
 	import {
 		FullscreenLayout,
 		FullscreenContainer,
@@ -40,34 +40,34 @@
 		FullscreenFilterBar,
 		FullscreenNavDropdown,
 		pageShortcuts
-	} from '$lib/components/fullscreen';
-	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
-	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
-	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
-	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
-	import MapKey from '$lib/components/map/MapKey.svelte';
-	import { allBandsVisible } from '$lib/facilities/transmission-bands.js';
-	import { MAP_CHIP_CLASS, MAP_FAB_CLASS } from '$lib/components/map/map-style.js';
-	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
-	import BottomSheet from '$lib/components/ui/bottom-sheet/BottomSheet.svelte';
+	} from '#lib/components/fullscreen/index.js';
+	import PageOptionsMenu from '#lib/components/PageOptionsMenu.svelte';
+	import ShortcutsToast from '#lib/components/ShortcutsToast.svelte';
+	import LogoMarkLoader from '#lib/components/LogoMarkLoader.svelte';
+	import MapOptionsDropdown from '#lib/components/map/MapOptionsDropdown.svelte';
+	import MapKey from '#lib/components/map/MapKey.svelte';
+	import { allBandsVisible } from '#lib/facilities/transmission-bands.js';
+	import { MAP_CHIP_CLASS, MAP_FAB_CLASS } from '#lib/components/map/map-style.js';
+	import { ResizablePanel } from '#lib/components/ui/resizable-panel/index.js';
+	import BottomSheet from '#lib/components/ui/bottom-sheet/BottomSheet.svelte';
 	import { fade } from 'svelte/transition';
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
 	import RegionDropdown from '../RegionDropdown.svelte';
 	import InterconnectorDetail from '../InterconnectorDetail.svelte';
 	import GenerationPanel from '../GenerationPanel.svelte';
 	import { createMapCharts } from '../map-charts.svelte.js';
 	import { DEFAULT_MINI_METRIC, MINI_METRIC_OPTIONS, latestStackedTotal } from '../map-minis.js';
 	import RegionMiniChart from '../RegionMiniChart.svelte';
-	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
-	import { formatSI } from '$lib/utils/si-units.js';
-	import { createGridLive } from '$lib/flows/grid-live.svelte.js';
-	import { getInterconnector, icSlug } from '$lib/flows/region-geo.js';
+	import { formatTooltipDateTime } from '#lib/components/charts/v2/formatters.js';
+	import { formatSI } from '#lib/utils/si-units.js';
+	import { createGridLive } from '#lib/flows/grid-live.svelte.js';
+	import { getInterconnector, icSlug } from '#lib/flows/region-geo.js';
 	import { DEFAULT_REGION, TRACKER_REGION_OPTIONS } from '../tracker-regions.js';
 	import {
 		BELOW_TABLET_QUERY,
 		isFullscreenUrl,
 		toggleFullscreenMode
-	} from '$lib/utils/fullscreen-mode.js';
+	} from '#lib/utils/fullscreen-mode.js';
 
 	/** @type {{ data: { nowMs: number, region: string, view: 'panel' | 'map', viewExplicit: boolean, mapChart: 'power' | 'price' | 'emissions', mapTheme: 'light' | 'dark' | 'satellite', showTransmissionLines: boolean, showFlows: boolean, showLegend: boolean, interconnector: string | null } }} */
 	let { data } = $props();
@@ -111,7 +111,9 @@
 	/** @type {string | null} */
 	let selectedIc = $state(initialData.interconnector);
 	// Re-sync on back/forward — $state doesn't re-init when the load re-runs.
-	afterNavigate(({ to }) => {
+	afterNavigate(({ to, shallow, type }) => {
+		if (shallow && type === 'goto') return;
+
 		// The shared main layout can keep this page alive briefly during a view
 		// transition. Do not hydrate its local state from the destination page's
 		// data when leaving for the /studio/tracker review index (or another route).
@@ -218,6 +220,7 @@
 
 	let panelInsetLeftPx = $derived.by(() => {
 		if (belowTablet.current || !panelOpen || !showPanel) return 0;
+
 		const widthPx =
 			panelSizePct > 0
 				? (panelSizePct / 100) * containerWidth
@@ -250,11 +253,13 @@
 		// default. Accepted: the safe view wins on an ambiguous phone URL.
 		if (viewMode === 'panel') url.searchParams.set('view', 'panel');
 		else url.searchParams.delete('view');
+
 		if (mapChartMetric !== DEFAULT_MINI_METRIC) url.searchParams.set('chart', mapChartMetric);
 		else url.searchParams.delete('chart');
 		if (selectedIc) url.searchParams.set('ic', icSlug(selectedIc));
 		else url.searchParams.delete('ic');
-		replaceState(`${url.pathname}${url.search}`, {});
+
+		goto(`${url.pathname}${url.search}`, { shallow: true, replace: true });
 	}
 
 	/** @param {string} value */
@@ -608,7 +613,7 @@
      charts behind a Back button. The sheet's header omits the top
      padding/border (its drag grip supplies the top chrome) and never shows
      the desktop collapse button. -->
-{#snippet panelHeader(/** @type {boolean} */ isSheet)}
+{#snippet panelHeader(isSheet = false)}
 	<header
 		class="flex shrink-0 items-center gap-1 {isSheet
 			? 'px-3 pb-2'

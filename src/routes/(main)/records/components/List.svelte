@@ -1,11 +1,11 @@
 <script>
-	import { regionsWithLabels } from '$lib/regions';
-	import { formatRecordValue } from '$lib/records/format-value.js';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import { regionsWithLabels } from '#lib/regions.js';
+	import { formatRecordValue } from '#lib/records/format-value.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import { regions } from '../page-data-options/filters';
 	import dateTimeQuery from '../page-data-options/date-time-query';
-	import { intlTimeZone } from '$lib/utils/date-format.js';
+	import { intlTimeZone } from '#lib/utils/date-format.js';
 	let { rolledUpRecords } = $props();
 
 	// $inspect('rolledUpRecords', rolledUpRecords);

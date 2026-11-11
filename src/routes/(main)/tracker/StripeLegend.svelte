@@ -1,5 +1,5 @@
 <script>
-	import { formatWithUnit } from '$lib/utils/formatters.js';
+	import { formatWithUnit } from '#lib/utils/formatters.js';
 	import { formatComparisonValue } from './comparison-metrics.js';
 	import { stripeGradient, stripeKeys } from './comparison-stripes.js';
 

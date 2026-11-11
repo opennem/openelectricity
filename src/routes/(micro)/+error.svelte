@@ -3,7 +3,7 @@
 	// record/[id], widget) — these render inside iframes, so no site chrome
 	// and no links that would navigate the parent page.
 	import { page } from '$app/state';
-	import LogoMark from '$lib/images/logo-mark.svelte';
+	import LogoMark from '#lib/images/logo-mark.svelte';
 
 	let message = $derived(
 		page.error?.message || (page.status === 404 ? 'Not found.' : 'Something went wrong.')

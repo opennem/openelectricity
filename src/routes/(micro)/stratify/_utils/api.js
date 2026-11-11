@@ -3,7 +3,7 @@
  * All requests include the Clerk JWT for admin verification.
  */
 
-import { getClerkState } from '$lib/auth/clerk.svelte.js';
+import { getClerkState } from '#lib/auth/clerk.svelte.js';
 
 /**
  * Get the current Clerk auth token.
@@ -61,7 +61,7 @@ async function authFetch(url, options = {}) {
 }
 
 /**
- * Full normalised chart document (see normaliseChart in $lib/stratify/chart-data.js)
+ * Full normalised chart document (see normaliseChart in #lib/stratify/chart-data.js)
  * plus list metadata appended by the API.
  * @typedef {Record<string, any> & {
  *   _id: string,
@@ -72,7 +72,7 @@ async function authFetch(url, options = {}) {
  *   status: string,
  *   userEmail?: string,
  *   publishedAt?: string | null,
- *   role?: import('$lib/stratify/chart-permissions.js').CollaboratorRole | null,
+ *   role?: import('#lib/stratify/chart-permissions.js').CollaboratorRole | null,
  *   _createdAt: string,
  *   _updatedAt: string
  * }} ChartDoc
@@ -241,7 +241,7 @@ export async function restoreRevision(id, revisionId) {
  * @typedef {Object} Collaborator
  * @property {string} userId
  * @property {string} email
- * @property {import('$lib/stratify/chart-permissions.js').CollaboratorRole} role
+ * @property {import('#lib/stratify/chart-permissions.js').CollaboratorRole} role
  * @property {string} addedAt
  * @property {boolean} [isAdmin] - False once they lose the admin role (owner's view only)
  */

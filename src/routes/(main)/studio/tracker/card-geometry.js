@@ -6,7 +6,7 @@
  * nothing about their footprint unless told.
  */
 
-import { REGION_ANCHORS, WEM_ANCHOR } from '$lib/flows/region-geo.js';
+import { REGION_ANCHORS, WEM_ANCHOR } from '#lib/flows/region-geo.js';
 
 /** Card positions that differ from the region anchor — pushed out to sea so
  *  the busy corridor labels stay readable (NSW/VIC east into the Tasman,

@@ -6,7 +6,7 @@
 	 * format the description, value and time label.
 	 */
 
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
 
 	/**
 	 * @typedef {Object} Props

@@ -5,8 +5,8 @@
 		formatComparisonCell
 	} from './comparison-metrics.js';
 	import { onDestroy } from 'svelte';
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
+	import { createViewportGestures } from '#lib/components/charts/v2/viewport-gestures.js';
 	import { inspectionStep } from './comparison-inspection.js';
 	import { benchmarkRankRows, rankComparisonRows } from './comparison-displays.js';
 	import {
@@ -36,7 +36,7 @@
 	 * tooltip: boolean, engaged: boolean, hover: number | null, focus: number | null, onhover: (time:number | null) => void, onfocus: (time:number | null) => void,
 	 * hoverRegion: string | null, onhoverregion: (region: string | null) => void,
 	 * onviewport: (start:number,end:number,settled:boolean) => void,
-	 * timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void}} */
+	 * timeMarkers?: import('#lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void}} */
 	let {
 		data,
 		regions,

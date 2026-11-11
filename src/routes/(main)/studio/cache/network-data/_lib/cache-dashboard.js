@@ -5,9 +5,9 @@
  */
 
 import { format as formatDate } from 'date-fns';
-import { MARKET_METRIC_NAMES } from '$lib/components/charts/network/market-metric-names.js';
+import { MARKET_METRIC_NAMES } from '#lib/components/charts/network/market-metric-names.js';
 
-/** Filter vocabularies — mirror the validation sets in $lib/server/network-data.js
+/** Filter vocabularies — mirror the validation sets in #lib/server/network-data.js
  *  (a server-only module this client-side model cannot import). */
 export const REGION_OPTIONS = ['au', '_all', 'wem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 export const INTERVAL_OPTIONS = ['5m', '1h', '1d', '7d', '1M', '3M', '1y'];
@@ -46,7 +46,7 @@ function toPositiveInt(value, fallback) {
 /**
  * Read the dashboard's filter state from the page URL.
  *
- * @param {URLSearchParams} searchParams
+ * @param {Pick<URLSearchParams, 'get'>} searchParams
  * @returns {Filters}
  */
 export function parseFilters(searchParams) {

@@ -1,4 +1,4 @@
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 
 /**
  * Fetch the full facility list from the OE API — no filters, so every status

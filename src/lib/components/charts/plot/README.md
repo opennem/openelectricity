@@ -49,8 +49,8 @@ StratifyPlotChart          High-level component: data props + chart type + annot
 
 ```svelte
 <script>
-	import StratifyPlotChart from '$lib/components/charts/plot/StratifyPlotChart.svelte';
-	import { parseCSV } from '$lib/stratify/csv-parser.js';
+	import StratifyPlotChart from '#lib/components/charts/plot/StratifyPlotChart.svelte';
+	import { parseCSV } from '#lib/stratify/csv-parser.js';
 
 	const parsed = parseCSV(csvString);
 </script>

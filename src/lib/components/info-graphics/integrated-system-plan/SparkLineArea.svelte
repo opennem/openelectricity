@@ -2,16 +2,16 @@
 	import { LayerCake, Svg, Html } from 'layercake';
 	import { scaleUtc } from 'd3-scale';
 
-	import Line from '$lib/components/charts/elements/Line.svelte';
-	import Area from '$lib/components/charts/elements/Area.svelte';
-	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
-	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
-	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
-	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
-	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
-	import Overlay from '$lib/components/charts/elements/Overlay.svelte';
-	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
-	import LineX from '$lib/components/charts/elements/annotations/LineX.svelte';
+	import Line from '#lib/components/charts/elements/Line.svelte';
+	import Area from '#lib/components/charts/elements/Area.svelte';
+	import AxisX from '#lib/components/charts/elements/AxisX.svelte';
+	import AxisY from '#lib/components/charts/elements/AxisY.svelte';
+	import HoverLayer from '#lib/components/charts/elements/HoverLayer.svelte';
+	import HoverLine from '#lib/components/charts/elements/HoverLine.html.svelte';
+	import HoverText from '#lib/components/charts/elements/HoverText.html.svelte';
+	import Overlay from '#lib/components/charts/elements/Overlay.svelte';
+	import HatchPattern from '#lib/components/charts/elements/defs/HatchPattern.svelte';
+	import LineX from '#lib/components/charts/elements/annotations/LineX.svelte';
 
 	import KeyHeader from './KeyHeader.svelte';
 

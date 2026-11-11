@@ -2,7 +2,7 @@
 	import { run } from 'svelte/legacy';
 
 	import { startOfYear, format } from 'date-fns';
-	import deepCopy from '$lib/utils/deep-copy';
+	import deepCopy from '#lib/utils/deep-copy.js';
 	import {
 		modelSelections,
 		scenarios,
@@ -15,19 +15,19 @@
 	} from './scenarios';
 	import { groups as ftGroupSelections, groupMap, orderMap } from './preview-ft-groups';
 	import { formatFyTickX } from './helpers';
-	import { fuelTechNameReducer, fuelTechReducer } from '$lib/fuel_techs.js';
-	import { colourReducer } from '$lib/stores/theme';
+	import { fuelTechNameReducer, fuelTechReducer } from '#lib/fuel_techs.js';
+	import { colourReducer } from '#lib/stores/theme.js';
 
-	import Icon from '$lib/components/Icon.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 
 	import OverviewChart from './OverviewChart.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 
-	import parseInterval from '$lib/utils/intervals';
-	import Statistic from '$lib/utils/Statistic';
-	import TimeSeries from '$lib/utils/TimeSeries';
+	import parseInterval from '#lib/utils/intervals.js';
+	import Statistic from '#lib/utils/Statistic/index.js';
+	import TimeSeries from '#lib/utils/TimeSeries/index.js';
 
 	/**
 	 * @typedef {Object} Props

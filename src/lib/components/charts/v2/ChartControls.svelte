@@ -6,7 +6,7 @@
 	 * measure and units.
 	 * Displayed in a dropdown panel from the chart header.
 	 */
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
 
 	/**
 	 * @typedef {Object} Props

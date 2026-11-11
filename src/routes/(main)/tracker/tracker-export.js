@@ -2,7 +2,7 @@
  * Data export for the tracker: Timeline's chart and table datasets, its
  * workbook Summary rows and every tracker file name. The dataset shape and
  * its serialisers are shared with other chart cards
- * (`$lib/components/charts/card/export-dataset.js`).
+ * (`#lib/components/charts/card/export-dataset.js`).
  *
  * Timeline's conventions:
  * - Each chart exports what it draws: the active tab's metric, the series
@@ -13,22 +13,22 @@
  * - Timestamps are the network's local time; the Summary sheet states the zone.
  */
 
-import { headerFor, rowTime } from '$lib/components/charts/card/export-dataset.js';
-import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
+import { headerFor, rowTime } from '#lib/components/charts/card/export-dataset.js';
+import { isObservationRow } from '#lib/components/charts/v2/bucket-filter.js';
 import {
 	formatNetworkTimestamp,
 	networkTimeZoneLabel
-} from '$lib/components/charts/v2/network-time.js';
+} from '#lib/components/charts/v2/network-time.js';
 import { contributionLabel } from './tracker-model.js';
 import { RENEWABLES_LINE_ID } from './tracker-overlays.js';
 import {
 	deriveVwPriceDisplayRows,
 	VW_PRICE_SERIES_ID
-} from '$lib/components/charts/network/process-price-vw.js';
+} from '#lib/components/charts/network/process-price-vw.js';
 import {
 	deriveIntensityDisplayRows,
 	INTENSITY_SERIES_ID
-} from '$lib/components/charts/network/process-emissions-intensity.js';
+} from '#lib/components/charts/network/process-emissions-intensity.js';
 
 /** @typedef {import('./types.js').ExportDatasetKey} ExportDatasetKey */
 /** @typedef {import('./types.js').ExportColumn} ExportColumn */

@@ -1,5 +1,5 @@
-/** @typedef {import('$lib/types/filters.types').TechnologyFilterOptions} TechnologyFilterOptions  */
-/** @typedef {import('$lib/types/filters.types').TechnologyFilterDict} TechnologyFilterDict  */
+/** @typedef {import('#lib/types/filters.types.ts').TechnologyFilterOptions} TechnologyFilterOptions  */
+/** @typedef {import('#lib/types/filters.types.ts').TechnologyFilterDict} TechnologyFilterDict  */
 
 /** Fuel Technologies */
 /** @type {TechnologyFilterOptions} */

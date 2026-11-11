@@ -1,12 +1,12 @@
 <script>
 	import { ChartNoAxesCombined, Check, Gauge, Plus, Search, X } from '@lucide/svelte';
-	import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+	import { GROUP_OPTIONS } from '#lib/components/charts/network/groups.js';
 	import {
 		RANGE_PRESETS,
 		getIntervalsForRange,
 		getIntervalSpec,
 		getPresetByDays
-	} from '$lib/components/charts/facility/range-interval-config.js';
+	} from '#lib/components/charts/facility/range-interval-config.js';
 	import { TRACKER_REGION_OPTIONS } from '../tracker-regions.js';
 	import { EXPLORE_RECIPES, exploreRecipeSupportsScope, recipeById } from './explore-model.js';
 

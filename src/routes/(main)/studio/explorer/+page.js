@@ -12,9 +12,9 @@ import {
 	RANGE_PRESETS,
 	getIntervalsForRange,
 	getIntervalOptionsForDays
-} from '$lib/components/charts/facility/range-interval-config.js';
-import { regionOptions } from '$lib/regions.js';
-import { DEFAULT_GROUP, GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+} from '#lib/components/charts/facility/range-interval-config.js';
+import { regionOptions } from '#lib/regions.js';
+import { DEFAULT_GROUP, GROUP_OPTIONS } from '#lib/components/charts/network/groups.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FLOOR_DATE = '1998-12-01';

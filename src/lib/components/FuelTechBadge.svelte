@@ -10,16 +10,16 @@
 		if (iconCache.has(iconName)) {
 			return iconCache.get(iconName);
 		}
-		const module = await import(`$lib/icons/fuel-techs/${iconName}Sm.svelte`);
+		const module = await import(`#lib/icons/fuel-techs/${iconName}Sm.svelte`);
 		iconCache.set(iconName, module.default);
 		return module.default;
 	}
 </script>
 
 <script>
-	import GlobeAlt from '$lib/icons/GlobeAlt.svelte';
-	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import { needsDarkText, getFueltechColor } from '$lib/utils/fueltech-display';
+	import GlobeAlt from '#lib/icons/GlobeAlt.svelte';
+	import FacilityStatusIcon from '#lib/components/facilities/FacilityStatusIcon.svelte';
+	import { needsDarkText, getFueltechColor } from '#lib/utils/fueltech-display.js';
 
 	/**
 	 * @type {{

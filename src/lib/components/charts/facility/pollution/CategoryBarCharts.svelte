@@ -1,6 +1,6 @@
 <script>
-	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
-	import GroupedBarChart from '$lib/components/charts/v2/GroupedBarChart.svelte';
+	import ChartStore from '#lib/components/charts/v2/ChartStore.svelte.js';
+	import GroupedBarChart from '#lib/components/charts/v2/GroupedBarChart.svelte';
 	import { CATEGORY_META } from './pollution-constants.js';
 	import { buildCategoryMeta } from './transform-pollution.js';
 

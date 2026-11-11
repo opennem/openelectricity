@@ -1,15 +1,15 @@
 import { json } from '@sveltejs/kit';
-import { decodeChartFields } from '$lib/stratify/chart-data.js';
-import { findAdminIds } from '$lib/auth/clerk-server.js';
-import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
-import { recordAuthorName } from '$lib/server/stratify/author-name.js';
-import { canAccess } from '$lib/stratify/chart-permissions.js';
-import { pickChartFields, saveChartFields } from '$lib/server/stratify/save-chart.js';
-import { deleteChartWithRevisions } from '$lib/server/stratify/revisions.js';
+import { decodeChartFields } from '#lib/stratify/chart-data.js';
+import { findAdminIds } from '#lib/auth/clerk-server.js';
+import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
+import { recordAuthorName } from '#lib/server/stratify/author-name.js';
+import { canAccess } from '#lib/stratify/chart-permissions.js';
+import { pickChartFields, saveChartFields } from '#lib/server/stratify/save-chart.js';
+import { deleteChartWithRevisions } from '#lib/server/stratify/revisions.js';
 
 /**
  * GET /api/stratify/charts/:id — fetch a single chart, with the caller's
- * `access` (see `$lib/stratify/chart-permissions.js`).
+ * `access` (see `#lib/stratify/chart-permissions.js`).
  * The owner, superadmins and collaborators can read it; other admins can
  * read published charts, without the collaborator list. For the owner,
  * each collaborator carries `isAdmin`: false once they have lost the admin
@@ -53,7 +53,7 @@ async function withAdminStatus(collaborators) {
  * only the owner may change `status`/`publishedAt`).
  *
  * Body: `{ baseRev, fields }`, where `fields` holds only the registry fields
- * (`$lib/stratify/chart-fields.js`) the editor changed since loading chart
+ * (`#lib/stratify/chart-fields.js`) the editor changed since loading chart
  * revision `baseRev`. Saves that other editors' saves don't overlap merge;
  * overlapping ones return 409 with the current chart so the editor can
  * resolve them. Every save writes a `stratifyChartRevision`.

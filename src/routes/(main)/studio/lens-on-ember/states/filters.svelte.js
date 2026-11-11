@@ -1,7 +1,7 @@
 import { setContext, getContext } from 'svelte';
-import { INTERVAL_LABELS } from '$lib/utils/intervals';
+import { INTERVAL_LABELS } from '#lib/utils/intervals.js';
 import { rangeIntervalMap } from '../page-data-options/config';
-import rangeIntervalXFormattersGetters from '$lib/utils/range-interval-ticks-formatters';
+import rangeIntervalXFormattersGetters from '#lib/utils/range-interval-ticks-formatters.js';
 
 const FILTERS_KEY = Symbol('filters');
 

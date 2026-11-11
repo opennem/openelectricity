@@ -10,8 +10,8 @@
  * fields are stored.
  */
 
-import { chartFieldDefault, getChartField, isSameFieldValue } from '$lib/stratify/chart-fields.js';
-import { MERGE_WINDOW_MS, REVISION_LIMIT } from '$lib/stratify/revision-policy.js';
+import { chartFieldDefault, getChartField, isSameFieldValue } from '#lib/stratify/chart-fields.js';
+import { MERGE_WINDOW_MS, REVISION_LIMIT } from '#lib/stratify/revision-policy.js';
 
 export const REVISION_TYPE = 'stratifyChartRevision';
 
@@ -47,7 +47,7 @@ const SUMMARY_LABEL_LIMIT = 3;
  */
 
 /**
- * @typedef {RevisionSummary & { changes: import('$lib/stratify/chart-fields.js').ChartFieldChange[] }} RevisionDetail
+ * @typedef {RevisionSummary & { changes: import('#lib/stratify/chart-fields.js').ChartFieldChange[] }} RevisionDetail
  */
 
 /**
@@ -83,7 +83,7 @@ export function summariseRevision(kind, fields) {
 		.map((key) => getChartField(key))
 		.filter((field) => field && field.group !== 'meta')
 		.map(
-			(field) => /** @type {import('$lib/stratify/chart-fields.js').ChartField} */ (field).label
+			(field) => /** @type {import('#lib/stratify/chart-fields.js').ChartField} */ (field).label
 		);
 	const named = labels.slice(0, SUMMARY_LABEL_LIMIT).join(', ');
 	const rest = labels.length - SUMMARY_LABEL_LIMIT;
@@ -101,7 +101,7 @@ export function summariseRevision(kind, fields) {
  *   chartId: string,
  *   parentRev: string,
  *   kind: RevisionKind,
- *   changes: import('$lib/stratify/chart-fields.js').ChartFieldChange[],
+ *   changes: import('#lib/stratify/chart-fields.js').ChartFieldChange[],
  *   author: RevisionAuthor,
  *   createdAt: string,
  *   restoredFrom?: RestoredFrom | null,
@@ -254,7 +254,7 @@ function toSummary(doc) {
 
 /**
  * @param {string | undefined} changes - JSON-encoded change list
- * @returns {import('$lib/stratify/chart-fields.js').ChartFieldChange[]}
+ * @returns {import('#lib/stratify/chart-fields.js').ChartFieldChange[]}
  */
 export function parseChanges(changes) {
 	try {
@@ -271,7 +271,7 @@ export function parseChanges(changes) {
  * revision, applied newest first so the oldest newer change wins. Publish
  * state is not part of a version. A value the chart never stored
  * (`before` missing) falls back to the field default.
- * @param {Array<{ changes: import('$lib/stratify/chart-fields.js').ChartFieldChange[] }>} newerRevisions - Newest first
+ * @param {Array<{ changes: import('#lib/stratify/chart-fields.js').ChartFieldChange[] }>} newerRevisions - Newest first
  * @returns {Record<string, any>}
  */
 export function revertedSettings(newerRevisions) {
@@ -359,9 +359,9 @@ export function canMergeInto(latest, kind, author, now) {
  * Combine an entry's changes with a later save's: each field keeps its
  * earliest `before` and takes the latest `after`, and fields that end up
  * back where they started drop out.
- * @param {import('$lib/stratify/chart-fields.js').ChartFieldChange[]} earlier
- * @param {import('$lib/stratify/chart-fields.js').ChartFieldChange[]} later
- * @returns {import('$lib/stratify/chart-fields.js').ChartFieldChange[]}
+ * @param {import('#lib/stratify/chart-fields.js').ChartFieldChange[]} earlier
+ * @param {import('#lib/stratify/chart-fields.js').ChartFieldChange[]} later
+ * @returns {import('#lib/stratify/chart-fields.js').ChartFieldChange[]}
  */
 export function mergeChanges(earlier, later) {
 	const byField = new Map(earlier.map((change) => [change.field, change]));

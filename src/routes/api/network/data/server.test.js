@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+	/** @type {EdgeRuntime | undefined} The runtime `edgeRuntime()` hands the route. */
+	runtime: undefined,
 	getMarket: vi.fn(),
 	getNetworkData: vi.fn()
 }));
@@ -13,10 +15,13 @@ vi.mock('openelectricity', () => ({
 	NoDataFound: class NoDataFound extends Error {}
 }));
 
+vi.mock('#lib/server/edge-runtime.js', () => ({ edgeRuntime: () => mocks.runtime }));
+
 import { GET } from './+server.js';
 
 /** @param {string} search @param {ReturnType<typeof vi.fn>} [setHeaders] */
 function request(search, setHeaders = vi.fn()) {
+	mocks.runtime = undefined;
 	return GET(
 		/** @type {any} */ ({
 			url: new URL(`https://example.test/api/network/data?${search}`),
@@ -220,7 +225,7 @@ describe('edge SWR cache (fake platform)', () => {
 		return {
 			store,
 			waited,
-			platform: /** @type {App.Platform} */ ({
+			platform: /** @type {EdgeRuntime} */ ({
 				caches: {
 					default: {
 						match: async (/** @type {string} */ key) => {
@@ -239,11 +244,11 @@ describe('edge SWR cache (fake platform)', () => {
 
 	/** @param {string} search @param {any} platform @param {ReturnType<typeof vi.fn>} [setHeaders] */
 	function platformRequest(search, platform, setHeaders = vi.fn()) {
+		mocks.runtime = platform;
 		return GET(
 			/** @type {any} */ ({
 				url: new URL(`https://example.test/api/network/data?${search}`),
-				setHeaders,
-				platform
+				setHeaders
 			})
 		);
 	}
@@ -353,7 +358,7 @@ describe('cache registry hooks (fake platform + D1)', () => {
 			store,
 			waited,
 			executed,
-			platform: /** @type {App.Platform} */ ({
+			platform: /** @type {EdgeRuntime} */ ({
 				caches: {
 					default: {
 						match: async (/** @type {string} */ key) => {
@@ -377,11 +382,11 @@ describe('cache registry hooks (fake platform + D1)', () => {
 
 	/** @param {string} search @param {any} platform @param {ReturnType<typeof vi.fn>} [setHeaders] */
 	function platformRequest(search, platform, setHeaders = vi.fn()) {
+		mocks.runtime = platform;
 		return GET(
 			/** @type {any} */ ({
 				url: new URL(`https://example.test/api/network/data?${search}`),
-				setHeaders,
-				platform
+				setHeaders
 			})
 		);
 	}

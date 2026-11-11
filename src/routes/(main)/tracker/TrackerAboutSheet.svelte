@@ -1,10 +1,10 @@
 <script>
-	import { version } from '$app/environment';
+	import { version } from '$app/env';
 	import { ChevronRight, ExternalLink } from '@lucide/svelte';
-	import { ModalSheet } from '$lib/components/ui/bottom-sheet';
-	import { API_STATUS_URL, apiStatusLabel } from '$lib/api-status.js';
-	import ApiStatusDot from '$lib/components/ApiStatusDot.svelte';
-	import { DATA_SOURCES, RESOURCE_LINKS } from '$lib/components/fullscreen/site-links.js';
+	import { ModalSheet } from '#lib/components/ui/bottom-sheet/index.js';
+	import { API_STATUS_URL, apiStatusLabel } from '#lib/api-status.js';
+	import ApiStatusDot from '#lib/components/ApiStatusDot.svelte';
+	import { DATA_SOURCES, RESOURCE_LINKS } from '#lib/components/fullscreen/site-links.js';
 
 	/**
 	 * TrackerAboutSheet — the phone About (below 768px), opened from the
@@ -18,7 +18,7 @@
 	 * @type {{
 	 *   open: boolean,
 	 *   onclose: () => void,
-	 *   apiStatus: import('$lib/api-status.js').ApiStatusSummary | null | undefined
+	 *   apiStatus: import('#lib/api-status.js').ApiStatusSummary | null | undefined
 	 * }}
 	 */
 	let { open, onclose, apiStatus } = $props();

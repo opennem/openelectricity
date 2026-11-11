@@ -1,9 +1,9 @@
 <script>
 	import { page } from '$app/state';
-	import { getClerkState } from '$lib/auth/clerk.svelte.js';
-	import { portal } from '$lib/actions/portal.js';
-	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
-	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
+	import { getClerkState } from '#lib/auth/clerk.svelte.js';
+	import { portal } from '#lib/actions/portal.js';
+	import { dropdownPosition } from '#lib/actions/dropdown-position.js';
+	import { FullscreenFilterBar, FullscreenNavDropdown } from '#lib/components/fullscreen/index.js';
 	import UserIcon from '@lucide/svelte/icons/user';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 

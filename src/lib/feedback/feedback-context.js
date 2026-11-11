@@ -1,4 +1,4 @@
-import { resolveSentryDsn } from '$lib/sentry/config.js';
+import { resolveSentryDsn } from '#lib/sentry/config.js';
 
 /**
  * Pure helpers for the Sentry feedback form: whether it is configured and the

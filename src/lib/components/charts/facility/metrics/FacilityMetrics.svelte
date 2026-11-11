@@ -17,7 +17,7 @@
 	 */
 
 	import MetricCard from './MetricCard.svelte';
-	import { getUnitCapacity, sumUnitCapacities } from '$lib/utils/capacity';
+	import { getUnitCapacity, sumUnitCapacities } from '#lib/utils/capacity.js';
 	import { getPrimaryFuelTechGroup, isGasPeaker, isPumpedHydro } from './fuel-group.js';
 	import {
 		sumAllSeries,
@@ -34,7 +34,7 @@
 		storageDurationHours
 	} from './metrics-calc.js';
 	import { METRICS, resolveMetricKeys } from './metric-definitions.js';
-	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
+	import { formatTooltipDateTime } from '#lib/components/charts/v2/formatters.js';
 	import { ianaFromOffset } from '../../v2/network-time.js';
 	import { unitSeriesIds } from '../unit-analysis.js';
 

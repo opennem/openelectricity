@@ -1,4 +1,4 @@
-import { CLOUDFLARE_WORKER_URL } from '$env/static/private';
+import { CLOUDFLARE_WORKER_URL } from '$app/env/private';
 
 export async function GET({ url }) {
 	const { searchParams } = url;

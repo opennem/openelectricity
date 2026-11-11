@@ -10,23 +10,23 @@
  * Values are base units: MW / MWh, $/MWh, $, kgCO₂e/MWh, tCO₂e.
  */
 
-import { networkTimeZoneLabel } from '$lib/components/charts/v2/network-time.js';
-import { getRegionLongLabel } from '$lib/facilities/filters.js';
-import { formatGenerationUnitValue } from '$lib/components/charts/network/generation-units.js';
-import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
-import { seriesDataset } from '$lib/components/charts/card/export-dataset.js';
+import { networkTimeZoneLabel } from '#lib/components/charts/v2/network-time.js';
+import { getRegionLongLabel } from '#lib/facilities/filters.js';
+import { formatGenerationUnitValue } from '#lib/components/charts/network/generation-units.js';
+import { isObservationRow } from '#lib/components/charts/v2/bucket-filter.js';
+import { seriesDataset } from '#lib/components/charts/card/export-dataset.js';
 import {
 	largestVisible,
 	lineCompareSource,
 	stackCompareSource
-} from '$lib/components/charts/card/compare/snapshot-sources.js';
+} from '#lib/components/charts/card/compare/snapshot-sources.js';
 import {
 	formatDollarsCompact,
 	formatFixed,
 	tonnesPrefix
-} from '$lib/components/charts/card/cell-format.js';
+} from '#lib/components/charts/card/cell-format.js';
 
-/** @typedef {import('$lib/components/charts/card/types.js').ChartSnapshot} ChartSnapshot */
+/** @typedef {import('#lib/components/charts/card/types.js').ChartSnapshot} ChartSnapshot */
 /** @typedef {'generation' | 'curtailment' | 'market' | 'emissions'} FacilityCard */
 /**
  * What the cards draw and how: the generation basis, each pair's tab and
@@ -93,7 +93,7 @@ export function facilityCardDataset(card, snapshot, view) {
  * ready with data or empty — answered without building the dataset (the
  * card reads it on every change).
  * @param {FacilityCard} card @param {ChartSnapshot | null} snapshot @param {FacilityCardView} view
- * @returns {import('$lib/components/charts/card/types.js').DownloadState}
+ * @returns {import('#lib/components/charts/card/types.js').DownloadState}
  */
 export function facilityCardState(card, snapshot, view) {
 	if (!snapshot) return 'loading';
@@ -117,7 +117,7 @@ export function facilityCardState(card, snapshot, view) {
  *   zone: string,
  *   interval: string
  * }} context
- * @returns {import('$lib/components/charts/card/types.js').CompareSource | null}
+ * @returns {import('#lib/components/charts/card/types.js').CompareSource | null}
  */
 export function facilityCompareSource(card, snapshot, context) {
 	if (!snapshot) return null;

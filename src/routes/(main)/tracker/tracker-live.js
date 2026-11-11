@@ -1,5 +1,5 @@
-import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
-import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
+import { getIntervalHours } from '#lib/components/charts/facility/interval-hours.js';
+import { isObservationRow } from '#lib/components/charts/v2/bucket-filter.js';
 
 /** A foreground-only minute clock for the freshness labels — it never fetches;
  * data moves only when the reader refreshes. Returning to the tab performs one

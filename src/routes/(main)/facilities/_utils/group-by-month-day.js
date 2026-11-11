@@ -1,5 +1,5 @@
 import { rollup } from 'd3-array';
-import { formatDateBySpecificity } from '$lib/utils/date-format';
+import { formatDateBySpecificity } from '#lib/utils/date-format.js';
 import getDateField from './get-date-field';
 
 /**

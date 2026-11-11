@@ -1,5 +1,5 @@
 import { addMonths } from 'date-fns';
-import { getFormattedMonth, getFormattedDate } from '$lib/utils/formatters';
+import { getFormattedMonth, getFormattedDate } from '#lib/utils/formatters.js';
 
 /**
  * @param {string} month

@@ -1,10 +1,10 @@
 <script>
 	import { getContext } from 'svelte';
-	import Switch from '$lib/components/Switch.svelte';
+	import Switch from '#lib/components/Switch.svelte';
 
 	import { modelLabelMap, scenarioLabelMap } from '../page-data-options/models';
 
-	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
+	import MiniCharts from '#lib/components/charts/v2/MiniCharts.svelte';
 
 	/**
 	 * @typedef {Object} Props

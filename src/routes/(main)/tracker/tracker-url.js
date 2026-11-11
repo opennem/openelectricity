@@ -56,12 +56,12 @@
 import {
 	applyRangeParams,
 	parseRangeParams
-} from '$lib/components/charts/facility/range-params.js';
+} from '#lib/components/charts/facility/range-params.js';
 import {
 	bucketFilterKindFor,
 	isValidBucketFilter
-} from '$lib/components/charts/v2/bucket-filter.js';
-import { GROUP_OPTIONS, getGroup } from '$lib/components/charts/network/groups.js';
+} from '#lib/components/charts/v2/bucket-filter.js';
+import { GROUP_OPTIONS, getGroup } from '#lib/components/charts/network/groups.js';
 import { TRACKER_OVERLAYS } from './tracker-overlays.js';
 import {
 	applyRegionComparison,
@@ -76,7 +76,7 @@ import {
 	normaliseProfileStyle
 } from './time-of-day.js';
 import { hasSpotPrice, TRACKER_REGION_VALUES } from './tracker-regions.js';
-import { normaliseCardComparison } from '$lib/components/charts/card/compare/chart-compare.js';
+import { normaliseCardComparison } from '#lib/components/charts/card/compare/chart-compare.js';
 import {
 	DEFAULT_GROUP,
 	DEFAULT_RANGE_DAYS,
@@ -123,7 +123,7 @@ export function normaliseContributionMode(value) {
 /**
  * @param {unknown} value
  * @param {{ growth?: boolean }} [options] - `growth: false` where Growth isn't offered (market value)
- * @returns {import('$lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType}
+ * @returns {import('#lib/components/charts/v2/ChartOptions.svelte.js').DataTransformType}
  */
 export function normaliseDataTransform(value, { growth = true } = {}) {
 	if (value === 'proportion' || value === 'changeSince') return value;
@@ -132,7 +132,7 @@ export function normaliseDataTransform(value, { growth = true } = {}) {
 
 /**
  * @param {unknown} value
- * @returns {import('$lib/components/charts/v2/ChartOptions.svelte.js').EnergyMeasure}
+ * @returns {import('#lib/components/charts/v2/ChartOptions.svelte.js').EnergyMeasure}
  */
 export function normaliseEnergyMeasure(value) {
 	return value === 'averagePower' || value === 'average-power' ? 'averagePower' : 'energy';

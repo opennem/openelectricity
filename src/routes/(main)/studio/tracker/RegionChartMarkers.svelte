@@ -15,9 +15,9 @@
 
 	import { LoaderCircle } from '@lucide/svelte';
 	import { CircleLayer, GeoJSONSource, LineLayer, Marker } from 'svelte-maplibre-gl';
-	import { REGION_ANCHORS, WEM_ANCHOR } from '$lib/flows/region-geo.js';
-	import { displayCode, formatPrice, numberOrUndefined } from '$lib/flows/format.js';
-	import { MAP_CHIP_CLASS } from '$lib/components/map/map-style.js';
+	import { REGION_ANCHORS, WEM_ANCHOR } from '#lib/flows/region-geo.js';
+	import { displayCode, formatPrice, numberOrUndefined } from '#lib/flows/format.js';
+	import { MAP_CHIP_CLASS } from '#lib/components/map/map-style.js';
 	import { CARD_ANCHORS, CARD_SIDES } from './card-geometry.js';
 	import RegionMiniChart from './RegionMiniChart.svelte';
 

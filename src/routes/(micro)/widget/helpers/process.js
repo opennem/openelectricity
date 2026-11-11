@@ -1,7 +1,7 @@
-import { loadFuelTechs } from '$lib/fuel_techs';
-import Statistic from '$lib/utils/Statistic';
-import TimeSeries from '$lib/utils/TimeSeries';
-import parseInterval from '$lib/utils/intervals';
+import { loadFuelTechs } from '#lib/fuel_techs.js';
+import Statistic from '#lib/utils/Statistic/index.js';
+import TimeSeries from '#lib/utils/TimeSeries/index.js';
+import parseInterval from '#lib/utils/intervals.js';
 
 /**
  *

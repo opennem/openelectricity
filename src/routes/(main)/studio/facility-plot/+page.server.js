@@ -5,7 +5,7 @@
  * for the Observable Plot multi-chart sync demo.
  */
 
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 
 const FACILITY_CODES = ['BAYSW', 'GULLRGWF'];
 

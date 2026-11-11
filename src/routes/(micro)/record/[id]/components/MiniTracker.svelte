@@ -1,10 +1,10 @@
 <script>
 	import { setContext, getContext } from 'svelte';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import nighttimes from '$lib/utils/nighttimes';
-	import LensChart from '$lib/components/charts/LensChart.svelte';
-	import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
-	import { applyRecordValueFormat } from '$lib/records/format-value.js';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
+	import nighttimes from '#lib/utils/nighttimes.js';
+	import LensChart from '#lib/components/charts/LensChart.svelte';
+	import ChartStore from '#lib/components/charts/stores/chart.svelte.js';
+	import { applyRecordValueFormat } from '#lib/records/format-value.js';
 	import { chartOptions } from '../../../../(main)/records/[id]/MiniTracker/helpers/config';
 	import xTickValueFormatters from '../../../../(main)/records/[id]/MiniTracker/helpers/xtick-value-formatters';
 

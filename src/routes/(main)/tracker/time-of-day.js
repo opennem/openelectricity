@@ -1,6 +1,6 @@
-import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
+import { offsetMsFromOffset } from '#lib/components/charts/v2/network-time.js';
 import { quantileSorted } from 'd3-array';
-import { DEMAND_GROSS_SERIES_ID } from '$lib/components/charts/network/market-series-ids.js';
+import { DEMAND_GROSS_SERIES_ID } from '#lib/components/charts/network/market-series-ids.js';
 import { averageProfileRows, profileRows } from './profile-chart.js';
 import { buildFuelTechTableRows } from './table-model.js';
 import { contributionLabel } from './tracker-model.js';

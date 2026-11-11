@@ -6,8 +6,8 @@
  */
 
 import { ruleX, axisX } from '@observablehq/plot';
-import { getDayStartDates, formatXAxis } from '$lib/components/charts/v2/formatters.js';
-import { computeEnergyGridlines } from '$lib/components/charts/v2/energy-gridlines.js';
+import { getDayStartDates, formatXAxis } from '#lib/components/charts/v2/formatters.js';
+import { computeEnergyGridlines } from '#lib/components/charts/v2/energy-gridlines.js';
 
 /**
  * @typedef {Object} PlotGridlines

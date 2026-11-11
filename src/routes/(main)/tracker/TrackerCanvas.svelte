@@ -3,46 +3,46 @@
 		formatRangeLabel,
 		getTimeFormatPolicy,
 		showsClockTimes
-	} from '$lib/components/charts/v2/time-format-policy.js';
+	} from '#lib/components/charts/v2/time-format-policy.js';
 	import { plottedExtent } from './plotted-extent.js';
 	import { onMount, untrack } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { slide } from 'svelte/transition';
 	import X from '@lucide/svelte/icons/x';
-	import Modal from '$lib/components/Modal.svelte';
-	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import ButtonIcon from '#lib/components/form-elements/ButtonIcon.svelte';
 	import TrackerSplitLayout, { FUEL_TECH_SPLIT } from './TrackerSplitLayout.svelte';
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
 	import SeriesLegend from './SeriesLegend.svelte';
 	import { seriesLegendItems } from './chart-legend.js';
-	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
-	import { rangeSlugFor } from '$lib/components/charts/facility/range-params.js';
+	import NetworkChart from '#lib/components/charts/network/NetworkChart.svelte';
+	import { rangeSlugFor } from '#lib/components/charts/facility/range-params.js';
 	import {
 		getIntervalSpec,
 		isRollingInterval
-	} from '$lib/components/charts/facility/range-interval-config.js';
-	import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
+	} from '#lib/components/charts/facility/range-interval-config.js';
+	import { getGroup, loadGroupsFor } from '#lib/components/charts/network/groups.js';
 	import {
 		bucketFilterKindFor,
 		bucketFilterOptionsFor
-	} from '$lib/components/charts/v2/bucket-filter.js';
-	import { createContributionContext } from '$lib/components/charts/network/contribution.js';
-	import { RENEWABLES_SERIES_ID } from '$lib/components/charts/network/market-series-ids.js';
+	} from '#lib/components/charts/v2/bucket-filter.js';
+	import { createContributionContext } from '#lib/components/charts/network/contribution.js';
+	import { RENEWABLES_SERIES_ID } from '#lib/components/charts/network/market-series-ids.js';
 	import {
 		toNetworkDateString,
 		tzAbbreviationFromIana
-	} from '$lib/components/charts/v2/network-time.js';
+	} from '#lib/components/charts/v2/network-time.js';
 	import { hasSpotPrice, regionLabel } from './tracker-regions.js';
-	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
+	import ChartCard from '#lib/components/charts/card/ChartCard.svelte';
 	import ReadingFreshness from './ReadingFreshness.svelte';
 	import FuelTechPanel from './FuelTechPanel.svelte';
 	import FuelTechOptions from './FuelTechOptions.svelte';
-	import ComparePanel from '$lib/components/charts/card/compare/ComparePanel.svelte';
+	import ComparePanel from '#lib/components/charts/card/compare/ComparePanel.svelte';
 	import WindowMetrics from './WindowMetrics.svelte';
-	import { createCompareMode } from '$lib/components/charts/card/compare/compare-mode.svelte.js';
+	import { createCompareMode } from '#lib/components/charts/card/compare/compare-mode.svelte.js';
 	import { timelineCompareSource } from './chart-compare-sources.js';
-	import { compareBuckets } from '$lib/components/charts/card/compare/snapshot-sources.js';
-	import { createComparePins } from '$lib/components/charts/card/compare/compare-pins.svelte.js';
+	import { compareBuckets } from '#lib/components/charts/card/compare/snapshot-sources.js';
+	import { createComparePins } from '#lib/components/charts/card/compare/compare-pins.svelte.js';
 	import { createTrackerPrefetchPlan } from './tracker-prefetch.js';
 	import { createLoadingNotice } from './tracker-loading.svelte.js';
 	import { resolvePriceMode, TIMELINE_COMPARE_CARDS } from './tracker-model.js';
@@ -55,7 +55,7 @@
 		RENEWABLES_LINE_COLOUR,
 		RENEWABLES_LINE_ID
 	} from './tracker-overlays.js';
-	import { formatPercentageValue } from '$lib/components/charts/card/cell-format.js';
+	import { formatPercentageValue } from '#lib/components/charts/card/cell-format.js';
 	import { createTrackerProviders } from './tracker-providers.svelte.js';
 	import { createRooftopForecast } from './rooftop-forecast.svelte.js';
 	import { hasRooftopForecast } from './rooftop-forecast.js';
@@ -162,7 +162,7 @@
 	 * marker, like a comparison's A) and the hovered one (a dashed preview,
 	 * like its armed ghost).
 	 * @param {TimelineCard} card
-	 * @returns {import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} */
+	 * @returns {import('#lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} */
 	function chartMarkers(card) {
 		const compared = compare.timeMarkers(card);
 		if (compared) return compared;

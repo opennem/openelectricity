@@ -24,7 +24,7 @@
  * }} TransmissionBand
  */
 
-import { isLightMapTheme } from '$lib/components/map/map-style.js';
+import { isLightMapTheme } from '#lib/components/map/map-style.js';
 
 /** @type {readonly TransmissionBand[]} */
 export const TRANSMISSION_BANDS = Object.freeze([

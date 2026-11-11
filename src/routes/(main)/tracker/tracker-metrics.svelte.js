@@ -1,4 +1,4 @@
-import { selectIntensityComponents } from '$lib/components/charts/network/process-emissions-intensity.js';
+import { selectIntensityComponents } from '#lib/components/charts/network/process-emissions-intensity.js';
 /** @typedef {'generation' | 'energy' | 'market' | 'emissions' | 'intensity' | 'demand' | 'renewables'
  * | 'curtailment_solar' | 'curtailment_wind'} MetricId */
 /** @typedef {{ pending: boolean, error: string | null }} MetricStatus */

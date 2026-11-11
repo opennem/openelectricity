@@ -1,5 +1,5 @@
 <script>
-	/** @type {{ chart: import('$lib/components/charts/v2/ChartStore.svelte.js').default, wrapperStyles?: string }} */
+	/** @type {{ chart: import('#lib/components/charts/v2/ChartStore.svelte.js').default, wrapperStyles?: string }} */
 	let { chart, wrapperStyles = '' } = $props();
 
 	let useData = $derived(chart.hoverData || chart.focusData);

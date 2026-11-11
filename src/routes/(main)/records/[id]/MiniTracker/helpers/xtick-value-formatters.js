@@ -1,6 +1,6 @@
 /** @typedef {(d: Date, timeZone?: string) => string} dateFormatter */
-import { formatDayMonth } from '$lib/components/charts/v2/date-labels.js';
-import { intlTimeZone } from '$lib/utils/date-format.js';
+import { formatDayMonth } from '#lib/components/charts/v2/date-labels.js';
+import { intlTimeZone } from '#lib/utils/date-format.js';
 
 /**
  * @param {Date} d

@@ -1,8 +1,8 @@
 <script>
 	import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
 	import ExamplePreview from './ExamplePreview.svelte';
-	import { getChartTypeGuidance } from '$lib/stratify/example-catalogue.js';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import { getChartTypeGuidance } from '#lib/stratify/example-catalogue.js';
+	import * as Card from '#lib/components/ui/card/index.js';
 
 	/** @type {{ example: Record<string, any> }} */
 	let { example } = $props();

@@ -1,12 +1,12 @@
-import { HOURS_MS, nemNaiveRange } from '$lib/flows/nem-time.js';
-import { makeUpstreamFetcher, parseNetworkDataParams } from '$lib/server/network-data.js';
-import { createSwrCache } from '$lib/server/swr-cache.js';
+import { HOURS_MS, nemNaiveRange } from '#lib/flows/nem-time.js';
+import { makeUpstreamFetcher, parseNetworkDataParams } from '#lib/server/network-data.js';
+import { createSwrCache } from '#lib/server/swr-cache.js';
 import {
 	NEM_SNAPSHOT_REGIONS,
 	lastTwelveMonths,
 	summariseAnnual,
 	summariseLive
-} from '$lib/server/system-snapshot-summary.js';
+} from '#lib/server/system-snapshot-summary.js';
 
 /**
  * Homepage System Snapshot data, from the OE v4 API through the Tracker's
@@ -39,8 +39,8 @@ async function fetchNetwork(query) {
 const hasRegions = (regions, ids) => ids.every((id) => regions[id]);
 
 /**
- * @typedef {{ period?: string, regions: Record<string, import('$lib/server/system-snapshot-summary.js').AnnualRegion>, error?: string }} AnnualSnapshot
- * @typedef {{ regions: Record<string, import('$lib/server/system-snapshot-summary.js').LiveRegion>, error?: string }} LiveSnapshot
+ * @typedef {{ period?: string, regions: Record<string, import('#lib/server/system-snapshot-summary.js').AnnualRegion>, error?: string }} AnnualSnapshot
+ * @typedef {{ regions: Record<string, import('#lib/server/system-snapshot-summary.js').LiveRegion>, error?: string }} LiveSnapshot
  */
 
 /** @returns {Promise<AnnualSnapshot>} */
@@ -120,7 +120,7 @@ const liveCache = createSwrCache({
 
 /**
  * Both snapshot modes, each from its own cache.
- * @param {App.Platform | undefined} platform
+ * @param {EdgeRuntime | undefined} platform
  * @returns {Promise<{ live: LiveSnapshot, annual: AnnualSnapshot }>}
  */
 export async function loadSystemSnapshot(platform) {

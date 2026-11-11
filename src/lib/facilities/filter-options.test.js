@@ -14,7 +14,7 @@ import {
 	regionOptions,
 	statusOptions,
 	typeOptions
-} from '$lib/facilities/filters.js';
+} from '#lib/facilities/filters.js';
 
 describe('getLeafValues', () => {
 	it('returns children of parents plus childless top-level options', () => {

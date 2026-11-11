@@ -21,27 +21,23 @@ declare global {
 		prepare(query: string): D1PreparedStatement;
 	}
 
-	namespace App {
-		// interface Error {}
-		// interface Locals {}
-		// interface PageData {}
-		// Minimal structural view of the Cloudflare adapter's platform object —
-		// enough for cache/waitUntil/binding usage without depending on
-		// @cloudflare/workers-types. Everything optional: absent in `vite dev`,
-		// and bindings absent until configured in the Cloudflare dashboard.
-		interface Platform {
-			context?: { waitUntil(promise: Promise<unknown>): void };
-			caches?: {
-				default: {
-					match(key: string | Request): Promise<Response | undefined>;
-					put(key: string | Request, response: Response): Promise<void>;
-				};
+	// Minimal structural view of the Cloudflare runtime the server caches use
+	// (built by `edgeRuntime()` in #lib/server/edge-runtime.js) — enough for
+	// cache/waitUntil/binding usage without depending on
+	// @cloudflare/workers-types. Everything optional: tests pass partial fakes,
+	// and bindings are absent until configured in the Cloudflare dashboard.
+	interface EdgeRuntime {
+		context?: { waitUntil(promise: Promise<unknown>): void };
+		caches?: {
+			default: {
+				match(key: string | Request): Promise<Response | undefined>;
+				put(key: string | Request, response: Response): Promise<void>;
 			};
-			env?: {
-				CACHE_REGISTRY?: D1Database;
-				CPI_DATA?: import('@cloudflare/workers-types').KVNamespace;
-			};
-		}
+		};
+		env?: {
+			CACHE_REGISTRY?: D1Database;
+			CPI_DATA?: import('@cloudflare/workers-types').KVNamespace;
+		};
 	}
 }
 

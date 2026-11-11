@@ -6,11 +6,11 @@ const { downloadCsv, downloadXlsx } = vi.hoisted(() => ({
 	downloadCsv: vi.fn(),
 	downloadXlsx: vi.fn(async () => {})
 }));
-vi.mock('$lib/utils/download-csv.js', async (original) => ({
+vi.mock('#lib/utils/download-csv.js', async (original) => ({
 	.../** @type {object} */ (await original()),
 	downloadCsv
 }));
-vi.mock('$lib/utils/download-xlsx.js', async (original) => ({
+vi.mock('#lib/utils/download-xlsx.js', async (original) => ({
 	.../** @type {object} */ (await original()),
 	downloadXlsx
 }));

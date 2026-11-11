@@ -1,4 +1,4 @@
-import { windowRows } from '$lib/components/charts/v2/binary-search.js';
+import { windowRows } from '#lib/components/charts/v2/binary-search.js';
 
 /** How long the window must hold still before a chart reports it: the
  * generation chart's debounce, so a pan reports once, not every frame. */
@@ -11,11 +11,11 @@ const REPORT_DELAY_MS = 300;
  * the bucket straddling its start included) once the window settles — what
  * its card's download and comparison read. Call during component init.
  * @param {() => {
- *   store: import('$lib/components/charts/v2/ChartStore.svelte.js').default | null,
+ *   store: import('#lib/components/charts/v2/ChartStore.svelte.js').default | null,
  *   chartHeightPx: number,
  *   viewStart: number,
  *   viewEnd: number,
- *   onvisibledata?: (snapshot: import('$lib/components/charts/card/types.js').ChartSnapshot) => void
+ *   onvisibledata?: (snapshot: import('#lib/components/charts/card/types.js').ChartSnapshot) => void
  * }} input
  */
 export function syncCardChart(input) {

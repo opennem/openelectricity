@@ -25,7 +25,7 @@ import {
 	formatYear,
 	isCurrentLocalYear
 } from './date-labels.js';
-import { baseIntervalFor } from '$lib/components/charts/facility/range-interval-config.js';
+import { baseIntervalFor } from '#lib/components/charts/facility/range-interval-config.js';
 import { tzAbbreviationFromIana } from './network-time.js';
 
 /**

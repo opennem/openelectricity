@@ -6,10 +6,10 @@
  * returns a CSV string, or null when there's nothing to export.
  */
 
-import { fuelTechNameMap } from '$lib/fuel_techs';
+import { fuelTechNameMap } from '#lib/fuel_techs.js';
 import { makeUnitLabelGetter } from './helpers.js';
-import { formatNetworkTimestamp } from '$lib/components/charts/v2/network-time.js';
-import { downloadCsv, escapeCsv } from '$lib/utils/download-csv';
+import { formatNetworkTimestamp } from '#lib/components/charts/v2/network-time.js';
+import { downloadCsv, escapeCsv } from '#lib/utils/download-csv.js';
 
 // Re-exported for the existing callers; the implementation lives with the
 // other network-time helpers.

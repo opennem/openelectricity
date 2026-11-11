@@ -35,7 +35,7 @@ import {
 	comparisonSummaryRows,
 	comparisonTableDataset
 } from './region-comparison-export.js';
-import { datasetToCsv } from '$lib/components/charts/card/export-dataset.js';
+import { datasetToCsv } from '#lib/components/charts/card/export-dataset.js';
 import { comparisonMetricValue } from './comparison-metrics.js';
 import { parseTrackerUrl, applyTrackerUrl } from './tracker-url.js';
 

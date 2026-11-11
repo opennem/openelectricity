@@ -1,7 +1,7 @@
 <script>
 	import MapIcon from '@lucide/svelte/icons/map';
-	import StrataChartView from '$lib/stratify/StrataChartView.svelte';
-	import { MAP_TYPES } from '$lib/stratify/chart-types.js';
+	import StrataChartView from '#lib/stratify/StrataChartView.svelte';
+	import { MAP_TYPES } from '#lib/stratify/chart-types.js';
 
 	/** @type {{ chart: Record<string, any> }} */
 	let { chart } = $props();

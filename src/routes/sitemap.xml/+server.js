@@ -1,4 +1,4 @@
-import { sitemapIndexXml, xmlResponse } from '$lib/seo/sitemap.js';
+import { sitemapIndexXml, xmlResponse } from '#lib/seo/sitemap.js';
 
 /**
  * Index pointing at the child sitemaps (referenced from static/robots.txt).

@@ -1,5 +1,5 @@
-import { bisectTime, bisectTimeRight } from '$lib/components/charts/v2/binary-search.js';
-import { computeYDomain } from '$lib/components/charts/v2/compute-y-domain.js';
+import { bisectTime, bisectTimeRight } from '#lib/components/charts/v2/binary-search.js';
+import { computeYDomain } from '#lib/components/charts/v2/compute-y-domain.js';
 import {
 	COMPARISON_CHART_OPTIONS,
 	DEFAULT_COMPARISON_CHARTS,
@@ -12,33 +12,33 @@ import {
 	comparisonMetricValue,
 	normaliseComparisonResponse
 } from './comparison-metrics.js';
-import { allRegionsOption, regionOptions } from '$lib/regions.js';
+import { allRegionsOption, regionOptions } from '#lib/regions.js';
 import { withTrackerLabel } from './tracker-regions.js';
-import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
-import { normaliseCardComparison } from '$lib/components/charts/card/compare/chart-compare.js';
-import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
-import { contributionSeries } from '$lib/components/charts/network/contribution.js';
-import { processEmissionsIntensity } from '$lib/components/charts/network/process-emissions-intensity.js';
-import { processNetworkData } from '$lib/components/charts/network/process-network-data.js';
+import { EARLIEST_DATA_MS } from '#lib/utils/date-range.js';
+import { normaliseCardComparison } from '#lib/components/charts/card/compare/chart-compare.js';
+import { getGroup, loadGroupsFor } from '#lib/components/charts/network/groups.js';
+import { contributionSeries } from '#lib/components/charts/network/contribution.js';
+import { processEmissionsIntensity } from '#lib/components/charts/network/process-emissions-intensity.js';
+import { processNetworkData } from '#lib/components/charts/network/process-network-data.js';
 import {
 	completeBucketRows,
 	displayFullTransform
-} from '$lib/components/charts/v2/dataProcessing.js';
-import { BUCKET_MONTHS } from '$lib/components/charts/v2/bucket-boundaries.js';
+} from '#lib/components/charts/v2/dataProcessing.js';
+import { BUCKET_MONTHS } from '#lib/components/charts/v2/bucket-boundaries.js';
 import {
 	bucketFilterKindFor,
 	bucketFilterOptionsFor,
 	bucketFilterPredicate,
 	isValidBucketFilter
-} from '$lib/components/charts/v2/bucket-filter.js';
+} from '#lib/components/charts/v2/bucket-filter.js';
 import {
 	formatRangeLabel,
 	getTimeFormatPolicy
-} from '$lib/components/charts/v2/time-format-policy.js';
+} from '#lib/components/charts/v2/time-format-policy.js';
 import {
 	baseIntervalFor,
 	getIntervalsForRange
-} from '$lib/components/charts/facility/range-interval-config.js';
+} from '#lib/components/charts/facility/range-interval-config.js';
 
 export const COMPARISON_REGIONS = [
 	...regionOptions.filter((region) => region.value !== '_all').map(withTrackerLabel),

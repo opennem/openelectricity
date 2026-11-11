@@ -1,4 +1,4 @@
-import { getNumberFormat } from '$lib/utils/formatters';
+import { getNumberFormat } from '#lib/utils/formatters.js';
 
 /** Proportion records (`renewable_proportion`) carry this `value_unit`. */
 const PROPORTION_UNIT = '%';
@@ -22,7 +22,7 @@ export function recordFractionDigits(unit) {
 /**
  * Give a record chart's tooltip and value readouts the record's fixed decimal
  * places, keeping the y-axis ticks whole.
- * @param {import('$lib/components/charts/stores/chart.svelte.js').default} chartCxt
+ * @param {import('#lib/components/charts/stores/chart.svelte.js').default} chartCxt
  * @param {string | null | undefined} unit - the record's `value_unit`
  */
 export function applyRecordValueFormat(chartCxt, unit) {

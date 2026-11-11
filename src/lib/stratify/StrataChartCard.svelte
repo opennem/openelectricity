@@ -1,9 +1,9 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import StrataChartView from '$lib/stratify/StrataChartView.svelte';
+	import StrataChartView from '#lib/stratify/StrataChartView.svelte';
 	import { EllipsisVertical, ExternalLink, Link, Code, ClipboardCheck } from '@lucide/svelte';
-	import { writeToClipboard } from '$lib/utils/clipboard';
+	import { writeToClipboard } from '#lib/utils/clipboard.js';
 
 	/**
 	 * @type {{

@@ -1,7 +1,7 @@
 /**
  * Shared types for chart cards (`ChartCard`): downloads, export datasets and
  * compare mode. JSDoc-only module — import these via
- * `@typedef {import('$lib/components/charts/card/types.js').X} X`.
+ * `@typedef {import('#lib/components/charts/card/types.js').X} X`.
  */
 
 /**

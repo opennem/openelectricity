@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg, flatten, stack, groupLonger } from 'layercake';
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
-	import getSeqId from '$lib/utils/html-id-gen';
+	import getSeqId from '#lib/utils/html-id-gen.js';
 	import AreaStacked from './elements/AreaStacked.svelte';
 	import AxisX from './elements/AxisX.svelte';
 	import AxisY from './elements/AxisY.svelte';

@@ -1,12 +1,12 @@
 <script>
 	import { untrack } from 'svelte';
 	import { addDays, addMonths, addYears, subDays, subMonths, subYears } from 'date-fns';
-	import { browser } from '$app/environment';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import { plainDateTime } from '$lib/utils/date-parser';
-	import LensChart from '$lib/components/charts/LensChart.svelte';
-	import { applyRecordValueFormat } from '$lib/records/format-value.js';
-	import nighttimes from '$lib/utils/nighttimes';
+	import { browser } from '$app/env';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
+	import { plainDateTime } from '#lib/utils/date-parser.js';
+	import LensChart from '#lib/components/charts/LensChart.svelte';
+	import { applyRecordValueFormat } from '#lib/records/format-value.js';
+	import nighttimes from '#lib/utils/nighttimes.js';
 	import init from './helpers/init';
 	import { chartOptions } from './helpers/config';
 	import { getFetchPath } from './helpers/fetch-path.js';

@@ -15,19 +15,21 @@
  */
 
 import { json } from '@sveltejs/kit';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
-import { freshnessStatus } from '$lib/network-cache/freshness.js';
-import { getEntry, registryDb } from '$lib/server/network-cache-registry.js';
+import { verifyAdmin } from '#lib/auth/clerk-server.js';
+import { freshnessStatus } from '#lib/network-cache/freshness.js';
+import { getEntry, registryDb } from '#lib/server/network-cache-registry.js';
 import {
 	freshnessFor,
 	makeUpstreamFetcher,
 	networkDataCache,
 	parseRegisteredKey
-} from '$lib/server/network-data.js';
+} from '#lib/server/network-data.js';
+import { edgeRuntime } from '#lib/server/edge-runtime.js';
 
 const NO_STORE = { 'cache-control': 'no-store' };
 
-export async function POST({ request, platform }) {
+export async function POST({ request }) {
+	const platform = edgeRuntime();
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
 		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });

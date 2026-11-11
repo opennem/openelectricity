@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { feedback } from '$lib/feedback/feedback.svelte.js';
+	import { feedback } from '#lib/feedback/feedback.svelte.js';
 
 	/**
 	 * Renders its children only in the browser, after mount, and only when

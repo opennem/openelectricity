@@ -14,9 +14,9 @@
 	 * is fully re-fed on each refresh rather than managed.
 	 */
 
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { peakBucket } from '$lib/components/charts/facility/metrics/metrics-calc.js';
-	import { getNumberFormat } from '$lib/utils/formatters';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
+	import { peakBucket } from '#lib/components/charts/facility/metrics/metrics-calc.js';
+	import { getNumberFormat } from '#lib/utils/formatters.js';
 
 	/**
 	 * @type {{

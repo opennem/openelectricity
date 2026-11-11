@@ -5,9 +5,9 @@
  * capacity sums, and weighted emissions intensity from a facility's units.
  */
 
-import { loadFuelTechs } from '$lib/fuel_techs';
-import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
-import { getUnitCapacity } from '$lib/utils/capacity';
+import { loadFuelTechs } from '#lib/fuel_techs.js';
+import { sortByDetailedOrder } from '#lib/fuel-tech-groups/detailed.js';
+import { getUnitCapacity } from '#lib/utils/capacity.js';
 import { buildUnitColourMap } from './helpers.js';
 
 const BATTERY_FUEL_TECHS = ['battery'];

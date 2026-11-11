@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { decodeChartFields } from '$lib/stratify/chart-data.js';
-import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
-import { getRevisionVersion } from '$lib/server/stratify/revisions.js';
+import { decodeChartFields } from '#lib/stratify/chart-data.js';
+import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
+import { getRevisionVersion } from '#lib/server/stratify/revisions.js';
 
 /**
  * GET /api/stratify/charts/:id/revisions/:revisionId — one revision's field

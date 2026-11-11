@@ -12,7 +12,7 @@
 	 * chart area, with boundary-aware flipping near the edges.
 	 */
 
-	import { formatWithUnit } from '$lib/utils/formatters.js';
+	import { formatWithUnit } from '#lib/utils/formatters.js';
 	import {
 		getActiveData,
 		getTotalForRow,

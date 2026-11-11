@@ -7,7 +7,7 @@
 import {
 	FULLSCREEN_SHORTCUT,
 	SHOW_SHORTCUTS_SHORTCUT
-} from '$lib/components/fullscreen/shortcuts.js';
+} from '#lib/components/fullscreen/shortcuts.js';
 
 /** @typedef {'refresh' | 'metrics' | 'fullscreen' | 'shortcuts'} TrackerShortcut */
 

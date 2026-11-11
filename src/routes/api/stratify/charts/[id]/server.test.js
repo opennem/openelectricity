@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 	setFields: vi.fn()
 }));
 
-vi.mock('$lib/sanity-cms.js', () => ({
+vi.mock('#lib/sanity-cms.js', () => ({
 	createCmsClient: () => ({
 		fetch: mocks.fetch,
 		patch: (/** @type {string} */ id) => ({
@@ -20,13 +20,13 @@ vi.mock('$lib/sanity-cms.js', () => ({
 	})
 }));
 
-vi.mock('$lib/auth/clerk-server.js', () => ({
+vi.mock('#lib/auth/clerk-server.js', () => ({
 	verifyAdmin: mocks.verifyAdmin,
 	findAdminIds: mocks.findAdminIds,
 	findUserName: mocks.findUserName
 }));
 
-vi.mock('$lib/server/stratify/save-chart.js', async (importOriginal) => ({
+vi.mock('#lib/server/stratify/save-chart.js', async (importOriginal) => ({
 	...(await importOriginal()),
 	saveChartFields: mocks.saveChartFields
 }));

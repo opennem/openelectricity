@@ -1,12 +1,12 @@
 import { json, text } from '@sveltejs/kit';
-import { MAILCHIMP_API_KEY, MAILCHIMP_LIST_ID } from '$env/static/private';
-import { subscribe } from '$lib/server/newsletter.js';
+import { MAILCHIMP_API_KEY, MAILCHIMP_LIST_ID } from '$app/env/private';
+import { subscribe } from '#lib/server/newsletter.js';
 
 const STATUS = { invalid: 400, unavailable: 502 };
 
 /**
  * Newsletter sign-up from `SignUpForm`. Answers `{ ok: true }` for every
- * accepted address, whatever its list status (see `$lib/server/newsletter.js`).
+ * accepted address, whatever its list status (see `#lib/server/newsletter.js`).
  * @type {import('./$types').RequestHandler}
  */
 export async function PUT({ request, fetch }) {

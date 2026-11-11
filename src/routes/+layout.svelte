@@ -1,8 +1,8 @@
 <script>
 	import '../app.css';
 	import { page } from '$app/state';
-	import { isNonProductionHost } from '$lib/utils/environment.js';
-	import { trackBackNavigation } from '$lib/utils/back-navigation.js';
+	import { isNonProductionHost } from '#lib/utils/environment.js';
+	import { trackBackNavigation } from '#lib/utils/back-navigation.js';
 
 	let { children } = $props();
 

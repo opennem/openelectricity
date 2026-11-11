@@ -34,11 +34,11 @@ Within the panel, the content is selection-driven from existing URL state:
 | `?region=sa1` (etc.)     | Region generation (`GenerationPanel`)                      |
 
 The region dropdown uses a tracker-local option list (`tracker-regions.js`) —
-the shared `$lib/regions.js` list plus the "All Regions" (`au`) entry, which is
+the shared `#lib/regions.js` list plus the "All Regions" (`au`) entry, which is
 deliberately not added to the shared list (scenarios and the studio explorer
 can't handle a two-network scope). The `au` panel data comes from
 `/api/network/data?region=au`, which merges one NEM and one WEM upstream call
-server-side (`$lib/server/network-data-au.js`): sub-daily WEM rows are
+server-side (`#lib/server/network-data-au.js`): sub-daily WEM rows are
 relabelled +2h onto the AEST clock (absolute-time join — the OE API's own AU
 network joins on wall-clock strings and displaces WEM by 2 real hours) and the
 merged series trim to the two networks' common live edge; daily+ rows join on
@@ -137,7 +137,7 @@ sub-regions, and no live price chip since `/api/prices` is NEM-only).
 ## Metrics — homepage renewables methodology
 
 `NetworkMetrics` renders the `NETWORK_METRICS` registry
-(`$lib/components/charts/network/network-metric-definitions.js`), computed over
+(`#lib/components/charts/network/network-metric-definitions.js`), computed over
 the charts' **visible range** so the numbers track pan/zoom (snapshot taken on
 the debounced visible-data cadence, not per pan frame).
 

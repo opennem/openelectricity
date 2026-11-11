@@ -1,13 +1,13 @@
 <script>
 	import { onDestroy } from 'svelte';
 	import { Play, X } from '@lucide/svelte';
-	import { MAP_FAB_CLASS } from '$lib/components/map/map-style.js';
-	import AnimationTimeline from '$lib/components/playback/AnimationTimeline.svelte';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
-	import clamp from '$lib/utils/clamp.js';
-	import { trackEvent } from '$lib/utils/analytics.js';
-	import formatValue from '$lib/facilities/format-value.js';
-	import { CAPACITY_TOOLTIP } from '$lib/facilities/capacity-tooltip.js';
+	import { MAP_FAB_CLASS } from '#lib/components/map/map-style.js';
+	import AnimationTimeline from '#lib/components/playback/AnimationTimeline.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
+	import clamp from '#lib/utils/clamp.js';
+	import { trackEvent } from '#lib/utils/analytics.js';
+	import formatValue from '#lib/facilities/format-value.js';
+	import { CAPACITY_TOOLTIP } from '#lib/facilities/capacity-tooltip.js';
 
 	/**
 	 * The map's year animation ("play mode"): a collapsed Play pill that expands

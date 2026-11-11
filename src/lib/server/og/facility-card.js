@@ -35,7 +35,7 @@ const ROOT = process.cwd();
 export const OG_CARD_VERSION = 1;
 
 // Fueltechs whose colour is light enough to need dark glyphs/text (mirrors
-// $lib/utils/fueltech-display so this module stays node-importable without $lib).
+// #lib/utils/fueltech-display so this module stays node-importable without the app alias).
 const LIGHT_FUELTECHS = new Set([
 	'solar_utility',
 	'solar',
@@ -124,7 +124,7 @@ const _iconCache = new Map();
 
 /**
  * Raw icon SVG for a fueltech, matching the facility pages — FuelTechBadge renders
- * $lib/icons/fuel-techs/<Name>Sm.svelte. Falls back to the base fueltech, then the
+ * #lib/icons/fuel-techs/<Name>Sm.svelte. Falls back to the base fueltech, then the
  * static icon set.
  * @param {string} ft
  */

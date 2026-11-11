@@ -1,15 +1,15 @@
 <script>
 	import { Info } from '@lucide/svelte';
-	import { formatCapacity } from '$lib/utils/formatters.js';
+	import { formatCapacity } from '#lib/utils/formatters.js';
 	import {
 		TRANSMISSION_BANDS,
 		TRANSMISSION_SOURCE_HREF,
 		allBandsVisible,
 		bandColour
-	} from '$lib/facilities/transmission-bands.js';
+	} from '#lib/facilities/transmission-bands.js';
 
 	/**
-	 * @typedef {import('$lib/facilities/transmission-bands.js').BandVisibility} Visibility
+	 * @typedef {import('#lib/facilities/transmission-bands.js').BandVisibility} Visibility
 	 */
 
 	/**

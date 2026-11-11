@@ -1,10 +1,10 @@
 <script>
-	import FuelTechBadgeStack from '$lib/components/FuelTechBadgeStack.svelte';
+	import FuelTechBadgeStack from '#lib/components/FuelTechBadgeStack.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
-	import { fuelTechNameMap } from '$lib/fuel_techs.js';
-	import { getRegionLabel } from '$lib/facilities/filters.js';
-	import formatValue from '$lib/facilities/format-value.js';
-	import { groupUnits, getOrderedFuelTechGroups } from '$lib/facilities/units.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
+	import { getRegionLabel } from '#lib/facilities/filters.js';
+	import formatValue from '#lib/facilities/format-value.js';
+	import { groupUnits, getOrderedFuelTechGroups } from '#lib/facilities/units.js';
 	import { nameColumnClass, metaColumnsClass } from '../_utils/list-columns.js';
 
 	/**

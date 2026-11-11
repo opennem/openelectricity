@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
-import { REVISION_TYPE } from '$lib/server/stratify/revisions.js';
+import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
+import { REVISION_TYPE } from '#lib/server/stratify/revisions.js';
 
 const LATEST_REVISION_QUERY = `*[_type == $type && chartId == $id] | order(createdAt desc)[0] {
 	userEmail, kind, summary, createdAt, updatedAt

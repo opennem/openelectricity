@@ -33,9 +33,9 @@
 		directionLabel,
 		icSlug,
 		interconnectorsForRegion
-	} from '$lib/flows/region-geo.js';
-	import { CORRIDOR_COLOUR } from '$lib/flows/format.js';
-	import clamp from '$lib/utils/clamp.js';
+	} from '#lib/flows/region-geo.js';
+	import { CORRIDOR_COLOUR } from '#lib/flows/format.js';
+	import clamp from '#lib/utils/clamp.js';
 
 	/**
 	 * @type {{

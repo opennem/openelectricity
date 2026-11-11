@@ -5,7 +5,7 @@
 	 * Allows users to switch between different data intervals (e.g., 5min, 30min).
 	 * Uses the Switch component for consistent UI.
 	 */
-	import Switch from '$lib/components/Switch.svelte';
+	import Switch from '#lib/components/Switch.svelte';
 
 	/**
 	 * @typedef {Object} IntervalOption

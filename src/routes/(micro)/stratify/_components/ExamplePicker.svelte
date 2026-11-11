@@ -1,6 +1,6 @@
 <script>
 	import { getStratifyContext } from '../_state/context.js';
-	import { builtInExamples, CHART_TYPE_GUIDANCE } from '$lib/stratify/example-catalogue.js';
+	import { builtInExamples, CHART_TYPE_GUIDANCE } from '#lib/stratify/example-catalogue.js';
 
 	const project = getStratifyContext();
 </script>

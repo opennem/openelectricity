@@ -1,9 +1,9 @@
 import { curveStepAfter, curveLinear, curveMonotoneX } from 'd3-shape';
 import { get, readable, derived, writable } from 'svelte/store';
-import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
-import { convert } from '$lib/utils/si-units';
-import transformToProportion from '$lib/utils/data-transform/proportion';
-import transformToChangeSince from '$lib/utils/data-transform/change-since';
+import { getNumberFormat, getFormattedDate, getFormattedTime } from '#lib/utils/formatters.js';
+import { convert } from '#lib/utils/si-units.js';
+import transformToProportion from '#lib/utils/data-transform/proportion.js';
+import transformToChangeSince from '#lib/utils/data-transform/change-since.js';
 
 const numberFormat = getNumberFormat();
 

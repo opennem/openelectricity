@@ -1,4 +1,4 @@
-import { createCmsClient } from '$lib/sanity-cms.js';
+import { createCmsClient } from '#lib/sanity-cms.js';
 import { curatedCommunityExamples } from './example-catalogue.js';
 
 /**

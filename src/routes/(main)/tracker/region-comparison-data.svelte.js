@@ -1,8 +1,8 @@
-import { adjustComparisonInflation } from '$lib/comparison-cpi.js';
+import { adjustComparisonInflation } from '#lib/comparison-cpi.js';
 import { processComparisonFinancial, processComparisonFlows } from './comparison-metrics.js';
 import { untrack } from 'svelte';
-import { createHeadlessSeriesProvider } from '$lib/components/charts/network/headless-series-provider.svelte.js';
-import { createNetworkMarketData } from '$lib/components/charts/network/network-market-data.svelte.js';
+import { createHeadlessSeriesProvider } from '#lib/components/charts/network/headless-series-provider.svelte.js';
+import { createNetworkMarketData } from '#lib/components/charts/network/network-market-data.svelte.js';
 import {
 	CLOSED_NETWORKS,
 	COMPARISON_REGIONS,
@@ -15,7 +15,7 @@ import {
 	processComparisonEnergy
 } from './region-comparison.js';
 
-/** @typedef {import('$lib/components/charts/network/headless-series-provider.svelte.js').HeadlessSeriesProvider} HeadlessSeriesProvider */
+/** @typedef {import('#lib/components/charts/network/headless-series-provider.svelte.js').HeadlessSeriesProvider} HeadlessSeriesProvider */
 /** @typedef {Record<keyof import('./region-comparison.js').ComparisonSourceRows, HeadlessSeriesProvider>} ProviderSet */
 
 /** Providers use UTC as a calendar-label axis. Each API returns its own local
@@ -31,7 +31,7 @@ import {
  * replaces the selection object every frame, and reading it wholesale would
  * rebuild the joined dataset on each frame.
  * @param {() => import('./region-comparison.js').RegionComparisonSelection} selection
- * @param {() => number} now @param {() => ReturnType<typeof import('$lib/comparison-cpi.js').comparisonCpi>} cpi */
+ * @param {() => number} now @param {() => ReturnType<typeof import('#lib/comparison-cpi.js').comparisonCpi>} cpi */
 export function createRegionComparisonData(selection, now, cpi) {
 	// Primitive bounds, so a refresh within the same month keeps their identity.
 	let boundsStart = $derived(comparisonBounds(now()).start);

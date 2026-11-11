@@ -1,7 +1,7 @@
 <script>
 	import { X } from '@lucide/svelte';
-	import { portal } from '$lib/actions/portal.js';
-	import { Backdrop } from '$lib/components/ui/backdrop';
+	import { portal } from '#lib/actions/portal.js';
+	import { Backdrop } from '#lib/components/ui/backdrop/index.js';
 
 	/**
 	 * FacilityMapLightbox — expanded, fully interactive facility map overlay.

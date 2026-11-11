@@ -1,4 +1,4 @@
-import { fuelTechColourMap } from '$lib/theme/openelectricity';
+import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
 import { CHART_TYPES } from './chart-types.js';
 
 /**

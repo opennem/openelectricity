@@ -1,5 +1,5 @@
-import { rowsFromSeriesMaps } from '$lib/components/charts/v2/series-rows.js';
-import { stripDateTimezone } from '$lib/utils/date-format.js';
+import { rowsFromSeriesMaps } from '#lib/components/charts/v2/series-rows.js';
+import { stripDateTimezone } from '#lib/utils/date-format.js';
 
 const COMPARISON_COLOURS = ['#4F5FD7', '#E78114', '#069FAF', '#A078D7', '#2C7629', '#E15C34'];
 

@@ -1,9 +1,9 @@
 import {
 	deriveVwPriceDisplayRows,
 	VW_PRICE_SERIES_ID
-} from '$lib/components/charts/network/process-price-vw.js';
-import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
-import { deriveIntensityDisplayRows } from '$lib/components/charts/network/process-emissions-intensity.js';
+} from '#lib/components/charts/network/process-price-vw.js';
+import { isObservationRow } from '#lib/components/charts/v2/bucket-filter.js';
+import { deriveIntensityDisplayRows } from '#lib/components/charts/network/process-emissions-intensity.js';
 import { RENEWABLES_DOCS } from './tracker-model.js';
 /** @typedef {Pick<import('./types.js').GenerationSnapshot, 'data' | 'start' | 'end' | 'seriesNames'>} Snapshot */
 /** @typedef {{value: number, time: number, ties: number}} Extreme */

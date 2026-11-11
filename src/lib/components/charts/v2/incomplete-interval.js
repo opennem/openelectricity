@@ -1,5 +1,5 @@
-import { baseIntervalFor } from '$lib/components/charts/facility/range-interval-config.js';
-import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
+import { baseIntervalFor } from '#lib/components/charts/facility/range-interval-config.js';
+import { getIntervalHours } from '#lib/components/charts/facility/interval-hours.js';
 
 const HOUR_MS = 60 * 60 * 1000;
 

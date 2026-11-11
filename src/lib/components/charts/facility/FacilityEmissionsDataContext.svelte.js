@@ -8,8 +8,8 @@ const KEY = Symbol('facility-emissions-data');
  * flows through from the provider's state.
  *
  * @typedef {Object} FacilityEmissionsDataContextValue
- * @property {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} intensityChartStore
- * @property {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} emissionsVolumeChartStore
+ * @property {import('#lib/components/charts/v2/ChartStore.svelte.js').default | null} intensityChartStore
+ * @property {import('#lib/components/charts/v2/ChartStore.svelte.js').default | null} emissionsVolumeChartStore
  * @property {any[]} intensityLoadingRanges
  * @property {any[]} emissionsVolumeLoadingRanges
  * @property {boolean} showLoadingOverlay
@@ -27,7 +27,7 @@ const KEY = Symbol('facility-emissions-data');
  * @property {(factor: number, centerMs: number) => void} handleZoom
  * @property {() => void} zoomIn - Button zoom step — settles (stale-fetch reconcile) immediately
  * @property {() => void} zoomOut - Button zoom step — settles immediately
- * @property {(chart: import('$lib/components/charts/v2/ChartStore.svelte.js').default) => {
+ * @property {(chart: import('#lib/components/charts/v2/ChartStore.svelte.js').default) => {
  *   data: any,
  *   key: string | undefined,
  *   value: number | undefined,
@@ -37,7 +37,7 @@ const KEY = Symbol('facility-emissions-data');
  *   date: string
  * } | null} getTooltipData
  * @property {(value: number) => string} formatIntensityValue
- * @property {(chart: import('$lib/components/charts/v2/ChartStore.svelte.js').default, value: number) => string} formatEmissionsValue
+ * @property {(chart: import('#lib/components/charts/v2/ChartStore.svelte.js').default, value: number) => string} formatEmissionsValue
  */
 
 /**

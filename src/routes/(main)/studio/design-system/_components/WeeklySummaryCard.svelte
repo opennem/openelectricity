@@ -6,8 +6,8 @@
 	 * Australia glyph is the real state map geometry, simplified for card size.
 	 */
 
-	import { fuelTechColourMap } from '$lib/theme/openelectricity.js';
-	import { getNumberFormat } from '$lib/utils/formatters';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
+	import { getNumberFormat } from '#lib/utils/formatters.js';
 
 	/**
 	 * @typedef {Object} Props

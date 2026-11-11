@@ -25,7 +25,7 @@
 	 * opening the status page, above About.
 	 */
 
-	import { building } from '$app/environment';
+	import { building } from '$app/env';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
@@ -34,20 +34,21 @@
 	import TrackerAboutSheet from './TrackerAboutSheet.svelte';
 	import TrackerFilterSheet from './TrackerFilterSheet.svelte';
 	import { Download, ImageDown, Info, Table2, X } from '@lucide/svelte';
-	import Meta from '$lib/components/Meta.svelte';
-	import ApiStatusDot from '$lib/components/ApiStatusDot.svelte';
-	import { createApiStatusState } from '$lib/api-status-state.svelte.js';
-	import { API_STATUS_URL, apiStatusLabel } from '$lib/api-status.js';
-	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
-	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
-	import { OptionsMenuDivider, OptionsMenuItem } from '$lib/components/ui/options-menu';
-	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
-	import Switch from '$lib/components/SwitchWithIcons.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import ApiStatusDot from '#lib/components/ApiStatusDot.svelte';
+	import { createApiStatusState } from '#lib/api-status-state.svelte.js';
+	import { API_STATUS_URL, apiStatusLabel } from '#lib/api-status.js';
+	import PageOptionsMenu from '#lib/components/PageOptionsMenu.svelte';
+	import FilterSelect from '#lib/components/filters/FilterSelect.svelte';
+	import { OptionsMenuDivider, OptionsMenuItem } from '#lib/components/ui/options-menu/index.js';
+	import ShortcutsToast from '#lib/components/ShortcutsToast.svelte';
+	import Switch from '#lib/components/SwitchWithIcons.svelte';
 	import {
 		setTouchControls,
 		TOUCH_ICON,
 		TOUCH_ICON_BUTTON
-	} from '$lib/components/ui/touch-controls.js';
+	} from '#lib/components/ui/touch-controls.js';
+
 	import {
 		FullscreenContainer,
 		FullscreenFilterBar,
@@ -55,8 +56,8 @@
 		FullscreenLayout,
 		FullscreenNavDropdown,
 		pageShortcuts
-	} from '$lib/components/fullscreen';
-	import { BELOW_TABLET_QUERY, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
+	} from '#lib/components/fullscreen/index.js';
+	import { BELOW_TABLET_QUERY, toggleFullscreenMode } from '#lib/utils/fullscreen-mode.js';
 	import { shortcutFor } from './tracker-shortcuts.js';
 	import { regionShortLabel, TRACKER_REGION_TREE } from './tracker-regions.js';
 	import { DEFAULT_REGION } from './tracker-model.js';
@@ -64,13 +65,13 @@
 	import PngExport from './PngExport.svelte';
 	import { setTrackerNavBottom } from './tracker-sheet.js';
 	import { capturePngSnapshot, settleChartAnimations } from './png-export.js';
-	import DownloadDataModal from '$lib/components/charts/card/DownloadDataModal.svelte';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import DownloadDataModal from '#lib/components/charts/card/DownloadDataModal.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import { mergeProps } from 'bits-ui';
 	import {
 		createChartDownloads,
 		setChartDownloads
-	} from '$lib/components/charts/card/chart-downloads.svelte.js';
+	} from '#lib/components/charts/card/chart-downloads.svelte.js';
 
 	/**
 	 * @type {{
@@ -420,7 +421,9 @@
 					     marker above it has scrolled off). It sits at the row's
 					     foot, so the 16px over it matches the chart column's top
 					     padding under it. -->
+
 					<div class="tablet:hidden" aria-hidden="true" {@attach watchStuck}></div>
+
 					<div
 						class="pointer-events-none sticky top-0 z-30 flex h-[68px] shrink-0 items-end justify-center px-[10px] pt-4 tablet:hidden"
 					>

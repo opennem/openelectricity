@@ -1,8 +1,8 @@
 <script>
-	import { version } from '$app/environment';
+	import { version } from '$app/env';
 	import { Maximize2 } from '@lucide/svelte';
-	import ApiStatus from '$lib/components/ApiStatus.svelte';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import ApiStatus from '#lib/components/ApiStatus.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import { DATA_SOURCES, RESOURCE_LINKS } from './site-links.js';
 
 	/**

@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 
 	import { modelOptions } from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
 	import { homepageDataTechnologyGroupOptions } from '../helpers';

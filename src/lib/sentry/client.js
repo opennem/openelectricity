@@ -1,6 +1,6 @@
-import { browser, dev, version } from '$app/environment';
+import { browser, dev, version } from '$app/env';
 import { env } from '$env/dynamic/public';
-import { hostEnvironment } from '$lib/utils/environment.js';
+import { hostEnvironment } from '#lib/utils/environment.js';
 import {
 	IGNORED_ERRORS,
 	errorFromEvent,

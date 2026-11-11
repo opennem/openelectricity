@@ -1,5 +1,5 @@
 <script>
-	import IconChevronTripleRight from '$lib/icons/ChevronTripleRight.svelte';
+	import IconChevronTripleRight from '#lib/icons/ChevronTripleRight.svelte';
 
 	/**
 	 * @typedef {Object} Props

@@ -18,7 +18,7 @@
  *     rooftop solar is excluded
  */
 
-import { getRegionLongLabel } from '$lib/facilities/filters.js';
+import { getRegionLongLabel } from '#lib/facilities/filters.js';
 
 /**
  * Facility fuel techs the OE API publishes a curtailment split for.

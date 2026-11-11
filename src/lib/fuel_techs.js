@@ -1,4 +1,4 @@
-import { getKeys } from '$lib/utils/keys';
+import { getKeys } from '#lib/utils/keys.ts';
 
 export const loadFuelTechs = [
 	'battery_charging',

@@ -4,7 +4,7 @@
  -->
 <script>
 	import { getContext } from 'svelte';
-	import clamp from '$lib/utils/clamp';
+	import clamp from '#lib/utils/clamp.js';
 	const { xScale } = getContext('LayerCake');
 
 	let { onbrush } = $props();

@@ -1,10 +1,10 @@
 <script>
 	import { format, isValid, parse } from 'date-fns';
 	import { resolve } from '$app/paths';
-	import { urlFor } from '$lib/sanity';
-	import RichText from '$lib/components/text-components/RichText.svelte';
-	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
-	import Meta from '$lib/components/Meta.svelte';
+	import { urlFor } from '#lib/sanity.js';
+	import RichText from '#lib/components/text-components/RichText.svelte';
+	import IconChevronLeft from '#lib/icons/ChevronLeft.svelte';
+	import Meta from '#lib/components/Meta.svelte';
 
 	/**
 	 * @typedef {Object} ArticleData
@@ -12,7 +12,7 @@
 	 * @property {string} summary
 	 * @property {string | null} publishDate
 	 * @property {any} cover
-	 * @property {Array<import('$lib/types/article.types').Author & { bio?: string }> | null} author
+	 * @property {Array<import('#lib/types/article.types.ts').Author & { bio?: string }> | null} author
 	 * @property {any} tldr
 	 * @property {any} content
 	 * @property {Record<string, any>} charts
@@ -51,7 +51,7 @@
 	<div class="container max-w-none lg:container py-12 relative z-10">
 		<div class="pb-10 md:py-14">
 			<a
-				href={resolve(preview ? '/article-drafts' : '/analysis')}
+				href={resolve(preview ? 'article-drafts' : 'analysis')}
 				class="inline-flex gap-4 items-center text-dark-grey hover:text-dark-red underline font-space font-medium text-sm"
 			>
 				<IconChevronLeft class="w-8 h-8" />

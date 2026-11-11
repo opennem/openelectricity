@@ -9,8 +9,8 @@ import {
 	getDefaultIntervalForRange,
 	getIntervalOptionsForDays,
 	getPresetByDays
-} from '$lib/components/charts/facility/range-interval-config.js';
-import { MIN_DATE } from '$lib/utils/date-range.js';
+} from '#lib/components/charts/facility/range-interval-config.js';
+import { MIN_DATE } from '#lib/utils/date-range.js';
 import { hasSpotPrice } from './tracker-regions.js';
 
 /** @typedef {import('./types.js').EmissionsMode} EmissionsMode */

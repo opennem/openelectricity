@@ -1,25 +1,25 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { goto, replaceState, afterNavigate } from '$app/navigation';
+	import { goto, afterNavigate } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { building } from '$app/environment';
+	import { building } from '$app/env';
 	import { Flag, RotateCcw, X, Zap } from '@lucide/svelte';
-	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
+	import MapOptionsDropdown from '#lib/components/map/MapOptionsDropdown.svelte';
 	import {
 		MAP_FAB_CLASS,
 		FACILITIES_MAP_THEMES,
 		isLightMapTheme
-	} from '$lib/components/map/map-style.js';
-	import MapKey from '$lib/components/map/MapKey.svelte';
-	import { allBandsVisible } from '$lib/facilities/transmission-bands.js';
+	} from '#lib/components/map/map-style.js';
+	import MapKey from '#lib/components/map/MapKey.svelte';
+	import { allBandsVisible } from '#lib/facilities/transmission-bands.js';
 	import DataCentresLegend from './_components/DataCentresLegend.svelte';
 	import { normaliseMetric, metricMax } from './_utils/normalise-metric.js';
 	import { capacityLegendStops } from './_utils/marker-radius.js';
-	import Meta from '$lib/components/Meta.svelte';
-	import Skeleton from '$lib/components/Skeleton.svelte';
-	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
-	import formatValue from '$lib/facilities/format-value.js';
+	import Meta from '#lib/components/Meta.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
+	import LogoMarkLoader from '#lib/components/LogoMarkLoader.svelte';
+	import formatValue from '#lib/facilities/format-value.js';
 	import getUnitYear from './_utils/get-unit-year';
 	import {
 		statusColours,
@@ -30,15 +30,15 @@
 		FUEL_TECH_VALUES,
 		parseFuelTechsParam,
 		normaliseViewParam
-	} from '$lib/facilities/filters.js';
+	} from '#lib/facilities/filters.js';
 	import {
 		serialiseSelection,
 		parseSelection,
 		isDefaultSelection
-	} from '$lib/facilities/filter-options.js';
+	} from '#lib/facilities/filter-options.js';
 	import { facilitiesToCsv } from './_utils/facilities-csv.js';
 	import { sortFacilities } from './_utils/sort-facilities';
-	import { downloadCsv } from '$lib/utils/download-csv.js';
+	import { downloadCsv } from '#lib/utils/download-csv.js';
 
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
@@ -48,31 +48,31 @@
 	import YearAnimationOverlay from './_components/YearAnimationOverlay.svelte';
 	import MobileFacilitiesSheet from './_components/MobileFacilitiesSheet.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
-	import FacilityPanelHeader from '$lib/components/facilities/FacilityPanelHeader.svelte';
+	import FacilityPanelHeader from '#lib/components/facilities/FacilityPanelHeader.svelte';
 	import FacilityPanelFooter from './_components/FacilityPanelFooter.svelte';
 	import DataCentreDetailPanel from './_components/DataCentreDetailPanel.svelte';
 	import DataCentrePanelHeader from './_components/DataCentrePanelHeader.svelte';
-	import { loadDataCentreFacilities } from '$lib/facilities/data-centres.js';
+	import { loadDataCentreFacilities } from '#lib/facilities/data-centres.js';
 	import {
 		FullscreenLayout,
 		FullscreenContainer,
 		FullscreenFooter,
 		pageShortcuts
-	} from '$lib/components/fullscreen';
-	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
-	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
-	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
-	import IconPlus from '$lib/icons/Plus.svelte';
-	import IconMinus from '$lib/icons/Minus.svelte';
-	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
-	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
+	} from '#lib/components/fullscreen/index.js';
+	import { ResizablePanel } from '#lib/components/ui/resizable-panel/index.js';
+	import { BottomSheet } from '#lib/components/ui/bottom-sheet/index.js';
+	import IconChevronLeft from '#lib/icons/ChevronLeft.svelte';
+	import IconPlus from '#lib/icons/Plus.svelte';
+	import IconMinus from '#lib/icons/Minus.svelte';
+	import { createDragHandler, DragHandle } from '#lib/components/ui/panel/index.js';
+	import ShortcutsToast from '#lib/components/ShortcutsToast.svelte';
 	import {
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits,
 		getFacilityCapacity,
 		withBatteryView
-	} from '$lib/facilities/units.js';
-	import { getUnitCapacity, sumUnitCapacities } from '$lib/utils/capacity';
+	} from '#lib/facilities/units.js';
+	import { getUnitCapacity, sumUnitCapacities } from '#lib/utils/capacity.js';
 	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
 	import { fetchFacilityDetail, peekFacilityDetail } from './_utils/fetch-facility-detail.js';
 	import { fetchAllFacilities } from './_utils/fetch-all-facilities.js';
@@ -88,10 +88,10 @@
 		isFullscreenUrl,
 		toggleFullscreenMode,
 		windowedHref
-	} from '$lib/utils/fullscreen-mode.js';
-	import { deriveCard } from '$lib/og/facility-card-data.js';
-	import { isFeatureEnabled } from '$lib/stores/app.js';
-	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
+	} from '#lib/utils/fullscreen-mode.js';
+	import { deriveCard } from '#lib/og/facility-card-data.js';
+	import { isFeatureEnabled } from '#lib/stores/app.js';
+	import { getFueltechColor, needsDarkText } from '#lib/utils/fueltech-display.js';
 
 	let { data } = $props();
 
@@ -123,15 +123,16 @@
 	const loadsFeature =
 		isFeatureEnabled('facility_loads') ||
 		(!building && page.url.searchParams.get('facility_loads') === 'true');
+
 	// URL-enabled overrides must survive filter navigations (buildUrl
 	// reconstructs the URL from scratch).
 	const loadsFeatureViaUrl = loadsFeature && !isFeatureEnabled('facility_loads');
 
 	// URL parsers for the client-side filter state — shared between the $state
 	// initialisers below and the afterNavigate re-sync, so the two can't drift.
-	/** @param {URLSearchParams} params */
+	/** @param {Pick<URLSearchParams, 'get'>} params */
 	const parseShowLoads = (params) => loadsFeature && params.get('datacentres') === 'true';
-	/** @param {URLSearchParams} params */
+	/** @param {Pick<URLSearchParams, 'get'>} params */
 	const parseLoadStatuses = (params) =>
 		parseSelection(params.get('load_statuses'), DEFAULT_LOAD_STATUSES).filter((s) =>
 			ALL_LOAD_STATUSES.includes(s)
@@ -341,6 +342,7 @@
 	let selectedFacility = $derived.by(() => {
 		const code =
 			optimisticCode !== undefined ? optimisticCode : page.url.searchParams.get('facility');
+
 		return code ? (lookupFacilities?.find((f) => f.code === code) ?? null) : null;
 	});
 
@@ -666,7 +668,10 @@
 	// next microtask. Any state changes during hydration will be picked up by
 	// the next user interaction and synced to the URL then.
 	let routerReady = $state(false);
-	afterNavigate(() => {
+
+	afterNavigate(({ shallow, type }) => {
+		if (shallow && type === 'goto') return;
+
 		// Any real navigation (back/forward, filter refetch) ends play mode so
 		// the restored URL's filters take effect again — without restoring the
 		// pre-play map state, since the navigated-to URL defines it. Facility
@@ -730,7 +735,7 @@
 	 */
 	function updateMapOptionsUrl() {
 		if (!routerReady) return;
-		const params = new URLSearchParams(page.url.searchParams);
+		const params = new URLSearchParams(page.url.search);
 
 		// Theme: omit Voyager, the default.
 		if (mapTheme !== 'voyager') {
@@ -822,7 +827,7 @@
 		}
 
 		const newUrl = `${page.url.pathname}?${params.toString()}`;
-		replaceState(newUrl, {});
+		goto(newUrl, { shallow: true, replace: true });
 	}
 	/** @type {*} */
 	let mapRef = $state(null);
@@ -1123,8 +1128,8 @@
 	 */
 	function navigateWithRefetch(params) {
 		goto(buildUrl(params), {
-			noScroll: true,
-			invalidateAll: true
+			reset: false,
+			refreshAll: true
 		});
 	}
 
@@ -1134,7 +1139,7 @@
 	 * @param {NavParams} params
 	 */
 	function navigateWithoutRefetch(params) {
-		replaceState(buildUrl(params), {});
+		goto(buildUrl(params), { shallow: true, replace: true });
 	}
 
 	/** Toggle app fullscreen (hide/show the global Nav/Footer chrome). Desktop
@@ -1422,7 +1427,7 @@
 	image="/img/facilities-preview.jpg"
 />
 
-{#snippet facilityActionBar(/** @type {boolean} */ darkText)}
+{#snippet facilityActionBar(darkText = false)}
 	<!-- Sits on the header colour wash; the close button aligns with the header
 	     content's padding and adapts to the wash's light/dark scheme for contrast. -->
 	<div class="flex items-center justify-end pt-8 pr-8">
@@ -1555,9 +1560,7 @@
 					style="--list-w: {listPaneWidth}px"
 				>
 					{#if viewLoading || (displayFacilities.length === 0 && loadsPending)}
-						<div class="flex-1 flex items-center justify-center">
-							<LogoMarkLoader />
-						</div>
+						<div class="flex-1 flex items-center justify-center"><LogoMarkLoader /></div>
 					{:else if displayFacilities.length === 0 && !playModeActive}
 						<!-- Under "ticked = shown" semantics an empty selection is a
 						     legitimate dead end — make it legible and easy to leave. -->
@@ -1846,9 +1849,7 @@
 							</div>
 
 							{#if showLoads}
-								<div class="absolute bottom-4 right-4 z-10">
-									<DataCentresLegend {mapTheme} />
-								</div>
+								<div class="absolute bottom-4 right-4 z-10"><DataCentresLegend {mapTheme} /></div>
 							{/if}
 						{/if}
 
@@ -1872,7 +1873,7 @@
 								{#snippet header()}
 									{#if detailFacility?.isLoad}
 										<DataCentrePanelHeader facility={detailFacility}>
-											{#snippet topBar(/** @type {boolean} */ darkText)}
+											{#snippet topBar(darkText = false)}
 												{#if selectedFacility}
 													{@render facilityActionBar(darkText)}
 												{/if}
@@ -1886,7 +1887,7 @@
 											dominantColour={detailColour}
 											darkText={detailDarkText}
 										>
-											{#snippet topBar(/** @type {boolean} */ darkText)}
+											{#snippet topBar(darkText = false)}
 												{#if selectedFacility}
 													{@render facilityActionBar(darkText)}
 												{/if}
@@ -1962,7 +1963,7 @@
 						{#snippet header()}
 							{#if selectedFacility && detailFacility?.isLoad}
 								<DataCentrePanelHeader facility={detailFacility}>
-									{#snippet topBar(/** @type {boolean} */ darkText)}
+									{#snippet topBar(darkText = false)}
 										{@render facilityActionBar(darkText)}
 									{/snippet}
 								</DataCentrePanelHeader>
@@ -1975,7 +1976,7 @@
 									darkText={detailDarkText}
 									photoUrl={facilityPhotos[selectedFacility.code] ?? null}
 								>
-									{#snippet topBar(/** @type {boolean} */ darkText)}
+									{#snippet topBar(darkText = false)}
 										{@render facilityActionBar(darkText)}
 									{/snippet}
 								</FacilityPanelHeader>

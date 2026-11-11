@@ -1,6 +1,6 @@
 <script>
-	import darken from '$lib/utils/colour-darken';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import darken from '#lib/utils/colour-darken.js';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 	import { groupOptions } from '../page-data-options/groups';
 	import { getFiltersContext } from '../states/filters.svelte';
 

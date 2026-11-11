@@ -1,4 +1,4 @@
-import { convert, formatSI } from '$lib/utils/si-units.js';
+import { convert, formatSI } from '#lib/utils/si-units.js';
 
 const AUTO_GWH_THRESHOLD_MWH = 100_000;
 

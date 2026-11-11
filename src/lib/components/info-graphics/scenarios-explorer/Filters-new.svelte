@@ -4,16 +4,16 @@
 	import { getContext } from 'svelte';
 	import lzString from 'lz-string';
 
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 
-	import Switch from '$lib/components/Switch.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import IconPlus from '$lib/icons/Plus.svelte';
-	import IconMinus from '$lib/icons/Minus.svelte';
-	import IconShare from '$lib/icons/Share.svelte';
-	import IconArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
+	import Switch from '#lib/components/Switch.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
+	import IconPlus from '#lib/icons/Plus.svelte';
+	import IconMinus from '#lib/icons/Minus.svelte';
+	import IconShare from '#lib/icons/Share.svelte';
+	import IconArrowDownTray from '#lib/icons/ArrowDownTray.svelte';
 
 	import Selection from './Selection.svelte';
 
@@ -62,7 +62,7 @@
 	);
 	run(() => {
 		if (browser) {
-			let query = new URLSearchParams($page.url.searchParams.toString());
+			let query = new URLSearchParams(page.url.searchParams.toString());
 			query.set('filters', compressedQuery);
 			goto(`?${query.toString()}#filters`);
 		}
@@ -91,8 +91,8 @@
 		const keepSelectedGroup =
 			(prevView === 'region' && view === 'scenario') ||
 			(prevView === 'scenario' && view === 'region');
-		// console.log('prev', prevView, 'view', view, 'shouldUpdate', keepSelectedGroup);
 
+		// console.log('prev', prevView, 'view', view, 'shouldUpdate', keepSelectedGroup);
 		if (keepSelectedGroup) return;
 		if (view === 'technology') {
 			$selectedGroup = dataTechnologyGroupOptions[0].value;

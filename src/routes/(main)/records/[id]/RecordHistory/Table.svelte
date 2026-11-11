@@ -1,9 +1,9 @@
 <script>
 	import { untrack } from 'svelte';
-	import getContext from '$lib/utils/get-context.js';
-	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
-	import { getFormattedDate, getFormattedTime } from '$lib/utils/formatters.js';
-	import { intlTimeZone } from '$lib/utils/date-format.js';
+	import getContext from '#lib/utils/get-context.js';
+	import formatDateBasedOnInterval from '#lib/utils/formatters-data-interval.js';
+	import { getFormattedDate, getFormattedTime } from '#lib/utils/formatters.js';
+	import { intlTimeZone } from '#lib/utils/date-format.js';
 	import { xTickValueFormatters } from './helpers/config';
 	/**
 	 * @typedef {Object} Props

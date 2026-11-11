@@ -14,8 +14,8 @@
 
 import { DEFAULT_MINI_METRIC, MINI_METRIC_OPTIONS } from '../map-minis.js';
 import { DEFAULT_REGION, TRACKER_REGION_OPTIONS } from '../tracker-regions.js';
-import { MAP_THEMES } from '$lib/components/map/map-style.js';
-import { icFromSlug } from '$lib/flows/region-geo.js';
+import { MAP_THEMES } from '#lib/components/map/map-style.js';
+import { icFromSlug } from '#lib/flows/region-geo.js';
 
 const REGION_VALUES = TRACKER_REGION_OPTIONS.map((r) => r.value);
 

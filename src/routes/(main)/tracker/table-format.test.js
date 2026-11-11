@@ -12,7 +12,7 @@ import {
 	EMPTY_CELL,
 	formatPercentageValue,
 	splitTableLabel
-} from '$lib/components/charts/card/cell-format.js';
+} from '#lib/components/charts/card/cell-format.js';
 
 describe('formatTablePower', () => {
 	it('keeps one decimal strictly inside the displayed -10 to 10 range', () => {

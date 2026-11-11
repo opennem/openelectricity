@@ -1,18 +1,18 @@
 <script>
 	import { onMount, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { browser } from '$app/environment';
-	import { isSafari } from '$lib/utils/browser-detect';
-	import { streamedState } from '$lib/utils/streamed-state.svelte.js';
+	import { browser } from '$app/env';
+	import { isSafari } from '#lib/utils/browser-detect.js';
+	import { streamedState } from '#lib/utils/streamed-state.svelte.js';
 
-	import { showToast } from '$lib/stores/toast';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import Meta from '$lib/components/Meta.svelte';
-	import Skeleton from '$lib/components/Skeleton.svelte';
-	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
-	import InfoGraphicNem7DayGenerationV2 from '$lib/components/info-graphics/nem-7-day-generation-v2/index.svelte';
-	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
-	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
+	import { showToast } from '#lib/stores/toast.js';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
+	import LogoMarkLoader from '#lib/components/LogoMarkLoader.svelte';
+	import InfoGraphicNem7DayGenerationV2 from '#lib/components/info-graphics/nem-7-day-generation-v2/index.svelte';
+	import InfoGraphicFossilFuelsRenewables from '#lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
+	import ArticleCard from '#lib/components/articles/ArticleCard.svelte';
 	import PinnedRecords from './records/components/PinnedRecords.svelte';
 	import { regions } from './records/page-data-options/filters.js';
 
@@ -31,7 +31,7 @@
 	// load() so the OE fetch never gates TTFB) — resolved into state so on
 	// re-navigation the old chart persists until the new data lands instead of
 	// flashing back to the skeleton.
-	/** @type {{ readonly current: import('$lib/oe-api/renewables-cache.server').RenewablesEnvelope | null }} */
+	/** @type {{ readonly current: import('#lib/oe-api/renewables-cache.server.js').RenewablesEnvelope | null }} */
 	const renewablesResult = streamedState(() => data.renewablesInput);
 
 	let renewablesInput = $derived(renewablesResult.current?.data ?? null);
@@ -137,7 +137,7 @@
 				if (entries[0].isIntersecting) {
 					Promise.all([
 						fetch('/api/system-snapshot').then((r) => (r.ok ? r.json() : null)),
-						import('$lib/components/info-graphics/system-snapshot/index.svelte')
+						import('#lib/components/info-graphics/system-snapshot/index.svelte')
 					])
 						.then(([snapshot, module]) => {
 							systemSnapshot = snapshot;
@@ -182,7 +182,7 @@
 		const scenariosObserver = new IntersectionObserver(
 			(entries) => {
 				if (entries[0].isIntersecting) {
-					import('$lib/components/info-graphics/scenarios-explorer/homepage/Preview.svelte').then(
+					import('#lib/components/info-graphics/scenarios-explorer/homepage/Preview.svelte').then(
 						(module) => {
 							ScenariosPreviewComponent = module.default;
 							showScenarios = true;
@@ -354,9 +354,7 @@
 		{#if hasArticles && analysisArticles.length > 0}
 			<div class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8">
 				{#each analysisArticles as article (article._id)}
-					<div class="snap-start shrink-0 w-[290px]">
-						<ArticleCard {article} />
-					</div>
+					<div class="snap-start shrink-0 w-[290px]"><ArticleCard {article} /></div>
 				{/each}
 			</div>
 		{:else}

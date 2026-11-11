@@ -23,16 +23,16 @@ import {
 	getMetricIntervalForDays,
 	getHysteresisTarget,
 	getDisplayIntervalForDays
-} from '$lib/utils/metric-interval';
+} from '#lib/utils/metric-interval.js';
 import {
 	getIntervalSpec,
 	getPresetByDays,
 	getDefaultIntervalForRange,
 	getIntervalOptionsForDays
 } from './range-interval-config.js';
-import { MIN_DATE } from '$lib/utils/date-range';
-import { toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
-import { createEchoGuard } from '$lib/components/charts/v2/echo-guard.js';
+import { MIN_DATE } from '#lib/utils/date-range.js';
+import { toNetworkDateString } from '#lib/components/charts/v2/network-time.js';
+import { createEchoGuard } from '#lib/components/charts/v2/echo-guard.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 /**
  * Track a named Fathom event. `window.fathom` may be absent (the deferred CDN

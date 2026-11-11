@@ -1,6 +1,6 @@
 import { setContext, getContext } from 'svelte';
 import { FiltersState, setFiltersContext, getFiltersContext } from '../states/filters.svelte';
-import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
+import ChartStore from '#lib/components/charts/stores/chart.svelte.js';
 import { chartCxtsOptions, dateBrushCxtOptions } from './config';
 
 /**

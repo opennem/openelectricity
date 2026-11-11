@@ -13,7 +13,7 @@
  * start times or lengths can never land on the wrong row.
  */
 
-import { stripDateTimezone } from '$lib/utils/date-format.js';
+import { stripDateTimezone } from '#lib/utils/date-format.js';
 
 /**
  * @typedef {Object} CollectSeriesConfig

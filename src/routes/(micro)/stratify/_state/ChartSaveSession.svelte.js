@@ -14,16 +14,16 @@
  * banner, and `pullIn()` merges it the same way a save does.
  *
  * It also holds what the current user may do with the chart (`access`, from
- * `$lib/stratify/chart-permissions.js`) and who it is shared with, since
+ * `#lib/stratify/chart-permissions.js`) and who it is shared with, since
  * sharing changes move the chart's `_rev` too.
  *
  * Shared through context so the header actions and the Share panel use the
  * same base, status, permissions and conflict.
  */
 
-import { diffSnapshots, getChartField, mergeFields } from '$lib/stratify/chart-fields.js';
-import { normaliseSnapshot } from '$lib/stratify/chart-data.js';
-import { canAccess } from '$lib/stratify/chart-permissions.js';
+import { diffSnapshots, getChartField, mergeFields } from '#lib/stratify/chart-fields.js';
+import { normaliseSnapshot } from '#lib/stratify/chart-data.js';
+import { canAccess } from '#lib/stratify/chart-permissions.js';
 import {
 	ApiError,
 	addCollaborator,
@@ -82,7 +82,7 @@ export const HEAD_POLL_MS = 30_000;
  * @property {typeof getChartHead} getChartHead
  */
 
-/** @typedef {import('$lib/stratify/chart-permissions.js').ChartAccess} ChartAccess */
+/** @typedef {import('#lib/stratify/chart-permissions.js').ChartAccess} ChartAccess */
 /** @typedef {import('../_utils/api.js').Collaborator} Collaborator */
 
 /** @type {SaveApi} */
@@ -169,7 +169,7 @@ export default class ChartSaveSession {
 
 	/**
 	 * Whether the current user may perform an action on this chart.
-	 * @param {import('$lib/stratify/chart-permissions.js').ChartAction} action
+	 * @param {import('#lib/stratify/chart-permissions.js').ChartAction} action
 	 */
 	can(action) {
 		return canAccess(this.access, action);

@@ -25,12 +25,12 @@
  * - capacity_max: maximum capacity in MW (client-side filter)
  * - facility: selected facility code for detail view
  *
- * See $lib/server/facilities-server-cache.js for caching implementation
+ * See #lib/server/facilities-server-cache.js for caching implementation
  */
 
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 import { redirect } from '@sveltejs/kit';
-import { getCachedFacilities, setCachedFacilities } from '$lib/server/facilities-server-cache.js';
+import { getCachedFacilities, setCachedFacilities } from '#lib/server/facilities-server-cache.js';
 import { expandFuelTechs } from './_utils/fuel-tech-map.js';
 import { fetchFacilityPhotos } from './_utils/fetch-facility-photos.js';
 import {
@@ -39,11 +39,11 @@ import {
 	FUEL_TECH_VALUES,
 	parseFuelTechsParam,
 	normaliseViewParam
-} from '$lib/facilities/filters.js';
-import { parseSelection, isDefaultSelection } from '$lib/facilities/filter-options.js';
+} from '#lib/facilities/filters.js';
+import { parseSelection, isDefaultSelection } from '#lib/facilities/filter-options.js';
 // Codes with a committed `static/og/facility/<code>.jpg`; lets the Tiles view show
 // the build-generated card and fall back to a live card for the rest.
-import cardCodes from '$lib/server/og/facility-card-codes.json';
+import cardCodes from '#lib/server/og/facility-card-codes.json';
 
 /**
  * @param {any[] | null} facilities

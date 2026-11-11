@@ -1,6 +1,6 @@
-import Statistic from '$lib/utils/Statistic';
-import TimeSeries from '$lib/utils/TimeSeries';
-import parseInterval from '$lib/utils/intervals';
+import Statistic from '#lib/utils/Statistic/index.js';
+import TimeSeries from '#lib/utils/TimeSeries/index.js';
+import parseInterval from '#lib/utils/intervals.js';
 import { fuelTechMap, orderMap, labelReducer } from './groups';
 
 /**

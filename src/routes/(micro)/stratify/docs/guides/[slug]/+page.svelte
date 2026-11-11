@@ -1,7 +1,7 @@
 <script>
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import Meta from '$lib/components/Meta.svelte';
+	import Meta from '#lib/components/Meta.svelte';
 
 	/** @type {{ data: { guide: Record<string, any>, previous: Record<string, any> | null, next: Record<string, any> | null } }} */
 	let { data } = $props();

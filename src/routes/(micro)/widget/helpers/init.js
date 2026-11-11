@@ -1,4 +1,4 @@
-import { ChartStore } from '$lib/components/charts/v2';
+import { ChartStore } from '#lib/components/charts/v2/index.js';
 import { FiltersState, setFiltersContext, getFiltersContext } from '../stores/filters.svelte';
 
 /**

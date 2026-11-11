@@ -1,6 +1,6 @@
-import { getScenarioJson, getScenarios } from '$lib/scenarios';
-import { getHistory } from '$lib/opennem';
-import parser from '$lib/opennem/parser';
+import { getScenarioJson, getScenarios } from '#lib/scenarios/index.js';
+import { getHistory } from '#lib/opennem/index.js';
+import parser from '#lib/opennem/parser.js';
 
 import { covertHistoryDataToTWh, mergeHistoricalEmissionsData } from './utils';
 

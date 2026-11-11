@@ -1,6 +1,6 @@
 <script>
-	import { colourReducer } from '$lib/stores/theme';
-	import { calculateRenewables } from '$lib/oe-api/calculate-renewables';
+	import { colourReducer } from '#lib/stores/theme.js';
+	import { calculateRenewables } from '#lib/oe-api/calculate-renewables.js';
 
 	import Chart from './Chart.svelte';
 

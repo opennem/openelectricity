@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+	/** @type {EdgeRuntime | undefined} The runtime `edgeRuntime()` hands the route. */
+	runtime: undefined,
 	verifyAdmin: vi.fn(),
 	getMarket: vi.fn(),
 	getNetworkData: vi.fn()
 }));
 
-vi.mock('$lib/auth/clerk-server.js', () => ({ verifyAdmin: mocks.verifyAdmin }));
+vi.mock('#lib/auth/clerk-server.js', () => ({ verifyAdmin: mocks.verifyAdmin }));
 vi.mock('openelectricity', () => ({
 	OpenElectricityClient: class {
 		getMarket = mocks.getMarket;
@@ -14,6 +16,8 @@ vi.mock('openelectricity', () => ({
 	},
 	NoDataFound: class NoDataFound extends Error {}
 }));
+
+vi.mock('#lib/server/edge-runtime.js', () => ({ edgeRuntime: () => mocks.runtime }));
 
 import { GET } from './+server.js';
 
@@ -37,7 +41,7 @@ function fakePlatform() {
 	return {
 		store,
 		waited,
-		platform: /** @type {App.Platform} */ ({
+		platform: /** @type {EdgeRuntime} */ ({
 			caches: {
 				default: {
 					match: async (/** @type {string} */ key) => {
@@ -62,11 +66,11 @@ function fakePlatform() {
 function request(key, platform) {
 	const url = new URL('https://example.test/api/admin/network-cache/entry');
 	if (key !== null) url.searchParams.set('key', key);
+	mocks.runtime = platform;
 	return GET(
 		/** @type {any} */ ({
 			request: new Request('https://example.test/api/admin/network-cache/entry'),
-			url,
-			platform
+			url
 		})
 	);
 }

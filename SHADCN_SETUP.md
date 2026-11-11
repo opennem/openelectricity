@@ -41,9 +41,9 @@ npx shadcn-svelte@latest add [component-name]
 
 ```svelte
 <script>
-	import { cn } from '$lib/utils';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import Card from '$lib/components/ui/card/card.svelte';
+	import { cn } from '#lib/utils/index.js';
+	import Button from '#lib/components/ui/button/button.svelte';
+	import Card from '#lib/components/ui/card/card.svelte';
 	import { Plus } from '@lucide/svelte';
 </script>
 

@@ -2,11 +2,11 @@
  * Shared series colour helpers for chart components.
  *
  * Chart series fall back to a neutral grey for unknown fuel techs — distinct
- * from `fuelTechColour` in `$lib/fuel_techs.js`, whose white fallback the
+ * from `fuelTechColour` in `#lib/fuel_techs.js`, whose white fallback the
  * info-graphics rely on.
  */
 
-import { fuelTechColourMap } from '$lib/theme/openelectricity';
+import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
 
 export const SERIES_FALLBACK_COLOUR = '#888888';
 

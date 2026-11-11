@@ -1,6 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
-	import Button from '$lib/components/form-elements/Button2.svelte';
+	import Button from '#lib/components/form-elements/Button2.svelte';
 	import {
 		scenarioLabels,
 		scenarioSummary,

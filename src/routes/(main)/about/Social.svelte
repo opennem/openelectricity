@@ -1,7 +1,7 @@
 <script>
-	import TwitterX from '$lib/icons/TwitterX.svelte';
-	import Linkedin from '$lib/icons/Linkedin.svelte';
-	import GlobeAlt from '$lib/icons/GlobeAlt.svelte';
+	import TwitterX from '#lib/icons/TwitterX.svelte';
+	import Linkedin from '#lib/icons/Linkedin.svelte';
+	import GlobeAlt from '#lib/icons/GlobeAlt.svelte';
 
 	/**
 	 * @typedef {Object} Props

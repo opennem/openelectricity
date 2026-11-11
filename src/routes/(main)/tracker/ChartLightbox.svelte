@@ -3,8 +3,8 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import X from '@lucide/svelte/icons/x';
 	import { MediaQuery } from 'svelte/reactivity';
-	import Modal from '$lib/components/Modal.svelte';
-	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
+	import Modal from '#lib/components/Modal.svelte';
+	import { BELOW_TABLET_QUERY } from '#lib/utils/fullscreen-mode.js';
 
 	/**
 	 * ChartLightbox — one chart enlarged over the page, like a photo lightbox:
