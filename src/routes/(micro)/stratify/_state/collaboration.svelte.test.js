@@ -226,7 +226,8 @@ async function sharedChart({ viewer = false } = {}) {
 	const sanity = createFakeSanity();
 	const { _id: chartId } = sanity.createChart({ csvText: CSV, title: 'Generation' }, 'owner');
 	/** @type {Array<[string, 'editor' | 'viewer']>} */
-	const members = [['editor', 'editor'], ...(viewer ? [['viewer', 'viewer']] : [])];
+	const members = [['editor', 'editor']];
+	if (viewer) members.push(['viewer', 'viewer']);
 	for (const [userId, role] of members) {
 		await updateCollaborators(sanity.client, {
 			id: chartId,
