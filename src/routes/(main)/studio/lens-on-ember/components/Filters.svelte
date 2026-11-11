@@ -2,8 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { getFiltersContext } from '../states/filters.svelte';
 
-	import Switch from '$lib/components/Switch.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import Switch from '#lib/components/Switch.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 
 	let cxt = getFiltersContext();
 
@@ -15,7 +15,7 @@
 		if (cxt.selectedRegion && cxt.selectedRange && cxt.selectedInterval) {
 			let intervalQuery = cxt.isYearly ? '' : `&interval=${cxt.selectedInterval}`;
 			goto(`?region=${cxt.selectedRegion}&range=${cxt.selectedRange}${intervalQuery}`, {
-				noScroll: true
+				reset: false
 			});
 		}
 	});

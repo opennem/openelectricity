@@ -8,8 +8,8 @@ const KEY = Symbol('facility-financial-data');
  * flows through from the provider's state.
  *
  * @typedef {Object} FacilityFinancialDataContextValue
- * @property {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} priceChartStore
- * @property {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} mvChartStore
+ * @property {import('#lib/components/charts/v2/ChartStore.svelte.js').default | null} priceChartStore
+ * @property {import('#lib/components/charts/v2/ChartStore.svelte.js').default | null} mvChartStore
  * @property {any[]} priceLoadingRanges
  * @property {any[]} mvLoadingRanges
  * @property {boolean} showLoadingOverlay
@@ -29,7 +29,7 @@ const KEY = Symbol('facility-financial-data');
  * @property {(factor: number, centerMs: number) => void} handleZoom
  * @property {() => void} zoomIn - Button zoom step — settles (stale-fetch reconcile) immediately
  * @property {() => void} zoomOut - Button zoom step — settles immediately
- * @property {(chart: import('$lib/components/charts/v2/ChartStore.svelte.js').default) => {
+ * @property {(chart: import('#lib/components/charts/v2/ChartStore.svelte.js').default) => {
  *   data: any,
  *   key: string | undefined,
  *   value: number | undefined,
@@ -39,7 +39,7 @@ const KEY = Symbol('facility-financial-data');
  *   date: string
  * } | null} getTooltipData
  * @property {(value: number) => string} formatPriceValue
- * @property {(chart: import('$lib/components/charts/v2/ChartStore.svelte.js').default, value: number) => string} formatDollarValue
+ * @property {(chart: import('#lib/components/charts/v2/ChartStore.svelte.js').default, value: number) => string} formatDollarValue
  */
 
 /**

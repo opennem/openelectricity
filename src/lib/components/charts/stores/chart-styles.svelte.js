@@ -1,4 +1,4 @@
-import getSeqId from '$lib/utils/html-id-gen';
+import getSeqId from '#lib/utils/html-id-gen.js';
 
 export default class ChartStylesState {
 	/** @type {boolean} */

@@ -2,7 +2,7 @@
 	import { untrack } from 'svelte';
 	import { LayerCake, Svg, flatten, stack, groupLonger } from 'layercake';
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
-	import getContext from '$lib/utils/get-context.js';
+	import getContext from '#lib/utils/get-context.js';
 	import StackedAreaLine from './elements2/StackedAreaLine.svelte';
 	import HoverLayer from './elements2/HoverLayer.svelte';
 	import AxisY from './elements/AxisY.svelte';
@@ -24,7 +24,7 @@
 	/** @type {Props} */
 	let { cxtKey, onmousemove, onmouseout, onpointerup } = $props();
 	// Get context once during initialization (cxtKey is stable)
-	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
+	/** @type {import('#lib/components/charts/stores/chart.svelte.js').default} */
 	let cxt = untrack(() => getContext(cxtKey));
 	let chartStyles = cxt.chartStyles;
 	let id = chartStyles.htmlId;

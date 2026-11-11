@@ -7,19 +7,19 @@ const mocks = vi.hoisted(() => ({
 	restoreChartVersion: vi.fn()
 }));
 
-vi.mock('$lib/sanity-cms.js', () => ({
+vi.mock('#lib/sanity-cms.js', () => ({
 	createCmsClient: () => ({ fetch: mocks.fetch })
 }));
 
-vi.mock('$lib/auth/clerk-server.js', () => ({
+vi.mock('#lib/auth/clerk-server.js', () => ({
 	verifyAdmin: mocks.verifyAdmin
 }));
 
-vi.mock('$lib/server/stratify/revisions.js', () => ({
+vi.mock('#lib/server/stratify/revisions.js', () => ({
 	listRevisions: mocks.listRevisions
 }));
 
-vi.mock('$lib/server/stratify/save-chart.js', () => ({
+vi.mock('#lib/server/stratify/save-chart.js', () => ({
 	restoreChartVersion: mocks.restoreChartVersion
 }));
 

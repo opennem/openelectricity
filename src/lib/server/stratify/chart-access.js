@@ -1,19 +1,19 @@
 /**
  * Decides a user's access to a Stratify chart and loads charts for API
  * routes. What each access level allows lives in
- * `$lib/stratify/chart-permissions.js`.
+ * `#lib/stratify/chart-permissions.js`.
  *
  * Collaborators are stored on the chart as a native array,
  * `collaborators: [{ _key, userId, email, role, addedAt, addedBy }]`.
  */
 
 import { json } from '@sveltejs/kit';
-import { createCmsClient } from '$lib/sanity-cms.js';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
-import { canAccess } from '$lib/stratify/chart-permissions.js';
+import { createCmsClient } from '#lib/sanity-cms.js';
+import { verifyAdmin } from '#lib/auth/clerk-server.js';
+import { canAccess } from '#lib/stratify/chart-permissions.js';
 
-/** @typedef {import('$lib/stratify/chart-permissions.js').ChartAccess} ChartAccess */
-/** @typedef {import('$lib/stratify/chart-permissions.js').ChartAction} ChartAction */
+/** @typedef {import('#lib/stratify/chart-permissions.js').ChartAccess} ChartAccess */
+/** @typedef {import('#lib/stratify/chart-permissions.js').ChartAction} ChartAction */
 
 /**
  * @typedef {Awaited<ReturnType<typeof verifyAdmin>>} ChartAuth

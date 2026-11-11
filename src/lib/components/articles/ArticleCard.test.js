@@ -2,14 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import ArticleCard from './ArticleCard.svelte';
 
-vi.mock('$lib/sanity', () => ({ urlFor: vi.fn() }));
+vi.mock('#lib/sanity.js', () => ({ urlFor: vi.fn() }));
 
 describe.each(['analysis', 'milestone'])('%s article card', (articleType) => {
 	it.each([null, undefined, '', 'invalid', '2026-02-30', '2026-09-15'])(
 		'renders a draft with publication date %s',
 		(publishDate) => {
 			// Drafts may omit fields that are required on published articles.
-			const article = /** @type {import('$lib/types/article.types').Article} */ (
+			const article = /** @type {import('#lib/types/article.types.ts').Article} */ (
 				/** @type {unknown} */ ({
 					_id: 'drafts.example',
 					title: 'Example draft',

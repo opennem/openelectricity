@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
-	import { API_STATUS_URL, fetchApiStatus } from '$lib/api-status.js';
-	import ApiStatusDot from '$lib/components/ApiStatusDot.svelte';
+	import { API_STATUS_URL, fetchApiStatus } from '#lib/api-status.js';
+	import ApiStatusDot from '#lib/components/ApiStatusDot.svelte';
 
 	/**
 	 * ApiStatus — a link to the status page with a coloured dot for the current
@@ -13,7 +13,7 @@
 	 */
 	let { variant = 'default' } = $props();
 
-	/** @type {import('$lib/api-status.js').ApiStatusSummary | null} */
+	/** @type {import('#lib/api-status.js').ApiStatusSummary | null} */
 	let summary = $state(null);
 	let hover = $state(false);
 

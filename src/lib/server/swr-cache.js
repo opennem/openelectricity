@@ -29,7 +29,7 @@ const STORED_AT_HEADER = 'x-stored-at';
  *   cached value still needs no background refresh
  * @param {(value: T) => boolean} config.isCacheable whether a fetched value
  *   may be stored (return false for error envelopes so they are never cached)
- * @returns {{ get: (platform: App.Platform | undefined) => Promise<T> }}
+ * @returns {{ get: (platform: EdgeRuntime | undefined) => Promise<T> }}
  */
 export function createSwrCache({ edgeCacheKey, fetcher, isFresh, isCacheable }) {
 	/** @type {{ value: T, storedAt: number } | null} */
@@ -39,7 +39,7 @@ export function createSwrCache({ edgeCacheKey, fetcher, isFresh, isCacheable }) 
 	let inflight = null;
 
 	/**
-	 * @param {App.Platform | undefined} platform
+	 * @param {EdgeRuntime | undefined} platform
 	 * @returns {Promise<{ value: T, storedAt: number } | null>}
 	 */
 	async function readEdgeCache(platform) {
@@ -58,7 +58,7 @@ export function createSwrCache({ edgeCacheKey, fetcher, isFresh, isCacheable }) 
 	}
 
 	/**
-	 * @param {App.Platform | undefined} platform
+	 * @param {EdgeRuntime | undefined} platform
 	 * @param {T} value
 	 * @param {number} storedAt
 	 */
@@ -83,7 +83,7 @@ export function createSwrCache({ edgeCacheKey, fetcher, isFresh, isCacheable }) 
 	 * Fetch upstream and cache the result. Single-flight: concurrent callers
 	 * share one fetch. Uncacheable results fall back to the last good value.
 	 *
-	 * @param {App.Platform | undefined} platform
+	 * @param {EdgeRuntime | undefined} platform
 	 * @returns {Promise<T>}
 	 */
 	function refresh(platform) {
@@ -110,7 +110,7 @@ export function createSwrCache({ edgeCacheKey, fetcher, isFresh, isCacheable }) 
 		return inflight;
 	}
 
-	/** @param {App.Platform | undefined} platform */
+	/** @param {EdgeRuntime | undefined} platform */
 	function scheduleRefresh(platform) {
 		const pending = refresh(platform).catch(() => {});
 		// waitUntil keeps the Workers isolate alive past the response; in dev
@@ -124,7 +124,7 @@ export function createSwrCache({ edgeCacheKey, fetcher, isFresh, isCacheable }) 
 		 * (new isolate + nothing at the colo's edge cache) blocks on the fetcher;
 		 * everything else returns immediately and refreshes in the background.
 		 *
-		 * @param {App.Platform | undefined} platform
+		 * @param {EdgeRuntime | undefined} platform
 		 * @returns {Promise<T>}
 		 */
 		async get(platform) {

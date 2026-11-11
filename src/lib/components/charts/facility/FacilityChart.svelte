@@ -6,20 +6,20 @@
 	 * horizontal panning, client-side data caching, and fuel tech color coding.
 	 */
 
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
+	import { createVisibleAggregation } from '#lib/components/charts/v2/display-aggregation.js';
 	import { createFacilityDataManager } from './facility-data-manager.js';
-	import { managerKey } from '$lib/components/charts/v2/manager-stash.js';
-	import { createChartHost } from '$lib/components/charts/v2/chart-host.svelte.js';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { fuelTechNameMap } from '$lib/fuel_techs';
+	import { managerKey } from '#lib/components/charts/v2/manager-stash.js';
+	import { createChartHost } from '#lib/components/charts/v2/chart-host.svelte.js';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
 	import { analyzeUnits, unitSeriesIds } from './unit-analysis.js';
 	import { capacityAnnotations } from './capacity-annotations.js';
 	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
-	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
-	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
+	import { formatXAxis, applyFacilityTimeAxis } from '#lib/components/charts/v2/formatters.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '#lib/components/charts/v2/chart-loading-state.js';
 	import { combinedMetricsFor, buildCombinedMetricsUrl } from './energy-basis.js';
-	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
+	import { EARLIEST_DATA_MS } from '#lib/utils/date-range.js';
 	import { untrack } from 'svelte';
 	import { ianaFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
@@ -64,13 +64,13 @@
 	 * @property {number | Array<any> | ((ticks: any[]) => any[])} [yTicks] - Y-axis ticks passed through to AxisY: a count, an explicit array, or a function that thins the scale's default ticks. Omit for the AxisY default (4).
 	 * @property {boolean} [bundleDerivedMetrics] - Fetch via the combined `metric=<metric>,market_value,emissions` URL so this chart shares one request with the financial/emissions providers mounted alongside it. Only enable when those providers are present (the facility detail page); off elsewhere to avoid pulling unused metrics.
 	 * @property {boolean} [prefetchRanges] - Whether to background-prefetch the 7-day power and 1-year energy ranges after the initial load (default: true). Disable for compact consumers (e.g. the unit detail sheet) where the prefetch would duplicate the main page's cache.
-	 * @property {import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} [timeMarkers] - A comparison's A / B markers over the plot (the store's `timeMarkers`)
+	 * @property {import('#lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} [timeMarkers] - A comparison's A / B markers over the plot (the store's `timeMarkers`)
 	 * @property {(time: number) => void} [onpick] - When given, a click (or Enter) on the plot reports
 	 *   its time here instead of pinning it — a chart card's compare mode picking A and B
 	 * @property {string[]} [hiddenUnitCodes] - Unit codes whose series are hidden from the chart (e.g. toggled off in the units panel). Mapped to `<metric>_<code>` series ids on the chart store.
 	 */
 
-	/** @typedef {import('$lib/components/charts/v2/ChartDataManager.svelte.js').default} ChartDataManager */
+	/** @typedef {import('#lib/components/charts/v2/ChartDataManager.svelte.js').default} ChartDataManager */
 
 	/** @type {Props} */
 	let {
@@ -347,7 +347,7 @@
 	// ============================================
 
 	// Create chart store per facility — recreated when facility changes.
-	/** @type {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} */
+	/** @type {import('#lib/components/charts/v2/ChartStore.svelte.js').default | null} */
 	let chartStore = $derived.by(() => {
 		if (!facility) return null;
 

@@ -521,12 +521,12 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   and negatives inward, the hub and titles read the net total and the hidden
   table gains a column per layer; the breakdown passes a single layer. The hub is a
   third of the radius.
-- **Chart cards** live in `$lib/components/charts/card/` (shared with
+- **Chart cards** live in `#lib/components/charts/card/` (shared with
   `/facility/[code]`; see its README): `ChartCard`, the table view, the
   download registry and dialog, the export dataset serialisers and compare
   mode. The tracker keeps its own datasets (`tracker-export.js`) and compare
   sources (`chart-compare-sources.js`).
-- **Compare mode** (`$lib/components/charts/card/compare/`,
+- **Compare mode** (`#lib/components/charts/card/compare/`,
   `chart-compare-sources.js`) — any chart card can compare two of its buckets; see
   [Compare mode](#compare-mode).
 - **`tracker-providers.svelte.js`** — enables and coordinates the six optional
@@ -551,7 +551,7 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
   (collapse control on the outer edge, title, panel actions) and the 48px
   collapsed rail (reopen control plus any controls that must stay reachable)
   shared by the metrics pane, the fuel-tech table and the regions table.
-- **`docked-panel.svelte.js`** (shared UI helper, `$lib/components/ui/panel`)
+- **`docked-panel.svelte.js`** (shared UI helper, `#lib/components/ui/panel`)
   — a resizable pane on the shared `resize-control` (pointer and keyboard,
   teardown on unmount): bounded size, a remembered size restored after mount,
   and the open/close focus hand-off between a panel's close control and its
@@ -573,7 +573,7 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
     chart's own — and the chart's pan/zoom (✥, − / +;
     unlike the grey bar elsewhere, − / + stay while pan/zoom is engaged,
     `keepZoomWhileEngaged`). A StratumChart inside a card hands its toolbar over
-    through a chart header host (`$lib/components/charts/v2/chart-header-host.svelte.js`)
+    through a chart header host (`#lib/components/charts/v2/chart-header-host.svelte.js`)
     instead of drawing its grey `ChartHeader` bar; the card composes the same
     pieces (`ChartHeaderUnit`, `ChartOptionsMenu`, `ChartPanZoomButtons`).
   - Row 2, when a card has them: `controls` on the right — `CardToggle`
@@ -700,7 +700,7 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
 - **Data export** — the top nav's **Download data** icon, between dividers
   left of the options (⋮) menu (the menu's item on phones, which have no
   dividers; `FullscreenFilterBar` `actions`), opens
-  `DownloadDataModal` (`$lib/components/charts/card/`): a "Download as CSV" row for every chart and panel
+  `DownloadDataModal` (`#lib/components/charts/card/`): a "Download as CSV" row for every chart and panel
   on screen, each with a download button, then a "Download as XLSX" row for
   the "All charts" workbook (a Summary sheet, then one sheet per listed chart
   with data, named as the dialog lists it).
@@ -756,7 +756,7 @@ percentage denominator stated; the Regions table downloads as shown. PNG uses th
     Excel's 31-character, case-insensitive names). Timestamps are
     network-local — offset-suffixed text in CSV, real date-time cells in
     XLSX. The workbook writer (`write-excel-file`, via
-    `$lib/utils/download-xlsx.js`) is imported on demand so it stays off the
+    `#lib/utils/download-xlsx.js`) is imported on demand so it stays off the
     page bundle. `trackerFileName` names every download, with the NEM's
     `_all` scope written as `nem`: `tracker-nem-generation-3d.csv` /
     `tracker-nem-3d.xlsx`, `tracker-wem-time-of-day-coal-2026-08-31.csv`,
@@ -773,7 +773,7 @@ keep it). The custom charts (ridgelines, radial clocks and heatmaps, the
 Compare panels) read the same way through the `pointerInspect` attachment: a
 tap shows the reading, which stays until a tap elsewhere. Chart cards have no
 height handles on touch screens, so the gaps between them scroll too. The
-shared rules live in `$lib/components/charts/v2` (`elements/touch-gesture.js`,
+shared rules live in `#lib/components/charts/v2` (`elements/touch-gesture.js`,
 `elements/pointer-inspect.js`); `tests/e2e/tracker-touch.spec.js` covers them
 at phone size.
 
@@ -796,7 +796,7 @@ backdrop that closes it, and every view opens with the table closed there
 (`tracker-page.js`, `WIDE_QUERY`); docked beside the charts is for 1024px and
 up. The docked panel and rail are hidden by CSS below 1024px, where they
 aren't used, so the server render never flashes them. On touch, a long press
-on a fuel tech or region row solos it (`$lib/utils/long-press.js`), as
+on a fuel tech or region row solos it (`#lib/utils/long-press.js`), as
 ⌘/Ctrl-click does.
 
 ### Narrow screens: the top bar and controls
@@ -816,11 +816,11 @@ range). As wide as its text and centred, it lifts out over the charts with a sof
 
 The filters open in a bottom sheet over a dimmed page (`TrackerFilterSheet`),
 in the Facilities filter sheet's chrome (`ModalSheet`, in
-`$lib/components/ui/bottom-sheet`): a centred "Filters" title, a round
+`#lib/components/ui/bottom-sheet`): a centred "Filters" title, a round
 ✕ and a full-width Done in the footer. It renders the Region switch (All,
 NEM, the five states and WA, four to a row, like the range presets) and then
 the view's own `controls`, the snippet the bar shows from 768px up, in a
-filter-sheet subtree (`$lib/components/filters/filter-sheet.js`), where the
+filter-sheet subtree (`#lib/components/filters/filter-sheet.js`), where the
 shared filter controls lay themselves out as the sheet's sections:
 
 - `FilterSelect`: a flat list (the interval, the calendar period, Profile's
@@ -840,7 +840,7 @@ Every pick applies as it lands, so the charts behind update while the sheet
 is open.
 
 The shell opts its subtree into touch-sized controls (`setTouchControls()`,
-`$lib/components/ui/touch-controls.js`): below 768px pills, segmented switches,
+`#lib/components/ui/touch-controls.js`): below 768px pills, segmented switches,
 the date input and the Feedback and options buttons are 40px tall with 14px
 type, and the view dropdown opens the phone's own picker (`NativeSelect`: a
 transparent `<select>` over the pill). The popovers above 768px
@@ -857,9 +857,9 @@ last item, About, which opens a `ModalSheet` (`TrackerAboutSheet`) of grouped
 rows: the version and the API status (checked as the sheet opens, a link to
 the status page), the data sources (AEMO, APVI) and Open Electricity's
 platform, documentation and data licence. The footer and the sheet share
-their links (`$lib/components/fullscreen/site-links.js`). The shell checks the
+their links (`#lib/components/fullscreen/site-links.js`). The shell checks the
 API status on phones as the page loads, every five minutes and as About opens
-(`createApiStatusState`, `$lib/api-status-state.svelte.js`): a dot in the status
+(`createApiStatusState`, `#lib/api-status-state.svelte.js`): a dot in the status
 page's colour sits over the options button's top-right corner
 (`OptionsMenu`'s `badge`), and a row above About carries it too: the dot in
 the icon gutter (`OptionsMenuItem`'s `leading`) beside "API status", opening
@@ -1169,7 +1169,7 @@ are dropped from old links.
 Use the navigation **Analysis view** switch to select **Profile**, then
 **Stacked** or **Breakdown**, a 7/14/28-day window "to" an optional
 historical last day (one phrase: "7 days to 30/09/2026"), then a 5- or
-30-minute **Interval**, in the top nav. The last day uses the app's `DatePicker` (`$lib/components/ui/date-picker`, built on bits-ui's
+30-minute **Interval**, in the top nav. The last day uses the app's `DatePicker` (`#lib/components/ui/date-picker`, built on bits-ui's
 DatePicker: a typeable input whose calendar opens in its own popover); its
 border darkens for a past day and its calendar footer offers **Latest complete
 days**. Breakdown adds
@@ -1324,7 +1324,7 @@ interpolation caption, because the image captures the displayed chart.
 - Everything fetches through `/api/network/data`; the providers share the
   charts' request broker, LRU and gap-aware fetching. The six headless
   providers are thin specialisations of one core
-  (`$lib/components/charts/network/headless-series-provider.svelte.js`),
+  (`#lib/components/charts/network/headless-series-provider.svelte.js`),
   which owns the manager lifecycle, viewport replay and display-grain rows.
 - Individual NEM region generation responses merge the official import/export
   flow metrics into the fuel-tech series. Imports render as a positive source;
@@ -1449,7 +1449,7 @@ Daily and so on. Rolling grains compare each 12-month window with the window a
 year earlier (12, 4, 4 or 2 rows back), since neighbouring windows share most
 of their months, and a calendar-period filter compares each period with the
 same period a year earlier (its rows are already a year apart). The
-comparisons live in `growthComparison` (`$lib/utils/data-transform/growth.js`).
+comparisons live in `growthComparison` (`#lib/utils/data-transform/growth.js`).
 
 - The first visible buckets compare with rows before the view: the chart
   passes a lead-in of earlier display rows it already holds

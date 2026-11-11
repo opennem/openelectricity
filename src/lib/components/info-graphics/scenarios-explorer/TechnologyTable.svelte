@@ -1,9 +1,9 @@
 <script>
 	import { createEventDispatcher, getContext } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import Bars2 from '$lib/icons/Bars2.svelte';
+	import Bars2 from '#lib/icons/Bars2.svelte';
 	import Selection from './Selection.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 
 	import { formatValue, dataTechnologyGroupOptions } from './helpers';
 

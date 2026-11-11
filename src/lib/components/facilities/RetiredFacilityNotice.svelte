@@ -1,6 +1,6 @@
 <script>
-	import { isFullyRetired, retiredAnchorMs } from '$lib/components/charts/facility/data-end.js';
-	import { formatDateTime } from '$lib/utils/formatters';
+	import { isFullyRetired, retiredAnchorMs } from '#lib/components/charts/facility/data-end.js';
+	import { formatDateTime } from '#lib/utils/formatters.js';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 
 	/**

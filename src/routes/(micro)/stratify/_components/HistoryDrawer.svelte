@@ -1,7 +1,7 @@
 <script>
-	import { Sheet } from '$lib/components/ui/sheet';
-	import { getChartField } from '$lib/stratify/chart-fields.js';
-	import { REVISION_LIMIT } from '$lib/stratify/revision-policy.js';
+	import { Sheet } from '#lib/components/ui/sheet/index.js';
+	import { getChartField } from '#lib/stratify/chart-fields.js';
+	import { REVISION_LIMIT } from '#lib/stratify/revision-policy.js';
 	import { getStratifyContext, getChartSaveContext } from '../_state/context.js';
 	import { getRevision, listRevisions } from '../_utils/api.js';
 	import { describeDataChange, describeFieldValue, isColourValue } from '../_utils/field-values.js';

@@ -1,5 +1,5 @@
 <script>
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils/index.js';
 
 	/**
 	 * `alwaysShowGrip` keeps the five-dot grip visible at every width; by

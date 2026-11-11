@@ -1,12 +1,12 @@
 <script>
 	import { setContext, getContext } from 'svelte';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 
-	import { colourReducer } from '$lib/stores/theme';
+	import { colourReducer } from '#lib/stores/theme.js';
 
-	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
-	import { createSyncedCharts } from '$lib/components/charts/v2/sync.js';
-	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
+	import ChartStore from '#lib/components/charts/v2/ChartStore.svelte.js';
+	import { createSyncedCharts } from '#lib/components/charts/v2/sync.js';
+	import StratumChart from '#lib/components/charts/v2/StratumChart.svelte';
 
 	import { fetchTechnologyViewData } from '../../../../../routes/(main)/scenarios/page-data-options/fetch.svelte.js';
 	import processTechnology from '../../../../../routes/(main)/scenarios/page-data-options/process-technology.js';
@@ -16,7 +16,7 @@
 		defaultModelPathway
 	} from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
 	import Tooltip from '../../../../../routes/(main)/scenarios/components/Tooltip.svelte';
-	import { formatFyTickX } from '$lib/utils/formatters';
+	import { formatFyTickX } from '#lib/utils/formatters.js';
 	import {
 		chartXHighlightTicks,
 		chartXMobileHiddenTicks
@@ -68,6 +68,7 @@
 
 	// --- Derive default pathway and scenario options from selected model ---
 	let defaultPathway = $derived(defaultModelPathway[$selectedModel]);
+
 	let currentModelScenarios = $derived(
 		/** @type {Record<string, any>} */ (modelScenarios)[$selectedModel] || []
 	);
@@ -98,8 +99,9 @@
 		chart.chartOptions.allowedPrefixes = processed.allowedPrefixes || [];
 
 		const chartType = processed.chartType === 'area' ? 'stacked-area' : processed.chartType;
+
 		chart.chartOptions.selectedChartType =
-			/** @type {import('$lib/components/charts/v2/ChartOptions.svelte.js').ChartType} */ (
+			/** @type {import('#lib/components/charts/v2/ChartOptions.svelte.js').ChartType} */ (
 				chartType
 			);
 

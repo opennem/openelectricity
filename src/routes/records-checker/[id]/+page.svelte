@@ -1,7 +1,7 @@
 <script>
 	import { run } from 'svelte/legacy';
 
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
 	import { parseISO } from 'date-fns';
 
@@ -57,7 +57,7 @@
 		currentPage = page;
 		currentStartRecordIndex = (page - 1) * 100 + 1;
 
-		goto(`/records/${id}?page=${page}`, { replaceState: true });
+		goto(`/records/${id}?page=${page}`, { replace: true });
 	}
 
 	// remove seconds and time difference from timestamp
@@ -186,9 +186,9 @@
 						<!-- <td>{currentStartRecordIndex + i}</td> -->
 						<td
 							class="font-mono text-dark-grey border-r border-mid-warm-grey p-1 align-top text-left"
+							>{removeSeconds(record.interval)}</td
 						>
-							{removeSeconds(record.interval)}
-						</td>
+
 						<td class="text-right border-r border-mid-warm-grey p-1 align-top">
 							<div class="flex justify-end gap-1">
 								<span class="font-mono text-black">{auNumber.format(record.value)}</span>

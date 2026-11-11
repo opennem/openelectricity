@@ -1,5 +1,5 @@
-import { backOr } from '$lib/utils/back-navigation.js';
-import { windowedHref } from '$lib/utils/fullscreen-mode.js';
+import { backOr } from '#lib/utils/back-navigation.js';
+import { windowedHref } from '#lib/utils/fullscreen-mode.js';
 
 /**
  * Navigate back from a facility detail page, falling back to the facilities

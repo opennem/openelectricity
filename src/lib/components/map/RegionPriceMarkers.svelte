@@ -9,9 +9,9 @@
 	 * Non-interactive; regions without a live price render nothing.
 	 */
 	import { Marker } from 'svelte-maplibre-gl';
-	import { REGION_ANCHORS } from '$lib/flows/region-geo.js';
+	import { REGION_ANCHORS } from '#lib/flows/region-geo.js';
 	import { MAP_CHIP_CLASS } from './map-style.js';
-	import { displayCode, formatPrice, numberOrUndefined } from '$lib/flows/format.js';
+	import { displayCode, formatPrice, numberOrUndefined } from '#lib/flows/format.js';
 
 	/**
 	 * @type {{

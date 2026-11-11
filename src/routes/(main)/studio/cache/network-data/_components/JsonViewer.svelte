@@ -1,5 +1,5 @@
 <script>
-	import { writeToClipboard } from '$lib/utils/clipboard.js';
+	import { writeToClipboard } from '#lib/utils/clipboard.js';
 	import { onDestroy } from 'svelte';
 	import { jsonSearchMatches } from '../_lib/cache-dashboard.js';
 

@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import { color } from 'd3-color';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 	import { groupOptions } from '../page-data-options/groups-technology';
 	import TableHeader from './TableHeader.svelte';
 	import AboutData from './AboutData.svelte';

@@ -11,12 +11,12 @@ import { flushSync } from 'svelte';
 import StratifyPlotProject from './StratifyPlotProject.svelte.js';
 import ChartSaveSession from './ChartSaveSession.svelte.js';
 import { ApiError } from '../_utils/api.js';
-import { decodeChartFields } from '$lib/stratify/chart-data.js';
-import { encodeChartFields, withChartDefaults } from '$lib/stratify/chart-fields.js';
-import { getChartAccess } from '$lib/server/stratify/chart-access.js';
-import { REVISION_TYPE } from '$lib/server/stratify/revisions.js';
-import { restoreChartVersion, saveChartFields } from '$lib/server/stratify/save-chart.js';
-import { addCollaborator, updateCollaborators } from '$lib/server/stratify/collaborators.js';
+import { decodeChartFields } from '#lib/stratify/chart-data.js';
+import { encodeChartFields, withChartDefaults } from '#lib/stratify/chart-fields.js';
+import { getChartAccess } from '#lib/server/stratify/chart-access.js';
+import { REVISION_TYPE } from '#lib/server/stratify/revisions.js';
+import { restoreChartVersion, saveChartFields } from '#lib/server/stratify/save-chart.js';
+import { addCollaborator, updateCollaborators } from '#lib/server/stratify/collaborators.js';
 
 const CSV = 'date,solar\n2024-01-01,100\n2024-02-01,120';
 
@@ -144,7 +144,7 @@ function apiFor(sanity, userId) {
 	/**
 	 * The chart and the user's access to it, or a 404 as the routes give.
 	 * @param {string} id
-	 * @returns {{ chart: Record<string, any>, access: import('$lib/stratify/chart-permissions.js').ChartAccess }}
+	 * @returns {{ chart: Record<string, any>, access: import('#lib/stratify/chart-permissions.js').ChartAccess }}
 	 */
 	const accessTo = (id) => {
 		const chart = sanity.docs.get(id);
@@ -225,14 +225,16 @@ async function openBuilder(sanity, userId, chartId) {
 async function sharedChart({ viewer = false } = {}) {
 	const sanity = createFakeSanity();
 	const { _id: chartId } = sanity.createChart({ csvText: CSV, title: 'Generation' }, 'owner');
-	for (const [userId, role] of [['editor', 'editor'], ...(viewer ? [['viewer', 'viewer']] : [])]) {
+	/** @type {Array<[string, 'editor' | 'viewer']>} */
+	const members = [['editor', 'editor'], ...(viewer ? [['viewer', 'viewer']] : [])];
+	for (const [userId, role] of members) {
 		await updateCollaborators(sanity.client, {
 			id: chartId,
 			change: (list) =>
 				addCollaborator(list, {
 					userId,
 					email: `${userId}@example.com`,
-					role: /** @type {'editor' | 'viewer'} */ (role),
+					role,
 					addedBy: 'owner',
 					now: new Date()
 				}),

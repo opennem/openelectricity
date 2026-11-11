@@ -11,26 +11,26 @@
 	 */
 
 	import { untrack } from 'svelte';
-	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
+	import LogoMarkLoader from '#lib/components/LogoMarkLoader.svelte';
 	import { networkQueryKey } from './network-query.js';
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
-	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
+	import { createVisibleAggregation } from '#lib/components/charts/v2/display-aggregation.js';
+	import { formatXAxis, applyFacilityTimeAxis } from '#lib/components/charts/v2/formatters.js';
 	import {
 		formatIntervalQuantityUnit,
 		getIntervalSpec,
 		isRollingInterval
-	} from '$lib/components/charts/facility/range-interval-config.js';
+	} from '#lib/components/charts/facility/range-interval-config.js';
 	import {
 		applyBucketFilter,
 		bucketFilterKindFor,
 		bucketFilterPredicate
-	} from '$lib/components/charts/v2/bucket-filter.js';
-	import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
-	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
-	import { createChartHost } from '$lib/components/charts/v2/chart-host.svelte.js';
-	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
-	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
+	} from '#lib/components/charts/v2/bucket-filter.js';
+	import { getIntervalHours } from '#lib/components/charts/facility/interval-hours.js';
+	import ChartDataManager from '#lib/components/charts/v2/ChartDataManager.svelte.js';
+	import { createChartHost } from '#lib/components/charts/v2/chart-host.svelte.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '#lib/components/charts/v2/chart-loading-state.js';
+	import { EARLIEST_DATA_MS } from '#lib/utils/date-range.js';
 	import { processNetworkData } from './process-network-data.js';
 	import { interpolateRooftopPower } from './rooftop-interpolation.js';
 	import { topUpRooftopPower } from './rooftop-top-up.js';
@@ -40,31 +40,31 @@
 		deriveIntensityDisplayRows,
 		INTENSITY_SERIES_ID
 	} from './process-emissions-intensity.js';
-	import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
+	import { processPriceData } from '#lib/components/charts/facility/process-price-data.js';
 	import {
 		createPriceYScale,
 		formatPriceTick,
 		PRICE_Y_DOMAIN,
 		PRICE_Y_TICKS,
 		PRICE_LINEAR_RANGE
-	} from '$lib/components/charts/facility/price-y-scale.js';
+	} from '#lib/components/charts/facility/price-y-scale.js';
 	import { processMarketData } from './process-market-data.js';
 	import {
 		processPriceVw,
 		deriveVwPriceDisplayRows,
 		VW_PRICE_SERIES_ID
 	} from './process-price-vw.js';
-	import { LINE_COLOUR } from '$lib/components/charts/facility/colours.js';
+	import { LINE_COLOUR } from '#lib/components/charts/facility/colours.js';
 	import { getMarketMetricConfig } from './market-metrics.js';
 	import { getGroup, loadGroupsFor } from './groups.js';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { formatPrice } from '$lib/utils/formatters';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import { formatPrice } from '#lib/utils/formatters.js';
 	import { fetchBufferMultiplierForInterval } from '../v2/fetch-window.js';
 	import { currentIncompleteInterval } from '../v2/incomplete-interval.js';
 	import { ianaFromOffset, offsetMsFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
-	import { growthComparison } from '$lib/utils/data-transform';
-	import nighttimes from '$lib/utils/nighttimes';
+	import { growthComparison } from '#lib/utils/data-transform/index.js';
+	import nighttimes from '#lib/utils/nighttimes.js';
 	import {
 		automaticGenerationEnergyPrefix,
 		formatGenerationUnitValue,
@@ -140,7 +140,7 @@
 	 * @property {boolean} [panZoomEngaged]
 	 * @property {(time: number) => void} [onpick] - Clicks pick a time instead of pinning it
 	 *   (a comparison's A and B); see StratumChart's `onpick`
-	 * @property {import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} [timeMarkers]
+	 * @property {import('#lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} [timeMarkers]
 	 *   - Labelled markers over the plot (a comparison's A and B)
 	 * @property {number} [minDateMs] - Viewport left-edge floor (default: EARLIEST_DATA_MS)
 	 * @property {boolean} [nightShading] - Shade nighttime bands like the homepage
@@ -461,7 +461,7 @@
 	 * Presentation shared by every panel kind — height, padding and tick
 	 * snapping. Called inside the `chartStore` derived so the prop reads
 	 * (chartHeight, chartHeightPx) stay tracked exactly as before.
-	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 * @param {import('#lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 */
 	function applyCommonStyles(chart) {
 		chart.chartStyles.chartHeightClasses = chartHeight;
@@ -473,13 +473,13 @@
 	/**
 	 * Time-axis tick labels for the market and generation arms — the price arm
 	 * keeps the ChartStore default.
-	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 * @param {import('#lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 */
 	function applyTimeTickFormat(chart) {
 		chart.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
 	}
 
-	/** @type {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} */
+	/** @type {import('#lib/components/charts/v2/ChartStore.svelte.js').default | null} */
 	let chartStore = $derived.by(() => {
 		// Only a metric family changes store identity. Presentation updates below
 		// must preserve options and focus while the user resizes the chart.

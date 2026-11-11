@@ -1,7 +1,7 @@
 <script>
 	import { Settings2 } from '@lucide/svelte';
-	import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
-	import { setFilterSheet } from '$lib/components/filters/filter-sheet.js';
+	import FilterPanel from '#lib/components/filters/FilterPanel.svelte';
+	import { setFilterSheet } from '#lib/components/filters/filter-sheet.js';
 
 	/**
 	 * TableOptions — the sliders button every tracker table panel carries in its

@@ -22,7 +22,9 @@ function harness() {
 		})
 	});
 	const snapshot = makeSnapshot({ start, end, data: [{ time: start, coal: 1 }] });
-	const data = {
+	// Cast where declared: a same-named key's cast (`data: … (data)`) trips the
+	// Svelte compiler's printer (sveltejs/esrap#257).
+	const data = /** @type {any} */ ({
 		/** @param {string} name */
 		state: (name) => ({
 			key: name,
@@ -33,16 +35,16 @@ function harness() {
 		ready: (name) => state.charts[name].ready && !state.charts[name].error,
 		/** @param {string} name */
 		current: (name) => (state.charts[name].ready ? snapshot : null)
-	};
+	});
 	const demandData = makeProvider({ rows: [{ time: start, demand: 5 }] });
 	const shareData = makeProvider({ rows: [{ time: start, renewable_share: 40 }] });
-	const providers = makeProviders({ demandData, shareData });
-	const table = { displayRowOpts: {}, shareRowOpts: {} };
+	const providers = /** @type {any} */ (makeProviders({ demandData, shareData }));
+	const table = /** @type {any} */ ({ displayRowOpts: {}, shareRowOpts: {} });
 	const metrics = createTrackerMetrics({
 		session,
-		data: /** @type {any} */ (data),
-		providers: /** @type {any} */ (providers),
-		table: /** @type {any} */ (table),
+		data,
+		providers,
+		table,
 		hidden: () => [],
 		priceMetric: () => 'price',
 		holdFrame: () => state.holdFrame

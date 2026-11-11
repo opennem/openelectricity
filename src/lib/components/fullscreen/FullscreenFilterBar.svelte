@@ -1,10 +1,10 @@
 <script>
-	import FeedbackIconButton from '$lib/components/feedback/FeedbackIconButton.svelte';
+	import FeedbackIconButton from '#lib/components/feedback/FeedbackIconButton.svelte';
 	import {
 		hasTouchControls,
 		TOUCH_ICON,
 		TOUCH_ICON_BUTTON
-	} from '$lib/components/ui/touch-controls.js';
+	} from '#lib/components/ui/touch-controls.js';
 
 	/**
 	 * FullscreenFilterBar — shared chrome for the filter bar at the top of

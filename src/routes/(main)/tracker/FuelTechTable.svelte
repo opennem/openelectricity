@@ -16,11 +16,11 @@
 		VALUE_COLUMN_WIDTH
 	} from './table-styles.js';
 	import { TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import TableFootnotes from './TableFootnotes.svelte';
-	import FilterSelect from '$lib/components/filters/FilterSelect.svelte';
-	import { getGroup, GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
-	import { fuelTechNameMap } from '$lib/fuel_techs.js';
+	import FilterSelect from '#lib/components/filters/FilterSelect.svelte';
+	import { getGroup, GROUP_OPTIONS } from '#lib/components/charts/network/groups.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
 	import { CONTRIBUTION_OPTIONS, DEFAULT_GROUP, contributionLabel } from './tracker-model.js';
 	import { TABLE_UNIT_CYCLES, nextTableUnitPrefix } from './table-units.js';
 	import {
@@ -40,8 +40,8 @@
 		formatTablePower,
 		formatTablePrice
 	} from './table-format.js';
-	import { EMPTY_CELL, splitTableLabel } from '$lib/components/charts/card/cell-format.js';
-	import { longPress } from '$lib/utils/long-press.js';
+	import { EMPTY_CELL, splitTableLabel } from '#lib/components/charts/card/cell-format.js';
+	import { longPress } from '#lib/utils/long-press.js';
 
 	/** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
 	/** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */

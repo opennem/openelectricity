@@ -6,7 +6,7 @@
 	 * changes the width by 2px.
 	 */
 
-	import { DragHandle } from '$lib/components/ui/panel/index.js';
+	import { DragHandle } from '#lib/components/ui/panel/index.js';
 
 	/**
 	 * @typedef {Object} Props

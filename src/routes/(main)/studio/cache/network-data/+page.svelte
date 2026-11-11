@@ -1,6 +1,6 @@
 <script>
-	import LoginGate from '$lib/components/auth/LoginGate.svelte';
-	import Meta from '$lib/components/Meta.svelte';
+	import LoginGate from '#lib/components/auth/LoginGate.svelte';
+	import Meta from '#lib/components/Meta.svelte';
 	import CacheDashboard from './_components/CacheDashboard.svelte';
 </script>
 

@@ -1,5 +1,5 @@
 import { derived, writable } from 'svelte/store';
-import { regionsWithShortLabels } from '$lib/regions';
+import { regionsWithShortLabels } from '#lib/regions.js';
 import { scenarioLabels } from '../page-data-options/descriptions';
 
 export default function () {

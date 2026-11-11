@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { regionsWithColours } from '$lib/regions.js';
+import { regionsWithColours } from '#lib/regions.js';
 import { processRegionPrices } from './process-region-prices.js';
 
 const T1 = '2026-07-24T14:20:00+10:00';

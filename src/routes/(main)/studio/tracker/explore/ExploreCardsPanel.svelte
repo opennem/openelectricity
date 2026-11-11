@@ -1,7 +1,7 @@
 <script>
 	import { ChevronRight, Plus, Trash2 } from '@lucide/svelte';
 	import { recipeById } from './explore-model.js';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
+	import { getIntervalSpec } from '#lib/components/charts/facility/range-interval-config.js';
 
 	/** @type {{charts:any[],sharedMode?:boolean,onadd?:()=>void,onedit?:(chart:any)=>void,onremove?:(id:string)=>void}} */
 	let { charts, sharedMode = false, onadd, onedit, onremove } = $props();

@@ -1,7 +1,7 @@
 <script>
-	import { primaryFuelTechColour } from '$lib/utils/fueltech-display';
-	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
-	import IconArrowsPointingOut from '$lib/icons/ArrowsPointingOut.svelte';
+	import { primaryFuelTechColour } from '#lib/utils/fueltech-display.js';
+	import PhotoCarousel from '#lib/components/PhotoCarousel.svelte';
+	import IconArrowsPointingOut from '#lib/icons/ArrowsPointingOut.svelte';
 	import FacilityMapLightbox from './FacilityMapLightbox.svelte';
 
 	/**

@@ -1,5 +1,5 @@
 <script>
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
 	import ComparePicker from './ComparePicker.svelte';
 	import CompareChangeList from './CompareChangeList.svelte';
 	import CompareValueTiles from './CompareValueTiles.svelte';

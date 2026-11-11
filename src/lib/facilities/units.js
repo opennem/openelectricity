@@ -1,7 +1,7 @@
-import { getFueltechColor } from '$lib/utils/fueltech-display';
-import { sumUnitCapacities } from '$lib/utils/capacity';
-import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
-import { parseCalendarDate } from '$lib/utils/date-format.js';
+import { getFueltechColor } from '#lib/utils/fueltech-display.js';
+import { sumUnitCapacities } from '#lib/utils/capacity.js';
+import { sortByDetailedOrder } from '#lib/fuel-tech-groups/detailed.js';
+import { parseCalendarDate } from '#lib/utils/date-format.js';
 
 /** Fuel techs of the split units derived from a bidirectional `battery` unit. */
 const DERIVED_BATTERY_FUEL_TECHS = ['battery_charging', 'battery_discharging'];

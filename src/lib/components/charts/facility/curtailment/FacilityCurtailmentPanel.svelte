@@ -27,9 +27,9 @@
 	 * through `onvisibledata`.
 	 */
 
-	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
-	import ChartCard from '$lib/components/charts/card/ChartCard.svelte';
-	import { curtailmentMetric } from '$lib/components/charts/network/market-metrics.js';
+	import NetworkChart from '#lib/components/charts/network/NetworkChart.svelte';
+	import ChartCard from '#lib/components/charts/card/ChartCard.svelte';
+	import { curtailmentMetric } from '#lib/components/charts/network/market-metrics.js';
 	import {
 		facilityCurtailmentScope,
 		hiddenCurtailmentSeries,
@@ -47,9 +47,9 @@
 	 * @property {number} viewEnd
 	 * @property {import('svelte').ComponentProps<typeof ChartCard>['download']} [download]
 	 * @property {import('svelte').ComponentProps<typeof ChartCard>['compare']} [compare]
-	 * @property {import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} [timeMarkers]
+	 * @property {import('#lib/components/charts/v2/time-markers.js').TimeMarkerSet | null} [timeMarkers]
 	 * @property {(time: number) => void} [onpick]
-	 * @property {(snapshot: import('$lib/components/charts/card/types.js').ChartSnapshot) => void} [onvisibledata]
+	 * @property {(snapshot: import('#lib/components/charts/card/types.js').ChartSnapshot) => void} [onvisibledata]
 	 * @property {number | undefined} [hoverTime]
 	 * @property {((time: number | undefined) => void)} [onhoverchange]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]

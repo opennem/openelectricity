@@ -16,15 +16,15 @@
 		INTERVAL_OPTIONS,
 		processForChart,
 		aggregateData
-	} from '$lib/components/charts/v2';
+	} from '#lib/components/charts/v2/index.js';
 	import {
 		appendHistoricalYear,
 		cachedFormatter,
 		formatDayMonth
-	} from '$lib/components/charts/v2/date-labels.js';
-	import { colourReducer } from '$lib/stores/theme';
+	} from '#lib/components/charts/v2/date-labels.js';
+	import { colourReducer } from '#lib/stores/theme.js';
 	import { fuelTechMap, orderMap, DEFAULT_GROUP } from './helpers/groups';
-	import { loadFuelTechs, fuelTechNameMap } from '$lib/fuel_techs';
+	import { loadFuelTechs, fuelTechNameMap } from '#lib/fuel_techs.js';
 
 	/**
 	 * @typedef {Object} ProcessedChartData

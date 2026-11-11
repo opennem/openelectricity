@@ -1,12 +1,12 @@
 <script>
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { colourReducer } from '$lib/stores/theme';
-	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
-	import Select from '$lib/components/form-elements/Select.svelte';
-	import Chart from '$lib/components/info-graphics/fossil-fuels-renewables/Chart.svelte';
-	import { displayXTicks } from '$lib/components/info-graphics/fossil-fuels-renewables/helpers';
+	import { colourReducer } from '#lib/stores/theme.js';
+	import Checkbox from '#lib/components/form-elements/Checkbox.svelte';
+	import Select from '#lib/components/form-elements/Select.svelte';
+	import Chart from '#lib/components/info-graphics/fossil-fuels-renewables/Chart.svelte';
+	import { displayXTicks } from '#lib/components/info-graphics/fossil-fuels-renewables/helpers.js';
 	import StudioAnnotations from './_components/StudioAnnotations.svelte';
 	import StudioDataTable from './_components/StudioDataTable.svelte';
 	import {
@@ -14,7 +14,7 @@
 		RENEWABLE_MODES,
 		RENEWABLE_SMOOTHING_OPTIONS,
 		RENEWABLE_VALUE_TYPE_OPTIONS
-	} from '$lib/oe-api/calculate-renewables';
+	} from '#lib/oe-api/calculate-renewables.js';
 
 	/** @type {{ data: import('./$types').PageData }} */
 	let { data } = $props();
@@ -58,9 +58,9 @@
 		return value && valid.includes(value) ? value : URL_DEFAULTS[key];
 	}
 
-	/** @type {import('$lib/oe-api/calculate-renewables').RenewableSmoothing} */
+	/** @type {import('#lib/oe-api/calculate-renewables.js').RenewableSmoothing} */
 	let selectedSmoothing = $state(
-		/** @type {import('$lib/oe-api/calculate-renewables').RenewableSmoothing} */ (
+		/** @type {import('#lib/oe-api/calculate-renewables.js').RenewableSmoothing} */ (
 			paramOrDefault(
 				'smoothing',
 				RENEWABLE_SMOOTHING_OPTIONS.map((s) => s.id)
@@ -68,9 +68,9 @@
 		)
 	);
 
-	/** @type {import('$lib/oe-api/calculate-renewables').RenewableValueType} */
+	/** @type {import('#lib/oe-api/calculate-renewables.js').RenewableValueType} */
 	let selectedValueType = $state(
-		/** @type {import('$lib/oe-api/calculate-renewables').RenewableValueType} */ (
+		/** @type {import('#lib/oe-api/calculate-renewables.js').RenewableValueType} */ (
 			paramOrDefault(
 				'value',
 				RENEWABLE_VALUE_TYPE_OPTIONS.map((v) => v.id)
@@ -91,7 +91,7 @@
 	let showDemand = $state(paramOrDefault('demand', ['true', 'false']) === 'true');
 
 	function syncUrl() {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		const params = {
 			smoothing: selectedSmoothing,
 			value: selectedValueType,
@@ -105,7 +105,7 @@
 				url.searchParams.set(key, value);
 			}
 		}
-		goto(url, { replaceState: true, keepFocus: true, noScroll: true });
+		goto(url, { replace: true, reset: false });
 	}
 
 	const smoothingOptions = RENEWABLE_SMOOTHING_OPTIONS.map((s) => ({
@@ -113,7 +113,6 @@
 		value: s.id,
 		description: s.description
 	}));
-
 	const valueTypeOptions = RENEWABLE_VALUE_TYPE_OPTIONS.map((v) => ({
 		label: v.label,
 		value: v.id,
@@ -138,7 +137,7 @@
 	let unitSuffix = $derived(UNIT_SUFFIX[`${selectedValueType}:${selectedSmoothing}`]);
 	let unitLabel = $derived(selectedValueType === 'percentage' ? '%' : 'GWh');
 
-	/** @param {import('$lib/oe-api/calculate-renewables').RenewableMode} mode */
+	/** @param {import('#lib/oe-api/calculate-renewables.js').RenewableMode} mode */
 	function calc(mode) {
 		if (!renewablesInput) return null;
 		return calculateRenewables(
@@ -160,8 +159,8 @@
 	<header class="mb-6">
 		<h1 class="text-2xl md:text-3xl font-space mb-2">Renewables — calculation method comparison</h1>
 		<p class="text-sm text-mid-grey max-w-2xl">
-			Side-by-side renewable share for every supported data source &amp; calculation method. The
-			filters apply to all charts at once.
+			Side-by-side renewable share for every supported data source & calculation method. The filters
+			apply to all charts at once.
 		</p>
 	</header>
 
@@ -179,7 +178,9 @@
 			widthClass="w-auto"
 			onchange={(opt) => {
 				selectedSmoothing =
-					/** @type {import('$lib/oe-api/calculate-renewables').RenewableSmoothing} */ (opt.value);
+					/** @type {import('#lib/oe-api/calculate-renewables.js').RenewableSmoothing} */ (
+						opt.value
+					);
 				syncUrl();
 			}}
 		/>
@@ -192,7 +193,9 @@
 			widthClass="w-auto"
 			onchange={(opt) => {
 				selectedValueType =
-					/** @type {import('$lib/oe-api/calculate-renewables').RenewableValueType} */ (opt.value);
+					/** @type {import('#lib/oe-api/calculate-renewables.js').RenewableValueType} */ (
+						opt.value
+					);
 				syncUrl();
 			}}
 		/>

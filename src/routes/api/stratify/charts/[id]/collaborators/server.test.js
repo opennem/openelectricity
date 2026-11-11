@@ -7,16 +7,16 @@ const mocks = vi.hoisted(() => ({
 	updateCollaborators: vi.fn()
 }));
 
-vi.mock('$lib/sanity-cms.js', () => ({
+vi.mock('#lib/sanity-cms.js', () => ({
 	createCmsClient: () => ({ fetch: mocks.fetch })
 }));
 
-vi.mock('$lib/auth/clerk-server.js', () => ({
+vi.mock('#lib/auth/clerk-server.js', () => ({
 	verifyAdmin: mocks.verifyAdmin,
 	findAdminByEmail: mocks.findAdminByEmail
 }));
 
-vi.mock('$lib/server/stratify/collaborators.js', async (importOriginal) => ({
+vi.mock('#lib/server/stratify/collaborators.js', async (importOriginal) => ({
 	...(await importOriginal()),
 	updateCollaborators: mocks.updateCollaborators
 }));

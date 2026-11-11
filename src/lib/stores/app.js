@@ -1,5 +1,5 @@
 import { readable } from 'svelte/store';
-import { PUBLIC_EXPLORE_URL, PUBLIC_FEATURE_FLAGS } from '$env/static/public';
+import { PUBLIC_EXPLORE_URL, PUBLIC_FEATURE_FLAGS } from '$app/env/public';
 
 /**
  * Build-time feature flags. Parsed from `PUBLIC_FEATURE_FLAGS` (JSON string in

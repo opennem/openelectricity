@@ -2,7 +2,7 @@
 	import { createBubbler } from 'svelte/legacy';
 
 	const bubble = createBubbler();
-	import IconArrowsPointingOut from '$lib/icons/ArrowsPointingOut.svelte';
+	import IconArrowsPointingOut from '#lib/icons/ArrowsPointingOut.svelte';
 </script>
 
 <button

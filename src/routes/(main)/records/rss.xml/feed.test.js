@@ -47,7 +47,7 @@ describe('intervalToDate', () => {
 });
 
 describe('recordTitle', () => {
-	/** @type {import('$lib/types/record.types').MilestoneRecord} */
+	/** @type {import('#lib/types/record.types.ts').MilestoneRecord} */
 	const base = {
 		record_id: 'au.nem.nsw1.wind.power.interval.high',
 		period: 'day',
@@ -86,8 +86,8 @@ describe('buildRecordsFeed', () => {
 	const origin = 'https://openelectricity.org.au';
 
 	/**
-	 * @param {Partial<import('$lib/types/record.types').MilestoneRecord>} over
-	 * @returns {import('$lib/types/record.types').MilestoneRecord}
+	 * @param {Partial<import('#lib/types/record.types.ts').MilestoneRecord>} over
+	 * @returns {import('#lib/types/record.types.ts').MilestoneRecord}
 	 */
 	const record = (over) => ({
 		record_id: 'au.nem.nsw1.wind.power.day.high',

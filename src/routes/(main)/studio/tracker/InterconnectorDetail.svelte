@@ -17,12 +17,12 @@
 	import { untrack } from 'svelte';
 	import { LineChart } from '@lucide/svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { formatRangeLabel, ChartRangeBar } from '$lib/components/charts/v2';
-	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
-	import { MIN_DATE } from '$lib/utils/date-range';
-	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
-	import InterconnectorChart from '$lib/components/charts/flows/InterconnectorChart.svelte';
-	import { INTERCONNECTORS, getInterconnector } from '$lib/flows/region-geo.js';
+	import { formatRangeLabel, ChartRangeBar } from '#lib/components/charts/v2/index.js';
+	import { createChartRangeControl } from '#lib/components/charts/facility/chart-range-control.svelte.js';
+	import { MIN_DATE } from '#lib/utils/date-range.js';
+	import { ianaFromOffset, toNetworkDateString } from '#lib/components/charts/v2/network-time.js';
+	import InterconnectorChart from '#lib/components/charts/flows/InterconnectorChart.svelte';
+	import { INTERCONNECTORS, getInterconnector } from '#lib/flows/region-geo.js';
 	import CorridorMetrics from './CorridorMetrics.svelte';
 	import PriceChipRow from './PriceChipRow.svelte';
 
@@ -72,9 +72,9 @@
 		return formatRangeLabel(start, end, range.displayInterval, ianaTimeZone);
 	});
 
-	/** @type {import('$lib/components/charts/flows/InterconnectorChart.svelte').default | undefined} */
+	/** @type {import('#lib/components/charts/flows/InterconnectorChart.svelte').default | undefined} */
 	let flowChart = $state(undefined);
-	/** @type {import('$lib/components/charts/flows/InterconnectorChart.svelte').default | undefined} */
+	/** @type {import('#lib/components/charts/flows/InterconnectorChart.svelte').default | undefined} */
 	let priceChart = $state(undefined);
 
 	const range = createChartRangeControl({

@@ -1,5 +1,5 @@
 import { derived, writable } from 'svelte/store';
-import { colourReducer } from '$lib/stores/theme';
+import { colourReducer } from '#lib/stores/theme.js';
 import { groups } from '../groups';
 import {
 	createNewStats,

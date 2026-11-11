@@ -1,11 +1,11 @@
-import { loadFuelTechs } from '$lib/fuel_techs';
-import { getGroup } from '$lib/components/charts/network/groups.js';
+import { loadFuelTechs } from '#lib/fuel_techs.js';
+import { getGroup } from '#lib/components/charts/network/groups.js';
 import {
 	averagePower,
 	meanSeries,
 	pairedShare,
 	sumAsEnergy
-} from '$lib/components/charts/network/network-metrics-calc.js';
+} from '#lib/components/charts/network/network-metrics-calc.js';
 
 const fmt0 = new Intl.NumberFormat('en-AU', { maximumFractionDigits: 0 });
 const fmt1 = new Intl.NumberFormat('en-AU', { maximumFractionDigits: 1 });

@@ -2,7 +2,7 @@
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleUtc } from 'd3-scale';
 
-	import getSeqId from '$lib/utils/html-id-gen';
+	import getSeqId from '#lib/utils/html-id-gen.js';
 	import Line from './elements/Line.svelte';
 	import Area from './elements/Area.svelte';
 	import AxisX from './elements/AxisX.svelte';

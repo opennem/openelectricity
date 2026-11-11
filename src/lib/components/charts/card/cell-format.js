@@ -4,7 +4,7 @@
  * parenthesised qualifier. Pure module.
  */
 
-import { formatSI } from '$lib/utils/si-units.js';
+import { formatSI } from '#lib/utils/si-units.js';
 
 /** A missing value — never a fabricated zero. */
 export const EMPTY_CELL = '—';

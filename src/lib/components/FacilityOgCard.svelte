@@ -1,5 +1,5 @@
 <script module>
-	import GlobeAlt from '$lib/icons/GlobeAlt.svelte';
+	import GlobeAlt from '#lib/icons/GlobeAlt.svelte';
 
 	/** @type {Map<string, any>} */
 	const iconCache = new Map();
@@ -24,7 +24,7 @@
 		if (iconCache.has(ft)) return iconCache.get(ft);
 		let component = GlobeAlt;
 		try {
-			const module = await import(`$lib/icons/fuel-techs/${fuelTechIconName(ft)}Sm.svelte`);
+			const module = await import(`#lib/icons/fuel-techs/${fuelTechIconName(ft)}Sm.svelte`);
 			component = module.default;
 		} catch {
 			/* missing icon → GlobeAlt */
@@ -38,7 +38,7 @@
 	/**
 	 * Live, in-app recreation of the build-time facility OG card's branded
 	 * (no-photo) variant — the fallback for facilities that don't yet have a
-	 * committed `static/og/facility/<code>.jpg`. Mirrors `$lib/server/og/facility-card.js`
+	 * committed `static/og/facility/<code>.jpg`. Mirrors `#lib/server/og/facility-card.js`
 	 * but reuses the canonical `FuelTechBadge` / `fueltech-display` instead of
 	 * re-deriving colours, so it stays visually in step with the facility pages.
 	 *
@@ -46,11 +46,11 @@
 	 * container width, so badges, type and spacing keep the exact OG proportions at
 	 * any tile size.
 	 */
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
-	import { deriveCard, formatCardSubtitle } from '$lib/og/facility-card-data.js';
-	import { retiredHatch } from '$lib/og/retired-hatch.js';
-	import { OG_CARD_WIDTH, OG_CARD_HEIGHT } from '$lib/og/card-dimensions.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
+	import { getFueltechColor, needsDarkText } from '#lib/utils/fueltech-display.js';
+	import { deriveCard, formatCardSubtitle } from '#lib/og/facility-card-data.js';
+	import { retiredHatch } from '#lib/og/retired-hatch.js';
+	import { OG_CARD_WIDTH, OG_CARD_HEIGHT } from '#lib/og/card-dimensions.js';
 
 	/** @type {{ facility: any }} */
 	let { facility } = $props();

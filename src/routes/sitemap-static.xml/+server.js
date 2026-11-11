@@ -1,4 +1,4 @@
-import { urlsetXml, xmlResponse } from '$lib/seo/sitemap.js';
+import { urlsetXml, xmlResponse } from '#lib/seo/sitemap.js';
 
 // Hand-curated: the indexable top-level surfaces. App-like and utility routes
 // (/studio, /records-checker, the (micro) embeds) are deliberately absent and

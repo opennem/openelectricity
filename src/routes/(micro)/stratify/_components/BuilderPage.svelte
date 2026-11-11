@@ -1,11 +1,11 @@
 <script>
 	import { onMount } from 'svelte';
-	import { goto, beforeNavigate, replaceState } from '$app/navigation';
+	import { goto, beforeNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import Meta from '$lib/components/Meta.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { DragHandle, createDragHandler } from '$lib/components/ui/panel';
+	import Meta from '#lib/components/Meta.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { DragHandle, createDragHandler } from '#lib/components/ui/panel/index.js';
 
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import FileSpreadsheet from '@lucide/svelte/icons/file-spreadsheet';
@@ -15,7 +15,7 @@
 	import Share2 from '@lucide/svelte/icons/share-2';
 	import HistoryIcon from '@lucide/svelte/icons/history';
 	import GitForkIcon from '@lucide/svelte/icons/git-fork';
-	import StrataChartView from '$lib/stratify/StrataChartView.svelte';
+	import StrataChartView from '#lib/stratify/StrataChartView.svelte';
 	import StratifyPlotProject from '../_state/StratifyPlotProject.svelte.js';
 	import { setStratifyContext, setChartSaveContext } from '../_state/context.js';
 	import ChartSaveSession from '../_state/ChartSaveSession.svelte.js';
@@ -37,7 +37,7 @@
 	import ConfirmModal from './ConfirmModal.svelte';
 	import ConflictDialog from './ConflictDialog.svelte';
 	import HistoryDrawer from './HistoryDrawer.svelte';
-	import { normaliseSnapshot } from '$lib/stratify/chart-data.js';
+	import { normaliseSnapshot } from '#lib/stratify/chart-data.js';
 	import { formatRevisionDateTime } from '../_utils/history.js';
 	import { timeAgo } from '../_utils/format.js';
 	import { forkChart, getChart } from '../_utils/api.js';
@@ -174,7 +174,7 @@
 	function routeToSavedChart() {
 		if (!project.currentChartId) return;
 		goto(resolve(`/(micro)/stratify/[id]?step=${activeStep}`, { id: project.currentChartId }), {
-			replaceState: true
+			replace: true
 		});
 	}
 
@@ -192,6 +192,7 @@
 	let savingFromModal = $state(false);
 
 	beforeNavigate((navigation) => {
+		if (navigation.shallow && navigation.type === 'goto') return;
 		if (!saveSession.isDirty) return;
 		// Tab close / external nav: trigger the browser's native warning. We
 		// can't show a custom modal because the dialog has to be synchronous.
@@ -216,9 +217,11 @@
 		savingFromModal = true;
 		const success = await saveSession.save();
 		savingFromModal = false;
+
 		if (success) resumePendingNavigation();
-		// A conflict needs resolving first; its own dialog takes over.
-		else if (saveSession.conflict) pendingNavigation = null;
+		else if (saveSession.conflict)
+			// A conflict needs resolving first; its own dialog takes over.
+			pendingNavigation = null;
 	}
 
 	function modalDiscard() {
@@ -310,19 +313,24 @@
 		if (!steps.some((step) => step.id === stepId)) return;
 		activeStep = stepId;
 		if (initialChartId) {
-			replaceState(
-				resolve(`/(micro)/stratify/[id]?step=${stepId}`, { id: initialChartId }),
-				page.state
-			);
+			goto(resolve(`/(micro)/stratify/[id]?step=${stepId}`, { id: initialChartId }), {
+				shallow: true,
+				replace: true,
+				state: page.state
+			});
 		} else if (templateSlug) {
-			replaceState(
+			goto(
 				resolve(
 					`/(micro)/stratify/new?template=${encodeURIComponent(templateSlug)}&step=${stepId}`
 				),
-				page.state
+				{ shallow: true, replace: true, state: page.state }
 			);
 		} else {
-			replaceState(resolve(`/(micro)/stratify/new?step=${stepId}`), page.state);
+			goto(resolve(`/(micro)/stratify/new?step=${stepId}`), {
+				shallow: true,
+				replace: true,
+				state: page.state
+			});
 		}
 	}
 

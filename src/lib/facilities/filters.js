@@ -1,7 +1,7 @@
-import optionsReducer from '$lib/utils/options-reducer';
-import { statusColours } from '$lib/theme/openelectricity';
-import { STATUS_LABELS as LOAD_STATUS_LABELS } from '$lib/facilities/data-centres.js';
-import { getLeafValues, parseSelection } from '$lib/facilities/filter-options.js';
+import optionsReducer from '#lib/utils/options-reducer.js';
+import { statusColours } from '#lib/theme/openelectricity.js';
+import { STATUS_LABELS as LOAD_STATUS_LABELS } from '#lib/facilities/data-centres.js';
+import { getLeafValues, parseSelection } from '#lib/facilities/filter-options.js';
 
 export { statusColours };
 
@@ -238,7 +238,7 @@ export const DEFAULT_TYPES = [...FUEL_TECH_VALUES];
  * load so the two boundaries can't drift. Handles the legacy prototype URLs
  * that expressed "generators off" as generators=false instead of
  * fuel_techs=none, and drops unknown values.
- * @param {URLSearchParams} searchParams
+ * @param {Pick<URLSearchParams, 'get'>} searchParams
  * @returns {string[]}
  */
 export function parseFuelTechsParam(searchParams) {

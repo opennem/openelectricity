@@ -1,5 +1,5 @@
 <script>
-	import StrataChartCard from '$lib/stratify/StrataChartCard.svelte';
+	import StrataChartCard from '#lib/stratify/StrataChartCard.svelte';
 
 	/** @type {{ data: { chart: any } }} */
 	let { data } = $props();

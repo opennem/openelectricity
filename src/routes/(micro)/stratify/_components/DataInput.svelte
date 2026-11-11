@@ -1,5 +1,5 @@
 <script>
-	import { updateDelimitedCell } from '$lib/stratify/delimited-text.js';
+	import { updateDelimitedCell } from '#lib/stratify/delimited-text.js';
 	import { getStratifyContext } from '../_state/context.js';
 	import ExpandedEditorModal from './ExpandedEditorModal.svelte';
 	import TabbedDataEditor from './TabbedDataEditor.svelte';

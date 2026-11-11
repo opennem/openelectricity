@@ -1,5 +1,5 @@
 <script>
-	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
+	import { hasTouchControls } from '#lib/components/ui/touch-controls.js';
 
 	/**
 	 * One row of an OptionsMenu. Pass `selected` to render the row as a radio

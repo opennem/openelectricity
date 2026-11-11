@@ -10,11 +10,11 @@
  * Wikipedia/Wikidata/OSM).
  */
 
-import { fuelTechNameMap } from '$lib/fuel_techs.js';
-import { regionsWithShortLabels } from '$lib/regions.js';
-import { EXTERNAL_LINKS } from '$lib/constants/external-links.js';
-import { sumUnitCapacities } from '$lib/utils/capacity';
-import { primaryFuelTech } from '$lib/utils/fueltech-display';
+import { fuelTechNameMap } from '#lib/fuel_techs.js';
+import { regionsWithShortLabels } from '#lib/regions.js';
+import { EXTERNAL_LINKS } from '#lib/constants/external-links.js';
+import { sumUnitCapacities } from '#lib/utils/capacity.js';
+import { primaryFuelTech } from '#lib/utils/fueltech-display.js';
 
 // Entity URI, deliberately not EXTERNAL_LINKS.wikidata's /wiki/ page URL —
 // sameAs/additionalType want the canonical entity form.

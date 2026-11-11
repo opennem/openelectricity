@@ -1,4 +1,4 @@
-import { getBuiltInExample, getCommunityExample } from '$lib/stratify/example-catalogue.js';
+import { getBuiltInExample, getCommunityExample } from '#lib/stratify/example-catalogue.js';
 
 /**
  * Load a documentation example as a new unsaved project.

@@ -1,4 +1,4 @@
-import { findUserName } from '$lib/auth/clerk-server.js';
+import { findUserName } from '#lib/auth/clerk-server.js';
 
 /**
  * Store the chart owner's display name as its public byline (`authorName`),

@@ -1,6 +1,6 @@
 <script>
-	import { formatRecordValue } from '$lib/records/format-value.js';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import { formatRecordValue } from '#lib/records/format-value.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import { xTickValueFormatters } from '../[id]/RecordHistory/helpers/config';
 	import { regions } from '../page-data-options/filters';

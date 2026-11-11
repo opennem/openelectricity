@@ -5,7 +5,7 @@
 	import { fade } from 'svelte/transition';
 	import { startOfYear } from 'date-fns';
 
-	import LogoMark from '$lib/images/logo-mark.svelte';
+	import LogoMark from '#lib/images/logo-mark.svelte';
 	import ExplorerTooltip from './Tooltip.svelte';
 	import ExplorerChart from './Chart.svelte';
 	import ExplorerTable from './Table.svelte';

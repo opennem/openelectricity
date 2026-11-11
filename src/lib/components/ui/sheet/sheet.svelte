@@ -1,8 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import { X } from '@lucide/svelte';
-	import { portal } from '$lib/actions/portal.js';
-	import { Backdrop } from '$lib/components/ui/backdrop';
+	import { portal } from '#lib/actions/portal.js';
+	import { Backdrop } from '#lib/components/ui/backdrop/index.js';
 
 	/**
 	 * @type {{

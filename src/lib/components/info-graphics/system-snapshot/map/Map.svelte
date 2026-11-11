@@ -4,7 +4,7 @@
 
 	import { createEventDispatcher } from 'svelte';
 	import chroma from 'chroma-js';
-	import { createIntensityScale, createPriceScale } from '$lib/colours';
+	import { createIntensityScale, createPriceScale } from '#lib/colours.js';
 
 	import Flow from './Flow.svelte';
 	import MapLabel from './MapLabel.svelte';
@@ -17,11 +17,11 @@
 	import Vic from './states/VIC.svelte';
 	import Wa from './states/WA.svelte';
 
-	import CrossBorderExport from '$lib/components/info-graphics/system-snapshot/CrossBorderExport.svelte';
+	import CrossBorderExport from '#lib/components/info-graphics/system-snapshot/CrossBorderExport.svelte';
 
-	import { priceColour } from '$lib/price-scale.js';
+	import { priceColour } from '#lib/price-scale.js';
 
-	import { carbonIntensityColour } from '$lib/stores/theme';
+	import { carbonIntensityColour } from '#lib/stores/theme.js';
 
 	import { writable } from 'svelte/store';
 	import { createPopperActions } from 'svelte-popperjs';

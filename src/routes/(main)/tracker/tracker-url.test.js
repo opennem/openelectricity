@@ -7,7 +7,7 @@ import {
 	normaliseHiddenSeries,
 	trackerView
 } from './tracker-url.js';
-import { GROUP_OPTIONS, getGroup } from '$lib/components/charts/network/groups.js';
+import { GROUP_OPTIONS, getGroup } from '#lib/components/charts/network/groups.js';
 
 const context = { nowMs: 2_000_000_000_000 };
 

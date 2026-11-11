@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
-import { createCmsClient } from '$lib/sanity-cms.js';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
-import { normaliseChart } from '$lib/stratify/chart-data.js';
-import { encodeChartFields, withChartDefaults } from '$lib/stratify/chart-fields.js';
+import { createCmsClient } from '#lib/sanity-cms.js';
+import { verifyAdmin } from '#lib/auth/clerk-server.js';
+import { normaliseChart } from '#lib/stratify/chart-data.js';
+import { encodeChartFields, withChartDefaults } from '#lib/stratify/chart-fields.js';
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 100;

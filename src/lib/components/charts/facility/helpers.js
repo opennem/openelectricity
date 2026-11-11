@@ -7,7 +7,7 @@
  */
 
 import chroma from 'chroma-js';
-import { SERIES_FALLBACK_COLOUR } from '$lib/components/charts/colours.js';
+import { SERIES_FALLBACK_COLOUR } from '#lib/components/charts/colours.js';
 
 // ============================================
 // Data Transformation

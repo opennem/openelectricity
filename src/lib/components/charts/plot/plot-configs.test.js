@@ -20,7 +20,7 @@ import {
 	withFacetFields,
 	buildScatterData
 } from './plot-configs.js';
-import { getLineDasharray } from '$lib/stratify/chart-types.js';
+import { getLineDasharray } from '#lib/stratify/chart-types.js';
 
 const CATEGORY_DATA = [
 	{ category: 'A', solar: 10, wind: 20 },

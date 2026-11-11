@@ -1,7 +1,7 @@
 import {
 	applyRangeParams,
 	parseRangeParams
-} from '$lib/components/charts/facility/range-params.js';
+} from '#lib/components/charts/facility/range-params.js';
 import { builtinLayout, normaliseRange } from './dashboard-model.js';
 
 /**

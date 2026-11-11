@@ -1,5 +1,5 @@
 <script>
-	import { STATUS_LABELS, DC_MARKER, dcFill } from '$lib/facilities/data-centres.js';
+	import { STATUS_LABELS, DC_MARKER, dcFill } from '#lib/facilities/data-centres.js';
 
 	/**
 	 * Legend for the data centres (loads) map layer — status buckets are encoded

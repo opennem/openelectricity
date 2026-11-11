@@ -6,13 +6,13 @@
  */
 
 import { untrack } from 'svelte';
-import { convert } from '$lib/utils/si-units';
-import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
+import { convert } from '#lib/utils/si-units.js';
+import { getNumberFormat, getFormattedDate, getFormattedTime } from '#lib/utils/formatters.js';
 import {
 	transformToProportion,
 	transformToGrowth,
 	transformToAveragePower
-} from '$lib/utils/data-transform';
+} from '#lib/utils/data-transform/index.js';
 import ChartOptions from './ChartOptions.svelte.js';
 import ChartStyles from './ChartStyles.svelte.js';
 import ChartTooltips from './ChartTooltips.svelte.js';
@@ -40,7 +40,7 @@ import { perfSpan } from './perf.js';
  * @property {SiPrefix} [displayPrefix] - SI prefix for display
  * @property {SiPrefix[]} [allowedPrefixes] - Allowed prefix options
  * @property {string} [baseUnit] - Base unit (W, Wh, etc.)
- * @property {string} [chartType] - Initial chart type
+ * @property {import('./ChartOptions.svelte.js').ChartType} [chartType] - Initial chart type
  * @property {string} [timeZone] - IANA timezone string
  * @property {boolean} [hideDataOptions] - Hide data transform options
  * @property {boolean} [hideChartTypeOptions] - Hide chart type selector
@@ -722,7 +722,7 @@ export default class ChartStore {
 			displayPrefix: displayPrefix ?? prefix,
 			allowedPrefixes,
 			baseUnit,
-			chartType: /** @type {import('./ChartOptions.svelte.js').ChartType} */ (chartType)
+			chartType
 		});
 
 		this.chartStyles = new ChartStyles(chartStyles);

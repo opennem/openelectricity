@@ -21,7 +21,7 @@
 	 *   the card within the slot.
 	 */
 
-	import { formatWithUnit } from '$lib/utils/formatters.js';
+	import { formatWithUnit } from '#lib/utils/formatters.js';
 	import {
 		getActiveData,
 		getValueKey,

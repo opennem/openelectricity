@@ -1,9 +1,9 @@
-import simpleGroup from '$lib/fuel-tech-groups/scenarios/simple';
-import detailedGroup from '$lib/fuel-tech-groups/scenarios/detailed';
+import simpleGroup from '#lib/fuel-tech-groups/scenarios/simple.js';
+import detailedGroup from '#lib/fuel-tech-groups/scenarios/detailed.js';
 import {
 	homepagePreviewGroup,
 	homepageRenewablesVsFossilsGroup
-} from '$lib/components/info-graphics/scenarios-explorer/groups';
+} from '#lib/components/info-graphics/scenarios-explorer/groups/index.js';
 
 export const groups = [simpleGroup, detailedGroup];
 export const groupOptions = groups.map((group) => ({

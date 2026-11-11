@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compareRows } from '$lib/components/charts/card/compare/chart-compare.js';
-import { compareBuckets } from '$lib/components/charts/card/compare/snapshot-sources.js';
+import { compareRows } from '#lib/components/charts/card/compare/chart-compare.js';
+import { compareBuckets } from '#lib/components/charts/card/compare/snapshot-sources.js';
 import {
 	formatRankPlace,
 	regionCompareSource,

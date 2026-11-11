@@ -1,6 +1,6 @@
 /**
  * Sentry configuration and helpers shared by the browser client
- * (`$lib/sentry/client.js`) and the feedback widget. Pure, so it can be
+ * (`#lib/sentry/client.js`) and the feedback widget. Pure, so it can be
  * tested without the SDK.
  */
 
@@ -21,7 +21,7 @@ export function resolveSentryDsn(env) {
  * rate limit. Set `PUBLIC_SENTRY_DEV=true` to check them locally. The
  * feedback form is unaffected.
  * @param {Record<string, string | undefined>} env - `$env/dynamic/public`
- * @param {boolean} dev - `$app/environment`'s `dev`
+ * @param {boolean} dev - `$app/env`'s `dev`
  */
 export function reportsErrors(env, dev) {
 	return !!resolveSentryDsn(env) && (!dev || env.PUBLIC_SENTRY_DEV === 'true');

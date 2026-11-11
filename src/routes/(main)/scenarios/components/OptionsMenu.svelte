@@ -6,9 +6,9 @@
 		OptionsMenuItem,
 		OptionsMenuHeading,
 		OptionsMenuDivider
-	} from '$lib/components/ui/options-menu';
-	import { writeToClipboard } from '$lib/utils/clipboard';
-	import { downloadCsv } from '$lib/utils/download-csv';
+	} from '#lib/components/ui/options-menu/index.js';
+	import { writeToClipboard } from '#lib/utils/clipboard.js';
+	import { downloadCsv } from '#lib/utils/download-csv.js';
 
 	/**
 	 * @type {{

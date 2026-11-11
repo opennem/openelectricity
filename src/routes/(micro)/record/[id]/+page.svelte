@@ -1,7 +1,7 @@
 <script>
-	import { regionsWithLabels } from '$lib/regions';
-	import { formatRecordValue } from '$lib/records/format-value.js';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import { regionsWithLabels } from '#lib/regions.js';
+	import { formatRecordValue } from '#lib/records/format-value.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../../../(main)/records/page-data-options/record-description';
 	import { xTickValueFormatters } from '../../../(main)/records/[id]/RecordHistory/helpers/config';
 	import MiniTracker from './components/MiniTracker.svelte';

@@ -1,6 +1,6 @@
 <script>
-	import Meta from '$lib/components/Meta.svelte';
-	import { byProp } from '$lib/utils/sort.js';
+	import Meta from '#lib/components/Meta.svelte';
+	import { byProp } from '#lib/utils/sort.js';
 
 	/**
 	 * @typedef {Object} Props

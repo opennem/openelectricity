@@ -68,7 +68,7 @@
 	 */
 	function applyFilter(name, value) {
 		const next = { ...filters, [name]: value, page: 1 };
-		goto(hrefFor(next, selectedKey), { replaceState: true, keepFocus: true, noScroll: true });
+		goto(hrefFor(next, selectedKey), { replace: true, reset: false });
 	}
 
 	/** @param {Event} event */

@@ -4,7 +4,7 @@
  * way decommissioned sites are hatched on maps. Shared by the in-app surfaces
  * (FacilityPanelHeader, FacilityCardTile, FacilityOgCard) and the build-time
  * satori OG renderer, so the treatment reads identically everywhere. Kept in
- * `$lib/og` (import-free) so the plain-Node build script can use it.
+ * `#lib/og` (import-free) so the plain-Node build script can use it.
  *
  * `dark` flips to a dark hatch for the light fuel-tech washes (solar, OCGT…),
  * mirroring the `needsDarkText` convention; photo banners always take the

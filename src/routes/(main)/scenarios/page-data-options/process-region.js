@@ -1,6 +1,6 @@
-import TimeSeries from '$lib/utils/TimeSeries';
-import parseInterval from '$lib/utils/intervals';
-import { loadFuelTechs } from '$lib/fuel_techs.js';
+import TimeSeries from '#lib/utils/TimeSeries/index.js';
+import parseInterval from '#lib/utils/intervals.js';
+import { loadFuelTechs } from '#lib/fuel_techs.js';
 
 import { fuelTechMap } from './groups-region';
 import sumFuelTechData from './sum-fuel-tech-data';

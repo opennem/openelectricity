@@ -1,7 +1,7 @@
 <script>
 	import { untrack } from 'svelte';
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { computeYDomain } from '$lib/components/charts/v2/compute-y-domain.js';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
+	import { computeYDomain } from '#lib/components/charts/v2/compute-y-domain.js';
 
 	/**
 	 * CompareSlopeChart — a slope chart of a comparison: each series' value
@@ -67,10 +67,21 @@
 		}))
 	);
 
+	/** @param {number} rank */
+	const formatRank = (rank) => `#${rank}`;
+	/** @param {Date} date */
+	const formatSideTick = (date) => (Number(date) === X_A ? labels.a : labels.b);
+	/** @param {Date} date */
+	const formatSideTooltip = (date) =>
+		Number(date) === X_A ? `A · ${labels.a}` : `B · ${labels.b}`;
+
+	// The formatters live outside the effects: the server build drops effect
+	// bodies, and the Svelte compiler's printer re-attaches their JSDoc to the
+	// next node (here `{chart}` below), printing invalid JS.
 	$effect(() => {
 		chart.chartOptions.baseUnit = ranked ? '' : source.unit;
-		chart.formatY = ranked ? (/** @type {number} */ rank) => `#${rank}` : source.format;
-		chart.formatTooltipY = ranked ? (/** @type {number} */ rank) => `#${rank}` : source.format;
+		chart.formatY = ranked ? formatRank : source.format;
+		chart.formatTooltipY = ranked ? formatRank : source.format;
 		chart.maximumFractionDigits = ranked ? 0 : 1;
 	});
 	$effect(() => {
@@ -91,9 +102,8 @@
 		}));
 	});
 	$effect(() => {
-		chart.formatTickX = (/** @type {Date} */ date) => (Number(date) === X_A ? labels.a : labels.b);
-		chart.formatTooltipX = (/** @type {Date} */ date) =>
-			Number(date) === X_A ? `A · ${labels.a}` : `B · ${labels.b}`;
+		chart.formatTickX = formatSideTick;
+		chart.formatTooltipX = formatSideTooltip;
 	});
 	$effect(() => {
 		chart.chartStyles.chartHeightPx = height;

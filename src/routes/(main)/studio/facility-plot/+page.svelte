@@ -1,34 +1,34 @@
 <script>
 	import { getContext, onMount, onDestroy, untrack } from 'svelte';
 	import { bisector } from 'd3-array';
-	import Meta from '$lib/components/Meta.svelte';
-	import PlotChart from '$lib/components/charts/plot/PlotChart.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import PlotChart from '#lib/components/charts/plot/PlotChart.svelte';
 	import {
 		createStackedAreaOptions,
 		createLineOptions,
 		capacityMarks
-	} from '$lib/components/charts/plot/plot-configs.js';
+	} from '#lib/components/charts/plot/plot-configs.js';
 	import {
 		timeToPx,
 		computeNightPeriods,
 		shouldShowNightShading
-	} from '$lib/components/charts/plot/plot-overlays.js';
-	import { computePlotGridlines } from '$lib/components/charts/plot/plot-gridlines.js';
-	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
-	import { makeLoadAwareColourGetter } from '$lib/components/charts/facility/helpers.js';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import Select from '$lib/components/form-elements/Select.svelte';
-	import { formatSI, convert } from '$lib/utils/si-units';
-	import { createFacilityDataManager } from '$lib/components/charts/facility/facility-data-manager.js';
+	} from '#lib/components/charts/plot/plot-overlays.js';
+	import { computePlotGridlines } from '#lib/components/charts/plot/plot-gridlines.js';
+	import { analyzeUnits } from '#lib/components/charts/facility/unit-analysis.js';
+	import { makeLoadAwareColourGetter } from '#lib/components/charts/facility/helpers.js';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
+	import Select from '#lib/components/form-elements/Select.svelte';
+	import { formatSI, convert } from '#lib/utils/si-units.js';
+	import { createFacilityDataManager } from '#lib/components/charts/facility/facility-data-manager.js';
 
-	/** @typedef {import('$lib/components/charts/v2/ChartDataManager.svelte.js').default} ChartDataManager */
-	import { getIntervalForDuration } from '$lib/components/charts/v2/intervalConfig.js';
-	import { aggregateToInterval } from '$lib/components/charts/v2/dataProcessing.js';
-	import PlotChartOptions from '$lib/components/charts/plot/PlotChartOptions.svelte.js';
-	import PlotChartTheme from '$lib/components/charts/plot/PlotChartTheme.svelte.js';
-	import PlotInteraction from '$lib/components/charts/plot/PlotInteraction.svelte.js';
-	import PlotSync from '$lib/components/charts/plot/PlotSync.svelte.js';
+	/** @typedef {import('#lib/components/charts/v2/ChartDataManager.svelte.js').default} ChartDataManager */
+	import { getIntervalForDuration } from '#lib/components/charts/v2/intervalConfig.js';
+	import { aggregateToInterval } from '#lib/components/charts/v2/dataProcessing.js';
+	import PlotChartOptions from '#lib/components/charts/plot/PlotChartOptions.svelte.js';
+	import PlotChartTheme from '#lib/components/charts/plot/PlotChartTheme.svelte.js';
+	import PlotInteraction from '#lib/components/charts/plot/PlotInteraction.svelte.js';
+	import PlotSync from '#lib/components/charts/plot/PlotSync.svelte.js';
 
 	const layout = getContext('layout-fullscreen');
 	onMount(() => layout.setFullscreen(true));

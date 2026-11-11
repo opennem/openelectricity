@@ -1,18 +1,18 @@
-import { createNetworkMarketData } from '$lib/components/charts/network/network-market-data.svelte.js';
-import { createNetworkFuelTechSeries } from '$lib/components/charts/network/network-fueltech-series.svelte.js';
-import { createMarketSeriesProvider } from '$lib/components/charts/network/network-series-provider.svelte.js';
-import { isRollingInterval } from '$lib/components/charts/facility/range-interval-config.js';
-import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
-import { getGroup } from '$lib/components/charts/network/groups.js';
-import { createHeadlessSeriesProvider } from '$lib/components/charts/network/headless-series-provider.svelte.js';
-import { processEmissionsIntensity } from '$lib/components/charts/network/process-emissions-intensity.js';
+import { createNetworkMarketData } from '#lib/components/charts/network/network-market-data.svelte.js';
+import { createNetworkFuelTechSeries } from '#lib/components/charts/network/network-fueltech-series.svelte.js';
+import { createMarketSeriesProvider } from '#lib/components/charts/network/network-series-provider.svelte.js';
+import { isRollingInterval } from '#lib/components/charts/facility/range-interval-config.js';
+import { getIntervalHours } from '#lib/components/charts/facility/interval-hours.js';
+import { getGroup } from '#lib/components/charts/network/groups.js';
+import { createHeadlessSeriesProvider } from '#lib/components/charts/network/headless-series-provider.svelte.js';
+import { processEmissionsIntensity } from '#lib/components/charts/network/process-emissions-intensity.js';
 import { rollingShareRows, ROLLING_LEAD_MS } from './tracker-chart-overlays.js';
 
-/** @typedef {import('$lib/components/charts/network/headless-series-provider.svelte.js').DisplayRowOptions} DisplayRowOptions */
+/** @typedef {import('#lib/components/charts/network/headless-series-provider.svelte.js').DisplayRowOptions} DisplayRowOptions */
 
 /** Optional data sources share the chart request broker and range lifecycle.
  * @param {{selection: () => import('./types.js').TrackerUrlState,
- * range: ReturnType<typeof import('$lib/components/charts/facility/chart-range-control.svelte.js').createChartRangeControl>,
+ * range: ReturnType<typeof import('#lib/components/charts/facility/chart-range-control.svelte.js').createChartRangeControl>,
  * timeZone: () => string, needsContributionDemand?: () => boolean, needsWindowMetrics?: () => boolean}} opts
  */
 export function createTrackerProviders(opts) {

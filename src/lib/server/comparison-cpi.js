@@ -8,7 +8,7 @@ import {
 
 /** Read the durable, scheduled snapshot. No request to ABS on page loads.
  * The bundled ABS snapshot keeps development and KV outages usable.
- * @param {App.Platform | undefined} platform */
+ * @param {EdgeRuntime | undefined} platform */
 export async function loadComparisonCpi(platform) {
 	const fallback = validateCpiSnapshot(bundled);
 	try {

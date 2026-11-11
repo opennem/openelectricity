@@ -1,11 +1,14 @@
 <script>
 	import { FileText, ImageOff } from '@lucide/svelte';
-	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
-	import ExpandableDescription from '$lib/components/ExpandableDescription.svelte';
-	import { hasPortableTextContent } from '$lib/utils/portable-text.js';
+	import PhotoCarousel from '#lib/components/PhotoCarousel.svelte';
+	import ExpandableDescription from '#lib/components/ExpandableDescription.svelte';
+	import { hasPortableTextContent } from '#lib/utils/portable-text.js';
 	import FacilityUnitCards from './FacilityUnitCards.svelte';
-	import { FacilityCompactCharts, getNetworkTimezone } from '$lib/components/charts/facility';
-	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
+	import {
+		FacilityCompactCharts,
+		getNetworkTimezone
+	} from '#lib/components/charts/facility/index.js';
+	import RetiredFacilityNotice from '#lib/components/facilities/RetiredFacilityNotice.svelte';
 
 	/**
 	 * Facility preview shown when a facility is selected on the /facilities page.

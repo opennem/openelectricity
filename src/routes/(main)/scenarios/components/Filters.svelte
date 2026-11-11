@@ -1,18 +1,18 @@
 <script>
 	import { getContext } from 'svelte';
 
-	import { regionsNemOnlyOptions } from '$lib/regions';
+	import { regionsNemOnlyOptions } from '#lib/regions.js';
 
 	const regionOptions = regionsNemOnlyOptions.map(({ description, ...rest }) => rest);
-	import Switch from '$lib/components/SwitchWithIcons.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
-	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
-	import Button from '$lib/components/form-elements/Button2.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import Switch from '#lib/components/SwitchWithIcons.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
+	import FormMultiSelect from '#lib/components/form-elements/MultiSelect.svelte';
+	import ButtonIcon from '#lib/components/form-elements/ButtonIcon.svelte';
+	import Button from '#lib/components/form-elements/Button2.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import IconAdjustmentsHorizontal from '#lib/icons/AdjustmentsHorizontal.svelte';
 
-	import { formatFyTickX } from '$lib/utils/formatters';
+	import { formatFyTickX } from '#lib/utils/formatters.js';
 
 	import { viewSectionOptions as _viewSectionOptions } from '../page-data-options/view-sections';
 
@@ -35,7 +35,7 @@
 		getDefaultScenario
 	} from '../page-data-options/grouped-options';
 	import OptionsMenu from './OptionsMenu.svelte';
-	import { FullscreenNavDropdown } from '$lib/components/fullscreen';
+	import { FullscreenNavDropdown } from '#lib/components/fullscreen/index.js';
 
 	/**
 	 * @type {{

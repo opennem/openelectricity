@@ -1,6 +1,6 @@
 <script>
-	import FilterDropdown from '$lib/components/filters/FilterDropdown.svelte';
-	import { inFilterSheet } from '$lib/components/filters/filter-sheet.js';
+	import FilterDropdown from '#lib/components/filters/FilterDropdown.svelte';
+	import { inFilterSheet } from '#lib/components/filters/filter-sheet.js';
 	import {
 		COMPARISON_CHART_OPTIONS,
 		COMPARISON_METRIC_GROUPS,

@@ -1,7 +1,7 @@
 <script>
-	import Meta from '$lib/components/Meta.svelte';
-	import PageHeader from '$lib/components/PageHeader.svelte';
-	import SectionLink from '$lib/components/SectionLink.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import SectionLink from '#lib/components/SectionLink.svelte';
 	import Social from './Social.svelte';
 	let { data } = $props();
 

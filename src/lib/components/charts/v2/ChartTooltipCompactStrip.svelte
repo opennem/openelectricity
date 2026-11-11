@@ -17,7 +17,7 @@
 	 * for the value (matching how the y-axis ticks render).
 	 */
 
-	import { formatWithUnit } from '$lib/utils/formatters.js';
+	import { formatWithUnit } from '#lib/utils/formatters.js';
 	import {
 		getActiveData,
 		getValueKey,

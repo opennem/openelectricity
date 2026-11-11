@@ -5,7 +5,7 @@
 	import ControlInput, { CONTROL_INPUT_CLASS } from '../ControlInput.svelte';
 	import ColourPicker from '../ColourPicker.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
-	import { HORIZONTAL_TYPES, WATERFALL_TYPES } from '$lib/stratify/chart-types.js';
+	import { HORIZONTAL_TYPES, WATERFALL_TYPES } from '#lib/stratify/chart-types.js';
 
 	const project = getStratifyContext();
 

@@ -2,15 +2,15 @@
 	import { untrack } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import getContext from '$lib/utils/get-context.js';
-	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
+	import getContext from '#lib/utils/get-context.js';
+	import EllipsisVertical from '#lib/icons/EllipsisVertical.svelte';
 	import ChartOptionsWithContext from './ChartOptionsWithContext.svelte';
 
 	/** @type {{ cxtKey: symbol, displayOptions?: boolean }} */
 	let { displayOptions = true, cxtKey } = $props();
 
 	// Get context once during initialization (cxtKey is stable)
-	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
+	/** @type {import('#lib/components/charts/stores/chart.svelte.js').default} */
 	let cxt = untrack(() => getContext(cxtKey));
 
 	let showOptions = $state(false);

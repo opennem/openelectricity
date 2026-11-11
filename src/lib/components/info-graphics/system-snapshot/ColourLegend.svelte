@@ -1,16 +1,16 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 
-	import ColourBarSwatch from '$lib/components/charts/elements/ColourBarSwatch.svelte';
-	import ColourBarRamp from '$lib/components/charts/elements/ColourBarRamp.svelte';
-	import LinearGradient from '$lib/components/charts/elements/defs/LinearGradient.svelte';
+	import ColourBarSwatch from '#lib/components/charts/elements/ColourBarSwatch.svelte';
+	import ColourBarRamp from '#lib/components/charts/elements/ColourBarRamp.svelte';
+	import LinearGradient from '#lib/components/charts/elements/defs/LinearGradient.svelte';
 
 	import {
 		priceColours as colours,
 		priceLabels as labels,
 		priceColourRanges as colourRanges
-	} from '$lib/price-scale.js';
-	import { theme, carbonIntensityStops } from '$lib/stores/theme.js';
+	} from '#lib/price-scale.js';
+	import { theme, carbonIntensityStops } from '#lib/stores/theme.js';
 
 	/**
 	 * @typedef {Object} Props

@@ -4,8 +4,8 @@
  * Fetches facility data from OE API and Sanity CMS for side-by-side comparison.
  */
 
-import { oeClient } from '$lib/server/oe-client.js';
-import { client as sanityClient } from '$lib/sanity';
+import { oeClient } from '#lib/server/oe-client.js';
+import { client as sanityClient } from '#lib/sanity.js';
 
 const SANITY_FACILITY_QUERY = `*[_type == "facility" && code == $code][0]{
 	_id, code, name, website, wikipedia, wikidata_id, osm_way_id, npiId, location,

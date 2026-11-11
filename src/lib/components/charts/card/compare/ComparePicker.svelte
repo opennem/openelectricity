@@ -3,7 +3,7 @@
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import { COMPARE_SLOTS } from './chart-compare.js';
 
 	/**

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { createCmsClient, resolveDataset } from '$lib/sanity-cms.js';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
+import { createCmsClient, resolveDataset } from '#lib/sanity-cms.js';
+import { verifyAdmin } from '#lib/auth/clerk-server.js';
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ request, cookies, url }) {

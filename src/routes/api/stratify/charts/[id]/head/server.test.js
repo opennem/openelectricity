@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ fetch: vi.fn(), verifyAdmin: vi.fn() }));
 
-vi.mock('$lib/sanity-cms.js', () => ({
+vi.mock('#lib/sanity-cms.js', () => ({
 	createCmsClient: () => ({ fetch: mocks.fetch })
 }));
 
-vi.mock('$lib/auth/clerk-server.js', () => ({
+vi.mock('#lib/auth/clerk-server.js', () => ({
 	verifyAdmin: mocks.verifyAdmin
 }));
 

@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { PUBLIC_EMBER_BRIDGE_API } from '$env/static/public';
+import { PUBLIC_EMBER_BRIDGE_API } from '$app/env/public';
 
 export async function GET({ fetch, url }) {
 	// /v4/ember/AUS/monthly.json

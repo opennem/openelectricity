@@ -1,7 +1,7 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
+	import EllipsisVertical from '#lib/icons/EllipsisVertical.svelte';
 	import ChartOptions from './ChartOptions.svelte';
 
 	let { store, displayOptions = true } = $props();

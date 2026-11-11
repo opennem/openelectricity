@@ -1,9 +1,9 @@
 <script>
 	import { onDestroy, untrack } from 'svelte';
 	import { color as d3Colour } from 'd3-color';
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
-	import { getFormattedX, getFormattedY } from '$lib/components/charts/v2/tooltip-derivations.js';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
+	import { createViewportGestures } from '#lib/components/charts/v2/viewport-gestures.js';
+	import { getFormattedX, getFormattedY } from '#lib/components/charts/v2/tooltip-derivations.js';
 	import ProfileReadout from './ProfileReadout.svelte';
 	import { ZERO_LINE_STROKE } from './tracker-overlays.js';
 	import {

@@ -1,10 +1,10 @@
 import { untrack } from 'svelte';
-import { createHeadlessSeriesProvider } from '$lib/components/charts/network/headless-series-provider.svelte.js';
-import { createNetworkMarketData } from '$lib/components/charts/network/network-market-data.svelte.js';
-import { loadGroupsFor } from '$lib/components/charts/network/groups.js';
-import { processNetworkData } from '$lib/components/charts/network/process-network-data.js';
-import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
-import { getFuelTechColour } from '$lib/components/charts/colours.js';
+import { createHeadlessSeriesProvider } from '#lib/components/charts/network/headless-series-provider.svelte.js';
+import { createNetworkMarketData } from '#lib/components/charts/network/network-market-data.svelte.js';
+import { loadGroupsFor } from '#lib/components/charts/network/groups.js';
+import { processNetworkData } from '#lib/components/charts/network/process-network-data.js';
+import { processPriceData } from '#lib/components/charts/facility/process-price-data.js';
+import { getFuelTechColour } from '#lib/components/charts/colours.js';
 
 /**
  * One bounded profile source on the shared headless provider: the same
@@ -19,7 +19,7 @@ import { getFuelTechColour } from '$lib/components/charts/colours.js';
  *
  * Must be called during component init — it registers `$effect`s.
  * @param {() => {region: string, metric?: 'power' | 'price', zone: string,
- * group: ReturnType<typeof import('$lib/components/charts/network/groups.js').getGroup>,
+ * group: ReturnType<typeof import('#lib/components/charts/network/groups.js').getGroup>,
  * window: {start: number, end: number}, enabled?: boolean,
  * retainRooftopPower?: boolean}} options */
 export function createProfileData(options) {

@@ -9,9 +9,9 @@
 	 * the user is hovering (or the latest sample when not hovering).
 	 */
 
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { nearestIndexOfTime } from '$lib/components/charts/v2/binary-search.js';
-	import { loadFuelTechs } from '$lib/fuel_techs';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import { nearestIndexOfTime } from '#lib/components/charts/v2/binary-search.js';
+	import { loadFuelTechs } from '#lib/fuel_techs.js';
 
 	/**
 	 * @typedef {Object} TableData

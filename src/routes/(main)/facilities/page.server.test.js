@@ -13,7 +13,7 @@ vi.mock('openelectricity', () => ({
 	}
 }));
 
-vi.mock('$lib/server/facilities-server-cache.js', () => ({
+vi.mock('#lib/server/facilities-server-cache.js', () => ({
 	getCachedFacilities: mocks.getCachedFacilities,
 	setCachedFacilities: mocks.setCachedFacilities
 }));

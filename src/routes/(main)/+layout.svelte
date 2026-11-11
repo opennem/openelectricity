@@ -3,17 +3,17 @@
 	import { fly } from 'svelte/transition';
 	import { onNavigate } from '$app/navigation';
 	import { page, updated } from '$app/state';
-	import { building } from '$app/environment';
+	import { building } from '$app/env';
 	import { setContext } from 'svelte';
 	// import '../../app.css';
 
-	import Nav from '$lib/components/Nav.svelte';
-	import Footer from '$lib/components/Footer.svelte';
-	import GlobalBanner from '$lib/components/GlobalBanner.svelte';
-	// import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
+	import Nav from '#lib/components/Nav.svelte';
+	import Footer from '#lib/components/Footer.svelte';
+	import GlobalBanner from '#lib/components/GlobalBanner.svelte';
+	// import ThemeSwitcher from '#lib/components/ThemeSwitcher.svelte';
 
-	import { showThemeSwitcher } from '$lib/stores/theme';
-	import { toastMessage } from '$lib/stores/toast';
+	import { showThemeSwitcher } from '#lib/stores/theme.js';
+	import { toastMessage } from '#lib/stores/toast.js';
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('svelte').Snippet} [children]
@@ -58,6 +58,8 @@
 	// let feedbackButtonPosition = $derived(feedbackButtonRef?.getBoundingClientRect());
 
 	onNavigate((navigation) => {
+		if (navigation.shallow && navigation.type === 'goto') return;
+
 		// If the browser doesn't support view transitions, return early
 		// @ts-ignore
 		if (!document.startViewTransition) return;

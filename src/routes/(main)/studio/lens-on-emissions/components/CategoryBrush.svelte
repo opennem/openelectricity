@@ -7,8 +7,8 @@
 	 */
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleLinear } from 'd3-scale';
-	import Line from '$lib/components/charts/elements/Line.svelte';
-	import Area from '$lib/components/charts/elements/Area.svelte';
+	import Line from '#lib/components/charts/elements/Line.svelte';
+	import Area from '#lib/components/charts/elements/Area.svelte';
 
 	/**
 	 * @typedef {import('../helpers/csv-parser.js').EmissionsDataPoint} EmissionsDataPoint

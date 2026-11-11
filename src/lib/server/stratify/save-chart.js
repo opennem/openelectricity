@@ -9,13 +9,13 @@
  * guarded by `ifRevisionId`, so a save that races another is retried
  * against the newer chart rather than overwriting it.
  *
- * History is bounded (`$lib/stratify/revision-policy.js`): a person's quick
+ * History is bounded (`#lib/stratify/revision-policy.js`): a person's quick
  * successive edits fold into their newest entry, and the same transaction
  * deletes revisions beyond the per-chart limit.
  */
 
-import { decodeChartFields } from '$lib/stratify/chart-data.js';
-import { encodeChartFields, getChartField, isSameFieldValue } from '$lib/stratify/chart-fields.js';
+import { decodeChartFields } from '#lib/stratify/chart-data.js';
+import { encodeChartFields, getChartField, isSameFieldValue } from '#lib/stratify/chart-fields.js';
 import {
 	RECENT_HISTORY_QUERY,
 	REVISION_TYPE,

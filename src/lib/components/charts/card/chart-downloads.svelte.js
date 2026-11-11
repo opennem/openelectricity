@@ -17,9 +17,9 @@
  * workbook's Summary rows.
  */
 import { getContext, setContext, untrack } from 'svelte';
-import { downloadCsv } from '$lib/utils/download-csv.js';
-import { downloadXlsx } from '$lib/utils/download-xlsx.js';
-import { formatNetworkTimestamp } from '$lib/components/charts/v2/network-time.js';
+import { downloadCsv } from '#lib/utils/download-csv.js';
+import { downloadXlsx } from '#lib/utils/download-xlsx.js';
+import { formatNetworkTimestamp } from '#lib/components/charts/v2/network-time.js';
 import { orderByDocument } from './chart-downloads.js';
 import { buildWorkbookSheets, datasetToCsv, uniqueSheetNames } from './export-dataset.js';
 

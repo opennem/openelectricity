@@ -1,23 +1,23 @@
-import { getIntervalHours } from '$lib/components/charts/facility/interval-hours.js';
-import { indexOfTime } from '$lib/components/charts/v2/binary-search.js';
-import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
-import { currentIncompleteInterval } from '$lib/components/charts/v2/incomplete-interval.js';
+import { getIntervalHours } from '#lib/components/charts/facility/interval-hours.js';
+import { indexOfTime } from '#lib/components/charts/v2/binary-search.js';
+import { isObservationRow } from '#lib/components/charts/v2/bucket-filter.js';
+import { currentIncompleteInterval } from '#lib/components/charts/v2/incomplete-interval.js';
 import {
 	applyBucketFilter,
 	bucketFilterPredicate,
 	bucketFilterKindFor
-} from '$lib/components/charts/v2/bucket-filter.js';
-import { isRollingInterval } from '$lib/components/charts/facility/range-interval-config.js';
-import { getGroup, loadGroupsFor } from '$lib/components/charts/network/groups.js';
+} from '#lib/components/charts/v2/bucket-filter.js';
+import { isRollingInterval } from '#lib/components/charts/facility/range-interval-config.js';
+import { getGroup, loadGroupsFor } from '#lib/components/charts/network/groups.js';
 import { CURTAILMENT_SERIES } from './tracker-overlays.js';
-import { perfSpan } from '$lib/components/charts/v2/perf.js';
+import { perfSpan } from '#lib/components/charts/v2/perf.js';
 import {
 	buildFuelTechTableRows,
 	computeCurtailmentRows,
 	computeOverlaySummary,
 	contributionDenominatorMWh
 } from './table-model.js';
-/** @typedef {import('$lib/components/charts/network/headless-series-provider.svelte.js').HeadlessSeriesProvider} HeadlessSeriesProvider */
+/** @typedef {import('#lib/components/charts/network/headless-series-provider.svelte.js').HeadlessSeriesProvider} HeadlessSeriesProvider */
 
 /**
  * One complete, accepted table together with the labels that describe its

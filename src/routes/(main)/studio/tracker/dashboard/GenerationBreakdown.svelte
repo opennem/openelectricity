@@ -1,5 +1,5 @@
 <script>
-	import { formatSI } from '$lib/utils/si-units.js';
+	import { formatSI } from '#lib/utils/si-units.js';
 
 	/** @type {{ dataset?: {data: any[], seriesNames: string[], seriesLabels: Record<string,string>, seriesColours?: Record<string,string>} | null, hiddenSeries?: string[], metric?: string, ontoggle?: (series: string) => void, standalone?: boolean }} */
 	let {

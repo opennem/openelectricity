@@ -2,23 +2,23 @@
 	import { ChevronRight } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import { Sheet } from '$lib/components/ui/sheet';
-	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
-	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import { getUnitCapacity } from '$lib/utils/capacity';
-	import { formatCapacity, getNumberFormat } from '$lib/utils/formatters';
-	import { formatDateRange } from '$lib/components/charts/v2';
-	import { buildUnitColourMap } from '$lib/components/charts/facility/helpers.js';
-	import { sortUnitsForDisplay } from '$lib/components/charts/facility/unit-analysis.js';
-	import { getPrimaryFuelTechGroup } from '$lib/components/charts/facility/metrics/fuel-group.js';
+	import FacilityStatusIcon from '#lib/components/facilities/FacilityStatusIcon.svelte';
+	import { Sheet } from '#lib/components/ui/sheet/index.js';
+	import { getFueltechColor, needsDarkText } from '#lib/utils/fueltech-display.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
+	import { getUnitCapacity } from '#lib/utils/capacity.js';
+	import { formatCapacity, getNumberFormat } from '#lib/utils/formatters.js';
+	import { formatDateRange } from '#lib/components/charts/v2/index.js';
+	import { buildUnitColourMap } from '#lib/components/charts/facility/helpers.js';
+	import { sortUnitsForDisplay } from '#lib/components/charts/facility/unit-analysis.js';
+	import { getPrimaryFuelTechGroup } from '#lib/components/charts/facility/metrics/fuel-group.js';
 	import {
 		isSubDailyData,
 		computeUnitAvailability
-	} from '$lib/components/charts/facility/metrics/metrics-calc.js';
+	} from '#lib/components/charts/facility/metrics/metrics-calc.js';
 	import UnitDetail from './UnitDetail.svelte';
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
-	import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
+	import { ianaFromOffset } from '#lib/components/charts/v2/network-time.js';
 
 	/**
 	 * `intervalData` is the generation chart's visible-range power data
@@ -126,10 +126,10 @@
 
 	/** @param {string | null} code */
 	function setSelectedCode(code) {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (code) url.searchParams.set('unit', code);
 		else url.searchParams.delete('unit');
-		goto(`${url.pathname}${url.search}`, { replaceState: true, noScroll: true, keepFocus: true });
+		goto(`${url.pathname}${url.search}`, { replace: true, reset: false });
 	}
 	// Enrichment — the matching Sanity unit for the one selected unit.
 	let selectedSanityUnit = $derived(

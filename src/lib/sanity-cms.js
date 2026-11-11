@@ -1,6 +1,6 @@
 import { createClient } from '@sanity/client';
-import { PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID } from '$env/static/public';
-import { env } from '$env/dynamic/private';
+import { PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID } from '$app/env/public';
+import { SANITY_CMS_TOKEN } from '$app/env/private';
 
 /** @type {string[] | null} */
 let cachedDatasets = null;
@@ -11,12 +11,13 @@ export async function getAvailableDatasets() {
 
 	const res = await fetch(
 		`https://${PUBLIC_SANITY_PROJECT_ID}.api.sanity.io/v2025-04-30/datasets`,
-		{ headers: { Authorization: `Bearer ${env.SANITY_CMS_TOKEN}` } }
+		{ headers: { Authorization: `Bearer ${SANITY_CMS_TOKEN}` } }
 	);
 
 	if (res.ok) {
 		/** @type {{ name: string }[]} */
 		const datasets = await res.json();
+
 		cachedDatasets = datasets
 			.map((d) => d.name)
 			.filter((name) => !name.includes('-comments'))
@@ -38,7 +39,7 @@ export function createCmsClient(dataset) {
 		dataset: dataset || PUBLIC_SANITY_DATASET,
 		apiVersion: '2025-04-30',
 		useCdn: false,
-		token: env.SANITY_CMS_TOKEN
+		token: SANITY_CMS_TOKEN
 	});
 }
 

@@ -1,6 +1,6 @@
 <script>
 	import { GeoJSONSource, FillLayer } from 'svelte-maplibre-gl';
-	import { twilightPolygon } from '$lib/utils/solar-terminator.js';
+	import { twilightPolygon } from '#lib/utils/solar-terminator.js';
 
 	/**
 	 * Local day/night overlay. Four translucent twilight polygons overlap to

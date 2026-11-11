@@ -1,5 +1,5 @@
 <script>
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 
 	/**
 	 * A single metric: uppercase label, large value in the site's normal font,

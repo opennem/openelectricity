@@ -20,7 +20,7 @@
 
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import IconXMark from '$lib/icons/XMark.svelte';
+	import IconXMark from '#lib/icons/XMark.svelte';
 	import { cleanupObsoleteDismissals, dismissalKey, getActiveBanner } from './banners.js';
 
 	/**

@@ -3,7 +3,7 @@
  *
  * Reduces a v4 market response carrying per-region `flow_imports`/`flow_exports`
  * (grouped by network_region) to chart-ready rows via the exact tree-topology
- * derivation in `$lib/flows/derive-pairwise.js`. Every corridor series is
+ * derivation in `#lib/flows/derive-pairwise.js`. Every corridor series is
  * emitted — the chart selects which one renders via `seriesNames`, so corridor
  * switching never reprocesses or refetches.
  *
@@ -11,9 +11,9 @@
  * here: per-region lag renders as a natural null tail on the chart.
  */
 
-import { derivePairwiseFlows, PAIRWISE_KEYS } from '$lib/flows/derive-pairwise.js';
-import { INTERCONNECTORS } from '$lib/flows/region-geo.js';
-import { stripDateTimezone } from '$lib/utils/date-format.js';
+import { derivePairwiseFlows, PAIRWISE_KEYS } from '#lib/flows/derive-pairwise.js';
+import { INTERCONNECTORS } from '#lib/flows/region-geo.js';
+import { stripDateTimezone } from '#lib/utils/date-format.js';
 
 /** Corridor line colour — matches the map arcs' base stroke. */
 const CORRIDOR_COLOUR = '#5f7690';

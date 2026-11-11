@@ -1,5 +1,5 @@
 import { curveStepAfter, curveLinear, curveMonotoneX } from 'd3-shape';
-import { transformToProportion, transformToChangeSince } from '$lib/utils/data-transform';
+import { transformToProportion, transformToChangeSince } from '#lib/utils/data-transform/index.js';
 
 /** @typedef {'absolute' | 'proportion' | 'changeSince'} DataTransformType */
 /** @typedef {'smooth' | 'straight' | 'step'} CurveType */

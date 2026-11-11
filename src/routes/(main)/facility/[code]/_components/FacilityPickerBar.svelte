@@ -1,10 +1,10 @@
 <script>
-	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
+	import PageOptionsMenu from '#lib/components/PageOptionsMenu.svelte';
 	import { ArrowLeft, ChevronRight, Download } from '@lucide/svelte';
-	import { OptionsMenuDivider, OptionsMenuItem } from '$lib/components/ui/options-menu';
-	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
+	import { OptionsMenuDivider, OptionsMenuItem } from '#lib/components/ui/options-menu/index.js';
+	import { FullscreenFilterBar, FullscreenNavDropdown } from '#lib/components/fullscreen/index.js';
 	import { backToFacilities } from '../../_utils/back-navigation.js';
-	import { windowedHref } from '$lib/utils/fullscreen-mode.js';
+	import { windowedHref } from '#lib/utils/fullscreen-mode.js';
 
 	/**
 	 * @type {{

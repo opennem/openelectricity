@@ -1,11 +1,11 @@
 <script>
 	import { getContext } from 'svelte';
-	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
+	import StratumChart from '#lib/components/charts/v2/StratumChart.svelte';
 	import Tooltip from './Tooltip.svelte';
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 * @property {import('#lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 * @property {number} [projectionStartTime]
 	 * @property {FuelTechCode[]} [seriesLoadsIds]
 	 * @property {(time: number, key?: string) => void} [onhover]

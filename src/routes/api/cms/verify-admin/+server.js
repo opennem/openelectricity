@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
+import { verifyAdmin } from '#lib/auth/clerk-server.js';
 
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request }) {

@@ -13,20 +13,20 @@
 	 * fetch that settles later still refreshes the grid.
 	 */
 
-	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
+	import MetricCard from '#lib/components/charts/facility/metrics/MetricCard.svelte';
 	import {
 		NETWORK_METRICS,
 		NETWORK_METRIC_KEYS
-	} from '$lib/components/charts/network/network-metric-definitions.js';
-	import { buildNetworkMetricsContext } from '$lib/components/charts/network/network-metrics-calc.js';
-	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
-	import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
+	} from '#lib/components/charts/network/network-metric-definitions.js';
+	import { buildNetworkMetricsContext } from '#lib/components/charts/network/network-metrics-calc.js';
+	import { formatTooltipDateTime } from '#lib/components/charts/v2/formatters.js';
+	import { ianaFromOffset } from '#lib/components/charts/v2/network-time.js';
 
 	/**
 	 * @type {{
 	 *   generationData?: { data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null,
 	 *   priceData?: { data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null,
-	 *   marketProvider: ReturnType<typeof import('$lib/components/charts/network/network-market-data.svelte.js').createNetworkMarketData>,
+	 *   marketProvider: ReturnType<typeof import('#lib/components/charts/network/network-market-data.svelte.js').createNetworkMarketData>,
 	 *   viewStart?: number,
 	 *   viewEnd?: number,
 	 *   basis?: 'power' | 'energy',
@@ -51,7 +51,7 @@
 
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 
-	/** @type {import('$lib/components/charts/network/network-metrics-calc.js').NetworkMetricsContext} */
+	/** @type {import('#lib/components/charts/network/network-metrics-calc.js').NetworkMetricsContext} */
 	let ctx = $derived.by(() => {
 		const marketRows =
 			viewStart && viewEnd ? marketProvider.getVisibleRows(viewStart, viewEnd) : [];

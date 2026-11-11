@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { flushSync } from 'svelte';
 import StratifyPlotProject from './StratifyPlotProject.svelte.js';
 import { examples } from '../_utils/examples.js';
-import { CHART_FIELDS } from '$lib/stratify/chart-fields.js';
+import { CHART_FIELDS } from '#lib/stratify/chart-fields.js';
 
 /**
  * `it` whose body runs inside an effect root. The constructor registers

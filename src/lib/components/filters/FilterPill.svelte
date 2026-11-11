@@ -1,6 +1,6 @@
 <script>
-	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
-	import { hasTouchControls, TOUCH_PILL_ICON } from '$lib/components/ui/touch-controls.js';
+	import IconChevronDown from '#lib/icons/ChevronDown.svelte';
+	import { hasTouchControls, TOUCH_PILL_ICON } from '#lib/components/ui/touch-controls.js';
 	import { filterPillClass } from './filter-pill.js';
 
 	/**

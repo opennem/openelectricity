@@ -1,17 +1,17 @@
 <script>
-	import StratifyPlotChart from '$lib/stratify/StratifyPlotChart.svelte';
-	import StratifyMapChart from '$lib/stratify/StratifyMapChart.svelte';
-	import AnimatedFacetChart from '$lib/stratify/AnimatedFacetChart.svelte';
-	import { parseCSV } from '$lib/stratify/csv-parser.js';
-	import { getNumericSeriesNames, uniqueColumnValues } from '$lib/stratify/chart-data.js';
-	import { getPreset, getPlotStyle } from '$lib/stratify/chart-styles.js';
-	import { assignPaletteColours, getPaletteSwatchColours } from '$lib/stratify/colour-palettes.js';
-	import { makeValueFormatter } from '$lib/components/charts/plot/plot-configs.js';
+	import StratifyPlotChart from '#lib/stratify/StratifyPlotChart.svelte';
+	import StratifyMapChart from '#lib/stratify/StratifyMapChart.svelte';
+	import AnimatedFacetChart from '#lib/stratify/AnimatedFacetChart.svelte';
+	import { parseCSV } from '#lib/stratify/csv-parser.js';
+	import { getNumericSeriesNames, uniqueColumnValues } from '#lib/stratify/chart-data.js';
+	import { getPreset, getPlotStyle } from '#lib/stratify/chart-styles.js';
+	import { assignPaletteColours, getPaletteSwatchColours } from '#lib/stratify/colour-palettes.js';
+	import { makeValueFormatter } from '#lib/components/charts/plot/plot-configs.js';
 	import { scaleSqrt } from 'd3-scale';
 	import {
 		compileAnnotationItems,
 		DEFAULT_ANNOTATION_STYLE
-	} from '$lib/stratify/annotation-data.js';
+	} from '#lib/stratify/annotation-data.js';
 	import {
 		HORIZONTAL_TYPES,
 		MAP_TYPES,
@@ -19,7 +19,7 @@
 		WATERFALL_ROLE_KEYS,
 		WATERFALL_ROLE_LABELS,
 		getWaterfallRoleColours
-	} from '$lib/stratify/chart-types.js';
+	} from '#lib/stratify/chart-types.js';
 
 	/**
 	 * @type {{

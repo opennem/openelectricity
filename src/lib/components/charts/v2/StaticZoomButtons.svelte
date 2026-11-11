@@ -7,7 +7,7 @@
 	 */
 	import Minus from '@lucide/svelte/icons/minus';
 	import Plus from '@lucide/svelte/icons/plus';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 
 	/** @type {{ onzoomin?: () => void, onzoomout?: () => void, isAtMinZoom?: boolean, isAtMaxZoom?: boolean, size?: 'sm' | 'md' }} */
 	let { onzoomin, onzoomout, isAtMinZoom = false, isAtMaxZoom = false, size = 'sm' } = $props();

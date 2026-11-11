@@ -1,23 +1,23 @@
 <script>
 	import { onMount } from 'svelte';
 	import { format } from 'date-fns';
-	import FilterContent from '$lib/components/filters/FilterContent.svelte';
-	import FilterSection from '$lib/components/filters/FilterSection.svelte';
-	import FilterSectionHead from '$lib/components/filters/FilterSectionHead.svelte';
-	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
-	import TextInput from '$lib/components/form-elements/TextInput.svelte';
-	import Button from '$lib/components/form-elements/Button.svelte';
+	import FilterContent from '#lib/components/filters/FilterContent.svelte';
+	import FilterSection from '#lib/components/filters/FilterSection.svelte';
+	import FilterSectionHead from '#lib/components/filters/FilterSectionHead.svelte';
+	import Checkbox from '#lib/components/form-elements/Checkbox.svelte';
+	import TextInput from '#lib/components/form-elements/TextInput.svelte';
+	import Button from '#lib/components/form-elements/Button.svelte';
 	import {
 		technologyFilters,
 		technologyDefaultSelections,
 		regionFilters,
 		regionDefaultSelections
-	} from '$lib/filters';
-	import { getKeys } from '$lib/utils/keys';
-	import { page } from '$app/stores';
-	import Icon from '$lib/components/Icon.svelte';
-	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
-	import Meta from '$lib/components/Meta.svelte';
+	} from '#lib/filters.js';
+	import { getKeys } from '#lib/utils/keys.ts';
+	import { page } from '$app/state';
+	import Icon from '#lib/components/Icon.svelte';
+	import ArticleCard from '#lib/components/articles/ArticleCard.svelte';
+	import Meta from '#lib/components/Meta.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -47,7 +47,7 @@
 	let dateChosen = 'none';
 
 	onMount(() => {
-		pURL = $page.url;
+		pURL = page.url;
 
 		technologyArgs = pURL.searchParams
 			.get('technologies')
@@ -147,14 +147,13 @@
 	};
 
 	const setQueryString = () => {
-		const newUrl = new URL($page.url);
+		const newUrl = new URL(page.url.href);
 		newUrl.hash = '';
 		newUrl.search = '';
 
 		const technologies = getKeys(technologySelections)
 			.filter((technology) => technologySelections[technology])
 			.join('+');
-
 		const regions = getKeys(regionSelections)
 			.filter((region) => regionSelections[region])
 			.join('+');

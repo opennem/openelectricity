@@ -1,10 +1,10 @@
 <script>
 	import { getStratifyContext } from '../_state/context.js';
-	import { PALETTES, getPaletteColours } from '$lib/stratify/colour-palettes.js';
+	import { PALETTES, getPaletteColours } from '#lib/stratify/colour-palettes.js';
 
 	const project = getStratifyContext();
 
-	/** @type {import('$lib/stratify/colour-palettes.js').PaletteType} */
+	/** @type {import('#lib/stratify/colour-palettes.js').PaletteType} */
 	let activeType = $state('qualitative');
 
 	const CLASS_COUNTS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -29,7 +29,7 @@
 					? 'border-dark-grey text-dark-grey bg-white'
 					: 'border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
 				onclick={() =>
-					(activeType = /** @type {import('$lib/stratify/colour-palettes.js').PaletteType} */ (
+					(activeType = /** @type {import('#lib/stratify/colour-palettes.js').PaletteType} */ (
 						type
 					))}
 			>

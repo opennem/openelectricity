@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { fetchAllFacilities } from '$lib/server/opennem/fetch-facilities.js';
-import { urlsetXml, xmlResponse } from '$lib/seo/sitemap.js';
+import { fetchAllFacilities } from '#lib/server/opennem/fetch-facilities.js';
+import { urlsetXml, xmlResponse } from '#lib/seo/sitemap.js';
 
 /**
  * One entry per facility page (~600), every status — retired facilities have

@@ -1,8 +1,8 @@
 <script>
 	import { mergeProps } from 'bits-ui';
 	import Settings2 from '@lucide/svelte/icons/settings-2';
-	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import LogoMarkLoader from '#lib/components/LogoMarkLoader.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 
 	/**
 	 * RangeStatus — every tracker view's range readout: the selected range

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fuelTechColourMap } from '$lib/theme/openelectricity';
+import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
 import { getFuelTechColour, SERIES_FALLBACK_COLOUR } from './colours.js';
 
 describe('getFuelTechColour', () => {

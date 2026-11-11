@@ -1,7 +1,7 @@
 <script>
-	import Meta from '$lib/components/Meta.svelte';
-	import SignUpForm from '$lib/components/SignUpForm.svelte';
-	import ArrowTopRightOnSquare from '$lib/icons/ArrowTopRightOnSquare.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import SignUpForm from '#lib/components/SignUpForm.svelte';
+	import ArrowTopRightOnSquare from '#lib/icons/ArrowTopRightOnSquare.svelte';
 </script>
 
 <Meta

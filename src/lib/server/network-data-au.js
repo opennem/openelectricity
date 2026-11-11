@@ -31,8 +31,8 @@
  * (parity with the standalone WEM card).
  */
 
-import { stripDateTimezone } from '$lib/utils/date-format.js';
-import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
+import { stripDateTimezone } from '#lib/utils/date-format.js';
+import { offsetMsFromOffset } from '#lib/components/charts/v2/network-time.js';
 
 const SUB_DAILY_INTERVALS = new Set(['5m', '1h']);
 const AEST_SUFFIX = '+10:00';

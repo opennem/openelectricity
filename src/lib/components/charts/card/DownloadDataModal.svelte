@@ -1,7 +1,7 @@
 <script>
 	import { Download, FileSpreadsheet, LoaderCircle, X } from '@lucide/svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import ButtonIcon from '#lib/components/form-elements/ButtonIcon.svelte';
 	import { downloadStatus, workbookAvailability } from './chart-downloads.js';
 
 	/**

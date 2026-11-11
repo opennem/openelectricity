@@ -1,12 +1,12 @@
 <script>
 	import { ChevronRight, ExternalLink } from '@lucide/svelte';
-	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
-	import { Sheet } from '$lib/components/ui/sheet';
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
+	import MiniCharts from '#lib/components/charts/v2/MiniCharts.svelte';
+	import { Sheet } from '#lib/components/ui/sheet/index.js';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
 	import { CATEGORY_META } from './pollution-constants.js';
 	import { formatPollutantMass, formatPollutantMassParts } from './format-pollutant-mass.js';
 	import { computePollutantTrend } from './pollutant-trend.js';
-	import Sparkline from '$lib/components/charts/Sparkline.svelte';
+	import Sparkline from '#lib/components/charts/Sparkline.svelte';
 
 	/**
 	 * Row-based pollution tables for /facility/[code]. Each NPI category
@@ -101,7 +101,7 @@
 	 * key so the per-chart stores all read the same x-axis.
 	 */
 	let sheetSeriesData = $derived.by(
-		/** @returns {import('$lib/components/charts/v2/types.js').TimeSeriesData[]} */
+		/** @returns {import('#lib/components/charts/v2/types.js').TimeSeriesData[]} */
 		() => {
 			if (!sheetPollutants.length) return [];
 			return data.years.map((year) => {

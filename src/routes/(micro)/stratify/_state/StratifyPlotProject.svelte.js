@@ -5,35 +5,35 @@
  * Contains all authoring state — no ChartStore/Stratum dependency.
  */
 
-import { parseCSV } from '$lib/stratify/csv-parser.js';
-import { getPreset } from '$lib/stratify/chart-styles.js';
-import { assignPaletteColours, getPaletteSwatchColours } from '$lib/stratify/colour-palettes.js';
+import { parseCSV } from '#lib/stratify/csv-parser.js';
+import { getPreset } from '#lib/stratify/chart-styles.js';
+import { assignPaletteColours, getPaletteSwatchColours } from '#lib/stratify/colour-palettes.js';
 import {
 	HORIZONTAL_TYPES,
 	WATERFALL_TYPES,
 	WATERFALL_ROLE_KEYS,
 	WATERFALL_ROLE_LABELS,
 	getWaterfallRoleColours
-} from '$lib/stratify/chart-types.js';
+} from '#lib/stratify/chart-types.js';
 import {
 	getNumericSeriesNames,
 	normaliseSnapshot,
 	uniqueColumnValues
-} from '$lib/stratify/chart-data.js';
-import { CHART_FIELDS } from '$lib/stratify/chart-fields.js';
+} from '#lib/stratify/chart-data.js';
+import { CHART_FIELDS } from '#lib/stratify/chart-fields.js';
 import {
 	compileAnnotationItems,
 	createAnnotationItem,
 	DEFAULT_ANNOTATION_STYLE
-} from '$lib/stratify/annotation-data.js';
+} from '#lib/stratify/annotation-data.js';
 import {
 	detectLatColumn,
 	detectLngColumn,
 	detectLabelColumn
-} from '$lib/stratify/map-detection.js';
+} from '#lib/stratify/map-detection.js';
 
 /**
- * @typedef {import('$lib/stratify/chart-types.js').ChartType} ChartType
+ * @typedef {import('#lib/stratify/chart-types.js').ChartType} ChartType
  */
 
 /**
@@ -48,9 +48,9 @@ const PROJECT_FIELD_KEYS = CHART_FIELDS.map((field) => field.key).filter(
  * @typedef {Object} StratifyPlotSnapshot
  * @property {number} version
  * @property {string} csvText
- * @property {import('$lib/stratify/annotation-data.js').AnnotationItem[]} [annotationItems]
- * @property {import('$lib/stratify/annotation-data.js').AnnotationStyleConfig} [annotationStyle]
- * @property {import('$lib/stratify/plot-annotations.js').Annotation[]} [annotations]
+ * @property {import('#lib/stratify/annotation-data.js').AnnotationItem[]} [annotationItems]
+ * @property {import('#lib/stratify/annotation-data.js').AnnotationStyleConfig} [annotationStyle]
+ * @property {import('#lib/stratify/plot-annotations.js').Annotation[]} [annotations]
  * @property {string} title
  * @property {string} description
  * @property {string} dataSource
@@ -64,7 +64,7 @@ const PROJECT_FIELD_KEYS = CHART_FIELDS.map((field) => field.key).filter(
  * @property {Record<string, string>} userSeriesLabels
  * @property {Record<string, string>} [seriesChartTypes]
  * @property {Record<string, string>} [seriesLineStyles]
- * @property {import('$lib/stratify/plot-overrides.js').PlotOverrides | null} [plotOverrides]
+ * @property {import('#lib/stratify/plot-overrides.js').PlotOverrides | null} [plotOverrides]
  * @property {string[]} [seriesOrder]
  * @property {number} [chartHeight]
  * @property {boolean} [showXTickLabels]
@@ -133,13 +133,13 @@ export default class StratifyPlotProject {
 	/** @type {string} */
 	csvText = $state('');
 
-	/** @type {import('$lib/stratify/annotation-data.js').AnnotationItem[]} */
+	/** @type {import('#lib/stratify/annotation-data.js').AnnotationItem[]} */
 	annotationItems = $state([]);
 
-	/** @type {import('$lib/stratify/annotation-data.js').AnnotationStyleConfig} */
+	/** @type {import('#lib/stratify/annotation-data.js').AnnotationStyleConfig} */
 	annotationStyle = $state({ ...DEFAULT_ANNOTATION_STYLE });
 
-	/** @type {import('$lib/stratify/plot-annotations.js').Annotation[]} Legacy annotations */
+	/** @type {import('#lib/stratify/plot-annotations.js').Annotation[]} Legacy annotations */
 	annotations = $state([]);
 
 	// --- Metadata ---
@@ -184,7 +184,7 @@ export default class StratifyPlotProject {
 	/** @type {Record<string, string>} Per-series line style override */
 	seriesLineStyles = $state({});
 
-	/** @type {import('$lib/stratify/plot-overrides.js').PlotOverrides | null} */
+	/** @type {import('#lib/stratify/plot-overrides.js').PlotOverrides | null} */
 	plotOverrides = $state(null);
 
 	/** @type {string[]} User-defined series order (empty = use CSV column order) */
@@ -781,7 +781,7 @@ export default class StratifyPlotProject {
 
 	/**
 	 * @param {string} id
-	 * @param {Partial<import('$lib/stratify/annotation-data.js').AnnotationItem>} patch
+	 * @param {Partial<import('#lib/stratify/annotation-data.js').AnnotationItem>} patch
 	 */
 	updateAnnotation(id, patch) {
 		this.annotationItems = this.annotationItems.map((item) =>

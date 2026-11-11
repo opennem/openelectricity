@@ -6,7 +6,7 @@
  * calculations that infer interval length from adjacent timestamps.
  */
 
-import { baseIntervalFor } from '$lib/components/charts/facility/range-interval-config.js';
+import { baseIntervalFor } from '#lib/components/charts/facility/range-interval-config.js';
 import { localYearMonth } from './date-labels.js';
 import { offsetHoursFromIana } from './network-time.js';
 

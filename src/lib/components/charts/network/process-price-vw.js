@@ -7,7 +7,7 @@
 import {
 	collectSeriesByTimestamp,
 	rowsFromSeriesMaps
-} from '$lib/components/charts/v2/series-rows.js';
+} from '#lib/components/charts/v2/series-rows.js';
 
 export const VW_PRICE_SERIES_ID = 'vw_price';
 const MARKET_VALUE_ID = 'market_value';

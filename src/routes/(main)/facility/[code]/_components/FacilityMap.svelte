@@ -2,12 +2,12 @@
 	import { MapLibre, Marker, AttributionControl } from 'svelte-maplibre-gl';
 	// Registers MapLibre 6's worker URL with Vite (once per page, idempotent).
 	import 'svelte-maplibre-gl/vite';
-	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
-	import TransmissionLinesLayer from '$lib/components/map/TransmissionLinesLayer.svelte';
-	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
-	import MapOptionsDropdown from '$lib/components/map/MapOptionsDropdown.svelte';
-	import { mapStyleForTheme } from '$lib/components/map/map-style.js';
-	import { fetchOsmPolygon, featureBounds } from '$lib/utils/osm.js';
+	import OsmFootprintLayer from '#lib/components/map/OsmFootprintLayer.svelte';
+	import TransmissionLinesLayer from '#lib/components/map/TransmissionLinesLayer.svelte';
+	import { collapseMapAttribution } from '#lib/components/map/collapse-attribution.js';
+	import MapOptionsDropdown from '#lib/components/map/MapOptionsDropdown.svelte';
+	import { mapStyleForTheme } from '#lib/components/map/map-style.js';
+	import { fetchOsmPolygon, featureBounds } from '#lib/utils/osm.js';
 
 	/**
 	 * Full-bleed, interactive facility location map. Unlike the sidebar

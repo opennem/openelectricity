@@ -1,5 +1,5 @@
 import { setContext, getContext } from 'svelte';
-import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
+import ChartStore from '#lib/components/charts/stores/chart.svelte.js';
 
 export default function () {
 	let chartKey = Symbol('record-history');

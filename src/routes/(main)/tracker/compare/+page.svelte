@@ -5,8 +5,8 @@
 	 * download.
 	 */
 
-	import { formatDayMonthTime } from '$lib/components/charts/v2/date-labels.js';
-	import { OptionsMenuItem } from '$lib/components/ui/options-menu';
+	import { formatDayMonthTime } from '#lib/components/charts/v2/date-labels.js';
+	import { OptionsMenuItem } from '#lib/components/ui/options-menu/index.js';
 	import TrackerShell from '../TrackerShell.svelte';
 	import RegionComparison from '../RegionComparison.svelte';
 	import { createTrackerPage } from '../tracker-page.js';

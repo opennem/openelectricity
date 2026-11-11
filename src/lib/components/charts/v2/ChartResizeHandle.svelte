@@ -7,7 +7,7 @@
 	 * Persists height via localStorage when `storageKey` is provided.
 	 */
 
-	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
+	import DragHandle from '#lib/components/ui/panel/drag-handle.svelte';
 
 	/**
 	 * @typedef {Object} Props

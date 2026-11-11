@@ -1,7 +1,7 @@
 <script>
 	import { onDestroy, onMount } from 'svelte';
-	import clamp from '$lib/utils/clamp.js';
-	import AnimationTimeline from '$lib/components/playback/AnimationTimeline.svelte';
+	import clamp from '#lib/utils/clamp.js';
+	import AnimationTimeline from '#lib/components/playback/AnimationTimeline.svelte';
 
 	/**
 	 * Animate through a facet column's unique values by interpolating row

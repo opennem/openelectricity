@@ -99,7 +99,7 @@ Energy is MWh, power MW, market value $, emissions tCO₂e.
 
 | Metric                        | Definition                                                                                                                                                                                                                                                                                                                          | Source                                        |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| **Capacity Factor**           | `energy / (capacity × hours) × 100` — capacity is the per-unit sum of maximum falling back to registered (`$lib/utils/capacity.js`)                                                                                                                                                                                                 | summaryData                                   |
+| **Capacity Factor**           | `energy / (capacity × hours) × 100` — capacity is the per-unit sum of maximum falling back to registered (`#lib/utils/capacity.js`)                                                                                                                                                                                                 | summaryData                                   |
 | **Total Energy**              | Σ energy across unit series (Σ\|energy\| throughput for storage facilities — batteries and pumped hydro, whose signed net is negative by physics)                                                                                                                                                                                   | summaryData                                   |
 | **Revenue**                   | Σ market value across unit series                                                                                                                                                                                                                                                                                                   | summaryData                                   |
 | **Avg Price Received**        | `market_value / energy` ($/MWh)                                                                                                                                                                                                                                                                                                     | summaryData                                   |
@@ -124,7 +124,7 @@ request.
 
 A few metrics (DC:AC ratio, storage duration, expected closure) read from the **Sanity
 CMS** facility document's `units[]`, via the shared projection in
-`$lib/server/sanity-projections.js` (`SANITY_FACILITY_UNITS_PROJECTION`), fetched
+`#lib/server/sanity-projections.js` (`SANITY_FACILITY_UNITS_PROJECTION`), fetched
 server-side on both pages. When Sanity has no data for a facility these simply don't
 render — the OE-API-derived metrics are unaffected. Per-unit fuel-tech, turbine and
 equipment detail is shown in the units slide-out panel, not here.

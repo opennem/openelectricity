@@ -389,7 +389,7 @@
 }
 
 /* MapLibre built-in controls (zoom +/-) — matched to the floating map chrome
-   (MAP_FAB_CLASS in $lib/components/map/map-style.js): the legends' material
+   (MAP_FAB_CLASS in #lib/components/map/map-style.js): the legends' material
    (white/95 + blur + soft shadow) with a thin border and slightly rounded
    corners, with slightly smaller buttons than the 44px FABs. Doubled-up
    `.maplibregl-ctrl` prefix: MapLibre's own stylesheet arrives with the

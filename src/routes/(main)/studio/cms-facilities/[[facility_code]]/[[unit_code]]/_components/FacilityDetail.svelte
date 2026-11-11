@@ -6,17 +6,17 @@
 	 * owners, metadata, units list) plus a slide-in unit detail panel.
 	 */
 
-	import { PanelHeader, DragHandle, createDragHandler } from '$lib/components/ui/panel';
-	import { EXTERNAL_LINKS } from '$lib/constants/external-links';
-	import { createUrlFor } from '$lib/sanity';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { PanelHeader, DragHandle, createDragHandler } from '#lib/components/ui/panel/index.js';
+	import { EXTERNAL_LINKS } from '#lib/constants/external-links.js';
+	import { createUrlFor } from '#lib/sanity.js';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
 	import { ChevronRight, CircleX, ExternalLink, Minus, Pencil, Plus, X } from '@lucide/svelte';
 	import { slide } from 'svelte/transition';
-	import { portal } from '$lib/actions/portal.js';
-	import { Backdrop } from '$lib/components/ui/backdrop';
-	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
+	import { portal } from '#lib/actions/portal.js';
+	import { Backdrop } from '#lib/components/ui/backdrop/index.js';
+	import FacilityStatusIcon from '#lib/components/facilities/FacilityStatusIcon.svelte';
 	import InlineDropdown from './InlineDropdown.svelte';
-	import { getClerkState } from '$lib/auth/clerk.svelte.js';
+	import { getClerkState } from '#lib/auth/clerk.svelte.js';
 
 	const clerkState = getClerkState();
 

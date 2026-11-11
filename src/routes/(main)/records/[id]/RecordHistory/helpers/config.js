@@ -1,4 +1,4 @@
-import { intlTimeZone } from '$lib/utils/date-format.js';
+import { intlTimeZone } from '#lib/utils/date-format.js';
 
 /** @typedef {(d: Date, timeZone?: string) => string} dateFormatter */
 

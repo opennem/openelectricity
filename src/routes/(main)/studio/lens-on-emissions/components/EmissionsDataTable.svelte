@@ -5,7 +5,7 @@
 	 * Displays a collapsible table showing emissions data for all sectors by year.
 	 * Shows data in reverse chronological order (newest first).
 	 */
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import { formatEmissionsValue } from '../helpers/formatters.js';
 
 	/**

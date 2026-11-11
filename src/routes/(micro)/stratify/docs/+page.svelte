@@ -2,11 +2,11 @@
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import Meta from '$lib/components/Meta.svelte';
-	import { CHART_TYPES } from '$lib/stratify/chart-types.js';
-	import { CHART_TYPE_GUIDANCE, getChartTypeGuidance } from '$lib/stratify/example-catalogue.js';
-	import { buildDocumentationCatalogue } from '$lib/stratify/example-docs.js';
-	import { stratifyGuides } from '$lib/stratify/guide-catalogue.js';
+	import Meta from '#lib/components/Meta.svelte';
+	import { CHART_TYPES } from '#lib/stratify/chart-types.js';
+	import { CHART_TYPE_GUIDANCE, getChartTypeGuidance } from '#lib/stratify/example-catalogue.js';
+	import { buildDocumentationCatalogue } from '#lib/stratify/example-docs.js';
+	import { stratifyGuides } from '#lib/stratify/guide-catalogue.js';
 	import ExampleCard from './_components/ExampleCard.svelte';
 
 	/** @type {{ data: { communityCharts: Array<Record<string, any>> } }} */

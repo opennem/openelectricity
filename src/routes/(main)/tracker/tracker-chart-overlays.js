@@ -1,13 +1,13 @@
-import { displayFullTransform } from '$lib/components/charts/v2/dataProcessing.js';
+import { displayFullTransform } from '#lib/components/charts/v2/dataProcessing.js';
 import {
 	applyBucketFilterToDisplayRows,
 	bucketFilterPredicate,
 	bucketFilterKindFor
-} from '$lib/components/charts/v2/bucket-filter.js';
+} from '#lib/components/charts/v2/bucket-filter.js';
 import {
 	RENEWABLES_SERIES_ID,
 	DEMAND_GROSS_SERIES_ID
-} from '$lib/components/charts/network/market-series-ids.js';
+} from '#lib/components/charts/network/market-series-ids.js';
 /** One year of lead-in plus room for half-year bucket alignment. */
 export const ROLLING_LEAD_MS = 580 * 86_400_000;
 

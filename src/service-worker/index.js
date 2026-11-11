@@ -1,11 +1,6 @@
-/// <reference types="@sveltejs/kit" />
-/// <reference no-default-lib="true"/>
-/// <reference lib="esnext" />
-/// <reference lib="webworker" />
-
-import { build, files, version } from '$service-worker';
-
-const sw = /** @type {ServiceWorkerGlobalScope} */ (/** @type {unknown} */ (self));
+import { self as sw } from '$app/service-worker';
+import { version } from '$app/env';
+import { assets, immutable } from '$app/manifest';
 
 // Unique cache per deployment — old caches are dropped on activate.
 const CACHE = `cache-${version}`;
@@ -16,15 +11,25 @@ const CACHE = `cache-${version}`;
 // heavy additions out by default (cache.addAll fails atomically, so one
 // oversized asset would otherwise block the whole install).
 const STATIC_ASSETS = ['/favicon.png', '/icon-192.png', '/logo-mark.png', '/manifest.webmanifest'];
+
+/**
+ * Manifest paths are relative to the base path (the worker's scope); resolve
+ * them to the absolute pathnames the fetch handler matches against.
+ * @param {{ path: string }} file
+ */
+const pathname = ({ path }) => new URL(path, sw.registration.scope).pathname;
+
 const ASSETS = [
-	...build,
-	...files.filter(
-		(path) =>
-			STATIC_ASSETS.includes(path) ||
-			/^\/fonts\/[^/]+\.(ttf|woff2?)$/.test(path) ||
-			path.startsWith('/img/icons/') ||
-			path.startsWith('/map-styles/')
-	)
+	...immutable.map(pathname),
+	...assets
+		.map(pathname)
+		.filter(
+			(path) =>
+				STATIC_ASSETS.includes(path) ||
+				/^\/fonts\/[^/]+\.(ttf|woff2?)$/.test(path) ||
+				path.startsWith('/img/icons/') ||
+				path.startsWith('/map-styles/')
+		)
 ];
 const ASSET_PATHS = new Set(ASSETS);
 

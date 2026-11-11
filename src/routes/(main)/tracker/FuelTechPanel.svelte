@@ -1,11 +1,11 @@
 <script>
 	import TrackerPanelHeader from './TrackerPanelHeader.svelte';
 	import FuelTechTable from './FuelTechTable.svelte';
-	import LoadingOverlay from '$lib/components/charts/card/LoadingOverlay.svelte';
+	import LoadingOverlay from '#lib/components/charts/card/LoadingOverlay.svelte';
 	import {
 		getChartDownloads,
 		chartDownload
-	} from '$lib/components/charts/card/chart-downloads.svelte.js';
+	} from '#lib/components/charts/card/chart-downloads.svelte.js';
 
 	/** @typedef {import('./types.js').FuelTechTableRow} FuelTechTableRow */
 	/** @typedef {import('./types.js').CurtailmentTableRow} CurtailmentTableRow */

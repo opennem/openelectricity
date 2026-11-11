@@ -1,17 +1,17 @@
 <script>
-	import { building } from '$app/environment';
+	import { building } from '$app/env';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { ChevronDown, Plus, Save, SlidersHorizontal } from '@lucide/svelte';
-	import Meta from '$lib/components/Meta.svelte';
-	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import PageOptionsMenu from '#lib/components/PageOptionsMenu.svelte';
 	import {
 		FullscreenContainer,
 		FullscreenFilterBar,
 		FullscreenLayout,
 		FullscreenNavDropdown
-	} from '$lib/components/fullscreen';
-	import { isFullscreenUrl, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
+	} from '#lib/components/fullscreen/index.js';
+	import { isFullscreenUrl, toggleFullscreenMode } from '#lib/utils/fullscreen-mode.js';
 	import ExploreCanvas from './ExploreCanvas.svelte';
 
 	/** @type {{ data: { facilities: any[] } }} */

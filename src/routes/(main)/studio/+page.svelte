@@ -1,6 +1,6 @@
 <script>
-	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
-	import Meta from '$lib/components/Meta.svelte';
+	import PageHeaderSimple from '#lib/components/PageHeaderSimple.svelte';
+	import Meta from '#lib/components/Meta.svelte';
 
 	const projects = [
 		{

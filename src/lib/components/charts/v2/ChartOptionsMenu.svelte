@@ -1,9 +1,9 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
+	import EllipsisVertical from '#lib/icons/EllipsisVertical.svelte';
 	import Settings2 from '@lucide/svelte/icons/settings-2';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import ChartControls from './ChartControls.svelte';
 
 	/**

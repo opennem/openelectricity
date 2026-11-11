@@ -4,7 +4,7 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('$lib/types/article.types').Article} article
+	 * @property {import('#lib/types/article.types.ts').Article} article
 	 */
 
 	/** @type {Props & { [key: string]: any }} */

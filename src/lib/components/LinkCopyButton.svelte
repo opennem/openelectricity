@@ -1,7 +1,7 @@
 <script>
-	import { writeToClipboard } from '$lib/utils/clipboard';
-	import IconShare from '$lib/icons/Share.svelte';
-	import IconClipboardDocumentCheck from '$lib/icons/ClipboardDocumentCheck.svelte';
+	import { writeToClipboard } from '#lib/utils/clipboard.js';
+	import IconShare from '#lib/icons/Share.svelte';
+	import IconClipboardDocumentCheck from '#lib/icons/ClipboardDocumentCheck.svelte';
 	let copying = $state(false);
 	function copyLink() {
 		copying = true;

@@ -1,7 +1,7 @@
 <script>
 	import { Pencil, X } from '@lucide/svelte';
-	import { CHART_TYPES } from '$lib/stratify/chart-types.js';
-	import { CHART_TYPE_GUIDANCE } from '$lib/stratify/example-catalogue.js';
+	import { CHART_TYPES } from '#lib/stratify/chart-types.js';
+	import { CHART_TYPE_GUIDANCE } from '#lib/stratify/example-catalogue.js';
 	import { getStratifyContext } from '../_state/context.js';
 	import ChartTypeGraphic from './ChartTypeGraphic.svelte';
 
@@ -13,7 +13,7 @@
 	);
 	let selectedGuidance = $derived(CHART_TYPE_GUIDANCE[selectedType.value]);
 
-	/** @param {import('$lib/stratify/chart-types.js').ChartType} chartType */
+	/** @param {import('#lib/stratify/chart-types.js').ChartType} chartType */
 	function selectChartType(chartType) {
 		project.chartType = chartType;
 	}

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import StratifyPlotProject from '../_state/StratifyPlotProject.svelte.js';
-import { curatedCommunityExamples } from '$lib/stratify/example-catalogue.js';
+import { curatedCommunityExamples } from '#lib/stratify/example-catalogue.js';
 import { loadExampleTemplate } from './templates.js';
 
 describe('Stratify example templates', () => {

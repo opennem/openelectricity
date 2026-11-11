@@ -1,6 +1,6 @@
 <script>
 	import { onMount, untrack } from 'svelte';
-	import { downloadBlob } from '$lib/utils/download-csv.js';
+	import { downloadBlob } from '#lib/utils/download-csv.js';
 	import { renderPng } from './png-export.js';
 
 	/** @type {{snapshot: import('./png-export.js').PngSnapshot, onclose: () => void}} */

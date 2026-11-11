@@ -10,7 +10,7 @@
  * (so every metric reflects the chart's current date range).
  */
 
-import { getNumberFormat, formatCapacity, formatPrice } from '$lib/utils/formatters';
+import { getNumberFormat, formatCapacity, formatPrice } from '#lib/utils/formatters.js';
 
 const fmt0 = getNumberFormat(0);
 const fmt1 = getNumberFormat(1);

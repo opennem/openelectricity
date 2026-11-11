@@ -7,7 +7,7 @@
  * pure and testable.
  */
 
-import { intlTimeZone } from '$lib/utils/date-format.js';
+import { intlTimeZone } from '#lib/utils/date-format.js';
 
 /** Separator used in all range labels ("21 — 27 Jan"). */
 export const RANGE_SEPARATOR = '—';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { urlFor } from '$lib/sanity';
+	import { urlFor } from '#lib/sanity.js';
 	// import type { CustomBlockComponentProps } from '@portabletext/svelte';
 
 	// Property custom blocks receive from @portabletext/svelte when redered

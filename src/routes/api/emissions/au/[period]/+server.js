@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getEmissions } from '$lib/server/emissions';
+import { getEmissions } from '#lib/server/emissions/index.js';
 
 /**
  * National (Australia-wide) emissions by sector, recreating the legacy

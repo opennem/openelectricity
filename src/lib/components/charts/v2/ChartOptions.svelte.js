@@ -10,10 +10,10 @@
  */
 
 import { curveStepAfter, curveLinear, curveMonotoneX } from 'd3-shape';
-import { transformToProportion, transformToChangeSince } from '$lib/utils/data-transform';
+import { transformToProportion, transformToChangeSince } from '#lib/utils/data-transform/index.js';
 
 /** @typedef {'absolute' | 'proportion' | 'changeSince' | 'growth'} DataTransformType */
-/** @typedef {import('$lib/utils/data-transform/growth.js').GrowthComparison} GrowthComparison */
+/** @typedef {import('#lib/utils/data-transform/growth.js').GrowthComparison} GrowthComparison */
 /** @typedef {'energy' | 'averagePower'} EnergyMeasure */
 /** @typedef {'smooth' | 'straight' | 'step'} CurveType */
 /** @typedef {'stacked-area' | 'area' | 'line' | 'grouped-bar' | 'bar-stacked'} ChartType */

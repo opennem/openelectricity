@@ -4,7 +4,7 @@
  * bundle — only a download click pays for it.
  */
 
-import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
+import { offsetMsFromOffset } from '#lib/components/charts/v2/network-time.js';
 import { downloadBlob } from './download-csv.js';
 
 /**

@@ -3,7 +3,7 @@ import { flushSync } from 'svelte';
 import {
 	clearCompletedResponses,
 	clearInFlightFetches
-} from '$lib/components/charts/v2/ChartDataManager.svelte.js';
+} from '#lib/components/charts/v2/ChartDataManager.svelte.js';
 import { createRegionComparisonData } from './region-comparison-data.svelte.js';
 import { normaliseRegionComparison } from './region-comparison.js';
 import { failedResponse, stubNetworkFetch } from './test-fixtures.svelte.js';

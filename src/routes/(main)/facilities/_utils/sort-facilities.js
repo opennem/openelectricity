@@ -3,8 +3,8 @@
  * keyboard navigation so both operate on the same ordering.
  */
 
-import { sumUnitCapacities } from '$lib/utils/capacity';
-import { getRegionLabel } from '$lib/facilities/filters.js';
+import { sumUnitCapacities } from '#lib/utils/capacity.js';
+import { getRegionLabel } from '#lib/facilities/filters.js';
 
 /**
  * @param {any} facility

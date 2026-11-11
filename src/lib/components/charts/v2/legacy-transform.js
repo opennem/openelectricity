@@ -15,8 +15,8 @@
  * avoid); prefer the series-rows core for new work.
  */
 
-import StatisticV2 from '$lib/utils/Statistic/v2.js';
-import TimeSeriesV2 from '$lib/utils/TimeSeries/v2.js';
+import StatisticV2 from '#lib/utils/Statistic/v2.js';
+import TimeSeriesV2 from '#lib/utils/TimeSeries/v2.js';
 
 /**
  * @typedef {Object} ProcessingOptions

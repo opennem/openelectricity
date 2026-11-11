@@ -1,12 +1,12 @@
 <script>
-	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import GenCapViz from '$lib/components/facilities/GenCapViz.svelte';
+	import FacilityStatusIcon from '#lib/components/facilities/FacilityStatusIcon.svelte';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
+	import GenCapViz from '#lib/components/facilities/GenCapViz.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
-	import { getRegionLabel } from '$lib/facilities/filters.js';
-	import formatValue from '$lib/facilities/format-value.js';
-	import { getFueltechColor } from '$lib/utils/fueltech-display';
-	import { getUnitCapacity, getUnitCapacitySource } from '$lib/utils/capacity';
+	import { getRegionLabel } from '#lib/facilities/filters.js';
+	import formatValue from '#lib/facilities/format-value.js';
+	import { getFueltechColor } from '#lib/utils/fueltech-display.js';
+	import { getUnitCapacity, getUnitCapacitySource } from '#lib/utils/capacity.js';
 
 	/**
 	 * @type {{

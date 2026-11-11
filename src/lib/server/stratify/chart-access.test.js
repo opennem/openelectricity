@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canAccess } from '$lib/stratify/chart-permissions.js';
+import { canAccess } from '#lib/stratify/chart-permissions.js';
 import { getChartAccess } from './chart-access.js';
 
 describe('getChartAccess', () => {

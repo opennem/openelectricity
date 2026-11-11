@@ -1,6 +1,6 @@
 <script>
 	import { untrack } from 'svelte';
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
 	import { comparisonChartUnits, formatComparisonCell } from './comparison-metrics.js';
 	import { COMPARISON_REGIONS, comparisonTickLabel } from './region-comparison.js';
 
@@ -15,7 +15,7 @@
 	 *   hover: number | null, focus: number | null, highlighted: boolean,
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
 	 *   onhoverregion: (region: string | null) => void,
-	 *   timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void}} */
+	 *   timeMarkers?: import('#lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void}} */
 	let {
 		region,
 		regions,

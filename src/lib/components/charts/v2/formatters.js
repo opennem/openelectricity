@@ -6,7 +6,7 @@
  */
 
 import { computeEnergyGridlines } from './energy-gridlines.js';
-import { baseIntervalFor } from '$lib/components/charts/facility/range-interval-config.js';
+import { baseIntervalFor } from '#lib/components/charts/facility/range-interval-config.js';
 import { bucketFilterKindFor, bucketFilterPredicate } from './bucket-filter.js';
 import {
 	appendHistoricalYear,

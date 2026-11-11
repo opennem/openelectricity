@@ -13,8 +13,8 @@
 		formatDispatchLabel,
 		formatPrice,
 		numberOrUndefined
-	} from '$lib/flows/format.js';
-	import { priceColour } from '$lib/price-scale.js';
+	} from '#lib/flows/format.js';
+	import { priceColour } from '#lib/price-scale.js';
 
 	/**
 	 * @type {{

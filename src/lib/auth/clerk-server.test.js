@@ -7,7 +7,7 @@ vi.mock('@clerk/backend', () => ({
 	verifyToken: vi.fn()
 }));
 
-vi.mock('$env/dynamic/private', () => ({ env: { CLERK_SECRET_KEY: 'sk_test' } }));
+vi.mock('$app/env/private', () => ({ CLERK_SECRET_KEY: 'sk_test' }));
 
 import { findAdminIds, searchAdmins } from './clerk-server.js';
 

@@ -5,11 +5,11 @@
  * documents into a consistent shape with defaults applied.
  */
 
-import { migrateChartType } from '$lib/stratify/chart-types.js';
-import { DEFAULT_ANNOTATION_STYLE } from '$lib/stratify/annotation-data.js';
-import { migratePreset } from '$lib/stratify/chart-styles.js';
-import { migratePresetToPalette } from '$lib/stratify/colour-palettes.js';
-import { CHART_FIELDS, chartFieldDefault, withChartDefaults } from '$lib/stratify/chart-fields.js';
+import { migrateChartType } from '#lib/stratify/chart-types.js';
+import { DEFAULT_ANNOTATION_STYLE } from '#lib/stratify/annotation-data.js';
+import { migratePreset } from '#lib/stratify/chart-styles.js';
+import { migratePresetToPalette } from '#lib/stratify/colour-palettes.js';
+import { CHART_FIELDS, chartFieldDefault, withChartDefaults } from '#lib/stratify/chart-fields.js';
 
 /**
  * Collect the unique values of a column from a row array, preserving

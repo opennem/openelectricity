@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { client } from '$lib/sanity';
-import { byProp } from '$lib/utils/sort';
+import { client } from '#lib/sanity.js';
+import { byProp } from '#lib/utils/sort.js';
 
 export async function GET({ setHeaders }) {
 	setHeaders({

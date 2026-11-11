@@ -1,12 +1,12 @@
 import { startOfYear, format, addYears } from 'date-fns';
 import { format as d3Format } from 'd3-format';
 
-import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
-import deepCopy from '$lib/utils/deep-copy';
+import { fuelTechNameReducer, loadFuelTechs } from '#lib/fuel_techs.js';
+import deepCopy from '#lib/utils/deep-copy.js';
 
-import Statistic from '$lib/utils/Statistic';
-import TimeSeries from '$lib/utils/TimeSeries';
-import parseInterval from '$lib/utils/intervals';
+import Statistic from '#lib/utils/Statistic/index.js';
+import TimeSeries from '#lib/utils/TimeSeries/index.js';
+import parseInterval from '#lib/utils/intervals.js';
 import {
 	detailedGroup,
 	simpleGroup,

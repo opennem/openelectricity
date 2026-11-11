@@ -6,8 +6,8 @@
  * render identically.
  */
 
-import { regionsWithShortLabels } from '$lib/regions.js';
-import { formatDateTime } from '$lib/utils/formatters.js';
+import { regionsWithShortLabels } from '#lib/regions.js';
+import { formatDateTime } from '#lib/utils/formatters.js';
 
 /**
  * '$87' / '-$12' — any '/MWh' suffix renders separately at the call site.
@@ -24,7 +24,7 @@ export function formatPrice(value) {
  *
  * Perceptual luma (ITU-R BT.709) with a 140 threshold — the price-scale
  * quantile greys split cleanly here. Deliberately NOT
- * `getContrastedTextColour` from `$lib/colours.js`: its WCAG ≥3:1 rule flips
+ * `getContrastedTextColour` from `#lib/colours.js`: its WCAG ≥3:1 rule flips
  * #91918F (the $100–$300 band) to white at 3.1:1, where black reads better at
  * the chips' 10px size.
  * @param {string} background - Hex colour like '#RRGGBB'

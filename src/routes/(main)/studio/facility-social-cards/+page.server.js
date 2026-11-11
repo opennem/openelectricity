@@ -4,8 +4,8 @@
  * facilities have a Sanity photo vs fall back to the branded card.
  */
 
-import { oeClient } from '$lib/server/oe-client.js';
-import { client as sanityClient } from '$lib/sanity';
+import { oeClient } from '#lib/server/oe-client.js';
+import { client as sanityClient } from '#lib/sanity.js';
 
 export async function load() {
 	const facilitiesPromise = oeClient

@@ -1,7 +1,7 @@
 <script>
 	import { MediaQuery } from 'svelte/reactivity';
 	import Move from '@lucide/svelte/icons/move';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import StaticZoomButtons from './StaticZoomButtons.svelte';
 
 	/**

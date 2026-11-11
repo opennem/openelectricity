@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
-import { resolveDataset } from '$lib/sanity-cms.js';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
-import { PUBLIC_SANITY_PROJECT_ID } from '$env/static/public';
-import { env } from '$env/dynamic/private';
+import { resolveDataset } from '#lib/sanity-cms.js';
+import { verifyAdmin } from '#lib/auth/clerk-server.js';
+import { PUBLIC_SANITY_PROJECT_ID } from '$app/env/public';
+import { SANITY_CMS_TOKEN } from '$app/env/private';
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -37,7 +37,7 @@ export async function POST({ request, cookies }) {
 		method: 'POST',
 		headers: {
 			'Content-Type': file.type,
-			Authorization: `Bearer ${env.SANITY_CMS_TOKEN}`
+			Authorization: `Bearer ${SANITY_CMS_TOKEN}`
 		},
 		body: buffer
 	});

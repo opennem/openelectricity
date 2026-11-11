@@ -1,9 +1,9 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { portal } from '$lib/actions/portal.js';
-	import { Backdrop } from '$lib/components/ui/backdrop';
-	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import { portal } from '#lib/actions/portal.js';
+	import { Backdrop } from '#lib/components/ui/backdrop/index.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
 	import { buildFacilityHaystack, parseQueryTerms } from './facility-search.js';
 
 	/**

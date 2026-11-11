@@ -1,5 +1,5 @@
 <script>
-	import StrataChartView from '$lib/stratify/StrataChartView.svelte';
+	import StrataChartView from '#lib/stratify/StrataChartView.svelte';
 
 	/**
 	 * @type {{

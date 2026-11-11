@@ -1,13 +1,13 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { CircleAlert, ExternalLink, SearchX } from '@lucide/svelte';
-	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
-	import { EXTERNAL_LINKS } from '$lib/constants/external-links';
-	import { urlFor } from '$lib/sanity';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import FacilitySearchPopover from '$lib/components/facility/FacilitySearchPopover.svelte';
-	import FacilitySpotlight from '$lib/components/facility/FacilitySpotlight.svelte';
-	import { PollutionSection } from '$lib/components/charts/facility';
+	import IconChevronLeft from '#lib/icons/ChevronLeft.svelte';
+	import { EXTERNAL_LINKS } from '#lib/constants/external-links.js';
+	import { urlFor } from '#lib/sanity.js';
+	import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
+	import FacilitySearchPopover from '#lib/components/facility/FacilitySearchPopover.svelte';
+	import FacilitySpotlight from '#lib/components/facility/FacilitySpotlight.svelte';
+	import { PollutionSection } from '#lib/components/charts/facility/index.js';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();

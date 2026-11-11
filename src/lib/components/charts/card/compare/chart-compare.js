@@ -6,7 +6,7 @@
  * owns the stepping, sorting and URL validation the panel needs.
  */
 
-import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
+import { EARLIEST_DATA_MS } from '#lib/utils/date-range.js';
 import { EMPTY_CELL, formatPercentageValue } from '../cell-format.js';
 
 /** @typedef {import('../types.js').CompareSource} CompareSource */

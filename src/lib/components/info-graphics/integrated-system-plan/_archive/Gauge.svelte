@@ -3,11 +3,11 @@
 
 	import { LayerCake, Svg } from 'layercake';
 
-	import Arc from '$lib/components/charts/elements/Arc.svelte';
+	import Arc from '#lib/components/charts/elements/Arc.svelte';
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('$lib/types/chart.types').TimeSeriesData[]} [dataset]
+	 * @property {import('#lib/types/chart.types.ts').TimeSeriesData[]} [dataset]
 	 * @property {number[]} [xDomain]
 	 * @property {number[]} [markerLines]
 	 * @property {string} [xKey]

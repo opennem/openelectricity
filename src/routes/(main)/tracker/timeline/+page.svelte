@@ -6,12 +6,12 @@
 	 */
 
 	import { MediaQuery } from 'svelte/reactivity';
-	import { ChartRangeBar } from '$lib/components/charts/v2';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
-	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
-	import { formatDayMonthTime } from '$lib/components/charts/v2/date-labels.js';
-	import { MIN_DATE } from '$lib/utils/date-range.js';
-	import { OptionsMenuItem } from '$lib/components/ui/options-menu';
+	import { ChartRangeBar } from '#lib/components/charts/v2/index.js';
+	import { getIntervalSpec } from '#lib/components/charts/facility/range-interval-config.js';
+	import { BELOW_TABLET_QUERY } from '#lib/utils/fullscreen-mode.js';
+	import { formatDayMonthTime } from '#lib/components/charts/v2/date-labels.js';
+	import { MIN_DATE } from '#lib/utils/date-range.js';
+	import { OptionsMenuItem } from '#lib/components/ui/options-menu/index.js';
 	import TrackerShell from '../TrackerShell.svelte';
 	import TrackerCanvas from '../TrackerCanvas.svelte';
 	import { createMetricsVisibilityPreference } from '../metrics-visibility.svelte.js';

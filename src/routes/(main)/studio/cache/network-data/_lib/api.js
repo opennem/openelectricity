@@ -5,7 +5,7 @@
  * preserved-entry metadata in their 502 body).
  */
 
-import { getClerkState } from '$lib/auth/clerk.svelte.js';
+import { getClerkState } from '#lib/auth/clerk.svelte.js';
 
 export class ApiError extends Error {
 	/**

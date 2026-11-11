@@ -4,12 +4,12 @@
 	import { LayerCake, Svg, Html } from 'layercake';
 	import { curveStepAfter } from 'd3-shape';
 
-	import Line from '$lib/components/charts/elements/Line.svelte';
-	import DotAnnotation from '$lib/components/charts/elements/annotations/Dot.svelte';
-	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
-	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
-	import Brush from '$lib/components/charts/elements/Brush.html.svelte';
-	import ClipPath from '$lib/components/charts/elements/defs/ClipPath.svelte';
+	import Line from '#lib/components/charts/elements/Line.svelte';
+	import DotAnnotation from '#lib/components/charts/elements/annotations/Dot.svelte';
+	import AxisX from '#lib/components/charts/elements/AxisX.svelte';
+	import AxisY from '#lib/components/charts/elements/AxisY.svelte';
+	import Brush from '#lib/components/charts/elements/Brush.html.svelte';
+	import ClipPath from '#lib/components/charts/elements/defs/ClipPath.svelte';
 
 	/** @type {{ data: any[], issueInstanceIds?: any[] }} */
 	let { data, issueInstanceIds = [] } = $props();

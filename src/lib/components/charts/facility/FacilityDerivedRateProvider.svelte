@@ -19,25 +19,25 @@
 	 * — safe to always wrap even when the charts are hidden.
 	 */
 
-	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
+	import { createVisibleAggregation } from '#lib/components/charts/v2/display-aggregation.js';
 	import { createFacilityDataManager } from './facility-data-manager.js';
 	import {
 		createViewportGestures,
 		isViewportPinned
-	} from '$lib/components/charts/v2/viewport-gestures.js';
+	} from '#lib/components/charts/v2/viewport-gestures.js';
 	import { viewportDurationLimits } from './range-interval-config.js';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { fuelTechNameMap } from '$lib/fuel_techs';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
 	import { analyzeUnits, unitSeriesIds } from './unit-analysis.js';
 	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
-	import { applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
+	import { applyFacilityTimeAxis } from '#lib/components/charts/v2/formatters.js';
 	import { untrack } from 'svelte';
 	import { getBasisMetric, combinedMetricsFor, buildCombinedMetricsUrl } from './energy-basis.js';
-	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
+	import { EARLIEST_DATA_MS } from '#lib/utils/date-range.js';
 	import { ianaFromOffset } from '../v2/network-time.js';
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '../v2/chart-loading-state.js';
 
-	/** @typedef {import('$lib/components/charts/v2/ChartDataManager.svelte.js').default} ChartDataManager */
+	/** @typedef {import('#lib/components/charts/v2/ChartDataManager.svelte.js').default} ChartDataManager */
 	/** @typedef {import('./derived-rate-recipe.js').RateSeriesInputs} RateSeriesInputs */
 	/** @typedef {import('./derived-rate-recipe.js').DerivedRateRecipe} DerivedRateRecipe */
 
@@ -736,7 +736,7 @@
 	);
 
 	/**
-	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 * @param {import('#lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 */
 	function getTooltipData(chart) {
 		const data = chart.hoverData || chart.focusData;

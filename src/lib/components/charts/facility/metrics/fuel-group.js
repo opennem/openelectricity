@@ -7,7 +7,7 @@
  * to `other`.
  */
 
-import { getUnitCapacity } from '$lib/utils/capacity';
+import { getUnitCapacity } from '#lib/utils/capacity.js';
 
 /** @typedef {'wind' | 'solar' | 'battery' | 'coal' | 'gas' | 'hydro' | 'other'} FuelTechGroup */
 

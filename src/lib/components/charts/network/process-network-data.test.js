@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import sourcesLoadsGroup from '$lib/fuel-tech-groups/sources-loads';
+import sourcesLoadsGroup from '#lib/fuel-tech-groups/sources-loads.js';
 import { processNetworkData } from './process-network-data.js';
 import { getGroup } from './groups.js';
 

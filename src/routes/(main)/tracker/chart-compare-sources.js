@@ -1,42 +1,42 @@
 /**
  * Compare sources — what each Tracker chart card hands its compare panel
  * (`CompareSource`): Timeline's cards build on the shared snapshot sources
- * (`$lib/components/charts/card/compare/snapshot-sources.js`); Compare's
+ * (`#lib/components/charts/card/compare/snapshot-sources.js`); Compare's
  * cards read the regions' rows. Pure module: the canvases pass in what the
  * card is showing.
  */
 
-import { networkTimeZoneLabel } from '$lib/components/charts/v2/network-time.js';
+import { networkTimeZoneLabel } from '#lib/components/charts/v2/network-time.js';
 import {
 	deriveVwPriceDisplayRows,
 	VW_PRICE_SERIES_ID
-} from '$lib/components/charts/network/process-price-vw.js';
+} from '#lib/components/charts/network/process-price-vw.js';
 import {
 	deriveIntensityDisplayRows,
 	INTENSITY_SERIES_ID
-} from '$lib/components/charts/network/process-emissions-intensity.js';
+} from '#lib/components/charts/network/process-emissions-intensity.js';
 import {
 	formatRankChange,
 	formatSignedChange
-} from '$lib/components/charts/card/compare/chart-compare.js';
+} from '#lib/components/charts/card/compare/chart-compare.js';
 import {
 	componentSums,
 	largestVisible,
 	lineCompareSource,
 	stackCompareSource
-} from '$lib/components/charts/card/compare/snapshot-sources.js';
+} from '#lib/components/charts/card/compare/snapshot-sources.js';
 import {
 	formatDollarsCompact,
 	formatFixed,
 	tonnesPrefix
-} from '$lib/components/charts/card/cell-format.js';
+} from '#lib/components/charts/card/cell-format.js';
 import {
 	formatTableEmissions,
 	formatTableEnergy,
 	formatTableIntensity,
 	formatTablePower
 } from './table-format.js';
-import { formatPercentageValue } from '$lib/components/charts/card/cell-format.js';
+import { formatPercentageValue } from '#lib/components/charts/card/cell-format.js';
 import { comparisonMetric, comparisonUnit, formatComparisonCell } from './comparison-metrics.js';
 import { benchmarkRankRows, rankComparisonRows } from './comparison-displays.js';
 import { COMPARISON_REGIONS, comparisonChartRows, comparisonPeriod } from './region-comparison.js';

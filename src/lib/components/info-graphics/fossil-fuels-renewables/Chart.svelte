@@ -4,18 +4,18 @@
 	import { quintOut } from 'svelte/easing';
 
 	import { LayerCake, Svg, Html, flatten, groupLonger } from 'layercake';
-	import MeasuredChartContainer from '$lib/components/charts/MeasuredChartContainer.svelte';
+	import MeasuredChartContainer from '#lib/components/charts/MeasuredChartContainer.svelte';
 	import { scaleOrdinal, scaleUtc } from 'd3-scale';
 	import { format } from 'date-fns';
 
-	import { isSafari } from '$lib/utils/browser-detect';
-	import MultiLine from '$lib/components/charts/elements/MultiLine.svelte';
-	import TrendLine from '$lib/components/charts/elements/TrendLine.svelte';
-	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
-	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
-	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
-	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
-	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
+	import { isSafari } from '#lib/utils/browser-detect.js';
+	import MultiLine from '#lib/components/charts/elements/MultiLine.svelte';
+	import TrendLine from '#lib/components/charts/elements/TrendLine.svelte';
+	import AxisX from '#lib/components/charts/elements/AxisX.svelte';
+	import AxisY from '#lib/components/charts/elements/AxisY.svelte';
+	import HoverLine from '#lib/components/charts/elements/HoverLine.html.svelte';
+	import HoverLayer from '#lib/components/charts/elements/HoverLayer.svelte';
+	import HoverText from '#lib/components/charts/elements/HoverText.html.svelte';
 
 	import Annotations from './Annotations.svelte';
 

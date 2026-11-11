@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 
 export async function GET({ url, setHeaders }) {
 	let { searchParams } = url;

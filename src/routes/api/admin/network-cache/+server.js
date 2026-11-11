@@ -19,10 +19,11 @@
  */
 
 import { json } from '@sveltejs/kit';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
-import { freshnessDeadlines, freshnessStatus } from '$lib/network-cache/freshness.js';
-import { listEntries, registryDb } from '$lib/server/network-cache-registry.js';
-import { VALID_INTERVALS, VALID_REGIONS, isValidMetric } from '$lib/server/network-data.js';
+import { verifyAdmin } from '#lib/auth/clerk-server.js';
+import { freshnessDeadlines, freshnessStatus } from '#lib/network-cache/freshness.js';
+import { listEntries, registryDb } from '#lib/server/network-cache-registry.js';
+import { VALID_INTERVALS, VALID_REGIONS, isValidMetric } from '#lib/server/network-data.js';
+import { edgeRuntime } from '#lib/server/edge-runtime.js';
 
 const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 100;
@@ -42,7 +43,7 @@ function toPositiveInt(value, fallback) {
  * Present a registry row for the dashboard: camel-cased with projected
  * freshness computed at a single reference time.
  *
- * @param {import('$lib/server/network-cache-registry.js').RegistryEntry} row
+ * @param {import('#lib/server/network-cache-registry.js').RegistryEntry} row
  * @param {number} nowMs
  */
 function presentEntry(row, nowMs) {
@@ -68,7 +69,8 @@ function presentEntry(row, nowMs) {
 	};
 }
 
-export async function GET({ request, url, platform }) {
+export async function GET({ request, url }) {
+	const platform = edgeRuntime();
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
 		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });

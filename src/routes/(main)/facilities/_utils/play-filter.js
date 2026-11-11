@@ -1,5 +1,5 @@
-import { filterDerivedBatteryUnits, hasBidirectionalBattery } from '$lib/facilities/units.js';
-import { getUnitCapacity } from '$lib/utils/capacity';
+import { filterDerivedBatteryUnits, hasBidirectionalBattery } from '#lib/facilities/units.js';
+import { getUnitCapacity } from '#lib/utils/capacity.js';
 import parseYear from './parse-year';
 
 /**

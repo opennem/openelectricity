@@ -1,6 +1,6 @@
 <script>
 	import { GeoJSONSource, CircleLayer, Popup } from 'svelte-maplibre-gl';
-	import { toGeoJSON, DC_MARKER, dcFill } from '$lib/facilities/data-centres.js';
+	import { toGeoJSON, DC_MARKER, dcFill } from '#lib/facilities/data-centres.js';
 
 	/**
 	 * Data centres (large loads) overlay for the facilities map. Renders purple

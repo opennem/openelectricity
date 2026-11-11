@@ -1,10 +1,10 @@
 import { env } from '$env/dynamic/public';
-import { resolveSentryDsn } from '$lib/sentry/config.js';
+import { resolveSentryDsn } from '#lib/sentry/config.js';
 import {
 	MAX_ENVELOPE_BYTES,
 	envelopeHeaderSummary,
 	tunnelTarget
-} from '$lib/server/sentry-tunnel.js';
+} from '#lib/server/sentry-tunnel.js';
 
 /**
  * Sentry relay: the browser SDK posts every envelope (errors, replays,
@@ -12,7 +12,7 @@ import {
  * and they are forwarded to our Sentry project only. On whenever a Sentry DSN
  * is set, as the browser client is; feedback's own switch only gates its UI.
  * The reader's IP and headers are not passed on. See
- * `$lib/server/sentry-tunnel.js`.
+ * `#lib/server/sentry-tunnel.js`.
  */
 export async function POST({ request }) {
 	const dsn = resolveSentryDsn(env);

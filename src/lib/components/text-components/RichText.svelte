@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { PortableText } from '@portabletext/svelte';
 	import { Tweet, YouTube } from 'sveltekit-embed';
-	import { dedupePortableTextKeys } from '$lib/utils/portable-text.js';
+	import { dedupePortableTextKeys } from '#lib/utils/portable-text.js';
 
-	import Image from '$lib/components/text-components/Image.svelte';
-	import StrataEmbed from '$lib/components/text-components/StrataEmbed.svelte';
+	import Image from '#lib/components/text-components/Image.svelte';
+	import StrataEmbed from '#lib/components/text-components/StrataEmbed.svelte';
 
 	/**
 	 * @typedef {Object} Block

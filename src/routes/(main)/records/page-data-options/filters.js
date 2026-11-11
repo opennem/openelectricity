@@ -1,4 +1,4 @@
-import optionsReducer from '$lib/utils/options-reducer';
+import optionsReducer from '#lib/utils/options-reducer.js';
 
 export const regions = [
 	{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },

@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { getBuiltInExample, getCommunityExample } from '$lib/stratify/example-catalogue.js';
-import { resolveDocumentationExample } from '$lib/stratify/example-docs.js';
-import { fetchCuratedCommunityChart } from '$lib/stratify/community-examples.server.js';
+import { getBuiltInExample, getCommunityExample } from '#lib/stratify/example-catalogue.js';
+import { resolveDocumentationExample } from '#lib/stratify/example-docs.js';
+import { fetchCuratedCommunityChart } from '#lib/stratify/community-examples.server.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params, setHeaders }) {

@@ -3,8 +3,8 @@ import { flushSync } from 'svelte';
 import {
 	clearCompletedResponses,
 	clearInFlightFetches
-} from '$lib/components/charts/v2/ChartDataManager.svelte.js';
-import { getGroup } from '$lib/components/charts/network/groups.js';
+} from '#lib/components/charts/v2/ChartDataManager.svelte.js';
+import { getGroup } from '#lib/components/charts/network/groups.js';
 import { createProfileData } from './profile-data.svelte.js';
 import { profileWindow } from './time-of-day.js';
 import { failedResponse, powerResponse, stubNetworkFetch } from './test-fixtures.svelte.js';

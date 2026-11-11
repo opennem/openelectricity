@@ -1,4 +1,4 @@
-import { fuelTechColourMap } from '$lib/theme/openelectricity';
+import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
 
 /** Fueltechs that need dark text for contrast on their background color */
 const LIGHT_FUELTECHS = [

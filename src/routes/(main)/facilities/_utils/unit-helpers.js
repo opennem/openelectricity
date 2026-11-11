@@ -1,5 +1,5 @@
-import { stripDateTimezone } from '$lib/utils/date-format';
-import { formatDateTime } from '$lib/utils/formatters';
+import { stripDateTimezone } from '#lib/utils/date-format.js';
+import { formatDateTime } from '#lib/utils/formatters.js';
 
 /**
  * Calculate commissioning percentage

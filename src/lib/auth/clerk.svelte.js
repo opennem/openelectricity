@@ -1,4 +1,4 @@
-import { PUBLIC_CLERK_PUBLISHABLE_KEY } from '$env/static/public';
+import { PUBLIC_CLERK_PUBLISHABLE_KEY } from '$app/env/public';
 
 /** @typedef {import('@clerk/clerk-js').Clerk} ClerkInstance */
 

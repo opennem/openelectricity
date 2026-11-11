@@ -1,12 +1,12 @@
 <script>
 	import { onDestroy } from 'svelte';
-	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
-	import StaticZoomButtons from '$lib/components/charts/v2/StaticZoomButtons.svelte';
+	import { createViewportGestures } from '#lib/components/charts/v2/viewport-gestures.js';
+	import StaticZoomButtons from '#lib/components/charts/v2/StaticZoomButtons.svelte';
 	import { comparisonChartUnits, comparisonMetric } from './comparison-metrics.js';
 	import { inspectionStep } from './comparison-inspection.js';
 	import RegionPanel from './RegionPanel.svelte';
 	import RegionTooltip from './RegionTooltip.svelte';
-	import { pointerInspect } from '$lib/components/charts/v2/elements/pointer-inspect.js';
+	import { pointerInspect } from '#lib/components/charts/v2/elements/pointer-inspect.js';
 	import {
 		COMPARISON_MIN_SPAN_MS,
 		COMPARISON_REGIONS,
@@ -29,7 +29,7 @@
 	 *   onhover: (time: number | null) => void, onfocus: (time: number | null) => void,
 	 *   onhoverregion: (region: string | null) => void,
 	 *   onviewport: (start: number, end: number, settled: boolean) => void,
-	 *   timeMarkers?: import('$lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void}} */
+	 *   timeMarkers?: import('#lib/components/charts/v2/time-markers.js').TimeMarkerSet | null, onpick?: (time: number) => void}} */
 	let {
 		data,
 		regions,

@@ -1,5 +1,5 @@
 <script>
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import { formatValue } from './helpers';
 
 	/**

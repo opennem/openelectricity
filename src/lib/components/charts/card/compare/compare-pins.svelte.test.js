@@ -22,7 +22,7 @@ function harness() {
 	const state = $state({
 		identity: 'nsw|power',
 		snapshot: /** @type {import('../types.js').ChartSnapshot | null} */ (snapshot([a, b])),
-		pair: { a: /** @type {number | null} */ (a), b: /** @type {number | null} */ (b) }
+		pair: /** @type {{ a: number | null, b: number | null }} */ ({ a, b })
 	});
 	const pins = createComparePins({
 		identity: () => state.identity,

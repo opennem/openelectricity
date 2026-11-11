@@ -7,18 +7,18 @@
  */
 
 import { NoDataFound } from 'openelectricity';
-import { oeClient } from '$lib/server/oe-client.js';
-import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
-import { MARKET_METRIC_NAMES } from '$lib/components/charts/network/market-metric-names.js';
-import { apiRangeLimitError } from '$lib/oe-api/data-limits.js';
-import { createKeyedSwrCache } from '$lib/server/keyed-swr-cache.js';
+import { oeClient } from '#lib/server/oe-client.js';
+import { regionToNetwork } from '#lib/components/charts/network/region-to-network.js';
+import { MARKET_METRIC_NAMES } from '#lib/components/charts/network/market-metric-names.js';
+import { apiRangeLimitError } from '#lib/oe-api/data-limits.js';
+import { createKeyedSwrCache } from '#lib/server/keyed-swr-cache.js';
 import {
 	recordRefreshError,
 	recordStored,
 	registryDb
-} from '$lib/server/network-cache-registry.js';
-import { auUpstreamRanges, mergeAuResponses } from '$lib/server/network-data-au.js';
-import { isHistoricalWindow } from '$lib/utils/date-range.js';
+} from '#lib/server/network-cache-registry.js';
+import { auUpstreamRanges, mergeAuResponses } from '#lib/server/network-data-au.js';
+import { isHistoricalWindow } from '#lib/utils/date-range.js';
 
 export const NETWORK_DATA_KEY_PREFIX = 'https://edge-cache.openelectricity.org.au/network-data-v1';
 

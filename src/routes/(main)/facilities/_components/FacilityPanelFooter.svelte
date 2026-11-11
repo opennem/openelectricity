@@ -5,7 +5,7 @@
 	 * the /facility/{code} page.
 	 */
 	import { ArrowRight, Building2 } from '@lucide/svelte';
-	import { windowedHref } from '$lib/utils/fullscreen-mode.js';
+	import { windowedHref } from '#lib/utils/fullscreen-mode.js';
 
 	/**
 	 * `buttonColour` (the facility's dominant fuel-tech colour) + `darkText` match

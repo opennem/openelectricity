@@ -11,8 +11,8 @@ import {
 	collectSeriesByTimestamp,
 	orderSeriesIds,
 	rowsFromSeriesMaps
-} from '$lib/components/charts/v2/series-rows.js';
-import { regionsWithColours, regionsWithShortLabels } from '$lib/regions.js';
+} from '#lib/components/charts/v2/series-rows.js';
+import { regionsWithColours, regionsWithShortLabels } from '#lib/regions.js';
 
 const REGION_ORDER = ['NSW1', 'QLD1', 'SA1', 'TAS1', 'VIC1'];
 

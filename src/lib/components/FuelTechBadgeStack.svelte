@@ -1,5 +1,5 @@
 <script>
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
 
 	/**
 	 * Row of fuel-tech badges — shared by the facility detail-panel header and the

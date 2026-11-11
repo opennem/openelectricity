@@ -6,7 +6,7 @@
  * reactive getters. Small payloads, so plain `$state` is fine.
  */
 
-import { processFlowsJson, processPricesJson } from '$lib/flows/process-flows.js';
+import { processFlowsJson, processPricesJson } from '#lib/flows/process-flows.js';
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 

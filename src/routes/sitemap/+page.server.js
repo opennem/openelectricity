@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { client } from '$lib/sanity';
+import { client } from '#lib/sanity.js';
 
 export const prerender = true;
 

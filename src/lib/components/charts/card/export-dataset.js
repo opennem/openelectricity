@@ -9,15 +9,15 @@
  * ("2026-07-01 14:30:00+10:00"), XLSX writes a real date-time cell.
  */
 
-import { escapeCsv } from '$lib/utils/download-csv.js';
-import { excelDateSerial } from '$lib/utils/download-xlsx.js';
-import { formatNetworkTimestamp } from '$lib/components/charts/v2/network-time.js';
-import { isObservationRow } from '$lib/components/charts/v2/bucket-filter.js';
+import { escapeCsv } from '#lib/utils/download-csv.js';
+import { excelDateSerial } from '#lib/utils/download-xlsx.js';
+import { formatNetworkTimestamp } from '#lib/components/charts/v2/network-time.js';
+import { isObservationRow } from '#lib/components/charts/v2/bucket-filter.js';
 
 /** @typedef {import('./types.js').ExportColumn} ExportColumn */
 /** @typedef {import('./types.js').ExportDataset} ExportDataset */
-/** @typedef {import('$lib/utils/download-xlsx.js').XlsxSheet} XlsxSheet */
-/** @typedef {import('$lib/utils/download-xlsx.js').XlsxCell} XlsxCell */
+/** @typedef {import('#lib/utils/download-xlsx.js').XlsxSheet} XlsxSheet */
+/** @typedef {import('#lib/utils/download-xlsx.js').XlsxCell} XlsxCell */
 
 /** Excel's sheet-name rules: at most 31 characters, none of []:*?/\ */
 const SHEET_NAME_MAX = 31;

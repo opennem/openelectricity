@@ -1,12 +1,12 @@
 import { createClerkClient, verifyToken } from '@clerk/backend';
-import { env } from '$env/dynamic/private';
+import { CLERK_SECRET_KEY } from '$app/env/private';
 
 /** @type {ReturnType<typeof createClerkClient> | null} */
 let client = null;
 
 /** The Clerk backend client, built once per worker. */
 function clerkClient() {
-	client ??= createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
+	client ??= createClerkClient({ secretKey: CLERK_SECRET_KEY });
 	return client;
 }
 
@@ -36,7 +36,7 @@ export async function verifyAdmin(request) {
 	if (!token) return { authenticated: false, isAdmin: false, isSuperAdmin: false };
 
 	try {
-		const secretKey = env.CLERK_SECRET_KEY;
+		const secretKey = CLERK_SECRET_KEY;
 		const payload = await verifyToken(token, { secretKey });
 		const clerk = clerkClient();
 		const user = await clerk.users.getUser(payload.sub);

@@ -7,12 +7,12 @@
 	 */
 	import { fade } from 'svelte/transition';
 	import { format } from 'date-fns';
-	import { ChartStore, StratumChart, ChartTooltip } from '$lib/components/charts/v2';
-	import { formatDayMonth } from '$lib/components/charts/v2/date-labels.js';
-	import { fuelTechColour } from '$lib/stores/theme';
-	import { fuelTechName } from '$lib/fuel_techs.js';
-	import { dataTrackerLink } from '$lib/stores/app';
-	import nighttimes from '$lib/utils/nighttimes';
+	import { ChartStore, StratumChart, ChartTooltip } from '#lib/components/charts/v2/index.js';
+	import { formatDayMonth } from '#lib/components/charts/v2/date-labels.js';
+	import { fuelTechColour } from '#lib/stores/theme.js';
+	import { fuelTechName } from '#lib/fuel_techs.js';
+	import { dataTrackerLink } from '#lib/stores/app.js';
+	import nighttimes from '#lib/utils/nighttimes.js';
 	import legend from './helpers/legend';
 
 	/**

@@ -1,9 +1,9 @@
 <script>
-	import FilterSheetSection from '$lib/components/filters/FilterSheetSection.svelte';
-	import Switch from '$lib/components/SwitchWithIcons.svelte';
-	import Toggle from '$lib/components/form-elements/Toggle.svelte';
+	import FilterSheetSection from '#lib/components/filters/FilterSheetSection.svelte';
+	import Switch from '#lib/components/SwitchWithIcons.svelte';
+	import Toggle from '#lib/components/form-elements/Toggle.svelte';
 	import TableOptions from './TableOptions.svelte';
-	import { getGroup, GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+	import { getGroup, GROUP_OPTIONS } from '#lib/components/charts/network/groups.js';
 	import { CONTRIBUTION_OPTIONS, contributionLabel } from './tracker-model.js';
 	import { TABLE_COLUMNS, ALL_TABLE_COLUMNS, DEFAULT_TABLE_COLUMNS } from './table-columns.js';
 

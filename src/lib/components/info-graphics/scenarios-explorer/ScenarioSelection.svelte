@@ -1,8 +1,8 @@
 <script>
 	import { getContext, onMount } from 'svelte';
-	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
-	import RadioIndicator from '$lib/components/form-elements/RadioIndicator.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import Checkbox from '#lib/components/form-elements/Checkbox.svelte';
+	import RadioIndicator from '#lib/components/form-elements/RadioIndicator.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 
 	import { scenarioLabels, scenarioDescriptions } from './descriptions';
 	import { allScenarios, modelOptions } from './options';

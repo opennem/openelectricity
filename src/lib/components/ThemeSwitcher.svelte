@@ -1,7 +1,7 @@
 <script>
 	import { shortcut } from '@svelte-put/shortcut';
-	import Modal from '$lib/components/Modal.svelte';
-	import { theme } from '$lib/stores/theme';
+	import Modal from '#lib/components/Modal.svelte';
+	import { theme } from '#lib/stores/theme.js';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();

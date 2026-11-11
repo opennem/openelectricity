@@ -1,11 +1,11 @@
 <script>
 	import { Zap, Globe, FileText } from '@lucide/svelte';
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import { getRegionLabel } from '$lib/facilities/filters.js';
-	import { getFueltechColor } from '$lib/utils/fueltech-display';
-	import { formatCapacity } from '$lib/utils/formatters';
-	import { bestMw, asUrl, isEstimated, STATUS_LABELS } from '$lib/facilities/data-centres.js';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
+	import FacilityStatusIcon from '#lib/components/facilities/FacilityStatusIcon.svelte';
+	import { getRegionLabel } from '#lib/facilities/filters.js';
+	import { getFueltechColor } from '#lib/utils/fueltech-display.js';
+	import { formatCapacity } from '#lib/utils/formatters.js';
+	import { bestMw, asUrl, isEstimated, STATUS_LABELS } from '#lib/facilities/data-centres.js';
 
 	/**
 	 * Header for the data centre (load) detail pane — mirrors
@@ -22,7 +22,7 @@
 	let record = $derived(facility?.dataCentre ?? null);
 	// The synthesised unit's status_id IS the DC status bucket (see
 	// toLoadFacilities), so it keys both the dot colour and the label.
-	/** @type {import('$lib/facilities/data-centres.js').DataCentreStatusBucket | null} */
+	/** @type {import('#lib/facilities/data-centres.js').DataCentreStatusBucket | null} */
 	let statusId = $derived(facility?.units?.[0]?.status_id ?? null);
 	let regionLabel = $derived(
 		facility ? getRegionLabel(facility.network_id, facility.network_region ?? '') : ''

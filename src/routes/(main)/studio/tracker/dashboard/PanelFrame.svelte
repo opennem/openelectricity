@@ -1,7 +1,7 @@
 <script>
 	import { ArrowDown, ArrowUp, Copy, GripVertical, Trash2 } from '@lucide/svelte';
-	import { sectionCardClass } from '$lib/components/charts/v2/section-card.js';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import { sectionCardClass } from '#lib/components/charts/v2/section-card.js';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
 
 	const WIDTH_OPTIONS = [
 		{ label: 'Half width', value: 'half' },

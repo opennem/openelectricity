@@ -1,5 +1,5 @@
 <script>
-	/** @type {{ chartType: import('$lib/stratify/chart-types.js').ChartType }} */
+	/** @type {{ chartType: import('#lib/stratify/chart-types.js').ChartType }} */
 	let { chartType } = $props();
 </script>
 

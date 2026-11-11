@@ -1,6 +1,6 @@
-import IconByTechnology from '$lib/icons/custom/ByTechnology.svelte';
-import IconByScenario from '$lib/icons/custom/ByScenario.svelte';
-import IconByRegion from '$lib/icons/custom/ByRegion.svelte';
+import IconByTechnology from '#lib/icons/custom/ByTechnology.svelte';
+import IconByScenario from '#lib/icons/custom/ByScenario.svelte';
+import IconByRegion from '#lib/icons/custom/ByRegion.svelte';
 
 /** @type {ViewSectionOption[]} */
 export const viewSectionOptions = [

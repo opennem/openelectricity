@@ -1,14 +1,14 @@
 <script>
 	import { setContext, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 
-	import Meta from '$lib/components/Meta.svelte';
-	import Switch from '$lib/components/Switch.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import Switch from '#lib/components/Switch.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
+	import FormMultiSelect from '#lib/components/form-elements/MultiSelect.svelte';
 
-	import { regionsWithLabels } from '$lib/regions';
+	import { regionsWithLabels } from '#lib/regions.js';
 	import { regions } from './page-data-options/filters.js';
 
 	import PinnedRecords from './components/PinnedRecords.svelte';
@@ -93,7 +93,7 @@
 		goto(
 			`/records${regionsParam2}${periodsParam}${fuelTechParams}${metricsParam}${significanceParam}`,
 			{
-				noScroll: true
+				reset: false
 			}
 		);
 	}
@@ -252,9 +252,7 @@
 		</div>
 
 		{#if $selectedView === 'list'}
-			<main class="min-h-[600px] col-span-6 md:pl-12 px-6">
-				<List {rolledUpRecords} />
-			</main>
+			<main class="min-h-[600px] col-span-6 md:pl-12 px-6"><List {rolledUpRecords} /></main>
 		{:else}
 			<main class="min-h-[600px] col-span-6 md:pl-6 pr-0">
 				<Table dataset={recordsData} />

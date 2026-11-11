@@ -1,5 +1,5 @@
 <script>
-	import { formatFyTickX } from '$lib/utils/formatters';
+	import { formatFyTickX } from '#lib/utils/formatters.js';
 
 	/**
 	 * @typedef {Object} Props

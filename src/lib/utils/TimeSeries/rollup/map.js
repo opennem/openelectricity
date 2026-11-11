@@ -1,9 +1,9 @@
-import getMonthKey from '$lib/utils/TimeSeries/rollup/month';
-import getQuarterKey from '$lib/utils/TimeSeries/rollup/quarter';
-import getYearHalfKey from '$lib/utils/TimeSeries/rollup/year-half';
-import getYearKey from '$lib/utils/TimeSeries/rollup/year';
-import getMinutesKey from '$lib/utils/TimeSeries/rollup/minutes';
-import getYearFinKey from '$lib/utils/TimeSeries/rollup/year-fin';
+import getMonthKey from '#lib/utils/TimeSeries/rollup/month.js';
+import getQuarterKey from '#lib/utils/TimeSeries/rollup/quarter.js';
+import getYearHalfKey from '#lib/utils/TimeSeries/rollup/year-half.js';
+import getYearKey from '#lib/utils/TimeSeries/rollup/year.js';
+import getMinutesKey from '#lib/utils/TimeSeries/rollup/minutes.js';
+import getYearFinKey from '#lib/utils/TimeSeries/rollup/year-fin.js';
 
 /**
  *

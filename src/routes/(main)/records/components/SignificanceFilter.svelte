@@ -2,9 +2,9 @@
 	import { fly } from 'svelte/transition';
 	import { Slider } from 'bits-ui';
 
-	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
-	import { portal } from '$lib/actions/portal.js';
-	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
+	import IconChevronUpDown from '#lib/icons/ChevronUpDown.svelte';
+	import { portal } from '#lib/actions/portal.js';
+	import { dropdownPosition } from '#lib/actions/dropdown-position.js';
 
 	/**
 	 * @typedef {Object} Props

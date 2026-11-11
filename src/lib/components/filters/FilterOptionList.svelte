@@ -1,13 +1,13 @@
 <script>
-	import { longPress } from '$lib/utils/long-press.js';
+	import { longPress } from '#lib/utils/long-press.js';
 	import { untrack } from 'svelte';
 
-	import IconCheckMark from '$lib/icons/CheckMark.svelte';
-	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
-	import { filterOptionsBySearch, getLeafValues } from '$lib/facilities/filter-options.js';
+	import IconCheckMark from '#lib/icons/CheckMark.svelte';
+	import IconChevronDown from '#lib/icons/ChevronDown.svelte';
+	import { filterOptionsBySearch, getLeafValues } from '#lib/facilities/filter-options.js';
 
 	/**
-	 * @typedef {import('$lib/facilities/filter-options.js').FilterOption} FilterOption
+	 * @typedef {import('#lib/facilities/filter-options.js').FilterOption} FilterOption
 	 * @typedef {{ selected: boolean, indeterminate: boolean, isChild: boolean }} RowState
 	 */
 

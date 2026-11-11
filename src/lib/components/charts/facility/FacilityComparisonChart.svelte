@@ -1,14 +1,14 @@
 <script>
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
-	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
-	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
-	import { createChartHost } from '$lib/components/charts/v2/chart-host.svelte.js';
-	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
-	import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
+	import { createVisibleAggregation } from '#lib/components/charts/v2/display-aggregation.js';
+	import { formatXAxis, applyFacilityTimeAxis } from '#lib/components/charts/v2/formatters.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '#lib/components/charts/v2/chart-loading-state.js';
+	import { createChartHost } from '#lib/components/charts/v2/chart-host.svelte.js';
+	import ChartDataManager from '#lib/components/charts/v2/ChartDataManager.svelte.js';
+	import { ianaFromOffset } from '#lib/components/charts/v2/network-time.js';
+	import { getIntervalSpec } from '#lib/components/charts/facility/range-interval-config.js';
 	import { processFacilityComparison } from './process-facility-comparison.js';
-	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
+	import { EARLIEST_DATA_MS } from '#lib/utils/date-range.js';
 
 	/** @type {{ facilities: Array<{code:string,name:string,units?:any[]}>, networkId:'NEM'|'WEM', interval:string, metric:'power'|'energy', displayInterval:string, timeZone:string, dateStart:string, dateEnd:string, chartHeightPx?:number, title?:string, onloadcomplete?: (state:{hasData:boolean}) => void, onvisibledata?: (payload:{data:any[],seriesNames:string[],seriesLabels:Record<string,string>}) => void, onviewportchange?: (range:{start:number,end:number}) => void, onviewportsettle?: (range:{start:number,end:number}) => void }} */
 	let {

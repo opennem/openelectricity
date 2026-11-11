@@ -1,6 +1,6 @@
 <script>
 	import { getStratifyContext } from '../_state/context.js';
-	import { getPaletteSwatchColours } from '$lib/stratify/colour-palettes.js';
+	import { getPaletteSwatchColours } from '#lib/stratify/colour-palettes.js';
 
 	/**
 	 * Theme-aware colour picker: a swatch trigger opening a popover with the

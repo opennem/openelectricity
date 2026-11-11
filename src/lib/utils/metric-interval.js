@@ -12,7 +12,7 @@
  * grains (week, quarter, season, half-year, fin-year) are explicit picker
  * choices (see `range-interval-config.js`), never auto-selected by pan/zoom.
  *
- * Lives in `$lib/utils/` so any chart route can consume the same logic; direct
+ * Lives in `#lib/utils/` so any chart route can consume the same logic; direct
  * callers: `/facilities` detail panel, `/facility/[code]`, `/studio/explorer`.
  */
 

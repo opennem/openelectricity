@@ -1,6 +1,6 @@
 <script>
 	import { ExternalLink } from '@lucide/svelte';
-	import Skeleton from '$lib/components/Skeleton.svelte';
+	import Skeleton from '#lib/components/Skeleton.svelte';
 	import { transformPollutionData } from './transform-pollution.js';
 	import { buildNpiFacilityUrl } from './npi-url.js';
 	import FacilityPollutionCharts from './FacilityPollutionCharts.svelte';

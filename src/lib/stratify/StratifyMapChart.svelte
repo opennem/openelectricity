@@ -1,11 +1,11 @@
 <script>
 	import { scaleSqrt, scaleLinear } from 'd3-scale';
 	import { interpolateLab } from 'd3-interpolate';
-	import PointMap from '$lib/components/map/PointMap.svelte';
-	import { parseCSV } from '$lib/stratify/csv-parser.js';
-	import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
-	import { assignPaletteColours } from '$lib/stratify/colour-palettes.js';
-	import { makeValueFormatter } from '$lib/components/charts/plot/plot-configs.js';
+	import PointMap from '#lib/components/map/PointMap.svelte';
+	import { parseCSV } from '#lib/stratify/csv-parser.js';
+	import { uniqueColumnValues } from '#lib/stratify/chart-data.js';
+	import { assignPaletteColours } from '#lib/stratify/colour-palettes.js';
+	import { makeValueFormatter } from '#lib/components/charts/plot/plot-configs.js';
 
 	/** First-column synthetic keys, by parse mode. The CSV parser stores the
 	 * first column under one of these instead of the column's own key. */
@@ -130,7 +130,7 @@
 
 	const points = $derived.by(() => {
 		if (!latKey || !lngKey) return [];
-		/** @type {import('$lib/components/map/types.js').MapPoint[]} */
+		/** @type {import('#lib/components/map/types.js').MapPoint[]} */
 		const out = [];
 		let i = 0;
 		for (const row of rowsWithFirstColAliased) {
@@ -185,7 +185,7 @@
 		const overrides = chart.userSeriesLabels ?? {};
 		const columnLabel = colourColumn ? (dataColumnLabels[colourColumn] ?? colourColumn) : undefined;
 
-		/** @type {import('$lib/components/map/types.js').MapColourLegend} */
+		/** @type {import('#lib/components/map/types.js').MapColourLegend} */
 		let colour;
 		if (colourMode === 'category' && colourColumn && colourGroupNames.length > 0) {
 			colour = {
@@ -211,7 +211,7 @@
 			colour = { mode: 'single', colour: singleColour, label: singleLabel };
 		}
 
-		/** @type {import('$lib/components/map/types.js').MapSizeLegend | null} */
+		/** @type {import('#lib/components/map/types.js').MapSizeLegend | null} */
 		let size = null;
 		if (sizeKey && sizeRange && sizeScale && sizeRange.min !== sizeRange.max) {
 			const mid = (sizeRange.min + sizeRange.max) / 2;

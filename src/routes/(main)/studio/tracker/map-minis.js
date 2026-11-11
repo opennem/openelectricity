@@ -13,16 +13,16 @@
  * produced.
  */
 
-import simple from '$lib/fuel-tech-groups/simple';
-import { loadFuelTechs } from '$lib/fuel_techs';
-import { getFuelTechColour } from '$lib/components/charts/colours.js';
+import simple from '#lib/fuel-tech-groups/simple.js';
+import { loadFuelTechs } from '#lib/fuel_techs.js';
+import { getFuelTechColour } from '#lib/components/charts/colours.js';
 import {
 	collectSeriesByTimestamp,
 	orderSeriesIds,
 	rowsFromSeriesMaps
-} from '$lib/components/charts/v2/series-rows.js';
-import { aggregateForDisplay } from '$lib/components/charts/v2/dataProcessing.js';
-import { peakBucket } from '$lib/components/charts/facility/metrics/metrics-calc.js';
+} from '#lib/components/charts/v2/series-rows.js';
+import { aggregateForDisplay } from '#lib/components/charts/v2/dataProcessing.js';
+import { peakBucket } from '#lib/components/charts/facility/metrics/metrics-calc.js';
 
 /** @type {'power' | 'price' | 'emissions'} */
 export const DEFAULT_MINI_METRIC = 'power';

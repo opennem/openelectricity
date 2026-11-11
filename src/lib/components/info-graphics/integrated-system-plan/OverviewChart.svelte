@@ -9,16 +9,16 @@
 
 	import { formatTickY, displayXTicks } from './helpers';
 
-	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
-	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
-	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
-	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
-	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
-	import ClipPath from '$lib/components/charts/elements/defs/ClipPath.svelte';
-	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
-	import Overlay from '$lib/components/charts/elements/Overlay.svelte';
-	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
-	import AnnotateLineX from '$lib/components/charts/elements/annotations/LineX.svelte';
+	import AreaStacked from '#lib/components/charts/elements/AreaStacked.svelte';
+	import AxisX from '#lib/components/charts/elements/AxisX.svelte';
+	import AxisY from '#lib/components/charts/elements/AxisY.svelte';
+	import HoverLayer from '#lib/components/charts/elements/HoverLayer.svelte';
+	import HoverLine from '#lib/components/charts/elements/HoverLine.html.svelte';
+	import ClipPath from '#lib/components/charts/elements/defs/ClipPath.svelte';
+	import HoverText from '#lib/components/charts/elements/HoverText.html.svelte';
+	import Overlay from '#lib/components/charts/elements/Overlay.svelte';
+	import HatchPattern from '#lib/components/charts/elements/defs/HatchPattern.svelte';
+	import AnnotateLineX from '#lib/components/charts/elements/annotations/LineX.svelte';
 
 	import ChartAnnotations from './ChartAnnotations.svelte';
 

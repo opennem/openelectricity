@@ -1,11 +1,11 @@
 <script>
 	import { fly } from 'svelte/transition';
 
-	import IconCheckMark from '$lib/icons/CheckMark.svelte';
-	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
+	import IconCheckMark from '#lib/icons/CheckMark.svelte';
+	import IconChevronUpDown from '#lib/icons/ChevronUpDown.svelte';
 	import { X } from '@lucide/svelte';
-	import { portal } from '$lib/actions/portal.js';
-	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
+	import { portal } from '#lib/actions/portal.js';
+	import { dropdownPosition } from '#lib/actions/dropdown-position.js';
 
 	/**
 	 * @typedef {Object} Props

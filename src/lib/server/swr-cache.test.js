@@ -12,7 +12,7 @@ function fakePlatform() {
 	return {
 		store,
 		waited,
-		platform: /** @type {App.Platform} */ ({
+		platform: /** @type {EdgeRuntime} */ ({
 			caches: {
 				default: {
 					match: async (/** @type {string} */ key) => {
@@ -131,7 +131,7 @@ describe('createSwrCache', () => {
 	});
 
 	it('survives a broken Cache API', async () => {
-		const platform = /** @type {App.Platform} */ ({
+		const platform = /** @type {EdgeRuntime} */ ({
 			caches: {
 				default: {
 					match: async () => {

@@ -1,5 +1,5 @@
-import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
-import { fetchPinnedRecords } from '$lib/records/pinned-records.js';
+import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$app/env/public';
+import { fetchPinnedRecords } from '#lib/records/pinned-records.js';
 
 export async function GET({ fetch, url, setHeaders }) {
 	setHeaders({

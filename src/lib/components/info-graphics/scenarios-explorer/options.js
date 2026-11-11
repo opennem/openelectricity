@@ -1,5 +1,5 @@
 import { startOfYear } from 'date-fns';
-import { regionsWithColours } from '$lib/regions.js';
+import { regionsWithColours } from '#lib/regions.js';
 
 export const modelOptions = [
 	{

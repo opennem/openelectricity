@@ -6,11 +6,11 @@ const mocks = vi.hoisted(() => ({
 	verifyAdmin: vi.fn()
 }));
 
-vi.mock('$lib/sanity-cms.js', () => ({
+vi.mock('#lib/sanity-cms.js', () => ({
 	createCmsClient: () => ({ fetch: mocks.fetch, create: mocks.create })
 }));
 
-vi.mock('$lib/auth/clerk-server.js', () => ({
+vi.mock('#lib/auth/clerk-server.js', () => ({
 	verifyAdmin: mocks.verifyAdmin
 }));
 

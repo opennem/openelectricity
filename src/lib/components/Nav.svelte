@@ -1,12 +1,12 @@
 <script>
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
-	import { dataTrackerLink, parsedFeatureFlags } from '$lib/stores/app';
+	import { dataTrackerLink, parsedFeatureFlags } from '#lib/stores/app.js';
 	import { fly } from 'svelte/transition';
-	import { getNavItems } from '$lib/components/nav/nav-items.js';
-	import { isNonProductionHost } from '$lib/utils/environment.js';
-	import FeedbackIconButton from '$lib/components/feedback/FeedbackIconButton.svelte';
-	import FloatingFeedbackButton from '$lib/components/feedback/FloatingFeedbackButton.svelte';
+	import { getNavItems } from '#lib/components/nav/nav-items.js';
+	import { isNonProductionHost } from '#lib/utils/environment.js';
+	import FeedbackIconButton from '#lib/components/feedback/FeedbackIconButton.svelte';
+	import FloatingFeedbackButton from '#lib/components/feedback/FloatingFeedbackButton.svelte';
 
 	// The global Nav only shows on windowed pages, so its links to
 	// fullscreen-by-default pages (/facilities) open in windowed mode.
@@ -20,7 +20,9 @@
 
 	let isNonProduction = $derived(isNonProductionHost(page.url.hostname));
 
-	afterNavigate(() => {
+	afterNavigate(({ shallow, type }) => {
+		if (shallow && type === 'goto') return;
+
 		mobileNavActive = false;
 		activeDropdown = null;
 	});
@@ -87,10 +89,8 @@
 									stroke-linecap="round"
 									stroke-linejoin="round"
 									class="ml-1 transition-transform duration-200"
-									class:rotate-180={activeDropdown === name}
+									class:rotate-180={activeDropdown === name}><path d="m6 9 6 6 6-6"></path></svg
 								>
-									<path d="m6 9 6 6 6-6" />
-								</svg>
 							</a>
 
 							{#if activeDropdown === name}
@@ -130,10 +130,8 @@
 							class:text-mid-grey={!isActive}
 							class:text-black={isActive}
 							class:font-semibold={isActive}
-							{href}
+							{href}>{name}</a
 						>
-							{name}
-						</a>
 					{/if}
 				{/if}
 			{/each}
@@ -176,20 +174,27 @@
 				class:burgerActive={mobileNavActive}
 			>
 				<g>
-					<circle cx="1.5" cy="1.5" r="1.5" fill="black" />
-					<circle cx="10.5" cy="1.5" r="1.5" fill="black" class="hider" />
-					<circle cx="19.5" cy="1.5" r="1.5" fill="black" />
+					<circle cx="1.5" cy="1.5" r="1.5" fill="black"></circle>
 
-					<circle cx="1.5" cy="10.5" r="1.5" fill="black" class="hider" />
-					<circle cx="10.5" cy="10.5" r="1.5" fill="black" />
-					<circle cx="19.5" cy="10.5" r="1.5" fill="black" class="hider" />
+					<circle cx="10.5" cy="1.5" r="1.5" fill="black" class="hider"></circle>
 
-					<circle cx="1.5" cy="19.5" r="1.5" fill="black" />
-					<circle cx="10.5" cy="19.5" r="1.5" fill="black" class="hider" />
-					<circle cx="19.5" cy="19.5" r="1.5" fill="black" />
+					<circle cx="19.5" cy="1.5" r="1.5" fill="black"></circle>
 
-					<line x1="1.5" y1="1.5" x2="19.5" y2="19.5" stroke="black" />
-					<line x1="19.5" y1="1.5" x2="1.5" y2="19.5" stroke="black" />
+					<circle cx="1.5" cy="10.5" r="1.5" fill="black" class="hider"></circle>
+
+					<circle cx="10.5" cy="10.5" r="1.5" fill="black"></circle>
+
+					<circle cx="19.5" cy="10.5" r="1.5" fill="black" class="hider"></circle>
+
+					<circle cx="1.5" cy="19.5" r="1.5" fill="black"></circle>
+
+					<circle cx="10.5" cy="19.5" r="1.5" fill="black" class="hider"></circle>
+
+					<circle cx="19.5" cy="19.5" r="1.5" fill="black"></circle>
+
+					<line x1="1.5" y1="1.5" x2="19.5" y2="19.5" stroke="black"></line>
+
+					<line x1="19.5" y1="1.5" x2="1.5" y2="19.5" stroke="black"></line>
 				</g>
 			</svg>
 		</button>

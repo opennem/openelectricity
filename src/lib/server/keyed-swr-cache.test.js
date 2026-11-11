@@ -12,7 +12,7 @@ function fakePlatform() {
 	return {
 		store,
 		waited,
-		platform: /** @type {App.Platform} */ ({
+		platform: /** @type {EdgeRuntime} */ ({
 			caches: {
 				default: {
 					match: async (/** @type {string} */ key) => {

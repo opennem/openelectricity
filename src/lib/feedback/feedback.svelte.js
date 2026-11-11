@@ -1,8 +1,8 @@
 import { tick } from 'svelte';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { env } from '$env/dynamic/public';
-import { loadSentry } from '$lib/sentry/client.js';
-import { showToast } from '$lib/stores/toast';
+import { loadSentry } from '#lib/sentry/client.js';
+import { showToast } from '#lib/stores/toast.js';
 import {
 	applyFeedbackContext,
 	buildFeedbackContext,
@@ -12,7 +12,7 @@ import {
 /**
  * Sentry user feedback, opened from the app's own "Feedback" controls.
  *
- * Uses the page's shared Sentry client (`$lib/sentry/client.js`, started when
+ * Uses the page's shared Sentry client (`#lib/sentry/client.js`, started when
  * the page is idle, or at once if feedback is opened first) and adds the
  * feedback integration on first open. A recorded or buffered session replay
  * is attached to each submission.
@@ -23,7 +23,7 @@ import {
  */
 
 /** @typedef {'idle' | 'loading' | 'open' | 'error'} FeedbackStatus */
-/** @typedef {NonNullable<ReturnType<typeof import('$lib/sentry/feedback-sdk.js').getFeedback>>} FeedbackIntegration */
+/** @typedef {NonNullable<ReturnType<typeof import('#lib/sentry/feedback-sdk.js').getFeedback>>} FeedbackIntegration */
 /** @typedef {Awaited<ReturnType<FeedbackIntegration['createForm']>>} FeedbackForm */
 
 /** Form copy (UK English) and look. Name, email and screenshot are optional. */
@@ -207,7 +207,7 @@ function createFeedback() {
 
 	/** Add the feedback integration to the shared client, once. */
 	function load() {
-		integration ??= Promise.all([loadSentry(), import('$lib/sentry/feedback-sdk.js')])
+		integration ??= Promise.all([loadSentry(), import('#lib/sentry/feedback-sdk.js')])
 			.then(([Sentry, { feedbackIntegration, getFeedback }]) => {
 				if (!Sentry) throw new Error('Sentry is not available.');
 				Sentry.addIntegration(feedbackIntegration(FORM_OPTIONS));

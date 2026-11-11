@@ -1,12 +1,12 @@
 <script>
 	import { getContext } from 'svelte';
-	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
-	import Switch from '$lib/components/SwitchWithIcons.svelte';
-	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
-	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import Button from '$lib/components/form-elements/Button2.svelte';
-	import LinkCopyButton from '$lib/components/LinkCopyButton.svelte';
+	import FormMultiSelect from '#lib/components/form-elements/MultiSelect.svelte';
+	import Switch from '#lib/components/SwitchWithIcons.svelte';
+	import ButtonIcon from '#lib/components/form-elements/ButtonIcon.svelte';
+	import IconAdjustmentsHorizontal from '#lib/icons/AdjustmentsHorizontal.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import Button from '#lib/components/form-elements/Button2.svelte';
+	import LinkCopyButton from '#lib/components/LinkCopyButton.svelte';
 	import SignificanceFilter from './SignificanceFilter.svelte';
 
 	import { regions } from '../page-data-options/filters.js';

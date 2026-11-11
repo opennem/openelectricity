@@ -1,4 +1,4 @@
-import { version } from '$app/environment';
+import { version } from '$app/env';
 
 /**
  * Reload onto the new build when a page still on the previous one asks for

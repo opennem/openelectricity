@@ -9,7 +9,7 @@
 
 <script>
 	import { dialAngle } from './dial.js';
-	import { hoverFade } from '$lib/components/charts/v2/hover-fade.js';
+	import { hoverFade } from '#lib/components/charts/v2/hover-fade.js';
 
 	/**
 	 * DialFace — the 24-hour dials' 00/06/12/18 hour ticks and labels just

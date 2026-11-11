@@ -1,7 +1,7 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
+	import IconChevronUpDown from '#lib/icons/ChevronUpDown.svelte';
 
 	/**
 	 * @typedef {Object} Facility

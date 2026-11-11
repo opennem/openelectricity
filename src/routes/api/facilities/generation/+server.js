@@ -1,5 +1,5 @@
 import { NoDataFound } from 'openelectricity';
-import { oeClient } from '$lib/server/oe-client.js';
+import { oeClient } from '#lib/server/oe-client.js';
 
 // `mode=live` is the latest 5-min power reading (MW). Restricted to NEM
 // because WEM publishes with a 12+ h lag, which makes "live" misleading.

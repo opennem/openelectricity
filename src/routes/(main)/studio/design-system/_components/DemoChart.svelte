@@ -8,11 +8,11 @@
 	 * than an API call, so the specimen never changes between visits.
 	 */
 
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { getTimeFormatPolicy } from '$lib/components/charts/v2/time-format-policy.js';
-	import { appendHistoricalYear, cachedFormatter } from '$lib/components/charts/v2/date-labels.js';
-	import { getFuelTechColour } from '$lib/components/charts/colours.js';
-	import { fuelTechNameMap } from '$lib/fuel_techs.js';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
+	import { getTimeFormatPolicy } from '#lib/components/charts/v2/time-format-policy.js';
+	import { appendHistoricalYear, cachedFormatter } from '#lib/components/charts/v2/date-labels.js';
+	import { getFuelTechColour } from '#lib/components/charts/colours.js';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
 
 	/** Stack order (bottom → top) follows the site convention: coal at the
 	 *  base, gas, hydro, wind, then solar crowning the stack. */

@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
+import { fetchFacilityByCode } from '#lib/server/opennem/fetch-facility-by-code.js';
 
 /**
  * Single-facility endpoint — returns the complete facility (every unit, all fuel

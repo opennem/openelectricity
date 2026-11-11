@@ -5,8 +5,8 @@
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
 	import { sortFacilities, getNextSort } from './_utils/sort-facilities';
 	import { nameColumnClass, metaColumnsClass } from './_utils/list-columns.js';
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
-	import { CAPACITY_TOOLTIP } from '$lib/facilities/capacity-tooltip.js';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
+	import { CAPACITY_TOOLTIP } from '#lib/facilities/capacity-tooltip.js';
 
 	/**
 	 * `dense` forces the desktop row layout (dividers, columns) at mobile

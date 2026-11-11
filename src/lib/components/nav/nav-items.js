@@ -1,4 +1,4 @@
-import { windowedHref } from '$lib/utils/fullscreen-mode.js';
+import { windowedHref } from '#lib/utils/fullscreen-mode.js';
 
 /**
  * @typedef {Object} NavItem

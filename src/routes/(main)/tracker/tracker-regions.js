@@ -3,15 +3,15 @@
  * "All Regions" (NEM+WEM, value 'au') scope at the top. The tracker's default
  * scope is the NEM (`DEFAULT_REGION` in `tracker-model.js`).
  *
- * The combined scope lives in `$lib/regions.js` as `allRegionsOption` but is
+ * The combined scope lives in `#lib/regions.js` as `allRegionsOption` but is
  * deliberately NOT part of `regionOptions` — that list feeds the scenarios
  * filters, the studio explorer and the positional `regionsNemOnlyOptions` /
  * `regionsOnly` derivations, none of which can handle a two-network scope.
  */
 
-import { regionLabel as sharedRegionLabel, regionOptionsWithAu } from '$lib/regions.js';
+import { regionLabel as sharedRegionLabel, regionOptionsWithAu } from '#lib/regions.js';
 
-export { hasSpotPrice } from '$lib/regions.js';
+export { hasSpotPrice } from '#lib/regions.js';
 
 /**
  * Tracker display names that differ from the shared labels (the scenarios and

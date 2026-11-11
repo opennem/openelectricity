@@ -8,7 +8,7 @@
 	 *
 	 * @type {{ facility: any, cardCodes: Set<string> }}
 	 */
-	import FacilityOgCard from '$lib/components/FacilityOgCard.svelte';
+	import FacilityOgCard from '#lib/components/FacilityOgCard.svelte';
 
 	let { facility, cardCodes } = $props();
 </script>

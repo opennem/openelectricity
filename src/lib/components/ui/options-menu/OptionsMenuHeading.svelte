@@ -1,5 +1,5 @@
 <script>
-	import { hasTouchControls } from '$lib/components/ui/touch-controls.js';
+	import { hasTouchControls } from '#lib/components/ui/touch-controls.js';
 
 	/**
 	 * A group label in an OptionsMenu. In a touch-controls subtree its icon

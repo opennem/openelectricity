@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { searchAdmins, verifyAdmin } from '$lib/auth/clerk-server.js';
+import { searchAdmins, verifyAdmin } from '#lib/auth/clerk-server.js';
 
 /** Shortest query worth searching, and the longest accepted. */
 const MIN_QUERY = 2;

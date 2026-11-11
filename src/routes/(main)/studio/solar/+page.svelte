@@ -1,8 +1,8 @@
 <script>
 	import { tick } from 'svelte';
-	import Meta from '$lib/components/Meta.svelte';
-	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
-	import IconArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import PageHeaderSimple from '#lib/components/PageHeaderSimple.svelte';
+	import IconArrowDownTray from '#lib/icons/ArrowDownTray.svelte';
 	import SolarHeatmap from './components/SolarHeatmap.svelte';
 	import HeatmapTooltip from './components/HeatmapTooltip.svelte';
 	import ColorLegend from './components/ColorLegend.svelte';

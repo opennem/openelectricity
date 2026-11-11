@@ -1,11 +1,11 @@
 <script>
-	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import {
 		hasTouchControls,
 		TOUCH_SWITCH_GRID_TRACK,
 		TOUCH_SWITCH_OPTION,
 		TOUCH_SWITCH_TRACK
-	} from '$lib/components/ui/touch-controls.js';
+	} from '#lib/components/ui/touch-controls.js';
 	/**
 	 * Segmented switcher with a thumb that slides to the selected option.
 	 * The thumb is inset from the track via the container padding.

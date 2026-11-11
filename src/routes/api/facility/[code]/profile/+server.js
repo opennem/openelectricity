@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { client as sanityClient } from '$lib/sanity.js';
-import { SANITY_FACILITY_PROFILE_PROJECTION } from '$lib/server/sanity-projections.js';
+import { client as sanityClient } from '#lib/sanity.js';
+import { SANITY_FACILITY_PROFILE_PROJECTION } from '#lib/server/sanity-projections.js';
 
 /**
  * Facility profile endpoint — returns the Sanity editorial enrichment

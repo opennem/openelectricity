@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EDGE_MAX_AGE_MS } from '$lib/network-cache/freshness.js';
+import { EDGE_MAX_AGE_MS } from '#lib/network-cache/freshness.js';
 import {
 	RETENTION_MS,
 	buildListQuery,

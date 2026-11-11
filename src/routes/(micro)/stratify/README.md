@@ -159,7 +159,7 @@ fails if `toJSON()` and the registry drift apart.
 Owners share a chart with other Stratify admins (Clerk `role: 'admin'`) as
 **editors** or **viewers** from the Share step's People section
 (`SharePanel`). What each level may do lives in
-`$lib/stratify/chart-permissions.js`, shared by the server and the builder:
+`#lib/stratify/chart-permissions.js`, shared by the server and the builder:
 
 | Access   | Who                              | Can                                                        |
 | -------- | -------------------------------- | ---------------------------------------------------------- |
@@ -168,7 +168,7 @@ Owners share a chart with other Stratify admins (Clerk `role: 'admin'`) as
 | `viewer` | collaborator                     | open read-only, see history, fork                          |
 | `reader` | any admin, published charts only | open read-only, fork                                       |
 
-- The server decides access in `$lib/server/stratify/chart-access.js`
+- The server decides access in `#lib/server/stratify/chart-access.js`
   (`getChartAccess`, `loadChartForRequest(request, id, action)`); routes
   ask for an action, not a role. `GET /api/stratify/charts/:id` returns the
   caller's `access` (and the collaborator list, except to readers). PATCH
@@ -177,14 +177,14 @@ Owners share a chart with other Stratify admins (Clerk `role: 'admin'`) as
 userId, email, role, addedAt, addedBy }]` (at most 20), so the list API's
   **Shared with me** section can query `$userId in collaborators[].userId`.
 - `POST|PATCH|DELETE /api/stratify/charts/:id/collaborators` (owner only)
-  add by email (`findAdminByEmail` in `$lib/auth/clerk-server.js`; the
+  add by email (`findAdminByEmail` in `#lib/auth/clerk-server.js`; the
   person must be an admin), change a role, or remove someone. Each change
   is logged as a `collaborator` revision in the same transaction, so
   editors' saves merge past it; the response's `parentRev` lets the
   builder move its base revision forward.
 - Typing two or more characters in the People field suggests matching
   admins (`GET /api/stratify/admins?q=`, admins only, uncached;
-  `searchAdmins` in `$lib/auth/clerk-server.js`). Clerk can't filter on
+  `searchAdmins` in `#lib/auth/clerk-server.js`). Clerk can't filter on
   private metadata, so it scans the first 50 matches for the text and keeps
   up to 10 admins; the owner and current collaborators are left out.
 - In the builder, viewers and readers see a "Fork" banner and every control
@@ -204,7 +204,7 @@ panel use the same state.
   `{ baseRev, fields }`: only the fields changed since the base, plus
   `status`/`publishedAt` when publishing. Publishing and unpublishing save
   pending edits too; the Share panel's branding toggle saves that one field.
-- **Server** (`$lib/server/stratify/save-chart.js`). If the chart is still at
+- **Server** (`#lib/server/stratify/save-chart.js`). If the chart is still at
   `baseRev`, the change is written. If not, the revision log says which
   fields later saves touched; an incoming field another save changed to a
   different value is a conflict (409 with the current chart). Otherwise the
@@ -265,7 +265,7 @@ them.
   changes and the chart at that version.
 - `POST /api/stratify/charts/:id/revisions` `{ restoreTo }` — restore.
 
-History is bounded (`$lib/stratify/revision-policy.js`), since every
+History is bounded (`#lib/stratify/revision-policy.js`), since every
 revision is a Sanity document and the dataset's document count is the limit
 that matters:
 
@@ -280,10 +280,10 @@ that matters:
 
 A version is rebuilt from the current chart by applying the `before` value
 of every later change, newest first (`revertedSettings()` in
-`$lib/server/stratify/revisions.js`). A restore changes chart settings only,
+`#lib/server/stratify/revisions.js`). A restore changes chart settings only,
 never publish state, and is saved as a new `restore` revision (with
 `restoredFrom`), so history is never rewritten. All three endpoints are
-owner/superadmin only (`$lib/server/stratify/chart-access.js`) and uncached.
+owner/superadmin only (`#lib/server/stratify/chart-access.js`) and uncached.
 
 ## Public documentation and templates
 
@@ -692,7 +692,7 @@ Stratify charts can be embedded in editorial articles via two Sanity content blo
 Renders the chart inline using `StrataEmbed.svelte`. Chart data is preloaded server-side in the article page load function.
 
 - Sanity fields: `chartId` (required), `caption` (optional)
-- Chart data fetched via `normaliseChart()` from `$lib/stratify/chart-data.js`
+- Chart data fetched via `normaliseChart()` from `#lib/stratify/chart-data.js`
 - Full interactivity, shared theme with article page
 
 ### `embed` (iframe)

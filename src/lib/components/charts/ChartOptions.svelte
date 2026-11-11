@@ -1,5 +1,5 @@
 <script>
-	import Switch from '$lib/components/Switch.svelte';
+	import Switch from '#lib/components/Switch.svelte';
 
 	let { store } = $props();
 

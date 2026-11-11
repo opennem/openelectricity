@@ -7,7 +7,7 @@
  * manually; see src/routes/api/admin/network-cache/README.md).
  */
 
-import { EDGE_MAX_AGE_MS } from '$lib/network-cache/freshness.js';
+import { EDGE_MAX_AGE_MS } from '#lib/network-cache/freshness.js';
 
 /** Registry rows older than this are pruned on successful writes. */
 export const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -32,7 +32,7 @@ export const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
  */
 
 /**
- * @param {App.Platform | undefined} platform
+ * @param {EdgeRuntime | undefined} platform
  * @returns {D1Database | null}
  */
 export function registryDb(platform) {

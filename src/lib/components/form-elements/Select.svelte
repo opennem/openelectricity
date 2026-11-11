@@ -1,7 +1,7 @@
 <script>
 	import { RadioGroup, Select } from 'bits-ui';
-	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
-	import RadioIndicator from '$lib/components/form-elements/RadioIndicator.svelte';
+	import IconChevronUpDown from '#lib/icons/ChevronUpDown.svelte';
+	import RadioIndicator from '#lib/components/form-elements/RadioIndicator.svelte';
 
 	/** @typedef {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean, isGroupHeader?: boolean, description?: string}} Option */
 	/** @typedef {{ heading?: Option, divider: boolean, items: Option[] }} Section */

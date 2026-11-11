@@ -1,16 +1,16 @@
 import { parseISO } from 'date-fns';
-import { escapeXml } from '$lib/seo/xml.js';
-import { stripDateTimezone } from '$lib/utils/date-format.js';
+import { escapeXml } from '#lib/seo/xml.js';
+import { stripDateTimezone } from '#lib/utils/date-format.js';
 import generateDescription from '../page-data-options/record-description.js';
-import { formatRecordValue } from '$lib/records/format-value.js';
+import { formatRecordValue } from '#lib/records/format-value.js';
 
-/** @typedef {import('$lib/types/record.types').MilestoneRecord} MilestoneRecord */
+/** @typedef {import('#lib/types/record.types.ts').MilestoneRecord} MilestoneRecord */
 
 /** Number of records the feed exposes (also the API page size). */
 export const FEED_SIZE = 100;
 
 // Re-exported so existing consumers/tests keep their import path; the
-// implementation moved to $lib/seo/xml.js when the sitemap routes needed it.
+// implementation moved to #lib/seo/xml.js when the sitemap routes needed it.
 export { escapeXml };
 
 /**

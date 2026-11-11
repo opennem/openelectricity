@@ -2,7 +2,7 @@
  * Hand-authored geography for the NEM interconnectors.
  *
  * The OE APIs carry no geometry: interconnector flows are keyed by directed
- * pair (see `$lib/flows/derive-pairwise.js`) and regions are just codes. This
+ * pair (see `#lib/flows/derive-pairwise.js`) and regions are just codes. This
  * module pins those to the map — one badge anchor per region, and per corridor
  * a straight anchor-to-anchor connector (see {@link corridorCoords}) plus the
  * point where that connector crosses the state border, which anchors the flow

@@ -1,5 +1,5 @@
 <script>
-	import { getNumberFormat } from '$lib/utils/formatters.js';
+	import { getNumberFormat } from '#lib/utils/formatters.js';
 
 	/**
 	 * Generic map legend overlay. Renders up to two independent encoding channels:

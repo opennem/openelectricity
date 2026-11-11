@@ -1,6 +1,6 @@
 <script>
 	import { PortableText } from '@portabletext/svelte';
-	import { dedupePortableTextKeys } from '$lib/utils/portable-text.js';
+	import { dedupePortableTextKeys } from '#lib/utils/portable-text.js';
 
 	/**
 	 * @type {{

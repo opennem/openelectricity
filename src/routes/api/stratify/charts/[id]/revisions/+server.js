@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
-import { decodeChartFields } from '$lib/stratify/chart-data.js';
-import { loadChartForRequest } from '$lib/server/stratify/chart-access.js';
-import { listRevisions } from '$lib/server/stratify/revisions.js';
-import { restoreChartVersion } from '$lib/server/stratify/save-chart.js';
+import { decodeChartFields } from '#lib/stratify/chart-data.js';
+import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
+import { listRevisions } from '#lib/server/stratify/revisions.js';
+import { restoreChartVersion } from '#lib/server/stratify/save-chart.js';
 
 /** Per-user history: never cache. */
 const NO_STORE = { 'cache-control': 'no-store' };

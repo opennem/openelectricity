@@ -1,6 +1,6 @@
 <script>
 	import { RotateCcw } from '@lucide/svelte';
-	import { GROUP_OPTIONS } from '$lib/components/charts/network/groups.js';
+	import { GROUP_OPTIONS } from '#lib/components/charts/network/groups.js';
 	import GenerationBreakdown from '../dashboard/GenerationBreakdown.svelte';
 
 	/** @type {{ dataset?:any, hiddenSeries?:string[], group:string, metric:string, ontoggle?:(series:string)=>void, ongroupchange?:(group:string)=>void, onshowall?:()=>void }} */

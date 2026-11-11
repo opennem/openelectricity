@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { createCmsClient } from '$lib/sanity-cms.js';
-import { normaliseChart } from '$lib/stratify/chart-data.js';
+import { createCmsClient } from '#lib/sanity-cms.js';
+import { normaliseChart } from '#lib/stratify/chart-data.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params, setHeaders }) {

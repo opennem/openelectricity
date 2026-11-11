@@ -1,5 +1,5 @@
 <script>
-	import { statusColours } from '$lib/theme/openelectricity';
+	import { statusColours } from '#lib/theme/openelectricity.js';
 
 	// committed, commissioning, operating, retired
 	let { status, size = 'default' } = $props();

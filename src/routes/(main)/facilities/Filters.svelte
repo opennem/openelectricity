@@ -1,15 +1,15 @@
 <script>
-	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
+	import { FullscreenFilterBar, FullscreenNavDropdown } from '#lib/components/fullscreen/index.js';
 	import MobileFilterModal from './_components/MobileFilterModal.svelte';
-	import SearchInput from '$lib/components/filters/SearchInput.svelte';
-	import FilterDropdown from '$lib/components/filters/FilterDropdown.svelte';
+	import SearchInput from '#lib/components/filters/SearchInput.svelte';
+	import FilterDropdown from '#lib/components/filters/FilterDropdown.svelte';
 	import FilterRangeDropdown from './_components/filters/FilterRangeDropdown.svelte';
 	import FuelTechRowContent from './_components/filters/FuelTechRowContent.svelte';
 	import { ListFilter } from '@lucide/svelte';
-	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
-	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
+	import PageOptionsMenu from '#lib/components/PageOptionsMenu.svelte';
+	import SwitchWithIcons from '#lib/components/SwitchWithIcons.svelte';
 
-	import { activeLeafCount } from '$lib/facilities/filter-options.js';
+	import { activeLeafCount } from '#lib/facilities/filter-options.js';
 	import {
 		regionOptions,
 		statusOptions,
@@ -24,7 +24,7 @@
 		GRID_REGIONS,
 		DEFAULT_TYPES,
 		VIEW_OPTIONS
-	} from '$lib/facilities/filters.js';
+	} from '#lib/facilities/filters.js';
 
 	/**
 	 * @type {{
@@ -337,7 +337,7 @@
 <!-- Rows in the merged Type tree: fuel-tech nodes get their coloured icon
      badge; Data Centres borrows the data_centre badge; the Generators/Loads
      group headers stay plain text. -->
-{#snippet typeRow(/** @type {import('$lib/facilities/filter-options.js').FilterOption} */ option)}
+{#snippet typeRow(/** @type {import('#lib/facilities/filter-options.js').FilterOption} */ option)}
 	{#if option.value === 'data_centres'}
 		<FuelTechRowContent option={{ ...option, value: 'data_centre' }} />
 	{:else if FUEL_TECH_OPTION_VALUES.has(option.value)}

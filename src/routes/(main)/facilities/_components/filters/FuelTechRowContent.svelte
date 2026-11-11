@@ -1,5 +1,5 @@
 <script>
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import FuelTechBadge from '#lib/components/FuelTechBadge.svelte';
 
 	/**
 	 * Technology filter row body: coloured icon badge + label + optional count.
@@ -8,7 +8,7 @@
 	 * nullish — per-option facility counts can be wired in later without any
 	 * component API change.
 	 * @type {{
-	 *   option: import('$lib/facilities/filter-options.js').FilterOption,
+	 *   option: import('#lib/facilities/filter-options.js').FilterOption,
 	 *   count?: number | null
 	 * }}
 	 */

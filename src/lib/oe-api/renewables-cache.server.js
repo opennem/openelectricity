@@ -1,10 +1,10 @@
 /**
  * Homepage renewables envelope, served through the shared SWR cache
- * (`$lib/server/swr-cache.js`). This module only supplies the domain policy:
+ * (`#lib/server/swr-cache.js`). This module only supplies the domain policy:
  * what to fetch, when a payload counts as fresh, and what may be cached.
  */
 
-import { createSwrCache } from '$lib/server/swr-cache';
+import { createSwrCache } from '#lib/server/swr-cache.js';
 import { fetchHomepageRenewablesInput } from './fetch-renewables.server';
 import { findLatestLastDate, lastCompleteMonthIso } from './renewables-month.js';
 
@@ -43,7 +43,7 @@ const cache = createSwrCache({
 });
 
 /**
- * @param {App.Platform | undefined} platform
+ * @param {EdgeRuntime | undefined} platform
  * @returns {Promise<RenewablesEnvelope>}
  */
 export function getHomepageRenewablesCached(platform) {

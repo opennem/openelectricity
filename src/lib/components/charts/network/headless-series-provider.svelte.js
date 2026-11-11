@@ -17,12 +17,12 @@
  */
 
 import { untrack } from 'svelte';
-import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
-import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
+import ChartDataManager from '#lib/components/charts/v2/ChartDataManager.svelte.js';
+import { createVisibleAggregation } from '#lib/components/charts/v2/display-aggregation.js';
 import {
 	reconcileBufferedRange,
 	requestBufferedRange
-} from '$lib/components/charts/v2/fetch-window.js';
+} from '#lib/components/charts/v2/fetch-window.js';
 
 /**
  * What a provider fetches. Re-read whenever any reactive input changes, so a
@@ -58,7 +58,7 @@ import {
  *   recent native buckets on the next request; `force` also bypasses response caches
  * @property {boolean} isPending - Loading state; disabled providers are never pending
  * @property {string | null} error - Failure in the requested viewport, if any
- * @property {import('$lib/components/charts/v2/ChartDataManager.svelte.js').default['seriesMeta'] | null} seriesMeta -
+ * @property {import('#lib/components/charts/v2/ChartDataManager.svelte.js').default['seriesMeta'] | null} seriesMeta -
  *   Names, labels and colours of the processed series, once a response has arrived
  */
 

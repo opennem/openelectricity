@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { PUBLIC_JSON_URL } from '$env/static/public';
+import { PUBLIC_JSON_URL } from '$app/env/public';
 
 const basePath = PUBLIC_JSON_URL + '/capacity';
 

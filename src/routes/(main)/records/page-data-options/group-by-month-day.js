@@ -1,6 +1,6 @@
 import { group, rollup } from 'd3-array';
-import { getFormattedDate } from '$lib/utils/formatters';
-import { intlTimeZone } from '$lib/utils/date-format.js';
+import { getFormattedDate } from '#lib/utils/formatters.js';
+import { intlTimeZone } from '#lib/utils/date-format.js';
 /**
  *
  * @param {MilestoneRecord[]} data

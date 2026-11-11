@@ -26,7 +26,7 @@ src/lib/server/emissions/
 ```
 
 The route is deliberately thin. All parsing lives in
-`src/lib/server/emissions/index.js` — kept server-only under `$lib/server`, so
+`src/lib/server/emissions/index.js` — kept server-only under `#lib/server`, so
 the CSVs are inlined into the Worker bundle (Vite `?raw` import) rather than read
 from disk at runtime, and are unit-testable in isolation.
 

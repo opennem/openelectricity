@@ -1,7 +1,7 @@
 <script>
 	import { FileText, Building2 } from '@lucide/svelte';
-	import ExpandableDescription from '$lib/components/ExpandableDescription.svelte';
-	import { hasPortableTextContent } from '$lib/utils/portable-text.js';
+	import ExpandableDescription from '#lib/components/ExpandableDescription.svelte';
+	import { hasPortableTextContent } from '#lib/utils/portable-text.js';
 
 	/**
 	 * `collapsible` clamps the description with a Read more toggle (desktop); pass

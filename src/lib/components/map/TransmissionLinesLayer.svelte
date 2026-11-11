@@ -44,7 +44,7 @@
 
 <script>
 	import { GeoJSONSource, LineLayer } from 'svelte-maplibre-gl';
-	import { BAND_MIN, bandColours } from '$lib/facilities/transmission-bands.js';
+	import { BAND_MIN, bandColours } from '#lib/facilities/transmission-bands.js';
 	import { isLightMapTheme } from './map-style.js';
 
 	/**

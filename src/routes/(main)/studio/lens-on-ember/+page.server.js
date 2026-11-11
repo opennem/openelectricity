@@ -1,4 +1,4 @@
-import { PUBLIC_EMBER_BRIDGE_API } from '$env/static/public';
+import { PUBLIC_EMBER_BRIDGE_API } from '$app/env/public';
 
 export async function load({ fetch }) {
 	try {

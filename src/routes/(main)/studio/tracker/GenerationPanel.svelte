@@ -23,29 +23,29 @@
 	import { tick, untrack } from 'svelte';
 	import { ChevronRight, LineChart } from '@lucide/svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
+	import SwitchTabs from '#lib/components/SwitchTabs.svelte';
 	import {
 		formatRangeLabel,
 		ChartRangeBar,
 		sectionCardClass,
 		toolbarTrayClass
-	} from '$lib/components/charts/v2';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
-	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
+	} from '#lib/components/charts/v2/index.js';
+	import { getIntervalSpec } from '#lib/components/charts/facility/range-interval-config.js';
+	import { createChartRangeControl } from '#lib/components/charts/facility/chart-range-control.svelte.js';
 	import {
 		parseRangeParams,
 		applyRangeParams
-	} from '$lib/components/charts/facility/range-params.js';
-	import { MIN_DATE } from '$lib/utils/date-range';
-	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
-	import { replaceState } from '$app/navigation';
-	import NetworkChart from '$lib/components/charts/network/NetworkChart.svelte';
-	import InterconnectorChart from '$lib/components/charts/flows/InterconnectorChart.svelte';
-	import { regionToNetwork } from '$lib/components/charts/network/region-to-network.js';
-	import { createNetworkMarketData } from '$lib/components/charts/network/network-market-data.svelte.js';
-	import { INTERCONNECTORS, interconnectorsForRegion } from '$lib/flows/region-geo.js';
-	import { NETWORK_METRIC_KEYS } from '$lib/components/charts/network/network-metric-definitions.js';
-	import { regionsNemOnlyOptions } from '$lib/regions.js';
+	} from '#lib/components/charts/facility/range-params.js';
+	import { MIN_DATE } from '#lib/utils/date-range.js';
+	import { ianaFromOffset, toNetworkDateString } from '#lib/components/charts/v2/network-time.js';
+	import { goto } from '$app/navigation';
+	import NetworkChart from '#lib/components/charts/network/NetworkChart.svelte';
+	import InterconnectorChart from '#lib/components/charts/flows/InterconnectorChart.svelte';
+	import { regionToNetwork } from '#lib/components/charts/network/region-to-network.js';
+	import { createNetworkMarketData } from '#lib/components/charts/network/network-market-data.svelte.js';
+	import { INTERCONNECTORS, interconnectorsForRegion } from '#lib/flows/region-geo.js';
+	import { NETWORK_METRIC_KEYS } from '#lib/components/charts/network/network-metric-definitions.js';
+	import { regionsNemOnlyOptions } from '#lib/regions.js';
 	import { DEFAULT_REGION, isWholeNetworkScope, hasSpotPrice } from './tracker-regions.js';
 	import NetworkMetrics from './NetworkMetrics.svelte';
 	import PriceChipRow from './PriceChipRow.svelte';
@@ -125,18 +125,18 @@
 		return formatRangeLabel(start, end, range.displayInterval, ianaTimeZone);
 	});
 
-	/** @type {import('$lib/components/charts/network/NetworkChart.svelte').default | undefined} */
+	/** @type {import('#lib/components/charts/network/NetworkChart.svelte').default | undefined} */
 	let generationChart = $state(undefined);
-	/** @type {import('$lib/components/charts/network/NetworkChart.svelte').default | undefined} */
+	/** @type {import('#lib/components/charts/network/NetworkChart.svelte').default | undefined} */
 	let priceChart = $state(undefined);
-	/** @type {import('$lib/components/charts/network/NetworkChart.svelte').default | undefined} */
+	/** @type {import('#lib/components/charts/network/NetworkChart.svelte').default | undefined} */
 	let emissionsVolumeChart = $state(undefined);
-	/** @type {import('$lib/components/charts/network/NetworkChart.svelte').default | undefined} */
+	/** @type {import('#lib/components/charts/network/NetworkChart.svelte').default | undefined} */
 	let emissionsIntensityChart = $state(undefined);
 	/** Inline corridor flow charts, keyed by corridor. The reactive record lets
 	 *  dynamic bind:this assignments and unmount cleanup participate in Svelte's
 	 *  update cycle; the range control reads the current refs lazily.
-	 *  @type {Record<string, import('$lib/components/charts/flows/InterconnectorChart.svelte').default | null>} */
+	 *  @type {Record<string, import('#lib/components/charts/flows/InterconnectorChart.svelte').default | null>} */
 	let flowCharts = $state({});
 
 	const range = createChartRangeControl({
@@ -315,8 +315,10 @@
 			const before = url.searchParams.toString();
 			applyRangeParams(url.searchParams, state);
 			if (url.searchParams.toString() === before) return;
-			replaceState(`${url.pathname}${url.search}`, {});
+
+			goto(`${url.pathname}${url.search}`, { shallow: true, replace: true });
 		}, 300);
+
 		return () => clearTimeout(timer);
 	});
 
@@ -574,9 +576,8 @@
 							class="shrink-0 text-mid-warm-grey transition-colors group-hover:text-mid-grey"
 						/>
 					</div>
-					<div class="w-full">
-						<CorridorMetrics interconnector={ic} {flows} />
-					</div>
+
+					<div class="w-full"><CorridorMetrics interconnector={ic} {flows} /></div>
 				</button>
 				<div class="px-2 pb-2">
 					<InterconnectorChart

@@ -2,13 +2,13 @@
 	import { format, isToday } from 'date-fns';
 	import { scaleLinear } from 'd3-scale';
 
-	import Map from '$lib/components/info-graphics/system-snapshot/map/Map.svelte';
-	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
+	import Map from '#lib/components/info-graphics/system-snapshot/map/Map.svelte';
+	import MapHeader from '#lib/components/homepage/MapHeader.svelte';
 
 	import ColourLegend from './ColourLegend.svelte';
 	import CrossBorderExport from './CrossBorderExport.svelte';
 
-	import { carbonIntensityColour } from '$lib/stores/theme';
+	import { carbonIntensityColour } from '#lib/stores/theme.js';
 
 	/**
 	 * @typedef {Object} Props

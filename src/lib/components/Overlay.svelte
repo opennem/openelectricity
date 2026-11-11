@@ -1,7 +1,7 @@
 <script>
 	import { fade } from 'svelte/transition';
-	import { portal } from '$lib/actions/portal.js';
-	import { Backdrop } from '$lib/components/ui/backdrop';
+	import { portal } from '#lib/actions/portal.js';
+	import { Backdrop } from '#lib/components/ui/backdrop/index.js';
 
 	/**
 	 * @typedef {Object} Props

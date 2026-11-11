@@ -1,6 +1,6 @@
 import chroma from 'chroma-js';
-import { spectrum } from '$lib/colours.js';
-import { fuelTechColourMap } from '$lib/theme/openelectricity.js';
+import { spectrum } from '#lib/colours.js';
+import { fuelTechColourMap } from '#lib/theme/openelectricity.js';
 import { comparisonMetric, comparisonUnit, formatComparisonValue } from './comparison-metrics.js';
 import { nextPeriodStart } from './region-comparison.js';
 

@@ -1,5 +1,5 @@
 import { goto, afterNavigate } from '$app/navigation';
-import { isOpenElectricityHost } from '$lib/utils/environment.js';
+import { isOpenElectricityHost } from '#lib/utils/environment.js';
 
 /** Set once any client-side navigation happens, meaning the previous history
  * entry is an in-app page. Fallback signal for browsers without the
@@ -12,6 +12,7 @@ let hasInternalNavigation = false;
  */
 export function trackBackNavigation() {
 	afterNavigate((navigation) => {
+		if (navigation.shallow && navigation.type === 'goto') return;
 		if (navigation.from) hasInternalNavigation = true;
 	});
 }
@@ -48,6 +49,6 @@ export function backOr(fallbackHref) {
 	if (previousEntryIsOpenElectricity()) {
 		history.back();
 	} else {
-		goto(fallbackHref, { replaceState: true });
+		goto(fallbackHref, { replace: true });
 	}
 }

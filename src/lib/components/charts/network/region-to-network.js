@@ -1,5 +1,5 @@
 /**
- * Map an Explorer region selection (the `value`s from `$lib/regions.js`) to the
+ * Map an Explorer region selection (the `value`s from `#lib/regions.js`) to the
  * OE API network + optional network_region pair.
  *
  * The dropdown exposes a single list mixing NEM-wide, individual NEM regions and

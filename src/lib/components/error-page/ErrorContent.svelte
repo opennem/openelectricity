@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/state';
-	import Meta from '$lib/components/Meta.svelte';
-	import SectionLink from '$lib/components/SectionLink.svelte';
+	import Meta from '#lib/components/Meta.svelte';
+	import SectionLink from '#lib/components/SectionLink.svelte';
 	import Bands from './Bands.svelte';
 
 	let status = $derived(page.status);

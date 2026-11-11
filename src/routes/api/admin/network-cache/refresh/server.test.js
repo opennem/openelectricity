@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+	/** @type {EdgeRuntime | undefined} The runtime `edgeRuntime()` hands the route. */
+	runtime: undefined,
 	verifyAdmin: vi.fn(),
 	getMarket: vi.fn(),
 	getNetworkData: vi.fn()
 }));
 
-vi.mock('$lib/auth/clerk-server.js', () => ({ verifyAdmin: mocks.verifyAdmin }));
+vi.mock('#lib/auth/clerk-server.js', () => ({ verifyAdmin: mocks.verifyAdmin }));
 vi.mock('openelectricity', () => ({
 	OpenElectricityClient: class {
 		getMarket = mocks.getMarket;
@@ -16,6 +18,8 @@ vi.mock('openelectricity', () => ({
 }));
 
 import { NoDataFound } from 'openelectricity';
+vi.mock('#lib/server/edge-runtime.js', () => ({ edgeRuntime: () => mocks.runtime }));
+
 import { POST } from './+server.js';
 
 const ADMIN = { authenticated: true, isAdmin: true, isSuperAdmin: false, userId: 'user-1' };
@@ -62,7 +66,7 @@ function fakePlatform({ registered = true } = {}) {
 		store,
 		waited,
 		executed,
-		platform: /** @type {App.Platform} */ ({
+		platform: /** @type {EdgeRuntime} */ ({
 			caches: {
 				default: {
 					match: async (/** @type {string} */ key) => {
@@ -89,14 +93,14 @@ function fakePlatform({ registered = true } = {}) {
  * @param {any} platform
  */
 function request(body, platform) {
+	mocks.runtime = platform;
 	return POST(
 		/** @type {any} */ ({
 			request: new Request('https://example.test/api/admin/network-cache/refresh', {
 				method: 'POST',
 				body: typeof body === 'string' ? body : JSON.stringify(body),
 				headers: { 'content-type': 'application/json' }
-			}),
-			platform
+			})
 		})
 	);
 }

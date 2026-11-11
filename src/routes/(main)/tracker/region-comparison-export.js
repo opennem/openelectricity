@@ -18,7 +18,7 @@ import {
 	rankedComparisonRegions
 } from './comparison-displays.js';
 import { trackerFileName } from './tracker-export.js';
-import { regionLabel } from '$lib/regions.js';
+import { regionLabel } from '#lib/regions.js';
 
 /** @typedef {import('./region-comparison.js').RegionComparisonSelection} RegionComparisonSelection */
 /** @typedef {import('./types.js').ExportColumn} ExportColumn */

@@ -14,18 +14,18 @@
 	 * window).
 	 */
 
-	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
-	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
-	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
-	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
-	import { createChartHost } from '$lib/components/charts/v2/chart-host.svelte.js';
-	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
-	import { EARLIEST_DATA_MS } from '$lib/utils/date-range.js';
-	import { getNumberFormat } from '$lib/utils/formatters';
+	import { ChartStore, StratumChart } from '#lib/components/charts/v2/index.js';
+	import { createVisibleAggregation } from '#lib/components/charts/v2/display-aggregation.js';
+	import { formatXAxis, applyFacilityTimeAxis } from '#lib/components/charts/v2/formatters.js';
+	import { getIntervalSpec } from '#lib/components/charts/facility/range-interval-config.js';
+	import ChartDataManager from '#lib/components/charts/v2/ChartDataManager.svelte.js';
+	import { createChartHost } from '#lib/components/charts/v2/chart-host.svelte.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '#lib/components/charts/v2/chart-loading-state.js';
+	import { EARLIEST_DATA_MS } from '#lib/utils/date-range.js';
+	import { getNumberFormat } from '#lib/utils/formatters.js';
 	import { ianaFromOffset } from '../v2/network-time.js';
 	import { perfSpan } from '../v2/perf.js';
-	import { getInterconnector } from '$lib/flows/region-geo.js';
+	import { getInterconnector } from '#lib/flows/region-geo.js';
 	import { processPairwiseFlows } from './process-pairwise-flows.js';
 	import { processRegionPrices } from './process-region-prices.js';
 
@@ -166,7 +166,7 @@
 	// ============================================
 
 	/**
-	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 * @param {import('#lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 */
 	function applyCommonStyles(chart) {
 		chart.chartStyles.chartHeightClasses = chartHeight;
@@ -179,7 +179,7 @@
 	// `title` — the flow title flips 'Flow' ↔ 'Energy' on every hysteresis grain
 	// switch, and reading it here would tear down and rebuild the whole chart
 	// pipeline each flip; the sync effect below applies it instead.
-	/** @type {import('$lib/components/charts/v2/ChartStore.svelte.js').default} */
+	/** @type {import('#lib/components/charts/v2/ChartStore.svelte.js').default} */
 	let chartStore = $derived.by(() => {
 		if (isFlowKind) {
 			const chart = new ChartStore({

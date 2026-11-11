@@ -1,11 +1,11 @@
 <script>
 	import { goto } from '$app/navigation';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
-	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
-	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import Button from '$lib/components/form-elements/Button2.svelte';
+	import FormSelect from '#lib/components/form-elements/Select.svelte';
+	import ButtonIcon from '#lib/components/form-elements/ButtonIcon.svelte';
+	import IconChevronLeft from '#lib/icons/ChevronLeft.svelte';
+	import IconAdjustmentsHorizontal from '#lib/icons/AdjustmentsHorizontal.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import Button from '#lib/components/form-elements/Button2.svelte';
 	import {
 		regions,
 		fuelTechOptions,
@@ -14,7 +14,7 @@
 		aggregateOptions
 	} from '../../page-data-options/filters.js';
 	// import { recordState } from './stores/state.svelte.js';
-	import LinkCopyButton from '$lib/components/LinkCopyButton.svelte';
+	import LinkCopyButton from '#lib/components/LinkCopyButton.svelte';
 
 	let {
 		record_id,

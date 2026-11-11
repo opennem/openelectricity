@@ -1,13 +1,13 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { X } from '@lucide/svelte';
-	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import { getFueltechColor } from '$lib/utils/fueltech-display';
-	import { PanelHeader } from '$lib/components/ui/panel';
+	import { fuelTechNameMap } from '#lib/fuel_techs.js';
+	import { getFueltechColor } from '#lib/utils/fueltech-display.js';
+	import { PanelHeader } from '#lib/components/ui/panel/index.js';
 	import {
 		buildFacilityHaystack,
 		parseQueryTerms
-	} from '$lib/components/facility/facility-search.js';
+	} from '#lib/components/facility/facility-search.js';
 
 	/**
 	 * @typedef {Object} Facility

@@ -1,9 +1,9 @@
 <script>
-	import { urlFor } from '$lib/sanity';
+	import { urlFor } from '#lib/sanity.js';
 	import { fly } from 'svelte/transition';
 	import { ChevronLeft, ChevronRight, X } from '@lucide/svelte';
-	import { portal } from '$lib/actions/portal.js';
-	import { Backdrop } from '$lib/components/ui/backdrop';
+	import { portal } from '#lib/actions/portal.js';
+	import { Backdrop } from '#lib/components/ui/backdrop/index.js';
 
 	/**
 	 * @type {{

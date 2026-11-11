@@ -24,12 +24,12 @@
 	import { fade } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import PanelRail from './PanelRail.svelte';
-	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
-	import { createDockedPanel } from '$lib/components/ui/panel/docked-panel.svelte.js';
-	import { percentPanelBounds } from '$lib/components/ui/panel/panel-bounds.js';
-	import ResizablePanel from '$lib/components/ui/resizable-panel/resizable-panel.svelte';
-	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
-	import { BELOW_TABLET_QUERY } from '$lib/utils/fullscreen-mode.js';
+	import DragHandle from '#lib/components/ui/panel/drag-handle.svelte';
+	import { createDockedPanel } from '#lib/components/ui/panel/docked-panel.svelte.js';
+	import { percentPanelBounds } from '#lib/components/ui/panel/panel-bounds.js';
+	import ResizablePanel from '#lib/components/ui/resizable-panel/resizable-panel.svelte';
+	import { BottomSheet } from '#lib/components/ui/bottom-sheet/index.js';
+	import { BELOW_TABLET_QUERY } from '#lib/utils/fullscreen-mode.js';
 	import { getTrackerNavBottom, setTrackerSheet } from './tracker-sheet.js';
 
 	/**

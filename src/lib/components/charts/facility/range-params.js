@@ -22,7 +22,7 @@ import {
 	getDefaultIntervalForRange,
 	getIntervalOptionsForDays
 } from './range-interval-config.js';
-import { MIN_DATE } from '$lib/utils/date-range';
+import { MIN_DATE } from '#lib/utils/date-range.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

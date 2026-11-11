@@ -25,7 +25,7 @@ export const BELOW_TABLET_QUERY = '(max-width: 767px)';
 /**
  * Whether a URL resolves to fullscreen mode — no param means fullscreen;
  * only an explicit `fullscreen=false` is windowed.
- * @param {URL} url
+ * @param {{ searchParams: Pick<URLSearchParams, 'get'> }} url
  * @returns {boolean}
  */
 export function isFullscreenUrl(url) {
@@ -59,5 +59,5 @@ export function toggleFullscreenMode(isFullscreen) {
 	const url = new URL(window.location.href);
 	if (isFullscreen) url.searchParams.set('fullscreen', 'false');
 	else url.searchParams.delete('fullscreen');
-	goto(`${url.pathname}${url.search}`, { noScroll: true, replaceState: true, keepFocus: true });
+	goto(`${url.pathname}${url.search}`, { reset: false, replace: true });
 }

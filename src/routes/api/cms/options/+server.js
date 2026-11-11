@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { createCmsClient, resolveDataset } from '$lib/sanity-cms.js';
-import { verifyAdmin } from '$lib/auth/clerk-server.js';
+import { createCmsClient, resolveDataset } from '#lib/sanity-cms.js';
+import { verifyAdmin } from '#lib/auth/clerk-server.js';
 
 const REGIONS_QUERY = `*[_type == "region"] | order(name asc) { _id, code, name }`;
 const OWNERS_QUERY = `*[_type == "owner"] | order(name asc) { _id, name, legal_name }`;

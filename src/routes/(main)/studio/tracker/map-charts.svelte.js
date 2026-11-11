@@ -11,7 +11,7 @@
  * dropped by a sequence guard; a failed refresh keeps the previous charts.
  */
 
-import { nemNaiveRange } from '$lib/flows/nem-time.js';
+import { nemNaiveRange } from '#lib/flows/nem-time.js';
 import { miniSeriesForAu, miniSeriesForRegion } from './map-minis.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;

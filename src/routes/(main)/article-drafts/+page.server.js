@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
-// import { client } from '$lib/sanity';
+// import { client } from '#lib/sanity.js';
 import { createClient } from '@sanity/client';
-import { PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID } from '$env/static/public';
-import { SANITY_TOKEN } from '$env/static/private';
+import { PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID } from '$app/env/public';
+import { SANITY_TOKEN } from '$app/env/private';
 
 const client = createClient({
 	projectId: PUBLIC_SANITY_PROJECT_ID,

@@ -5,7 +5,7 @@
 	import SectionHeader from '../SectionHeader.svelte';
 	import ControlInput, { CONTROL_INPUT_CLASS } from '../ControlInput.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
-	import { WATERFALL_TYPES } from '$lib/stratify/chart-types.js';
+	import { WATERFALL_TYPES } from '#lib/stratify/chart-types.js';
 
 	const project = getStratifyContext();
 	const FLIP_DURATION = 150;

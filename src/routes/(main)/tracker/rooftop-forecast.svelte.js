@@ -1,5 +1,5 @@
 import { untrack } from 'svelte';
-import { HALF_HOUR_MS } from '$lib/components/charts/network/rooftop-top-up.js';
+import { HALF_HOUR_MS } from '#lib/components/charts/network/rooftop-top-up.js';
 import { forecastQuery, forecastRows } from './rooftop-forecast.js';
 
 /** Retry cadence while the slot covering now is missing. */
@@ -31,9 +31,13 @@ export function createRooftopForecast(opts) {
 
 	$effect(() => {
 		if (!request) return;
-		const [region, tz, now] = untrack(() => [opts.region(), opts.timeZone(), opts.clock()]);
-		const url = `/api/network/data?${forecastQuery(region, /** @type {number} */ (now), tz)}`;
-		const slot = Math.floor(/** @type {number} */ (now) / HALF_HOUR_MS) * HALF_HOUR_MS;
+		const { region, tz, now } = untrack(() => ({
+			region: opts.region(),
+			tz: opts.timeZone(),
+			now: opts.clock()
+		}));
+		const url = `/api/network/data?${forecastQuery(region, now, tz)}`;
+		const slot = Math.floor(now / HALF_HOUR_MS) * HALF_HOUR_MS;
 		const controller = new AbortController();
 		/** @type {ReturnType<typeof setTimeout> | undefined} */
 		let retry;
@@ -50,7 +54,7 @@ export function createRooftopForecast(opts) {
 				.then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
 				.then((json) => {
 					const forecast = forecastRows(json.response);
-					loaded = { region: /** @type {string} */ (region), ...forecast };
+					loaded = { region, ...forecast };
 					if ((forecast.rows.at(-1)?.time ?? -Infinity) < slot) retryLater();
 				})
 				.catch((err) => {

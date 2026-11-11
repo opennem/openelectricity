@@ -1,13 +1,14 @@
-import { loadSystemSnapshot } from '$lib/server/system-snapshot.js';
+import { loadSystemSnapshot } from '#lib/server/system-snapshot.js';
+import { edgeRuntime } from '#lib/server/edge-runtime.js';
 
 /**
  * Homepage System Snapshot: per-region live and 12-month figures in one
  * response, each mode served from its own SWR cache
- * (`$lib/server/system-snapshot.js`). A mode that fails carries `error` and
+ * (`#lib/server/system-snapshot.js`). A mode that fails carries `error` and
  * empty `regions`, so the other still renders.
  */
-export async function GET({ platform, setHeaders }) {
-	const snapshot = await loadSystemSnapshot(platform);
+export async function GET({ setHeaders }) {
+	const snapshot = await loadSystemSnapshot(edgeRuntime());
 	if (snapshot.live.error && snapshot.annual.error) {
 		return Response.json({ error: 'System snapshot unavailable.' }, { status: 503 });
 	}

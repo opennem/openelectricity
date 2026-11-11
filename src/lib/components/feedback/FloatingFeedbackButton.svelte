@@ -1,7 +1,7 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { MediaQuery, createSubscriber } from 'svelte/reactivity';
-	import { feedback } from '$lib/feedback/feedback.svelte.js';
+	import { feedback } from '#lib/feedback/feedback.svelte.js';
 	import FeedbackIconButton from './FeedbackIconButton.svelte';
 
 	/**

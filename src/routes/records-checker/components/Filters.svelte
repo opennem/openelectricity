@@ -2,9 +2,9 @@
 	import { run } from 'svelte/legacy';
 
 	import { createEventDispatcher } from 'svelte';
-	import CheckboxTree from '$lib/components/form-elements/CheckboxTree.svelte';
-	import Switch from '$lib/components/Switch.svelte';
-	import Radio from '$lib/components/form-elements/Radio.svelte';
+	import CheckboxTree from '#lib/components/form-elements/CheckboxTree.svelte';
+	import Switch from '#lib/components/Switch.svelte';
+	import Radio from '#lib/components/form-elements/Radio.svelte';
 
 	import {
 		regionOptions,

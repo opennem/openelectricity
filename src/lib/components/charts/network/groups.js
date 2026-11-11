@@ -1,17 +1,17 @@
 /**
  * Fuel-tech grouping options supported by network charts.
  *
- * Thin wrapper over the shared `$lib/fuel-tech-groups` modules so the Explorer
+ * Thin wrapper over the shared `#lib/fuel-tech-groups` modules so the Explorer
  * page, NetworkChart and the fuel-tech table all resolve a group the same way.
  */
 
-import detailed from '$lib/fuel-tech-groups/detailed';
-import simple from '$lib/fuel-tech-groups/simple';
-import coalGasRenewables from '$lib/fuel-tech-groups/coal-gas-renewables';
-import flexibility from '$lib/fuel-tech-groups/flexibility';
-import renewablesFossils from '$lib/fuel-tech-groups/renewables-fossils';
-import vreResidual from '$lib/fuel-tech-groups/vre-residual';
-import { loadFuelTechs } from '$lib/fuel_techs';
+import detailed from '#lib/fuel-tech-groups/detailed.js';
+import simple from '#lib/fuel-tech-groups/simple.js';
+import coalGasRenewables from '#lib/fuel-tech-groups/coal-gas-renewables.js';
+import flexibility from '#lib/fuel-tech-groups/flexibility.js';
+import renewablesFossils from '#lib/fuel-tech-groups/renewables-fossils.js';
+import vreResidual from '#lib/fuel-tech-groups/vre-residual.js';
+import { loadFuelTechs } from '#lib/fuel_techs.js';
 
 // Menu order mirrors the legacy explore tool's grouping list.
 const GROUP_CONFIGS = [
