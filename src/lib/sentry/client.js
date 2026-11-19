@@ -1,5 +1,5 @@
 import { browser, dev, version } from '$app/env';
-import { env } from '$env/dynamic/public';
+import { sentryEnv as env } from './env.js';
 import { hostEnvironment } from '#lib/utils/environment.js';
 import {
 	IGNORED_ERRORS,

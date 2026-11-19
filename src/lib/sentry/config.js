@@ -8,7 +8,7 @@
  * The DSN Sentry reports to, or null when Sentry is off. Errors and session
  * replay need only this; feedback also needs its own switch
  * (`resolveFeedbackDsn`).
- * @param {Record<string, string | undefined>} env - `$env/dynamic/public`
+ * @param {Record<string, string | undefined>} env - `sentryEnv` (`./env.js`)
  */
 export function resolveSentryDsn(env) {
 	return env.PUBLIC_SENTRY_DSN?.trim() || null;
@@ -20,7 +20,7 @@ export function resolveSentryDsn(env) {
  * error from work in progress and (at its full replay rate) trip the relay's
  * rate limit. Set `PUBLIC_SENTRY_DEV=true` to check them locally. The
  * feedback form is unaffected.
- * @param {Record<string, string | undefined>} env - `$env/dynamic/public`
+ * @param {Record<string, string | undefined>} env - `sentryEnv` (`./env.js`)
  * @param {boolean} dev - `$app/env`'s `dev`
  */
 export function reportsErrors(env, dev) {
