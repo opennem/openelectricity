@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/public';
+import { sentryEnv as env } from '#lib/sentry/env.js';
 import { resolveSentryDsn } from '#lib/sentry/config.js';
 import {
 	MAX_ENVELOPE_BYTES,

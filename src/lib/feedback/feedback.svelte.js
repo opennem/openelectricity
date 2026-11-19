@@ -1,6 +1,6 @@
 import { tick } from 'svelte';
 import { browser } from '$app/env';
-import { env } from '$env/dynamic/public';
+import { sentryEnv as env } from '#lib/sentry/env.js';
 import { loadSentry } from '#lib/sentry/client.js';
 import { showToast } from '#lib/stores/toast.js';
 import {
@@ -18,8 +18,7 @@ import {
  * is attached to each submission.
  *
  * Off unless `PUBLIC_SENTRY_DSN` and `PUBLIC_FEEDBACK_ENABLED=true` are set.
- * Read in the browser only: `$env/dynamic/public` can't be read while
- * prerendering, and the entry points render after mount anyway.
+ * Read in the browser only: the entry points render after mount anyway.
  */
 
 /** @typedef {'idle' | 'loading' | 'open' | 'error'} FeedbackStatus */

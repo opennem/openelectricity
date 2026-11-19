@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: true, dev: false, version: '1.0.0' }));
-vi.mock('$env/dynamic/public', () => ({
-	env: { PUBLIC_SENTRY_DSN: 'https://public@o0.ingest.sentry.io/0' }
+vi.mock('./env.js', () => ({
+	sentryEnv: { PUBLIC_SENTRY_DSN: 'https://public@o0.ingest.sentry.io/0' }
 }));
 const sdk = vi.hoisted(() => ({
 	init: vi.fn(),
