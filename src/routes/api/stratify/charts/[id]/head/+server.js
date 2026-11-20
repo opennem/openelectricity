@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
 import { REVISION_TYPE } from '#lib/server/stratify/revisions.js';
 
@@ -25,7 +24,7 @@ export async function GET({ request, params }) {
 		id: params.id
 	});
 
-	return json(
+	return Response.json(
 		{
 			rev: loaded.chart._rev,
 			latest: latest

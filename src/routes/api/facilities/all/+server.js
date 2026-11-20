@@ -9,7 +9,6 @@
  * consumer works unchanged.
  */
 
-import { json } from '@sveltejs/kit';
 import { oeClient } from '#lib/server/oe-client.js';
 import { getCachedFacilities, setCachedFacilities } from '#lib/server/facilities-server-cache.js';
 import { PLAY_STATUSES } from '#lib/facilities/filters.js';
@@ -46,5 +45,5 @@ export async function GET({ setHeaders }) {
 	// carry the response across isolates for the same 5-minute window.
 	setHeaders({ 'cache-control': 'public, max-age=300' });
 
-	return json(facilities);
+	return Response.json(facilities);
 }

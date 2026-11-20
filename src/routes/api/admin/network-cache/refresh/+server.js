@@ -14,7 +14,6 @@
  * Body: `{ "key": "<full synthetic cache key>" }`
  */
 
-import { json } from '@sveltejs/kit';
 import { verifyAdmin } from '#lib/auth/clerk-server.js';
 import { freshnessStatus } from '#lib/network-cache/freshness.js';
 import { getEntry, registryDb } from '#lib/server/network-cache-registry.js';
@@ -32,12 +31,12 @@ export async function POST({ request }) {
 	const platform = edgeRuntime();
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
+		return Response.json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
 	}
 
 	const db = registryDb(platform);
 	if (!db) {
-		return json(
+		return Response.json(
 			{ error: 'The CACHE_REGISTRY D1 binding is not configured in this environment.' },
 			{ status: 503, headers: NO_STORE }
 		);
@@ -46,16 +45,19 @@ export async function POST({ request }) {
 	const body = await request.json().catch(() => null);
 	const key = body?.key;
 	if (typeof key !== 'string' || !key) {
-		return json({ error: 'A key property is required.' }, { status: 400, headers: NO_STORE });
+		return Response.json(
+			{ error: 'A key property is required.' },
+			{ status: 400, headers: NO_STORE }
+		);
 	}
 	const parsed = parseRegisteredKey(key);
 	if (!parsed) {
-		return json({ error: 'Malformed cache key.' }, { status: 400, headers: NO_STORE });
+		return Response.json({ error: 'Malformed cache key.' }, { status: 400, headers: NO_STORE });
 	}
 
 	const registered = await getEntry(db, key);
 	if (!registered) {
-		return json(
+		return Response.json(
 			{ error: 'Unknown cache key — not in the registry.' },
 			{ status: 404, headers: NO_STORE }
 		);
@@ -67,7 +69,7 @@ export async function POST({ request }) {
 			parsed.canonical,
 			makeUpstreamFetcher(parsed.params)
 		);
-		return json(
+		return Response.json(
 			{ ok: true, value, stored, storedAt, sizeBytes, durationMs },
 			{ headers: NO_STORE }
 		);
@@ -76,7 +78,7 @@ export async function POST({ request }) {
 		// previously cached response (if this data centre holds one) survives.
 		const local = await networkDataCache.peek(platform, parsed.canonical);
 		const freshMs = freshnessFor(parsed.params.dateEnd, parsed.params.metric);
-		return json(
+		return Response.json(
 			{
 				ok: false,
 				error: String(/** @type {any} */ (err)?.message ?? err),

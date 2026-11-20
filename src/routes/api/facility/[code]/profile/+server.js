@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { client as sanityClient } from '#lib/sanity.js';
 import { SANITY_FACILITY_PROFILE_PROJECTION } from '#lib/server/sanity-projections.js';
 
@@ -32,5 +31,5 @@ export async function GET({ params, setHeaders }) {
 	// re-selecting a facility is instant.
 	setHeaders({ 'cache-control': 'public, max-age=3600' });
 
-	return json(profile);
+	return Response.json(profile);
 }

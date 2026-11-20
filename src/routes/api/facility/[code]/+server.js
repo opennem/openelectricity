@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { fetchFacilityByCode } from '#lib/server/opennem/fetch-facility-by-code.js';
 
 /**
@@ -21,5 +20,5 @@ export async function GET({ params, setHeaders }) {
 	// browser reuse it so re-selecting a facility is instant.
 	setHeaders({ 'cache-control': 'public, max-age=3600' });
 
-	return json(facility);
+	return Response.json(facility);
 }

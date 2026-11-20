@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
 
 /**
@@ -38,5 +37,5 @@ export async function POST({ request, params }) {
 		forkedFrom: source._id
 	});
 
-	return json({ chart: { _id: doc._id } }, { status: 201 });
+	return Response.json({ chart: { _id: doc._id } }, { status: 201 });
 }

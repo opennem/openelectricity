@@ -18,7 +18,6 @@
  *   pageSize  — rows per page (default 25, max 100)
  */
 
-import { json } from '@sveltejs/kit';
 import { verifyAdmin } from '#lib/auth/clerk-server.js';
 import { freshnessDeadlines, freshnessStatus } from '#lib/network-cache/freshness.js';
 import { listEntries, registryDb } from '#lib/server/network-cache-registry.js';
@@ -73,12 +72,12 @@ export async function GET({ request, url }) {
 	const platform = edgeRuntime();
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
+		return Response.json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
 	}
 
 	const db = registryDb(platform);
 	if (!db) {
-		return json(
+		return Response.json(
 			{ error: 'The CACHE_REGISTRY D1 binding is not configured in this environment.' },
 			{ status: 503, headers: NO_STORE }
 		);
@@ -93,19 +92,34 @@ export async function GET({ request, url }) {
 	const q = searchParams.get('q') || undefined;
 
 	if (region && !VALID_REGIONS.has(region)) {
-		return json({ error: `Invalid region: ${region}` }, { status: 400, headers: NO_STORE });
+		return Response.json(
+			{ error: `Invalid region: ${region}` },
+			{ status: 400, headers: NO_STORE }
+		);
 	}
 	if (metric && !isValidMetric(metric)) {
-		return json({ error: `Invalid metric: ${metric}` }, { status: 400, headers: NO_STORE });
+		return Response.json(
+			{ error: `Invalid metric: ${metric}` },
+			{ status: 400, headers: NO_STORE }
+		);
 	}
 	if (interval && !VALID_INTERVALS.has(interval)) {
-		return json({ error: `Invalid interval: ${interval}` }, { status: 400, headers: NO_STORE });
+		return Response.json(
+			{ error: `Invalid interval: ${interval}` },
+			{ status: 400, headers: NO_STORE }
+		);
 	}
 	if (window && window !== 'live' && window !== 'historical') {
-		return json({ error: `Invalid window: ${window}` }, { status: 400, headers: NO_STORE });
+		return Response.json(
+			{ error: `Invalid window: ${window}` },
+			{ status: 400, headers: NO_STORE }
+		);
 	}
 	if (freshness && freshness !== 'fresh' && freshness !== 'stale' && freshness !== 'expired') {
-		return json({ error: `Invalid freshness: ${freshness}` }, { status: 400, headers: NO_STORE });
+		return Response.json(
+			{ error: `Invalid freshness: ${freshness}` },
+			{ status: 400, headers: NO_STORE }
+		);
 	}
 
 	const page = toPositiveInt(searchParams.get('page'), 1);
@@ -129,7 +143,7 @@ export async function GET({ request, url }) {
 		nowMs: now
 	});
 
-	return json(
+	return Response.json(
 		{
 			items: items.map((row) => presentEntry(row, now)),
 			total,

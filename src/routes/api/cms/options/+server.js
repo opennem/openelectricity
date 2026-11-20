@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { createCmsClient, resolveDataset } from '#lib/sanity-cms.js';
 import { verifyAdmin } from '#lib/auth/clerk-server.js';
 
@@ -11,7 +10,7 @@ const FUEL_TECHS_QUERY = `*[_type == "fuel_technology"] | order(name asc) { _id,
 export async function GET({ request, cookies }) {
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
+		return Response.json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
 	}
 
 	const client = createCmsClient(await resolveDataset(cookies));
@@ -22,7 +21,7 @@ export async function GET({ request, cookies }) {
 		client.fetch(FUEL_TECHS_QUERY)
 	]);
 
-	return json({
+	return Response.json({
 		regions: regions ?? [],
 		owners: owners ?? [],
 		networks: networks ?? [],

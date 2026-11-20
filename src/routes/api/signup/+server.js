@@ -1,4 +1,3 @@
-import { json, text } from '@sveltejs/kit';
 import { MAILCHIMP_API_KEY, MAILCHIMP_LIST_ID } from '$app/env/private';
 import { subscribe } from '#lib/server/newsletter.js';
 
@@ -16,11 +15,11 @@ export async function PUT({ request, fetch }) {
 		apiKey: MAILCHIMP_API_KEY,
 		listId: MAILCHIMP_LIST_ID
 	});
-	return json(result, { status: result.ok ? 200 : STATUS[result.reason] });
+	return Response.json(result, { status: result.ok ? 200 : STATUS[result.reason] });
 }
 
 // This handler will respond to POST, PATCH, DELETE, etc.
 /** @type {import('./$types').RequestHandler} */
 export async function fallback() {
-	return text('Nothing to see here');
+	return new Response('Nothing to see here');
 }

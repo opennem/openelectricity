@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { findAdminByEmail } from '#lib/auth/clerk-server.js';
 import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
 import { COLLABORATOR_ROLES } from '#lib/stratify/chart-permissions.js';
@@ -43,7 +42,9 @@ async function share(request, id, prepare) {
 	const { client, auth, chart } = loaded;
 
 	const body = await request.json().catch(() => null);
-	if (!body || typeof body !== 'object') return json({ error: 'Invalid body' }, { status: 400 });
+	if (!body || typeof body !== 'object') {
+		return Response.json({ error: 'Invalid body' }, { status: 400 });
+	}
 
 	const change = await prepare({ auth, chart, body });
 	if (change instanceof Response) return change;
@@ -56,17 +57,17 @@ async function share(request, id, prepare) {
 
 	switch (result.outcome) {
 		case 'not-found':
-			return json({ error: 'Not found' }, { status: 404 });
+			return Response.json({ error: 'Not found' }, { status: 404 });
 		case 'invalid':
-			return json({ error: result.error }, { status: 400 });
+			return Response.json({ error: result.error }, { status: 400 });
 		case 'unchanged':
-			return json({
+			return Response.json({
 				collaborators: result.collaborators,
 				chart: { _id: id, _rev: result.rev },
 				parentRev: null
 			});
 		case 'saved':
-			return json({
+			return Response.json({
 				collaborators: result.collaborators,
 				chart: { _id: id, _rev: result.rev },
 				parentRev: result.parentRev
@@ -78,16 +79,18 @@ async function share(request, id, prepare) {
 export async function POST({ request, params }) {
 	return share(request, params.id, async ({ auth, chart, body }) => {
 		const email = typeof body.email === 'string' ? body.email.trim() : '';
-		if (!EMAIL.test(email)) return json({ error: 'Enter an email address' }, { status: 400 });
+		if (!EMAIL.test(email)) {
+			return Response.json({ error: 'Enter an email address' }, { status: 400 });
+		}
 		if (!isRole(body.role))
-			return json({ error: 'role must be editor or viewer' }, { status: 400 });
+			return Response.json({ error: 'role must be editor or viewer' }, { status: 400 });
 
 		const person = await findAdminByEmail(email);
 		if (!person) {
-			return json({ error: 'No Stratify admin uses that email address' }, { status: 404 });
+			return Response.json({ error: 'No Stratify admin uses that email address' }, { status: 404 });
 		}
 		if (person.userId === chart.userId) {
-			return json({ error: 'That person owns this chart' }, { status: 400 });
+			return Response.json({ error: 'That person owns this chart' }, { status: 400 });
 		}
 
 		return (list) =>
@@ -104,7 +107,10 @@ export async function POST({ request, params }) {
 export async function PATCH({ request, params }) {
 	return share(request, params.id, async ({ body }) => {
 		if (typeof body.userId !== 'string' || !isRole(body.role)) {
-			return json({ error: 'userId and role (editor or viewer) are required' }, { status: 400 });
+			return Response.json(
+				{ error: 'userId and role (editor or viewer) are required' },
+				{ status: 400 }
+			);
 		}
 		return (list) => setCollaboratorRole(list, body.userId, body.role);
 	});
@@ -114,7 +120,7 @@ export async function PATCH({ request, params }) {
 export async function DELETE({ request, params }) {
 	return share(request, params.id, async ({ body }) => {
 		if (typeof body.userId !== 'string') {
-			return json({ error: 'userId is required' }, { status: 400 });
+			return Response.json({ error: 'userId is required' }, { status: 400 });
 		}
 		return (list) => removeCollaborator(list, body.userId);
 	});

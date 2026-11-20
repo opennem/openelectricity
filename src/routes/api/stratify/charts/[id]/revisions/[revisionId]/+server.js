@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { decodeChartFields } from '#lib/stratify/chart-data.js';
 import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
 import { getRevisionVersion } from '#lib/server/stratify/revisions.js';
@@ -21,9 +20,9 @@ export async function GET({ request, params }) {
 		decodeChartFields(loaded.chart),
 		params.revisionId
 	);
-	if (!version) return json({ error: 'Revision not found' }, { status: 404 });
+	if (!version) return Response.json({ error: 'Revision not found' }, { status: 404 });
 
-	return json(
+	return Response.json(
 		{ revision: version.revision, chart: version.chart },
 		{ headers: { 'cache-control': 'no-store' } }
 	);

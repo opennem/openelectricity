@@ -13,7 +13,6 @@
  *   key — the full synthetic cache key, exactly as listed by the registry
  */
 
-import { json } from '@sveltejs/kit';
 import { verifyAdmin } from '#lib/auth/clerk-server.js';
 import { freshnessDeadlines, freshnessStatus } from '#lib/network-cache/freshness.js';
 import { registryDb } from '#lib/server/network-cache-registry.js';
@@ -26,11 +25,11 @@ export async function GET({ request, url }) {
 	const platform = edgeRuntime();
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
+		return Response.json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
 	}
 
 	if (!registryDb(platform)) {
-		return json(
+		return Response.json(
 			{ error: 'The CACHE_REGISTRY D1 binding is not configured in this environment.' },
 			{ status: 503, headers: NO_STORE }
 		);
@@ -38,19 +37,19 @@ export async function GET({ request, url }) {
 
 	const key = url.searchParams.get('key');
 	if (!key) {
-		return json(
+		return Response.json(
 			{ error: 'A key query parameter is required.' },
 			{ status: 400, headers: NO_STORE }
 		);
 	}
 	const parsed = parseRegisteredKey(key);
 	if (!parsed) {
-		return json({ error: 'Malformed cache key.' }, { status: 400, headers: NO_STORE });
+		return Response.json({ error: 'Malformed cache key.' }, { status: 400, headers: NO_STORE });
 	}
 
 	const local = await networkDataCache.peek(platform, parsed.canonical);
 	if (!local) {
-		return json({ found: false, key }, { headers: NO_STORE });
+		return Response.json({ found: false, key }, { headers: NO_STORE });
 	}
 
 	// Local freshness re-derives the period from the key's date_end — the
@@ -58,7 +57,7 @@ export async function GET({ request, url }) {
 	const freshMs = freshnessFor(parsed.params.dateEnd, parsed.params.metric);
 	const entry = { storedAt: local.storedAt, freshMs };
 
-	return json(
+	return Response.json(
 		{
 			found: true,
 			key,

@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { decodeChartFields } from '#lib/stratify/chart-data.js';
 import { findAdminIds } from '#lib/auth/clerk-server.js';
 import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
@@ -24,7 +23,7 @@ export async function GET({ request, params }) {
 	/** @type {Array<Record<string, any>>} */
 	const collaborators = access === 'reader' ? [] : (chart.collaborators ?? []);
 
-	return json({
+	return Response.json({
 		chart: {
 			...decodeChartFields(chart),
 			collaborators: access === 'owner' ? await withAdminStatus(collaborators) : collaborators,
@@ -74,15 +73,15 @@ export async function PATCH({ request, params }) {
 	const body = await request.json();
 	const isFieldSave = typeof body?.fields === 'object' && body.fields !== null;
 	if (isFieldSave && typeof body.baseRev !== 'string') {
-		return json({ error: 'baseRev is required' }, { status: 400 });
+		return Response.json({ error: 'baseRev is required' }, { status: 400 });
 	}
 
 	const values = pickChartFields(isFieldSave ? body.fields : body);
 	if (Object.keys(values).length === 0) {
-		return json({ error: 'No fields to update' }, { status: 400 });
+		return Response.json({ error: 'No fields to update' }, { status: 400 });
 	}
 	if (('status' in values || 'publishedAt' in values) && !canAccess(access, 'publish')) {
-		return json({ error: 'Only the owner can publish or unpublish' }, { status: 403 });
+		return Response.json({ error: 'Only the owner can publish or unpublish' }, { status: 403 });
 	}
 
 	const result = await saveChartFields(client, {
@@ -104,16 +103,16 @@ export async function PATCH({ request, params }) {
 
 	switch (result.outcome) {
 		case 'not-found':
-			return json({ error: 'Not found' }, { status: 404 });
+			return Response.json({ error: 'Not found' }, { status: 404 });
 		case 'conflict':
-			return json(
+			return Response.json(
 				{ error: 'Conflict', conflicts: result.conflicts, chart: result.latest },
 				{ status: 409 }
 			);
 		case 'unchanged':
-			return json({ chart: { _id: params.id, _rev: result.rev }, latest: null });
+			return Response.json({ chart: { _id: params.id, _rev: result.rev }, latest: null });
 		case 'saved':
-			return json({
+			return Response.json({
 				chart: { _id: params.id, _rev: result.rev },
 				latest: result.merged ? result.chart : null
 			});
@@ -130,5 +129,5 @@ export async function DELETE({ request, params }) {
 
 	await deleteChartWithRevisions(loaded.client, params.id);
 
-	return json({ deleted: true });
+	return Response.json({ deleted: true });
 }

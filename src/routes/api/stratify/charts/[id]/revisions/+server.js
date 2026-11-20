@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { decodeChartFields } from '#lib/stratify/chart-data.js';
 import { loadChartForRequest } from '#lib/server/stratify/chart-access.js';
 import { listRevisions } from '#lib/server/stratify/revisions.js';
@@ -21,11 +20,11 @@ export async function GET({ request, params, url }) {
 
 	const before = url.searchParams.get('before');
 	if (before !== null && Number.isNaN(Date.parse(before))) {
-		return json({ error: 'before must be a timestamp' }, { status: 400 });
+		return Response.json({ error: 'before must be a timestamp' }, { status: 400 });
 	}
 
 	const page = await listRevisions(loaded.client, params.id, { before });
-	return json(page, { headers: NO_STORE });
+	return Response.json(page, { headers: NO_STORE });
 }
 
 /**
@@ -45,7 +44,7 @@ export async function POST({ request, params }) {
 
 	const body = await request.json().catch(() => null);
 	if (typeof body?.restoreTo !== 'string' || !body.restoreTo) {
-		return json({ error: 'restoreTo is required' }, { status: 400 });
+		return Response.json({ error: 'restoreTo is required' }, { status: 400 });
 	}
 
 	const result = await restoreChartVersion(client, {
@@ -56,18 +55,18 @@ export async function POST({ request, params }) {
 
 	switch (result.outcome) {
 		case 'not-found':
-			return json({ error: 'Revision not found' }, { status: 404 });
+			return Response.json({ error: 'Revision not found' }, { status: 404 });
 		case 'conflict':
-			return json(
+			return Response.json(
 				{ error: 'The chart changed while restoring. Try again.', chart: result.latest },
 				{ status: 409 }
 			);
 		case 'unchanged':
-			return json({
+			return Response.json({
 				chart: { _id: params.id, _rev: result.rev },
 				latest: decodeChartFields(chart)
 			});
 		case 'saved':
-			return json({ chart: { _id: params.id, _rev: result.rev }, latest: result.chart });
+			return Response.json({ chart: { _id: params.id, _rev: result.rev }, latest: result.chart });
 	}
 }

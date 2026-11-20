@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { searchAdmins, verifyAdmin } from '#lib/auth/clerk-server.js';
 
 /** Shortest query worth searching, and the longest accepted. */
@@ -17,12 +16,12 @@ const MAX_QUERY = 100;
 export async function GET({ request, url }) {
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
+		return Response.json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
 	}
 
 	const query = (url.searchParams.get('q') ?? '').trim();
-	if (query.length > MAX_QUERY) return json({ error: 'Query too long' }, { status: 400 });
+	if (query.length > MAX_QUERY) return Response.json({ error: 'Query too long' }, { status: 400 });
 
 	const admins = query.length < MIN_QUERY ? [] : await searchAdmins(query);
-	return json({ admins }, { headers: { 'cache-control': 'no-store' } });
+	return Response.json({ admins }, { headers: { 'cache-control': 'no-store' } });
 }

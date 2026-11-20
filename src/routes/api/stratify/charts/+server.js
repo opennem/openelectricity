@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { createCmsClient } from '#lib/sanity-cms.js';
 import { verifyAdmin } from '#lib/auth/clerk-server.js';
 import { normaliseChart } from '#lib/stratify/chart-data.js';
@@ -38,7 +37,7 @@ function toPositiveInt(value, fallback) {
 export async function GET({ request, url }) {
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
+		return Response.json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
 	}
 
 	const scope = url.searchParams.get('scope') ?? 'all';
@@ -108,7 +107,7 @@ export async function GET({ request, url }) {
 		wants('community') ? fetchSection(communityFilters, communityPage) : null
 	]);
 
-	return json({
+	return Response.json({
 		...(my ? { my } : {}),
 		...(shared ? { shared } : {}),
 		...(community ? { community } : {}),
@@ -124,13 +123,13 @@ export async function GET({ request, url }) {
 export async function POST({ request }) {
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
+		return Response.json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
 	}
 
 	const body = await request.json();
 
 	if (!body.csvText) {
-		return json({ error: 'csvText is required' }, { status: 400 });
+		return Response.json({ error: 'csvText is required' }, { status: 400 });
 	}
 
 	const client = createCmsClient();
@@ -146,5 +145,5 @@ export async function POST({ request }) {
 		})
 	});
 
-	return json({ chart: { _id: doc._id, _rev: doc._rev } }, { status: 201 });
+	return Response.json({ chart: { _id: doc._id, _rev: doc._rev } }, { status: 201 });
 }

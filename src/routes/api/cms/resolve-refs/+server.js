@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { createCmsClient, resolveDataset } from '#lib/sanity-cms.js';
 import { verifyAdmin } from '#lib/auth/clerk-server.js';
 
@@ -6,11 +5,11 @@ import { verifyAdmin } from '#lib/auth/clerk-server.js';
 export async function GET({ request, cookies, url }) {
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
-		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
+		return Response.json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
 	}
 
 	const ids = url.searchParams.get('ids')?.split(',').filter(Boolean) ?? [];
-	if (!ids.length) return json({});
+	if (!ids.length) return Response.json({});
 
 	const client = createCmsClient(await resolveDataset(cookies));
 	const query = `*[_id in $ids]{ _id, _type, name, title, code }`;
@@ -22,5 +21,5 @@ export async function GET({ request, cookies, url }) {
 		result[doc._id] = doc;
 	}
 
-	return json(result);
+	return Response.json(result);
 }

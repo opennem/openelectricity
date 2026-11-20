@@ -7,7 +7,6 @@
  * `collaborators: [{ _key, userId, email, role, addedAt, addedBy }]`.
  */
 
-import { json } from '@sveltejs/kit';
 import { createCmsClient } from '#lib/sanity-cms.js';
 import { verifyAdmin } from '#lib/auth/clerk-server.js';
 import { canAccess } from '#lib/stratify/chart-permissions.js';
@@ -59,7 +58,7 @@ export async function loadChartForRequest(request, id, action, { full = false } 
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
 		return {
-			response: json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 })
+			response: Response.json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 })
 		};
 	}
 
@@ -70,9 +69,11 @@ export async function loadChartForRequest(request, id, action, { full = false } 
 	});
 	const access = chart ? getChartAccess(chart, auth) : null;
 
-	if (!chart || !access) return { response: json({ error: 'Not found' }, { status: 404 }) };
+	if (!chart || !access) {
+		return { response: Response.json({ error: 'Not found' }, { status: 404 }) };
+	}
 	if (!canAccess(access, action)) {
-		return { response: json({ error: 'Forbidden' }, { status: 403 }) };
+		return { response: Response.json({ error: 'Forbidden' }, { status: 403 }) };
 	}
 
 	return { response: null, auth, client, chart, access };
