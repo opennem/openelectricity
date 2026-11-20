@@ -39,6 +39,53 @@
 			name="viewport"
 			content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
 		/>
+		<script>
+			// Some hosts that embed /widget drop or block writes to `history`.
+			// SvelteKit 3 reads its start-up entry straight back from
+			// `history.state` and fails to start when the write didn't stick
+			// (Sentry OPENELECTRICITY-SVELTEKIT-5F, and 2W when it throws). Where
+			// a test write doesn't stick, keep the state in memory instead so the
+			// router still starts. Ordinary browsers keep the native API.
+			(function () {
+				var h = history;
+				var probe = '__oe_history_probe';
+				try {
+					var saved = h.state;
+					var marked = Object.assign({}, saved);
+					marked[probe] = 1;
+					h.replaceState(marked, '');
+					var kept = h.state && h.state[probe] === 1;
+					h.replaceState(saved, '');
+					if (kept) return;
+				} catch (e) {}
+				var state = null;
+				try {
+					state = h.state;
+				} catch (e) {}
+				['pushState', 'replaceState'].forEach(function (name) {
+					var native = h[name];
+					h[name] = function (data, unused, url) {
+						state = data;
+						try {
+							native.call(h, data, unused, url);
+						} catch (e) {}
+					};
+				});
+				Object.defineProperty(h, 'state', {
+					configurable: true,
+					get: function () {
+						return state;
+					}
+				});
+				addEventListener(
+					'popstate',
+					function (event) {
+						state = event.state;
+					},
+					true
+				);
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
