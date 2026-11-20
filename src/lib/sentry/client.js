@@ -4,6 +4,7 @@ import { hostEnvironment } from '#lib/utils/environment.js';
 import {
 	IGNORED_ERRORS,
 	errorFromEvent,
+	ownScriptUrls,
 	replaySessionSampleRate,
 	reportsErrors,
 	resolveSentryDsn
@@ -61,6 +62,7 @@ export function loadSentry() {
 				release: `openelectricity@${version}`,
 				environment,
 				ignoreErrors: IGNORED_ERRORS,
+				allowUrls: ownScriptUrls(window.location.origin),
 				// Feedback has its own hook; this only drops errors.
 				beforeSend: (event) => (reporting ? event : null),
 				integrations: reporting

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	IGNORED_ERRORS,
 	errorFromEvent,
+	ownScriptUrls,
 	replaySessionSampleRate,
 	reportsErrors,
 	resolveSentryDsn
@@ -48,7 +49,15 @@ describe('IGNORED_ERRORS', () => {
 			'Failed to fetch (openelectricity.org.au)',
 			'TypeError: Load failed',
 			'TypeError: NetworkError when attempting to fetch resource.',
-			'Non-Error promise rejection captured with value: Object Not Found Matching Id:2, MethodName:update, ParamCount:4'
+			'Non-Error promise rejection captured with value: Object Not Found Matching Id:2, MethodName:update, ParamCount:4',
+			'InvalidStateError: Skipped ViewTransition due to document being hidden',
+			'InvalidStateError: Skipping view transition because viewport size changed.',
+			'AbortError: signal is aborted without reason',
+			'AbortError: The operation was aborted. ',
+			'AbortError: Fetch is aborted',
+			'Error: Failed to initialize WebGL',
+			'GPUInitializationError: WebGL2 is required to display this map. We are sorry, but it seems that your browser does not support WebGL2, a technology for rendering 3D graphics on the web.',
+			'Error: Invalid call to runtime.sendMessage(). Tab not found.'
 		]) {
 			expect(ignored(message), message).toBe(true);
 		}
@@ -60,9 +69,35 @@ describe('IGNORED_ERRORS', () => {
 			"TypeError: Cannot read properties of undefined (reading '0')",
 			'TypeError: Failed to fetch records: 500',
 			"SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
-			'Error: navigation aborted while saving'
+			'Error: navigation aborted while saving',
+			// Dropped by where it starts (`ownScriptUrls`), never by message.
+			"TypeError: Cannot read properties of null (reading 'tagName')",
+			'AbortError: signal is aborted because the chart closed'
 		]) {
 			expect(ignored(message), message).toBe(false);
+		}
+	});
+});
+
+describe('ownScriptUrls', () => {
+	/** @param {string} url */
+	const own = (url) =>
+		ownScriptUrls('https://openelectricity.org.au').some((pattern) => pattern.test(url));
+
+	it("keeps errors that start in the site's own scripts", () => {
+		expect(own('https://openelectricity.org.au/_app/immutable/chunks/Cnl6T7YL.js')).toBe(true);
+		expect(own('https://openelectricity.org.au/widget')).toBe(true);
+	});
+
+	it('drops errors that start in third-party scripts', () => {
+		for (const url of [
+			'https://static.cloudflareinsights.com/beacon.min.js',
+			'https://zerophishing.iaas.checkpoint.com/2/zp.js?api_key={X}',
+			'chrome-extension://abcdef/content.js',
+			'https://openelectricity.org.au.evil.example/x.js',
+			'https://evil.example/?from=https://openelectricity.org.au/'
+		]) {
+			expect(own(url), url).toBe(false);
 		}
 	});
 });

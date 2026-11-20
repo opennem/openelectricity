@@ -19,7 +19,9 @@ afterEach(() => {
 
 describe('captureError', () => {
 	it('skips null and undefined errors, queued or live', async () => {
-		vi.stubGlobal('window', { location: { hostname: 'openelectricity.org.au' } });
+		vi.stubGlobal('window', {
+			location: { hostname: 'openelectricity.org.au', origin: 'https://openelectricity.org.au' }
+		});
 		const early = new Error('early');
 		captureError(null);
 		captureError(early);

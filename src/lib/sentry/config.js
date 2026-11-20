@@ -65,11 +65,37 @@ export const IGNORED_ERRORS = [
 	/^(Error: )?navigation aborted$/,
 	/Transition was aborted/,
 	/View transition was skipped/,
+	/Skipped ViewTransition/,
+	/Skipping view transition/,
+	// A request or map tile the page cancelled itself (Chrome, then Firefox and
+	// Safari wording).
+	/^(AbortError: )?(signal is aborted without reason|The operation was aborted\.?\s*|Fetch is aborted)$/,
 	// The reader's connection dropped.
 	/^(TypeError: )?(Failed to fetch|Load failed|NetworkError when attempting to fetch resource\.)( \(.*\))?$/,
+	// The reader's browser or device can't draw the map (WebGL unavailable or
+	// turned off).
+	/Failed to initialize WebGL/,
+	/WebGL2 is required to display this map/,
+	// A browser extension's messaging, which has no script URL for
+	// `ownScriptUrls` to drop.
+	/Invalid call to runtime\.sendMessage\(\)/,
 	// Outlook's link scanner opening pages from emails.
 	/Object Not Found Matching Id/
 ];
+
+/**
+ * Where an error must start to be reported (Sentry's `allowUrls`, matched
+ * against the innermost stack frame with a script URL): scripts served from
+ * the site itself. Errors raised inside third-party scripts, such as
+ * Cloudflare's analytics beacon or a script that an extension or security
+ * product injects, aren't faults in the site. Errors with no script URL are
+ * kept and left to `IGNORED_ERRORS`.
+ * @param {string} origin - `window.location.origin`
+ * @returns {RegExp[]}
+ */
+export function ownScriptUrls(origin) {
+	return [new RegExp(`^${origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`)];
+}
 
 /**
  * What to report for a window `error` or `unhandledrejection` event caught
